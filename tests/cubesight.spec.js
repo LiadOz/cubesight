@@ -1,0 +1,71 @@
+import { test, expect } from 'playwright/test';
+
+test('loads the 3D trainer and Rust engine', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+
+  await expect(page.locator('#cube canvas')).toBeVisible();
+  await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
+  await expect(page.locator('.answer-button')).toHaveCount(6);
+  await expect(page.locator('.answer-button kbd')).toHaveText(['W', 'Y', 'G', 'B', 'R', 'O']);
+  await expect(page.locator('#known-colors')).toBeHidden();
+  await expect(page.locator('#case-mode')).toHaveAttribute('data-target-corner', /^(UFL|UBR|DFR)$/);
+  await expect(page.locator('#cube canvas')).toHaveAttribute('data-rotation', 'locked');
+  expect(errors).toEqual([]);
+});
+
+test('accepts color initials and advances all three corners', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Three corners' }).click();
+  await expect(page.locator('#corner-sequence span')).toHaveCount(3);
+  await expect(page.locator('#case-mode')).toContainText('1/3');
+  await expect(page.locator('#cube canvas')).toHaveAttribute('data-corner-presentation', 'full');
+
+  const key = (await page.locator('.answer-button kbd').first().textContent()).toLowerCase();
+  await page.keyboard.press(key);
+  expect(await page.locator('#cube canvas').getAttribute('aria-label')).toMatch(/Result: (correct|wrong)\. Correct color: (White|Yellow|Green|Blue|Red|Orange)\./);
+  await expect(page.locator('#case-mode')).toContainText('2/3', { timeout: 3_000 });
+  await expect(page.locator('#corner-sequence .active')).toHaveText(/02/);
+});
+
+test('F2L supports fixed and color-neutral bottoms with a limited camera', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
+  await page.getByRole('link', { name: 'F2L deduction' }).click();
+
+  await expect(page.locator('#f2l-view')).toBeVisible();
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm');
+  await expect(page.locator('.cross-option')).toHaveCount(7);
+  await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
+  await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-azimuth-limit', '0.62');
+  await expect(page.locator('#f2l-total')).not.toHaveText('0');
+
+  await page.getByRole('button', { name: 'Red' }).click();
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-preference', 'red');
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-bottom-color', 'red');
+  await expect(page.locator('#f2l-cross-label')).toHaveText('RED BOTTOM');
+  await page.getByRole('button', { name: /New cube/ }).click();
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-bottom-color', 'red');
+
+  await page.getByRole('button', { name: 'Neutral' }).click();
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-preference', 'neutral');
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-bottom-color', /^(white|yellow|green|blue|red|orange)$/);
+  expect(errors).toEqual([]);
+});
+
+test('corner cube ignores drag gestures', async ({ page }) => {
+  await page.goto('/');
+  const cube = page.locator('#cube canvas');
+  await expect(cube).toHaveAttribute('data-rotation', 'locked');
+  const before = await cube.getAttribute('data-camera-pose');
+  const box = await cube.boundingBox();
+  await page.mouse.move(box.x + box.width * .35, box.y + box.height * .5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * .7, box.y + box.height * .5, { steps: 8 });
+  await page.mouse.up();
+  const after = await cube.getAttribute('data-camera-pose');
+  expect(after).toBe(before);
+});

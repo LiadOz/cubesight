@@ -1,0 +1,63 @@
+.recognition-profile { margin-top: 24px; color: var(--ink); }
+.rp-head { display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:16px; }
+.rp-head h2 { margin:2px 0 0; }
+.rp-controls { display:flex; gap:10px; flex-wrap:wrap; }
+.rp-controls label { display:grid; gap:5px; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+.rp-controls select { min-width:145px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; color:var(--ink); background:var(--panel); font:inherit; text-transform:none; letter-spacing:normal; }
+.rp-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+.rp-summary > div, .rp-chart-wrap, .rp-details > div { border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+.rp-summary > div { padding:13px 15px; display:grid; gap:4px; }
+.rp-summary span, .rp-bar span { color:var(--muted); font-size:11px; }
+.rp-summary strong { font-size:21px; }
+.rp-chart-wrap { min-height:240px; position:relative; padding:10px 8px 3px; }
+.rp-chart { display:block; width:100%; height:240px; overflow:visible; }
+.rp-chart text { fill:var(--muted); font-size:10px; font-family:inherit; }
+.rp-grid { stroke:var(--line); stroke-width:1; stroke-dasharray:3 4; }
+.rp-axis { stroke:var(--muted); stroke-width:1; }
+.rp-line { fill:none; stroke:var(--accent); stroke-width:2; opacity:.65; }
+.rp-point { fill:var(--accent); stroke:var(--panel); stroke-width:2; }
+.rp-point.is-glance { fill:#e8aa58; }
+.rp-empty { color:var(--muted); position:absolute; inset:0; display:grid; place-items:center; margin:0; font-size:13px; }
+.rp-details { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(240px,.7fr); gap:12px; margin-top:12px; }
+.rp-details > div { padding:16px; }
+.rp-details h3 { margin:0 0 4px; font-size:14px; }
+.rp-note { color:var(--muted); font-size:12px; margin:0 0 10px; min-height:17px; }
+.rp-row { display:grid; grid-template-columns:minmax(120px,1fr) auto; gap:3px 12px; padding:11px 0; border-top:1px solid var(--line); font-size:12px; }
+.rp-row strong, .rp-row small { display:block; }
+.rp-row small { color:var(--muted); font-size:11px; margin-top:3px; }
+.rp-row > span { color:var(--accent); white-space:nowrap; }
+.rp-row > small { grid-column:1 / -1; }
+.rp-muted { color:var(--muted); font-size:12px; margin:13px 0 0; }
+.rp-context { color:var(--muted); font-size:12px; line-height:1.6; }
+.rp-trend { margin-top:12px; border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:16px; }
+.rp-trend-head { display:flex; align-items:end; justify-content:space-between; gap:16px; margin-bottom:10px; }
+.rp-trend-head h3 { margin:0 0 4px; font-size:14px; }
+.rp-trend-head .rp-muted { margin:0; }
+.rp-trend-controls { display:flex; align-items:end; gap:10px; flex-wrap:wrap; }
+.rp-trend-controls label { display:grid; gap:5px; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+.rp-trend-controls select { min-width:125px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; color:var(--ink); background:var(--panel); font:inherit; text-transform:none; letter-spacing:normal; }
+.rp-entry-toggle { min-height:35px; padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); font-size:11px; font-weight:700; }
+.rp-entry-toggle[aria-pressed="true"] { border-color:var(--accent); background:var(--accent); color:#fff; }
+[data-theme="dark"] .rp-entry-toggle[aria-pressed="true"] { color:#10201f; }
+.rp-trend-chart-wrap { min-height:250px; position:relative; }
+.rp-trend-chart { display:block; width:100%; height:250px; overflow:visible; }
+.rp-trend-chart text { fill:var(--muted); font-size:10px; font-family:inherit; }
+.rp-rolling-line { fill:none; stroke:#e8aa58; stroke-width:3.5; stroke-linecap:round; stroke-linejoin:round; opacity:.98; pointer-events:none; }
+.rp-trend-point { fill:var(--accent); stroke:var(--panel); stroke-width:2; }
+.rp-trend-point:hover, .rp-trend-point:focus { stroke:var(--ink); stroke-width:3; outline:none; cursor:pointer; }
+.rp-entry-point { fill:var(--accent); stroke:transparent; stroke-width:8; paint-order:stroke; cursor:pointer; }
+.rp-entry-point:hover, .rp-entry-point:focus { stroke:color-mix(in srgb, var(--accent) 25%, transparent); outline:none; }
+.rp-trend-readout { color:var(--ink); font-size:12px; line-height:1.6; min-height:2em; }
+.rp-time-breakdown summary { cursor:pointer; color:var(--muted); font-size:12px; padding:10px 0; }
+.rp-trend-rows { max-height:300px; overflow:auto; }
+.rp-trend-empty { color:var(--muted); position:absolute; inset:0; display:grid; place-items:center; margin:0; font-size:13px; }
+.rp-trend-note { color:var(--muted); font-size:12px; margin:5px 0 8px; }
+.rp-trend-row { display:grid; grid-template-columns:minmax(90px,1fr) auto auto; gap:12px; align-items:center; border-top:1px solid var(--line); padding:9px 0; font-size:12px; }
+.rp-trend-row span:last-child { color:var(--accent); white-space:nowrap; }
+.rp-bar { display:grid; grid-template-columns:75px 1fr auto; align-items:center; gap:8px; margin-top:16px; font-size:12px; }
+.rp-bar i { display:block; height:8px; background:var(--line); border-radius:99px; overflow:hidden; }
+.rp-bar b { display:block; height:100%; border-radius:inherit; background:var(--accent); }
+.rp-bar strong { font-size:12px; }
+@media (max-width:700px) { .rp-head { align-items:start; flex-direction:column; } .rp-controls { width:100%; } .rp-controls label { flex:1; } .rp-controls select { width:100%; min-width:0; } .rp-details { grid-template-columns:1fr; } }
+@media (max-width:700px) { .rp-trend-head { align-items:start; flex-direction:column; } .rp-trend-controls { width:100%; } .rp-trend-controls label { flex:1; } .rp-trend-controls select { width:100%; min-width:0; } .rp-entry-toggle { flex:1 0 100%; } .rp-trend-row { grid-template-columns:1fr auto; } .rp-trend-row span:last-child { grid-column:1 / -1; } }
+@media (max-width:420px) { .rp-summary strong { font-size:17px; } .rp-summary > div { padding:11px; } }
