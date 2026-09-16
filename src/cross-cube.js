@@ -4,11 +4,50 @@ export const FACE_COLORS = Object.freeze({ U:'white', D:'yellow', F:'green', B:'
 export const COLOR_HEX = Object.freeze({ white:'#ffffff', yellow:'#ffd500', green:'#009b48', blue:'#0051ba', red:'#e7332a', orange:'#ff6b00' });
 const NORMAL = { U:[0,1,0], D:[0,-1,0], F:[0,0,1], B:[0,0,-1], R:[1,0,0], L:[-1,0,0] };
 const FACE_BY_NORMAL = Object.fromEntries(Object.entries(NORMAL).map(([f,n])=>[n.join(','),f]));
+const OPPOSITE_FACE = Object.freeze({U:'D',D:'U',F:'B',B:'F',R:'L',L:'R'});
 const CORNERS = ['UFR','UBR','UBL','UFL','DFR','DBR','DBL','DFL'];
 const EDGES = ['UF','UR','UB','UL','FR','BR','BL','FL','DF','DR','DB','DL'];
 const dot = (a,b) => a.reduce((sum,v,i)=>sum+v*b[i],0);
+const cross = (a,b) => [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const positionOf = id => [...id].reduce((p,f)=>p.map((v,i)=>v+NORMAL[f][i]),[0,0,0]);
 const nameOf = ([x,y,z]) => `${y===1?'U':y===-1?'D':''}${z===1?'F':z===-1?'B':''}${x===1?'R':x===-1?'L':''}`;
+
+export function inspectionOrientation(bottomFace='D',frontFace='F') {
+  if (!(bottomFace in NORMAL) || !(frontFace in NORMAL)) throw new Error('Unknown inspection face.');
+  if (bottomFace===frontFace || OPPOSITE_FACE[bottomFace]===frontFace) throw new Error('The front face must be adjacent to the bottom face.');
+  const top=OPPOSITE_FACE[bottomFace];
+  const right=FACE_BY_NORMAL[cross(NORMAL[top],NORMAL[frontFace]).join(',')];
+  return {bottom:bottomFace,top,front:frontFace,right,visibleFaces:[top,frontFace,right]};
+}
+
+export function frontFacesFor(bottomFace='D') {
+  if (!(bottomFace in NORMAL)) throw new Error('Unknown bottom face.');
+  const conventional={U:'F',D:'F',F:'U',B:'U',R:'U',L:'U'}[bottomFace];
+  return [conventional,...Object.keys(NORMAL).filter(face=>face!==conventional&&face!==bottomFace&&face!==OPPOSITE_FACE[bottomFace])];
+}
+
+/**
+ * Choose a useful fixed inspection angle without changing scramble notation.
+ * Cross-colored stickers get the strongest weight, followed by distinct
+ * target pieces and then the total number of their visible stickers.
+ */
+export function suggestInspectionFront(state,bottomFace='D',pieceIds=[]) {
+  const targets=pieceIds.length?[...new Set(pieceIds)]:state.cubies.filter(c=>c.id.length===2&&c.id.includes(bottomFace)).map(c=>c.id);
+  const ranked=frontFacesFor(bottomFace).map((face,index)=>{
+    const visible=new Set(inspectionOrientation(bottomFace,face).visibleFaces);
+    let crossStickers=0,visiblePieces=0,visibleStickers=0;
+    for(const id of targets){
+      const cubie=state.cubies.find(candidate=>candidate.id===id);if(!cubie)continue;
+      const shown=Object.keys(cubie.stickers).filter(stickerFace=>visible.has(stickerFace));
+      if(shown.length)visiblePieces++;
+      visibleStickers+=shown.length;
+      const crossSticker=Object.entries(cubie.stickers).find(([,color])=>color===FACE_COLORS[bottomFace])?.[0];
+      if(crossSticker&&visible.has(crossSticker))crossStickers++;
+    }
+    return {face,crossStickers,visiblePieces,visibleStickers,index,score:crossStickers*100+visiblePieces*10+visibleStickers};
+  }).sort((a,b)=>b.score-a.score||a.index-b.index);
+  return ranked[0];
+}
 
 export function parseScramble(input='') {
   if (typeof input !== 'string') throw new TypeError('Enter a scramble as move notation.');

@@ -1081,7 +1081,7 @@ function updateHelp() {
   if (activeTool === 'scout') {
     document.querySelector('#help-title').textContent = 'Inspect your possibilities.';
     document.querySelector('#help-copy').textContent = 'Cross Scout compares cross and extended-cross plans for the colors you select. Recognition labels are explanatory heuristics, not a guarantee that a plan will feel easy.';
-    document.querySelector('#help-steps').innerHTML = '<li>Apply the scramble to a solved cube with white on top and green in front. Paste or generate that same scramble here.</li><li>Select allowed cross colors, or CN for all six, and choose Analyze.</li><li>Select a plan to highlight its pair pieces. Step through the moves on screen or on your cube. Move notation always uses the original scramble orientation.</li>';
+    document.querySelector('#help-steps').innerHTML = '<li>Apply the scramble to a solved cube with white on top and green in front. Paste or generate that same scramble here.</li><li>Select allowed cross colors, or CN for all six. The active color is held on the bottom; use the suggested front or choose another before you analyze.</li><li>Select a plan to highlight its pair pieces. Step through the moves on screen or on your cube. Move notation always uses the original scramble orientation.</li>';
     return;
   }
   if (activeTool === 'pll') {

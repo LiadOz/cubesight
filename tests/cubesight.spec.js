@@ -69,3 +69,24 @@ test('corner cube ignores drag gestures', async ({ page }) => {
   const after = await cube.getAttribute('data-camera-pose');
   expect(after).toBe(before);
 });
+
+test('a vertical touch that begins on a cube scrolls the page', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 600 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  await page.goto('/#/pll-recognition');
+  const cube = page.locator('#pll-cube canvas');
+  await expect(cube).toBeVisible();
+  await expect(cube).toHaveCSS('touch-action', 'pan-y');
+  const box = await cube.boundingBox();
+  const x = box.x + box.width / 2;
+  const start = box.y + box.height * .8;
+  const end = start - 180;
+  const session = await context.newCDPSession(page);
+  await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: start }] });
+  for (let index = 1; index <= 8; index += 1) {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: start + (end - start) * index / 8 }] });
+  }
+  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(50);
+  await context.close();
+});

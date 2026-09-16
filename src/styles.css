@@ -56,8 +56,7 @@ h1 { margin: 0; font-size: 31px; letter-spacing: -1.2px; line-height: 1.2; font-
 .view-lock { padding: 5px 8px; border: 1px solid #aec0ce29; border-radius: 5px; font-size: 9px; white-space: nowrap; }
 .cube-mount { position: relative; z-index: 1; flex: 1; min-height: 325px; display: grid; place-items: center; }
 .cube-mount svg { width: min(100%,520px); height: auto; overflow: visible; }
-.cube-mount canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
-.cube-mount canvas[data-rotation="locked"] { touch-action: pan-y; }
+.cube-mount canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
 .cube-mount canvas[data-rotation="limited-horizontal"]:active { cursor: grabbing !important; }
 .cube-mount.glance-mask > canvas, .cube-mount.glance-mask > svg { visibility: hidden; }
 .glance-overlay { position: absolute; inset: 80px 30px; display: grid; place-items: center; pointer-events: none; color: #e2f0f6; font-size: 22px; }

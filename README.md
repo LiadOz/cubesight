@@ -25,7 +25,7 @@ npm run dev
 - Corner glance mode: fixed viewing time or adaptive pacing (25–1500 ms). Every ten eligible answers, 90%+ accuracy shortens the view; 70% or lower adds viewing time. Three-corner drills count only the first corner for pacing; changing drills resets the evidence.
 - Responsive touch layout with collapsible settings and six color answers visible together on phones
 - Light/dark header toggle: follows the device initially, remembers explicit choices, and leaves cube colors unchanged
-- Cross Scout calculator: pasted/generated scrambles, selectable color subsets or CN, full-cube inspection, tracked pair highlights, and animated step/playback controls
+- Cross Scout calculator: pasted/generated scrambles, selectable color subsets or CN, selected-color-on-bottom inspection with a visibility-based and changeable front face, tracked pair highlights, and animated step/playback controls
 - Cross Scout retrieval practice hides the selected plan, structural cue, and result list until the user commits to an answer, then reveals the verified moves and existing piece highlights. Self-ratings and commitment time remain local.
 - Two-sided PLL recognition covers all 21 standard cases on a full, fixed-view cube with random AUF. Learn starts with a small family, Mix interleaves all cases, and Transfer records a separate accuracy stream.
 - PLL adaptive glance changes after ten valid outcomes and only speeds up at 90%+ accuracy. Incorrect/skipped cases return after two intervening cases; correct-only response times, confusion pairs, transfer accuracy, and genuine 24-hour retention probes are tracked separately.
@@ -35,7 +35,7 @@ npm run dev
 - Mistakes in F2L stay on screen with correct-pair outlines until Continue
 - Reviews after a gap of at least 24 hours are counted separately from ordinary practice
 - Leaving the tab or opening help pauses practice; the interrupted trial is discarded when resuming
-- Unanswered corner and PLL trials expire at 10 seconds and are not logged at all. Their prompts stay inside the cube area and resume with a fresh case. F2L has no time cutoff; its timing and correction inspection are unaffected.
+- Unanswered corner trials expire at 10 seconds and resume with a fresh case. PLL timing stops at 10 seconds without blocking the answer: the learner can still reveal the case and cue, while that practice-only attempt stays out of progress statistics. F2L has no time cutoff.
 
 The scheduler is a heuristic informed by perceptual learning and spacing research, not an experimentally validated learning model. Corner scheduling considers the ordered visible stickers and target position; F2L samples fresh cases within the selected bottom color. Three-corner drills schedule whole states, with separate records for their preview advantage. Glance mode currently applies to corners only. A shorter exposure does not prove that all mental processing finished during that exposure.
 

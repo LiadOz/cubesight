@@ -154,6 +154,8 @@ export function createCube3D(container, options = {}) {
   // Keep the cube aligned to the camera constraints and stationary at onset.
   cubeGroup.rotation.y = 0;
   scene.add(cubeGroup);
+  let bottomFace = 'D';
+  let frontFace = 'F';
   const selectionMaterial = new THREE.LineBasicMaterial({
     color: 0xffffff,
     transparent: true,
@@ -310,10 +312,32 @@ export function createCube3D(container, options = {}) {
       renderer.domElement.style.cursor = 'default';
       renderer.domElement.setAttribute('aria-label', 'Three-dimensional corner-recognition cube in a fixed solve view. Hidden corner stickers remain masked.');
     }
+    // OrbitControls writes `touch-action: none` inline. Keeping vertical
+    // gestures native lets a page scroll when a touch begins on the cube;
+    // horizontal/diagonal gestures still reach the enabled cube controls.
+    renderer.domElement.style.touchAction = 'pan-y';
     controls.update();
     syncCameraPose();
   }
   setMode(interactionMode);
+
+  function setOrientation(nextBottom='D',nextFront='F') {
+    const bottom=String(nextBottom).toUpperCase(),front=String(nextFront).toUpperCase();
+    if (!FACE_NORMALS[bottom] || !FACE_NORMALS[front]) throw new Error('Unknown cube orientation face.');
+    const bottomVector=new THREE.Vector3(...FACE_NORMALS[bottom]);
+    const frontVector=new THREE.Vector3(...FACE_NORMALS[front]);
+    if (Math.abs(bottomVector.dot(frontVector))>.001) throw new Error('The front face must be adjacent to the bottom face.');
+    const sourceUp=bottomVector.clone().negate();
+    const sourceRight=new THREE.Vector3().crossVectors(sourceUp,frontVector);
+    const sourceBasis=new THREE.Matrix4().makeBasis(sourceRight,sourceUp,frontVector);
+    cubeGroup.quaternion.setFromRotationMatrix(sourceBasis.invert());
+    bottomFace=bottom;frontFace=front;
+    renderer.domElement.dataset.bottomFace=bottomFace;
+    renderer.domElement.dataset.frontFace=frontFace;
+    controls.update();
+    renderer.render(scene,camera);
+  }
+  setOrientation();
 
   let stopped = false;
   let feedbackActive = false;
@@ -439,7 +463,7 @@ export function createCube3D(container, options = {}) {
     renderer.domElement.setAttribute('aria-label', interactionMode === 'f2l'
       ? `Interactive F2L cube with a limited left-right inspection arc.${f2lSelected ? ` Selected ${f2lSelected}.` : ''}${f2lFeedback ? ` Pair result: ${f2lFeedback.status}.` : ''}`
       : interactionMode === 'scout'
-        ? `Interactive Cross Scout cube showing all stickers.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
+        ? `Interactive Cross Scout cube showing all stickers. ${bottomFace} is held on the bottom and ${frontFace} in front.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
       : `Three-dimensional corner-recognition cube in a fixed solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
     // Present the new case immediately rather than waiting for the next loop.
     renderer.render(scene, camera);
@@ -513,6 +537,7 @@ export function createCube3D(container, options = {}) {
     update,
     animateMove,
     setMode,
+    setOrientation,
     resetView() { setMode(interactionMode); },
     destroy() {
       cancelMoveAnimation();

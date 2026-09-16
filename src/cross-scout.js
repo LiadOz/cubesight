@@ -1,6 +1,6 @@
 import './cross-scout.css';
 import { createCube3D } from './cube-3d.js';
-import { FACE_COLORS, COLOR_HEX, parseScramble, stateFromScramble, applyMoves, toRenderData, validateSolution, classifyOpportunity, randomScramble, planPieceIds } from './cross-cube.js';
+import { FACE_COLORS, COLOR_HEX, parseScramble, stateFromScramble, applyMoves, toRenderData, validateSolution, classifyOpportunity, randomScramble, planPieceIds, frontFacesFor, suggestInspectionFront } from './cross-cube.js';
 import { solveCross, terminateCrossSolver } from './cross-solver.js';
 
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -26,17 +26,19 @@ export function createCrossScout(root) {
   let controller=null, requestGeneration=0, currentScramble='', busy=false;
   let highlightsOn=false;
   let practice=null;
+  let viewBottom=allowed[0],viewFront='F',suggestedFront=null;
   root.innerHTML=`
     <section class="intro-row"><div><p class="eyebrow">Explore / Cross planning</p><h1>Cross Scout</h1></div><p class="intro-copy">Find the opportunity.<br>Understand what to look for.</p></section>
     <section class="scout-input" aria-label="Cross calculator input">
       <label for="scout-scramble">Your scramble</label>
       <div class="scout-scramble-row"><textarea id="scout-scramble" rows="2" spellcheck="false" autocomplete="off" autocapitalize="characters" placeholder="Paste a scramble, or generate one…"></textarea><button class="scout-button" id="scout-random">New scramble</button></div>
-      <small>Start from solved, white on top and green in front. Standard face turns only: U D R L F B, with 2 or ′. An empty scramble represents a solved cube.</small>
+      <small>Apply notation from solved with white on top and green in front. The inspection view below may reorient the cube, but every scramble and solution move stays in this original frame. Standard face turns only: U D R L F B, with 2 or ′.</small>
       <div class="scout-options"><div><span class="scout-label">Allowed cross colors · choose a subset or CN</span><div class="scout-colors" id="scout-colors" role="group" aria-label="Allowed cross colors"></div></div><div class="scout-options-actions"><button class="new-case-button" id="scout-analyze">Analyze</button><button class="scout-button" id="scout-stop" hidden>Stop search</button></div></div>
+      <div class="scout-orientation"><div><span class="scout-label">Inspection orientation</span><strong id="scout-bottom-label"></strong><small id="scout-front-reason"></small></div><label for="scout-front"><span>Front face</span><select id="scout-front" aria-label="Front face for inspection"></select></label></div>
       <p class="scout-message" id="scout-message" role="status" aria-live="polite">Apply the scramble to your cube, then compare plans. No timer, no score.</p>
     </section>
     <section class="trainer-shell scout-shell">
-      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> Inspect every face</span><span class="view-lock">Free rotation</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span>Move frame: white U · green F</span><button class="text-button" id="scout-reset-view">Reset view</button></div></div>
+      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> Inspect every face</span><span class="view-lock">Free rotation</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span id="scout-view-caption">Moves: white U · green F</span><button class="text-button" id="scout-reset-view">Reset view</button></div></div>
       <div class="scout-plan"><p class="eyebrow">Your plan</p><span id="scout-family" class="scout-family">Start with the cross</span><h2 id="scout-plan-title">What can you spot?</h2><p id="scout-explanation">Analyze the scramble to compare cross, X-cross, and double X-cross candidates. Select a plan to see which pieces matter.</p><p class="scout-pieces" id="scout-pieces"></p><div id="scout-moves" class="scout-moves" aria-label="Solution moves"></div><div class="scout-playback"><button class="scout-button" id="scout-start" disabled>Reset</button><button class="scout-button" id="scout-prev" disabled aria-label="Previous move">←</button><button class="scout-button" id="scout-play" disabled>Play</button><button class="scout-button" id="scout-next" disabled aria-label="Next move">→</button></div><span class="scout-step-note" id="scout-step">Scrambled state</span><button class="scout-practice-launch" id="scout-practice" disabled>Practice this plan</button><section class="scout-practice-panel" id="scout-practice-panel" hidden aria-live="polite"><span class="scout-practice-kicker">Retrieval practice</span><h3 id="scout-practice-title">Find the pieces before you reveal the plan</h3><p id="scout-practice-copy">On the unassisted cube, identify the four cross edges and the highlighted-plan pair pieces. Commit to what you would inspect first, then reveal.</p><div class="scout-practice-actions"><button class="scout-button scout-practice-reveal" id="scout-practice-reveal">I found it — reveal plan</button><button class="scout-button" id="scout-practice-exit">Exit practice</button></div><div class="scout-practice-result" id="scout-practice-result" hidden><p id="scout-practice-time"></p><p id="scout-practice-cue"></p><div class="scout-practice-rating"><span>How did the retrieval feel?</span><button class="scout-button" data-practice-rating="found">Found it</button><button class="scout-button" data-practice-rating="missed">Missed it</button></div><p class="scout-practice-history" id="scout-practice-history"></p></div></section></div>
     </section>
     <section class="scout-results"><div class="scout-results-head"><h2>Plans found</h2><select id="scout-sort" aria-label="Sort plans"><option value="cue">Recognizable cues first</option><option value="moves">Fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose your colors and analyze to find candidate plans.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). Random scrambles here are random-move practice scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search powered by the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, running locally in WebAssembly. Smart-cube connection is not available yet; the cube model is separate from scramble input for a future device adapter.</p></section>`;
@@ -58,6 +60,19 @@ export function createCrossScout(root) {
   const cube=createCube3D($('#scout-cube'),{mode:'scout'});
   function planData(state,plan=selected){return toRenderData(state,highlightsOn&&plan?planPieceIds(source,plan.face,plan.pairs):[]);}
   function message(text){ $('#scout-message').textContent=text; }
+  function updateOrientation(useSuggestion=false){
+    if(!Object.hasOwn(FACE_COLORS,viewBottom))viewBottom=allowed[0]||'U';
+    const targets=selected&&selected.face===viewBottom?planPieceIds(source,selected.face,selected.pairs):[];
+    suggestedFront=suggestInspectionFront(source,viewBottom,targets);
+    const fronts=frontFacesFor(viewBottom);
+    if(useSuggestion||!fronts.includes(viewFront))viewFront=suggestedFront.face;
+    cube.setOrientation(viewBottom,viewFront);
+    $('#scout-bottom-label').textContent=`${title(FACE_COLORS[viewBottom])} on bottom`;
+    $('#scout-front').innerHTML=fronts.map(face=>`<option value="${face}"${face===viewFront?' selected':''}>${title(FACE_COLORS[face])} · ${face}${face===suggestedFront.face?' (suggested)':''}</option>`).join('');
+    const targetLabel=targets.length?'plan':'cross';
+    $('#scout-front-reason').textContent=`Suggested ${title(FACE_COLORS[suggestedFront.face])} front · ${suggestedFront.visiblePieces} of ${targets.length||4} ${targetLabel} pieces visible from the initial angle.`;
+    $('#scout-view-caption').textContent=`${title(FACE_COLORS[viewBottom])} bottom · ${title(FACE_COLORS[viewFront])} front · moves stay white-U / green-F`;
+  }
   function renderColors(){
     $('#scout-colors').innerHTML=`<button data-scout-color="CN" aria-pressed="${allowed.length===6}">CN · all six</button>`+Object.entries(FACE_COLORS).map(([face,color])=>`<button data-scout-color="${face}" aria-pressed="${allowed.includes(face)}"><i style="--color:${COLOR_HEX[color]}" aria-hidden="true"></i>${title(color)}</button>`).join('');
   }
@@ -109,7 +124,7 @@ export function createCrossScout(root) {
     const moves=parseScramble($('#scout-scramble').value);
     currentScramble=moves.join(' ');source=stateFromScramble(currentScramble);
     $('#scout-cube').style.visibility='';
-    clearPlans();cube.update(toRenderData(source));
+    clearPlans();updateOrientation(true);cube.update(toRenderData(source));
   }
   function renderPlayback(){
     $('#scout-play').textContent=playing?'Pause':'Play';
@@ -133,6 +148,7 @@ export function createCrossScout(root) {
   function selectPlan(index){
     stopPlayback();practice=null;highlightsOn=false;selected=results[index];step=0;states=[source];
     for(const move of selected.moves) states.push(applyMoves(states.at(-1),[move]));
+    viewBottom=selected.face;updateOrientation(true);
     cube.update(planData(source));renderPlan();renderResults();
   }
   function renderResults(){
@@ -197,12 +213,13 @@ export function createCrossScout(root) {
   $('#scout-colors').addEventListener('click',event=>{
     const face=event.target.closest('[data-scout-color]')?.dataset.scoutColor;if(!face)return;
     if(face==='CN')allowed=Object.keys(FACE_COLORS);
-    else if(allowed.length===6)allowed=[face];
-    else if(allowed.includes(face)){if(allowed.length===1){message('Keep at least one cross color selected.');return;}allowed=allowed.filter(f=>f!==face);}
-    else allowed.push(face);
+    else if(allowed.length===6){allowed=[face];viewBottom=face;}
+    else if(allowed.includes(face)){if(allowed.length===1){message('Keep at least one cross color selected.');return;}allowed=allowed.filter(f=>f!==face);if(viewBottom===face)viewBottom=allowed[0];}
+    else {allowed.push(face);viewBottom=face;}
     try{localStorage.setItem('cubesight-scout-colors',JSON.stringify(allowed));}catch{/* Keep in memory. */}
-    cancelSearch();clearPlans();cube.update(toRenderData(source));renderColors();message('Cross colors changed. Analyze to compare this selection.');
+    cancelSearch();clearPlans();updateOrientation(true);cube.update(toRenderData(source));renderColors();message(`${title(FACE_COLORS[viewBottom])} is now on the bottom. Analyze to compare this color selection.`);
   });
+  $('#scout-front').addEventListener('change',event=>{stopPlayback();viewFront=event.target.value;updateOrientation(false);cube.update(planData(states[step]||source));message(`${title(FACE_COLORS[viewFront])} is now in front. Move notation remains in the original white-U / green-F frame.`);});
   $('#scout-results').addEventListener('click',event=>{const button=event.target.closest('[data-scout-result]');if(button)selectPlan(Number(button.dataset.scoutResult));});
   $('#scout-sort').addEventListener('change',renderResults);
   $('#scout-moves').addEventListener('click',event=>{const button=event.target.closest('[data-scout-step]');if(button)jump(Number(button.dataset.scoutStep));});

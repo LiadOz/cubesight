@@ -7,6 +7,22 @@ async function openScout(page){
   await expect(page.locator('#scout-cube canvas')).toBeVisible();
 }
 
+test('color selection holds that cross on bottom and offers a suggested, changeable front',async({page})=>{
+  await openScout(page);
+  const canvas=page.locator('#scout-cube canvas');
+  await expect(canvas).toHaveAttribute('data-bottom-face','U');
+  await expect(page.locator('#scout-bottom-label')).toHaveText('White on bottom');
+  await expect(page.locator('#scout-front-reason')).toContainText(/suggested/i);
+  await page.locator('[data-scout-color="R"]').click();
+  await expect(canvas).toHaveAttribute('data-bottom-face','R');
+  await expect(page.locator('#scout-bottom-label')).toHaveText('Red on bottom');
+  await expect(page.locator('#scout-front option')).toHaveCount(4);
+  await page.locator('#scout-front').selectOption('D');
+  await expect(canvas).toHaveAttribute('data-front-face','D');
+  await expect(page.locator('#scout-view-caption')).toContainText('Red bottom · Yellow front');
+  await expect(page.locator('#scout-message')).toContainText('original white-U / green-F frame');
+});
+
 test('calculator analyzes, highlights pieces, and plays a verified plan',async({page})=>{
   await openScout(page);
   await page.locator('#scout-scramble').fill('R U F');

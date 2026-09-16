@@ -11,6 +11,14 @@
 .scout-colors button[aria-pressed="true"] { color: var(--ink); border-color: var(--accent); box-shadow: inset 0 -2px var(--accent); }
 .scout-colors i, .scout-result i { width: 14px; height: 14px; display: inline-block; flex-shrink: 0; border: 1px solid #8998a766; border-radius: 4px; background: var(--color); }
 .scout-options-actions { display: flex; gap: 8px; }
+.scout-orientation { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-top:16px; padding:13px 14px; border:1px solid var(--line); border-radius:10px; background:color-mix(in srgb,var(--accent) 5%,var(--paper)); }
+.scout-orientation > div { min-width:0; }
+.scout-orientation .scout-label { margin-bottom:4px; }
+.scout-orientation strong { display:block; color:var(--ink); font-size:13px; }
+.scout-orientation small { margin-top:4px; }
+.scout-orientation label { flex:0 0 210px; color:var(--muted); font-size:10px; font-weight:700; }
+.scout-orientation label span { display:block; margin-bottom:6px; }
+.scout-orientation select { width:100%; min-height:42px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink); font-size:12px; }
 .scout-message { margin: 14px 0 0; min-height: 18px; font-size: 11px; color: var(--muted); line-height: 1.6; }
 .scout-shell { grid-template-columns: minmax(0,1.2fr) minmax(340px,1fr); }
 .scout-shell .cube-stage { min-height: 465px; }
@@ -77,6 +85,7 @@
   .main-nav .nav-link { font-size: 10px; padding: 11px 5px; }
   .scout-input { padding: 14px; } .scout-scramble-row { flex-wrap: wrap; } .scout-scramble-row textarea { flex-basis: 100%; font-size: 16px; min-height: 94px; } .scout-scramble-row .scout-button { width: 100%; }
   .scout-options { margin-top: 16px; gap: 14px; } .scout-colors { gap: 5px; } .scout-colors button { min-height: 44px; padding: 7px 8px; font-size: 10px; } .scout-options-actions { width: 100%; } .scout-options-actions > button { flex: 1; }
+  .scout-orientation { align-items:stretch; flex-direction:column; gap:12px; } .scout-orientation label { flex-basis:auto; } .scout-orientation select { min-height:46px; font-size:16px; }
   .scout-shell .cube-stage { min-height: 0; } .scout-shell .cube-mount { height: 285px; } .scout-shell .cube-caption span:last-child { display: block; } .scout-plan { padding: 18px; } .scout-plan h2 { font-size: 20px; } .scout-plan p { font-size: 11px; }
   .scout-button { min-height: 44px; padding: 8px 10px; } .scout-move { min-width: 40px; min-height: 44px; } .scout-result-grid { grid-template-columns: 1fr; } .scout-results-head select { font-size: 16px; max-width: 100%; }
   .scout-practice-panel { padding: 14px; } .scout-practice-actions { flex-direction: column; align-items: stretch; } .scout-practice-actions .scout-button { width: 100%; }

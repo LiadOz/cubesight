@@ -197,9 +197,10 @@ export function createPLLTrainer(root) {
     idleTimer = setTimeout(() => {
       if (token !== trialToken || locked || paused) return;
       elapsed = performance.now() - startedAt;
-      // A ten-second lapse is an abandoned observation, not a slow response.
-      // Lock it permanently and make the only continuation a fresh trial.
-      paused = true; locked = true; trial = { ...trial, invalidated: true }; stopClock(); $('#pll-pause').hidden = false; $('#pll-cube').classList.add('is-paused'); setMessage('Abandoned after 10 seconds · not logged.', 'paused');
+      // Stop measuring after ten seconds, but do not make a learner restart
+      // just as they are working the pattern out. They can still answer and
+      // reveal the cue; the slow attempt simply stays out of their statistics.
+      trial = { ...trial, invalidated: true }; stopClock(); setTimerText(IDLE_LIMIT); setMessage('Take your time · this answer will be practice only and will not be logged.', 'info');
     }, IDLE_LIMIT);
   }
   function setGlance(value) {
@@ -277,14 +278,14 @@ export function createPLLTrainer(root) {
   }
   function answer(value, skipped = false) {
     if (!trial || locked || paused) return;
-    locked = true; stopClock(); elapsed = performance.now() - startedAt; setTimerText(elapsed); setGlance(true);
-    const correct = !skipped && sameId(value, trial.caseId); const itemStats = caseStats(trial.caseId); const retention = mode === 'transfer';
+    locked = true; stopClock(); elapsed = trial.invalidated ? IDLE_LIMIT : performance.now() - startedAt; setTimerText(elapsed); setGlance(true);
+    const correct = !skipped && sameId(value, trial.caseId); const itemStats = caseStats(trial.caseId); const retention = mode === 'transfer'; const recordable = !trial.invalidated;
     const delayed = retention && Boolean(trial.delayedEligible);
-    if (!retention) {
+    if (recordable && !retention) {
       itemStats.attempts++;
       if (correct) { itemStats.correct++; itemStats.times.push(elapsed); itemStats.times = itemStats.times.slice(-80); }
       if (!correct && value) itemStats.confusion[value] = (itemStats.confusion[value] || 0) + 1;
-    } else {
+    } else if (recordable) {
       // Transfer is its own accuracy stream. It becomes a delayed-retention
       // observation only when this case was last seen at least 24 hours ago.
       itemStats.transfer.attempts++;
@@ -295,25 +296,26 @@ export function createPLLTrainer(root) {
       }
       if (!correct && value) itemStats.confusion[value] = (itemStats.confusion[value] || 0) + 1;
     }
-    if (!correct) scheduleRetry(trial.caseId);
-    if (glanceEnabled) tuneGlance(correct, skipped);
-    // Abandoned/hidden-tab trials never reach here, so they do not erase a
-    // genuinely delayed return interval.
-    const answeredAt = Date.now();
-    itemStats.lastSeen = answeredAt;
-    if (correct) {
-      itemStats.reviewStreak = (itemStats.reviewStreak || 0) + 1;
-      const fluent = elapsed <= 900;
-      itemStats.intervalDays = itemStats.reviewStreak === 1 ? 1 : Math.min(30, Math.max(1, itemStats.intervalDays || 1) * (fluent ? 2 : 1.4));
-      itemStats.nextReviewAt = answeredAt + itemStats.intervalDays * 24 * 60 * 60 * 1000;
-    } else {
-      itemStats.reviewStreak = 0;
-      itemStats.intervalDays = 0;
-      itemStats.nextReviewAt = answeredAt + 15 * 60 * 1000;
+    if (recordable) {
+      if (!correct) scheduleRetry(trial.caseId);
+      if (glanceEnabled) tuneGlance(correct, skipped);
+      const answeredAt = Date.now();
+      itemStats.lastSeen = answeredAt;
+      if (correct) {
+        itemStats.reviewStreak = (itemStats.reviewStreak || 0) + 1;
+        const fluent = elapsed <= 900;
+        itemStats.intervalDays = itemStats.reviewStreak === 1 ? 1 : Math.min(30, Math.max(1, itemStats.intervalDays || 1) * (fluent ? 2 : 1.4));
+        itemStats.nextReviewAt = answeredAt + itemStats.intervalDays * 24 * 60 * 60 * 1000;
+      } else {
+        itemStats.reviewStreak = 0;
+        itemStats.intervalDays = 0;
+        itemStats.nextReviewAt = answeredAt + 15 * 60 * 1000;
+      }
+      completed++; saveStats(stats); refreshStats();
     }
-    completed++; saveStats(stats); refreshStats();
     const expected = getCase(trial.caseId); const cue = feedbackCue();
-    setMessage(skipped ? `Skipped · correct case: ${expected.name}` : correct ? `Correct · ${expected.name}` : `Not quite · correct case: ${expected.name}`, correct ? 'correct' : 'wrong');
+    const result = skipped ? `Skipped · correct case: ${expected.name}` : correct ? `Correct · ${expected.name}` : `Not quite · correct case: ${expected.name}`;
+    setMessage(`${result}${recordable?'':' · practice only'}`, correct ? 'correct' : 'wrong');
     $('#pll-next').hidden = false; $('#pll-next').focus({ preventScroll: true });
     const note = $('#pll-timing-note'); note.textContent = cue ? `${cue}${expected.algorithm ? ` · ${expected.algorithm}` : ''}` : (expected.algorithm ? `Algorithm: ${expected.algorithm}` : 'Corrective retrieval is scheduled after a short interleaved delay.');
     $('#pll-answers').querySelectorAll('.pll-answer').forEach((button) => { const id = button.dataset.pllAnswer; button.disabled = true; button.classList.toggle('correct', sameId(id, trial.caseId)); button.classList.toggle('wrong', !skipped && sameId(id, value) && !correct); });
@@ -351,6 +353,7 @@ export function createPLLTrainer(root) {
     // to the trainer always starts a fresh case, so unseen time is never
     // mistaken for recognition time.
     setActive(value) {
+      if (active === value) return;
       active = value;
       if (!value) { stopClock(); locked = true; paused = true; if (trial) trial = { ...trial, invalidated: true }; }
       else { newTrial(); }

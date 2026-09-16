@@ -42,7 +42,7 @@ test('PLL errors become a contrastive retry only after two intervening answers',
   await expect(page.locator('#pll-view')).toHaveAttribute('data-pll-case', missed);
 });
 
-test('PLL adaptive glance is accuracy-gated and abandoned attempts never log', async ({ page }) => {
+test('PLL adaptive glance is accuracy-gated and slow attempts stay usable without being logged', async ({ page }) => {
   await openPLL(page);
   await page.locator('#pll-glance').check();
   for (let index = 0; index < 10; index += 1) {
@@ -55,11 +55,13 @@ test('PLL adaptive glance is accuracy-gated and abandoned attempts never log', a
   await page.clock.install();
   await page.locator('#pll-next').click();
   await page.clock.fastForward(10_050);
-  await expect(page.locator('#pll-pause')).toBeVisible();
+  await expect(page.locator('#pll-pause')).toBeHidden();
+  await expect(page.locator('#pll-feedback')).toContainText('practice only');
+  await expect(page.locator('[data-pll-answer]').first()).toBeEnabled();
+  await answerCurrent(page, true);
+  await expect(page.locator('#pll-feedback')).toContainText('practice only');
   const attemptsAfter = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('cubesight-pll-progress-v1'))).reduce((sum, item) => sum + item.attempts, 0));
   expect(attemptsAfter).toBe(attemptsBefore);
-  await page.locator('#pll-resume').click();
-  await expect(page.locator('#pll-pause')).toBeHidden();
 });
 
 test('PLL stays within a mobile viewport and collapses settings', async ({ page }) => {

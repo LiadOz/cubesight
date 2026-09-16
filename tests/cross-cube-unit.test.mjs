@@ -1,9 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseScramble, createSolvedState, applyMoves, stateFromScramble, toRenderData, validateSolution, classifyOpportunity } from '../src/cross-cube.js';
+import { parseScramble, createSolvedState, applyMoves, stateFromScramble, toRenderData, validateSolution, classifyOpportunity, frontFacesFor, inspectionOrientation, suggestInspectionFront } from '../src/cross-cube.js';
 import { planPieceIds } from '../src/cross-cube.js';
 
 const pos = (s, id) => s.cubies.find(p => p.id === id)?.position;
+
+test('inspection orientation puts the chosen cross face on bottom and suggests the most visible front', () => {
+  assert.deepEqual(inspectionOrientation('U','F'), {bottom:'U',top:'D',front:'F',right:'L',visibleFaces:['D','F','L']});
+  assert.deepEqual(frontFacesFor('R'), ['U','D','F','B']);
+  assert.throws(() => inspectionOrientation('U','D'), /adjacent/);
+  const suggestion=suggestInspectionFront(stateFromScramble("R U F L' D"),'U');
+  assert.equal(suggestion.face,'B');
+  assert.equal(suggestion.visiblePieces,4);
+  assert.equal(suggestion.crossStickers,2);
+});
 
 test('plan highlights include all cross edges plus only the selected F2L pairs on every color', () => {
   const original = stateFromScramble("R U F L' B2");
