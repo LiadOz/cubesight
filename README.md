@@ -43,6 +43,24 @@ Deduction uses oriented sticker candidates and exact one-to-one identity matchin
 
 Automatic hot reload is disabled. Refresh manually when ready to load source changes. For an uninterrupted built version, run `npm run build` followed by `npm run preview -- --port 4173`.
 
+## Install and use offline
+
+CubeSight is an installable Progressive Web App. On Android, open the deployed
+site in Chrome and choose **Install app** from the browser menu. On iPhone or
+iPad, open it in Safari and choose **Share → Add to Home Screen**.
+
+The first online load installs a service worker that precaches the complete app,
+including its JavaScript, locally hosted fonts, WebAssembly engines and icons.
+After that completes, every trainer works without a network connection. Training
+history already lives in browser-local storage and remains on that device. The
+external source-attribution link still requires a connection when opened.
+
+New deployments update the offline cache after open CubeSight tabs close, so an
+active training session never changes underneath you. `npm run test:pwa` builds
+the production app, checks Chromium's installability report, waits for its
+service worker, disables the test browser's network and exercises all four
+trainers offline.
+
 The precompiled WASM browser output lives in `src/wasm/`. To rebuild it, install the `wasm32-unknown-unknown` Rust target and `wasm-bindgen-cli`, then run:
 
 ```bash
@@ -53,6 +71,7 @@ npm run build:wasm
 
 ```bash
 npm test
+npm run test:pwa
 npm run test:unit
 npm run test:rust
 npm run build

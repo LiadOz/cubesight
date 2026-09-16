@@ -1,3 +1,6 @@
+import '@fontsource-variable/manrope';
+import '@fontsource/dm-mono/latin-400.css';
+import '@fontsource/dm-mono/latin-500.css';
 import './styles.css';
 import { setupTheme } from './theme.js';
 import { renderCube } from './cube-renderer.js';
