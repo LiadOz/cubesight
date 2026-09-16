@@ -10,6 +10,7 @@ import { createF2LCase, createF2LCaseFromWasm } from './f2l-logic.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
 import { createRecognitionProfile } from './recognition-profile.js';
+import { chooseCornerView } from './corner-view.js';
 import './recognition-profile.css';
 
 const COLORS = {
@@ -60,6 +61,7 @@ const EDGE_SLOTS = [
 const STORAGE_KEY = 'cubesight-progress-v2';
 const TRIAL_TIMEOUT_MS = 10_000;
 let trialTimeout = null;
+let previousCornerView = '';
 
 const initialStats = () => ({ attempts: 0, correct: 0, totalMs: 0, bestMs: null, streak: 0, bestStreak: 0, byCase: {}, history: [] });
 let stats = loadStats();
@@ -174,14 +176,14 @@ document.querySelector('#app').innerHTML = `
       <div class="cube-stage">
         <div class="stage-topline">
           <span class="status-dot"><i></i> Find the hidden color</span>
-          <span class="view-lock">Fixed view</span>
+          <span class="view-lock">Locked · varied angle</span>
         </div>
         <div id="cube" class="cube-mount"></div>
         <div id="glance-overlay" class="glance-overlay" hidden aria-live="polite">Look</div>
         <div id="corner-sequence" class="corner-sequence" hidden></div>
         <div class="cube-caption">
           <span id="orientation-caption">White top · Green front</span>
-          <span>Fixed solve view · hidden stickers stay masked</span>
+          <span>Nearby solve angles · hidden stickers stay masked</span>
         </div>
       </div>
 
@@ -288,8 +290,8 @@ document.querySelector('#app').innerHTML = `
     <button class="dialog-close" data-action="close-help" aria-label="Close">×</button>
     <p class="eyebrow">How it works</p>
     <h2 id="help-title">Recognize, don’t calculate.</h2>
-    <p id="help-copy">Two stickers of each target corner remain visible. Identify its hidden third color as quickly as possible.</p>
-    <ol id="help-steps"><li>Use the centers and edges to ground the cube orientation.</li><li>Click a color or type its first letter: W, Y, G, B, R, or O.</li><li>In Three corners, answer the highlighted targets from left to right.</li></ol>
+    <p id="help-copy">Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.</p>
+    <ol id="help-steps"><li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type its first letter.</li><li>In Three corners, answer the highlighted targets from left to right.</li></ol>
     <button class="primary-button" data-action="close-help">Start training</button>
   </dialog>
 `;
@@ -472,7 +474,10 @@ function renderCurrentCase() {
     colors: palette,
     feedback: current.feedback || null,
   };
-  if (cube3D) cube3D.update(cubeData);
+  if (cube3D) {
+    cube3D.setViewOffset(current.viewPose);
+    cube3D.update(cubeData);
+  }
   else {
     const fallback = renderCube(cubeTargetData(active), { title: 'Corner recognition cube' });
     document.querySelector('#cube').replaceChildren(fallback);
@@ -523,6 +528,8 @@ function startCase() {
   cancelCornerTimers();
   if (activeTool !== 'corner' || paused) return;
   state.current = createCase();
+  state.current.viewPose = chooseCornerView(previousCornerView);
+  previousCornerView = state.current.viewPose.id;
   state.current.exposureMs = state.exposureMs;
   state.current.recallAnswers = [];
   document.querySelector('[data-action="next-recall"]').hidden = true;
@@ -705,6 +712,9 @@ function recordCornerAnswer(active, color, skipped, elapsed, position, at = Date
     missing: correctColor, selected: color, skipped,
     mode: state.mode, position,
     glance: usesGlance(), exposureMs: trialExposureMs,
+    viewPose: state.current.viewPose?.id || 'center',
+    viewYaw: state.current.viewPose?.yaw || 0,
+    viewPitch: state.current.viewPose?.pitch || 0,
   });
   stats.history = stats.history.slice(-1000);
   saveStats();
@@ -1094,10 +1104,10 @@ function updateHelp() {
   document.querySelector('#help-title').textContent = f2l ? 'Inspect, deduce, match.' : 'Recognize, don’t calculate.';
   document.querySelector('#help-copy').textContent = f2l
     ? 'Find every corner–edge pair that can be identified from the allowed inspection arc.'
-    : 'Two stickers of each target corner remain visible. Identify its hidden third color as quickly as possible.';
+    : 'Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.';
   document.querySelector('#help-steps').innerHTML = f2l
     ? '<li>Drag only left and right; the camera cannot reveal the back or bottom.</li><li>Select a corner or edge, then select its matching piece. Other pieces also accept clicks.</li><li>After a mistake, inspect the green outlines. Press N or Continue when ready.</li>'
-    : '<li>Use the centers and edges to ground the cube orientation.</li><li>Click a color or type its first letter: W, Y, G, B, R, or O.</li><li>In Three corners, answer the highlighted targets from left to right.</li>';
+    : '<li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down. Hidden faces never enter view.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type W, Y, G, B, R, or O.</li><li>In Three corners, answer the highlighted targets from left to right; all three share one stable angle.</li>';
 }
 
 // Hash routes work on static hosts too, without a server-side SPA rewrite.

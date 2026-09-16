@@ -70,6 +70,23 @@ test('corner cube ignores drag gestures', async ({ page }) => {
   expect(after).toBe(before);
 });
 
+test('corner cases use stable, bounded viewing angles that vary between cases', async ({ page }) => {
+  await page.goto('/');
+  const cube = page.locator('#cube canvas');
+  const firstPose = await cube.getAttribute('data-view-pose');
+  const firstCamera = await cube.getAttribute('data-camera-pose');
+  expect(Math.abs(Number(await cube.getAttribute('data-view-yaw')))).toBeLessThanOrEqual(8);
+  expect(Math.abs(Number(await cube.getAttribute('data-view-pitch')))).toBeLessThanOrEqual(4.5);
+  await page.locator('.answer-button').first().click();
+  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'feedback');
+  await expect(cube).toHaveAttribute('data-view-pose', firstPose);
+  await expect(cube).toHaveAttribute('data-camera-pose', firstCamera);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1).viewPose)).toBe(firstPose);
+  await expect(cube).not.toHaveAttribute('data-view-pose', firstPose, { timeout: 3_000 });
+  await expect(cube).toHaveAttribute('data-rotation', 'locked');
+  await expect(cube).toHaveAttribute('aria-label', /locked .* solve view/);
+});
+
 test('a vertical touch that begins on a cube scrolls the page', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 600 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();

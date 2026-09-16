@@ -11,7 +11,7 @@ npm run dev
 
 ## What is included
 
-- Three.js cube: corners have a fixed view; F2L allows a limited horizontal inspection arc with back and bottom faces hidden
+- Three.js cube: each corner case uses one locked, subtly varied solve angle while keeping back, bottom, and left faces hidden; F2L allows a limited horizontal inspection arc
 - Random legal color orientations; white is not fixed to either top or bottom
 - Single-corner and sequential Three-corner drills
 - In Three-corner drills, corners two and three are timed from the previous input, including the feedback interval. The next clock visibly runs immediately; its ten-second cutoff uses the same starting point.

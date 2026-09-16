@@ -113,7 +113,8 @@ function stickerTransform(mesh, face, x, y, z) {
 export function createCube3D(container, options = {}) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
-  camera.position.set(6.7, 5.6, 7.7);
+  const cornerCameraPosition = new THREE.Vector3(6.7, 5.6, 7.7);
+  camera.position.copy(cornerCameraPosition);
   camera.lookAt(0, 0, 0);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -139,6 +140,7 @@ export function createCube3D(container, options = {}) {
   };
   controls.addEventListener('change', syncCameraPose);
   let interactionMode = options.mode || 'corner';
+  let lockedViewOffset = { id: 'center', label: 'centered', yaw: 0, pitch: 0 };
   let onPieceClick = options.onPieceClick || null;
   let selectablePieces = new Set();
 
@@ -302,7 +304,7 @@ export function createCube3D(container, options = {}) {
     } else {
       renderer.domElement.dataset.rotation = 'locked';
       delete renderer.domElement.dataset.azimuthLimit;
-      camera.position.set(6.7, 5.6, 7.7);
+      camera.position.copy(cornerCameraPosition);
       controls.target.set(0, 0, 0);
       controls.enabled = false;
       controls.minAzimuthAngle = -Infinity;
@@ -311,6 +313,7 @@ export function createCube3D(container, options = {}) {
       controls.maxPolarAngle = Math.PI;
       renderer.domElement.style.cursor = 'default';
       renderer.domElement.setAttribute('aria-label', 'Three-dimensional corner-recognition cube in a fixed solve view. Hidden corner stickers remain masked.');
+      applyLockedViewOffset();
     }
     // OrbitControls writes `touch-action: none` inline. Keeping vertical
     // gestures native lets a page scroll when a touch begins on the cube;
@@ -320,6 +323,28 @@ export function createCube3D(container, options = {}) {
     syncCameraPose();
   }
   setMode(interactionMode);
+
+  function applyLockedViewOffset() {
+    if (interactionMode !== 'corner') return;
+    const spherical=new THREE.Spherical().setFromVector3(cornerCameraPosition);
+    spherical.theta+=THREE.MathUtils.degToRad(lockedViewOffset.yaw);
+    spherical.phi+=THREE.MathUtils.degToRad(lockedViewOffset.pitch);
+    camera.position.setFromSpherical(spherical);
+    camera.lookAt(controls.target);
+    renderer.domElement.dataset.viewPose=lockedViewOffset.id;
+    renderer.domElement.dataset.viewYaw=String(lockedViewOffset.yaw);
+    renderer.domElement.dataset.viewPitch=String(lockedViewOffset.pitch);
+  }
+
+  function setViewOffset(value={}) {
+    const yaw=THREE.MathUtils.clamp(Number(value.yaw)||0,-10,10);
+    const pitch=THREE.MathUtils.clamp(Number(value.pitch)||0,-6,6);
+    lockedViewOffset={id:String(value.id||'custom'),label:String(value.label||'varied'),yaw,pitch};
+    applyLockedViewOffset();
+    controls.update();
+    syncCameraPose();
+    renderer.render(scene,camera);
+  }
 
   function setOrientation(nextBottom='D',nextFront='F') {
     const bottom=String(nextBottom).toUpperCase(),front=String(nextFront).toUpperCase();
@@ -464,7 +489,7 @@ export function createCube3D(container, options = {}) {
       ? `Interactive F2L cube with a limited left-right inspection arc.${f2lSelected ? ` Selected ${f2lSelected}.` : ''}${f2lFeedback ? ` Pair result: ${f2lFeedback.status}.` : ''}`
       : interactionMode === 'scout'
         ? `Interactive Cross Scout cube showing all stickers. ${bottomFace} is held on the bottom and ${frontFace} in front.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
-      : `Three-dimensional corner-recognition cube in a fixed solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
+      : `Three-dimensional corner-recognition cube in a locked ${lockedViewOffset.label} solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
     // Present the new case immediately rather than waiting for the next loop.
     renderer.render(scene, camera);
   }
@@ -537,6 +562,7 @@ export function createCube3D(container, options = {}) {
     update,
     animateMove,
     setMode,
+    setViewOffset,
     setOrientation,
     resetView() { setMode(interactionMode); },
     destroy() {
