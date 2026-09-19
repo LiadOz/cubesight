@@ -27,6 +27,9 @@
 .pll-stage-topline .view-lock { padding:5px 8px; border:1px solid #ffffff2e; border-radius:5px; color:#d5e7ef; font-size:9px; }
 .pll-cube-mount { flex:1; min-height:380px; height:380px; transition:opacity .15s ease, filter .15s ease; }
 .pll-cube-mount.is-glance-hidden canvas { visibility:hidden; }
+.pll-cube-mount.is-glance-hidden svg { visibility:hidden; }
+.pll-cube-mount.is-svg-fallback { display:grid; place-items:center; }
+.pll-cube-mount.is-svg-fallback svg { width:min(100%,440px); height:100%; }
 .pll-cube-mount.is-paused { opacity:.2; filter:blur(10px); }
 .pll-glance-overlay { position:absolute; inset:46% 0 auto; z-index:2; text-align:center; color:#f5fffe; font:800 14px var(--mono); letter-spacing:.08em; text-transform:uppercase; text-shadow:0 2px 16px #000; pointer-events:none; }
 .pll-pause { position:absolute; z-index:3; inset:35% 12% auto; display:flex; flex-direction:column; align-items:center; gap:8px; padding:20px; border:1px solid #ffffff42; border-radius:13px; background:#142330ee; color:#f6fbff; text-align:center; box-shadow:0 15px 40px #050b12aa; }

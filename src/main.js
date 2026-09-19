@@ -10,6 +10,18 @@ import { createF2LCase, createF2LCaseFromWasm } from './f2l-logic.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
 import { createRecognitionProfile } from './recognition-profile.js';
+
+// A newly activated service worker owns a different set of hashed lazy-load
+// chunks. Reload an already-installed app as soon as its controller changes
+// so a live old shell never asks the new worker for a deleted PLL/Scout chunk.
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  let reloadingForUpdate = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    location.reload();
+  });
+}
 import { chooseCornerView } from './corner-view.js';
 import './recognition-profile.css';
 
@@ -1091,7 +1103,7 @@ function updateHelp() {
   if (activeTool === 'scout') {
     document.querySelector('#help-title').textContent = 'Inspect your possibilities.';
     document.querySelector('#help-copy').textContent = 'Cross Scout compares cross and extended-cross plans for the colors you select. Recognition labels are explanatory heuristics, not a guarantee that a plan will feel easy.';
-    document.querySelector('#help-steps').innerHTML = '<li>Apply the scramble to a solved cube with white on top and green in front. Paste or generate that same scramble here.</li><li>Select allowed cross colors, or CN for all six. The active color is held on the bottom; use the suggested front or choose another before you analyze.</li><li>Select a plan to highlight its pair pieces. Step through the moves on screen or on your cube. Move notation always uses the original scramble orientation.</li>';
+    document.querySelector('#help-steps').innerHTML = '<li>Apply the scramble to a solved cube with white on top and green in front. Paste or generate that same scramble here; the preview stays in this default view while plans are found.</li><li>Select allowed cross colors, or CN for all six, then Analyze. Choose a plan to put its cross on the bottom; the suggested front explains which cross and plan pieces it exposes.</li><li>Step through the plan on screen or on your cube. The displayed move letters follow the selected bottom/front view, and you can tumble the preview through every face.</li>';
     return;
   }
   if (activeTool === 'pll') {

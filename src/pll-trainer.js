@@ -1,5 +1,6 @@
 import './pll-trainer.css';
 import { createCube3D } from './cube-3d.js';
+import { renderCube } from './cube-renderer.js';
 import { toRenderData } from './cross-cube.js';
 import { PLL_CASES, createPLLTrial } from './pll-logic.js';
 
@@ -139,7 +140,19 @@ export function createPLLTrainer(root) {
 
   const $ = (selector) => root.querySelector(selector);
   if (window.matchMedia('(max-width: 700px)').matches) $('.pll-settings').open = false;
-  const cube = createCube3D($('#pll-cube'), { mode: 'corner' });
+  let cube;
+  try {
+    cube = createCube3D($('#pll-cube'), { mode: 'corner' });
+  } catch (error) {
+    console.warn('WebGL PLL cube unavailable; using the offline SVG view.', error);
+    const mount=$('#pll-cube');
+    mount.classList.add('is-svg-fallback');
+    $('.pll-stage-topline .view-lock').textContent='Fixed 2D compatibility view';
+    cube={
+      update(data){mount.replaceChildren(renderCube(data,{title:'PLL recognition cube',description:'Top, front, and right stickers for the current PLL case.'}));},
+      destroy(){mount.replaceChildren();},
+    };
+  }
   const setTimerText = (milliseconds) => { $('#pll-timer').innerHTML = `${(milliseconds / 1000).toFixed(2)}<span>s</span>`; };
   const totalAttempts = () => Object.values(stats).reduce((sum, item) => sum + (item.attempts || 0), 0);
   const totalCorrect = () => Object.values(stats).reduce((sum, item) => sum + (item.correct || 0), 0);

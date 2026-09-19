@@ -7,20 +7,19 @@ async function openScout(page){
   await expect(page.locator('#scout-cube canvas')).toBeVisible();
 }
 
-test('color selection holds that cross on bottom and offers a suggested, changeable front',async({page})=>{
+test('color selection keeps the canonical preview until a plan is chosen',async({page})=>{
   await openScout(page);
   const canvas=page.locator('#scout-cube canvas');
-  await expect(canvas).toHaveAttribute('data-bottom-face','U');
-  await expect(page.locator('#scout-bottom-label')).toHaveText('White on bottom');
-  await expect(page.locator('#scout-front-reason')).toContainText(/suggested/i);
+  await expect(canvas).toHaveAttribute('data-bottom-face','D');
+  await expect(canvas).toHaveAttribute('data-front-face','F');
+  await expect(page.locator('#scout-bottom-label')).toHaveText('Default cube view');
+  await expect(page.locator('#scout-front-reason')).toContainText('White stays on top, green in front, and red on the right');
+  await expect(page.locator('#scout-front')).toBeDisabled();
   await page.locator('[data-scout-color="R"]').click();
-  await expect(canvas).toHaveAttribute('data-bottom-face','R');
-  await expect(page.locator('#scout-bottom-label')).toHaveText('Red on bottom');
-  await expect(page.locator('#scout-front option')).toHaveCount(4);
-  await page.locator('#scout-front').selectOption('D');
-  await expect(canvas).toHaveAttribute('data-front-face','D');
-  await expect(page.locator('#scout-view-caption')).toContainText('Red bottom · Yellow front');
-  await expect(page.locator('#scout-message')).toContainText('original white-U / green-F frame');
+  await expect(canvas).toHaveAttribute('data-bottom-face','D');
+  await expect(canvas).toHaveAttribute('data-front-face','F');
+  await expect(page.locator('#scout-view-caption')).toHaveText('White top · Green front · Red right');
+  await expect(page.locator('#scout-message')).toContainText('stays white-top / green-front');
 });
 
 test('calculator analyzes, highlights pieces, and plays a verified plan',async({page})=>{
@@ -29,8 +28,30 @@ test('calculator analyzes, highlights pieces, and plays a verified plan',async({
   await page.locator('#scout-analyze').click();
   await expect(page.locator('#scout-message')).toContainText('plans found',{timeout:30_000});
   expect(await page.locator('.scout-result').count()).toBeGreaterThan(0);
+  await expect(page.locator('.scout-result[aria-pressed="true"]')).toHaveCount(0);
+  await expect(page.locator('#scout-cube canvas')).toHaveAttribute('data-bottom-face','D');
+  await expect(page.locator('#scout-cube canvas')).toHaveAttribute('data-front-face','F');
+  await expect(page.locator('#scout-front')).toBeDisabled();
   const pairPlan=page.locator('.scout-result').filter({hasText:'solved F2L pair'}).first();
   await pairPlan.click();
+  await expect(page.locator('#scout-front')).toBeEnabled();
+  await expect(page.locator('#scout-front-reason')).toContainText(/because it shows \d of 4 cross-color stickers and \d of \d plan pieces/);
+  const expectedMoves=await page.evaluate(async()=>{
+    const {movesForInspection}=await import('/src/cross-cube.js');
+    const root=document.querySelector('#scout-view'),canvas=document.querySelector('#scout-cube canvas');
+    return movesForInspection(root.dataset.scoutCanonicalMoves,canvas.dataset.bottomFace,canvas.dataset.frontFace);
+  });
+  await expect(page.locator('.scout-move')).toHaveText(expectedMoves);
+  const oldFront=await page.locator('#scout-front').inputValue();
+  const newFront=await page.locator('#scout-front option').evaluateAll((options,current)=>options.map(option=>option.value).find(value=>value!==current),oldFront);
+  await page.locator('#scout-front').selectOption(newFront);
+  const remappedMoves=await page.evaluate(async()=>{
+    const {movesForInspection}=await import('/src/cross-cube.js');
+    const root=document.querySelector('#scout-view'),canvas=document.querySelector('#scout-cube canvas');
+    return movesForInspection(root.dataset.scoutCanonicalMoves,canvas.dataset.bottomFace,canvas.dataset.frontFace);
+  });
+  await expect(page.locator('.scout-move')).toHaveText(remappedMoves);
+  await expect(page.locator('#scout-message')).toContainText('remapped to this held view');
   await expect(page.locator('#scout-cube canvas')).not.toHaveAttribute('aria-label',/Highlighted pieces/);
   await page.getByRole('button',{name:'Highlight cross and F2L pieces'}).click();
   expect(Number(await page.locator('#scout-cube canvas').getAttribute('data-highlight-cages'))).toBeGreaterThanOrEqual(6);
@@ -111,14 +132,18 @@ test('color subsets, CN, invalid scrambles, and cancellation remain usable on mo
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
 });
 
-test('scout has free rotation and no corner timeout or scoring',async({page})=>{
-  await page.clock.install();await openScout(page);
+test('scout can tumble past its poles and has no corner timeout or scoring',async({page})=>{
+  await openScout(page);
   const canvas=page.locator('#scout-cube canvas');
-  await expect(canvas).toHaveAttribute('data-rotation','free-all-axis');
+  await expect(canvas).toHaveAttribute('data-rotation','free-tumble');
+  await canvas.scrollIntoViewIfNeeded();
   const box=await canvas.boundingBox();const before=await canvas.getAttribute('data-camera-pose');
-  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
-  await page.mouse.move(box.x+box.width/2+150,box.y+box.height/2+100,{steps:8});await page.mouse.up();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height*.8);await page.mouse.down();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height*.05,{steps:12});await page.mouse.up();
+  await page.waitForTimeout(250);
   expect(await canvas.getAttribute('data-camera-pose')).not.toBe(before);
+  expect(await canvas.getAttribute('data-camera-up')).not.toBe('0.0000,1.0000,0.0000');
+  await page.clock.install();
   await page.clock.fastForward(30_000);
   await expect(page.locator('#pause-overlay')).toBeHidden();
   await expect(page.locator('.retention-panel')).toBeHidden();

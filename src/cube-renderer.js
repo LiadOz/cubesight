@@ -147,6 +147,8 @@ function normalizeCase(caseData = {}) {
     activeTargetIndex,
     colors: source.colors || orientation.colors || {},
     stickerColors: source.stickerColors || orientation.stickerColors || {},
+    cornerStickers: source.cornerStickers || orientation.cornerStickers || {},
+    showAllCorners: Boolean(source.showAllCorners),
   };
 }
 
@@ -200,7 +202,8 @@ function stickerColor(face, caseInfo, palette) {
 
 function regularStickerColor(face, coordinate, caseInfo, palette) {
   const key = `${face}:${coordinate.piece}`;
-  const supplied = caseInfo.stickerColors[key] ?? caseInfo.stickerColors?.[face]?.[coordinate.piece];
+  const stickers = coordinate.kind === 'corner' ? caseInfo.cornerStickers : caseInfo.stickerColors;
+  const supplied = stickers[key] ?? stickers?.[face]?.[coordinate.piece];
   if (supplied && palette[String(supplied).toUpperCase()]) return palette[String(supplied).toUpperCase()];
   if (supplied && typeof supplied === 'string') return supplied;
   return faceColor(face, palette);
@@ -245,7 +248,7 @@ function renderFace(face, facePoints, caseInfo, palette) {
     for (let column = 0; column < 3; column += 1) {
       const coordinate = getStickerCoordinate(face, row, column);
       const quad = cellQuad(facePoints, row, column);
-      const matches = caseInfo.targets.map((target, index) => ({
+      const matches = (caseInfo.showAllCorners ? [] : caseInfo.targets).map((target, index) => ({
         target,
         index,
         isKnown: coordinate.piece === target.targetCorner && target.knownFaces.includes(face),
@@ -257,7 +260,7 @@ function renderFace(face, facePoints, caseInfo, palette) {
       const isTarget = matches.length > 0;
       const isKnown = Boolean(knownMatch);
       const isUnknownTarget = Boolean(unknownMatch) && !isKnown;
-      const isMaskedCorner = coordinate.kind === 'corner' && !isKnown && !isUnknownTarget;
+      const isMaskedCorner = coordinate.kind === 'corner' && !caseInfo.showAllCorners && !isKnown && !isUnknownTarget;
       const hidden = isMaskedCorner || isUnknownTarget;
       const isActiveTarget = Boolean(activeMatch);
       const isQuietTarget = isTarget && !isActiveTarget;
@@ -288,7 +291,7 @@ function renderFace(face, facePoints, caseInfo, palette) {
     }
   }
 
-  caseInfo.targets.forEach((target, index) => {
+  if (!caseInfo.showAllCorners) caseInfo.targets.forEach((target, index) => {
     result.push(targetMarker(face, facePoints, target, index, index === caseInfo.activeTargetIndex));
   });
   const labelPoint = centerOf(facePoints);
@@ -310,7 +313,9 @@ export function renderCubeMarkup(caseData = {}, options = {}) {
   const targetSummary = caseInfo.targets.length > 1
     ? `${caseInfo.targets.length} corner targets are shown; target ${caseInfo.activeTargetIndex + 1} is active.`
     : `the ${caseInfo.targetCorner} corner is selected`;
-  const description = options.description || `Three-view cube where ${targetSummary} Known stickers are highlighted and hidden corners are masked.`;
+  const description = options.description || (caseInfo.showAllCorners
+    ? 'Three-face cube view showing the top, front, and right stickers.'
+    : `Three-view cube where ${targetSummary} Known stickers are highlighted and hidden corners are masked.`);
   const uid = `corner-cube-${++renderId}`;
   const className = options.className ? ` class="${escapeXml(options.className)}"` : '';
   const faces = geometry(width, height);

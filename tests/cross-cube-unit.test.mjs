@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseScramble, createSolvedState, applyMoves, stateFromScramble, toRenderData, validateSolution, classifyOpportunity, frontFacesFor, inspectionOrientation, suggestInspectionFront } from '../src/cross-cube.js';
+import { parseScramble, createSolvedState, applyMoves, stateFromScramble, toRenderData, validateSolution, classifyOpportunity, frontFacesFor, inspectionOrientation, suggestInspectionFront, movesForInspection } from '../src/cross-cube.js';
 import { planPieceIds } from '../src/cross-cube.js';
 
 const pos = (s, id) => s.cubies.find(p => p.id === id)?.position;
@@ -13,6 +13,14 @@ test('inspection orientation puts the chosen cross face on bottom and suggests t
   assert.equal(suggestion.face,'B');
   assert.equal(suggestion.visiblePieces,4);
   assert.equal(suggestion.crossStickers,2);
+  assert.equal(suggestion.choices,4);
+});
+
+test('solution notation follows the selected inspection hold', () => {
+  assert.deepEqual(movesForInspection("R U F' D2",'D','F'),['R','U',"F'",'D2']);
+  assert.deepEqual(movesForInspection("R U F' D2",'U','F'),['L','D',"F'",'U2']);
+  assert.deepEqual(movesForInspection("U R2 B' L",'R','U'),['F','D2',"R'",'U']);
+  assert.throws(()=>movesForInspection('R','U','D'),/adjacent/);
 });
 
 test('plan highlights include all cross edges plus only the selected F2L pairs on every color', () => {

@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Training sessions should only restart when the learner chooses to refresh.
+// Installed apps have no update prompt UI, so activate new app shells
+// immediately instead of leaving a stale worker waiting indefinitely.
 export default defineConfig({
   plugins: [
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         id: '/',
@@ -31,7 +32,7 @@ export default defineConfig({
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: false,
+        skipWaiting: true,
       },
     }),
   ],

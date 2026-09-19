@@ -2,7 +2,9 @@ import { test, expect } from 'playwright/test';
 
 test('installs its full app shell and trainers for offline use', async ({ page, context }) => {
   const requestedOrigins = new Set();
+  const pageErrors = [];
   page.on('request', (request) => requestedOrigins.add(new URL(request.url()).origin));
+  page.on('pageerror', (error) => pageErrors.push(error.message));
 
   await page.goto('/');
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
@@ -23,6 +25,8 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
     expect.objectContaining({ sizes: '512x512' }),
     expect.objectContaining({ sizes: '512x512', purpose: 'maskable' }),
   ]));
+  const workerScript = await page.evaluate(() => fetch('/sw.js').then((response) => response.text()));
+  expect(workerScript).toMatch(/["']use strict["'];self\.skipWaiting\(\),\w+\.clientsClaim\(\)/);
 
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
@@ -51,6 +55,14 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm');
   await page.getByRole('link', { name: 'PLL recognition', exact: true }).click();
   await expect(page.locator('#pll-view')).toBeVisible();
+  await expect(page.locator('#pll-cube canvas')).toBeVisible();
+  await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
+  await expect(page.locator('.pll-trainer-shell')).toHaveCSS('display', 'flex');
+  const pllCase = await page.locator('#pll-view').getAttribute('data-pll-case');
+  await page.locator(`[data-pll-answer="${pllCase}"]`).tap();
+  await expect(page.locator('#pll-feedback')).toContainText('Correct');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.getByRole('link', { name: 'Cross Scout', exact: true }).click();
   await expect(page.locator('#scout-highlight')).toBeVisible();
+  expect(pageErrors).toEqual([]);
 });

@@ -7,6 +7,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4175',
     viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
   },
   webServer: {
     command: 'npm run build && npm run preview -- --port 4175',

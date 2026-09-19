@@ -70,3 +70,17 @@ test('PLL stays within a mobile viewport and collapses settings', async ({ page 
   await expect(page.locator('.pll-settings')).not.toHaveAttribute('open', '');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
+
+test('PLL remains usable with the SVG compatibility view when WebGL is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    HTMLCanvasElement.prototype.getContext = () => null;
+  });
+  await page.goto('/#/pll-recognition');
+  await expect(page.locator('#pll-cube svg')).toBeVisible();
+  await expect(page.locator('.pll-stage-topline .view-lock')).toHaveText('Fixed 2D compatibility view');
+  await expect(page.locator('#pll-cube [data-kind="corner"]')).toHaveCount(12);
+  await expect(page.locator('#pll-cube [data-masked="true"]')).toHaveCount(0);
+  await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
+  await answerCurrent(page, true);
+  await expect(page.locator('#pll-feedback')).toContainText('Correct');
+});

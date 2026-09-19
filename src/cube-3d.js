@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 const FACE_NORMALS = {
@@ -135,10 +136,19 @@ export function createCube3D(container, options = {}) {
   controls.rotateSpeed = .55;
   controls.minPolarAngle = .45;
   controls.maxPolarAngle = Math.PI - .45;
+  const tumbleControls = new TrackballControls(camera, renderer.domElement);
+  tumbleControls.enabled = false;
+  tumbleControls.noZoom = true;
+  tumbleControls.noPan = true;
+  tumbleControls.rotateSpeed = 1.65;
+  tumbleControls.staticMoving = false;
+  tumbleControls.dynamicDampingFactor = .14;
   const syncCameraPose = () => {
     renderer.domElement.dataset.cameraPose = camera.position.toArray().map((value) => value.toFixed(4)).join(',');
+    renderer.domElement.dataset.cameraUp = camera.up.toArray().map((value) => value.toFixed(4)).join(',');
   };
   controls.addEventListener('change', syncCameraPose);
+  tumbleControls.addEventListener('change', syncCameraPose);
   let interactionMode = options.mode || 'corner';
   let lockedViewOffset = { id: 'center', label: 'centered', yaw: 0, pitch: 0 };
   let onPieceClick = options.onPieceClick || null;
@@ -247,6 +257,7 @@ export function createCube3D(container, options = {}) {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
+    tumbleControls.handleResize();
   }
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(container);
@@ -277,6 +288,8 @@ export function createCube3D(container, options = {}) {
   function setMode(mode) {
     interactionMode = mode;
     renderer.domElement.dataset.interactionMode = mode;
+    controls.enabled = false;
+    tumbleControls.enabled = false;
     if (mode === 'f2l') {
       renderer.domElement.dataset.rotation = 'limited-horizontal';
       renderer.domElement.dataset.azimuthLimit = '0.62';
@@ -290,17 +303,15 @@ export function createCube3D(container, options = {}) {
       renderer.domElement.style.cursor = 'grab';
       renderer.domElement.setAttribute('aria-label', 'Interactive F2L cube. Drag left and right within the limited inspection arc, then click visible corner and edge pieces to match them.');
     } else if (mode === 'scout') {
-      renderer.domElement.dataset.rotation = 'free-all-axis';
+      renderer.domElement.dataset.rotation = 'free-tumble';
       delete renderer.domElement.dataset.azimuthLimit;
+      camera.up.set(0, 1, 0);
       camera.position.set(6.7, 5.6, 7.7);
-      controls.target.set(0, 0, 0);
-      controls.enabled = true;
-      controls.minAzimuthAngle = -Infinity;
-      controls.maxAzimuthAngle = Infinity;
-      controls.minPolarAngle = 0;
-      controls.maxPolarAngle = Math.PI;
+      tumbleControls.target.set(0, 0, 0);
+      tumbleControls.enabled = true;
+      tumbleControls.reset();
       renderer.domElement.style.cursor = 'grab';
-      renderer.domElement.setAttribute('aria-label', 'Interactive Cross Scout cube. Drag to inspect every face and follow highlighted pieces.');
+      renderer.domElement.setAttribute('aria-label', 'Interactive Cross Scout cube. Drag in any direction to tumble through every face and follow highlighted pieces.');
     } else {
       renderer.domElement.dataset.rotation = 'locked';
       delete renderer.domElement.dataset.azimuthLimit;
@@ -319,7 +330,8 @@ export function createCube3D(container, options = {}) {
     // gestures native lets a page scroll when a touch begins on the cube;
     // horizontal/diagonal gestures still reach the enabled cube controls.
     renderer.domElement.style.touchAction = 'pan-y';
-    controls.update();
+    if (mode === 'scout') tumbleControls.update();
+    else controls.update();
     syncCameraPose();
   }
   setMode(interactionMode);
@@ -341,7 +353,8 @@ export function createCube3D(container, options = {}) {
     const pitch=THREE.MathUtils.clamp(Number(value.pitch)||0,-6,6);
     lockedViewOffset={id:String(value.id||'custom'),label:String(value.label||'varied'),yaw,pitch};
     applyLockedViewOffset();
-    controls.update();
+    if (interactionMode === 'scout') tumbleControls.update();
+    else controls.update();
     syncCameraPose();
     renderer.render(scene,camera);
   }
@@ -359,7 +372,8 @@ export function createCube3D(container, options = {}) {
     bottomFace=bottom;frontFace=front;
     renderer.domElement.dataset.bottomFace=bottomFace;
     renderer.domElement.dataset.frontFace=frontFace;
-    controls.update();
+    if (interactionMode === 'scout') tumbleControls.update();
+    else controls.update();
     renderer.render(scene,camera);
   }
   setOrientation();
@@ -381,7 +395,8 @@ export function createCube3D(container, options = {}) {
     if (stopped) return;
     animationFrame = requestAnimationFrame(frame);
     if (document.hidden || !container.clientWidth || !container.clientHeight) return;
-    controls.update();
+    if (interactionMode === 'scout') tumbleControls.update();
+    else controls.update();
     if (selectionCage.visible) {
       const pulse = reducedMotion.matches ? .5 : (Math.sin(clock.getElapsedTime() * 2.8) + 1) / 2;
       selectionMaterial.opacity = (feedbackActive ? .52 : .68) + pulse * (feedbackActive ? .48 : .27);
@@ -518,6 +533,7 @@ export function createCube3D(container, options = {}) {
     const snapshots = members.map((object) => ({ object, position: object.position.clone(), quaternion: object.quaternion.clone(), scale: object.scale.clone() }));
     members.forEach((object) => layer.attach(object));
     controls.enabled = false;
+    tumbleControls.enabled = false;
     let settled = false;
     let started = performance.now();
     let frameId;
@@ -527,7 +543,8 @@ export function createCube3D(container, options = {}) {
         object.position.copy(position); object.quaternion.copy(quaternion); object.scale.copy(scale);
       });
       cubeGroup.remove(layer);
-      controls.enabled = interactionMode === 'scout' || interactionMode === 'f2l';
+      controls.enabled = interactionMode === 'f2l';
+      tumbleControls.enabled = interactionMode === 'scout';
     };
     return new Promise((resolve) => {
       const finish = (applyState) => {
@@ -571,6 +588,7 @@ export function createCube3D(container, options = {}) {
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
       controls.dispose();
+      tumbleControls.dispose();
       renderer.dispose();
       questionTexture.dispose();
       answerBadge.texture.dispose();

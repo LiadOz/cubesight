@@ -20,6 +20,25 @@ export function inspectionOrientation(bottomFace='D',frontFace='F') {
   return {bottom:bottomFace,top,front:frontFace,right,visibleFaces:[top,frontFace,right]};
 }
 
+/**
+ * Express canonical scramble moves in the notation of the cube as it is
+ * currently held for inspection. The physical moves do not change; only the
+ * face letters shown to the learner do.
+ */
+export function movesForInspection(input=[],bottomFace='D',frontFace='F') {
+  const moves=parseScramble(typeof input==='string'?input:input.join(' '));
+  const orientation=inspectionOrientation(bottomFace,frontFace);
+  const faceMap={
+    [orientation.top]:'U',
+    [orientation.bottom]:'D',
+    [orientation.front]:'F',
+    [OPPOSITE_FACE[orientation.front]]:'B',
+    [orientation.right]:'R',
+    [OPPOSITE_FACE[orientation.right]]:'L',
+  };
+  return moves.map(move=>`${faceMap[move[0]]}${move.slice(1)}`);
+}
+
 export function frontFacesFor(bottomFace='D') {
   if (!(bottomFace in NORMAL)) throw new Error('Unknown bottom face.');
   const conventional={U:'F',D:'F',F:'U',B:'U',R:'U',L:'U'}[bottomFace];
@@ -46,7 +65,8 @@ export function suggestInspectionFront(state,bottomFace='D',pieceIds=[]) {
     }
     return {face,crossStickers,visiblePieces,visibleStickers,index,score:crossStickers*100+visiblePieces*10+visibleStickers};
   }).sort((a,b)=>b.score-a.score||a.index-b.index);
-  return ranked[0];
+  const best=ranked[0];
+  return {...best,choices:ranked.length,tiedChoices:ranked.filter(candidate=>candidate.score===best.score).length};
 }
 
 export function parseScramble(input='') {
