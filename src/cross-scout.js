@@ -25,6 +25,7 @@ export function createCrossScout(root) {
   let source=stateFromScramble(''), results=[], selected=null, step=0, states=[], active=true, playing=false, playbackGeneration=0;
   let controller=null, requestGeneration=0, currentScramble='', busy=false;
   let highlightsOn=false;
+  let fullTouchRotation=false;
   let practice=null;
   let viewBottom='D',viewFront='F',suggestedFront=null;
   root.innerHTML=`
@@ -38,7 +39,7 @@ export function createCrossScout(root) {
       <p class="scout-message" id="scout-message" role="status" aria-live="polite">Apply the scramble to your cube, then compare plans. No timer, no score.</p>
     </section>
     <section class="trainer-shell scout-shell">
-      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> Inspect every face</span><span class="view-lock">Free tumble</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span id="scout-view-caption">White top · Green front · Red right</span><button class="text-button" id="scout-reset-view">Reset view</button></div></div>
+      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> Inspect every face</span><span class="view-lock">Free tumble</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span id="scout-view-caption">White top · Green front · Red right</span><div class="scout-view-actions"><button class="text-button" id="scout-touch-mode" aria-pressed="false">Touch: scroll + rotate</button><button class="text-button" id="scout-reset-view">Reset view</button></div></div></div>
       <div class="scout-plan"><p class="eyebrow">Your plan</p><span id="scout-family" class="scout-family">Start with the cross</span><h2 id="scout-plan-title">What can you spot?</h2><p id="scout-explanation">Analyze the scramble to compare cross, X-cross, and double X-cross candidates. Select a plan to see which pieces matter.</p><p class="scout-pieces" id="scout-pieces"></p><div id="scout-moves" class="scout-moves" aria-label="Solution moves"></div><div class="scout-playback"><button class="scout-button" id="scout-start" disabled>Reset</button><button class="scout-button" id="scout-prev" disabled aria-label="Previous move">←</button><button class="scout-button" id="scout-play" disabled>Play</button><button class="scout-button" id="scout-next" disabled aria-label="Next move">→</button></div><span class="scout-step-note" id="scout-step">Scrambled state</span><button class="scout-practice-launch" id="scout-practice" disabled>Practice this plan</button><section class="scout-practice-panel" id="scout-practice-panel" hidden aria-live="polite"><span class="scout-practice-kicker">Retrieval practice</span><h3 id="scout-practice-title">Find the pieces before you reveal the plan</h3><p id="scout-practice-copy">On the unassisted cube, identify the four cross edges and the highlighted-plan pair pieces. Commit to what you would inspect first, then reveal.</p><div class="scout-practice-actions"><button class="scout-button scout-practice-reveal" id="scout-practice-reveal">I found it — reveal plan</button><button class="scout-button" id="scout-practice-exit">Exit practice</button></div><div class="scout-practice-result" id="scout-practice-result" hidden><p id="scout-practice-time"></p><p id="scout-practice-cue"></p><div class="scout-practice-rating"><span>How did the retrieval feel?</span><button class="scout-button" data-practice-rating="found">Found it</button><button class="scout-button" data-practice-rating="missed">Missed it</button></div><p class="scout-practice-history" id="scout-practice-history"></p></div></section></div>
     </section>
     <section class="scout-results"><div class="scout-results-head"><h2>Plans found</h2><select id="scout-sort" aria-label="Sort plans"><option value="cue">Recognizable cues first</option><option value="moves">Fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose your colors and analyze to find candidate plans.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). Random scrambles here are random-move practice scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search powered by the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, running locally in WebAssembly. Smart-cube connection is not available yet; the cube model is separate from scramble input for a future device adapter.</p></section>`;
@@ -58,6 +59,13 @@ export function createCrossScout(root) {
   highlightButton.setAttribute('aria-pressed','false');highlightButton.disabled=true;
   $('.stage-topline .view-lock').replaceWith(highlightButton);
   const cube=createCube3D($('#scout-cube'),{mode:'scout'});
+  function renderTouchMode(){
+    cube.setFullTouchRotation(fullTouchRotation);
+    $('#scout-touch-mode').setAttribute('aria-pressed',String(fullTouchRotation));
+    $('#scout-touch-mode').textContent=fullTouchRotation?'Touch: full rotate':'Touch: scroll + rotate';
+    $('#scout-touch-mode').title=fullTouchRotation?'Every drag rotates the cube; drag outside it to scroll the page.':'Vertical drags may scroll the page; enable full rotate for unrestricted touch movement.';
+  }
+  renderTouchMode();
   function planData(state,plan=selected){return toRenderData(state,highlightsOn&&plan?planPieceIds(source,plan.face,plan.pairs):[]);}
   function message(text){ $('#scout-message').textContent=text; }
   function updateOrientation(useSuggestion=false){
@@ -237,6 +245,7 @@ export function createCrossScout(root) {
   $('#scout-sort').addEventListener('change',renderResults);
   $('#scout-moves').addEventListener('click',event=>{const button=event.target.closest('[data-scout-step]');if(button)jump(Number(button.dataset.scoutStep));});
   $('#scout-reset-view').addEventListener('click',()=>{if(selected)jump(step);cube.resetView();});
+  $('#scout-touch-mode').addEventListener('click',()=>{fullTouchRotation=!fullTouchRotation;renderTouchMode();});
   $('#scout-start').addEventListener('click',()=>jump(0));
   $('#scout-prev').addEventListener('click',()=>jump(step-1));
   $('#scout-next').addEventListener('click',()=>{stopPlayback();advance();});

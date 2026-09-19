@@ -150,6 +150,7 @@ export function createCube3D(container, options = {}) {
   controls.addEventListener('change', syncCameraPose);
   tumbleControls.addEventListener('change', syncCameraPose);
   let interactionMode = options.mode || 'corner';
+  let fullTouchRotation = false;
   let lockedViewOffset = { id: 'center', label: 'centered', yaw: 0, pitch: 0 };
   let onPieceClick = options.onPieceClick || null;
   let selectablePieces = new Set();
@@ -326,10 +327,11 @@ export function createCube3D(container, options = {}) {
       renderer.domElement.setAttribute('aria-label', 'Three-dimensional corner-recognition cube in a fixed solve view. Hidden corner stickers remain masked.');
       applyLockedViewOffset();
     }
-    // OrbitControls writes `touch-action: none` inline. Keeping vertical
-    // gestures native lets a page scroll when a touch begins on the cube;
-    // horizontal/diagonal gestures still reach the enabled cube controls.
-    renderer.domElement.style.touchAction = 'pan-y';
+    // OrbitControls writes `touch-action: none` inline. Normal mode keeps
+    // vertical page scrolling available; Scout can explicitly capture every
+    // direction when the user selects full touch rotation.
+    renderer.domElement.style.touchAction = mode === 'scout' && fullTouchRotation ? 'none' : 'pan-y';
+    renderer.domElement.dataset.touchMode = mode === 'scout' && fullTouchRotation ? 'full-rotation' : 'page-scroll';
     if (mode === 'scout') tumbleControls.update();
     else controls.update();
     syncCameraPose();
@@ -357,6 +359,12 @@ export function createCube3D(container, options = {}) {
     else controls.update();
     syncCameraPose();
     renderer.render(scene,camera);
+  }
+
+  function setFullTouchRotation(enabled) {
+    fullTouchRotation = Boolean(enabled);
+    renderer.domElement.style.touchAction = interactionMode === 'scout' && fullTouchRotation ? 'none' : 'pan-y';
+    renderer.domElement.dataset.touchMode = interactionMode === 'scout' && fullTouchRotation ? 'full-rotation' : 'page-scroll';
   }
 
   function setOrientation(nextBottom='D',nextFront='F') {
@@ -581,6 +589,7 @@ export function createCube3D(container, options = {}) {
     setMode,
     setViewOffset,
     setOrientation,
+    setFullTouchRotation,
     resetView() { setMode(interactionMode); },
     destroy() {
       cancelMoveAnimation();

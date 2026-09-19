@@ -150,3 +150,29 @@ test('scout can tumble past its poles and has no corner timeout or scoring',asyn
   await page.getByRole('link', { name: 'Corner recognition',exact:true}).click();
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-rotation','locked');
 });
+
+test('mobile can switch from page scrolling to unrestricted touch rotation',async({browser})=>{
+  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+  const page=await context.newPage();
+  await page.goto('/#/cross-scout');
+  const canvas=page.locator('#scout-cube canvas');
+  await expect(canvas).toBeVisible();
+  await expect(canvas).toHaveAttribute('data-touch-mode','page-scroll');
+  await page.locator('#scout-touch-mode').click();
+  await expect(page.locator('#scout-touch-mode')).toHaveAttribute('aria-pressed','true');
+  await expect(canvas).toHaveAttribute('data-touch-mode','full-rotation');
+  await expect(canvas).toHaveCSS('touch-action','none');
+  await canvas.scrollIntoViewIfNeeded();
+  const box=await canvas.boundingBox(),x=box.x+box.width/2,start=box.y+box.height*.8,end=box.y+box.height*.05;
+  const beforePose=await canvas.getAttribute('data-camera-pose'),beforeScroll=await page.evaluate(()=>scrollY);
+  const session=await context.newCDPSession(page);
+  await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y:start}]});
+  for(let index=1;index<=12;index+=1)await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:start+(end-start)*index/12}]});
+  await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await page.waitForTimeout(250);
+  expect(await canvas.getAttribute('data-camera-pose')).not.toBe(beforePose);
+  expect(await page.evaluate(()=>scrollY)).toBe(beforeScroll);
+  await page.locator('#scout-touch-mode').click();
+  await expect(canvas).toHaveCSS('touch-action','pan-y');
+  await context.close();
+});

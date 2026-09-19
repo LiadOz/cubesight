@@ -24,6 +24,8 @@
 .scout-shell .cube-stage { min-height: 465px; }
 .scout-shell .cube-caption { flex-wrap: wrap; }
 .scout-shell .cube-caption button { color: #c0d4df; }
+.scout-view-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:12px; }
+#scout-touch-mode[aria-pressed="true"] { color:#9ff5e7; text-decoration-thickness:2px; }
 .scout-highlight { min-height: 44px; padding: 8px 10px; border: 1px solid #6a8596; border-radius: 7px; background: #152733; color: #d5e7ef; font-size: 10px; font-weight: 700; }
 .scout-highlight[aria-pressed="true"] { background: #214c58; border-color: #65e8ff; color: #c6f8ff; }
 .scout-highlight:disabled { opacity: .45; cursor: default; }
@@ -86,7 +88,7 @@
   .scout-input { padding: 14px; } .scout-scramble-row { flex-wrap: wrap; } .scout-scramble-row textarea { flex-basis: 100%; font-size: 16px; min-height: 94px; } .scout-scramble-row .scout-button { width: 100%; }
   .scout-options { margin-top: 16px; gap: 14px; } .scout-colors { gap: 5px; } .scout-colors button { min-height: 44px; padding: 7px 8px; font-size: 10px; } .scout-options-actions { width: 100%; } .scout-options-actions > button { flex: 1; }
   .scout-orientation { align-items:stretch; flex-direction:column; gap:12px; } .scout-orientation label { flex-basis:auto; } .scout-orientation select { min-height:46px; font-size:16px; }
-  .scout-shell .cube-stage { min-height: 0; } .scout-shell .cube-mount { height: 285px; } .scout-shell .cube-caption span:last-child { display: block; } .scout-plan { padding: 18px; } .scout-plan h2 { font-size: 20px; } .scout-plan p { font-size: 11px; }
+  .scout-shell .cube-stage { min-height: 0; } .scout-shell .cube-mount { height: 285px; } .scout-shell .cube-caption span:last-child { display: block; } .scout-view-actions { width:100%; justify-content:space-between; } .scout-view-actions .text-button { min-height:36px; } .scout-plan { padding: 18px; } .scout-plan h2 { font-size: 20px; } .scout-plan p { font-size: 11px; }
   .scout-button { min-height: 44px; padding: 8px 10px; } .scout-move { min-width: 40px; min-height: 44px; } .scout-result-grid { grid-template-columns: 1fr; } .scout-results-head select { font-size: 16px; max-width: 100%; }
   .scout-practice-panel { padding: 14px; } .scout-practice-actions { flex-direction: column; align-items: stretch; } .scout-practice-actions .scout-button { width: 100%; }
 }

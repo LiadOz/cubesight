@@ -10,6 +10,8 @@ import { createF2LCase, createF2LCaseFromWasm } from './f2l-logic.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
 import { createRecognitionProfile } from './recognition-profile.js';
+const BUILD_REVISION = __CUBESIGHT_REVISION__;
+const BUILD_LABEL = BUILD_REVISION === 'development' ? BUILD_REVISION : BUILD_REVISION.slice(0, 7);
 
 // A newly activated service worker owns a different set of hashed lazy-load
 // chunks. Reload an already-installed app as soon as its controller changes
@@ -286,7 +288,7 @@ document.querySelector('#app').innerHTML = `
     <section class="retention-panel" aria-label="Adaptive practice progress"><div><span>Ready to review</span><strong id="review-due">0 cases</strong></div><p id="review-summary">Complete cases to build your review queue</p><small>Ready means its spacing interval has elapsed. Missed and slow patterns return sooner; fluent patterns return later.<br>Practice accuracy is separate from delayed retention.</small></section>
   </main>
 
-  <footer><span>Cubesight <span class="footer-dot">·</span> A little practice. A quicker instinct.</span><span>Your progress stays on this device.</span></footer>
+  <footer><span>Cubesight <span class="footer-dot">·</span> A little practice. A quicker instinct. <button class="build-badge" data-action="check-update">Build <b>${BUILD_LABEL}</b></button></span><span>Your progress stays on this device.</span></footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="pause-overlay" class="pause-overlay" hidden role="region" aria-label="Training paused" aria-live="polite"><div><p class="eyebrow">Take your time</p><h2>Practice paused</h2><p>Your interrupted trial will not be scored.</p><button class="primary-button" data-action="resume">Resume with a fresh case</button></div></div>
@@ -304,6 +306,7 @@ document.querySelector('#app').innerHTML = `
     <h2 id="help-title">Recognize, don’t calculate.</h2>
     <p id="help-copy">Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.</p>
     <ol id="help-steps"><li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type its first letter.</li><li>In Three corners, answer the highlighted targets from left to right.</li></ol>
+    <div class="build-info"><span>Installed build</span><code id="app-build">${BUILD_LABEL}</code><button class="text-button" data-action="check-update">Check for update</button><small id="update-status">The build number identifies exactly which CubeSight release is open.</small></div>
     <button class="primary-button" data-action="close-help">Start training</button>
   </dialog>
 `;
@@ -887,6 +890,36 @@ function showToast(message) {
   setTimeout(() => toast.classList.remove('show'), 1800);
 }
 
+let checkingForUpdate = false;
+async function checkForUpdate() {
+  if (checkingForUpdate) return;
+  checkingForUpdate = true;
+  const status = document.querySelector('#update-status');
+  status.textContent = 'Checking the server…';
+  try {
+    const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const serverRevision = String((await response.json()).revision || '');
+    const serverLabel = serverRevision === 'development' ? serverRevision : serverRevision.slice(0, 7);
+    if (!serverRevision || serverRevision === BUILD_REVISION) {
+      status.textContent = `Build ${BUILD_LABEL} is current.`;
+      showToast(`CubeSight build ${BUILD_LABEL} is current`);
+      return;
+    }
+    status.textContent = `Build ${serverLabel} is available. Updating…`;
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration) {
+      await registration.update();
+      registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+    }
+    location.reload();
+  } catch (error) {
+    status.textContent = `Could not check for an update: ${error.message}`;
+  } finally {
+    checkingForUpdate = false;
+  }
+}
+
 const F2L_BOTTOMS = ['neutral', 'white', 'yellow', 'green', 'blue', 'red', 'orange'];
 
 function renderCrossOptions() {
@@ -1263,6 +1296,7 @@ document.addEventListener('click', (event) => {
   if (action === 'skip' && activeTool === 'corner') answer(null, true);
   if (action === 'new-f2l' && (activeTool === 'f2l' || !f2lState.correction)) newF2LCase();
   if (action === 'reset-view') cube3D?.resetView();
+  if (action === 'check-update') return checkForUpdate();
   if (action === 'clear' && confirm('Clear all Cubesight training history?')) {
     stats = initialStats(); learning = loadLearning(null); saveLearningState(); saveStats(); updateStatsUI(); startCase();
   }

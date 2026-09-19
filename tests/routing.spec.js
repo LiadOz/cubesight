@@ -1,5 +1,17 @@
 import { test, expect } from 'playwright/test';
 
+test('exposes the installed build and a network version marker', async ({ page, request }) => {
+  await page.goto('/');
+  await expect(page.locator('#app-build')).toHaveText(/^(development|[0-9a-f]{7})$/);
+  const response = await request.get('/version.json');
+  expect(response.ok()).toBe(true);
+  const server = await response.json();
+  expect(await page.locator('#app-build').textContent()).toBe(server.revision === 'development' ? server.revision : server.revision.slice(0, 7));
+  await page.locator('[data-action="open-help"]').click();
+  await page.locator('.build-info [data-action="check-update"]').click();
+  await expect(page.locator('#update-status')).toContainText('is current');
+});
+
 const routes = [
   ['corners', 'corner', 'Corner recognition'],
   ['f2l', 'f2l', 'F2L deduction'],
