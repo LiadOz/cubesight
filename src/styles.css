@@ -133,6 +133,9 @@ h2 { margin: 0; font-size: 23px; letter-spacing: -.6px; }
 .empty-cases span { font-size: 12px; font-weight: 700; }
 .empty-cases small { margin-top: 6px; font-size: 11px; }
 .f2l-controls { justify-content: space-between; }
+.f2l-drill-picker { min-width: 0; flex: 1; }
+.scan-duration { display: flex; align-items: center; gap: 8px; }
+.scan-duration select { min-height: 38px; padding: 0 28px 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--ink); font: 11px var(--mono); }
 .cross-picker { min-width: 0; flex: 1; }
 .cross-options { display: flex; flex-wrap: wrap; gap: 5px; }
 .cross-option { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 7px 10px; border: 1px solid transparent; border-radius: 7px; background: #f0f3f6; font-size: 10px; font-weight: 700; }
@@ -159,6 +162,14 @@ h2 { margin: 0; font-size: 23px; letter-spacing: -.6px; }
 .f2l-progress { display: flex; gap: 7px; margin-top: auto; padding-top: 16px; }
 .f2l-progress i { flex: 1; height: 26px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: #f0f3f6; color: var(--muted); font: 9px var(--mono); }
 .f2l-progress i.done { border-color: #90c9be; background: #e3f7ed; color: #087849; }
+.f2l-planner-choices { display: grid; gap: 8px; margin-top: 14px; }
+.planner-choice { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--ink); text-align: left; }
+.planner-choice strong { font-size: 12px; }
+.planner-choice span { color: var(--muted); font: 10px var(--mono); }
+.planner-choice small { grid-column: 1 / -1; color: var(--muted); font: 10px/1.5 var(--mono); }
+.planner-choice.best { border-color: #63b99c; background: #e3f7ed; }
+.planner-choice.picked-wrong { border-color: #dc887e; background: #fff0ee; }
+.planner-loading { padding: 18px; border: 1px dashed var(--line); border-radius: 9px; color: var(--muted); font: 10px/1.6 var(--mono); text-align: center; }
 .f2l-footer-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font: 9px var(--mono); }
 .correction-button { padding: 10px 16px; border: 1px solid #90c9be; border-radius: 7px; background: #e3f7ed; color: #087849; }
 .f2l-info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin: 20px 0 36px; }
@@ -227,6 +238,7 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
   .stats-grid { gap: 8px; } .metric-card, .trend-card { padding: 13px 10px; } .metric-card > span { font-size: 9px; } .metric-card strong { margin: 16px 0 8px; font-size: 22px; } .metric-card small { font-size: 8px; } .trend-card { padding: 16px; }
   .case-table-head { padding: 16px 14px; } .case-row { grid-template-columns: 45px 1fr 35px; padding: 12px 14px; gap: 12px; font-size: 11px; } .case-row > span:nth-of-type(2), .case-row .mini-track { display: none; } .family-swatches i { width: 19px; height: 19px; }
   .cross-picker { flex-direction: column; align-items: stretch; } .cross-options { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); margin-top: 5px; }
+  .f2l-drill-picker { flex-direction: column; align-items: stretch; } .f2l-drill-picker .segmented { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 5px; }
   .cross-option { min-height: 44px; padding: 7px 5px; gap: 4px; font-size: 9px; } .cross-option i { width: 13px; height: 13px; } .new-case-button { min-height: 44px; }
   .f2l-score { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-bottom: 8px; } .f2l-score strong { margin: 0; font-size: 30px; letter-spacing: -1.5px; } .f2l-score > span { font-size: 10px; }
   .f2l-instructions { margin: 12px 0; } .f2l-instructions p { font-size: 15px; } .f2l-instructions small { font-size: 9px; margin-top: 6px; }
@@ -246,6 +258,9 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
 :root[data-theme="dark"] { color-scheme: dark; --ink: #e3ebf3; --paper: #101820; --panel: #19242f; --line: #30404e; --muted: #a6b6c6; --accent: #66dfc5; color: var(--ink); background: var(--paper); }
 [data-theme="dark"] :is(.site-header, .icon-button, .training-settings, .trainer-shell, .metric-card, .trend-card, .case-table-card, .f2l-info-grid article, dialog, .pause-overlay > div) { background: var(--panel); }
 [data-theme="dark"] :is(.main-nav, .segmented, .cross-option, .dialog-close, .selected-piece-card, .f2l-progress i) { background: #22313e; }
+[data-theme="dark"] .planner-choice { background: #22313e; }
+[data-theme="dark"] .planner-choice.best { background: #17483b; }
+[data-theme="dark"] .planner-choice.picked-wrong { background: #542c2c; }
 [data-theme="dark"] :is(.nav-link.active, .segment.active) { background: #304451; box-shadow: 0 2px 5px #0002; }
 [data-theme="dark"] .exposure-picker select { background: #22313e; }
 [data-theme="dark"] .answer-button { background: #1d2b37; border-color: #425565; }

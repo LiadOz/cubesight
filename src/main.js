@@ -6,7 +6,10 @@ import { setupTheme } from './theme.js';
 import { renderCube } from './cube-renderer.js';
 import { createCube3D } from './cube-3d.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
-import { createF2LCase, createF2LCaseFromWasm } from './f2l-logic.js';
+import { createF2LCase, createF2LCaseFromWasm, colorNeutralOrientation } from './f2l-logic.js';
+import { solveCross } from './cross-solver.js';
+import { toRenderData } from './cross-cube.js';
+import { createPlannerSetup, plannerChoices, formatWeight } from './f2l-planner.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
 import { createRecognitionProfile } from './recognition-profile.js';
@@ -109,10 +112,9 @@ let scoutLoad = null;
 let pll = null;
 let pllLoad = null;
 let f2lCube3D = null;
-let f2lPreference = localStorage.getItem('cubesight-f2l-bottom') || 'neutral';
-if (!['neutral', ...Object.keys(COLORS)].includes(f2lPreference)) f2lPreference = 'neutral';
 let paused = false;
 let f2lState = {
+  drill: 'deduction',
   current: null,
   caseNumber: 0,
   selected: null,
@@ -123,6 +125,14 @@ let f2lState = {
   startedAt: 0,
   firstSelectedAt: 0,
   correction: false,
+  scanDuration: [15, 30, 45].includes(Number(localStorage.getItem('cubesight-f2l-scan-seconds'))) ? Number(localStorage.getItem('cubesight-f2l-scan-seconds')) : 30,
+  scanRunning: false,
+  scanEndsAt: 0,
+  scanScore: 0,
+  scanMisses: 0,
+  scanFrame: null,
+  planner: null,
+  plannerGeneration: 0,
 };
 
 document.querySelector('#app').innerHTML = `
@@ -252,9 +262,10 @@ document.querySelector('#app').innerHTML = `
         <p class="intro-copy">Find your next pair.<br>Before your next turn.</p>
       </section>
       <details class="training-settings" open>
-      <summary><span>Training settings</span><small>Bottom color & new case</small><i aria-hidden="true"></i></summary>
+      <summary><span>Training settings</span><small>Color neutral · choose a drill</small><i aria-hidden="true"></i></summary>
       <section class="mode-bar f2l-controls" aria-label="F2L settings">
-        <div class="mode-group cross-picker"><span class="control-label">Bottom face</span><div id="cross-options" class="cross-options"></div></div>
+        <div class="mode-group f2l-drill-picker"><span class="control-label">Drill</span><div class="segmented" aria-label="F2L drill"><button class="segment active" data-f2l-drill="deduction">Pair deduction</button><button class="segment" data-f2l-drill="scan">Timed scan</button><button class="segment" data-f2l-drill="planner">Best next pair</button></div></div>
+        <label class="scan-duration" id="scan-duration-wrap" hidden><span class="control-label">Round</span><select id="f2l-scan-duration"><option value="15">15 seconds</option><option value="30" selected>30 seconds</option><option value="45">45 seconds</option></select></label>
         <button class="new-case-button" data-action="new-f2l">New cube <span>↗</span></button>
       </section>
       </details>
@@ -274,13 +285,14 @@ document.querySelector('#app').innerHTML = `
           <div class="selected-piece-card" id="f2l-selection"><span>First selection</span><strong>None</strong><small>Click a visible F2L corner or edge</small></div>
           <div class="f2l-timings" id="f2l-timings">Find a pair to see search and matching times.</div>
           <div class="f2l-progress" id="f2l-progress"></div>
+          <div id="f2l-planner-choices" class="f2l-planner-choices" hidden></div>
           <div class="f2l-footer-actions"><span>Back and bottom faces are locked</span><button id="f2l-continue" class="skip-button" data-action="new-f2l">Skip case <kbd>N</kbd></button></div>
         </div>
       </section>
       <section class="f2l-info-grid">
-        <article><p class="eyebrow">01 / inspect</p><h3>Use the H</h3><p>Scan the top, front, left, and right faces. The camera stops before the back becomes visible.</p></article>
-        <article><p class="eyebrow">02 / deduce</p><h3>Count what remains</h3><p>One-sticker pieces can still be located by eliminating identities already visible elsewhere.</p></article>
-        <article><p class="eyebrow">03 / match</p><h3>Learn the difference</h3><p>After a mistake, inspect the correct pieces outlined in green. Continue when you are ready.</p></article>
+        <article><p class="eyebrow">01 / inspect</p><h3>Limited view</h3><p>Scan the top, front, left, and right faces. The camera stops before the back becomes visible.</p></article>
+        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards how many matching corner–edge partners you identify across fresh cubes.</p></article>
+        <article><p class="eyebrow">03 / plan</p><h3>Choose efficiently</h3><p>The planner compares verified next-pair solutions with ergonomic weights, not raw move count alone.</p></article>
       </section>
     </div>
     <div id="pll-view" hidden></div>
@@ -920,16 +932,6 @@ async function checkForUpdate() {
   }
 }
 
-const F2L_BOTTOMS = ['neutral', 'white', 'yellow', 'green', 'blue', 'red', 'orange'];
-
-function renderCrossOptions() {
-  document.querySelector('#cross-options').innerHTML = F2L_BOTTOMS.map((color) => {
-    const label = color === 'neutral' ? 'Neutral' : COLORS[color].label;
-    const style = color === 'neutral' ? '' : `style="--cross-color:${COLORS[color].hex}"`;
-    return `<button class="cross-option ${color === f2lPreference ? 'active' : ''} ${color === 'neutral' ? 'neutral' : ''}" data-cross="${color}" ${style} aria-pressed="${color === f2lPreference}"><i aria-hidden="true"></i><span>${label}</span></button>`;
-  }).join('');
-}
-
 function randomSeed() {
   return crypto.getRandomValues(new Uint32Array(1))[0];
 }
@@ -948,7 +950,153 @@ function pairLearningKey(current, pairId) {
   return f2lKey({ bottom: current.bottomColor, pair: pairId, position: `${corner}/${edge}`, visibility: current.frontColor });
 }
 
+function renderF2LControls() {
+  document.querySelectorAll('[data-f2l-drill]').forEach((button) => {
+    const selected = button.dataset.f2lDrill === f2lState.drill;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  document.querySelector('#scan-duration-wrap').hidden = f2lState.drill !== 'scan' || f2lState.scanRunning;
+  document.querySelector('#f2l-scan-duration').value = String(f2lState.scanDuration);
+  document.querySelector('#f2l-planner-choices').hidden = f2lState.drill !== 'planner';
+  document.querySelector('#f2l-selection').hidden = f2lState.drill === 'planner';
+  document.querySelector('#f2l-progress').hidden = f2lState.drill === 'planner';
+}
+
+function recolorPlannerData(state, orientation) {
+  const data = toRenderData(state);
+  const replacements = Object.fromEntries(Object.entries(FACE_COLOR).map(([face, color]) => [COLORS[color].hex, COLORS[orientation[face]].hex]));
+  const replace = (value) => replacements[String(value).toLowerCase()] || value;
+  data.mode = 'f2l';
+  data.colors = Object.fromEntries(Object.entries(data.colors).map(([key, value]) => [key, replace(value)]));
+  data.cornerStickers = Object.fromEntries(Object.entries(data.cornerStickers).map(([key, value]) => [key, replace(value)]));
+  data.stickerColors = Object.fromEntries(Object.entries(data.stickerColors).map(([key, value]) => [key, replace(value)]));
+  data.selectablePieces = [];
+  return data;
+}
+
+function plannerPairLabel(choice, orientation) {
+  return [...choice.slot].map((face) => COLORS[orientation[face]].label).join(' + ');
+}
+
+function renderF2LPlanner() {
+  renderF2LControls();
+  const planner = f2lState.planner;
+  const status = document.querySelector('#f2l-status');
+  const choices = document.querySelector('#f2l-planner-choices');
+  document.querySelector('.f2l-score > span').textContent = 'Pairs already solved';
+  document.querySelector('#f2l-found').textContent = planner?.setup.solvedCount ?? '—';
+  document.querySelector('#f2l-total').textContent = '4';
+  document.querySelector('#f2l-case-number').textContent = `CASE ${String(f2lState.caseNumber).padStart(3, '0')}`;
+  document.querySelector('#f2l-cross-label').textContent = planner ? `${COLORS[planner.orientation.D].label.toUpperCase()} BOTTOM` : 'CN';
+  document.querySelector('#f2l-orientation').textContent = planner
+    ? `${COLORS[planner.orientation.D].label} bottom · ${COLORS[planner.orientation.F].label} front`
+    : 'Preparing a verified case…';
+  document.querySelector('#f2l-timings').textContent = 'Weights: U/R/L/D = 1 · F/B = 1.25 · rotations = 2';
+  const button = document.querySelector('#f2l-continue');
+  button.dataset.action = 'new-f2l';
+  button.innerHTML = `New case <kbd>N</kbd>`;
+  button.setAttribute('aria-label', 'New best-pair case');
+  if (!planner) {
+    status.className = '';
+    status.textContent = f2lState.message || 'Searching for verified choices…';
+    choices.innerHTML = '<div class="planner-loading">Finding optimal next-pair plans locally…</div>';
+    return;
+  }
+  f2lCube3D?.update(recolorPlannerData(planner.setup.state, planner.orientation));
+  document.querySelector('#f2l-view').dataset.preference = 'neutral';
+  document.querySelector('#f2l-view').dataset.bottomColor = planner.orientation.D;
+  document.querySelector('#f2l-view').dataset.caseSource = 'verified-planner';
+  const answerIsBest = planner.answer != null && planner.choices[planner.answer].weight === planner.choices[0].weight;
+  status.className = planner.answer == null ? '' : answerIsBest ? 'is-correct' : 'is-wrong';
+  status.textContent = planner.answer == null
+    ? 'Which pair has the cheapest verified insertion? Pseudo-slotting routes and D moves are allowed.'
+    : answerIsBest
+      ? `Correct. ${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} is cheapest at ${formatWeight(planner.choices[planner.answer].weight)}.`
+      : `${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} costs ${formatWeight(planner.choices[planner.answer].weight)}. The best is ${plannerPairLabel(planner.choices[0], planner.orientation)} at ${formatWeight(planner.choices[0].weight)}.`;
+  choices.innerHTML = planner.choices.map((choice, index) => {
+    const reveal = planner.answer == null ? '' : `<small>${choice.moves.join(' ')} · weighted ${formatWeight(choice.weight)}</small>`;
+    const stateClass = planner.answer == null ? '' : choice.weight === planner.choices[0].weight ? 'best' : index === planner.answer ? 'picked-wrong' : '';
+    return `<button class="planner-choice ${stateClass}" data-planner-choice="${index}" ${planner.answer == null ? '' : 'disabled'}><strong>${plannerPairLabel(choice, planner.orientation)}</strong><span>${choice.slot} slot</span>${reveal}</button>`;
+  }).join('');
+}
+
+async function newF2LPlannerCase() {
+  const generation = ++f2lState.plannerGeneration;
+  f2lState = { ...f2lState, planner: null, locked: true, correction: false, caseNumber: f2lState.caseNumber + 1, message: 'Searching for verified choices…' };
+  renderF2LPlanner();
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const seed = randomSeed() + attempt;
+    const setup = createPlannerSetup(seed);
+    if (setup.solvedCount < 0 || setup.solvedCount > 2) continue;
+    try {
+      const reply = await solveCross({ scramble: setup.scramble, face: 'D', kind: 'xcross', maxResults: 8, maxDepth: 10, timeLimitMs: 1800 });
+      if (generation !== f2lState.plannerGeneration || activeTool !== 'f2l' || f2lState.drill !== 'planner') return;
+      const choices = plannerChoices(setup, reply.results);
+      if (choices.length < 2) continue;
+      f2lState.planner = { setup, choices, orientation: colorNeutralOrientation(seed), answer: null };
+      f2lState.locked = false;
+      f2lState.message = '';
+      renderF2LPlanner();
+      return;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+    }
+  }
+  if (generation !== f2lState.plannerGeneration) return;
+  f2lState.message = 'No sufficiently varied verified case was found. Try New cube.';
+  renderF2LPlanner();
+}
+
+function stopF2LScan() {
+  clearTimeout(f2lState.scanFrame);
+  f2lState.scanFrame = null;
+  f2lState.scanRunning = false;
+}
+
+function updateF2LScanClock() {
+  if (!f2lState.scanRunning || f2lState.drill !== 'scan' || activeTool !== 'f2l') return;
+  const remaining = Math.max(0, f2lState.scanEndsAt - performance.now());
+  document.querySelector('#f2l-timings').textContent = `${(remaining / 1000).toFixed(1)}s left · ${f2lState.scanScore} pairs · ${f2lState.scanMisses} misses`;
+  if (remaining <= 0) {
+    stopF2LScan();
+    f2lState.locked = true;
+    f2lState.selected = null;
+    f2lState.message = `Time. You found ${f2lState.scanScore} ${f2lState.scanScore === 1 ? 'pair' : 'pairs'} with ${f2lState.scanMisses} ${f2lState.scanMisses === 1 ? 'miss' : 'misses'}.`;
+    renderF2L();
+    return;
+  }
+  f2lState.scanFrame = setTimeout(updateF2LScanClock, 100);
+}
+
+function startF2LScan() {
+  if (f2lState.drill !== 'scan') return;
+  stopF2LScan();
+  f2lState.scanRunning = true;
+  f2lState.scanScore = 0;
+  f2lState.scanMisses = 0;
+  f2lState.scanEndsAt = performance.now() + f2lState.scanDuration * 1000;
+  newF2LCase();
+  updateF2LScanClock();
+}
+
+function setF2LDrill(drill) {
+  if (!['deduction', 'scan', 'planner'].includes(drill) || drill === f2lState.drill) return;
+  stopF2LScan();
+  f2lState.plannerGeneration += 1;
+  f2lState.drill = drill;
+  f2lState.planner = null;
+  f2lState.current = null;
+  f2lState.scanScore = 0;
+  f2lState.scanMisses = 0;
+  renderF2LControls();
+  newF2LCase();
+  updateHelp();
+}
+
 function renderF2L() {
+  if (f2lState.drill === 'planner') return renderF2LPlanner();
+  renderF2LControls();
   const current = f2lState.current;
   if (!current) return;
   const matched = matchedPieces();
@@ -969,14 +1117,15 @@ function renderF2L() {
   const bottom = COLORS[current.bottomColor];
   const front = COLORS[current.frontColor];
   const view = document.querySelector('#f2l-view');
-  view.dataset.preference = f2lPreference;
+  view.dataset.preference = 'neutral';
   view.dataset.bottomColor = current.bottomColor;
   view.dataset.caseSource = current.source;
   document.querySelector('#f2l-orientation').textContent = `${bottom.label} bottom · ${front.label} front`;
   document.querySelector('#f2l-cross-label').textContent = `${bottom.label.toUpperCase()} BOTTOM`;
   document.querySelector('#f2l-case-number').textContent = `CASE ${String(f2lState.caseNumber).padStart(3, '0')}`;
-  document.querySelector('#f2l-found').textContent = f2lState.matchedPairIds.length;
-  document.querySelector('#f2l-total').textContent = current.targetPairIds.length;
+  document.querySelector('.f2l-score > span').textContent = f2lState.drill === 'scan' ? 'Pairs this round' : 'Deducible pairs';
+  document.querySelector('#f2l-found').textContent = f2lState.drill === 'scan' ? f2lState.scanScore : f2lState.matchedPairIds.length;
+  document.querySelector('#f2l-total').textContent = f2lState.drill === 'scan' ? '∞' : current.targetPairIds.length;
   const status = document.querySelector('#f2l-status');
   status.textContent = f2lState.message || 'Select a corner or edge to begin.';
   status.className = f2lState.feedback?.status === 'correct' ? 'is-correct' : f2lState.feedback?.status === 'wrong' ? 'is-wrong' : '';
@@ -992,9 +1141,11 @@ function renderF2L() {
   document.querySelector('#f2l-progress').innerHTML = current.targetPairIds.map((pairId, index) => `<i class="${f2lState.matchedPairIds.includes(pairId) ? 'done' : ''}" title="Pair ${index + 1}"><span>${f2lState.matchedPairIds.includes(pairId) ? '✓' : index + 1}</span></i>`).join('');
   const continueButton = document.querySelector('#f2l-continue');
   if (continueButton) {
-    continueButton.innerHTML = `${f2lState.correction ? 'Continue' : 'New case'} <kbd>N</kbd>`;
+    const waitingScan = f2lState.drill === 'scan' && !f2lState.scanRunning;
+    continueButton.dataset.action = waitingScan ? 'start-scan' : 'new-f2l';
+    continueButton.innerHTML = `${waitingScan ? `Start ${f2lState.scanDuration}s` : f2lState.correction ? 'Continue' : 'New case'} <kbd>${waitingScan ? 'S' : 'N'}</kbd>`;
     continueButton.classList.toggle('correction-button', Boolean(f2lState.correction));
-    continueButton.setAttribute('aria-label', f2lState.correction ? 'Continue to the next F2L case' : 'Skip F2L case');
+    continueButton.setAttribute('aria-label', waitingScan ? `Start ${f2lState.scanDuration}-second scan` : f2lState.correction ? 'Continue to the next F2L case' : 'Skip F2L case');
   }
 }
 
@@ -1002,14 +1153,15 @@ function newF2LCase() {
   clearTimeout(trialTimeout);
   clearTimeout(f2lState.nextTimer);
   if (paused || activeTool !== 'f2l') return;
+  if (f2lState.drill === 'planner') return newF2LPlannerCase();
   // Pick the neutral bottom once; adaptive case filtering must not bias it.
-  const bottom = f2lPreference === 'neutral' ? Object.keys(COLORS)[randomSeed() % 6] : f2lPreference;
+  const bottom = Object.keys(COLORS)[randomSeed() % 6];
   const candidates = [];
   for (let attempt = 0; attempt < 64; attempt++) {
     const seed = randomSeed();
     let generated;
     if (wasmReady) {
-      generated = createF2LCaseFromWasm(JSON.parse(wasmF2LCase(BigInt(seed), COLOR_FACE[bottom])), seed, f2lPreference);
+      generated = createF2LCaseFromWasm(JSON.parse(wasmF2LCase(BigInt(seed), COLOR_FACE[bottom])), seed, 'neutral');
     } else {
       generated = createF2LCase(seed, bottom);
     }
@@ -1023,20 +1175,25 @@ function newF2LCase() {
     return;
   }
   f2lState = {
+    ...f2lState,
     current: generated,
     caseNumber: f2lState.caseNumber + 1,
     selected: null,
     matchedPairIds: [],
     feedback: null,
-    locked: false,
+    locked: f2lState.drill === 'scan' && !f2lState.scanRunning,
     nextTimer: null,
-    message: 'Select a corner or edge to begin.',
+    message: f2lState.drill === 'scan'
+      ? (f2lState.scanRunning ? 'Find as many matching pairs as you can.' : `Ready for a ${f2lState.scanDuration}-second scan.`)
+      : 'Select a corner or edge to begin.',
     startedAt: 0,
     firstSelectedAt: 0,
     correction: false,
   };
   renderF2L();
-  document.querySelector('#f2l-timings').textContent = 'Find a pair to see search and matching times.';
+  document.querySelector('#f2l-timings').textContent = f2lState.drill === 'scan'
+    ? `Round score ${f2lState.scanScore} · misses ${f2lState.scanMisses}`
+    : 'Find a pair to see search and matching times.';
   f2lState.startedAt = performance.now();
 }
 
@@ -1077,6 +1234,25 @@ function handleF2LPiece({ piece }) {
     return;
   }
   f2lState.feedback = { status: correct ? 'correct' : 'wrong', piece };
+  if (f2lState.drill === 'scan') {
+    f2lState.selected = null;
+    f2lState.firstSelectedAt = 0;
+    if (correct) {
+      f2lState.scanScore += 1;
+      f2lState.matchedPairIds.push(first.pairId);
+      f2lState.message = 'Found. Keep scanning.';
+      renderF2L();
+      if (f2lState.matchedPairIds.length === current.targetPairIds.length) {
+        f2lState.nextTimer = setTimeout(() => { if (f2lState.scanRunning) newF2LCase(); }, 180);
+      }
+    } else {
+      f2lState.scanMisses += 1;
+      f2lState.message = 'Not a pair. Keep scanning.';
+      f2lState.feedback = null;
+      renderF2L();
+    }
+    return;
+  }
   clearTimeout(trialTimeout);
   const now = performance.now();
   const elapsed = Math.round(now - f2lState.startedAt);
@@ -1118,14 +1294,6 @@ function handleF2LPiece({ piece }) {
   }
 }
 
-function setF2LPreference(preference) {
-  if (!F2L_BOTTOMS.includes(preference)) return;
-  f2lPreference = preference;
-  try { localStorage.setItem('cubesight-f2l-bottom', preference); } catch { /* Keep the preference in memory. */ }
-  renderCrossOptions();
-  newF2LCase();
-}
-
 function updateHelp() {
   if (activeTool === 'corner' && state.mode === 'recall') {
     document.querySelector('#help-title').textContent = 'One glance. Three answers.';
@@ -1146,12 +1314,17 @@ function updateHelp() {
     return;
   }
   const f2l = activeTool === 'f2l';
-  document.querySelector('#help-title').textContent = f2l ? 'Inspect, deduce, match.' : 'Recognize, don’t calculate.';
+  const f2lHelp = f2lState.drill === 'scan'
+    ? ['Scan before you solve.', 'Identify as many matching corner–edge partners as possible before the clock expires.', '<li>The bottom color changes between cases: every round is color neutral.</li><li>Drag only left and right; the back and bottom remain hidden.</li><li>Select a corner and its matching edge. Finished cubes advance automatically while the same clock keeps running.</li>']
+    : f2lState.drill === 'planner'
+      ? ['Choose the efficient pair.', 'Compare the cheapest verified next-pair plans, including pseudo-slotting routes.', '<li>Each case begins with the cross and zero to two F2L pairs solved.</li><li>Choose the pair with the lowest weighted plan. D counts normally; F/B and rotations carry an ergonomic penalty.</li><li>After answering, inspect every verified algorithm. Existing solved pairs are always preserved.</li>']
+      : ['Inspect, deduce, match.', 'Find every corner–edge pair that can be identified from the allowed inspection arc.', '<li>Drag only left and right; the camera cannot reveal the back or bottom.</li><li>Select a corner or edge, then select its matching piece. Other pieces also accept clicks.</li><li>After a mistake, inspect the green outlines. Press N or Continue when ready.</li>'];
+  document.querySelector('#help-title').textContent = f2l ? f2lHelp[0] : 'Recognize, don’t calculate.';
   document.querySelector('#help-copy').textContent = f2l
-    ? 'Find every corner–edge pair that can be identified from the allowed inspection arc.'
+    ? f2lHelp[1]
     : 'Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.';
   document.querySelector('#help-steps').innerHTML = f2l
-    ? '<li>Drag only left and right; the camera cannot reveal the back or bottom.</li><li>Select a corner or edge, then select its matching piece. Other pieces also accept clicks.</li><li>After a mistake, inspect the green outlines. Press N or Continue when ready.</li>'
+    ? f2lHelp[2]
     : '<li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down. Hidden faces never enter view.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type W, Y, G, B, R, or O.</li><li>In Three corners, answer the highlighted targets from left to right; all three share one stable angle.</li>';
 }
 
@@ -1184,6 +1357,10 @@ function setTool(tool, initial = false) {
     else link.removeAttribute('aria-current');
   });
   clearTimeout(f2lState.nextTimer);
+  if (tool !== 'f2l') {
+    stopF2LScan();
+    f2lState.plannerGeneration += 1;
+  }
   cancelCornerTimers();
   if (tool === 'scout') {
     state.locked = true;
@@ -1247,6 +1424,8 @@ function pausePractice(reason = 'interrupted') {
   cancelCornerTimers();
   state.locked = true;
   clearTimeout(f2lState.nextTimer);
+  stopF2LScan();
+  f2lState.plannerGeneration += 1;
   f2lState.locked = true;
   document.querySelector('#pause-overlay h2').textContent = reason === 'timeout' ? 'Taking a break?' : 'Practice paused';
   document.querySelector('#pause-overlay p:not(.eyebrow)').textContent = reason === 'timeout'
@@ -1281,8 +1460,14 @@ document.querySelector('#summary-dialog').addEventListener('cancel', (event) => 
 document.addEventListener('click', (event) => {
   const toolButton = event.target.closest('[data-tool]');
   if (toolButton) return; // Native links preserve new-tab behavior; hashchange switches trainers.
-  const crossButton = event.target.closest('[data-cross]');
-  if (crossButton) return setF2LPreference(crossButton.dataset.cross);
+  const f2lDrillButton = event.target.closest('[data-f2l-drill]');
+  if (f2lDrillButton) return setF2LDrill(f2lDrillButton.dataset.f2lDrill);
+  const plannerChoice = event.target.closest('[data-planner-choice]');
+  if (plannerChoice && f2lState.drill === 'planner' && f2lState.planner?.answer == null) {
+    f2lState.planner.answer = Number(plannerChoice.dataset.plannerChoice);
+    f2lState.locked = true;
+    return renderF2LPlanner();
+  }
   const answerButton = event.target.closest('[data-color]');
   if (answerButton && activeTool === 'corner') return answer(answerButton.dataset.color);
   const modeButton = event.target.closest('[data-mode]');
@@ -1295,6 +1480,7 @@ document.addEventListener('click', (event) => {
   if (action === 'next-recall' && activeTool === 'corner' && state.mode === 'recall') return startCase();
   if (action === 'skip' && activeTool === 'corner') answer(null, true);
   if (action === 'new-f2l' && (activeTool === 'f2l' || !f2lState.correction)) newF2LCase();
+  if (action === 'start-scan' && activeTool === 'f2l') startF2LScan();
   if (action === 'reset-view') cube3D?.resetView();
   if (action === 'check-update') return checkForUpdate();
   if (action === 'clear' && confirm('Clear all Cubesight training history?')) {
@@ -1326,6 +1512,11 @@ document.querySelector('#exposure-select').addEventListener('change', (event) =>
   glancePacing.setExposure(state.exposureMs);
   if (usesGlance()) startCase();
 });
+document.querySelector('#f2l-scan-duration').addEventListener('change', (event) => {
+  f2lState.scanDuration = [15, 30, 45].includes(Number(event.target.value)) ? Number(event.target.value) : 30;
+  try { localStorage.setItem('cubesight-f2l-scan-seconds', String(f2lState.scanDuration)); } catch { /* Keep it in memory. */ }
+  renderF2L();
+});
 
 document.addEventListener('keydown', (event) => {
   if (activeTool === 'scout' || activeTool === 'pll') return;
@@ -1333,6 +1524,7 @@ document.addEventListener('keydown', (event) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
   if (activeTool === 'f2l') {
+    if (f2lState.drill === 'scan' && !f2lState.scanRunning && event.key.toLowerCase() === 's') return startF2LScan();
     if (event.key.toLowerCase() === 'n') newF2LCase();
     return;
   }
@@ -1355,7 +1547,6 @@ try {
   document.querySelector('#f2l-cube').textContent = 'The F2L trainer needs WebGL. Enable hardware acceleration or try another browser.';
   document.querySelector('[data-tool="f2l"]').title = 'F2L requires WebGL';
 }
-renderCrossOptions();
 updateStatsUI();
 updateSprintUI();
 updateLearningUI();

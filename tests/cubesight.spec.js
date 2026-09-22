@@ -29,7 +29,7 @@ test('accepts color initials and advances all three corners', async ({ page }) =
   await expect(page.locator('#corner-sequence .active')).toHaveText(/02/);
 });
 
-test('F2L supports fixed and color-neutral bottoms with a limited camera', async ({ page }) => {
+test('F2L is always color neutral with a limited camera and three drills', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
@@ -38,21 +38,17 @@ test('F2L supports fixed and color-neutral bottoms with a limited camera', async
 
   await expect(page.locator('#f2l-view')).toBeVisible();
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm');
-  await expect(page.locator('.cross-option')).toHaveCount(7);
+  await expect(page.locator('[data-f2l-drill]')).toHaveCount(3);
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-azimuth-limit', '0.62');
   await expect(page.locator('#f2l-total')).not.toHaveText('0');
 
-  await page.getByRole('button', { name: 'Red' }).click();
-  await expect(page.locator('#f2l-view')).toHaveAttribute('data-preference', 'red');
-  await expect(page.locator('#f2l-view')).toHaveAttribute('data-bottom-color', 'red');
-  await expect(page.locator('#f2l-cross-label')).toHaveText('RED BOTTOM');
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-preference', 'neutral');
+  const firstBottom = await page.locator('#f2l-view').getAttribute('data-bottom-color');
   await page.getByRole('button', { name: /New cube/ }).click();
-  await expect(page.locator('#f2l-view')).toHaveAttribute('data-bottom-color', 'red');
-
-  await page.getByRole('button', { name: 'Neutral' }).click();
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-preference', 'neutral');
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-bottom-color', /^(white|yellow|green|blue|red|orange)$/);
+  expect(firstBottom).toMatch(/^(white|yellow|green|blue|red|orange)$/);
   expect(errors).toEqual([]);
 });
 

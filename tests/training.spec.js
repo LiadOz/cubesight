@@ -5,8 +5,11 @@ import { createF2LCaseFromWasm } from '../src/f2l-logic.js';
 
 initSync({ module: readFileSync(new URL('../src/wasm/cubesight_core_bg.wasm', import.meta.url)) });
 let fixture;
+const colorFaces = { white: 'U', yellow: 'D', green: 'F', blue: 'B', red: 'R', orange: 'L' };
+const colors = Object.keys(colorFaces);
 for (let seed = 1; seed < 200; seed++) {
-  const current = createF2LCaseFromWasm(JSON.parse(f2l_case(BigInt(seed), 'U')), seed, 'white');
+  const bottom = colors[seed % colors.length];
+  const current = createF2LCaseFromWasm(JSON.parse(f2l_case(BigInt(seed), colorFaces[bottom])), seed, 'neutral');
   const pairs = current.targetPairIds.map((id) => Object.keys(current.pairByPiece).filter((piece) => current.pairByPiece[piece].pairId === id));
   const visible = pairs.filter((members) => members.every((piece) => piece.includes('U') || piece.includes('F')));
   if (visible.length >= 2) { fixture = { seed, current, pairs: visible }; break; }
@@ -14,7 +17,6 @@ for (let seed = 1; seed < 200; seed++) {
 
 async function prepareF2L(page) {
   await page.addInitScript(({ seed }) => {
-    localStorage.setItem('cubesight-f2l-bottom', 'white');
     crypto.getRandomValues = (array) => { array.fill(seed); return array; };
   }, fixture);
   await page.goto('/');
@@ -132,6 +134,28 @@ test('F2L distractors accept clicks, and mobile layout stays within the screen',
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
+test('timed F2L scan scores matching pieces and keeps the limited camera', async ({ page }) => {
+  await prepareF2L(page);
+  await page.locator('[data-f2l-drill="scan"]').click();
+  await page.locator('#f2l-scan-duration').selectOption('15');
+  await page.getByRole('button', { name: 'Start 15-second scan' }).click();
+  for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
+  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect(page.locator('#f2l-timings')).toContainText('left');
+  await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
+});
+
+test('best-next-pair drill shows locally verified weighted choices', async ({ page }) => {
+  test.setTimeout(40_000);
+  await prepareF2L(page);
+  await page.locator('[data-f2l-drill="planner"]').click();
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'verified-planner', { timeout: 25_000 });
+  await expect.poll(() => page.locator('.planner-choice').count()).toBeGreaterThanOrEqual(2);
+  await page.locator('.planner-choice').nth(1).click();
+  await expect.poll(() => page.locator('.planner-choice.best').count()).toBeGreaterThanOrEqual(1);
+  await expect(page.locator('#f2l-timings')).toContainText('F/B = 1.25');
+});
+
 test('opening help pauses the trial until explicit resume', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'How to play' }).click();
@@ -181,13 +205,12 @@ test.describe('phone touch layout', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   });
 
-  test('F2L pairs respond to real touch taps and fixed-bottom controls fit', async ({ page }) => {
+  test('F2L pairs respond to real touch taps and CN drill controls fit', async ({ page }) => {
     await prepareF2L(page);
     for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
     await expect(page.locator('#f2l-found')).toHaveText('1');
     await page.locator('#f2l-view summary').tap();
-    await page.locator('[data-cross="blue"]').tap();
-    await expect(page.locator('[data-cross="blue"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-f2l-drill="scan"]')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   });
 });

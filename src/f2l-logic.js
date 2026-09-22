@@ -47,6 +47,10 @@ function orientations() {
 }
 const ORIENTATIONS = orientations();
 
+export function colorNeutralOrientation(seed) {
+  return ORIENTATIONS[(seed >>> 0) % ORIENTATIONS.length];
+}
+
 function shuffle(items, random) {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
