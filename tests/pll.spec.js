@@ -71,6 +71,31 @@ test('PLL stays within a mobile viewport and collapses settings', async ({ page 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
+test('PLL canvas stays bounded on a high-density Android display', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  await page.goto('/#/pll-recognition');
+  const canvas = page.locator('#pll-cube canvas');
+  await expect(canvas).toBeVisible();
+  const sizes = [];
+  for (const delay of [100, 250, 500]) {
+    await page.waitForTimeout(delay);
+    sizes.push(await page.evaluate(() => {
+      const mount = document.querySelector('#pll-cube').getBoundingClientRect();
+      const cubeCanvas = document.querySelector('#pll-cube canvas').getBoundingClientRect();
+      return { mountHeight: mount.height, canvasWidth: cubeCanvas.width, canvasHeight: cubeCanvas.height, documentHeight: document.documentElement.scrollHeight };
+    }));
+  }
+  for (const size of sizes) {
+    expect(size.mountHeight).toBeLessThanOrEqual(221);
+    expect(size.canvasWidth).toBeLessThanOrEqual(337);
+    expect(size.canvasHeight).toBeLessThanOrEqual(221);
+    expect(size.documentHeight).toBeLessThan(2_500);
+  }
+  expect(Math.max(...sizes.map((size) => size.mountHeight)) - Math.min(...sizes.map((size) => size.mountHeight))).toBeLessThan(1);
+  await context.close();
+});
+
 test('PLL remains usable with the SVG compatibility view when WebGL is unavailable', async ({ page }) => {
   await page.addInitScript(() => {
     HTMLCanvasElement.prototype.getContext = () => null;

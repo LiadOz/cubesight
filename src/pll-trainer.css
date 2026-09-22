@@ -25,7 +25,8 @@
 .pll-stage-topline .status-dot { display:flex; align-items:center; gap:7px; }
 .pll-stage-topline .status-dot i { width:7px; height:7px; border-radius:50%; background:#65e8ff; box-shadow:0 0 10px #65e8ff; }
 .pll-stage-topline .view-lock { padding:5px 8px; border:1px solid #ffffff2e; border-radius:5px; color:#d5e7ef; font-size:9px; }
-.pll-cube-mount { flex:1; min-height:380px; height:380px; transition:opacity .15s ease, filter .15s ease; }
+.pll-cube-mount { position:relative; flex:1; min-height:380px; height:380px; overflow:hidden; transition:opacity .15s ease, filter .15s ease; }
+.pll-cube-mount canvas { position:absolute; inset:0; width:100%; height:100%; cursor:default; touch-action:pan-y; }
 .pll-cube-mount.is-glance-hidden canvas { visibility:hidden; }
 .pll-cube-mount.is-glance-hidden svg { visibility:hidden; }
 .pll-cube-mount.is-svg-fallback { display:grid; place-items:center; }
@@ -99,7 +100,7 @@
   .pll-segment { flex:1; padding:0 6px; }
   .pll-trainer-shell { display:flex; flex-direction:column; min-height:0; border-radius:13px; }
   .pll-cube-stage { min-height:0; padding:12px 14px 10px; }
-  .pll-cube-mount { min-height:0; height:clamp(185px,23svh,220px); }
+  .pll-cube-mount { flex:none; min-height:0; height:clamp(185px,23svh,220px); }
   .pll-cube-caption { font-size:9px; }
   .pll-cube-caption span:last-child { display:none; }
   .pll-answer-stage { padding:19px 16px 16px; }
