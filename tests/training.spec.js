@@ -136,13 +136,27 @@ test('F2L distractors accept clicks, and mobile layout stays within the screen',
 
 test('timed F2L scan scores matching pieces and keeps the limited camera', async ({ page }) => {
   await prepareF2L(page);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-f2l-drill="scan"]').click();
   await page.locator('#f2l-scan-duration').selectOption('15');
-  await page.getByRole('button', { name: 'Start 15-second scan' }).click();
+  await expect(page.locator('#f2l-status')).toContainText('Tap Start 15s scan above the cube');
+  await page.locator('#f2l-scan-start').click();
   for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
   await expect(page.locator('#f2l-found')).toHaveText('1');
   await expect(page.locator('#f2l-timings')).toContainText('left');
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
+});
+
+test('timed scan accepts real touch taps on a phone-sized canvas', async ({ browser }) => {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4174', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  await prepareF2L(page);
+  await page.locator('#f2l-view summary').tap();
+  await page.locator('[data-f2l-drill="scan"]').click();
+  await page.locator('#f2l-scan-start').tap();
+  for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
+  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await context.close();
 });
 
 test('best-next-pair drill shows locally verified weighted choices', async ({ page }) => {
@@ -153,7 +167,10 @@ test('best-next-pair drill shows locally verified weighted choices', async ({ pa
   await expect.poll(() => page.locator('.planner-choice').count()).toBeGreaterThanOrEqual(2);
   await page.locator('.planner-choice').nth(1).click();
   await expect.poll(() => page.locator('.planner-choice.best').count()).toBeGreaterThanOrEqual(1);
-  await expect(page.locator('#f2l-timings')).toContainText('F/B = 1.25');
+  await expect(page.locator('#f2l-timings')).toContainText('F/B = 5');
+  await page.locator('#planner-shift-d').check();
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'verified-planner', { timeout: 25_000 });
+  await expect(page.locator('#f2l-status')).toContainText('D layer starts shifted');
 });
 
 test('opening help pauses the trial until explicit resume', async ({ page }) => {

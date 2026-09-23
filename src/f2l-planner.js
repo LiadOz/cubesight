@@ -18,6 +18,19 @@ function rotateY(algorithm, turns) {
   }).join(' ');
 }
 
+/** Uw = y D: search after the matching D turn, then map moves into the rotated center frame. */
+export function wideURequest(setup, suffix = '') {
+  const turns = suffix === "'" ? 3 : suffix === '2' ? 2 : 1;
+  const dTurn = `D${suffix}`;
+  return { prefix: `Uw${suffix}`, turns, scramble: `${setup.scramble} ${dTurn}` };
+}
+
+export function wideUResults(request, results) {
+  return (results || []).map((result) => ({
+    moves: [request.prefix, ...result.moves.map((move) => rotateY(move, (4 - request.turns) % 4))],
+  }));
+}
+
 export function invertAlgorithm(algorithm) {
   return algorithm.trim().split(/\s+/).filter(Boolean).reverse().map((move) => {
     if (move.endsWith('2')) return move;
@@ -26,24 +39,31 @@ export function invertAlgorithm(algorithm) {
 }
 
 /** Build a short, realistic post-cross state with exactly 0–2 F2L pairs solved. */
-export function createPlannerSetup(seed) {
+export function createPlannerSetup(seed, { shiftD = false } = {}) {
   const brokenSlots = 2 + (seed % 3);
   const setups = [];
   for (let slot = 0; slot < brokenSlots; slot += 1) {
     const algorithm = rotateY(SLOT_ALGORITHMS[(seed + slot * 3) % SLOT_ALGORITHMS.length], slot);
     setups.push(invertAlgorithm(algorithm));
   }
-  const scramble = setups.join(' ');
+  const baseScramble = setups.join(' ');
+  const basePairs = validateSolution(stateFromScramble(baseScramble), [], 'D').pairs;
+  const dShift = shiftD ? ["D", "D'", "D2"][seed % 3] : null;
+  const scramble = [baseScramble, dShift].filter(Boolean).join(' ');
   const state = stateFromScramble(scramble);
-  const verified = validateSolution(state, [], 'D');
-  return { scramble, state, solvedPairs: verified.pairs, solvedCount: verified.pairs.length };
+  const restored = dShift ? [invertAlgorithm(dShift)] : [];
+  const recoveryPlans = setups.slice().reverse().map((setup) => {
+    restored.push(invertAlgorithm(setup));
+    return restored.join(' ').split(' ');
+  });
+  return { scramble, state, solvedPairs: basePairs, solvedCount: basePairs.length, dShift, recoveryPlans };
 }
 
 export function weightedMoveCount(moves) {
   return moves.reduce((total, move) => {
     const face = move[0]?.toUpperCase();
     if ('XYZ'.includes(face)) return total + 2;
-    if (face === 'F' || face === 'B') return total + 1.25;
+    if (face === 'F' || face === 'B') return total + 5;
     return total + 1;
   }, 0);
 }
@@ -65,7 +85,9 @@ export function plannerChoices(setup, results) {
       const weight = weightedMoveCount(moves);
       const current = best.get(pair.slot);
       if (!current || weight < current.weight || (weight === current.weight && moves.length < current.moves.length)) {
-        best.set(pair.slot, { slot: pair.slot, cornerId: pair.cornerId, edgeId: pair.edgeId, moves, weight });
+        const last = moves.at(-1);
+        const pseudo = /^D(?:2|')?$/.test(last || '') && !validateSolution(setup.state, moves.slice(0, -1), 'D').crossSolved;
+        best.set(pair.slot, { slot: pair.slot, cornerId: pair.cornerId, edgeId: pair.edgeId, moves, weight, pseudo });
       }
     }
   }

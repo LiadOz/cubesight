@@ -69,11 +69,11 @@ export function suggestInspectionFront(state,bottomFace='D',pieceIds=[]) {
   return {...best,choices:ranked.length,tiedChoices:ranked.filter(candidate=>candidate.score===best.score).length};
 }
 
-export function parseScramble(input='') {
+export function parseScramble(input='', { allowWide = false } = {}) {
   if (typeof input !== 'string') throw new TypeError('Enter a scramble as move notation.');
   const tokens = input.trim().replace(/[′’]/g,"'").split(/\s+/).filter(Boolean);
   if (tokens.length > 200) throw new Error('Use at most 200 moves.');
-  for (const token of tokens) if (!/^[URFDLB](?:2|')?$/.test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B with 2 or a prime.`);
+  for (const token of tokens) if (!(allowWide ? /^(?:[URFDLB]|Uw)(?:2|')?$/ : /^[URFDLB](?:2|')?$/).test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B with 2 or a prime.`);
   return tokens;
 }
 
@@ -89,12 +89,13 @@ function quarter(v, n) {
 }
 
 export function applyMoves(state, input) {
-  const moves = parseScramble(typeof input === 'string' ? input : input.join(' '));
+  const moves = parseScramble(typeof input === 'string' ? input : input.join(' '), { allowWide: true });
   let cubies = state.cubies.map(c=>({id:c.id,position:[...c.position],stickers:{...c.stickers}}));
   for (const move of moves) {
     const normal = NORMAL[move[0]];
+    const wideU = move.startsWith('Uw');
     const turns = move.endsWith('2') ? 2 : move.endsWith("'") ? 3 : 1;
-    for (let turn=0;turn<turns;turn++) cubies = cubies.map(c=>dot(c.position,normal)!==1 ? c : {
+    for (let turn=0;turn<turns;turn++) cubies = cubies.map(c=>(wideU ? dot(c.position,normal)<0 : dot(c.position,normal)!==1) ? c : {
       id:c.id, position:quarter(c.position,normal),
       stickers:Object.fromEntries(Object.entries(c.stickers).map(([f,color])=>[FACE_BY_NORMAL[quarter(NORMAL[f],normal).join(',')],color])),
     });
@@ -124,16 +125,17 @@ export function toRenderData(state, highlightedIds=[]) {
   }
   return data;
 }
-function solved(c) { return c && [...c.id].every(f=>c.stickers[f]===FACE_COLORS[f]); }
+function solved(c, centers = FACE_COLORS) { return c && Object.entries(c.stickers).every(([face,color])=>color===centers[face]); }
 export function validateSolution(state,moves=[],crossFace='D') {
   if (!(crossFace in NORMAL)) throw new Error('Unknown cross face.');
   const result = applyMoves(state,moves);
   const byId = Object.fromEntries(result.cubies.map(c=>[c.id,c]));
-  const crossSolved = EDGES.filter(id=>id.includes(crossFace)).every(id=>solved(byId[id]));
+  const centers = Object.fromEntries(result.cubies.filter(c=>c.id.length===1).flatMap(c=>Object.entries(c.stickers)));
+  const crossSolved = EDGES.filter(id=>id.includes(crossFace)).every(id=>solved(byId[id],centers));
   const pairs = CORNERS.filter(id=>id.includes(crossFace)).flatMap(cornerId=>{
     const sides = [...cornerId].filter(f=>f!==crossFace);
     const edgeId = EDGES.find(id=>sides.every(f=>id.includes(f)));
-    return solved(byId[cornerId]) && solved(byId[edgeId]) ? [{cornerId,edgeId,slot:edgeId}] : [];
+    return solved(byId[cornerId],centers) && solved(byId[edgeId],centers) ? [{cornerId,edgeId,slot:edgeId}] : [];
   });
   return {crossSolved,pairs};
 }

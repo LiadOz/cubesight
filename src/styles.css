@@ -136,6 +136,8 @@ h2 { margin: 0; font-size: 23px; letter-spacing: -.6px; }
 .f2l-drill-picker { min-width: 0; flex: 1; }
 .scan-duration { display: flex; align-items: center; gap: 8px; }
 .scan-duration select { min-height: 38px; padding: 0 28px 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--ink); font: 11px var(--mono); }
+.planner-shift { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; color: var(--ink); font-size: 11px; cursor: pointer; }
+.planner-shift input { width: 18px; height: 18px; accent-color: var(--accent); }
 .cross-picker { min-width: 0; flex: 1; }
 .cross-options { display: flex; flex-wrap: wrap; gap: 5px; }
 .cross-option { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 7px 10px; border: 1px solid transparent; border-radius: 7px; background: #f0f3f6; font-size: 10px; font-weight: 700; }

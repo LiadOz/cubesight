@@ -9,7 +9,7 @@ import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
 import { toRenderData } from './cross-cube.js';
-import { createPlannerSetup, plannerChoices, formatWeight } from './f2l-planner.js';
+import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from './f2l-planner.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
 import { createRecognitionProfile } from './recognition-profile.js';
@@ -131,6 +131,7 @@ let f2lState = {
   scanScore: 0,
   scanMisses: 0,
   scanFrame: null,
+  plannerShiftD: false,
   planner: null,
   plannerGeneration: 0,
 };
@@ -266,6 +267,8 @@ document.querySelector('#app').innerHTML = `
       <section class="mode-bar f2l-controls" aria-label="F2L settings">
         <div class="mode-group f2l-drill-picker"><span class="control-label">Drill</span><div class="segmented" aria-label="F2L drill"><button class="segment active" data-f2l-drill="deduction">Pair deduction</button><button class="segment" data-f2l-drill="scan">Timed scan</button><button class="segment" data-f2l-drill="planner">Best next pair</button></div></div>
         <label class="scan-duration" id="scan-duration-wrap" hidden><span class="control-label">Round</span><select id="f2l-scan-duration"><option value="15">15 seconds</option><option value="30" selected>30 seconds</option><option value="45">45 seconds</option></select></label>
+        <button class="new-case-button" id="f2l-scan-start" data-action="start-scan" hidden>Start scan</button>
+        <label class="planner-shift" id="planner-shift-wrap" hidden><input id="planner-shift-d" type="checkbox"> Shift D layer</label>
         <button class="new-case-button" data-action="new-f2l">New cube <span>↗</span></button>
       </section>
       </details>
@@ -957,6 +960,12 @@ function renderF2LControls() {
     button.setAttribute('aria-pressed', String(selected));
   });
   document.querySelector('#scan-duration-wrap').hidden = f2lState.drill !== 'scan' || f2lState.scanRunning;
+  const scanStart = document.querySelector('#f2l-scan-start');
+  scanStart.hidden = f2lState.drill !== 'scan' || f2lState.scanRunning;
+  scanStart.textContent = `Start ${f2lState.scanDuration}s scan`;
+  document.querySelector('.f2l-controls > [data-action="new-f2l"]').hidden = f2lState.drill === 'scan';
+  document.querySelector('#planner-shift-wrap').hidden = f2lState.drill !== 'planner';
+  document.querySelector('#planner-shift-d').checked = f2lState.plannerShiftD;
   document.querySelector('#f2l-scan-duration').value = String(f2lState.scanDuration);
   document.querySelector('#f2l-planner-choices').hidden = f2lState.drill !== 'planner';
   document.querySelector('#f2l-selection').hidden = f2lState.drill === 'planner';
@@ -984,7 +993,7 @@ function renderF2LPlanner() {
   const planner = f2lState.planner;
   const status = document.querySelector('#f2l-status');
   const choices = document.querySelector('#f2l-planner-choices');
-  document.querySelector('.f2l-score > span').textContent = 'Pairs already solved';
+  document.querySelector('.f2l-score > span').textContent = f2lState.plannerShiftD ? 'Pairs solved before D shift' : 'Pairs already solved';
   document.querySelector('#f2l-found').textContent = planner?.setup.solvedCount ?? '—';
   document.querySelector('#f2l-total').textContent = '4';
   document.querySelector('#f2l-case-number').textContent = `CASE ${String(f2lState.caseNumber).padStart(3, '0')}`;
@@ -992,7 +1001,7 @@ function renderF2LPlanner() {
   document.querySelector('#f2l-orientation').textContent = planner
     ? `${COLORS[planner.orientation.D].label} bottom · ${COLORS[planner.orientation.F].label} front`
     : 'Preparing a verified case…';
-  document.querySelector('#f2l-timings').textContent = 'Weights: U/R/L/D = 1 · F/B = 1.25 · rotations = 2';
+  document.querySelector('#f2l-timings').textContent = 'U/R/L/D/Uw = 1 · F/B = 5 · rotations = 2';
   const button = document.querySelector('#f2l-continue');
   button.dataset.action = 'new-f2l';
   button.innerHTML = `New case <kbd>N</kbd>`;
@@ -1010,12 +1019,12 @@ function renderF2LPlanner() {
   const answerIsBest = planner.answer != null && planner.choices[planner.answer].weight === planner.choices[0].weight;
   status.className = planner.answer == null ? '' : answerIsBest ? 'is-correct' : 'is-wrong';
   status.textContent = planner.answer == null
-    ? 'Which pair has the cheapest verified insertion? Pseudo-slotting routes and D moves are allowed.'
+    ? `Which pair has the cheapest verified insertion? ${f2lState.plannerShiftD ? 'The D layer starts shifted.' : 'The D layer starts aligned.'}`
     : answerIsBest
       ? `Correct. ${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} is cheapest at ${formatWeight(planner.choices[planner.answer].weight)}.`
       : `${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} costs ${formatWeight(planner.choices[planner.answer].weight)}. The best is ${plannerPairLabel(planner.choices[0], planner.orientation)} at ${formatWeight(planner.choices[0].weight)}.`;
   choices.innerHTML = planner.choices.map((choice, index) => {
-    const reveal = planner.answer == null ? '' : `<small>${choice.moves.join(' ')} · weighted ${formatWeight(choice.weight)}</small>`;
+    const reveal = planner.answer == null ? '' : `<small>${choice.moves.join(' ')} · weighted ${formatWeight(choice.weight)}${choice.pseudo ? ' · D restores the shifted cross/pair' : ''}</small>`;
     const stateClass = planner.answer == null ? '' : choice.weight === planner.choices[0].weight ? 'best' : index === planner.answer ? 'picked-wrong' : '';
     return `<button class="planner-choice ${stateClass}" data-planner-choice="${index}" ${planner.answer == null ? '' : 'disabled'}><strong>${plannerPairLabel(choice, planner.orientation)}</strong><span>${choice.slot} slot</span>${reveal}</button>`;
   }).join('');
@@ -1027,21 +1036,30 @@ async function newF2LPlannerCase() {
   renderF2LPlanner();
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const seed = randomSeed() + attempt;
-    const setup = createPlannerSetup(seed);
+    const setup = createPlannerSetup(seed, { shiftD: f2lState.plannerShiftD });
     if (setup.solvedCount < 0 || setup.solvedCount > 2) continue;
-    try {
-      const reply = await solveCross({ scramble: setup.scramble, face: 'D', kind: 'xcross', maxResults: 8, maxDepth: 10, timeLimitMs: 1800 });
+    const results = setup.recoveryPlans.map((moves) => ({ moves }));
+    const searches = [
+      { scramble: setup.scramble, timeLimitMs: 1800 },
+      ...['', "'"].map((suffix) => ({ ...wideURequest(setup, suffix), timeLimitMs: 900 })),
+    ];
+    for (const search of searches) {
       if (generation !== f2lState.plannerGeneration || activeTool !== 'f2l' || f2lState.drill !== 'planner') return;
-      const choices = plannerChoices(setup, reply.results);
-      if (choices.length < 2) continue;
-      f2lState.planner = { setup, choices, orientation: colorNeutralOrientation(seed), answer: null };
-      f2lState.locked = false;
-      f2lState.message = '';
-      renderF2LPlanner();
-      return;
-    } catch (error) {
-      if (error.name === 'AbortError') return;
+      try {
+        const reply = await solveCross({ scramble: search.scramble, face: 'D', kind: 'xcross', maxResults: 8, maxDepth: 10, timeLimitMs: search.timeLimitMs });
+        results.push(...(search.prefix ? wideUResults(search, reply.results) : reply.results));
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+      }
     }
+    if (generation !== f2lState.plannerGeneration || activeTool !== 'f2l' || f2lState.drill !== 'planner') return;
+    const choices = plannerChoices(setup, results);
+    if (choices.length < 2) continue;
+    f2lState.planner = { setup, choices, orientation: colorNeutralOrientation(seed), answer: null };
+    f2lState.locked = false;
+    f2lState.message = '';
+    renderF2LPlanner();
+    return;
   }
   if (generation !== f2lState.plannerGeneration) return;
   f2lState.message = 'No sufficiently varied verified case was found. Try New cube.';
@@ -1184,7 +1202,7 @@ function newF2LCase() {
     locked: f2lState.drill === 'scan' && !f2lState.scanRunning,
     nextTimer: null,
     message: f2lState.drill === 'scan'
-      ? (f2lState.scanRunning ? 'Find as many matching pairs as you can.' : `Ready for a ${f2lState.scanDuration}-second scan.`)
+      ? (f2lState.scanRunning ? 'Tap a visible corner, then its matching edge. Keep finding pairs.' : `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its matching edge.`)
       : 'Select a corner or edge to begin.',
     startedAt: 0,
     firstSelectedAt: 0,
@@ -1315,9 +1333,9 @@ function updateHelp() {
   }
   const f2l = activeTool === 'f2l';
   const f2lHelp = f2lState.drill === 'scan'
-    ? ['Scan before you solve.', 'Identify as many matching corner–edge partners as possible before the clock expires.', '<li>The bottom color changes between cases: every round is color neutral.</li><li>Drag only left and right; the back and bottom remain hidden.</li><li>Select a corner and its matching edge. Finished cubes advance automatically while the same clock keeps running.</li>']
+    ? ['Scan before you solve.', 'Identify as many matching corner–edge partners as possible before the clock expires.', '<li>Choose a round length and tap Start scan above the cube.</li><li>Drag only left and right; the back and bottom remain hidden.</li><li>Tap a visible corner and its matching edge. Finished cubes advance automatically while the same clock keeps running.</li>']
     : f2lState.drill === 'planner'
-      ? ['Choose the efficient pair.', 'Compare the cheapest verified next-pair plans, including pseudo-slotting routes.', '<li>Each case begins with the cross and zero to two F2L pairs solved.</li><li>Choose the pair with the lowest weighted plan. D counts normally; F/B and rotations carry an ergonomic penalty.</li><li>After answering, inspect every verified algorithm. Existing solved pairs are always preserved.</li>']
+      ? ['Choose the efficient pair.', 'Compare verified next-pair plans with a strong penalty for F and B turns.', '<li>Enable Shift D layer to practice an offset bottom layer and pseudo-slotting routes.</li><li>U, R, L, D, and wide U count one each; F and B cost five each.</li><li>After answering, inspect every verified algorithm. Existing solved pairs are preserved.</li>']
       : ['Inspect, deduce, match.', 'Find every corner–edge pair that can be identified from the allowed inspection arc.', '<li>Drag only left and right; the camera cannot reveal the back or bottom.</li><li>Select a corner or edge, then select its matching piece. Other pieces also accept clicks.</li><li>After a mistake, inspect the green outlines. Press N or Continue when ready.</li>'];
   document.querySelector('#help-title').textContent = f2l ? f2lHelp[0] : 'Recognize, don’t calculate.';
   document.querySelector('#help-copy').textContent = f2l
@@ -1515,7 +1533,12 @@ document.querySelector('#exposure-select').addEventListener('change', (event) =>
 document.querySelector('#f2l-scan-duration').addEventListener('change', (event) => {
   f2lState.scanDuration = [15, 30, 45].includes(Number(event.target.value)) ? Number(event.target.value) : 30;
   try { localStorage.setItem('cubesight-f2l-scan-seconds', String(f2lState.scanDuration)); } catch { /* Keep it in memory. */ }
+  if (!f2lState.scanRunning) f2lState.message = `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its matching edge.`;
   renderF2L();
+});
+document.querySelector('#planner-shift-d').addEventListener('change', (event) => {
+  f2lState.plannerShiftD = event.target.checked;
+  if (activeTool === 'f2l' && f2lState.drill === 'planner') newF2LPlannerCase();
 });
 
 document.addEventListener('keydown', (event) => {
