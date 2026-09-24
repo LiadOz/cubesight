@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initSync, f2l_case } from '../src/wasm/cubesight_core.js';
-import { createF2LCase, createF2LCaseFromWasm, deduce, COLOR_HEX } from '../src/f2l-logic.js';
+import { createF2LCase, createF2LCaseFromWasm, createPseudoScanCase, deduce, COLOR_HEX } from '../src/f2l-logic.js';
 
 initSync({ module: readFileSync(new URL('../src/wasm/cubesight_core_bg.wasm', import.meta.url)) });
 const faceColors = { U: 'white', D: 'yellow', F: 'green', B: 'blue', R: 'red', L: 'orange' };
@@ -67,4 +67,24 @@ test('all visible non-cross pieces remain selectable, including distractors', ()
   assert.equal(Object.keys(current.pieceByPiece).length, 16);
   assert.ok(Object.values(current.pieceByPiece).some((item) => item.pairId === null));
   assert.ok(Object.values(current.pieceByPiece).every((item) => item.type === 'corner' || item.type === 'edge'));
+});
+
+test('pseudo scan rotates the real D-layer stickers and maps corners to shifted-slot edges', () => {
+  const base = createF2LCase(17);
+  for (const turns of [1, 2, 3]) {
+    const pseudo = createPseudoScanCase(base, turns);
+    if (turns === 1) assert.equal(pseudo.cornerStickers['D:DBR'], base.cornerStickers['D:DFR']);
+    assert.equal(Object.keys(pseudo.cornerStickers).length, 24);
+    assert.equal(Object.keys(pseudo.edgeStickers).length, 24);
+    assert.deepEqual(Object.values(pseudo.pairOptions).length, pseudo.targetPairIds.length);
+    for (const [id, option] of Object.entries(pseudo.pairOptions)) {
+      const [cornerId, edgeId] = id.split('>');
+      assert.notEqual(cornerId, edgeId);
+      assert.equal(pseudo.pairByPiece[option.cornerPiece].pairId, cornerId);
+      assert.equal(pseudo.pairByPiece[option.edgePiece].pairId, edgeId);
+    }
+    const restored = createPseudoScanCase(pseudo, 4 - turns);
+    assert.deepEqual(restored.cornerStickers, base.cornerStickers);
+    assert.deepEqual(restored.edgeStickers, base.edgeStickers);
+  }
 });

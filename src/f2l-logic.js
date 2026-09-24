@@ -168,6 +168,54 @@ function localPosition(position, canonicalToLocal, slots) {
   return slots.find((slot) => sameLetters(slot.piece, translated))?.piece;
 }
 
+const D_RING = ['F', 'R', 'B', 'L'];
+function shiftedFace(face, turns) {
+  const index = D_RING.indexOf(face);
+  return index < 0 ? face : D_RING[(index + turns) % 4];
+}
+function shiftedPosition(piece, turns) {
+  if (!piece.includes('D')) return piece;
+  const shifted = [...piece].map((face) => shiftedFace(face, turns)).join('');
+  return [...CORNER_SLOTS, ...EDGE_SLOTS].find((slot) => sameLetters(slot.piece, shifted))?.piece;
+}
+
+/** Put the D layer in a real offset and match each corner to that slot's edge. */
+export function createPseudoScanCase(current, turns) {
+  if (![1, 2, 3].includes(turns)) throw new RangeError('A pseudo scan needs a nonzero D offset.');
+  const remapStickers = (stickers) => Object.fromEntries(Object.entries(stickers).map(([address, color]) => {
+    const [face, piece] = address.split(':');
+    return [piece.includes('D') ? `${shiftedFace(face, turns)}:${shiftedPosition(piece, turns)}` : address, color];
+  }));
+  const remapPieces = (entries) => Object.fromEntries(Object.entries(entries).map(([piece, metadata]) => [shiftedPosition(piece, turns), metadata]));
+  const pairByPiece = remapPieces(current.pairByPiece);
+  const pieceByPiece = remapPieces(current.pieceByPiece);
+  const selectablePieces = current.selectablePieces.map((piece) => shiftedPosition(piece, turns));
+  const available = new Set(current.targetPairIds);
+  const pairOptions = {};
+  for (const slot of CORNER_SLOTS.filter((item) => item.piece.startsWith('D'))) {
+    const sides = slot.faces.filter((face) => face !== 'D');
+    const cornerId = key(sides.map((face) => current.orientation[face]));
+    const edgeId = key(sides.map((face) => current.orientation[shiftedFace(face, turns)]));
+    if (!available.has(cornerId) || !available.has(edgeId)) continue;
+    const cornerPiece = Object.entries(pairByPiece).find(([, item]) => item.type === 'corner' && item.pairId === cornerId)?.[0];
+    const edgePiece = Object.entries(pairByPiece).find(([, item]) => item.type === 'edge' && item.pairId === edgeId)?.[0];
+    if (!selectablePieces.includes(cornerPiece) || !selectablePieces.includes(edgePiece)) continue;
+    pairOptions[`${cornerId}>${edgeId}`] = { cornerPiece, edgePiece };
+  }
+  return {
+    ...current,
+    cornerStickers: remapStickers(current.cornerStickers),
+    edgeStickers: remapStickers(current.edgeStickers),
+    pairByPiece,
+    pieceByPiece,
+    selectablePieces,
+    targetPairIds: Object.keys(pairOptions),
+    pairOptions,
+    dShift: ['D', 'D2', "D'"][turns - 1],
+    source: `${current.source}-pseudo-scan`,
+  };
+}
+
 /** Adapt the legal cubie state emitted by the Rust/WASM core to the local
  * U/D/F/B/R/L view used by the renderer. The selected color is always local
  * D and the adjacent front is randomized from the case seed. */

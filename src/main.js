@@ -6,7 +6,7 @@ import { setupTheme } from './theme.js';
 import { renderCube } from './cube-renderer.js';
 import { createCube3D } from './cube-3d.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
-import { createF2LCase, createF2LCaseFromWasm, colorNeutralOrientation } from './f2l-logic.js';
+import { createF2LCase, createF2LCaseFromWasm, createPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
 import { toRenderData } from './cross-cube.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from './f2l-planner.js';
@@ -126,11 +126,13 @@ let f2lState = {
   firstSelectedAt: 0,
   correction: false,
   scanDuration: [15, 30, 45].includes(Number(localStorage.getItem('cubesight-f2l-scan-seconds'))) ? Number(localStorage.getItem('cubesight-f2l-scan-seconds')) : 30,
+  scanPseudo: localStorage.getItem('cubesight-f2l-scan-pseudo') === 'true',
   scanRunning: false,
   scanEndsAt: 0,
   scanScore: 0,
   scanMisses: 0,
   scanFrame: null,
+  matchedPieceIds: [],
   plannerShiftD: false,
   planner: null,
   plannerGeneration: 0,
@@ -267,6 +269,7 @@ document.querySelector('#app').innerHTML = `
       <section class="mode-bar f2l-controls" aria-label="F2L settings">
         <div class="mode-group f2l-drill-picker"><span class="control-label">Drill</span><div class="segmented" aria-label="F2L drill"><button class="segment active" data-f2l-drill="deduction">Pair deduction</button><button class="segment" data-f2l-drill="scan">Timed scan</button><button class="segment" data-f2l-drill="planner">Best next pair</button></div></div>
         <label class="scan-duration" id="scan-duration-wrap" hidden><span class="control-label">Round</span><select id="f2l-scan-duration"><option value="15">15 seconds</option><option value="30" selected>30 seconds</option><option value="45">45 seconds</option></select></label>
+        <label class="planner-shift" id="scan-pseudo-wrap" hidden><input id="f2l-scan-pseudo" type="checkbox"> Pseudo pairs · shift D</label>
         <button class="new-case-button" id="f2l-scan-start" data-action="start-scan" hidden>Start scan</button>
         <label class="planner-shift" id="planner-shift-wrap" hidden><input id="planner-shift-d" type="checkbox"> Shift D layer</label>
         <button class="new-case-button" data-action="new-f2l">New cube <span>↗</span></button>
@@ -294,7 +297,7 @@ document.querySelector('#app').innerHTML = `
       </section>
       <section class="f2l-info-grid">
         <article><p class="eyebrow">01 / inspect</p><h3>Limited view</h3><p>Scan the top, front, left, and right faces. The camera stops before the back becomes visible.</p></article>
-        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards how many matching corner–edge partners you identify across fresh cubes.</p></article>
+        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards corner–edge recognition across fresh cubes, with optional D-shift pseudo pairs.</p></article>
         <article><p class="eyebrow">03 / plan</p><h3>Choose efficiently</h3><p>The planner compares verified next-pair solutions with ergonomic weights, not raw move count alone.</p></article>
       </section>
     </div>
@@ -941,6 +944,7 @@ function randomSeed() {
 
 function matchedPieces() {
   if (!f2lState.current) return [];
+  if (f2lState.drill === 'scan' && f2lState.scanPseudo) return f2lState.matchedPieceIds;
   return Object.entries(f2lState.current.pairByPiece)
     .filter(([, item]) => f2lState.matchedPairIds.includes(item.pairId))
     .map(([piece]) => piece);
@@ -960,6 +964,9 @@ function renderF2LControls() {
     button.setAttribute('aria-pressed', String(selected));
   });
   document.querySelector('#scan-duration-wrap').hidden = f2lState.drill !== 'scan' || f2lState.scanRunning;
+  document.querySelector('#scan-pseudo-wrap').hidden = f2lState.drill !== 'scan';
+  document.querySelector('#f2l-scan-pseudo').checked = f2lState.scanPseudo;
+  document.querySelector('#f2l-scan-pseudo').disabled = f2lState.scanRunning;
   const scanStart = document.querySelector('#f2l-scan-start');
   scanStart.hidden = f2lState.drill !== 'scan' || f2lState.scanRunning;
   scanStart.textContent = `Start ${f2lState.scanDuration}s scan`;
@@ -1138,10 +1145,10 @@ function renderF2L() {
   view.dataset.preference = 'neutral';
   view.dataset.bottomColor = current.bottomColor;
   view.dataset.caseSource = current.source;
-  document.querySelector('#f2l-orientation').textContent = `${bottom.label} bottom · ${front.label} front`;
-  document.querySelector('#f2l-cross-label').textContent = `${bottom.label.toUpperCase()} BOTTOM`;
+  document.querySelector('#f2l-orientation').textContent = `${bottom.label} bottom · ${front.label} front${current.dShift ? ` · ${current.dShift} offset` : ''}`;
+  document.querySelector('#f2l-cross-label').textContent = current.dShift ? `${current.dShift} OFFSET` : `${bottom.label.toUpperCase()} BOTTOM`;
   document.querySelector('#f2l-case-number').textContent = `CASE ${String(f2lState.caseNumber).padStart(3, '0')}`;
-  document.querySelector('.f2l-score > span').textContent = f2lState.drill === 'scan' ? 'Pairs this round' : 'Deducible pairs';
+  document.querySelector('.f2l-score > span').textContent = f2lState.drill === 'scan' ? (f2lState.scanPseudo ? 'Pseudo pairs this round' : 'Pairs this round') : 'Deducible pairs';
   document.querySelector('#f2l-found').textContent = f2lState.drill === 'scan' ? f2lState.scanScore : f2lState.matchedPairIds.length;
   document.querySelector('#f2l-total').textContent = f2lState.drill === 'scan' ? '∞' : current.targetPairIds.length;
   const status = document.querySelector('#f2l-status');
@@ -1183,7 +1190,8 @@ function newF2LCase() {
     } else {
       generated = createF2LCase(seed, bottom);
     }
-    generated.targetPairIds.forEach((pairId) => candidates.push({ current: generated, learningKey: pairLearningKey(generated, pairId) }));
+    if (f2lState.drill === 'scan' && f2lState.scanPseudo) generated = createPseudoScanCase(generated, 1 + seed % 3);
+    generated.targetPairIds.forEach((pairId) => candidates.push({ current: generated, learningKey: f2lState.scanPseudo && f2lState.drill === 'scan' ? `scan-pseudo:${pairId}` : pairLearningKey(generated, pairId) }));
     if (candidates.length >= 32) break;
   }
   const generated = chooseDue(learning, candidates)?.current;
@@ -1198,11 +1206,14 @@ function newF2LCase() {
     caseNumber: f2lState.caseNumber + 1,
     selected: null,
     matchedPairIds: [],
+    matchedPieceIds: [],
     feedback: null,
     locked: f2lState.drill === 'scan' && !f2lState.scanRunning,
     nextTimer: null,
     message: f2lState.drill === 'scan'
-      ? (f2lState.scanRunning ? 'Tap a visible corner, then its matching edge. Keep finding pairs.' : `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its matching edge.`)
+      ? (f2lState.scanRunning
+        ? (f2lState.scanPseudo ? `Tap a corner, then the edge of its ${generated.dShift}-shifted slot.` : 'Tap a visible corner, then its matching edge. Keep finding pairs.')
+        : `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its ${f2lState.scanPseudo ? 'D-shift pseudo partner' : 'matching edge'}.`)
       : 'Select a corner or edge to begin.',
     startedAt: 0,
     firstSelectedAt: 0,
@@ -1243,8 +1254,12 @@ function handleF2LPiece({ piece }) {
   }
 
   const sameTruePair = first.pairId && first.pairId === second.pairId;
-  const correct = sameTruePair && current.targetPairIds.includes(first.pairId);
-  if (sameTruePair && !correct) {
+  const pseudoScan = f2lState.drill === 'scan' && f2lState.scanPseudo;
+  const corner = first.type === 'corner' ? first : second;
+  const edge = first.type === 'edge' ? first : second;
+  const pseudoPairId = `${corner.pairId}>${edge.pairId}`;
+  const correct = pseudoScan ? current.targetPairIds.includes(pseudoPairId) : sameTruePair && current.targetPairIds.includes(first.pairId);
+  if (sameTruePair && !correct && !pseudoScan) {
     f2lState.selected = null;
     f2lState.firstSelectedAt = 0;
     f2lState.message = 'Those pieces match. This case is outside the trainer’s deduction targets; unscored.';
@@ -1253,19 +1268,21 @@ function handleF2LPiece({ piece }) {
   }
   f2lState.feedback = { status: correct ? 'correct' : 'wrong', piece };
   if (f2lState.drill === 'scan') {
+    const firstPiece = f2lState.selected;
     f2lState.selected = null;
     f2lState.firstSelectedAt = 0;
     if (correct) {
       f2lState.scanScore += 1;
-      f2lState.matchedPairIds.push(first.pairId);
-      f2lState.message = 'Found. Keep scanning.';
+      f2lState.matchedPairIds.push(pseudoScan ? pseudoPairId : first.pairId);
+      if (pseudoScan) f2lState.matchedPieceIds.push(firstPiece, piece);
+      f2lState.message = pseudoScan ? 'Pseudo pair found. Keep scanning.' : 'Found. Keep scanning.';
       renderF2L();
       if (f2lState.matchedPairIds.length === current.targetPairIds.length) {
         f2lState.nextTimer = setTimeout(() => { if (f2lState.scanRunning) newF2LCase(); }, 180);
       }
     } else {
       f2lState.scanMisses += 1;
-      f2lState.message = 'Not a pair. Keep scanning.';
+      f2lState.message = pseudoScan ? 'Not a pseudo pair for this D offset. Keep scanning.' : 'Not a pair. Keep scanning.';
       f2lState.feedback = null;
       renderF2L();
     }
@@ -1333,7 +1350,7 @@ function updateHelp() {
   }
   const f2l = activeTool === 'f2l';
   const f2lHelp = f2lState.drill === 'scan'
-    ? ['Scan before you solve.', 'Identify as many matching corner–edge partners as possible before the clock expires.', '<li>Choose a round length and tap Start scan above the cube.</li><li>Drag only left and right; the back and bottom remain hidden.</li><li>Tap a visible corner and its matching edge. Finished cubes advance automatically while the same clock keeps running.</li>']
+    ? ['Scan before you solve.', 'Identify as many corner–edge partners as possible before the clock expires.', '<li>Choose a round length and tap Start scan above the cube.</li><li>Enable Pseudo pairs to offset the D layer. In that mode, match each corner to the edge of its shifted D slot, then restore D later.</li><li>Drag only left and right; the back and bottom remain hidden.</li><li>Tap a corner and its partner. Finished cubes advance automatically while the same clock keeps running.</li>']
     : f2lState.drill === 'planner'
       ? ['Choose the efficient pair.', 'Compare verified next-pair plans with a strong penalty for F and B turns.', '<li>Enable Shift D layer to practice an offset bottom layer and pseudo-slotting routes.</li><li>U, R, L, D, and wide U count one each; F and B cost five each.</li><li>After answering, inspect every verified algorithm. Existing solved pairs are preserved.</li>']
       : ['Inspect, deduce, match.', 'Find every corner–edge pair that can be identified from the allowed inspection arc.', '<li>Drag only left and right; the camera cannot reveal the back or bottom.</li><li>Select a corner or edge, then select its matching piece. Other pieces also accept clicks.</li><li>After a mistake, inspect the green outlines. Press N or Continue when ready.</li>'];
@@ -1533,8 +1550,14 @@ document.querySelector('#exposure-select').addEventListener('change', (event) =>
 document.querySelector('#f2l-scan-duration').addEventListener('change', (event) => {
   f2lState.scanDuration = [15, 30, 45].includes(Number(event.target.value)) ? Number(event.target.value) : 30;
   try { localStorage.setItem('cubesight-f2l-scan-seconds', String(f2lState.scanDuration)); } catch { /* Keep it in memory. */ }
-  if (!f2lState.scanRunning) f2lState.message = `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its matching edge.`;
+  if (!f2lState.scanRunning) f2lState.message = `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its ${f2lState.scanPseudo ? 'D-shift pseudo partner' : 'matching edge'}.`;
   renderF2L();
+});
+document.querySelector('#f2l-scan-pseudo').addEventListener('change', (event) => {
+  if (f2lState.scanRunning) return;
+  f2lState.scanPseudo = event.target.checked;
+  try { localStorage.setItem('cubesight-f2l-scan-pseudo', String(f2lState.scanPseudo)); } catch { /* Keep it in memory. */ }
+  if (activeTool === 'f2l' && f2lState.drill === 'scan') newF2LCase();
 });
 document.querySelector('#planner-shift-d').addEventListener('change', (event) => {
   f2lState.plannerShiftD = event.target.checked;

@@ -1,10 +1,11 @@
 import { test, expect } from 'playwright/test';
 import { readFileSync } from 'node:fs';
 import { initSync, f2l_case } from '../src/wasm/cubesight_core.js';
-import { createF2LCaseFromWasm } from '../src/f2l-logic.js';
+import { createF2LCaseFromWasm, createPseudoScanCase } from '../src/f2l-logic.js';
 
 initSync({ module: readFileSync(new URL('../src/wasm/cubesight_core_bg.wasm', import.meta.url)) });
 let fixture;
+let pseudoFixture;
 const colorFaces = { white: 'U', yellow: 'D', green: 'F', blue: 'B', red: 'R', orange: 'L' };
 const colors = Object.keys(colorFaces);
 for (let seed = 1; seed < 200; seed++) {
@@ -14,11 +15,18 @@ for (let seed = 1; seed < 200; seed++) {
   const visible = pairs.filter((members) => members.every((piece) => piece.includes('U') || piece.includes('F')));
   if (visible.length >= 2) { fixture = { seed, current, pairs: visible }; break; }
 }
+for (let seed = 1; seed < 200; seed++) {
+  const bottom = colors[seed % colors.length];
+  const current = createF2LCaseFromWasm(JSON.parse(f2l_case(BigInt(seed), colorFaces[bottom])), seed, 'neutral');
+  const pseudo = createPseudoScanCase(current, 1 + seed % 3);
+  const visible = Object.entries(pseudo.pairOptions).filter(([, pair]) => [pair.cornerPiece, pair.edgePiece].every((piece) => piece.includes('U') || piece.includes('F')));
+  if (visible.length >= 2) { pseudoFixture = { seed, current: pseudo, pairs: visible }; break; }
+}
 
-async function prepareF2L(page) {
+async function prepareF2L(page, selectedFixture = fixture) {
   await page.addInitScript(({ seed }) => {
     crypto.getRandomValues = (array) => { array.fill(seed); return array; };
-  }, fixture);
+  }, selectedFixture);
   await page.goto('/');
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
   await page.getByRole('link', { name: 'F2L deduction' }).click();
@@ -156,6 +164,25 @@ test('timed scan accepts real touch taps on a phone-sized canvas', async ({ brow
   await page.locator('#f2l-scan-start').tap();
   for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
   await expect(page.locator('#f2l-found')).toHaveText('1');
+  await context.close();
+});
+
+test('timed scan scores a pseudo pair with phone taps under a visible D offset', async ({ browser }) => {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4174', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  await prepareF2L(page, pseudoFixture);
+  await page.locator('#f2l-view summary').tap();
+  await page.locator('[data-f2l-drill="scan"]').tap();
+  await page.locator('#f2l-scan-pseudo').check();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm-pseudo-scan');
+  await expect(page.locator('#f2l-orientation')).toContainText(`${pseudoFixture.current.dShift} offset`);
+  await page.locator('#f2l-scan-start').tap();
+  const [, pair] = pseudoFixture.pairs[0];
+  await clickPiece(page, pair.cornerPiece);
+  await clickPiece(page, pair.edgePiece);
+  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect(page.locator('#f2l-status')).toContainText('Pseudo pair found');
   await context.close();
 });
 
