@@ -1,5 +1,22 @@
 import { test, expect } from 'playwright/test';
 
+test('smart-cube picker does not hide devices behind name filters', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'bluetooth', {
+      configurable: true,
+      value: {
+        requestDevice(options) {
+          window.smartCubePickerOptions = options;
+          return Promise.reject(new DOMException('Selection cancelled', 'NotFoundError'));
+        },
+      },
+    });
+  });
+  await page.goto('/#/cross-scout');
+  await page.locator('#scout-smart-connect').click();
+  await expect.poll(() => page.evaluate(() => window.smartCubePickerOptions?.acceptAllDevices)).toBe(true);
+});
+
 test('Cross Scout mirrors smart-cube turns and advances a selected plan', async ({ page }) => {
   test.setTimeout(60_000);
   await page.addInitScript(() => {

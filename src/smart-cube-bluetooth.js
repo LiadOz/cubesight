@@ -9,6 +9,9 @@ export const smartCube = createSmartCubeSession(options => {
   }
   return connectSmartCube({
     ...options,
+    // GAN model names and advertisements vary; let the user choose the BLE
+    // device, then identify its protocol from the services it exposes.
+    deviceSelection: 'any',
     macAddressProvider: async (_device, finalAttempt) => finalAttempt
       ? window.prompt('Cube MAC address needed for decryption. Enter its 12 hexadecimal digits (from Cube Station or the cube label), or Cancel to stop:')
       : null,
