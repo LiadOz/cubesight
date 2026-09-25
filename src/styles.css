@@ -59,6 +59,10 @@ h1 { margin: 0; font-size: 31px; letter-spacing: -1.2px; line-height: 1.2; font-
 .cube-mount canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
 .cube-mount canvas[data-rotation="limited-horizontal"]:active { cursor: grabbing !important; }
 .cube-mount.glance-mask > canvas, .cube-mount.glance-mask > svg { visibility: hidden; }
+.corner-result { position: absolute; z-index: 4; top: 54px; right: 24px; max-width: calc(100% - 48px); padding: 9px 13px; border: 2px solid #55d88b; border-radius: 9px; background: #f8f7f1; color: #155b38; box-shadow: 0 8px 24px #0005; font: 700 12px/1.35 var(--mono); pointer-events: none; animation: corner-result-flash .7s ease-out both; }
+.corner-result.is-wrong { border-color: #ff625a; color: #a9342d; animation-duration: 1.05s; }
+@keyframes corner-result-flash { 0% { opacity: 0; transform: translateY(-8px) scale(.94); } 13%, 72% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-4px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .corner-result { animation-duration: 1ms; } }
 .glance-overlay { position: absolute; inset: 80px 30px; display: grid; place-items: center; pointer-events: none; color: #e2f0f6; font-size: 22px; }
 .cube-caption { padding-top: 13px; border-top: 1px solid #aec0ce24; font-size: 9px; line-height: 1.6; }
 .cube-caption span:last-child { color: #8fa7b9; text-align: right; }
@@ -222,7 +226,7 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
   .segment { min-height: 42px; padding: 8px 10px; font-size: 10px; } .learning-controls { gap: 12px; } .learning-toggle { min-height: 44px; } .exposure-picker select { min-height: 44px; font-size: 16px; }
   .sprint-progress { width: 100%; }
   .trainer-shell { display: flex; flex-direction: column; min-height: 0; border-radius: 13px; }
-  .cube-stage { padding: 12px 14px 10px; } .stage-topline { font-size: 9px; gap: 8px; } .view-lock { font-size: 8px; padding: 4px 6px; }
+  .cube-stage { padding: 12px 14px 10px; } .stage-topline { font-size: 9px; gap: 8px; } .view-lock { font-size: 8px; padding: 4px 6px; } .corner-result { top: 40px; right: 14px; max-width: calc(100% - 28px); padding: 6px 9px; font-size: 10px; }
   .cube-mount { flex: none; height: clamp(200px,28svh,275px); min-height: 0; }
   .cube-caption { padding-top: 8px; font-size: 8px; } .cube-caption span:last-child { display: none; }
   .corner-sequence { margin-bottom: 8px; } .corner-sequence span { padding: 7px 4px; font-size: 8px; }

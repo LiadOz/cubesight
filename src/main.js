@@ -544,6 +544,18 @@ function renderSequence() {
   sequence.innerHTML = state.current.targets.map((_, index) => `<span class="${index === state.current.activeIndex ? 'active' : index < state.current.activeIndex ? 'done' : ''}"><i>${String(index + 1).padStart(2, '0')}</i>${positions[index]}</span>`).join('');
 }
 
+function showCornerResult(isCorrect, correctColor, skipped) {
+  document.querySelector('.corner-result')?.remove();
+  const result = document.createElement('div');
+  result.className = `corner-result ${isCorrect ? 'is-correct' : 'is-wrong'}`;
+  result.setAttribute('aria-hidden', 'true');
+  result.textContent = isCorrect
+    ? `✓ Correct · ${COLORS[correctColor].label}`
+    : `${skipped ? '↷ Skipped' : '× Not quite'} · ${COLORS[correctColor].label} was correct`;
+  result.addEventListener('animationend', () => result.remove(), { once: true });
+  document.querySelector('#corner-view .cube-stage').append(result);
+}
+
 function syncExposureSelect() {
   const select = document.querySelector('#exposure-select');
   const value = String(state.exposureMs);
@@ -763,6 +775,7 @@ function answer(color, skipped = false) {
   cancelCornerTimers();
   const elapsed = Math.round(answeredAt - state.startedAt);
   const { isCorrect, correctColor } = recordCornerAnswer(activeTarget(), color, skipped, elapsed, state.current.activeIndex + 1);
+  showCornerResult(isCorrect, correctColor, skipped);
   const feedback = document.querySelector('#feedback');
   if (!isCorrect) {
     document.querySelectorAll('.answer-button').forEach((button) => {
