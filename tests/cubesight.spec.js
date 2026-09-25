@@ -16,6 +16,7 @@ test('loads the 3D trainer and Rust engine', async ({ page }) => {
 });
 
 test('accepts color initials and advances all three corners', async ({ page }) => {
+  await page.addInitScript(() => { Math.random = () => 0; });
   await page.goto('/');
   await page.getByRole('button', { name: 'Three corners' }).click();
   await expect(page.locator('#corner-sequence span')).toHaveCount(3);

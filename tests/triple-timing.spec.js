@@ -1,7 +1,9 @@
 import {test,expect} from 'playwright/test';
 
 test('three-corner clock includes feedback between answers in displayed and logged times',async({page})=>{
-  await page.clock.install();await page.goto('/');
+  await page.clock.install();
+  await page.addInitScript(() => { Math.random = () => 0; });
+  await page.goto('/');
   await page.getByRole('button',{name:'Three corners',exact:true}).click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state','visible');
   // Freeze at the currently running fake clock so exact answer-to-answer
