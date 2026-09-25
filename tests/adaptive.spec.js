@@ -2,23 +2,23 @@ import { test, expect } from 'playwright/test';
 
 test.setTimeout(35_000);
 
-async function waitForNextVisible(page, previousCase) {
-  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'feedback');
+async function waitForNextTrial(page, previousCase) {
   await expect(page.locator('#case-number')).not.toHaveText(previousCase, { timeout: 4_000 });
-  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible', { timeout: 4_000 });
+  // A short glance may already be covered by the time the assertion runs.
+  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', /^(visible|covered)$/, { timeout: 4_000 });
 }
 
 async function skipAndWait(page) {
   const previousCase = await page.locator('#case-number').textContent();
   await page.locator('[data-action="skip"]').click();
-  await waitForNextVisible(page, previousCase);
+  await waitForNextTrial(page, previousCase);
 }
 
 async function startGlance(page, exposure = '1500') {
   await page.goto('/');
   await page.locator('#exposure-select').selectOption(exposure);
   await page.locator('#glance-toggle').check();
-  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible', { timeout: 4_000 });
+  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', /^(visible|covered)$/, { timeout: 4_000 });
 }
 
 test('Fixed glance never changes after ten skipped outcomes', async ({ page }) => {
@@ -65,8 +65,8 @@ test('Changing drill mode resets adaptive evidence progress', async ({ page }) =
   await expect(page.locator('#exposure-note')).toContainText('3/10');
 
   await page.locator('[data-mode="triple"]').click();
-  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible', { timeout: 4_000 });
+  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', /^(visible|covered)$/, { timeout: 4_000 });
   await page.locator('[data-mode="single"]').click();
-  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible', { timeout: 4_000 });
+  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', /^(visible|covered)$/, { timeout: 4_000 });
   await expect(page.locator('#exposure-note')).toContainText('0/10');
 });

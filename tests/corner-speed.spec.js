@@ -6,16 +6,16 @@ test('a correct single-corner answer makes the next case ready without a feedbac
   await page.goto('/');
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await page.keyboard.press('g');
-  const first = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1));
-  expect(first.correct).toBe(true);
-  await page.clock.runFor(50);
-  await expect(page.locator('#case-number')).toHaveText('CASE 002');
-  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('.corner-result')).toContainText('Correct');
   expect(await page.locator('.corner-result').evaluate((element) => ({
     animation: getComputedStyle(element).animationName,
     pointerEvents: getComputedStyle(element).pointerEvents,
   }))).toEqual({ animation: 'corner-result-flash', pointerEvents: 'none' });
+  const first = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1));
+  expect(first.correct).toBe(true);
+  await page.clock.runFor(50);
+  await expect(page.locator('#case-number')).toHaveText('CASE 002');
+  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('#feedback')).toContainText('Correct');
   await page.locator('[data-color="white"]').click();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).attempts)).toBe(2);

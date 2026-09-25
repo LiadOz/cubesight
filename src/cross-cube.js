@@ -81,6 +81,16 @@ export function createSolvedState() {
   return { cubies: [...CORNERS,...EDGES,...Object.keys(NORMAL)].map(id=>({ id, position:positionOf(id), stickers:Object.fromEntries([...id].map(f=>[f,FACE_COLORS[f]])) })) };
 }
 
+export function sameCubeState(a, b) {
+  if (!a?.cubies || !b?.cubies || a.cubies.length !== b.cubies.length) return false;
+  const byId = new Map(b.cubies.map(cubie => [cubie.id, cubie]));
+  return a.cubies.every(cubie => {
+    const other = byId.get(cubie.id);
+    return other && cubie.position.every((value, index) => value === other.position[index])
+      && Object.entries(cubie.stickers).every(([face, color]) => other.stickers[face] === color);
+  });
+}
+
 // A clockwise face move is -90 degrees about its outward normal.
 function quarter(v, n) {
   const projection = dot(v,n);

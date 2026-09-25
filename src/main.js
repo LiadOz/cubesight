@@ -1359,7 +1359,7 @@ function updateHelp() {
   if (activeTool === 'scout') {
     document.querySelector('#help-title').textContent = 'Inspect your possibilities.';
     document.querySelector('#help-copy').textContent = 'Cross Scout compares cross and extended-cross plans for the colors you select. Recognition labels are explanatory heuristics, not a guarantee that a plan will feel easy.';
-    document.querySelector('#help-steps').innerHTML = '<li>Apply the scramble to a solved cube with white on top and green in front. Paste or generate that same scramble here; the preview stays in this default view while plans are found.</li><li>Select allowed cross colors, or CN for all six, then Analyze. Choose a plan to put its cross on the bottom; the suggested front explains which cross and plan pieces it exposes.</li><li>Step through the plan on screen or on your cube. The displayed move letters follow the selected bottom/front view, and you can tumble the preview through every face.</li>';
+    document.querySelector('#help-steps').innerHTML = '<li>Paste a scramble, or connect a smart cube. For live tracking, start with a solved cube and sync it; each physical turn then updates the preview. Disconnect to edit the scramble manually.</li><li>Select allowed cross colors, or CN for all six, then Analyze. Choose a plan to put its cross on the bottom; the suggested front explains which cross and plan pieces it exposes.</li><li>Step through the plan on screen or on your cube. Physical turns that follow the selected plan advance its step; a different turn switches back to the current live cube. The displayed move letters follow the selected bottom/front view.</li>';
     return;
   }
   if (activeTool === 'pll') {

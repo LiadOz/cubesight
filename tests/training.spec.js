@@ -55,14 +55,17 @@ async function clickPiece(page, piece) {
 }
 
 test('glance shows the cube first, covers it, and times from reveal', async ({ page }) => {
+  await page.clock.install();
   await page.goto('/');
   await page.locator('#exposure-select').selectOption('1500');
   await page.locator('#glance-toggle').check();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('#cube canvas')).toBeVisible();
+  await page.clock.runFor(1_600);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'covered', { timeout: 3000 });
   await expect(page.locator('#cube canvas')).toBeHidden();
   expect(parseFloat(await page.locator('#timer').textContent())).toBeGreaterThanOrEqual(1.45);
+  await page.clock.pauseAt(await page.evaluate(() => new Date(Date.now() + 1000).toISOString()));
   await page.locator('[data-action="skip"]').click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'feedback');
   await expect(page.locator('#cube canvas')).toBeVisible();

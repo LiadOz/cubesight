@@ -5,6 +5,12 @@
 .scout-button { min-height: 42px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font-size: 11px; font-weight: 700; }
 .scout-button:disabled { opacity: .4; cursor: default; }
 .scout-input small { display: block; margin-top: 9px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.scout-smart-cube { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--accent) 5%, var(--paper)); }
+.scout-smart-cube > div:first-child { flex: 1 1 230px; min-width: 0; }
+.scout-smart-cube strong { display: block; color: var(--ink); font-size: 12px; }
+.scout-smart-cube p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.scout-smart-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.scout-scramble-row textarea:read-only { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 4%, var(--paper)); }
 .scout-options { display: flex; align-items: flex-end; flex-wrap: wrap; justify-content: space-between; gap: 16px; margin-top: 20px; }
 .scout-colors { display: flex; flex-wrap: wrap; gap: 5px; }
 .scout-colors button { min-height: 40px; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); background: var(--paper); font-size: 11px; }
@@ -86,6 +92,7 @@
 @media (max-width:700px) {
   .main-nav .nav-link { font-size: 10px; padding: 11px 5px; }
   .scout-input { padding: 14px; } .scout-scramble-row { flex-wrap: wrap; } .scout-scramble-row textarea { flex-basis: 100%; font-size: 16px; min-height: 94px; } .scout-scramble-row .scout-button { width: 100%; }
+  .scout-smart-actions { width: 100%; } .scout-smart-actions .scout-button { flex: 1; }
   .scout-options { margin-top: 16px; gap: 14px; } .scout-colors { gap: 5px; } .scout-colors button { min-height: 44px; padding: 7px 8px; font-size: 10px; } .scout-options-actions { width: 100%; } .scout-options-actions > button { flex: 1; }
   .scout-orientation { align-items:stretch; flex-direction:column; gap:12px; } .scout-orientation label { flex-basis:auto; } .scout-orientation select { min-height:46px; font-size:16px; }
   .scout-shell .cube-stage { min-height: 0; } .scout-shell .cube-mount { height: 285px; } .scout-shell .cube-caption span:last-child { display: block; } .scout-view-actions { width:100%; justify-content:space-between; } .scout-view-actions .text-button { min-height:36px; } .scout-plan { padding: 18px; } .scout-plan h2 { font-size: 20px; } .scout-plan p { font-size: 11px; }
