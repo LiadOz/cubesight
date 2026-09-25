@@ -70,7 +70,10 @@ external source-attribution link still requires a connection when opened.
 
 Smart-cube pairing requires a Web Bluetooth browser (Chrome or Edge on Android
 or desktop) and a compatible cube. The Bluetooth connection and move stream stay
-local; the app does not send cube state to the server. In Cross Scout, connect,
+local; the app does not send cube state or MAC address to the server. A verified
+cube MAC is remembered in this browser's local storage so it normally needs to
+be entered only once per browser profile. Clearing site data or using a different
+browser/profile will require entering it again. In Cross Scout, connect,
 solve the physical cube, and tap **Sync solved cube** if it was not already solved
 when connected. Turns then mirror into the scramble and preview. Select a plan
 to follow it with physical turns. Disconnect to return to manual scramble entry.
