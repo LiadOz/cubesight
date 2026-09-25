@@ -557,7 +557,7 @@ function syncExposureSelect() {
   select.value = value;
 }
 
-function startCase() {
+function startCase(successNotice = null) {
   cancelCornerTimers();
   if (activeTool !== 'corner' || paused) return;
   state.current = createCase();
@@ -569,7 +569,7 @@ function startCase() {
   document.querySelector('[data-action="skip"]').hidden = false;
   state.current.edgeStickers = createScrambledEdges(state.current.orientation, state.current.cornerParity);
   if (state.mode === 'recall') return presentRecall();
-  presentCorner();
+  presentCorner(null, successNotice);
 }
 
 function coverRecall() {
@@ -658,15 +658,15 @@ function answerRecall(color, skipped, answeredAt) {
   if (state.sprint && session.attempts >= state.sprintLength) showSummary();
 }
 
-function presentCorner(previousInputAt = null) {
+function presentCorner(previousInputAt = null, successNotice = null) {
   cancelCornerTimers();
   state.locked = true;
   const generation = state.generation;
   const mount = document.querySelector('#cube');
   mount.classList.add('glance-mask');
   mount.dataset.learningState = 'preparing';
-  document.querySelector('#feedback').textContent = 'Click a color or type its first letter';
-  document.querySelector('#feedback').className = '';
+  document.querySelector('#feedback').textContent = successNotice || 'Click a color or type its first letter';
+  document.querySelector('#feedback').className = successNotice ? 'is-correct' : '';
   document.querySelector('#timer').innerHTML = `${previousInputAt === null ? '0.00' : ((performance.now() - previousInputAt) / 1000).toFixed(2)}<span>s</span>`;
   document.querySelector('.timer-label').textContent = previousInputAt === null
     ? 'Response time · includes key / click' : 'Response time · from your last answer';
@@ -763,31 +763,38 @@ function answer(color, skipped = false) {
   cancelCornerTimers();
   const elapsed = Math.round(answeredAt - state.startedAt);
   const { isCorrect, correctColor } = recordCornerAnswer(activeTarget(), color, skipped, elapsed, state.current.activeIndex + 1);
-
-  document.querySelectorAll('.answer-button').forEach((button) => {
-    const buttonColor = button.dataset.color;
-    if (buttonColor === correctColor) button.classList.add('correct');
-    else if (!skipped && buttonColor === color) button.classList.add('wrong');
-    else button.classList.add('muted');
-  });
   const feedback = document.querySelector('#feedback');
-  feedback.className = isCorrect ? 'is-correct' : 'is-wrong';
-  feedback.textContent = isCorrect
-    ? `Correct — ${formatMs(elapsed)}`
-    : `${skipped ? 'Skipped' : 'Not quite'} — it was ${COLORS[correctColor].label}`;
-
-  state.current.feedback = {
-    status: isCorrect ? 'correct' : 'wrong',
-    correctColor: COLORS[correctColor].hex,
-    correctName: COLORS[correctColor].label,
-  };
-  renderCurrentCase();
-  document.querySelector('#cube').dataset.learningState = 'feedback';
+  if (!isCorrect) {
+    document.querySelectorAll('.answer-button').forEach((button) => {
+      const buttonColor = button.dataset.color;
+      if (buttonColor === correctColor) button.classList.add('correct');
+      else if (!skipped && buttonColor === color) button.classList.add('wrong');
+      else button.classList.add('muted');
+    });
+    feedback.className = 'is-wrong';
+    feedback.textContent = `${skipped ? 'Skipped' : 'Not quite'} — it was ${COLORS[correctColor].label}`;
+    state.current.feedback = {
+      status: 'wrong',
+      correctColor: COLORS[correctColor].hex,
+      correctName: COLORS[correctColor].label,
+    };
+    renderCurrentCase();
+    document.querySelector('#cube').dataset.learningState = 'feedback';
+  }
 
   updateStatsUI();
   updateSprintUI();
   const sprintDone = state.sprint && session.attempts >= state.sprintLength;
   const moreCorners = state.mode === 'triple' && state.current.activeIndex < state.current.targets.length - 1;
+  if (isCorrect) {
+    if (sprintDone) return showSummary();
+    if (moreCorners) {
+      state.current.activeIndex++;
+      state.current.feedback = null;
+      return presentCorner(answeredAt, `Correct — ${formatMs(elapsed)}`);
+    }
+    return startCase(`Correct — ${formatMs(elapsed)}`);
+  }
   if (moreCorners && !sprintDone) {
     // Later corners remain visible during feedback: that inspection time is
     // part of the NEXT answer, not a free preview or a fresh timer at reveal.
@@ -804,7 +811,7 @@ function answer(color, skipped = false) {
     state.current.activeIndex++;
     state.current.feedback = null;
     presentCorner(answeredAt);
-  }, isCorrect ? 650 : 1100);
+  }, 1100);
 }
 
 function formatMs(ms) {
@@ -1360,7 +1367,7 @@ function updateHelp() {
     : 'Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.';
   document.querySelector('#help-steps').innerHTML = f2l
     ? f2lHelp[2]
-    : '<li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down. Hidden faces never enter view.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type W, Y, G, B, R, or O.</li><li>In Three corners, answer the highlighted targets from left to right; all three share one stable angle.</li>';
+    : '<li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down. Hidden faces never enter view.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type W, Y, G, B, R, or O.</li><li>Correct answers advance as soon as the next view is ready; mistakes pause so you can inspect the revealed color.</li><li>In Three corners, answer the highlighted targets from left to right; all three share one stable angle.</li>';
 }
 
 // Hash routes work on static hosts too, without a server-side SPA rewrite.

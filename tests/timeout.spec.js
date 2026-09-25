@@ -27,8 +27,9 @@ test('answers under ten seconds are still recorded', async ({ page }) => {
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await page.clock.fastForward(8_000);
   await page.keyboard.press('w');
-  await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'feedback');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).attempts)).toBe(1);
+  const progress = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')));
+  expect(progress.attempts).toBe(1);
+  expect(progress.history.at(-1).ms).toBeGreaterThanOrEqual(8_000);
 });
 
 test('late input is rejected even before a delayed timeout callback runs', async ({ page }) => {

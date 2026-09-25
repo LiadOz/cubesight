@@ -63,14 +63,14 @@ test('glance shows the cube first, covers it, and times from reveal', async ({ p
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'covered', { timeout: 3000 });
   await expect(page.locator('#cube canvas')).toBeHidden();
   expect(parseFloat(await page.locator('#timer').textContent())).toBeGreaterThanOrEqual(1.45);
-  await page.locator('[data-color="white"]').click();
+  await page.locator('[data-action="skip"]').click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'feedback');
   await expect(page.locator('#cube canvas')).toBeVisible();
 });
 
 test('switching trainers during feedback cancels the old corner transition', async ({ page }) => {
   await page.goto('/');
-  await page.locator('[data-color="white"]').click();
+  await page.locator('[data-action="skip"]').click();
   await page.getByRole('link', { name: 'F2L deduction' }).click();
   const timer = await page.locator('#timer').textContent();
   await page.waitForTimeout(1300);

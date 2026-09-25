@@ -73,7 +73,7 @@ test('corner cases use stable, bounded viewing angles that vary between cases', 
   const firstCamera = await cube.getAttribute('data-camera-pose');
   expect(Math.abs(Number(await cube.getAttribute('data-view-yaw')))).toBeLessThanOrEqual(8);
   expect(Math.abs(Number(await cube.getAttribute('data-view-pitch')))).toBeLessThanOrEqual(4.5);
-  await page.locator('.answer-button').first().click();
+  await page.locator('[data-action="skip"]').click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'feedback');
   await expect(cube).toHaveAttribute('data-view-pose', firstPose);
   await expect(cube).toHaveAttribute('data-camera-pose', firstCamera);
