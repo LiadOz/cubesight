@@ -72,3 +72,17 @@ test('unknown move stops trusted tracking instead of corrupting state', async ()
   assert.deepEqual(session.getSnapshot().moves, []);
   await session.disconnect();
 });
+
+test('gyro readings publish a validated orientation and clear on disconnect', async () => {
+  const device = fakeCube();
+  const session = createSmartCubeSession(device.connect);
+  await session.connect();
+  device.emit({ type: 'GYRO', quaternion: { x: 0, y: 0, z: 0, w: 1 } });
+  assert.deepEqual(session.getSnapshot().gyro, { x: 0, y: 0, z: 0, w: 1 });
+  device.emit({ type: 'GYRO', quaternion: { x: NaN, y: 0, z: 0, w: 1 } });
+  assert.deepEqual(session.getSnapshot().gyro, { x: 0, y: 0, z: 0, w: 1 });
+  device.emit({ type: 'GYRO', quaternion: { x: 0, y: 0, z: 0, w: 0 } });
+  assert.deepEqual(session.getSnapshot().gyro, { x: 0, y: 0, z: 0, w: 1 });
+  await session.disconnect();
+  assert.equal(session.getSnapshot().gyro, null);
+});

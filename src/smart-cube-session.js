@@ -7,7 +7,7 @@ const isSolvedState = state => state.cubies.every(cubie =>
 
 /**
  * Device-neutral cube stream for trainers. A connection adapter supplies
- * connect({ onStatus }) and emits MOVE/FACELETS/DISCONNECT.
+ * connect({ onStatus }) and emits MOVE/FACELETS/GYRO/DISCONNECT.
  * Only a verified solved baseline starts the move history used by solvers.
  */
 export function createSmartCubeSession(connectDevice) {
@@ -18,7 +18,7 @@ export function createSmartCubeSession(connectDevice) {
   let faceletsRequest = null;
   let snapshot = {
     phase: 'disconnected', detail: 'Connect a smart cube to mirror its turns.',
-    deviceName: '', protocol: '', battery: null, facelets: null,
+    deviceName: '', protocol: '', battery: null, facelets: null, gyro: null,
     state: solvedState(), moves: [],
   };
 
@@ -60,12 +60,18 @@ export function createSmartCubeSession(connectDevice) {
       }
     } else if (event.type === 'BATTERY') {
       publish({ battery: event.batteryLevel });
+    } else if (event.type === 'GYRO') {
+      const q = event.quaternion;
+      if (q && [q.x, q.y, q.z, q.w].every(Number.isFinite)
+        && q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w > 0.0001) {
+        publish({ gyro: { x: q.x, y: q.y, z: q.z, w: q.w } });
+      }
     } else if (event.type === 'DISCONNECT') {
       endFaceletsRequest(new Error('Cube disconnected.'));
       subscription?.unsubscribe();
       subscription = null;
       connection = null;
-      publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '' });
+      publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '', gyro: null });
     }
   }
 
@@ -88,7 +94,7 @@ export function createSmartCubeSession(connectDevice) {
       publish({
         phase: 'awaiting-solved', detail: 'Connected. Checking whether the cube is solved…',
         deviceName: connected.deviceName || 'Smart cube',
-        protocol: connected.protocol?.name || '', battery: null, facelets: null,
+        protocol: connected.protocol?.name || '', battery: null, facelets: null, gyro: null,
       });
       if (connected.capabilities?.facelets) {
         connected.sendCommand({ type: 'REQUEST_FACELETS' }).catch(() => {
@@ -127,7 +133,7 @@ export function createSmartCubeSession(connectDevice) {
     connection = null;
     subscription?.unsubscribe();
     subscription = null;
-    publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '' });
+    publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '', gyro: null });
     await old?.disconnect();
   }
 

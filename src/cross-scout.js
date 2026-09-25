@@ -31,6 +31,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
   let practice=null;
   let viewBottom='D',viewFront='F',suggestedFront=null;
   let lastLiveScramble=null;
+  let lastGyro=null,lastSmartStatus='';
   root.innerHTML=`
     <section class="intro-row"><div><p class="eyebrow">Explore / Cross planning</p><h1>Cross Scout</h1></div><p class="intro-copy">Find the opportunity.<br>Understand what to look for.</p></section>
     <section class="scout-input" aria-label="Cross calculator input">
@@ -39,7 +40,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
       <small>Enter the scramble from solved with white on top and green in front. After you select a plan, its solution notation changes to match the cross-bottom inspection view shown below. Standard face turns only: U D R L F B, with 2 or ′.</small>
       <div class="scout-smart-cube" aria-label="Smart cube connection">
         <div><strong id="scout-smart-title">Smart cube · disconnected</strong><p id="scout-smart-status" role="status" aria-live="polite">Connect a cube to mirror its turns from a solved position.</p></div>
-        <div class="scout-smart-actions"><button class="scout-button" id="scout-smart-connect">Connect cube</button><button class="scout-button" id="scout-smart-sync" hidden>Sync solved cube</button><button class="scout-button" id="scout-smart-disconnect" hidden>Disconnect</button></div>
+        <div class="scout-smart-actions"><button class="scout-button" id="scout-smart-connect">Connect cube</button><button class="scout-button" id="scout-smart-sync" hidden>Sync solved cube</button><button class="scout-button" id="scout-smart-recenter" hidden>Recenter motion</button><button class="scout-button" id="scout-smart-disconnect" hidden>Disconnect</button></div>
       </div>
       <div class="scout-options"><div><span class="scout-label">Allowed cross colors · choose a subset or CN</span><div class="scout-colors" id="scout-colors" role="group" aria-label="Allowed cross colors"></div></div><div class="scout-options-actions"><button class="new-case-button" id="scout-analyze">Analyze</button><button class="scout-button" id="scout-stop" hidden>Stop search</button></div></div>
       <div class="scout-orientation"><div><span class="scout-label">Inspection orientation</span><strong id="scout-bottom-label"></strong><small id="scout-front-reason"></small></div><label for="scout-front"><span>Front face</span><select id="scout-front" aria-label="Front face for inspection"></select></label></div>
@@ -154,12 +155,14 @@ export function createCrossScout(root, cubeSession = smartCube) {
   }
   function renderSmartStatus(snapshot){
     const connected=snapshot.phase!=='disconnected'&&snapshot.phase!=='connecting';
+    const gyroLive=connected&&snapshot.protocol.startsWith('GAN')&&Boolean(snapshot.gyro);
     const supported=Boolean(window.isSecureContext&&navigator.bluetooth?.requestDevice);
     $('#scout-smart-title').textContent=connected?`${snapshot.deviceName}${snapshot.protocol?` · ${snapshot.protocol}`:''}`:snapshot.phase==='connecting'?'Smart cube · connecting':'Smart cube · disconnected';
-    $('#scout-smart-status').textContent=supported?snapshot.detail:'Web Bluetooth is unavailable here. Use Chrome or Edge on Android/desktop over HTTPS; manual scrambles still work.';
+    $('#scout-smart-status').textContent=supported?`${snapshot.detail}${gyroLive?' Motion follows the cube; hold it as shown and tap Recenter motion to align.':''}`:'Web Bluetooth is unavailable here. Use Chrome or Edge on Android/desktop over HTTPS; manual scrambles still work.';
     $('#scout-smart-connect').hidden=snapshot.phase!=='disconnected';
     $('#scout-smart-connect').disabled=!supported;
     $('#scout-smart-sync').hidden=!connected;
+    $('#scout-smart-recenter').hidden=!gyroLive;
     $('#scout-smart-disconnect').hidden=snapshot.phase==='disconnected';
     const tracking=snapshot.phase==='tracking';
     $('#scout-scramble').readOnly=tracking;
@@ -180,7 +183,10 @@ export function createCrossScout(root, cubeSession = smartCube) {
     message(snapshot.moves.length>200?'Smart cube tracked over 200 moves. Return to solved and sync to start a new Cross Scout case.':'Smart cube mirrored. Select Analyze to find plans for its current state.');
   }
   function onSmartCube(snapshot){
-    renderSmartStatus(snapshot);
+    const gyro=snapshot.protocol.startsWith('GAN')?snapshot.gyro:null;
+    if(gyro!==lastGyro){cube.setGyroOrientation(gyro);lastGyro=gyro;}
+    const statusKey=[snapshot.phase,snapshot.detail,snapshot.deviceName,snapshot.protocol,Boolean(gyro)].join('|');
+    if(statusKey!==lastSmartStatus){renderSmartStatus(snapshot);lastSmartStatus=statusKey;}
     if(snapshot.phase==='tracking')applyLiveCube(snapshot);
     if(snapshot.phase==='disconnected')lastLiveScramble=null;
   }
@@ -265,6 +271,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
   $('#scout-analyze').addEventListener('click',analyze);
   $('#scout-smart-connect').addEventListener('click',()=>{void cubeSession.connect();});
   $('#scout-smart-sync').addEventListener('click',()=>{void cubeSession.syncSolved().catch(()=>{});});
+  $('#scout-smart-recenter').addEventListener('click',()=>{cube.recenterGyro();message('Cube motion recentered to the current inspection view.');});
   $('#scout-smart-disconnect').addEventListener('click',()=>{void cubeSession.disconnect();});
   $('#scout-stop').addEventListener('click',()=>{cancelSearch();message(`Search stopped. ${results.length} plans kept; search is incomplete.`);});
   $('#scout-random').addEventListener('click',()=>{cancelSearch();$('#scout-scramble').value=randomScramble();loadScramble();message('New scramble ready. Apply it to a solved cube, then Analyze.');});

@@ -169,6 +169,16 @@ export function createCube3D(container, options = {}) {
   scene.add(cubeGroup);
   let bottomFace = 'D';
   let frontFace = 'F';
+  const heldOrientation = new THREE.Quaternion();
+  const targetGyroOrientation = new THREE.Quaternion();
+  const gyroAxisMap = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+    new THREE.Vector3(1, 0, 0),  // GAN +X is red / renderer +X.
+    new THREE.Vector3(0, 0, -1), // GAN +Y is blue / renderer -Z.
+    new THREE.Vector3(0, 1, 0),  // GAN +Z is white / renderer +Y.
+  ));
+  const inverseGyroAxisMap = gyroAxisMap.clone().invert();
+  let gyroReference = null;
+  let latestGyro = null;
   const selectionMaterial = new THREE.LineBasicMaterial({
     color: 0xffffff,
     transparent: true,
@@ -377,6 +387,12 @@ export function createCube3D(container, options = {}) {
     const sourceRight=new THREE.Vector3().crossVectors(sourceUp,frontVector);
     const sourceBasis=new THREE.Matrix4().makeBasis(sourceRight,sourceUp,frontVector);
     cubeGroup.quaternion.setFromRotationMatrix(sourceBasis.invert());
+    heldOrientation.copy(cubeGroup.quaternion);
+    targetGyroOrientation.copy(heldOrientation);
+    if (latestGyro) {
+      gyroReference = latestGyro.clone();
+      renderer.domElement.dataset.gyroTarget = targetGyroOrientation.toArray().map(number => number.toFixed(4)).join(',');
+    }
     bottomFace=bottom;frontFace=front;
     renderer.domElement.dataset.bottomFace=bottomFace;
     renderer.domElement.dataset.frontFace=frontFace;
@@ -385,6 +401,37 @@ export function createCube3D(container, options = {}) {
     renderer.render(scene,camera);
   }
   setOrientation();
+
+  function setGyroOrientation(value) {
+    if (!value) {
+      latestGyro = null;
+      gyroReference = null;
+      targetGyroOrientation.copy(heldOrientation);
+      cubeGroup.quaternion.copy(heldOrientation);
+      renderer.domElement.dataset.gyroFollow = 'off';
+      delete renderer.domElement.dataset.gyroTarget;
+      delete renderer.domElement.dataset.gyroPose;
+      return;
+    }
+    const incoming = new THREE.Quaternion(value.x, value.y, value.z, value.w).normalize();
+    latestGyro = incoming;
+    if (!gyroReference) gyroReference = incoming.clone();
+    // GAN reports orientation in red/blue/white axes. Convert the relative
+    // physical rotation into this renderer's red/white/green axes, then apply
+    // it around the currently selected held view.
+    const delta = gyroReference.clone().invert().multiply(incoming);
+    targetGyroOrientation.copy(heldOrientation).multiply(gyroAxisMap).multiply(delta).multiply(inverseGyroAxisMap).normalize();
+    renderer.domElement.dataset.gyroFollow = 'on';
+    renderer.domElement.dataset.gyroTarget = targetGyroOrientation.toArray().map(number => number.toFixed(4)).join(',');
+  }
+
+  function recenterGyro() {
+    if (!latestGyro) return;
+    gyroReference = latestGyro.clone();
+    targetGyroOrientation.copy(heldOrientation);
+    cubeGroup.quaternion.copy(heldOrientation);
+    renderer.domElement.dataset.gyroTarget = targetGyroOrientation.toArray().map(number => number.toFixed(4)).join(',');
+  }
 
   let stopped = false;
   let feedbackActive = false;
@@ -405,6 +452,8 @@ export function createCube3D(container, options = {}) {
     if (document.hidden || !container.clientWidth || !container.clientHeight) return;
     if (interactionMode === 'scout') tumbleControls.update();
     else controls.update();
+    if (gyroReference) cubeGroup.quaternion.slerp(targetGyroOrientation, reducedMotion.matches ? 1 : .38);
+    if (gyroReference) renderer.domElement.dataset.gyroPose = cubeGroup.quaternion.toArray().map(number => number.toFixed(4)).join(',');
     if (selectionCage.visible) {
       const pulse = reducedMotion.matches ? .5 : (Math.sin(clock.getElapsedTime() * 2.8) + 1) / 2;
       selectionMaterial.opacity = (feedbackActive ? .52 : .68) + pulse * (feedbackActive ? .48 : .27);
@@ -589,6 +638,8 @@ export function createCube3D(container, options = {}) {
     setMode,
     setViewOffset,
     setOrientation,
+    setGyroOrientation,
+    recenterGyro,
     setFullTouchRotation,
     resetView() { setMode(interactionMode); },
     destroy() {

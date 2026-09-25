@@ -74,6 +74,11 @@ local; the app does not send cube state to the server. In Cross Scout, connect,
 solve the physical cube, and tap **Sync solved cube** if it was not already solved
 when connected. Turns then mirror into the scramble and preview. Select a plan
 to follow it with physical turns. Disconnect to return to manual scramble entry.
+When a GAN cube reports gyro orientation, Cross Scout also follows physical cube
+rotations. Hold the cube in the view shown on screen and tap **Recenter motion**
+to align it; dragging the on-screen cube remains available for inspection.
+Other cube models continue to mirror turns without motion tracking until their
+gyro axes are mapped and verified.
 The device adapter recognizes supported protocols automatically; compatibility
 with the GAN 16 UI has not yet been verified on physical hardware.
 

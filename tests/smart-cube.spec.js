@@ -38,6 +38,7 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
     const session = createSmartCubeSession(() => Promise.resolve(connection));
     window.testSmartCube = {
       emit(move) { observer?.next({ type: 'MOVE', move }); },
+      emitGyro(quaternion) { observer?.next({ type: 'GYRO', quaternion }); },
     };
     const root = document.createElement('div');
     root.id = 'smart-scout-test';
@@ -49,6 +50,18 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
   await expect(scout.locator('#scout-smart-title')).toContainText('GAN test cube');
   await expect(scout.locator('#scout-smart-status')).toContainText('Solved baseline synced');
   await expect(scout.locator('#scout-scramble')).toHaveAttribute('readonly', '');
+  await page.evaluate(() => {
+    window.testSmartCube.emitGyro({ x: 0, y: 0, z: 0, w: 1 });
+    window.testSmartCube.emitGyro({ x: 0, y: 0, z: Math.SQRT1_2, w: Math.SQRT1_2 });
+  });
+  const canvas = scout.locator('canvas');
+  await expect(canvas).toHaveAttribute('data-gyro-follow', 'on');
+  await expect(scout.locator('#scout-smart-recenter')).toBeVisible();
+  // GAN +Z is the white axis, so a turn around it maps to renderer +Y.
+  await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-target')).split(',')[1])).toBeGreaterThan(.65);
+  await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-pose')).split(',')[1])).toBeGreaterThan(.65);
+  await scout.locator('#scout-smart-recenter').click();
+  await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-target')).split(',')[1])).toBeCloseTo(0, 2);
   await page.evaluate(() => ['R', 'U', 'F'].forEach(move => window.testSmartCube.emit(move)));
   await expect(scout.locator('#scout-scramble')).toHaveValue('R U F');
   await expect(scout.locator('#scout-message')).toContainText('Smart cube mirrored');
@@ -64,4 +77,6 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
   await expect(scout.locator('#scout-message')).toContainText('matched move 1');
   await scout.locator('#scout-smart-disconnect').click();
   await expect(scout.locator('#scout-scramble')).not.toHaveAttribute('readonly');
+  await expect(canvas).toHaveAttribute('data-gyro-follow', 'off');
+  await expect(scout.locator('#scout-smart-recenter')).toBeHidden();
 });
