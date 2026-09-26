@@ -26,7 +26,7 @@ export const smartCube = createSmartCubeSession(async options => {
           }
           return null;
         }
-        return window.prompt('Cube MAC address needed for decryption. Enter its 12 hexadecimal digits (from Cube Station or the cube label), or Cancel to stop:');
+        return window.prompt('Cube MAC address needed for decryption. Enter its 12 hexadecimal digits, or Cancel and open “Asked for a cube MAC address?” in Cross Scout for Chrome instructions:');
       },
     });
     // connectSmartCube returns only after it validates decrypted cube data.

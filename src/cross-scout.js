@@ -41,6 +41,10 @@ export function createCrossScout(root, cubeSession = smartCube) {
       <div class="scout-smart-cube" aria-label="Smart cube connection">
         <div><strong id="scout-smart-title">Smart cube · disconnected</strong><p id="scout-smart-status" role="status" aria-live="polite">Connect a cube to mirror its turns from a solved position.</p></div>
         <div class="scout-smart-actions"><button class="scout-button" id="scout-smart-connect">Connect cube</button><button class="scout-button" id="scout-smart-sync" hidden>Sync solved cube</button><button class="scout-button" id="scout-smart-recenter" hidden>Recenter motion</button><button class="scout-button" id="scout-smart-disconnect" hidden>Disconnect</button></div>
+        <details class="scout-mac-help" id="scout-mac-help"><summary>Asked for a cube MAC address? Find it in Chrome</summary>
+          <ol><li>Open regular Chrome on Android, Windows, or Linux. If CubeSight is installed as an app, switch to Chrome so you have an address bar.</li><li>Paste <code>chrome://bluetooth-internals/#devices</code> into Chrome’s address bar and open it. <button type="button" class="scout-mac-copy" id="scout-mac-copy">Copy address</button><span class="scout-mac-copy-status" id="scout-mac-copy-status" role="status" aria-live="polite"></span></li><li>Turn on your GAN cube, tap <strong>Start Scan</strong>, and find its Bluetooth name in the device list. Copy the value in the <strong>Address</strong> column (six pairs of hex digits).</li><li>Return to CubeSight, connect the cube, and enter that address if prompted. After a verified connection, this browser remembers it.</li></ol>
+          <p>Chrome on macOS can show a substitute address, so use Android, Windows, or Linux to find the real one. If Chrome does not show it on Android, a Bluetooth scanner such as <a href="https://github.com/NordicSemiconductor/Android-nRF-Connect" target="_blank" rel="noopener noreferrer">nRF Connect</a> can show nearby device addresses.</p>
+        </details>
       </div>
       <div class="scout-options"><div><span class="scout-label">Allowed cross colors · choose a subset or CN</span><div class="scout-colors" id="scout-colors" role="group" aria-label="Allowed cross colors"></div></div><div class="scout-options-actions"><button class="new-case-button" id="scout-analyze">Analyze</button><button class="scout-button" id="scout-stop" hidden>Stop search</button></div></div>
       <div class="scout-orientation"><div><span class="scout-label">Inspection orientation</span><strong id="scout-bottom-label"></strong><small id="scout-front-reason"></small></div><label for="scout-front"><span>Front face</span><select id="scout-front" aria-label="Front face for inspection"></select></label></div>
@@ -270,6 +274,10 @@ export function createCrossScout(root, cubeSession = smartCube) {
   }
   $('#scout-analyze').addEventListener('click',analyze);
   $('#scout-smart-connect').addEventListener('click',()=>{void cubeSession.connect();});
+  $('#scout-mac-copy').addEventListener('click',async()=>{
+    try { await navigator.clipboard.writeText('chrome://bluetooth-internals/#devices');$('#scout-mac-copy-status').textContent='Copied. Paste into Chrome’s address bar.'; }
+    catch { $('#scout-mac-copy-status').textContent='Select and copy the address above, then paste it into Chrome.'; }
+  });
   $('#scout-smart-sync').addEventListener('click',()=>{void cubeSession.syncSolved().catch(()=>{});});
   $('#scout-smart-recenter').addEventListener('click',()=>{cube.recenterGyro();message('Cube motion recentered to the current inspection view.');});
   $('#scout-smart-disconnect').addEventListener('click',()=>{void cubeSession.disconnect();});

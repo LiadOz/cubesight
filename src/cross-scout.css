@@ -10,6 +10,15 @@
 .scout-smart-cube strong { display: block; color: var(--ink); font-size: 12px; }
 .scout-smart-cube p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .scout-smart-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.scout-mac-help { flex: 1 0 100%; min-width: 0; border-top: 1px solid var(--line); padding-top: 8px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.scout-mac-help summary { width: fit-content; color: var(--accent); font-weight: 700; cursor: pointer; }
+.scout-mac-help ol { padding-left: 20px; margin: 10px 0; }
+.scout-mac-help li { padding-left: 2px; margin: 7px 0; }
+.scout-mac-help strong { display: inline; font-size: inherit; }
+.scout-mac-help code { color: var(--ink); font: 11px var(--mono); overflow-wrap: anywhere; user-select: all; }
+.scout-mac-help a { color: var(--accent); }
+.scout-mac-copy { min-height: 32px; margin-left: 5px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); font-size: 10px; font-weight: 700; }
+.scout-mac-copy-status { margin-left: 6px; }
 .scout-scramble-row textarea:read-only { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 4%, var(--paper)); }
 .scout-options { display: flex; align-items: flex-end; flex-wrap: wrap; justify-content: space-between; gap: 16px; margin-top: 20px; }
 .scout-colors { display: flex; flex-wrap: wrap; gap: 5px; }

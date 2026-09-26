@@ -73,7 +73,11 @@ or desktop) and a compatible cube. The Bluetooth connection and move stream stay
 local; the app does not send cube state or MAC address to the server. A verified
 cube MAC is remembered in this browser's local storage so it normally needs to
 be entered only once per browser profile. Clearing site data or using a different
-browser/profile will require entering it again. In Cross Scout, connect,
+browser/profile will require entering it again. If asked for the MAC, expand
+**Asked for a cube MAC address?** in Cross Scout for the
+Chrome device-list instructions. Open that internal page in regular Chrome,
+not the installed PWA, then return to CubeSight to enter the address.
+In Cross Scout, connect,
 solve the physical cube, and tap **Sync solved cube** if it was not already solved
 when connected. Turns then mirror into the scramble and preview. Select a plan
 to follow it with physical turns. Disconnect to return to manual scramble entry.

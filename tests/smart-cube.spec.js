@@ -1,5 +1,21 @@
 import { test, expect } from 'playwright/test';
 
+test('Cross Scout explains how to find a GAN MAC in Chrome', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText(value) { window.copiedMacHelpAddress = value; return Promise.resolve(); } } });
+  });
+  await page.goto('/#/cross-scout');
+  await page.locator('#scout-mac-help summary').click();
+  await expect(page.locator('#scout-mac-help')).toContainText('chrome://bluetooth-internals/#devices');
+  await expect(page.locator('#scout-mac-help')).toContainText('Start Scan');
+  await expect(page.locator('#scout-mac-help')).toContainText('Address');
+  await page.locator('#scout-mac-copy').click();
+  await expect.poll(() => page.evaluate(() => window.copiedMacHelpAddress)).toBe('chrome://bluetooth-internals/#devices');
+  await expect(page.locator('#scout-mac-copy-status')).toContainText('Copied');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test('smart-cube picker does not hide devices behind name filters', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'bluetooth', {
