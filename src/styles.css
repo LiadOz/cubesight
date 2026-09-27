@@ -286,3 +286,20 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
 [data-theme="dark"] .trend-chart > i:last-child { background: var(--accent); }
 [data-theme="dark"] .toast { background: #dcece8; color: #152a25; }
 @media (hover:hover) { [data-theme="dark"] .answer-button:hover:not(.muted):not(.correct):not(.wrong) { background: #2c414f; border-color: #7a9bad; } }
+
+/* One-time smart-cube MAC entry dialog (self-contained; works in any trainer view). */
+dialog.smart-mac-dialog { border: 1px solid var(--line); border-radius: 18px; background: var(--panel); color: var(--ink); max-width: 30rem; padding: 1.4rem 1.5rem; box-shadow: 0 18px 50px #0004; }
+dialog.smart-mac-dialog::backdrop { background: #102333bb; backdrop-filter: blur(6px); }
+dialog.smart-mac-dialog h2 { margin: .2rem 0 .6rem; font-size: 1.2rem; }
+dialog.smart-mac-dialog .smart-mac-why { font-size: .9rem; color: var(--muted); margin: 0 0 .8rem; }
+dialog.smart-mac-dialog .smart-mac-steps { margin: 0 0 1rem; padding-left: 1.1rem; display: grid; gap: .4rem; color: var(--ink); }
+dialog.smart-mac-dialog .smart-mac-steps code { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: .05rem .3rem; font-family: var(--mono); }
+dialog.smart-mac-dialog .smart-mac-copy { font: inherit; cursor: pointer; margin-left: .4rem; padding: .15rem .5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+dialog.smart-mac-dialog .smart-mac-copy-status { margin-left: .4rem; font-size: .8rem; color: var(--muted); }
+dialog.smart-mac-dialog .smart-mac-field { display: grid; gap: .25rem; }
+dialog.smart-mac-dialog .smart-mac-field span { font-size: .8rem; color: var(--muted); }
+dialog.smart-mac-dialog .smart-mac-input { font: inherit; font-family: var(--mono); padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); }
+dialog.smart-mac-dialog .smart-mac-error { color: #c0392b; font-size: .85rem; margin: .5rem 0 0; }
+[data-theme="dark"] dialog.smart-mac-dialog .smart-mac-error { color: #ffa395; }
+dialog.smart-mac-dialog .smart-mac-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
+dialog.smart-mac-dialog .smart-mac-cancel { font: inherit; cursor: pointer; padding: .5rem .9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); }

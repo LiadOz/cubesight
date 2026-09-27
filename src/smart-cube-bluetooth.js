@@ -1,6 +1,7 @@
 import { connectSmartCube } from 'smartcube-web-bluetooth';
 import { createSmartCubeSession } from './smart-cube-session.js';
 import { getRememberedMac, rememberMac, forgetRememberedMac } from './smart-cube-mac.js';
+import { promptMacAddress } from './smart-cube-mac-dialog.js';
 
 // One physical connection and move history shared by every trainer. Protocol
 // details stay behind this adapter; consumers only see canonical cube moves.
@@ -25,14 +26,16 @@ export const smartCube = createSmartCubeSession(async options => {
         selectedDevice = device;
         // Returning null on the non-final attempt lets the library run its own
         // second advertisement watch (up to 5 s more) before we fall back to a
-        // previously verified address, and only then to a manual prompt.
+        // previously verified address, and only then to a one-time manual entry.
         if (!finalAttempt) return null;
         const remembered = getRememberedMac(device.name);
         if (remembered) {
           usedRememberedMac = true;
           return remembered;
         }
-        return window.prompt('Cube MAC address needed for decryption. Enter its 12 hexadecimal digits (e.g. AA:BB:CC:DD:EE:FF), or Cancel and open “Asked for a cube MAC address?” in Cross Scout for Chrome instructions:');
+        // Advertising did not expose the address (Web Bluetooth hides it). Show a
+        // self-contained one-time entry dialog — never send the user to another view.
+        return promptMacAddress(device);
       },
     });
     // connectSmartCube returns only after it validates decrypted cube data.
