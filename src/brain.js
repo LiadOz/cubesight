@@ -10,6 +10,7 @@ import { summarize, ao5, ao12 } from './solve-metrics.js';
 import { exportAll, serializeExport, parseImport, importAll } from './data-port.js';
 import { subscribeConnection, clearConnectionLog, getConnectionLog } from './smart-cube-diag.js';
 import { clearSavedCubeData } from './smart-cube-bluetooth.js';
+import { METHODS, getMethod, DEFAULT_METHOD } from './solve-methods.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const title = color => color[0].toUpperCase() + color.slice(1);
@@ -50,6 +51,7 @@ export function createBrain(root, cubeSession = smartCube) {
   let optimalCross = null;     // {face, length} from crossSuggestion during inspection
   let pendingSuggestion = null;
   let crossKind = 'cross';   // cross | xcross | xxcross — solve target chosen in setup
+  let solveMethod = getMethod(DEFAULT_METHOD);
   let skips = [];          // { stage, kind, label } — hurrahs marked on the timeline
   const STAGE_FOR_SKIP = { oll: 3, pll: 4, f2l: 2 };
   (function restoreSetup() {
