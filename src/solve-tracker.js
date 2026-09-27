@@ -9,7 +9,9 @@
 // FACE_COLORS is a valid reference for "the color a slot should show". Wide
 // moves only appear in simulation and are out of scope for live phase tracking.
 
-import { FACE_COLORS, OPPOSITE_FACE, CORNERS, EDGES, createSolvedState, sameCubeState } from './cross-cube.js';
+import { FACE_COLORS, OPPOSITE_FACE, CORNERS, EDGES, createSolvedState, sameCubeState, canonicalizeForRecognition } from './cross-cube.js';
+
+export { canonicalizeForRecognition };
 
 const cubieAt = (state, id) => state.cubies.find(cubie => cubie.id === id);
 
@@ -55,6 +57,15 @@ export function solvedPairs(state, crossFace) {
 // Last-layer face opposite the chosen cross.
 export const llFace = crossFace => OPPOSITE_FACE[crossFace];
 
+// Bring a colour-neutral solve into the canonical white-cross / yellow-LL view
+// that the PLL and OLL recognisers (defined relative to a white U layer) expect.
+// reorientState puts the chosen cross face on D; then we recolour every sticker
+// according to where the centres now sit, so the cube reads as a standard
+// solved-frame scramble with the same piece permutation. This makes PLL/OLL
+// recognition colour-neutral instead of white-cross-only.
+// (Implementation lives in cross-cube.js, where the geometry lives; here we
+// just re-export it.)
+
 // OLL is done when every sticker on the last-layer face matches that face's
 // center color (the LL is oriented, though not yet permuted).
 export function ollSolved(state, crossFace) {
@@ -80,6 +91,19 @@ export function pairConnected(state, pair) {
     if (corner.stickers[face] !== undefined && corner.stickers[face] !== color) return false;
   }
   return true;
+}
+
+// How ready an unsolved F2L pair is to insert, without a search. The cheapest
+// signal the F2L lens surfaces before (and alongside) a solver-based ranking:
+// a connected pair is one insertion away; a pair with a piece already solved
+// in its slot is a keyhole candidate. Used by the coach lenses and by tests.
+export function pairReadiness(state, pair) {
+  const corner = cubieAt(state, pair.cornerId);
+  const edge = cubieAt(state, pair.edgeId);
+  const cornerSolved = corner && cubieSolved(corner);
+  const edgeSolved = edge && cubieSolved(edge);
+  const connected = pairConnected(state, pair);
+  return { cornerSolved, edgeSolved, connected, ready: connected };
 }
 
 // Full phase snapshot for a state and chosen cross face. `phase` is a label the

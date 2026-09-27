@@ -114,6 +114,78 @@ export function applyMoves(state, input) {
 }
 export function stateFromScramble(scramble) { return applyMoves(createSolvedState(),parseScramble(scramble)); }
 
+// Rotate the whole cube so that `toBottomFace` sits on the bottom (D). Used to
+// bring a colour-neutral cross onto D so last-layer recognisers (PLL/OLL, which
+// are defined relative to U) can run. This is a rigid-body relabelling: it
+// permutes positions and sticker face keys, and moves centres along with the
+// pieces — physically rotating the cube, not turning a layer.
+const rotationMatrix = (fromNormal, toNormal) => {
+  const a = fromNormal, b = toNormal;
+  const dotP = dot(a, b);
+  if (dotP > 0.999999) return [[1,0,0],[0,1,0],[0,0,1]];
+  if (dotP < -0.999999) {
+    // 180° about any axis perpendicular to a.
+    const axis = Math.abs(a[1]) < 0.9 ? cross(a,[0,1,0]) : cross(a,[1,0,0]);
+    const n = Math.hypot(...axis) || 1;
+    const [x,y,z] = axis.map(v => v/n);
+    return [[2*x*x-1, 2*x*y, 2*x*z],[2*x*y, 2*y*y-1, 2*y*z],[2*x*z, 2*y*z, 2*z*z-1]];
+  }
+  const axis = cross(a, b);
+  const sin = Math.hypot(...axis);
+  const cos = dotP;
+  const [x,y,z] = axis.map(v => v/sin);
+  const t = 1 - cos;
+  return [
+    [t*x*x+cos,   t*x*y - z*sin, t*x*z + y*sin],
+    [t*x*y + z*sin, t*y*y+cos,   t*y*z - x*sin],
+    [t*x*z - y*sin, t*y*z + x*sin, t*z*z+cos],
+  ];
+};
+const applyMatrix = (m, v) => [m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2], m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2], m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]];
+export function reorientState(state, toBottomFace = 'D') {
+  if (!(toBottomFace in NORMAL)) throw new Error('Unknown face.');
+  const m = rotationMatrix(NORMAL[toBottomFace], NORMAL.D);
+  const faceByNormal = new Map(Object.entries(NORMAL).map(([face, n]) => [n.join(','), face]));
+  const remapFace = (face) => faceByNormal.get(applyMatrix(m, NORMAL[face]).map(v => Object.is(v, -0) ? 0 : v).join(','));
+  return { cubies: state.cubies.map(cubie => ({
+    id: cubie.id,
+    position: applyMatrix(m, cubie.position).map(v => Object.is(v, -0) ? 0 : v),
+    stickers: Object.fromEntries(Object.entries(cubie.stickers).map(([face, color]) => [remapFace(face), color])),
+  })) };
+}
+
+// Colour-neutral view for last-layer recognisers (PLL/OLL), which are defined
+// relative to a white U layer. Unlike reorientState, this derives the
+// rotation from where the cross colour's centre ACTUALLY sits, so it works for
+// any canonical or pre-rotated state: bring the cross colour to the bottom,
+// then recolour every sticker from the resulting centres so the cube reads as a
+// standard solved-frame scramble with the same piece permutation.
+const centerWithColor = (state, color) => state.cubies.find(c => c.id.length === 1 && Object.values(c.stickers).includes(color));
+export function canonicalizeForRecognition(state, crossFace = 'D') {
+  if (!(crossFace in FACE_COLORS)) throw new Error('Unknown cross face.');
+  const crossColor = FACE_COLORS[crossFace];
+  const crossCenter = centerWithColor(state, crossColor);
+  if (!crossCenter) return state;
+  const pos = crossCenter.position;
+  const m = rotationMatrix(pos, NORMAL.D);
+  const faceByNormal = new Map(Object.entries(NORMAL).map(([face, n]) => [n.join(','), face]));
+  const remapFace = (face) => faceByNormal.get(applyMatrix(m, NORMAL[face]).map(v => Object.is(v, -0) ? 0 : v).join(','));
+  const reoriented = { cubies: state.cubies.map(cubie => ({
+    id: cubie.id,
+    position: applyMatrix(m, cubie.position).map(v => Object.is(v, -0) ? 0 : v),
+    stickers: Object.fromEntries(Object.entries(cubie.stickers).map(([face, color]) => [remapFace(face), color])),
+  })) };
+  const colorOfFace = {};
+  for (const face of Object.keys(FACE_COLORS)) {
+    const center = reoriented.cubies.find(c => c.id.length === 1 && c.stickers[face] !== undefined);
+    if (center) colorOfFace[center.stickers[face]] = FACE_COLORS[face];
+  }
+  return { cubies: reoriented.cubies.map(cubie => ({
+    id: cubie.id, position: cubie.position,
+    stickers: Object.fromEntries(Object.entries(cubie.stickers).map(([f, color]) => [f, colorOfFace[color] || color])),
+  })) };
+}
+
 export function planPieceIds(state, face, pairs=[]) {
   return [...new Set([
     ...state.cubies.filter(c=>c.id.length===2 && c.id.includes(face)).map(c=>c.id),

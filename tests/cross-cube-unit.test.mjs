@@ -122,3 +122,30 @@ test('classification recognizes an explicitly preserved connected pair', () => {
   assert.equal(r.label, 'Preserve a pair');
   assert.deepEqual(r.highlightedIds, ['DFR', 'FR']);
 });
+
+test('reorientState is identity for D and moves a chosen face to the bottom', async () => {
+  const { reorientState, sameCubeState, createSolvedState, FACE_COLORS } = await import('../src/cross-cube.js');
+  const solved = createSolvedState();
+  assert.equal(sameCubeState(reorientState(solved, 'D'), solved), true);
+  const toF = reorientState(solved, 'F');
+  assert.equal(sameCubeState(toF, solved), false);
+  // After reorienting solved so F is on the bottom, the D face centre should carry
+  // the green (F) colour.
+  const dCenter = toF.cubies.find(c => c.id.length === 1 && c.stickers.D !== undefined);
+  assert.equal(dCenter.stickers.D, FACE_COLORS.F);
+});
+
+test('canonicalizeForRecognition recovers a PLL case from a colour-neutral cross', async () => {
+  const { reorientState } = await import('../src/cross-cube.js');
+  const { canonicalizeForRecognition } = await import('../src/solve-tracker.js');
+  const { identifyPllCase, generatePllCase } = await import('../src/pll-logic.js');
+  // Start from a canonical T perm (yellow cross on D). Rigidly rotate the whole
+  // cube so the yellow centre is no longer on D — a colour-neutral solve as
+  // the smart cube would report after a non-D cross. The position-derived
+  // canonicalizer should bring the yellow cross back to D and recover the T.
+  const trial = generatePllCase('T', { auf: '' });
+  const rotated = reorientState(trial.state, 'F'); // yellow (D) centre moves off D
+  const view = canonicalizeForRecognition(rotated, 'D');
+  assert.equal(identifyPllCase(view)?.name, 'T');
+});
+
