@@ -22,3 +22,11 @@ After a pair insertion, evaluate the state *before* the insertion and compute th
 - "after you complete your previous pair, evaluate the next pair from the state where the previous one was before it, and calculate the least moves to get there";
 - corner orientation roughly determines whether an F is avoidable.
 This needs the cross/X-cross solver per pair (worker-based) and is the next coach lens to build after the layout is settled.
+
+## More ideas (varying the side info — the part that was "still weirding")
+
+- `brain-idea-C.svg` — **No side rail at all.** Everything floats: connection + setup become one slim top hairline bar; the timer and phase are floating chips directly beside the cube; the coach insights sit in a single compact glass card bottom-center; metrics is a tiny corner chip. Zero boxes on the sides. The most radical — pure floating HUD.
+- `brain-idea-D.svg` — **One continuous glass rail.** A single tall translucent panel on the right with sections separated only by hairlines (no individual boxed cards) — reads as one surface, not a wall of boxes. Keeps scannability without the "boxy" feel.
+- `brain-idea-E.svg` — **Bottom-center pill HUD.** A wide rounded pill docks under the cube holding phase + live counter + coach lines + metrics all inline, separated by hairlines. The sides stay totally empty; on phone it becomes a swipeable bottom sheet. The cube dominates the whole upper area.
+
+Open all four (B, C, D, E) and pick the direction; the differences are mostly about how the side info is presented, not the cube.
