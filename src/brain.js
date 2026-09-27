@@ -45,6 +45,7 @@ export function createBrain(root, cubeSession = smartCube) {
   let live = null;
   let lastGyro = null;
   let lastStatusKey = '';
+  let lastMirroredMove = null;
   let optimalCross = null;     // {face, length} from crossSuggestion during inspection
   let pendingSuggestion = null;
 
@@ -146,10 +147,18 @@ export function createBrain(root, cubeSession = smartCube) {
     if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro)].join('|');
     if (key !== lastStatusKey) { renderConnection(snapshot); lastStatusKey = key; }
-    if (snapshot.phase === 'tracking' && live.getSnapshot().phase !== 'solving' && live.getSnapshot().phase !== 'applying') {
-      // Mirror the live cube whenever we are not mid-solve so the user can inspect.
-      if (snapshot.lastMove) cube?.queueLiveMove(snapshot.lastMove, toRenderData(snapshot.state));
-      else cube?.update(toRenderData(snapshot.state));
+    if (snapshot.phase !== 'tracking') { lastMirroredMove = null; return; }
+    // The session publishes a snapshot on every event — including many gyro/
+    // status updates per second — so we must NOT re-queue the last move on
+    // each one, or a single physical turn re-animates forever. Only animate when
+    // a genuinely new move arrives (Cross Scout dedups the same way).
+    if (snapshot.lastMove && snapshot.lastMove !== lastMirroredMove) {
+      lastMirroredMove = snapshot.lastMove;
+      cube?.queueLiveMove(snapshot.lastMove, toRenderData(snapshot.state));
+    } else if (snapshot.lastMove === null && lastMirroredMove !== null) {
+      // Re-synced baseline: reset and redraw the solved cube.
+      lastMirroredMove = null;
+      cube?.update(toRenderData(snapshot.state));
     }
   }
 
