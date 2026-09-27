@@ -83,6 +83,12 @@
 /* sections: eyebrow label + floating text (no boxes) */
 .brain-pill-row { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) minmax(0, 12rem); gap: .9rem; align-items: start; }
 @media (max-width: 720px) { .brain-pill-row { grid-template-columns: 1fr; } }
+/* Portrait/mobile: smaller cube, connect chip goes inline (not floating) so it doesn't overlap. */
+@media (max-width: 720px) {
+  .brain-cube-stage { min-height: 20rem; }
+  #brain-cube.cube-mount { min-height: 16rem; }
+  .brain-connect-chip { position: static; max-width: none; margin: .6rem .9rem 0; }
+}
 .brain-pill-phase { min-width: 0; }
 .brain-pill-phase .eyebrow { font-size: .66rem; }
 .brain-pill-phase h2 { margin: .1rem 0 .35rem; font-size: 1.15rem; color: var(--ink); font-weight: 700; }
