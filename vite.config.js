@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 
 function currentRevision() {
   if (process.env.CUBESIGHT_REF) return process.env.CUBESIGHT_REF;
@@ -24,6 +25,27 @@ const buildInfoPlugin = {
   },
 };
 
+// Dev-only diagnostics sink: trainers POST connection logs / errors here so the agent
+// can read them from the container while debugging. This is NOT part of the
+// production build — configureServer only runs in `vite` (dev), never in
+// preview/`vite build`, so nothing is collected on a deployed site.
+const devLogPlugin = {
+  name: 'cubesight-dev-log',
+  configureServer(server) {
+    server.middlewares.use('/__devlog', (request, response) => {
+      if (request.method !== 'POST') { response.statusCode = 405; response.end('405'); return; }
+      let body = '';
+      request.on('data', chunk => { body += chunk; if (body.length > 1e6) request.destroy(); });
+      request.on('end', () => {
+        try {
+          fs.appendFileSync('/tmp/cubesight-devlog.jsonl', body.replace(/\n/g, ' ') + '\n');
+        } catch { /* ignore */ }
+        response.end('ok');
+      });
+    });
+  },
+};
+
 // Installed apps have no update prompt UI, so activate new app shells
 // immediately instead of leaving a stale worker waiting indefinitely.
 export default defineConfig({
@@ -32,6 +54,7 @@ export default defineConfig({
   },
   plugins: [
     buildInfoPlugin,
+    devLogPlugin,
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],

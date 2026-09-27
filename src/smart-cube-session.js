@@ -25,6 +25,7 @@ export function createSmartCubeSession(connectDevice) {
 
   function publish(changes) {
     snapshot = { ...snapshot, ...changes };
+    if (typeof document !== 'undefined') document.documentElement.dataset.cubePhase = snapshot.phase;
     for (const listener of listeners) listener(snapshot);
   }
 

@@ -9,7 +9,7 @@ import { analyze } from './solve-tracker.js';
 import { loadSolves, appendSolve } from './solve-store.js';
 import { summarize, ao5, ao12 } from './solve-metrics.js';
 import { exportAll, serializeExport, parseImport, importAll } from './data-port.js';
-import { subscribeConnection, clearConnectionLog } from './smart-cube-diag.js';
+import { subscribeConnection, clearConnectionLog, getConnectionLog } from './smart-cube-diag.js';
 import { clearSavedCubeData } from './smart-cube-bluetooth.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -87,11 +87,13 @@ export function createBrain(root, cubeSession = smartCube) {
           <p id="brain-phase-detail" class="brain-phase-detail">Cross is detected from the face on the bottom at your first solving move.</p>
         </div>
         <div id="brain-coach" class="brain-coach" aria-live="polite"></div>
+        <button class="brain-button" id="brain-reset-view" type="button" title="Rebuild this view without reloading the page (keeps the cube connected)">Reset view</button>
       </div>
     </section>
     <section class="brain-connection-log" aria-label="Connection diagnostics">
-      <div class="brain-connection-log-head"><div><p class="eyebrow">Connection log</p><h2>What the attach is doing</h2></div><button class="brain-button" id="brain-clear-log" type="button">Clear log</button></div>
+      <div class="brain-connection-log-head"><div><p class="eyebrow">Connection log</p><h2>What the attach is doing</h2></div><div class="brain-log-actions"><button class="brain-button" id="brain-send-log" type="button" title="Send this log to the dev server so the agent can read it">Send to dev</button><button class="brain-button" id="brain-clear-log" type="button">Clear log</button></div></div>
       <ol id="brain-connection-log" class="brain-log-list"></ol>
+      <p id="brain-send-status" role="status" aria-live="polite"></p>
     </section>
     <section class="brain-metrics" aria-label="Your solve metrics">
       <div class="section-heading"><div><p class="eyebrow">Progress</p><h2>Your metrics</h2></div></div>
@@ -151,6 +153,7 @@ export function createBrain(root, cubeSession = smartCube) {
   }
 
   function onSession(snapshot) {
+    if (detached) return;
     const gyro = snapshot.protocol?.startsWith('GAN') ? snapshot.gyro : null;
     if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro)].join('|');
@@ -354,23 +357,63 @@ export function createBrain(root, cubeSession = smartCube) {
   renderCoach();
   // Pre-warm the (heavy) WCA scramble loader so the first click is instant.
   scrambleLoad = import('./scramble.js').then(m => m).catch(() => null);
-  cubeSession.subscribe(onSession);
-  live.subscribe(onLive);
+
+  // Capture browser-side errors so they can be sent along with the log.
+  const runtimeErrors = [];
+  window.addEventListener('error', e => runtimeErrors.push(String(e.error?.stack || e.message || e).slice(0, 500)));
+  window.addEventListener('unhandledrejection', e => runtimeErrors.push('unhandledrejection: ' + String(e.reason?.stack || e.reason || e).slice(0, 500)));
+
+  let detached = false;
+  const unsubSession = cubeSession.subscribe(onSession);
+  const unsubLive = live.subscribe(onLive);
 
   function renderConnectionLog(entries) {
     $('#brain-connection-log').innerHTML = entries.length ? entries.map(e => `<li class="brain-log-item brain-log-${e.kind || 'info'}"><span class="brain-log-time">${new Date(e.at).toLocaleTimeString()}</span><span>${escape(e.label)}</span></li>`).join('') : '<li class="brain-log-muted">No connection attempts yet in this session.</li>';
   }
   subscribeConnection(renderConnectionLog);
   $('#brain-clear-log').addEventListener('click', () => { clearConnectionLog(); });
+  $('#brain-send-log').addEventListener('click', async () => {
+    const status = $('#brain-send-status');
+    status.textContent = 'Sending…';
+    const log = getConnectionLog();
+    const redact = text => String(text || '').replace(/([\da-f]{2}:){5}[\da-f]{2}/gi, 'XX:XX:XX:XX:XX:XX');
+    const payload = JSON.stringify({
+      at: Date.now(),
+      href: location.href,
+      ua: navigator.userAgent,
+      session: { phase: cubeSession.getSnapshot().phase, deviceName: cubeSession.getSnapshot().deviceName, protocol: cubeSession.getSnapshot().protocol },
+      connectionLog: log.map(e => ({ ...e, label: redact(e.label) })),
+      runtimeErrors: runtimeErrors.slice(-20).map(redact),
+      toggles,
+    });
+    try {
+      const res = await fetch('/__devlog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+      status.textContent = res.ok ? 'Sent — the agent can read the log now.' : `Send failed: HTTP ${res.status}`;
+    } catch (error) { status.textContent = `Send failed: ${error.message}`; }
+  });
   $('#brain-clear-cube').addEventListener('click', () => {
     clearSavedCubeData();
     message('Saved cube address cleared. Connect again to derive it from scratch.');
   });
 
-  return {
-    setActive(value) {
-      active = value;
-      if (!value) { live.cancel(); $('#brain-start').hidden = false; $('#brain-stop').hidden = true; }
+  $('#brain-reset-view').addEventListener('click', () => {
+    const fresh = (currentInstance = createBrain(root, cubeSession));
+    return fresh;
+  });
+  let currentInstance = {
+    setActive(value) { active = value; if (!value) { live.cancel(); $('#brain-start').hidden = false; $('#brain-stop').hidden = true; } },
+    detach() {
+      if (detached) return; detached = true;
+      active = false;
+      unsubSession();
+      unsubLive();
+      live?.detach();
+      root.innerHTML = '';
+    },
+    reset() {
+      this.detach();
+      return createBrain(root, cubeSession);
     },
   };
+  return currentInstance;
 }

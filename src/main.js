@@ -21,8 +21,22 @@ const BUILD_LABEL = BUILD_REVISION === 'development' ? BUILD_REVISION : BUILD_RE
 // so a live old shell never asks the new worker for a deleted PLL/Scout chunk.
 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
   let reloadingForUpdate = false;
+  const cubeIsConnected = () => {
+    const phase = document.documentElement.dataset.cubePhase;
+    return phase && phase !== 'disconnected' && phase !== 'connecting';
+  };
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (reloadingForUpdate) return;
+    // A full reload drops the live Bluetooth GATT link, so if a smart cube is
+    // connected, defer the reload until it disconnects (a lighter refresh via
+    // the in-app “Reset view” keeps the link). Watch the phase attribute.
+    if (cubeIsConnected()) {
+      const observer = new MutationObserver(() => {
+        if (!cubeIsConnected()) { observer.disconnect(); reloadingForUpdate = true; location.reload(); }
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-cube-phase'] });
+      return;
+    }
     reloadingForUpdate = true;
     location.reload();
   });
