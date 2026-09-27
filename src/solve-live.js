@@ -38,6 +38,10 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let crossColor = null;
   let rotations = 0;
   let pseudo = false;            // pseudo-F2L (D-shift) detection, opt-in
+  let inspectSeconds = 15;
+  let inspectionEnabled = true;
+  let inspectionEndsAt = null;
+  let inspectionTimer = null;
   let lastBottom = null;
   let crossMoveCount = null;
   let crossAchieved = false;   // milestones — once reached, never regress
@@ -45,6 +49,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let ollAchieved = false;
   let maxPairs = 0;
   let liveMoveCount = 0;
+  let lastProcessedLen = -1;   // dedup: only process a move when the history grows
   let prev = null;           // previous phase analysis during solving
   let progress = null;       // monotonic phase snapshot the UI renders
   let mark = {};             // { solveStartAt, crossAt, f2lAt, ollAt }
@@ -55,6 +60,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   const snapshot = () => ({
     mode, phase, scrambleStr, applyStep, applyTotal: scrambleMoves.length, applyDetour: [...applyDetour],
     solveMoves: [...solveMoves], solveMoveCount: liveMoveCount, elapsedMs: phase === 'solving' && solveStartAt ? Math.max(0, now() - solveStartAt) : null,
+    inspection: phase === 'inspecting' ? { enabled: inspectionEnabled, remainingMs: inspectionEndsAt ? Math.max(0, inspectionEndsAt - now()) : null } : null,
     crossFace, crossColor, rotations, crossMoveCount,
     progress, prev, record, done: phase === 'done',
   });
@@ -77,6 +83,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     mode = 'guided';
     scrambleStr = scramble;
     scrambleMoves = scramble.split(/\s+/).filter(Boolean);
+    lastProcessedLen = session.getSnapshot().moves.length;
     scrambledState = stateFromScramble(scramble);
     applyStep = 0; applyDetour = [];
     phase = 'applying';
@@ -92,17 +99,21 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     mode = 'free';
     scrambleStr = null; scrambleMoves = []; scrambledState = null;
     applyStep = 0; applyDetour = [];
-    phase = 'solving';
+    phase = 'inspecting';
     const snap = session.getSnapshot();
     solveStartIndex = snap.moves.length;
-    solveStartAt = now();
+    lastProcessedLen = snap.moves.length;
+    solveStartAt = null;              // the solve clock starts on the first move, not now
     resetSolve();
+    enterInspection();
     emit();
   }
 
   function cancel() {
     mode = null; phase = 'idle'; scrambleStr = null; scrambleMoves = [];
     scrambledState = null; applyStep = 0; applyDetour = [];
+    lastProcessedLen = -1;
+    if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
     resetSolve();
     emit();
   }
@@ -115,13 +126,25 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     applyStep = result.step;
     applyDetour = result.detour;
     if (sameCubeState(state, scrambledState)) {
-      // Scramble fully applied — begin the solve.
-      phase = 'solving';
+      // Scramble fully applied — enter inspection (the solve clock starts on
+      // the first solving move, not now).
+      phase = 'inspecting';
       solveStartIndex = session.getSnapshot().moves.length;
-      solveStartAt = now();
+      solveStartAt = null;
       resetSolve();
+      enterInspection();
     }
     emit();
+  }
+
+  function enterInspection() {
+    inspectionEndsAt = inspectionEnabled ? now() + inspectSeconds * 1000 : null;
+    if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
+    // Only tick in a browser; the Node unit tests use a frozen clock and a
+    // live interval would keep the test process alive.
+    if (inspectionEnabled && inspectionEndsAt != null && typeof window !== 'undefined') {
+      inspectionTimer = setInterval(() => { if (phase === 'inspecting') emit(); else { clearInterval(inspectionTimer); inspectionTimer = null; } }, 250);
+    }
   }
 
   function finishSolve(state, allMoves) {
@@ -206,9 +229,23 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (snap.phase === 'desynced') { phase = 'desynced'; emit(); return; }
     if (phase === 'desynced' || phase === 'done') return;
     if (snap.phase !== 'tracking') return;
+    // The session publishes a snapshot on every event (gyro/status too), so only
+    // act on a genuinely new move (history grew) — otherwise a single wrong
+    // turn during the scramble would balloon the recovery detour.
+    if (snap.moves.length <= lastProcessedLen) return;
+    lastProcessedLen = snap.moves.length;
     const move = snap.lastMove;
     if (!move) return;
     if (phase === 'applying') { onApplyMove(move, snap.state); return; }
+    if (phase === 'inspecting') {
+      // The first solving move starts the solve clock and ends inspection.
+      phase = 'solving';
+      solveStartAt = now();
+      enterInspection(); // no-op to clear countdown state
+      if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
+      onSolveMove(move, snap.state, snap.moves);
+      return;
+    }
     if (phase === 'solving') { onSolveMove(move, snap.state, snap.moves); }
   }
 
@@ -217,6 +254,12 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   return {
     startGuided, startFree, cancel,
     setPseudo(value) { pseudo = Boolean(value); },
+    setInspection({ enabled, seconds } = {}) {
+      if (typeof enabled === 'boolean') inspectionEnabled = enabled;
+      if (Number.isFinite(seconds)) inspectSeconds = Math.max(0, Math.min(60, seconds));
+      if (phase === 'inspecting') enterInspection();
+      emit();
+    },
     subscribe(listener) { listeners.add(listener); listener(snapshot()); return () => listeners.delete(listener); },
     getSnapshot: snapshot,
     detach() { unsub?.(); },

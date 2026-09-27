@@ -66,6 +66,7 @@ export function createBrain(root, cubeSession = smartCube) {
         <div id="brain-cube" class="cube-mount"></div>
         <div class="cube-caption"><span id="brain-view-caption">White top · Green front</span></div>
         <div id="brain-turn-guide" hidden></div>
+        <p class="brain-cue-label" id="brain-cue-label" hidden>Scramble</p>
         <div id="brain-moves" class="brain-moves" aria-label="Scramble moves" hidden></div>
       </div>
       <aside class="brain-hud">
@@ -84,12 +85,16 @@ export function createBrain(root, cubeSession = smartCube) {
               <div class="segmented"><button class="segment active" data-brain-cross="cross">Cross</button><button class="segment" data-brain-cross="xcross">X-cross</button><button class="segment" data-brain-cross="xxcross">Double X</button></div>
             </div>
             <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-pseudo"><span>Pseudo F2L · D-shift</span></label>
+            <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-inspection" checked><span>Inspection · 15s</span></label>
           </div>
-          <div class="brain-scramble-wrap" id="brain-guided-wrap">
-            <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="Generate a WCA scramble, or paste one…"></textarea>
-            <button class="brain-button" id="brain-generate">New WCA scramble</button>
-          </div>
-          <div class="brain-setup-actions"><button class="primary-button" id="brain-start">Start guided</button><button class="brain-button" id="brain-stop" hidden>Stop</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading the page (keeps the cube connected)">Reset view</button></div>
+          <div class="brain-setup-actions"><button class="primary-button" id="brain-start">Start guided solve</button><button class="brain-button" id="brain-stop" hidden>Stop</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading the page (keeps the cube connected)">Reset view</button></div>
+          <details class="brain-advanced-scramble">
+            <summary><span>Use a specific scramble</span><i aria-hidden="true"></i></summary>
+            <div class="brain-scramble-wrap" id="brain-guided-wrap">
+              <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="Paste a scramble, or generate one to inspect before starting…"></textarea>
+              <div class="brain-scramble-actions"><button class="brain-button" id="brain-generate">New WCA scramble</button><button class="brain-button" id="brain-start-custom">Start with this scramble</button></div>
+            </div>
+          </details>
           <p id="brain-error" class="brain-error" role="alert" hidden></p>
         </section>
         <section class="brain-phase" aria-live="polite">
@@ -211,7 +216,7 @@ export function createBrain(root, cubeSession = smartCube) {
     const snap = live.getSnapshot();
     const guideEl = $('#brain-turn-guide');
     const movesEl = $('#brain-moves');
-    if (snap.phase !== 'applying') { turnGuide.render({ mode: null }); if (movesEl) { movesEl.hidden = true; movesEl.innerHTML = ''; } return; }
+    if (snap.phase !== 'applying') { turnGuide.render({ mode: null }); if (movesEl) { movesEl.hidden = true; movesEl.innerHTML = ''; } const label = $('#brain-cue-label'); if (label) label.hidden = true; return; }
     const held = cube?.getHeldFaces?.() ?? { bottom: 'D', front: 'F' };
     const scrambleMoves = snap.scrambleStr ? snap.scrambleStr.split(/\s+/).filter(Boolean) : [];
     if (snap.applyDetour.length) {
@@ -222,14 +227,15 @@ export function createBrain(root, cubeSession = smartCube) {
         movesEl.hidden = false;
         movesEl.innerHTML = `<p class="brain-moves-recovery">Off the scramble by ${snap.applyDetour.length} move${snap.applyDetour.length === 1 ? '' : 's'}. Do <strong>${escape(recovery.join(' '))}</strong> to get back, then continue.</p>`;
       }
+      const label = $('#brain-cue-label'); if (label) label.hidden = false;
     } else {
       const move = scrambleMoves[snap.applyStep];
       turnGuide.render({ mode: 'guide', move, index: snap.applyStep, total: scrambleMoves.length, bottom: held.bottom, front: held.front });
-      // Showcase the whole algorithm with the current step highlighted.
       if (movesEl) {
         movesEl.hidden = false;
         movesEl.innerHTML = scrambleMoves.map((m, i) => `<i class="${i < snap.applyStep ? 'done' : ''} ${i === snap.applyStep ? 'current' : ''}">${escape(m)}</i>`).join('');
       }
+      const label = $('#brain-cue-label'); if (label) label.hidden = false;
     }
     // During guided application the cube advances by physical turns, so the manual ←/→ buttons are meaningless here.
     const actions = guideEl.querySelector('.smart-turn-actions');
@@ -291,16 +297,22 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-timeline').innerHTML = steps.map(s => `<i class="${s.done ? 'done' : ''}"><span>${s.label}</span></i>`).join('');
     let label = 'Connect and start a solve';
     if (snap.phase === 'applying') label = 'Perform the scramble…';
+    else if (snap.phase === 'inspecting') label = 'Inspection';
     else if (snap.phase === 'solving') label = p.phase ? ({ 'pre-cross': 'Building the cross', cross: 'Cross done', 'oll': 'OLL', pll: 'PLL', solved: 'Solved' }[p.phase] || `F2L · ${p.pairsSolved ?? 0}/4`) : 'Solving';
     else if (snap.phase === 'done') label = 'Solved';
     $('#brain-phase-label').textContent = label;
-    // Live turn / time / TPS readout so it's obvious turns are being counted.
-    const moves = snap.solveMoveCount ?? 0;
-    const msElapsed = snap.elapsedMs ?? 0;
-    const tps = msElapsed > 0 ? (moves / (msElapsed / 1000)).toFixed(2) : '0.00';
-    $('#brain-phase-detail').textContent = (snap.phase === 'solving' || snap.phase === 'done')
-      ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s`
-      : 'Cross is detected from the face on the bottom at your first solving move.';
+    // Live turn / time / TPS readout, or the inspection countdown before the first move.
+    if (snap.phase === 'inspecting' && snap.inspection) {
+      const remaining = snap.inspection.remainingMs;
+      $('#brain-phase-detail').textContent = remaining != null ? `Inspect — ${(remaining / 1000).toFixed(1)}s left (clock starts on your first move)` : 'Inspect — start solving on your first move';
+    } else {
+      const moves = snap.solveMoveCount ?? 0;
+      const msElapsed = snap.elapsedMs ?? 0;
+      const tps = msElapsed > 0 ? (moves / (msElapsed / 1000)).toFixed(2) : '0.00';
+      $('#brain-phase-detail').textContent = (snap.phase === 'solving' || snap.phase === 'done')
+        ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s`
+        : 'Scramble ready — start solving on your first move. The clock starts when you turn.';
+    }
   }
 
   function renderMetrics() {
@@ -358,19 +370,36 @@ export function createBrain(root, cubeSession = smartCube) {
     const sessionSnap = cubeSession.getSnapshot();
     if (sessionSnap.phase !== 'tracking') { showError('Connect and sync a solved cube first.'); return; }
     if (mode === 'guided') {
-      const scramble = $('#brain-scramble').value.trim();
-      if (!scramble) { showError('Generate or paste a scramble first.'); return; }
+      // No manual entry needed: auto-generate a WCA scramble if none is set.
+      let scramble = $('#brain-scramble').value.trim();
+      if (!scramble) {
+        const button = $('#brain-start'); const original = button.textContent;
+        button.disabled = true; button.textContent = 'Generating…';
+        try {
+          const mod = await (scrambleLoad || import('./scramble.js'));
+          scrambleLoad = Promise.resolve(mod);
+          scramble = await mod.generateWcaScramble();
+          $('#brain-scramble').value = scramble;
+        } catch (error) { showError(`Could not generate a scramble: ${error.message}`); button.disabled = false; button.textContent = original; return; }
+        finally { button.disabled = false; button.textContent = original; }
+      }
       try { live.startGuided(scramble); void suggestCrossFor(scramble); }
       catch (error) { showError(error.message); return; }
     } else {
       live.startFree();
-      // Best-effort cross suggestion from the user's own scramble (the moves
-      // tracked since the solved baseline, up to the solve start).
       void suggestCrossFor(cubeSession.getSnapshot().moves.join(' '));
     }
     $('#brain-start').hidden = true;
     $('#brain-stop').hidden = false;
-    message('Start solving when you begin turning. The cross is read from the bottom at your first move.');
+    message('Scramble ready — inspect, then start solving on your first move. The clock starts when you turn.');
+  });
+  $('#brain-start-custom').addEventListener('click', () => {
+    const scramble = $('#brain-scramble').value.trim();
+    if (!scramble) { showError('Paste a scramble first.'); return; }
+    const sessionSnap = cubeSession.getSnapshot();
+    if (sessionSnap.phase !== 'tracking') { showError('Connect and sync a solved cube first.'); return; }
+    try { live.startGuided(scramble); void suggestCrossFor(scramble); $('#brain-start').hidden = true; $('#brain-stop').hidden = false; }
+    catch (error) { showError(error.message); }
   });
   $('#brain-stop').addEventListener('click', () => { live.cancel(); $('#brain-start').hidden = false; $('#brain-stop').hidden = true; optimalCross = null; renderCoach(); renderTimeline(); });
   root.querySelectorAll('[data-brain-mode]').forEach(btn => btn.addEventListener('click', () => {
@@ -393,9 +422,14 @@ export function createBrain(root, cubeSession = smartCube) {
     live?.setPseudo(event.target.checked);
     try { localStorage.setItem('cubesight-brain-pseudo', String(event.target.checked)); } catch { /* keep in memory */ }
   });
+  $('#brain-inspection').addEventListener('change', event => { live?.setInspection({ enabled: event.target.checked }); try { localStorage.setItem('cubesight-brain-inspection', String(event.target.checked)); } catch {} });
   (function restorePseudo() {
     let saved = false; try { saved = localStorage.getItem('cubesight-brain-pseudo') === 'true'; } catch { /* ignore */ }
     const cb = $('#brain-pseudo'); if (cb) { cb.checked = saved; live?.setPseudo(saved); }
+  })();
+  (function restoreInspection() {
+    let saved = true; try { saved = localStorage.getItem('cubesight-brain-inspection') !== 'false'; } catch { /* ignore */ }
+    const cb = $('#brain-inspection'); if (cb) { cb.checked = saved; live?.setInspection({ enabled: saved }); }
   })();
   $('#brain-toggles').addEventListener('change', event => {
     const input = event.target.closest('[data-brain-toggle]');

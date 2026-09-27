@@ -34,8 +34,8 @@ test('guided scramble is applied then solved; record carries phases, tps and cro
   assert.equal(live.getSnapshot().phase, 'applying');
   // Apply the scramble in order.
   for (const m of scramble.split(' ')) { t += 500; session.emit(m); }
-  assert.equal(live.getSnapshot().phase, 'solving');
-  // Solve: inverse of the scramble reversed.
+  assert.equal(live.getSnapshot().phase, 'inspecting');
+  // Solve: inverse of the scramble reversed. The first solving move starts the clock.
   const solution = scramble.split(' ').reverse().map(m => m.endsWith('2') ? m : m.endsWith("'") ? m[0] : m + "'").join(' ');
   for (const m of solution.split(' ')) { t += 500; session.emit(m); }
   const snap = live.getSnapshot();
@@ -55,9 +55,8 @@ test('free scramble solve starts from the current tracked state', () => {
   // user scrambles freely
   for (const m of "R U F".split(' ')) session.emit(m);
   live.startFree();
-  assert.equal(live.getSnapshot().phase, 'solving');
-  // solve with inverse
-  const inv = ['F', "U'", "R'"].reverse(); // inverse of R U F is F' U' R'
+  assert.equal(live.getSnapshot().phase, 'inspecting');
+  // solve with inverse — the first move starts the clock
   for (const m of ["F'", "U'", "R'"]) session.emit(m);
   assert.equal(live.getSnapshot().phase, 'done');
   assert.equal(live.getSnapshot().record.free, true);
@@ -105,5 +104,51 @@ test('detaching stops receiving session updates', () => {
   live.detach();
   // emits after detach should not transition the live tracker
   session.emit('R');
+  assert.equal(live.getSnapshot().phase, 'inspecting');
+});
+
+// Fake session that can also fire a non-move (gyro) snapshot, to reproduce the
+// recovery-detour ballooning bug: a single wrong turn must not append to
+// the detour on every gyro/status snapshot.
+function fakeSessionWithGyro() {
+  const listeners = new Set();
+  let state = createSolvedState();
+  let moves = [];
+  let lastMove = null;
+  const snap = () => ({ phase: 'tracking', state, moves, lastMove });
+  return {
+    getSnapshot: snap,
+    subscribe(l) { listeners.add(l); l(snap()); return () => listeners.delete(l); },
+    emit(move) { state = applyMoves(state, [move]); moves = [...moves, move]; lastMove = move; for (const l of listeners) l(snap()); },
+    emitGyro() { for (const l of listeners) l(snap()); }, // moves/lastMove unchanged
+  };
+}
+
+test('a wrong turn during application does not balloon the recovery detour on gyro updates', () => {
+  const session = fakeSessionWithGyro();
+  const live = createSolveLive(session, { getOrientation: () => ({ bottom: 'D', front: 'F' }), now: () => 0 });
+  live.startGuided("R U");
+  session.emit('R');           // matches step 1
+  session.emit('F');           // wrong: detour grows to 1
+  assert.equal(live.getSnapshot().applyDetour.length, 1);
+  session.emitGyro(); session.emitGyro(); session.emitGyro();  // gyro/status snapshots, no new move
+  assert.equal(live.getSnapshot().applyDetour.length, 1, 'gyro updates must not grow the detour');
+  session.emit("F'");        // recover: back on plan
+  assert.equal(live.getSnapshot().applyDetour.length, 0);
+});
+
+test('inspection phase holds until the first solving move, then the clock starts', () => {
+  const session = fakeSession();
+  let t = 1000;
+  const live = createSolveLive(session, { getOrientation: () => ({ bottom: 'D', front: 'F' }), now: () => t });
+  live.startGuided("R U");
+  for (const m of "R U".split(' ')) { t += 500; session.emit(m); }
+  assert.equal(live.getSnapshot().phase, 'inspecting');
+  assert.equal(live.getSnapshot().elapsedMs, null, 'no solve clock before the first move');
+  assert.ok(live.getSnapshot().inspection, 'inspection countdown is exposed');
+  // first solving move starts the clock
+  session.emit("U'");
   assert.equal(live.getSnapshot().phase, 'solving');
+  assert.ok(live.getSnapshot().elapsedMs >= 0, 'clock started on first move');
+  assert.equal(live.getSnapshot().inspection, null);
 });
