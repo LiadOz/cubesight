@@ -2,8 +2,7 @@ import './brain.css';
 import { createCube3D } from './cube-3d.js';
 import { FACE_COLORS, toRenderData } from './cross-cube.js';
 import { smartCube } from './smart-cube-bluetooth.js';
-import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
-import { recoveryMoves } from './smart-cube-guidance.js';
+import { describeTurn, recoveryMoves } from './smart-cube-guidance.js';
 import { createSolveLive } from './solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from './solve-coach.js';
 import { loadSolves, appendSolve } from './solve-store.js';
@@ -51,6 +50,8 @@ export function createBrain(root, cubeSession = smartCube) {
   let optimalCross = null;     // {face, length} from crossSuggestion during inspection
   let pendingSuggestion = null;
   let crossKind = 'cross';   // cross | xcross | xxcross — solve target chosen in setup
+  let skips = [];          // { stage, kind, label } — hurrahs marked on the timeline
+  const STAGE_FOR_SKIP = { oll: 3, pll: 4, f2l: 2 };
   (function restoreSetup() {
     try {
       crossKind = JSON.parse(localStorage.getItem('cubesight-brain-cross') || '"cross"');
@@ -69,13 +70,10 @@ export function createBrain(root, cubeSession = smartCube) {
           <div class="brain-controls"><button class="brain-chip" id="brain-connect">Connect</button><button class="brain-chip" id="brain-sync" hidden>Sync</button><button class="brain-chip" id="brain-recenter" hidden>Recenter</button><button class="brain-chip" id="brain-disconnect" hidden>Disconnect</button><button class="brain-chip" id="brain-clear-cube" hidden>Clear saved</button></div>
         </div>
         <div id="brain-cube" class="cube-mount"></div>
-        <div class="cube-caption"><span id="brain-view-caption">White top · Green front</span></div>
-        <div id="brain-turn-guide" hidden></div>
-        <p class="brain-cue-label" id="brain-cue-label" hidden>Scramble</p>
         <div id="brain-moves" class="brain-moves" aria-label="Scramble moves" hidden></div>
+        <div class="brain-cube-timeline" id="brain-timeline" role="progressbar" aria-label="Solve stage timeline"></div>
       </div>
       <div class="brain-pill">
-        <div class="brain-pill-timeline" id="brain-timeline" role="progressbar" aria-label="Solve stage timeline"></div>
         <div class="brain-pill-row">
           <div class="brain-pill-phase">
             <p class="eyebrow">Phase</p>
@@ -88,7 +86,7 @@ export function createBrain(root, cubeSession = smartCube) {
             <p class="brain-footnote">All data stays on this device.</p>
           </div>
         </div>
-        <div class="brain-pill-actions"><button class="primary-button" id="brain-start">Start guided solve</button><button class="brain-button" id="brain-stop" hidden>Stop</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">Reset view</button><p id="brain-error" class="brain-error" role="alert" hidden></p></div>
+        <div class="brain-pill-actions"><button class="primary-button" id="brain-start">Start guided solve</button><button class="brain-button" id="brain-stop" hidden>Cancel solve</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">Reset view</button><p id="brain-error" class="brain-error" role="alert" hidden></p></div>
         <details class="brain-pill-setup">
           <summary><span>Setup</span><i aria-hidden="true"></i></summary>
           <section class="brain-setup" aria-label="Solve setup">
@@ -111,11 +109,6 @@ export function createBrain(root, cubeSession = smartCube) {
 
   try { cube = createCube3D($('#brain-cube'), { mode: 'scout' }); }
   catch (error) { $('#brain-cube').textContent = 'The Brain needs WebGL. Enable hardware acceleration or try another browser.'; }
-
-  const turnGuide = createSmartCubeTurnGuide($('#brain-turn-guide'), {
-    onPrevious: () => { /* guided scramble has no manual prev during apply */ },
-    onNext: () => { /* guided scramble auto-advances on physical turns */ },
-  });
 
   live = createSolveLive(cubeSession, {
     getOrientation: () => (cube?.getHeldFaces?.() ?? { bottom: 'D', front: 'F' }),
@@ -191,34 +184,34 @@ export function createBrain(root, cubeSession = smartCube) {
 
   // --- Coach panel ------------------------------------------------------------------------------
   // --- Guided scramble cue + algorithm showcase + recovery ----------------
+  // The scramble flow under the cube is the single place the scramble is shown. The current move
+  // carries a tooltip describing how to turn it (an affordance), replacing the old separate
+  // turn-guide card the user disliked.
   function renderApplyGuide() {
     const snap = live.getSnapshot();
-    const guideEl = $('#brain-turn-guide');
     const movesEl = $('#brain-moves');
-    if (snap.phase !== 'applying') { turnGuide.render({ mode: null }); if (movesEl) { movesEl.hidden = true; movesEl.innerHTML = ''; } const label = $('#brain-cue-label'); if (label) label.hidden = true; return; }
+    if (snap.phase !== 'applying') { if (movesEl) { movesEl.hidden = true; movesEl.innerHTML = ''; } return; }
     const held = cube?.getHeldFaces?.() ?? { bottom: 'D', front: 'F' };
     const scrambleMoves = snap.scrambleStr ? snap.scrambleStr.split(/\s+/).filter(Boolean) : [];
     if (snap.applyDetour.length) {
-      // A wrong turn happened: show the inverse return path (what to do to get back).
+      // A wrong turn is folded into the scramble as an extra step (CubeStation-style):
+      // show what to do next, not a 'undo your wrong turn', and the prior done moves animate away.
       const recovery = recoveryMoves(snap.applyDetour, held.bottom, held.front);
-      turnGuide.render({ mode: 'recovery', move: recovery[0], index: 0, total: recovery.length, bottom: held.bottom, front: held.front, recovery });
       if (movesEl) {
         movesEl.hidden = false;
-        movesEl.innerHTML = `<p class="brain-moves-recovery">Off the scramble by ${snap.applyDetour.length} move${snap.applyDetour.length === 1 ? '' : 's'}. Do <strong>${escape(recovery.join(' '))}</strong> to get back, then continue.</p>`;
+        movesEl.innerHTML = `<p class="brain-moves-recovery">Off by ${snap.applyDetour.length}. Next do <strong>${escape(recovery.join(' '))}</strong>, then continue the scramble.</p>`;
       }
-      const label = $('#brain-cue-label'); if (label) label.hidden = false;
     } else {
       const move = scrambleMoves[snap.applyStep];
-      turnGuide.render({ mode: 'guide', move, index: snap.applyStep, total: scrambleMoves.length, bottom: held.bottom, front: held.front });
       if (movesEl) {
         movesEl.hidden = false;
-        movesEl.innerHTML = scrambleMoves.map((m, i) => `<i class="${i < snap.applyStep ? 'done' : ''} ${i === snap.applyStep ? 'current' : ''}">${escape(m)}</i>`).join('');
+        movesEl.innerHTML = scrambleMoves.map((m, i) => {
+          const current = i === snap.applyStep;
+          const c = current ? describeTurn(m, held.bottom, held.front) : null;
+          return `<i class="${i < snap.applyStep ? 'done' : ''} ${current ? 'current' : ''}"${c ? ` title="${escape(c.text)}"` : ''}>${escape(m)}</i>`;
+        }).join('');
       }
-      const label = $('#brain-cue-label'); if (label) label.hidden = false;
     }
-    // During guided application the cube advances by physical turns, so the manual ←/→ buttons are meaningless here.
-    const actions = guideEl.querySelector('.smart-turn-actions');
-    if (actions) actions.hidden = true;
   }
 
   function renderCoach() {
@@ -285,7 +278,12 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-timeline').innerHTML = `
       <div class="brain-tl-line"><i style="width:${pct}%"></i></div>
       <div class="brain-tl-dot" style="left:${pct}%"></div>
-      <div class="brain-tl-marks">${STAGES.map((label, i) => `<span style="left:${(i / (STAGES.length - 1)) * 100}%">${label}</span>`).join('')}</div>`;
+      <div class="brain-tl-marks">${STAGES.map((label, i) => {
+        const skip = skips.find(s => s.stage === i);
+        const cls = skip ? 'skip' : '';
+        const title = skip ? ` title="${escape(skip.label)}"` : '';
+        return `<span class="${cls}" style="left:${(i / (STAGES.length - 1)) * 100}%"${title}>${label}${skip ? ' ★' : ''}</span>`;
+      }).join('')}</div>`;
     let label = 'Connect and start a solve';
     if (snap.phase === 'applying') label = 'Perform the scramble';
     else if (snap.phase === 'inspecting') label = 'Inspection';
@@ -309,6 +307,7 @@ export function createBrain(root, cubeSession = smartCube) {
 
   // End-game review: stats in the middle + cube snapshots at key moments + hindsight.
   let snapshots = [];
+  let lastCapturedStage = -1;
   function captureSnapshot(label) {
     const state = cubeSession.getSnapshot().state;
     if (!state) return;
@@ -358,13 +357,17 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-metrics-grid').innerHTML = cells.map(([k, v]) => `<article class="brain-metric"><span>${k}</span><strong>${v}</strong></article>`).join('');
   }
 
-  let lastCapturedStage = -1;
   function onLive(snap) {
     if (!active) return;
     renderTimeline();
     renderCoach();
     renderApplyGuide();
     refreshScrambleState();
+    const skipInfo = snap.progress?.skip;
+    if (skipInfo) {
+      skips.push({ stage: STAGE_FOR_SKIP[skipInfo.kind] ?? 0, kind: skipInfo.kind, label: skipInfo.label });
+      skips = skips.slice(-8);
+    }
     // Capture a cube snapshot at each stage transition for the end-game review.
     const stage = stageIndex(snap.progress, snap.phase);
     if (snap.phase === 'solving' && stage !== lastCapturedStage) {
@@ -420,10 +423,11 @@ export function createBrain(root, cubeSession = smartCube) {
         } catch (error) { showError(`Could not generate a scramble: ${error.message}`); button.disabled = false; button.textContent = original; return; }
         finally { button.disabled = false; button.textContent = original; }
       }
-      try { live.startGuided(scramble); void suggestCrossFor(scramble); }
+      try { live.startGuided(scramble); void suggestCrossFor(scramble); skips = []; }
       catch (error) { showError(error.message); return; }
     } else {
       live.startFree();
+      skips = [];
       void suggestCrossFor(cubeSession.getSnapshot().moves.join(' '));
     }
     $('#brain-start').hidden = true;
@@ -435,7 +439,7 @@ export function createBrain(root, cubeSession = smartCube) {
     if (!scramble) { showError('Paste a scramble first.'); return; }
     const sessionSnap = cubeSession.getSnapshot();
     if (sessionSnap.phase !== 'tracking') { showError('Connect and sync a solved cube first.'); return; }
-    try { live.startGuided(scramble); void suggestCrossFor(scramble); $('#brain-start').hidden = true; $('#brain-stop').hidden = false; }
+    try { live.startGuided(scramble); void suggestCrossFor(scramble); $('#brain-start').hidden = true; $('#brain-stop').hidden = false; skips = []; }
     catch (error) { showError(error.message); }
   });
   $('#brain-stop').addEventListener('click', () => { live.cancel(); $('#brain-start').hidden = false; $('#brain-stop').hidden = true; optimalCross = null; renderCoach(); renderTimeline(); });
@@ -547,6 +551,7 @@ export function createBrain(root, cubeSession = smartCube) {
 
   $('#brain-rebuild-view').addEventListener('click', () => {
     currentInstance = createBrain(root, cubeSession);
+    skips = [];
   });
   let currentInstance = {
     setActive(value) { active = value; if (!value) { live.cancel(); $('#brain-start').hidden = false; $('#brain-stop').hidden = true; } },

@@ -62,7 +62,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     solveMoves: [...solveMoves], solveMoveCount: liveMoveCount, elapsedMs: phase === 'solving' && solveStartAt ? Math.max(0, now() - solveStartAt) : null,
     inspection: phase === 'inspecting' ? { enabled: inspectionEnabled, remainingMs: inspectionEndsAt ? Math.max(0, inspectionEndsAt - now()) : null } : null,
     crossFace, crossColor, rotations, crossMoveCount,
-    progress, prev, record, done: phase === 'done',
+    progress, prev, skip: progress?.skip ?? null, record, done: phase === 'done',
   });
 
   function emit() { for (const l of listeners) l(snapshot()); }
@@ -194,12 +194,21 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       const o = getOrientation() || {};
       if (o.bottom && o.bottom !== lastBottom) { rotations++; lastBottom = o.bottom; }
     }
+    const prevOll = ollAchieved, prevSolved = Boolean(prev && prev.solved), prevPairs = maxPairs;
     const next = analyze(state, crossFace);
     // Milestones are monotonic: once the cross / F2L / OLL is reached it stays
     // reached, even if a later F2L insertion temporarily breaks a cross edge.
     // The displayed phase never regresses (the user expects “once the cross is
     // done, it’s done”); breakages surface as coach hindsight, not as a phase
     // step backwards.
+    // detect a SKIPPED phase (a milestone reached "for free"): a celebratory hurrah.
+    //   • OLL skipped: OLL done as part of F2L (ollDone became true at the same move F2L finished, or was already true when F2L finished) — no dedicated OLL step.
+    //   • PLL skipped: solved became true right after OLL (no dedicated PLL step).
+    //   • F2L pair skipped: two pairs solved in one move (a pair fell in "for free").
+    let skip = null;
+    if (!prevOll && next.ollDone && f2lAchieved) skip = { kind: 'oll', label: 'OLL skipped — last layer oriented while solving F2L!' };
+    else if (!prevSolved && next.solved && ollAchieved) skip = { kind: 'pll', label: 'PLL skipped — solved straight after OLL!' };
+    else if (crossAchieved && (next.pairsSolved ?? 0) >= (prevPairs ?? 0) + 2) skip = { kind: 'f2l', label: `${(next.pairsSolved ?? 0) - (prevPairs ?? 0)} F2L pairs solved at once!` };
     if (!crossAchieved && next.crossDone) {
       crossAchieved = true;
       mark.crossAt = now();
@@ -219,7 +228,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     else if (f2lAchieved) label = 'oll';
     else if (crossAchieved) label = maxPairs > 0 ? `f2l-${maxPairs}` : 'cross';
     else label = 'pre-cross';
-    progress = { phase: label, crossDone: crossAchieved, pairsSolved: maxPairs, f2lDone: f2lAchieved, ollDone: ollAchieved, solved: next.solved };
+    progress = { phase: label, crossDone: crossAchieved, pairsSolved: maxPairs, f2lDone: f2lAchieved, ollDone: ollAchieved, solved: next.solved, skip };
     prev = next;
     if (next.solved) { finishSolve(state, allMoves); return; }
     emit();
