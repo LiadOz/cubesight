@@ -82,8 +82,10 @@ test('selected plans support retrieval-first practice before revealing cues',asy
   await expect(page.locator('#scout-practice-panel')).toBeVisible();
   await expect(page.locator('.scout-results')).toBeHidden();
   await expect(page.locator('#scout-moves')).toBeEmpty();
+  await expect(page.locator('#scout-turn-guide')).toBeHidden();
   await expect(page.locator('#scout-cube canvas')).toHaveAttribute('data-highlight-cages','0');
   await page.locator('#scout-practice-reveal').click();
+  await expect(page.locator('#scout-turn-guide')).toBeVisible();
   await expect(page.locator('#scout-practice-time')).toContainText('Commitment time:');
   await expect(page.locator('#scout-practice-cue')).not.toBeEmpty();
   expect(Number(await page.locator('#scout-cube canvas').getAttribute('data-highlight-cages'))).toBeGreaterThanOrEqual(4);

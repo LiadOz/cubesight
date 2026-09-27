@@ -17,6 +17,7 @@ const routes = [
   ['f2l', 'f2l', 'F2L deduction'],
   ['pll-recognition', 'pll', 'PLL recognition'],
   ['cross-scout', 'scout', 'Cross Scout'],
+  ['smart-cube', 'smart', 'Smart Cube Studio'],
 ];
 
 for (const [path, tool, title] of routes) {

@@ -167,6 +167,46 @@ export function createCube3D(container, options = {}) {
   // Keep the cube aligned to the camera constraints and stationary at onset.
   cubeGroup.rotation.y = 0;
   scene.add(cubeGroup);
+  let turnHint = null;
+  function setTurnHint(move) {
+    if (turnHint) {
+      cubeGroup.remove(turnHint);
+      turnHint.traverse((object) => { object.geometry?.dispose(); object.material?.dispose(); });
+      turnHint = null;
+    }
+    delete renderer.domElement.dataset.hintMove;
+    delete renderer.domElement.dataset.hintLayers;
+    if (!move || !FACE_NORMALS[move[0]]) return;
+    const normal = new THREE.Vector3(...FACE_NORMALS[move[0]]);
+    const first = Math.abs(normal.y) > .5 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+    const second = new THREE.Vector3().crossVectors(normal, first).normalize();
+    const wide = move[1] === 'w';
+    const sweep = (move.endsWith("'") ? 1 : -1) * (move.endsWith('2') ? Math.PI : Math.PI * 1.45);
+    const group = new THREE.Group();
+    const center = normal.clone().multiplyScalar(1.61);
+    const drawArc = (radius) => {
+      const points = Array.from({ length: 33 }, (_, index) => {
+        const angle = -.68 + sweep * index / 32;
+        return center.clone().addScaledVector(first, radius * Math.cos(angle)).addScaledVector(second, radius * Math.sin(angle));
+      });
+      const arc = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 32, .026, 5, false), new THREE.MeshBasicMaterial({ color: 0x13d5ec, depthTest: true, depthWrite: false }));
+      arc.renderOrder = 30;
+      group.add(arc);
+      const tangent = points.at(-1).clone().sub(points.at(-2)).normalize();
+      const arrow = new THREE.Mesh(new THREE.ConeGeometry(.095, .22, 10), arc.material.clone());
+      arrow.position.copy(points.at(-1));
+      arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+      arrow.renderOrder = 31;
+      group.add(arrow);
+    };
+    drawArc(wide ? .72 : .83);
+    if (wide) drawArc(.51);
+    cubeGroup.add(group);
+    turnHint = group;
+    renderer.domElement.dataset.hintMove = move;
+    renderer.domElement.dataset.hintLayers = wide ? '2' : '1';
+    renderer.render(scene, camera);
+  }
   let bottomFace = 'D';
   let frontFace = 'F';
   const heldOrientation = new THREE.Quaternion();
@@ -321,6 +361,9 @@ export function createCube3D(container, options = {}) {
       tumbleControls.target.set(0, 0, 0);
       tumbleControls.enabled = true;
       tumbleControls.reset();
+      // TrackballControls.reset() restores the pose but leaves its damping
+      // velocity alive, which otherwise rotates the camera again next frame.
+      tumbleControls._lastAngle = 0;
       renderer.domElement.style.cursor = 'grab';
       renderer.domElement.setAttribute('aria-label', 'Interactive Cross Scout cube. Drag in any direction to tumble through every face and follow highlighted pieces.');
     } else {
@@ -439,6 +482,8 @@ export function createCube3D(container, options = {}) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const clock = new THREE.Clock();
   let moveAnimation = null;
+  let liveMoveQueue = [];
+  let liveMoveRunning = false;
   let applyingAnimationUpdate = false;
   function cancelMoveAnimation() {
     if (!moveAnimation) return;
@@ -469,7 +514,7 @@ export function createCube3D(container, options = {}) {
   frame();
 
   function update(data) {
-    if (!applyingAnimationUpdate) cancelMoveAnimation();
+    if (!applyingAnimationUpdate) { liveMoveQueue = []; cancelMoveAnimation(); }
     const palette = { ...DEFAULT_FACE_COLORS, ...(data.colors || {}) };
     const targets = data.targets || [{
       targetCorner: data.targetCorner,
@@ -569,9 +614,9 @@ export function createCube3D(container, options = {}) {
   // Animate a layer turn for scout playback. The caller supplies the state
   // that should be displayed after the move; geometry is always restored
   // before applying it so repeated updates cannot accumulate transforms.
-  function animateMove(move, nextData) {
+  function animateMove(move, nextData, durationMs=260) {
     cancelMoveAnimation();
-    const notation = String(move || '').trim().toUpperCase();
+    const notation = String(move || '').trim();
     const face = notation[0];
     if (!FACE_NORMALS[face]) {
       if (nextData) update(nextData);
@@ -581,11 +626,15 @@ export function createCube3D(container, options = {}) {
     const direction = notation.includes("'") ? -1 : 1;
     const axis = new THREE.Vector3(...FACE_NORMALS[face]);
     const angle = -direction * turns * Math.PI / 2;
+    renderer.domElement.dataset.turningFace = face;
     const layer = new THREE.Group();
     cubeGroup.add(layer);
+    const wide = notation[1] === 'w';
     const members = cubeGroup.children.filter((child) => {
       const position = child.userData.cubiePosition;
-      return position && position[axis.x ? 0 : axis.y ? 1 : 2] === (axis.x || axis.y || axis.z);
+      return position && (wide
+        ? position[axis.x ? 0 : axis.y ? 1 : 2] * (axis.x || axis.y || axis.z) >= 0
+        : position[axis.x ? 0 : axis.y ? 1 : 2] === (axis.x || axis.y || axis.z));
     });
     const snapshots = members.map((object) => ({ object, position: object.position.clone(), quaternion: object.quaternion.clone(), scale: object.scale.clone() }));
     members.forEach((object) => layer.attach(object));
@@ -609,6 +658,7 @@ export function createCube3D(container, options = {}) {
         settled = true;
         cancelAnimationFrame(frameId);
         restore();
+        delete renderer.domElement.dataset.turningFace;
         moveAnimation = null;
         if (applyState && nextData) {
           applyingAnimationUpdate = true;
@@ -618,12 +668,15 @@ export function createCube3D(container, options = {}) {
         resolve();
       };
       moveAnimation = { cancel: () => finish(false) };
-      const duration = reducedMotion.matches ? 0 : 260;
+      const duration = reducedMotion.matches ? 0 : durationMs;
       const tick = (now) => {
         if (settled) return;
         const progress = duration ? Math.min((now - started) / duration, 1) : 1;
         layer.rotation.set(0, 0, 0);
-        layer.rotateOnAxis(axis, angle * (progress < 1 ? 1 - Math.pow(1 - progress, 3) : 1));
+        // Smooth acceleration and deceleration makes instructional turns
+        // readable at slow speeds without a sudden first-frame jump.
+        const eased = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
+        layer.rotateOnAxis(axis, angle * eased);
         renderer.render(scene, camera);
         if (progress >= 1) finish(true);
         else frameId = requestAnimationFrame(tick);
@@ -632,18 +685,46 @@ export function createCube3D(container, options = {}) {
     });
   }
 
+  // Smart-cube packets can arrive faster than a teaching animation. Keep
+  // turns in order, then shorten animations under load. If we fall far behind
+  // (including in a hidden tab), catch up to the verified latest state.
+  function queueLiveMove(move, nextData) {
+    if (liveMoveQueue.length >= 6 || document.hidden) {
+      update(nextData);
+      return;
+    }
+    liveMoveQueue.push({ move, nextData });
+    if (liveMoveRunning) return;
+    liveMoveRunning = true;
+    void (async () => {
+      try {
+        while (liveMoveQueue.length && !stopped) {
+          const next = liveMoveQueue.shift();
+          await animateMove(next.move, next.nextData, liveMoveQueue.length > 2 ? 65 : 105);
+        }
+      } finally { liveMoveRunning = false; }
+    })();
+  }
+
   return {
     update,
     animateMove,
+    setTurnHint,
+    queueLiveMove,
     setMode,
     setViewOffset,
     setOrientation,
     setGyroOrientation,
     recenterGyro,
     setFullTouchRotation,
-    resetView() { setMode(interactionMode); },
+    resetView() {
+      setMode(interactionMode);
+      if (interactionMode === 'scout') recenterGyro();
+    },
     destroy() {
+      liveMoveQueue = [];
       cancelMoveAnimation();
+      setTurnHint(null);
       stopped = true;
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();

@@ -64,5 +64,8 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.getByRole('link', { name: 'Cross Scout', exact: true }).click();
   await expect(page.locator('#scout-highlight')).toBeVisible();
+  await page.getByRole('link', { name: 'Smart Cube Studio', exact: true }).click();
+  await expect(page.locator('#studio-cube canvas')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Inspect tracking' })).toHaveAttribute('aria-selected', 'true');
   expect(pageErrors).toEqual([]);
 });

@@ -49,6 +49,18 @@ test('parseScramble returns strict move strings', () => {
   assert.throws(() => parseScramble(Array(201).fill('R').join(' ')));
 });
 
+test('all wide faces turn two layers and preserve inverses', () => {
+  const solved = createSolvedState();
+  for (const face of ['U', 'D', 'R', 'L', 'F', 'B']) {
+    const move = `${face}w`;
+    assert.deepEqual(parseScramble(`${move} ${move}' ${move}2`, { allowWide: true }), [move, `${move}'`, `${move}2`]);
+    assert.deepEqual(applyMoves(solved, [move, `${move}'`]), solved);
+    assert.deepEqual(applyMoves(solved, [move, move, move, move]), solved);
+    assert.notDeepEqual(applyMoves(solved, move), applyMoves(solved, face));
+  }
+  assert.throws(() => parseScramble('Rw'), /Unsupported move/);
+});
+
 test('solved state contains stable cubie IDs and stickers', () => {
   const s = createSolvedState();
   assert.equal(s.cubies.length, 26); assert.deepEqual(pos(s, 'UFR'), [1, 1, 1]);

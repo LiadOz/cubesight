@@ -38,6 +38,7 @@
 .scout-shell { grid-template-columns: minmax(0,1.2fr) minmax(340px,1fr); }
 .scout-shell .cube-stage { min-height: 465px; }
 .scout-shell .cube-caption { flex-wrap: wrap; }
+.scout-shell .cube-caption #scout-view-caption { color: #d6e8f0; font: 700 11px/1.5 var(--mono); }
 .scout-shell .cube-caption button { color: #c0d4df; }
 .scout-view-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:12px; }
 #scout-touch-mode[aria-pressed="true"] { color:#9ff5e7; text-decoration-thickness:2px; }

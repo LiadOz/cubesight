@@ -33,6 +33,33 @@ test('smart-cube picker does not hide devices behind name filters', async ({ pag
   await expect.poll(() => page.evaluate(() => window.smartCubePickerOptions?.acceptAllDevices)).toBe(true);
 });
 
+test('scramble turn guide names the next face and direction', async ({ page }) => {
+  await page.goto('/#/cross-scout');
+  const scramble = page.locator('#scout-scramble');
+  await scramble.fill("R U' F2");
+  await expect(page.locator('#scout-turn-guide')).toContainText('Scramble turn 1 of 3');
+  await expect(page.locator('#scout-turn-guide')).toContainText('right face (red center) clockwise');
+  await page.locator('#scout-turn-guide .smart-turn-next').click();
+  await expect(page.locator('#scout-turn-guide')).toContainText('top face (white center) counterclockwise');
+  await page.locator('#scout-turn-guide .smart-turn-next').click();
+  await expect(page.locator('#scout-turn-guide')).toContainText('front face (green center) 180°');
+});
+
+test('Reset view restores the Cross Scout camera after a drag', async ({ page }) => {
+  await page.goto('/#/cross-scout');
+  const canvas = page.locator('#scout-cube canvas');
+  await canvas.scrollIntoViewIfNeeded();
+  const initial = await canvas.getAttribute('data-camera-pose');
+  const box = await canvas.boundingBox();
+  await page.mouse.move(box.x + box.width * .5, box.y + box.height * .8);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * .5, box.y + box.height * .05, { steps: 12 });
+  await page.mouse.up();
+  await expect.poll(() => canvas.getAttribute('data-camera-pose')).not.toBe(initial);
+  await page.locator('#scout-reset-view').click();
+  await expect.poll(() => canvas.getAttribute('data-camera-pose')).toBe(initial);
+});
+
 test('Cross Scout mirrors smart-cube turns and advances a selected plan', async ({ page }) => {
   test.setTimeout(60_000);
   await page.addInitScript(() => {
@@ -76,20 +103,55 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
   // GAN +Z is the white axis, so a turn around it maps to renderer +Y.
   await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-target')).split(',')[1])).toBeGreaterThan(.65);
   await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-pose')).split(',')[1])).toBeGreaterThan(.65);
+  const liveTurn = await page.evaluate(() => {
+    window.testSmartCube.emit('R');
+    const canvas = document.querySelector('#smart-scout-test canvas');
+    return { face: canvas.dataset.turningFace, target: Number(canvas.dataset.gyroTarget.split(',')[1]) };
+  });
+  expect(liveTurn.face).toBe('R');
+  expect(liveTurn.target).toBeGreaterThan(.65);
+  await scout.locator('#scout-reset-view').click();
+  await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-target')).split(',')[1])).toBeCloseTo(0, 2);
+  await page.evaluate(() => window.testSmartCube.emitGyro({ x: 0, y: 0, z: 1, w: 0 }));
+  await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-target')).split(',')[1])).toBeGreaterThan(.65);
   await scout.locator('#scout-smart-recenter').click();
   await expect.poll(async () => Number((await canvas.getAttribute('data-gyro-target')).split(',')[1])).toBeCloseTo(0, 2);
-  await page.evaluate(() => ['R', 'U', 'F'].forEach(move => window.testSmartCube.emit(move)));
+  await page.evaluate(() => ['U', 'F'].forEach(move => window.testSmartCube.emit(move)));
   await expect(scout.locator('#scout-scramble')).toHaveValue('R U F');
+  await expect(canvas).not.toHaveAttribute('data-turning-face', { timeout: 2000 });
   await expect(scout.locator('#scout-message')).toContainText('Smart cube mirrored');
 
   await scout.locator('#scout-analyze').click();
   await expect(scout.locator('#scout-message')).toContainText('plans found', { timeout: 30_000 });
   await scout.locator('.scout-result').filter({ hasText: /[1-9]\d* moves/ }).first().click();
+  await expect(scout.locator('#scout-turn-guide')).toContainText('Plan turn 1 of');
+  const detour = await page.evaluate(async () => {
+    const { applyMoves, stateFromScramble, sameCubeState, movesForInspection } = await import('/src/cross-cube.js');
+    const root = document.querySelector('#smart-scout-test');
+    const plan = root.dataset.scoutCanonicalMoves.split(' ');
+    const states = [stateFromScramble('R U F')];
+    for (const move of plan) states.push(applyMoves(states.at(-1), [move]));
+    const wrong = ['U', 'D', 'R', 'L', 'F', 'B', 'U2', 'D2'].find(move => !states.some(state => sameCubeState(state, applyMoves(states[0], [move]))));
+    const undo = wrong.endsWith('2') ? wrong : `${wrong}'`;
+    const canvas = root.querySelector('canvas');
+    const shownUndo = movesForInspection([undo], canvas.dataset.bottomFace, canvas.dataset.frontFace)[0];
+    window.testSmartCube.emit(wrong);
+    return { undo, shownUndo };
+  });
+  await expect(scout.locator('#scout-step')).toContainText('Off plan');
+  await expect(scout.locator('#scout-turn-guide')).toContainText('Return to plan');
+  await expect(scout.locator('#scout-turn-guide .smart-turn-notation')).toHaveText(detour.shownUndo);
+  await expect(scout.locator('.scout-result[aria-pressed="true"]')).toHaveCount(1);
+  await expect(scout.locator('#scout-analyze')).toHaveText('Analyze current cube');
+  await page.evaluate(move => window.testSmartCube.emit(move), detour.undo);
+  await expect(scout.locator('#scout-turn-guide')).toContainText('Plan turn 1 of');
+  await expect(scout.locator('#scout-analyze')).toHaveText('Analyze');
   await page.evaluate(() => {
     const move = document.querySelector('#smart-scout-test').dataset.scoutCanonicalMoves.split(' ')[0];
     window.testSmartCube.emit(move);
   });
   await expect(scout.locator('#scout-step')).toContainText('Move 1 of');
+  await expect(scout.locator('#scout-turn-guide')).toContainText(/Plan turn 2 of|Plan complete/);
   await expect(scout.locator('#scout-message')).toContainText('matched move 1');
   await scout.locator('#scout-smart-disconnect').click();
   await expect(scout.locator('#scout-scramble')).not.toHaveAttribute('readonly');

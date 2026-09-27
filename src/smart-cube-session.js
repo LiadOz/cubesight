@@ -12,6 +12,7 @@ const isSolvedState = state => state.cubies.every(cubie =>
  */
 export function createSmartCubeSession(connectDevice) {
   const listeners = new Set();
+  const eventListeners = new Set();
   let connection = null;
   let subscription = null;
   let generation = 0;
@@ -19,7 +20,7 @@ export function createSmartCubeSession(connectDevice) {
   let snapshot = {
     phase: 'disconnected', detail: 'Connect a smart cube to mirror its turns.',
     deviceName: '', protocol: '', battery: null, facelets: null, gyro: null,
-    state: solvedState(), moves: [],
+    state: solvedState(), moves: [], lastMove: null,
   };
 
   function publish(changes) {
@@ -28,7 +29,7 @@ export function createSmartCubeSession(connectDevice) {
   }
 
   function establishSolvedBaseline() {
-    publish({ phase: 'tracking', detail: 'Solved baseline synced. Turn the cube, then Analyze.', state: solvedState(), moves: [] });
+    publish({ phase: 'tracking', detail: 'Solved baseline synced. Turn the cube, then Analyze.', state: solvedState(), moves: [], lastMove: null });
   }
 
   function endFaceletsRequest(error, facelets) {
@@ -41,6 +42,26 @@ export function createSmartCubeSession(connectDevice) {
   }
 
   function onEvent(event) {
+    // Keep protocol observations separate from the trusted solved-baseline
+    // state. The Studio can inspect turns even before tracking is established.
+    const observation = {
+      type: event.type,
+      receivedAt: Date.now(),
+      ...(event.type === 'MOVE' ? {
+        move: String(event.move || ''),
+        face: Number.isInteger(event.face) ? event.face : null,
+        direction: Number.isInteger(event.direction) ? event.direction : null,
+        serial: Number.isInteger(event.serial) ? event.serial : null,
+        cubeTimestamp: Number.isFinite(event.cubeTimestamp) ? event.cubeTimestamp : null,
+        localTimestamp: Number.isFinite(event.localTimestamp) ? event.localTimestamp : null,
+      } : {}),
+      ...(event.type === 'GYRO' ? { quaternion: event.quaternion } : {}),
+      ...(event.type === 'FACELETS' ? { facelets: event.facelets } : {}),
+      ...(event.type === 'BATTERY' ? { batteryLevel: event.batteryLevel } : {}),
+    };
+    for (const listener of eventListeners) {
+      try { listener(observation); } catch { /* A diagnostic consumer must not stop tracking. */ }
+    }
     if (event.type === 'FACELETS') {
       publish({ facelets: event.facelets });
       endFaceletsRequest(null, event.facelets);
@@ -54,7 +75,7 @@ export function createSmartCubeSession(connectDevice) {
         if (moves.length !== 1) throw new Error('Invalid move');
         const [move] = moves;
         const state = applyMoves(snapshot.state, [move]);
-        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], detail: 'Live cube updated. Analyze when ready.' });
+        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, detail: 'Live cube updated. Analyze when ready.' });
       } catch {
         publish({ phase: 'desynced', detail: `Unsupported move from cube: ${String(event.move).slice(0, 20)}. Solve it and sync again.` });
       }
@@ -141,5 +162,6 @@ export function createSmartCubeSession(connectDevice) {
     connect, disconnect, syncSolved,
     getSnapshot: () => snapshot,
     subscribe(listener) { listeners.add(listener); listener(snapshot); return () => listeners.delete(listener); },
+    subscribeEvents(listener) { eventListeners.add(listener); return () => eventListeners.delete(listener); },
   };
 }

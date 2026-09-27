@@ -73,7 +73,7 @@ export function parseScramble(input='', { allowWide = false } = {}) {
   if (typeof input !== 'string') throw new TypeError('Enter a scramble as move notation.');
   const tokens = input.trim().replace(/[′’]/g,"'").split(/\s+/).filter(Boolean);
   if (tokens.length > 200) throw new Error('Use at most 200 moves.');
-  for (const token of tokens) if (!(allowWide ? /^(?:[URFDLB]|Uw)(?:2|')?$/ : /^[URFDLB](?:2|')?$/).test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B with 2 or a prime.`);
+  for (const token of tokens) if (!(allowWide ? /^[URFDLB]w?(?:2|')?$/ : /^[URFDLB](?:2|')?$/).test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B${allowWide ? ', or a wide move such as Rw,' : ''} with 2 or a prime.`);
   return tokens;
 }
 
@@ -95,7 +95,7 @@ export function sameCubeState(a, b) {
 function quarter(v, n) {
   const projection = dot(v,n);
   const cross = [n[1]*v[2]-n[2]*v[1], n[2]*v[0]-n[0]*v[2], n[0]*v[1]-n[1]*v[0]];
-  return v.map((_,i)=>n[i]*projection-cross[i]);
+  return v.map((_,i)=>n[i]*projection-cross[i] || 0);
 }
 
 export function applyMoves(state, input) {
@@ -103,9 +103,9 @@ export function applyMoves(state, input) {
   let cubies = state.cubies.map(c=>({id:c.id,position:[...c.position],stickers:{...c.stickers}}));
   for (const move of moves) {
     const normal = NORMAL[move[0]];
-    const wideU = move.startsWith('Uw');
+    const wide = move[1] === 'w';
     const turns = move.endsWith('2') ? 2 : move.endsWith("'") ? 3 : 1;
-    for (let turn=0;turn<turns;turn++) cubies = cubies.map(c=>(wideU ? dot(c.position,normal)<0 : dot(c.position,normal)!==1) ? c : {
+    for (let turn=0;turn<turns;turn++) cubies = cubies.map(c=>(wide ? dot(c.position,normal)<0 : dot(c.position,normal)!==1) ? c : {
       id:c.id, position:quarter(c.position,normal),
       stickers:Object.fromEntries(Object.entries(c.stickers).map(([f,color])=>[FACE_BY_NORMAL[quarter(NORMAL[f],normal).join(',')],color])),
     });

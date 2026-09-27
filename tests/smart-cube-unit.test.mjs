@@ -86,3 +86,36 @@ test('gyro readings publish a validated orientation and clear on disconnect', as
   await session.disconnect();
   assert.equal(session.getSnapshot().gyro, null);
 });
+
+test('diagnostic subscribers see decoded moves before sync without altering trusted state', async () => {
+  const device = fakeCube();
+  const session = createSmartCubeSession(device.connect);
+  const observations = [];
+  session.subscribeEvents(event => observations.push(event));
+  session.subscribeEvents(() => { throw new Error('debug panel failed'); });
+  device.setFacelets(`R${SOLVED.slice(1)}`);
+  await session.connect();
+  await new Promise(resolve => setImmediate(resolve));
+  device.emit({ type: 'MOVE', move: 'R', face: 1, direction: 0, serial: 7, cubeTimestamp: 123, localTimestamp: 456 });
+  assert.deepEqual(session.getSnapshot().moves, []);
+  assert.deepEqual(observations.at(-1), {
+    type: 'MOVE', receivedAt: observations.at(-1).receivedAt, move: 'R', face: 1, direction: 0, serial: 7,
+    cubeTimestamp: 123, localTimestamp: 456,
+  });
+  await session.disconnect();
+});
+
+test('a raw wide or slice label stays visible even when trusted tracking rejects it', async () => {
+  for (const move of ['Uw', 'M']) {
+    const device = fakeCube();
+    const session = createSmartCubeSession(device.connect);
+    const seen = [];
+    session.subscribeEvents(event => seen.push(event));
+    await session.connect();
+    await new Promise(resolve => setImmediate(resolve));
+    device.emit({ type: 'MOVE', move });
+    assert.equal(seen.at(-1).move, move);
+    assert.equal(session.getSnapshot().phase, 'desynced');
+    await session.disconnect();
+  }
+});

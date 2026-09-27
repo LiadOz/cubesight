@@ -1,9 +1,10 @@
 import './cross-scout.css';
 import { createCube3D } from './cube-3d.js';
-import { FACE_COLORS, COLOR_HEX, parseScramble, stateFromScramble, applyMoves, toRenderData, validateSolution, classifyOpportunity, randomScramble, planPieceIds, frontFacesFor, suggestInspectionFront, movesForInspection } from './cross-cube.js';
+import { FACE_COLORS, COLOR_HEX, parseScramble, stateFromScramble, applyMoves, toRenderData, validateSolution, classifyOpportunity, randomScramble, planPieceIds, frontFacesFor, suggestInspectionFront, inspectionOrientation, movesForInspection } from './cross-cube.js';
 import { solveCross, terminateCrossSolver } from './cross-solver.js';
 import { smartCube } from './smart-cube-bluetooth.js';
-import { sameCubeState } from './cross-cube.js';
+import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
+import { followPlanTurn, recoveryMoves } from './smart-cube-guidance.js';
 
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const title = value => value[0].toUpperCase()+value.slice(1);
@@ -31,6 +32,8 @@ export function createCrossScout(root, cubeSession = smartCube) {
   let practice=null;
   let viewBottom='D',viewFront='F',suggestedFront=null;
   let lastLiveScramble=null;
+  let scrambleGuideIndex=0,manualScrambleGuide=true;
+  let offPlanMoves=[];
   let lastGyro=null,lastSmartStatus='';
   root.innerHTML=`
     <section class="intro-row"><div><p class="eyebrow">Explore / Cross planning</p><h1>Cross Scout</h1></div><p class="intro-copy">Find the opportunity.<br>Understand what to look for.</p></section>
@@ -51,11 +54,15 @@ export function createCrossScout(root, cubeSession = smartCube) {
       <p class="scout-message" id="scout-message" role="status" aria-live="polite">Apply the scramble to your cube, then compare plans. No timer, no score.</p>
     </section>
     <section class="trainer-shell scout-shell">
-      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> Inspect every face</span><span class="view-lock">Free tumble</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span id="scout-view-caption">White top · Green front · Red right</span><div class="scout-view-actions"><button class="text-button" id="scout-touch-mode" aria-pressed="false">Touch: scroll + rotate</button><button class="text-button" id="scout-reset-view">Reset view</button></div></div></div>
+      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> Inspect every face</span><span class="view-lock">Free tumble</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span id="scout-view-caption">White top · Green front · Red right</span><div class="scout-view-actions"><button class="text-button" id="scout-touch-mode" aria-pressed="false">Touch: scroll + rotate</button><button class="text-button" id="scout-reset-view">Reset view</button></div></div><div id="scout-turn-guide" hidden></div></div>
       <div class="scout-plan"><p class="eyebrow">Your plan</p><span id="scout-family" class="scout-family">Start with the cross</span><h2 id="scout-plan-title">What can you spot?</h2><p id="scout-explanation">Analyze the scramble to compare cross, X-cross, and double X-cross candidates. Select a plan to see which pieces matter.</p><p class="scout-pieces" id="scout-pieces"></p><div id="scout-moves" class="scout-moves" aria-label="Solution moves"></div><div class="scout-playback"><button class="scout-button" id="scout-start" disabled>Reset</button><button class="scout-button" id="scout-prev" disabled aria-label="Previous move">←</button><button class="scout-button" id="scout-play" disabled>Play</button><button class="scout-button" id="scout-next" disabled aria-label="Next move">→</button></div><span class="scout-step-note" id="scout-step">Scrambled state</span><button class="scout-practice-launch" id="scout-practice" disabled>Practice this plan</button><section class="scout-practice-panel" id="scout-practice-panel" hidden aria-live="polite"><span class="scout-practice-kicker">Retrieval practice</span><h3 id="scout-practice-title">Find the pieces before you reveal the plan</h3><p id="scout-practice-copy">On the unassisted cube, identify the four cross edges and the highlighted-plan pair pieces. Commit to what you would inspect first, then reveal.</p><div class="scout-practice-actions"><button class="scout-button scout-practice-reveal" id="scout-practice-reveal">I found it — reveal plan</button><button class="scout-button" id="scout-practice-exit">Exit practice</button></div><div class="scout-practice-result" id="scout-practice-result" hidden><p id="scout-practice-time"></p><p id="scout-practice-cue"></p><div class="scout-practice-rating"><span>How did the retrieval feel?</span><button class="scout-button" data-practice-rating="found">Found it</button><button class="scout-button" data-practice-rating="missed">Missed it</button></div><p class="scout-practice-history" id="scout-practice-history"></p></div></section></div>
     </section>
     <section class="scout-results"><div class="scout-results-head"><h2>Plans found</h2><select id="scout-sort" aria-label="Sort plans"><option value="cue">Recognizable cues first</option><option value="moves">Fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose your colors and analyze to find candidate plans.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). Random scrambles here are random-move practice scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search powered by the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, running locally in WebAssembly. Smart-cube moves stay on your device; the server only serves the app. Bluetooth requires a compatible cube, HTTPS, and a Web Bluetooth browser.</p></section>`;
   const $=selector=>root.querySelector(selector);
+  const turnGuide=createSmartCubeTurnGuide($('#scout-turn-guide'),{
+    onPrevious:()=>{scrambleGuideIndex=Math.max(0,scrambleGuideIndex-1);renderTurnGuide();},
+    onNext:()=>{scrambleGuideIndex++;renderTurnGuide();},
+  });
   const guide=document.createElement('details');
   guide.className='scout-guide';
   guide.innerHTML=`<summary>What do the solution classes mean?</summary>
@@ -82,8 +89,11 @@ export function createCrossScout(root, cubeSession = smartCube) {
   function message(text){ $('#scout-message').textContent=text; }
   function updateOrientation(useSuggestion=false){
     if(!selected){
+      // Live turns redraw this view repeatedly. Re-anchoring its gyro on
+      // every turn would erase the physical rotation we are following.
+      const changedHold=viewBottom!=='D'||viewFront!=='F';
       viewBottom='D';viewFront='F';suggestedFront=null;
-      cube.setOrientation(viewBottom,viewFront);
+      if(changedHold)cube.setOrientation(viewBottom,viewFront);
       $('#scout-bottom-label').textContent='Default cube view';
       $('#scout-front').innerHTML='<option value="F" selected>Green · F</option>';
       $('#scout-front').disabled=true;
@@ -102,14 +112,15 @@ export function createCrossScout(root, cubeSession = smartCube) {
     $('#scout-front').innerHTML=fronts.map(face=>`<option value="${face}"${face===viewFront?' selected':''}>${title(FACE_COLORS[face])} · ${face}${face===suggestedFront.face?' (suggested)':''}</option>`).join('');
     const tieNote=suggestedFront.tiedChoices>1?' It ties for the clearest view, so the conventional front wins the tie.':'';
     $('#scout-front-reason').textContent=`Suggested ${title(FACE_COLORS[suggestedFront.face])} because it shows ${suggestedFront.crossStickers} of 4 cross-color stickers and ${suggestedFront.visiblePieces} of ${targets.length} plan pieces from the starting angle. Cross stickers count first, then visible plan pieces.${tieNote}`;
-    $('#scout-view-caption').textContent=`${title(FACE_COLORS[viewBottom])} bottom · ${title(FACE_COLORS[viewFront])} front · moves match this held view`;
+    const held=inspectionOrientation(viewBottom,viewFront);
+    $('#scout-view-caption').textContent=`${title(FACE_COLORS[held.top])} top · ${title(FACE_COLORS[held.front])} front · ${title(FACE_COLORS[held.right])} right · ${title(FACE_COLORS[held.bottom])} bottom`;
   }
   function renderColors(){
     $('#scout-colors').innerHTML=`<button data-scout-color="CN" aria-pressed="${allowed.length===6}">CN · all six</button>`+Object.entries(FACE_COLORS).map(([face,color])=>`<button data-scout-color="${face}" aria-pressed="${allowed.includes(face)}"><i style="--color:${COLOR_HEX[color]}" aria-hidden="true"></i>${title(color)}</button>`).join('');
   }
   function stopPlayback(){playing=false;playbackGeneration++;renderPlayback();}
   function cancelSearch(){ requestGeneration++; controller?.abort();controller=null;terminateCrossSolver();busy=false;$('#scout-stop').hidden=true;$('#scout-analyze').disabled=false; }
-  function clearPlans(){stopPlayback();practice=null;highlightsOn=false;selected=null;results=[];states=[];step=0;delete root.dataset.scoutCanonicalMoves;updateOrientation();renderResults();renderPlan();}
+  function clearPlans(){stopPlayback();practice=null;highlightsOn=false;selected=null;results=[];states=[];step=0;offPlanMoves=[];delete root.dataset.scoutCanonicalMoves;updateOrientation();renderResults();renderPlan();}
   function readPracticeHistory(){try{const value=JSON.parse(localStorage.getItem(PRACTICE_STORE));return Array.isArray(value)?value:[];}catch{return [];}}
   function savePracticeAttempt(rating){
     if(!practice?.revealedAt || practice.rated || !selected)return;
@@ -173,17 +184,27 @@ export function createCrossScout(root, cubeSession = smartCube) {
     $('#scout-random').disabled=tracking;
   }
   function applyLiveCube(snapshot){
+    manualScrambleGuide=false;
     const scramble=snapshot.moves.join(' ');
     if(lastLiveScramble===scramble)return;
     lastLiveScramble=scramble;
     $('#scout-scramble').value=scramble;
     if(selected){
-      const matched=states.findIndex(state=>sameCubeState(state,snapshot.state));
-      if(matched>=0){stopPlayback();step=matched;cube.update(planData(states[step]));renderPlayback();message(`Smart cube matched move ${step} of this plan.`);return;}
+      const progress=followPlanTurn(states,step,offPlanMoves,snapshot.state,snapshot.lastMove);
+      stopPlayback();
+      step=progress.step;offPlanMoves=progress.detour;
+      if(progress.onPlan){
+        const data=planData(states[step]);if(snapshot.lastMove)cube.queueLiveMove(snapshot.lastMove,data);else cube.update(data);
+        renderPlayback();message(`Smart cube matched move ${step} of this plan.`);return;
+      }
+      const data=planData(snapshot.state);if(snapshot.lastMove)cube.queueLiveMove(snapshot.lastMove,data);else cube.update(data);
+      renderPlayback();
+      message(`Off plan. Follow the return-to-plan turns below, or Analyze current cube for a new plan.`);
+      return;
     }
     cancelSearch();
     source=snapshot.state;currentScramble=scramble;
-    clearPlans();cube.update(toRenderData(source));
+    clearPlans();const data=toRenderData(source);if(snapshot.lastMove)cube.queueLiveMove(snapshot.lastMove,data);else cube.update(data);
     message(snapshot.moves.length>200?'Smart cube tracked over 200 moves. Return to solved and sync to start a new Cross Scout case.':'Smart cube mirrored. Select Analyze to find plans for its current state.');
   }
   function onSmartCube(snapshot){
@@ -196,13 +217,31 @@ export function createCrossScout(root, cubeSession = smartCube) {
   }
   function renderPlayback(){
     $('#scout-play').textContent=playing?'Pause':'Play';
-    $('#scout-play').disabled=!selected || !selected.moves.length;
-    $('#scout-start').disabled=!selected || step===0;
-    $('#scout-prev').disabled=!selected || step===0;
-    $('#scout-next').disabled=!selected || step>=selected.moves.length;
-    $('#scout-step').textContent=selected?`Move ${step} of ${selected.moves.length}${step===selected.moves.length?' · plan complete':''}`:'Scrambled state';
+    $('#scout-play').disabled=!selected || !selected.moves.length || offPlanMoves.length>0;
+    $('#scout-start').disabled=!selected || step===0 || offPlanMoves.length>0;
+    $('#scout-prev').disabled=!selected || step===0 || offPlanMoves.length>0;
+    $('#scout-next').disabled=!selected || step>=selected.moves.length || offPlanMoves.length>0;
+    $('#scout-step').textContent=offPlanMoves.length?`Off plan · return to move ${step}`:selected?`Move ${step} of ${selected.moves.length}${step===selected.moves.length?' · plan complete':''}`:'Scrambled state';
     const displayed=selected?movesForInspection(selected.moves,viewBottom,viewFront):[];
-    $('#scout-moves').innerHTML=selected?displayed.map((move,index)=>`<button class="scout-move ${index<step?'done':''} ${index===step-1?'current':''}" data-scout-step="${index+1}" aria-label="Show state after move ${index+1}: ${escape(move)}">${escape(move)}</button>`).join(''):'';
+    $('#scout-moves').innerHTML=selected?displayed.map((move,index)=>`<button class="scout-move ${index<step?'done':''} ${index===step-1?'current':''}" data-scout-step="${index+1}" aria-label="Show state after move ${index+1}: ${escape(move)}"${offPlanMoves.length?' disabled':''}>${escape(move)}</button>`).join(''):'';
+    $('#scout-analyze').textContent=offPlanMoves.length?'Analyze current cube':'Analyze';
+    renderTurnGuide();
+  }
+  function renderTurnGuide(){
+    let move,mode,index=0,total=0,recovery=[];
+    if(selected&&offPlanMoves.length){
+      recovery=recoveryMoves(offPlanMoves,viewBottom,viewFront);
+      move=recovery[0];total=recovery.length;mode='recovery';
+    }else if(selected){
+      const moves=movesForInspection(selected.moves,viewBottom,viewFront);
+      move=moves[step];index=step;total=moves.length;mode='plan';
+    }else if(manualScrambleGuide){
+      let moves=[];
+      try { moves=parseScramble($('#scout-scramble').value); } catch { /* Invalid manual input has no turn cue. */ }
+      scrambleGuideIndex=Math.min(scrambleGuideIndex,moves.length);
+      move=moves[scrambleGuideIndex];index=scrambleGuideIndex;total=moves.length;mode='scramble';
+    }
+    turnGuide.render({mode:practice&&!practice.revealedAt?null:mode,move,index,total,bottom:viewBottom,front:viewFront,recovery});
   }
   function renderPlan(){
     highlightButton.disabled=!selected;
@@ -215,11 +254,13 @@ export function createCrossScout(root, cubeSession = smartCube) {
     renderPractice();
   }
   function selectPlan(index){
-    stopPlayback();practice=null;highlightsOn=false;selected=results[index];step=0;states=[source];
+    stopPlayback();practice=null;highlightsOn=false;offPlanMoves=[];selected=results[index];step=0;states=[source];
     root.dataset.scoutCanonicalMoves=selected.moves.join(' ');
     for(const move of selected.moves) states.push(applyMoves(states.at(-1),[move]));
     viewBottom=selected.face;updateOrientation(true);
     cube.update(planData(source));renderPlan();renderResults();
+    const held=inspectionOrientation(viewBottom,viewFront);
+    message(`Hold the physical cube with ${FACE_COLORS[held.top]} on top and ${FACE_COLORS[held.front]} in front, then tap Reset view to align its motion. Follow the center color named in each turn cue.`);
   }
   function renderResults(){
     const ranks={easy:0,medium:1,hard:2};
@@ -227,9 +268,9 @@ export function createCrossScout(root, cubeSession = smartCube) {
     $('#scout-results').innerHTML=ordered.map(result=>`<button class="scout-result" data-scout-result="${result.index}" aria-pressed="${selected===results[result.index]}"><span><i style="--color:${COLOR_HEX[FACE_COLORS[result.face]]}" aria-hidden="true"></i>${title(FACE_COLORS[result.face])} · ${stageName(result.pairs.length)}</span><small>${result.pairs.length?`Cross + ${result.pairs.length} solved F2L pair${result.pairs.length===1?'':'s'}`:'Four cross edges; no F2L pair'}</small><strong>${result.moves.length} moves</strong><span class="scout-family">Look for: ${escape(clue(result)[0])}</span><small>${escape(clue(result)[1])}</small></button>`).join('');
     $('#scout-empty').hidden=results.length>0;
   }
-  function jump(target){stopPlayback();if(!selected)return;step=Math.max(0,Math.min(target,selected.moves.length));cube.update(planData(states[step]));renderPlayback();}
+  function jump(target){stopPlayback();if(!selected||offPlanMoves.length)return;step=Math.max(0,Math.min(target,selected.moves.length));cube.update(planData(states[step]));renderPlayback();}
   async function advance(){
-    if(!selected || step>=selected.moves.length)return;
+    if(!selected || offPlanMoves.length || step>=selected.moves.length)return;
     const token=playbackGeneration, plan=selected,next=step+1;
     await cube.animateMove(plan.moves[step],planData(states[next],plan));
     if(token!==playbackGeneration||plan!==selected)return;
@@ -237,7 +278,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
   }
   async function play(){
     if(playing){stopPlayback();cube.update(planData(states[step]));return;}
-    if(!selected)return;if(step===selected.moves.length)jump(0);
+    if(!selected||offPlanMoves.length)return;if(step===selected.moves.length)jump(0);
     playing=true;const token=playbackGeneration;renderPlayback();
     while(playing&&active&&token===playbackGeneration&&step<selected.moves.length) await advance();
     if(token===playbackGeneration){playing=false;renderPlayback();}
@@ -282,8 +323,9 @@ export function createCrossScout(root, cubeSession = smartCube) {
   $('#scout-smart-recenter').addEventListener('click',()=>{cube.recenterGyro();message('Cube motion recentered to the current inspection view.');});
   $('#scout-smart-disconnect').addEventListener('click',()=>{void cubeSession.disconnect();});
   $('#scout-stop').addEventListener('click',()=>{cancelSearch();message(`Search stopped. ${results.length} plans kept; search is incomplete.`);});
-  $('#scout-random').addEventListener('click',()=>{cancelSearch();$('#scout-scramble').value=randomScramble();loadScramble();message('New scramble ready. Apply it to a solved cube, then Analyze.');});
+  $('#scout-random').addEventListener('click',()=>{cancelSearch();manualScrambleGuide=true;scrambleGuideIndex=0;$('#scout-scramble').value=randomScramble();loadScramble();message('New scramble ready. Apply it to a solved cube, then Analyze.');});
   $('#scout-scramble').addEventListener('input',()=>{
+    manualScrambleGuide=true;scrambleGuideIndex=0;
     cancelSearch();clearPlans();
     try{loadScramble();$('#scout-cube').style.visibility='';message('Cube updated. Select Analyze to find plans.');}
     catch(error){$('#scout-cube').style.visibility='hidden';message(error.message);}

@@ -2,6 +2,8 @@
 
 A browser-based recognition gym for corners, F2L deduction, two-sided PLL recognition, and cross/X-cross planning.
 
+For the current smart-cube work and next-agent starting point, see [HANDOFF.md](HANDOFF.md).
+
 ## Run locally
 
 ```bash
@@ -26,6 +28,8 @@ npm run dev
 - Responsive touch layout with collapsible settings and six color answers visible together on phones
 - Light/dark header toggle: follows the device initially, remembers explicit choices, and leaves cube colors unchanged
 - Cross Scout calculator: pasted/generated scrambles or live smart-cube turns, selectable color subsets or CN, selected-color-on-bottom inspection with a visibility-based and changeable front face, tracked pair highlights, and animated step/playback controls
+- Smart Cube Studio (`#/smart-cube`): a connection-first debug workspace with a live cube, decoded event log, gyro readout, and a real-cube scramble rehearsal that advances by tracked state and shows recovery after a wrong turn. The current GAN decoder does not verify wide/slice gestures as a single move.
+  Implementation and comparisons: [`docs/smart-cube-studio.md`](docs/smart-cube-studio.md).
 - Cross Scout retrieval practice hides the selected plan, structural cue, and result list until the user commits to an answer, then reveals the verified moves and existing piece highlights. Self-ratings and commitment time remain local.
 - Two-sided PLL recognition covers all 21 standard cases on a full, fixed-view cube with random AUF. Learn starts with a small family, Mix interleaves all cases, and Transfer records a separate accuracy stream.
 - PLL adaptive glance changes after ten valid outcomes and only speeds up at 90%+ accuracy. Incorrect/skipped cases return after two intervening cases; correct-only response times, confusion pairs, transfer accuracy, and genuine 24-hour retention probes are tracked separately.
@@ -49,7 +53,8 @@ Automatic hot reload is disabled. Refresh manually when ready to load source cha
 discovery and protocol decoding are isolated there. `src/smart-cube-session.js`
 is the device-neutral session: it verifies a solved baseline, applies canonical
 face turns to the shared cube state, and publishes snapshots through
-`subscribe(listener)` (which returns an unsubscribe function). New trainers can
+`subscribe(listener)` (which returns an unsubscribe function). It also exposes
+`subscribeEvents(listener)` for decoded diagnostic events. New trainers can
 import the same `smartCube` singleton and consume `getSnapshot()` or subscribe;
 they should not talk to GATT directly. The session keeps tracking across trainer
 navigation, but an unsupported move stops trusted tracking until the cube is
@@ -79,21 +84,32 @@ Chrome device-list instructions. Open that internal page in regular Chrome,
 not the installed PWA, then return to CubeSight to enter the address.
 In Cross Scout, connect,
 solve the physical cube, and tap **Sync solved cube** if it was not already solved
-when connected. Turns then mirror into the scramble and preview. Select a plan
-to follow it with physical turns. Disconnect to return to manual scramble entry.
+when connected. Turns then mirror into the scramble and animate on the preview.
+The turn guide shows the next face, its center color, and turn direction for a
+manual scramble or selected plan; use its Next button to walk a manual scramble.
+Hold the physical cube with the top/front colors shown on screen, then tap
+**Reset view** to align gyro motion before following plan letters. A connected
+cube advances a selected plan automatically as its
+turns match. If a turn goes off-plan, the plan stays visible and the guide shows
+the inverse turns needed to return, or **Analyze current cube** starts a new
+plan. Disconnect to return to manual scramble entry.
 When a GAN cube reports gyro orientation, Cross Scout also follows physical cube
 rotations. Hold the cube in the view shown on screen and tap **Recenter motion**
-to align it; dragging the on-screen cube remains available for inspection.
+to align it. **Reset view** also restores the camera angle and aligns the live
+gyro to the current physical hold; dragging the on-screen cube remains
+available for inspection.
 Other cube models continue to mirror turns without motion tracking until their
 gyro axes are mapped and verified.
 The device adapter recognizes supported protocols automatically; compatibility
 with the GAN 16 UI has not yet been verified on physical hardware.
+The reusable local guidance design and wide-move detection limits are in
+[`docs/smart-cube-guidance.md`](docs/smart-cube-guidance.md).
 
 New deployments update the offline cache after open CubeSight tabs close, so an
 active training session never changes underneath you. `npm run test:pwa` builds
 the production app, checks Chromium's installability report, waits for its
-service worker, disables the test browser's network and exercises all four
-trainers offline.
+service worker, disables the test browser's network and exercises the trainers
+and Smart Cube Studio offline.
 
 The precompiled WASM browser output lives in `src/wasm/`. To rebuild it, install the `wasm32-unknown-unknown` Rust target and `wasm-bindgen-cli`, then run:
 
