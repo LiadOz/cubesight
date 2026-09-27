@@ -28,7 +28,6 @@ const DEFAULT_TOGGLES = {
   rotationFlag: true,      // flag excessive whole-cube rotations
   efficiencyScore: true,  // chess.com-style accuracy analogue
   autoCross: true,         // detect cross from the held bottom at first move
-  pseudoF2l: false,       // opt-in: I solve F2L with pseudo pairs (D-shift slotting)
 };
 
 function loadToggles() {
@@ -51,66 +50,77 @@ export function createBrain(root, cubeSession = smartCube) {
   let scrambleLoad = null;
   let optimalCross = null;     // {face, length} from crossSuggestion during inspection
   let pendingSuggestion = null;
+  let crossKind = 'cross';   // cross | xcross | xxcross — solve target chosen in setup
+  (function restoreSetup() {
+    try {
+      crossKind = JSON.parse(localStorage.getItem('cubesight-brain-cross') || '"cross"');
+      if (!['cross','xcross','xxcross'].includes(crossKind)) crossKind = 'cross';
+    } catch { /* ignore */ }
+  })();
 
   root.innerHTML = `
-    <section class="intro-row"><div><p class="eyebrow">Practice / Smart cube</p><h1>Brain</h1></div><p class="intro-copy">Connect your cube.<br>Solve. Learn what to fix.</p></section>
-    <section class="brain-connection" aria-label="Smart cube connection">
-      <div><strong id="brain-device">No cube connected</strong><p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start a tracked solve.</p></div>
-      <div class="brain-controls"><button class="brain-button" id="brain-connect">Connect cube</button><button class="brain-button" id="brain-sync" hidden>Sync solved cube</button><button class="brain-button" id="brain-recenter" hidden>Recenter motion</button><button class="brain-button" id="brain-disconnect" hidden>Disconnect</button><button class="brain-button" id="brain-clear-cube" hidden>Clear saved cube</button></div>
-    </section>
-    <section class="brain-setup" aria-label="Solve setup">
-      <div class="brain-mode" role="group" aria-label="Solve mode">
-        <span class="control-label">Mode</span>
-        <div class="segmented"><button class="segment active" data-brain-mode="guided">Guided scramble</button><button class="segment" data-brain-mode="free">Free scramble</button></div>
-      </div>
-      <div class="brain-scramble-wrap" id="brain-guided-wrap">
-        <label for="brain-scramble">Scramble</label>
-        <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="Generate a WCA scramble, or paste one…"></textarea>
-        <button class="brain-button" id="brain-generate">New WCA scramble</button>
-      </div>
-      <button class="primary-button" id="brain-start">Start guided</button>
-      <button class="brain-button" id="brain-stop" hidden>Stop</button>
-      <p id="brain-error" class="brain-error" role="alert" hidden></p>
-    </section>
-    <section class="trainer-shell brain-shell">
-      <div class="cube-stage">
-        <div class="stage-topline"><span class="status-dot"><i></i> Live cube</span><span class="view-lock">Free tumble</span></div>
+    <section class="intro-row brain-intro"><div><p class="eyebrow">Practice / Smart cube</p><h1>Brain</h1></div><p class="intro-copy">Connect your cube.<br>Solve. Learn what to fix.</p></section>
+    <section class="brain-work" aria-label="Live solve">
+      <div class="brain-cube-stage">
+        <div class="brain-cube-topline"><span class="status-dot"><i></i> <span id="brain-device-inline">No cube</span></span><span class="view-lock">Free tumble</span><button class="text-button" id="brain-reset-view" type="button">Reset view</button></div>
         <div id="brain-cube" class="cube-mount"></div>
-        <div class="cube-caption"><span id="brain-view-caption">White top · Green front</span><button class="text-button" id="brain-reset-view">Reset view</button></div>
+        <div class="cube-caption"><span id="brain-view-caption">White top · Green front</span></div>
         <div id="brain-turn-guide" hidden></div>
         <div id="brain-moves" class="brain-moves" aria-label="Scramble moves" hidden></div>
       </div>
-      <div class="brain-side">
-        <div class="brain-phase" aria-live="polite">
+      <aside class="brain-hud">
+        <section class="brain-connection" aria-label="Smart cube connection">
+          <div><strong id="brain-device">No cube connected</strong><p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start a tracked solve.</p></div>
+          <div class="brain-controls"><button class="brain-button" id="brain-connect">Connect cube</button><button class="brain-button" id="brain-sync" hidden>Sync solved cube</button><button class="brain-button" id="brain-recenter" hidden>Recenter motion</button><button class="brain-button" id="brain-disconnect" hidden>Disconnect</button><button class="brain-button" id="brain-clear-cube" hidden>Clear saved cube</button></div>
+        </section>
+        <section class="brain-setup" aria-label="Solve setup">
+          <div class="brain-setup-row">
+            <div class="brain-mode" role="group" aria-label="Solve mode">
+              <span class="control-label">Mode</span>
+              <div class="segmented"><button class="segment active" data-brain-mode="guided">Guided</button><button class="segment" data-brain-mode="free">Free</button></div>
+            </div>
+            <div class="brain-cross-kind" role="group" aria-label="Cross style">
+              <span class="control-label">Cross</span>
+              <div class="segmented"><button class="segment active" data-brain-cross="cross">Cross</button><button class="segment" data-brain-cross="xcross">X-cross</button><button class="segment" data-brain-cross="xxcross">Double X</button></div>
+            </div>
+            <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-pseudo"><span>Pseudo F2L · D-shift</span></label>
+          </div>
+          <div class="brain-scramble-wrap" id="brain-guided-wrap">
+            <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="Generate a WCA scramble, or paste one…"></textarea>
+            <button class="brain-button" id="brain-generate">New WCA scramble</button>
+          </div>
+          <div class="brain-setup-actions"><button class="primary-button" id="brain-start">Start guided</button><button class="brain-button" id="brain-stop" hidden>Stop</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading the page (keeps the cube connected)">Reset view</button></div>
+          <p id="brain-error" class="brain-error" role="alert" hidden></p>
+        </section>
+        <section class="brain-phase" aria-live="polite">
           <p class="eyebrow">Solve phase</p>
           <h2 id="brain-phase-label">Connect and start a solve</h2>
           <div id="brain-timeline" class="brain-timeline"></div>
           <p id="brain-phase-detail" class="brain-phase-detail">Cross is detected from the face on the bottom at your first solving move.</p>
-        </div>
+        </section>
         <div id="brain-coach" class="brain-coach" aria-live="polite"></div>
-        <button class="brain-button" id="brain-reset-view" type="button" title="Rebuild this view without reloading the page (keeps the cube connected)">Reset view</button>
-      </div>
+        <section class="brain-metrics" aria-label="Your solve metrics">
+          <div class="brain-metrics-grid" id="brain-metrics-grid"></div>
+          <p class="brain-footnote">All data stays on this device. Nothing is sent to a server.</p>
+        </section>
+        <details class="brain-coach-settings">
+          <summary><span>Coach settings</span><small>Choose which insights appear</small><i aria-hidden="true"></i></summary>
+          <div id="brain-toggles" class="brain-toggles"></div>
+          <div class="brain-data-port">
+            <span>Your data stays on this device.</span>
+            <button class="brain-button" id="brain-export" type="button">Export data</button>
+            <button class="brain-button" id="brain-import" type="button">Import data</button>
+            <input type="file" id="brain-import-file" accept="application/json,.json" hidden>
+            <p id="brain-port-status" role="status" aria-live="polite"></p>
+          </div>
+        </details>
+      </aside>
     </section>
-    <section class="brain-connection-log" aria-label="Connection diagnostics">
+    <details class="brain-diagnostics">
+      <summary><span>Connection diagnostics</span><small>What the attach is doing — send to dev</small><i aria-hidden="true"></i></summary>
       <div class="brain-connection-log-head"><div><p class="eyebrow">Connection log</p><h2>What the attach is doing</h2></div><div class="brain-log-actions"><button class="brain-button" id="brain-send-log" type="button" title="Send this log to the dev server so the agent can read it">Send to dev</button><button class="brain-button" id="brain-clear-log" type="button">Clear log</button></div></div>
       <ol id="brain-connection-log" class="brain-log-list"></ol>
       <p id="brain-send-status" role="status" aria-live="polite"></p>
-    </section>
-    <section class="brain-metrics" aria-label="Your solve metrics">
-      <div class="section-heading"><div><p class="eyebrow">Progress</p><h2>Your metrics</h2></div></div>
-      <div class="brain-metrics-grid" id="brain-metrics-grid"></div>
-      <p class="brain-footnote">All data stays on this device. Nothing is sent to a server. Export and import your data from the settings menu.</p>
-    </section>
-    <details class="brain-debug">
-      <summary><span>Coach &amp; visual debug menu</span><small>Toggle every affordance to inspect it</small><i aria-hidden="true"></i></summary>
-      <div id="brain-toggles" class="brain-toggles"></div>
-      <div class="brain-data-port">
-        <span>Your data stays on this device.</span>
-        <button class="brain-button" id="brain-export" type="button">Export data</button>
-        <button class="brain-button" id="brain-import" type="button">Import data</button>
-        <input type="file" id="brain-import-file" accept="application/json,.json" hidden>
-        <p id="brain-port-status" role="status" aria-live="polite"></p>
-      </div>
     </details>`;
 
   const $ = selector => root.querySelector(selector);
@@ -141,6 +151,8 @@ export function createBrain(root, cubeSession = smartCube) {
     const gyroLive = connected && snapshot.protocol?.startsWith('GAN') && Boolean(snapshot.gyro);
     const supported = Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice);
     $('#brain-device').textContent = connected ? `${snapshot.deviceName}${snapshot.protocol ? ` · ${snapshot.protocol}` : ''}` : snapshot.phase === 'connecting' ? 'Smart cube · connecting' : 'No cube connected';
+    const inline = $('#brain-device-inline');
+    if (inline) inline.textContent = connected ? snapshot.deviceName : (snapshot.phase === 'connecting' ? 'connecting…' : 'No cube');
     $('#brain-status').textContent = supported ? snapshot.detail + (gyroLive ? ' Hold the cube as shown and tap Recenter motion to align.' : '') : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
     $('#brain-connect').hidden = snapshot.phase !== 'disconnected';
     $('#brain-connect').disabled = !supported;
@@ -367,11 +379,28 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-guided-wrap').hidden = !guided;
     $('#brain-start').textContent = guided ? 'Start guided' : 'Start free';
   }));
+  root.querySelectorAll('[data-brain-cross]').forEach(btn => btn.addEventListener('click', () => {
+    root.querySelectorAll('[data-brain-cross]').forEach(b => b.classList.toggle('active', b === btn));
+    crossKind = btn.dataset.brainCross;
+    try { localStorage.setItem('cubesight-brain-cross', JSON.stringify(crossKind)); } catch { /* keep in memory */ }
+    const scramble = $('#brain-scramble').value.trim();
+    if (scramble) void suggestCrossFor(scramble);
+  }));
+  (function restoreCrossKind() {
+    root.querySelectorAll('[data-brain-cross]').forEach(b => b.classList.toggle('active', b.dataset.brainCross === crossKind));
+  })();
+  $('#brain-pseudo').addEventListener('change', event => {
+    live?.setPseudo(event.target.checked);
+    try { localStorage.setItem('cubesight-brain-pseudo', String(event.target.checked)); } catch { /* keep in memory */ }
+  });
+  (function restorePseudo() {
+    let saved = false; try { saved = localStorage.getItem('cubesight-brain-pseudo') === 'true'; } catch { /* ignore */ }
+    const cb = $('#brain-pseudo'); if (cb) { cb.checked = saved; live?.setPseudo(saved); }
+  })();
   $('#brain-toggles').addEventListener('change', event => {
     const input = event.target.closest('[data-brain-toggle]');
     if (!input) return;
     toggle(input.dataset.brainToggle, input.checked);
-    if (input.dataset.brainToggle === 'pseudoF2l') live?.setPseudo(input.checked);
     renderCoach();
   });
   $('#brain-export').addEventListener('click', () => {
@@ -445,9 +474,8 @@ export function createBrain(root, cubeSession = smartCube) {
     message('Saved cube address cleared. Connect again to derive it from scratch.');
   });
 
-  $('#brain-reset-view').addEventListener('click', () => {
-    const fresh = (currentInstance = createBrain(root, cubeSession));
-    return fresh;
+  $('#brain-rebuild-view').addEventListener('click', () => {
+    currentInstance = createBrain(root, cubeSession);
   });
   let currentInstance = {
     setActive(value) { active = value; if (!value) { live.cancel(); $('#brain-start').hidden = false; $('#brain-stop').hidden = true; } },
