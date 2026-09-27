@@ -63,6 +63,11 @@ export function createBrain(root, cubeSession = smartCube) {
     <section class="brain-work" aria-label="Live solve">
       <div class="brain-cube-stage">
         <div class="brain-cube-topline"><span class="status-dot"><i></i> <span id="brain-device-inline">No cube</span></span><span class="view-lock">Free tumble</span><button class="text-button" id="brain-reset-view" type="button">Reset view</button></div>
+        <div class="brain-connect-chip" aria-label="Smart cube connection">
+          <strong id="brain-device">No cube connected</strong>
+          <p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start.</p>
+          <div class="brain-controls"><button class="brain-chip" id="brain-connect">Connect</button><button class="brain-chip" id="brain-sync" hidden>Sync</button><button class="brain-chip" id="brain-recenter" hidden>Recenter</button><button class="brain-chip" id="brain-disconnect" hidden>Disconnect</button><button class="brain-chip" id="brain-clear-cube" hidden>Clear saved</button></div>
+        </div>
         <div id="brain-cube" class="cube-mount"></div>
         <div class="cube-caption"><span id="brain-view-caption">White top · Green front</span></div>
         <div id="brain-turn-guide" hidden></div>
@@ -85,11 +90,7 @@ export function createBrain(root, cubeSession = smartCube) {
         </div>
         <div class="brain-pill-actions"><button class="primary-button" id="brain-start">Start guided solve</button><button class="brain-button" id="brain-stop" hidden>Stop</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">Reset view</button><p id="brain-error" class="brain-error" role="alert" hidden></p></div>
         <details class="brain-pill-setup">
-          <summary><span>Connect &amp; setup</span><i aria-hidden="true"></i></summary>
-          <section class="brain-connection" aria-label="Smart cube connection">
-            <div><strong id="brain-device">No cube connected</strong><p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start a tracked solve.</p></div>
-            <div class="brain-controls"><button class="brain-button" id="brain-connect">Connect cube</button><button class="brain-button" id="brain-sync" hidden>Sync solved cube</button><button class="brain-button" id="brain-recenter" hidden>Recenter motion</button><button class="brain-button" id="brain-disconnect" hidden>Disconnect</button><button class="brain-button" id="brain-clear-cube" hidden>Clear saved cube</button></div>
-          </section>
+          <summary><span>Setup</span><i aria-hidden="true"></i></summary>
           <section class="brain-setup" aria-label="Solve setup">
             <div class="brain-setup-row">
               <div class="brain-mode" role="group" aria-label="Solve mode"><span class="control-label">Mode</span><div class="segmented"><button class="segment active" data-brain-mode="guided">Guided</button><button class="segment" data-brain-mode="free">Free</button></div></div>
@@ -279,18 +280,18 @@ export function createBrain(root, cubeSession = smartCube) {
     const snap = live.getSnapshot();
     const p = snap.progress || {};
     const current = stageIndex(p, snap.phase);
-    // Horizontal stage strip with a moving fill to the current stage.
-    $('#brain-timeline').innerHTML = STAGES.map((label, i) => {
-      const state = i < current ? 'done' : i === current ? 'current' : '';
-      return `<i class="${state}" data-stage="${i}"><span>${label}</span></i>`;
-    }).join('') + `<i class="fill" style="width:${(current / (STAGES.length - 1)) * 100}%"></i>`;
+    const pct = (current / (STAGES.length - 1)) * 100;
+    // A thin glowing line with a moving dot at the current stage (not chips).
+    $('#brain-timeline').innerHTML = `
+      <div class="brain-tl-line"><i style="width:${pct}%"></i></div>
+      <div class="brain-tl-dot" style="left:${pct}%"></div>
+      <div class="brain-tl-marks">${STAGES.map((label, i) => `<span style="left:${(i / (STAGES.length - 1)) * 100}%">${label}</span>`).join('')}</div>`;
     let label = 'Connect and start a solve';
     if (snap.phase === 'applying') label = 'Perform the scramble';
     else if (snap.phase === 'inspecting') label = 'Inspection';
     else if (snap.phase === 'solving') label = p.phase ? ({ 'pre-cross': 'Building the cross', cross: 'Cross', 'f2l-0': 'F2L', 'f2l-1': 'F2L', 'f2l-2': 'F2L', 'f2l-3': 'F2L', 'f2l-4': 'F2L', 'oll': 'OLL', pll: 'PLL', solved: 'Solved' }[p.phase] || 'F2L') : 'Solving';
     else if (snap.phase === 'done') label = 'Solved';
     $('#brain-phase-label').textContent = label;
-    // Live turn / time / TPS readout (or the inspection countdown) — the pair count appears ONLY here.
     if (snap.phase === 'inspecting' && snap.inspection) {
       const remaining = snap.inspection.remainingMs;
       $('#brain-phase-detail').textContent = remaining != null ? `Inspect — ${(remaining / 1000).toFixed(1)}s left (clock starts on your first move)` : 'Inspect — start solving on your first move';
@@ -303,7 +304,6 @@ export function createBrain(root, cubeSession = smartCube) {
         ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s${pairs ? ' · ' + pairs : ''}`
         : 'Scramble ready — start solving on your first move. The clock starts when you turn.';
     }
-    // Show the end-game review when solved.
     renderReview();
   }
 
