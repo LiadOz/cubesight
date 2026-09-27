@@ -147,9 +147,17 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-recenter').hidden = !gyroLive;
     $('#brain-disconnect').hidden = snapshot.phase === 'disconnected';
     $('#brain-clear-cube').hidden = snapshot.phase !== 'disconnected';
-    const tracking = snapshot.phase === 'tracking';
-    $('#brain-scramble').readOnly = tracking;
-    $('#brain-generate').disabled = tracking;
+    refreshScrambleState();
+  }
+
+  // Scramble generation/editing stays available while a cube is connected (you
+  // generate a WCA scramble AFTER connecting, then Start guided). It is only
+  // locked while a scramble is actively being applied or a solve is running.
+  function refreshScrambleState() {
+    const livePhase = live?.getSnapshot().phase;
+    const busy = livePhase === 'applying' || livePhase === 'solving' || livePhase === 'done';
+    $('#brain-generate').disabled = busy;
+    $('#brain-scramble').readOnly = busy;
   }
 
   function onSession(snapshot) {
@@ -262,6 +270,7 @@ export function createBrain(root, cubeSession = smartCube) {
     if (!active) return;
     renderTimeline();
     renderCoach();
+    refreshScrambleState();
     if (snap.phase === 'done' && snap.record) {
       records = appendSolve(localStorage, records, snap.record);
       renderMetrics();
