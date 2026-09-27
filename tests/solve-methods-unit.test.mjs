@@ -7,7 +7,7 @@ test('METHODS lists CFOP and Roux with stages, and getMethod falls back to the f
   assert.ok(ids.includes('cfop'));
   assert.ok(ids.includes('roux'));
   const cfop = getMethod('cfop');
-  assert.equal(cfop.stages.length, 6);
+  assert.equal(cfop.stages.length, 7);
   assert.equal(getMethod('nope').id, DEFAULT_METHOD, 'unknown method falls back to default');
 });
 
@@ -15,10 +15,10 @@ test('CFOP mapProgress maps cross/F2L/OLL/PLL milestones to stage indices', () =
   const cfop = getMethod('cfop');
   assert.equal(cfop.mapProgress({}, 'solving'), 0);
   assert.equal(cfop.mapProgress({ crossDone: true }, 'solving'), 1);
-  assert.equal(cfop.mapProgress({ crossDone: true, pairsSolved: 2 }, 'solving'), 2);
-  assert.equal(cfop.mapProgress({ crossDone: true, f2lDone: true }, 'solving'), 4);
-  assert.equal(cfop.mapProgress({ crossDone: true, f2lDone: true, ollDone: true }, 'solving'), 5);
-  assert.equal(cfop.mapProgress({ crossDone: true, f2lDone: true, ollDone: true, solved: true }, 'solving'), 6);
+  assert.equal(cfop.mapProgress({ crossDone: true, pairsSolved: 2 }, 'solving'), 1);  // still Cross (F2L one stage)
+  assert.equal(cfop.mapProgress({ crossDone: true, f2lDone: true }, 'solving'), 2);  // F2L
+  assert.equal(cfop.mapProgress({ crossDone: true, f2lDone: true, eoDone: true, coDone: true }, 'solving'), 4);  // CO (OLL done)
+  assert.equal(cfop.mapProgress({ crossDone: true, f2lDone: true, eoDone: true, coDone: true, solved: true }, 'solving'), 5);  // PLL
 });
 
 test('applying/inspecting map to the Scramble stage for every method', () => {

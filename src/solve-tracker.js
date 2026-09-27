@@ -90,12 +90,24 @@ export const llFace = crossFace => OPPOSITE_FACE[crossFace];
 // (Implementation lives in cross-cube.js, where the geometry lives; here we
 // just re-export it.)
 
-// OLL is done when every sticker on the last-layer face matches that face's
-// center color (the LL is oriented, though not yet permuted).
+// OLL is two looks: orient the edges (EO), then orient the corners (CO). A beginner
+// 2-look does edges-then-corners; the other 2-look does corners-then-edges.
 export function ollSolved(state, crossFace) {
+  return eoSolved(state, crossFace) && coSolved(state, crossFace);
+}
+// Edges oriented: the four last-layer EDGES all show the LL colour on the LL face.
+export function eoSolved(state, crossFace) {
   const ll = llFace(crossFace);
   const llColor = FACE_COLORS[ll];
-  return state.cubies.every(cubie => cubie.stickers[ll] === undefined || cubie.stickers[ll] === llColor);
+  const edges = state.cubies.filter(c => c.id.length === 2 && c.stickers[ll] !== undefined);
+  return edges.length === 4 && edges.every(e => e.stickers[ll] === llColor);
+}
+// Corners oriented: the four last-layer CORNERS all show the LL colour on the LL face.
+export function coSolved(state, crossFace) {
+  const ll = llFace(crossFace);
+  const llColor = FACE_COLORS[ll];
+  const corners = state.cubies.filter(c => c.id.length === 3 && c.stickers[ll] !== undefined);
+  return corners.length === 4 && corners.every(c => c.stickers[ll] === llColor);
 }
 
 // A connected (but not necessarily solved) F2L pair: the corner and edge are
@@ -140,11 +152,17 @@ export function analyze(state, crossFace) {
   const crossDone = crossSolved(state, crossFace);
   const f2lDone = crossDone && pairsSolved === 4;
   const ll = llFace(crossFace);
-  const ollDone = f2lDone && ollSolved(state, crossFace);
+  const eoSolvedNow = f2lDone && eoSolved(state, crossFace);
+  const coSolvedNow = f2lDone && coSolved(state, crossFace);
+  const eoDone = eoSolvedNow;
+  const coDone = coSolvedNow;
+  const ollDone = eoDone && coDone;
   let phase;
   if (solved) phase = 'solved';
-  else if (ollDone) phase = 'pll';
-  else if (f2lDone) phase = 'oll';
+  else if (coDone) phase = 'co';
+  else if (eoDone && coDone) phase = 'pll';
+  else if (eoDone) phase = 'co-pending';
+  else if (f2lDone && !eoDone) phase = 'eo';
   else if (crossDone) phase = pairsSolved > 0 ? `f2l-${pairsSolved}` : 'cross';
   else phase = 'pre-cross';
   return {
@@ -154,6 +172,8 @@ export function analyze(state, crossFace) {
     pairsSolved,
     solvedPairSlots,
     f2lDone,
+    eoDone: eoDone,
+    coDone: coDone,
     ollDone,
     pllDone: solved,
     solved,

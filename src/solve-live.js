@@ -19,7 +19,7 @@
 // session in tests.
 
 import { applyMoves, sameCubeState, stateFromScramble, createSolvedState } from './cross-cube.js';
-import { analyze, crossSolved, extendedCross, f2lPairSlots, pairSolved, solvedPairsPseudo, f2lDonePseudo } from './solve-tracker.js';
+import { analyze, crossSolved, extendedCross, f2lPairSlots, pairSolved, solvedPairsPseudo, f2lDonePseudo, eoSolved, coSolved } from './solve-tracker.js';
 import { followPlanTurn, inverseMove } from './smart-cube-guidance.js';
 
 const SOLVED = createSolvedState();
@@ -47,6 +47,8 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let crossAchieved = false;   // milestones — once reached, never regress
   let f2lAchieved = false;
   let ollAchieved = false;
+  let eoAchieved = false;      // OLL edges oriented (two-look: EO)
+  let coAchieved = false;      // OLL corners oriented (two-look: CO)
   let maxPairs = 0;
   let liveMoveCount = 0;
   let lastProcessedLen = -1;   // dedup: only process a move when the history grows
@@ -70,7 +72,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   function resetSolve() {
     crossFace = null; crossColor = null; rotations = 0; lastBottom = null;
     crossMoveCount = null;
-    crossAchieved = false; f2lAchieved = false; ollAchieved = false; maxPairs = 0; liveMoveCount = 0;
+    crossAchieved = false; f2lAchieved = false; ollAchieved = false; eoAchieved = false; coAchieved = false; maxPairs = 0; liveMoveCount = 0;
     prev = null; progress = null; mark = {}; solveMoves = []; record = null;
   }
 
@@ -194,7 +196,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       const o = getOrientation() || {};
       if (o.bottom && o.bottom !== lastBottom) { rotations++; lastBottom = o.bottom; }
     }
-    const prevOll = ollAchieved, prevSolved = Boolean(prev && prev.solved), prevPairs = maxPairs;
+    const prevOll = ollAchieved, prevEo = eoAchieved, prevCo = coAchieved, prevSolved = Boolean(prev && prev.solved), prevPairs = maxPairs;
     const next = analyze(state, crossFace);
     // Milestones are monotonic: once the cross / F2L / OLL is reached it stays
     // reached, even if a later F2L insertion temporarily breaks a cross edge.
@@ -206,8 +208,9 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     //   • PLL skipped: solved became true right after OLL (no dedicated PLL step).
     //   • F2L pair skipped: two pairs solved in one move (a pair fell in "for free").
     let skip = null;
-    if (!prevOll && next.ollDone && f2lAchieved) skip = { kind: 'oll', label: 'OLL skipped — last layer oriented while solving F2L!' };
-    else if (!prevSolved && next.solved && ollAchieved) skip = { kind: 'pll', label: 'PLL skipped — solved straight after OLL!' };
+    if (!prevEo && next.eoDone && f2lAchieved) skip = { kind: 'eo', label: 'EO skipped — edges oriented while solving F2L!' };
+    else if (!prevCo && next.coDone && eoAchieved) skip = { kind: 'co', label: 'CO skipped — corners oriented right after EO!' };
+    else if (!prevSolved && next.solved && eoAchieved && coAchieved) skip = { kind: 'pll', label: 'PLL skipped — solved straight after OLL (EO + CO)!' };
     else if (crossAchieved && (next.pairsSolved ?? 0) >= (prevPairs ?? 0) + 2) skip = { kind: 'f2l', label: `${(next.pairsSolved ?? 0) - (prevPairs ?? 0)} F2L pairs solved at once!` };
     if (!crossAchieved && next.crossDone) {
       crossAchieved = true;
@@ -221,14 +224,18 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (crossAchieved && pairCount > maxPairs) maxPairs = pairCount;
     const f2lComplete = pseudo ? f2lDonePseudo(state, crossFace) : next.f2lDone;
     if (crossAchieved && !f2lAchieved && f2lComplete) { f2lAchieved = true; mark.f2lAt = now(); }
-    if (f2lAchieved && !ollAchieved && next.ollDone) { ollAchieved = true; mark.ollAt = now(); }
+    if (f2lAchieved && !eoAchieved && next.eoDone) { eoAchieved = true; mark.eoAt = now(); }
+    if (f2lAchieved && !coAchieved && next.coDone) { coAchieved = true; mark.coAt = now(); }
+    if (eoAchieved && coAchieved && !ollAchieved) { ollAchieved = true; mark.ollAt = now(); }
     let label;
     if (next.solved) label = 'solved';
-    else if (ollAchieved) label = 'pll';
-    else if (f2lAchieved) label = 'oll';
+    else if (eoAchieved && coAchieved) label = 'pll';
+    else if (coAchieved) label = 'co';
+    else if (eoAchieved) label = 'co-pending';
+    else if (f2lAchieved) label = 'eo';
     else if (crossAchieved) label = maxPairs > 0 ? `f2l-${maxPairs}` : 'cross';
     else label = 'pre-cross';
-    progress = { phase: label, crossDone: crossAchieved, pairsSolved: maxPairs, f2lDone: f2lAchieved, ollDone: ollAchieved, solved: next.solved, skip };
+    progress = { phase: label, crossDone: crossAchieved, pairsSolved: maxPairs, f2lDone: f2lAchieved, eoDone: eoAchieved, coDone: coAchieved, ollDone: eoAchieved && coAchieved, solved: next.solved, skip };
     prev = next;
     if (next.solved) { finishSolve(state, allMoves); return; }
     emit();

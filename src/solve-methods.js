@@ -12,15 +12,16 @@ export const METHODS = [
     id: 'cfop',
     label: 'CFOP',
     description: 'Cross → F2L → OLL → PLL.',
-    stages: ['Scramble', 'Cross', 'F2L', 'OLL', 'PLL', 'Solved'],
+    stages: ['Scramble', 'Cross', 'F2L', 'EO', 'CO', 'PLL', 'Solved'],
     mapProgress(progress, phase) {
       const p = progress || {};
-      if (phase === 'applying' || phase === 'inspecting') return 0;
-      if (!p.crossDone) return 0;
-      if (!p.f2lDone) return 1 + Math.min(3, Math.max(0, Math.floor((p.pairsSolved ?? 0) / 4 * 3)));
-      if (!p.ollDone) return 4;
-      if (!p.solved) return 5;
-      return 6;
+      if (phase === 'applying' || phase === 'inspecting') return 0;  // Scramble
+      if (!p.crossDone) return 0;                            // pre-cross
+      if (!p.f2lDone) return 1;                               // Cross
+      if (!p.eoDone) return 2;                               // F2L (pair count in phase detail)
+      if (!p.coDone) return 3;                               // EO (orient edges)
+      if (!p.solved) return 4;                               // CO (orient corners = OLL done)
+      return 5;                                             // Solved
     },
   },
   {
