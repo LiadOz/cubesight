@@ -185,3 +185,6 @@
 .brain-moves i.current { display: grid; gap: .15rem; align-items: baseline; }
 .brain-move-tip { color: var(--accent); font-weight: 700; font-size: 1rem; }
 .brain-move-hint { font-size: .72rem; color: var(--muted); }
+
+/* on-screen debug readout (small, monospace) so you can see what the tracker sees */
+.brain-debug { font-family: var(--mono); font-size: .68rem; color: var(--muted); margin: .3rem 0 0; line-height: 1.3; }

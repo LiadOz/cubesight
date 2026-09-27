@@ -163,6 +163,7 @@ export function createBrain(root, cubeSession = smartCube) {
     if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro)].join('|');
     if (key !== lastStatusKey) { renderConnection(snapshot); lastStatusKey = key; }
+    const dbg = $('#brain-debug'); if (dbg) dbg.hidden = snapshot.phase === 'disconnected';
     if (snapshot.phase !== 'tracking') { lastMirroredMove = null; lastMirroredLen = 0; return; }
     // The session publishes a snapshot on every event — including many gyro/
     // status updates per second — so we must NOT re-queue the last move on
@@ -178,6 +179,8 @@ export function createBrain(root, cubeSession = smartCube) {
       if (lastEntry) cube?.queueLiveMove(lastEntry, toRenderData(snapshot.state));
       else cube?.update(toRenderData(snapshot.state));
     }
+    const debug = $('#brain-debug');
+    if (debug) debug.textContent = `phase=${snapshot.phase} moves=${snapshot.moves.length} last=${snapshot.lastMove ?? '-'} mirror=${mirrorFired}`;
   }
 
   // --- Cross suggestion (async, during inspection) --------------------------------------------
