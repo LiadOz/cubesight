@@ -115,3 +115,10 @@
 .brain-log-fallback { color: #e0a800; }
 [data-theme="dark"] .brain-log-error { color: #ffa395; }
 [data-theme="dark"] .brain-log-ok { color: #83e7b3; }
+
+.brain-moves { display: flex; flex-wrap: wrap; gap: .25rem; margin-top: .5rem; font-family: var(--mono); }
+.brain-moves i { padding: .2rem .4rem; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: .82rem; }
+.brain-moves i.done { opacity: .45; text-decoration: line-through; }
+.brain-moves i.current { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--ink); }
+.brain-moves-recovery { width: 100%; color: #e0a800; font-size: .88rem; }
+[data-theme="dark"] .brain-moves-recovery { color: #ffd27a; }

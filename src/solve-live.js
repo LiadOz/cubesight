@@ -19,7 +19,7 @@
 // session in tests.
 
 import { applyMoves, sameCubeState, stateFromScramble, createSolvedState } from './cross-cube.js';
-import { analyze, crossSolved, extendedCross, f2lPairSlots, pairSolved } from './solve-tracker.js';
+import { analyze, crossSolved, extendedCross, f2lPairSlots, pairSolved, solvedPairsPseudo, f2lDonePseudo } from './solve-tracker.js';
 import { followPlanTurn, inverseMove } from './smart-cube-guidance.js';
 
 const SOLVED = createSolvedState();
@@ -37,6 +37,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let crossFace = null;
   let crossColor = null;
   let rotations = 0;
+  let pseudo = false;            // pseudo-F2L (D-shift) detection, opt-in
   let lastBottom = null;
   let crossMoveCount = null;
   let crossAchieved = false;   // milestones — once reached, never regress
@@ -182,8 +183,12 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       mark.xcross = extendedCross(state, crossFace).kind;
       crossMoveCount = liveMoveCount;
     }
-    if (crossAchieved && next.pairsSolved > maxPairs) maxPairs = next.pairsSolved;
-    if (crossAchieved && !f2lAchieved && next.f2lDone) { f2lAchieved = true; mark.f2lAt = now(); }
+    // F2L pair progress. In pseudo mode, count pairs solved up to a
+    // whole-D-layer rotation (the frame a pseudo-F2L user solves in).
+    const pairCount = pseudo ? solvedPairsPseudo(state, crossFace).length : next.pairsSolved;
+    if (crossAchieved && pairCount > maxPairs) maxPairs = pairCount;
+    const f2lComplete = pseudo ? f2lDonePseudo(state, crossFace) : next.f2lDone;
+    if (crossAchieved && !f2lAchieved && f2lComplete) { f2lAchieved = true; mark.f2lAt = now(); }
     if (f2lAchieved && !ollAchieved && next.ollDone) { ollAchieved = true; mark.ollAt = now(); }
     let label;
     if (next.solved) label = 'solved';
@@ -211,6 +216,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
 
   return {
     startGuided, startFree, cancel,
+    setPseudo(value) { pseudo = Boolean(value); },
     subscribe(listener) { listeners.add(listener); listener(snapshot()); return () => listeners.delete(listener); },
     getSnapshot: snapshot,
     detach() { unsub?.(); },

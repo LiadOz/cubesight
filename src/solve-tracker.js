@@ -9,7 +9,7 @@
 // FACE_COLORS is a valid reference for "the color a slot should show". Wide
 // moves only appear in simulation and are out of scope for live phase tracking.
 
-import { FACE_COLORS, OPPOSITE_FACE, CORNERS, EDGES, createSolvedState, sameCubeState, canonicalizeForRecognition } from './cross-cube.js';
+import { FACE_COLORS, OPPOSITE_FACE, CORNERS, EDGES, createSolvedState, sameCubeState, canonicalizeForRecognition, applyMoves } from './cross-cube.js';
 
 export { canonicalizeForRecognition };
 
@@ -50,8 +50,32 @@ export function pairSolved(state, pair) {
   return cubieSolved(cubieAt(state, pair.cornerId)) && cubieSolved(cubieAt(state, pair.edgeId));
 }
 
+// How ready an unsolved F2L pair is to insert, without a search. The cheapest
 export function solvedPairs(state, crossFace) {
   return f2lPairSlots(crossFace).filter(pair => pairSolved(state, pair));
+}
+
+// --- Pseudo-F2L (D-shift) support ------------------------------------------
+// A pseudo-F2L user solves pairs into slots that are only correct after a
+// whole-D-layer rotation, then restores D at the end. To count those pairs we
+// first find the D-offset (0..3) that brings the cross edges home — that is
+// the frame the user is currently solving in — then count pairs solved under
+// that same offset. Returns the empty list while the cross is not solved
+// under any offset (still building). Standard users (k = 0) get the plain
+// count; the toggle just widens the window to k = 1..3.
+const D_OFFSET_MOVES = ['', 'D', 'D2', "D'"];
+const dShift = (state, k) => (k ? applyMoves(state, [D_OFFSET_MOVES[k]]) : state);
+export function currentDShift(state, crossFace) {
+  for (let k = 0; k < 4; k++) if (crossSolved(dShift(state, k), crossFace)) return k;
+  return null;
+}
+export function solvedPairsPseudo(state, crossFace) {
+  const k = currentDShift(state, crossFace);
+  if (k == null) return [];
+  return f2lPairSlots(crossFace).filter(pair => pairSolved(dShift(state, k), pair));
+}
+export function f2lDonePseudo(state, crossFace) {
+  return solvedPairsPseudo(state, crossFace).length === 4;
 }
 
 // Last-layer face opposite the chosen cross.

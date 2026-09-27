@@ -3,6 +3,7 @@ import { createCube3D } from './cube-3d.js';
 import { FACE_COLORS, toRenderData } from './cross-cube.js';
 import { smartCube } from './smart-cube-bluetooth.js';
 import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
+import { recoveryMoves } from './smart-cube-guidance.js';
 import { createSolveLive } from './solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from './solve-coach.js';
 import { loadSolves, appendSolve } from './solve-store.js';
@@ -27,6 +28,7 @@ const DEFAULT_TOGGLES = {
   rotationFlag: true,      // flag excessive whole-cube rotations
   efficiencyScore: true,  // chess.com-style accuracy analogue
   autoCross: true,         // detect cross from the held bottom at first move
+  pseudoF2l: false,       // opt-in: I solve F2L with pseudo pairs (D-shift slotting)
 };
 
 function loadToggles() {
@@ -76,6 +78,7 @@ export function createBrain(root, cubeSession = smartCube) {
         <div id="brain-cube" class="cube-mount"></div>
         <div class="cube-caption"><span id="brain-view-caption">White top · Green front</span><button class="text-button" id="brain-reset-view">Reset view</button></div>
         <div id="brain-turn-guide" hidden></div>
+        <div id="brain-moves" class="brain-moves" aria-label="Scramble moves" hidden></div>
       </div>
       <div class="brain-side">
         <div class="brain-phase" aria-live="polite">
@@ -191,6 +194,36 @@ export function createBrain(root, cubeSession = smartCube) {
   }
 
   // --- Coach panel ------------------------------------------------------------------------------
+  // --- Guided scramble cue + algorithm showcase + recovery ----------------
+  function renderApplyGuide() {
+    const snap = live.getSnapshot();
+    const guideEl = $('#brain-turn-guide');
+    const movesEl = $('#brain-moves');
+    if (snap.phase !== 'applying') { turnGuide.render({ mode: null }); if (movesEl) { movesEl.hidden = true; movesEl.innerHTML = ''; } return; }
+    const held = cube?.getHeldFaces?.() ?? { bottom: 'D', front: 'F' };
+    const scrambleMoves = snap.scrambleStr ? snap.scrambleStr.split(/\s+/).filter(Boolean) : [];
+    if (snap.applyDetour.length) {
+      // A wrong turn happened: show the inverse return path (what to do to get back).
+      const recovery = recoveryMoves(snap.applyDetour, held.bottom, held.front);
+      turnGuide.render({ mode: 'recovery', move: recovery[0], index: 0, total: recovery.length, bottom: held.bottom, front: held.front, recovery });
+      if (movesEl) {
+        movesEl.hidden = false;
+        movesEl.innerHTML = `<p class="brain-moves-recovery">Off the scramble by ${snap.applyDetour.length} move${snap.applyDetour.length === 1 ? '' : 's'}. Do <strong>${escape(recovery.join(' '))}</strong> to get back, then continue.</p>`;
+      }
+    } else {
+      const move = scrambleMoves[snap.applyStep];
+      turnGuide.render({ mode: 'guide', move, index: snap.applyStep, total: scrambleMoves.length, bottom: held.bottom, front: held.front });
+      // Showcase the whole algorithm with the current step highlighted.
+      if (movesEl) {
+        movesEl.hidden = false;
+        movesEl.innerHTML = scrambleMoves.map((m, i) => `<i class="${i < snap.applyStep ? 'done' : ''} ${i === snap.applyStep ? 'current' : ''}">${escape(m)}</i>`).join('');
+      }
+    }
+    // During guided application the cube advances by physical turns, so the manual ←/→ buttons are meaningless here.
+    const actions = guideEl.querySelector('.smart-turn-actions');
+    if (actions) actions.hidden = true;
+  }
+
   function renderCoach() {
     const snap = live.getSnapshot();
     const sessionSnap = cubeSession.getSnapshot();
@@ -275,6 +308,7 @@ export function createBrain(root, cubeSession = smartCube) {
     if (!active) return;
     renderTimeline();
     renderCoach();
+    renderApplyGuide();
     refreshScrambleState();
     if (snap.phase === 'done' && snap.record) {
       records = appendSolve(localStorage, records, snap.record);
@@ -337,6 +371,7 @@ export function createBrain(root, cubeSession = smartCube) {
     const input = event.target.closest('[data-brain-toggle]');
     if (!input) return;
     toggle(input.dataset.brainToggle, input.checked);
+    if (input.dataset.brainToggle === 'pseudoF2l') live?.setPseudo(input.checked);
     renderCoach();
   });
   $('#brain-export').addEventListener('click', () => {
