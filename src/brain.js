@@ -172,7 +172,7 @@ export function createBrain(root, cubeSession = smartCube) {
     // grow on the second quarter, but the last entry changes from 'U' to 'U2', so we must
     // mirror it or the cube's faces stick at the first quarter.)
     const lastEntry = snapshot.moves[snapshot.moves.length - 1];
-    if (lastEntry !== lastMirroredMove) {
+    if (snapshot.moves.length !== lastMirroredLen || lastEntry !== lastMirroredMove) {
       lastMirroredLen = snapshot.moves.length;
       lastMirroredMove = lastEntry;
       if (lastEntry) cube?.queueLiveMove(lastEntry, toRenderData(snapshot.state));
