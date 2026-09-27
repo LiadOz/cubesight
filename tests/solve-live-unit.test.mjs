@@ -82,9 +82,10 @@ test('a wrong turn during guided scramble application keeps the attempt and show
   assert.equal(live.getSnapshot().applyStep, 1);
   assert.equal(live.getSnapshot().applyDetour.length, 0);
   session.emit('F');          // wrong: not the next planned move
-  // The detour should be non-empty (a recovery move is queued) and step unchanged.
-  assert.ok(live.getSnapshot().applyDetour.length >= 1);
-  assert.equal(live.getSnapshot().applyStep, 1);
+  // With the grace, a quick wrong-then-recover folds into a step instead of flashing off-plan.
+  session.emit("F'");         // recover
+  assert.equal(live.getSnapshot().applyDetour.length, 0, 'quick wrong-then-recover folds into a step (grace)');
+  assert.equal(live.getSnapshot().applyStep, 1, 'step unchanged');
 });
 
 test('cancel returns to idle and clears the in-progress record', () => {
@@ -129,10 +130,10 @@ test('a wrong turn during application does not balloon the recovery detour on gy
   const live = createSolveLive(session, { getOrientation: () => ({ bottom: 'D', front: 'F' }), now: () => 0 });
   live.startGuided("R U");
   session.emit('R');           // matches step 1
-  session.emit('F');           // wrong: detour grows to 1
-  assert.equal(live.getSnapshot().applyDetour.length, 1);
+  session.emit('F');           // wrong: grace holds (no detour committed yet)
+  assert.equal(live.getSnapshot().applyDetour.length, 0, 'wrong turn starts a grace, no off-plan yet');
   session.emitGyro(); session.emitGyro(); session.emitGyro();  // gyro/status snapshots, no new move
-  assert.equal(live.getSnapshot().applyDetour.length, 1, 'gyro updates must not grow the detour');
+  assert.equal(live.getSnapshot().applyDetour.length, 0, 'gyro updates during grace must not grow the detour');
   session.emit("F'");        // recover: back on plan
   assert.equal(live.getSnapshot().applyDetour.length, 0);
 });
@@ -151,4 +152,16 @@ test('inspection phase holds until the first solving move, then the clock starts
   assert.equal(live.getSnapshot().phase, 'solving');
   assert.ok(live.getSnapshot().elapsedMs >= 0, 'clock started on first move');
   assert.equal(live.getSnapshot().inspection, null);
+});
+
+test('a guided U2 double turn coalesces and does not flash off-plan', () => {
+  const session = fakeSession();
+  const live = createSolveLive(session, { getOrientation: () => ({ bottom: 'D', front: 'F' }), now: () => 0 });
+  live.startGuided("U2");
+  // a physical U2 flick arrives as two U quarter-turn MOVE events (the session coalesces them)
+  session.emit('U');
+  session.emit('U');
+  const snap = live.getSnapshot();
+  assert.equal(snap.applyDetour.length, 0, 'no off-plan flicker for a coalesced U2');
+  assert.equal(snap.applyStep, 1, 'U2 advanced one plan step');
 });

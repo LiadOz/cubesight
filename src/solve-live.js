@@ -106,6 +106,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     solveStartIndex = snap.moves.length;
     lastProcessedLen = snap.moves.length;
     solveStartAt = null;              // the solve clock starts on the first move, not now
+    if (detourGrace) { clearTimeout(detourGrace); detourGrace = null; }
     resetSolve();
     enterInspection();
     emit();
@@ -116,17 +117,34 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     scrambledState = null; applyStep = 0; applyDetour = [];
     lastProcessedLen = -1;
     if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
+    if (detourGrace) { clearTimeout(detourGrace); detourGrace = null; }
     resetSolve();
     emit();
   }
 
+  let detourGrace = null;        // brief delay before declaring a wrong turn off-plan (so a U2's two quarters coalesce)
   function onApplyMove(move, state) {
     // Plan states include the solved start at index 0, so `step` counts how many
     // scramble moves have been completed (matching Cross Scout's contract).
     const planStates = [SOLVED, ...scrambleMoves.map((_, i) => applyMoves(SOLVED, scrambleMoves.slice(0, i + 1)))];
     const result = followPlanTurn(planStates, applyStep, applyDetour, state, move);
-    applyStep = result.step;
-    applyDetour = result.detour;
+    // Grace period before committing a wrong turn (CubeStation-style: a double turn's two
+    // quarter events arrive back-to-back; declaring off-plan on the first would flash a false 'you're wrong'.
+    // Instead, wait briefly for a potential coalescing second quarter that lands on a plan state.
+    if (result.onPlan) {
+      if (detourGrace) { clearTimeout(detourGrace); detourGrace = null; }
+      applyStep = result.step;
+      applyDetour = result.detour;
+    } else if (!detourGrace) {
+      // Start the grace only on the FIRST off-plan move; remember the step we were at so we can resume if a plan state is reached.
+      const pendingStep = applyStep;
+      detourGrace = setTimeout(() => {
+        detourGrace = null;
+        applyStep = result.step;
+        applyDetour = result.detour;
+        emit();
+      }, 90);
+    }
     if (sameCubeState(state, scrambledState)) {
       // Scramble fully applied — enter inspection (the solve clock starts on
       // the first solving move, not now).

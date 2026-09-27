@@ -161,3 +161,27 @@
 .brain-data-port { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding-top: .5rem; }
 .brain-data-port span { font-size: .8rem; color: var(--muted); }
 .brain-data-port p { margin: 0; width: 100%; font-size: .76rem; color: var(--muted); }
+
+/* connect pairing indicator (spinner) */
+.brain-connect-chip.is-connecting .brain-controls .brain-chip {
+  position: relative; opacity: .6;
+}
+.brain-connect-chip.is-connecting .brain-chip::after {
+  content: ''; position: absolute; right: .55rem; top: 50%; width: .9rem; height: .9rem;
+  margin-top: -.45rem; border: 2px solid var(--muted); border-top-color: var(--accent);
+  border-radius: 50%; animation: brain-spin .7s linear infinite;
+}
+@keyframes brain-spin { to { transform: rotate(360deg); } }
+
+/* timeline: hidden until scramble done, then swoops in from the right */
+.brain-cube-timeline { overflow: hidden; transition: opacity .3s ease; opacity: 0; }
+.brain-cube-timeline.brain-timeline--visible { opacity: 1; animation: brain-swoop .45s cubic-bezier(.22,1,.36,1); }
+@keyframes brain-swoop {
+  from { transform: translateX(40%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* visible cue on the current scramble move (an affordance, not a hover-only tooltip) */
+.brain-moves i.current { display: grid; gap: .15rem; align-items: baseline; }
+.brain-move-tip { color: var(--accent); font-weight: 700; font-size: 1rem; }
+.brain-move-hint { font-size: .72rem; color: var(--muted); }

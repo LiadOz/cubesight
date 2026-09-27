@@ -127,13 +127,17 @@ export function createBrain(root, cubeSession = smartCube) {
   function message(text) { $('#brain-status').textContent = text; }
 
   function renderConnection(snapshot) {
-    const connected = snapshot.phase !== 'disconnected' && snapshot.phase !== 'connecting';
+    const connecting = snapshot.phase === 'connecting';
+    const connected = !connecting && snapshot.phase !== 'disconnected';
     const gyroLive = connected && snapshot.protocol?.startsWith('GAN') && Boolean(snapshot.gyro);
     const supported = Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice);
-    $('#brain-device').textContent = connected ? `${snapshot.deviceName}${snapshot.protocol ? ` · ${snapshot.protocol}` : ''}` : snapshot.phase === 'connecting' ? 'Smart cube · connecting' : 'No cube connected';
+    $('#brain-device').textContent = connected ? `${snapshot.deviceName}${snapshot.protocol ? ` · ${snapshot.protocol}` : ''}` : connecting ? 'Smart cube · connecting' : 'No cube connected';
     const inline = $('#brain-device-inline');
-    if (inline) inline.textContent = connected ? snapshot.deviceName : (snapshot.phase === 'connecting' ? 'connecting…' : 'No cube');
-    $('#brain-status').textContent = supported ? snapshot.detail + (gyroLive ? ' Hold the cube as shown and tap Recenter motion to align.' : '') : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
+    if (inline) inline.textContent = connected ? snapshot.deviceName : (connecting ? 'connecting…' : 'No cube');
+    // A clear pairing indicator: show a spinner while connecting (not an affordance).
+    $('#brain-status').textContent = supported ? (connecting ? 'Select your cube in the picker…' : snapshot.detail + (gyroLive ? ' Hold the cube as shown and tap Recenter motion to align.' : '')) : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
+    const connectChip = document.querySelector('.brain-connect-chip');
+    if (connectChip) connectChip.classList.toggle('is-connecting', connecting);
     $('#brain-connect').hidden = snapshot.phase !== 'disconnected';
     $('#brain-connect').disabled = !supported;
     $('#brain-sync').hidden = !connected;
@@ -211,7 +215,8 @@ export function createBrain(root, cubeSession = smartCube) {
         movesEl.innerHTML = scrambleMoves.map((m, i) => {
           const current = i === snap.applyStep;
           const c = current ? describeTurn(m, held.bottom, held.front) : null;
-          return `<i class="${i < snap.applyStep ? 'done' : ''} ${current ? 'current' : ''}"${c ? ` title="${escape(c.text)}"` : ''}>${escape(m)}</i>`;
+          const tip = c ? `<b class="brain-move-tip" title="${escape(c.text)}">${c.symbol || ''}</b><span class="brain-move-hint">${escape(c.text)}</span>` : escape(m);
+          return `<i class="${i < snap.applyStep ? 'done' : ''} ${current ? 'current' : ''}">${tip}</i>`;
         }).join('');
       }
     }
@@ -269,8 +274,14 @@ export function createBrain(root, cubeSession = smartCube) {
     const STAGES = solveMethod.stages;
     const current = stageIndex(p, snap.phase);
     const pct = (current / (STAGES.length - 1)) * 100;
+    // Hidden until the scramble is done; swoops in when solving starts.
+    const tl = $('#brain-timeline');
+    const visible = snap.phase === 'solving' || snap.phase === 'done';
+    tl.hidden = !visible;
+    tl.classList.toggle('brain-timeline--visible', visible);
+    if (!visible) return;
     // A thin glowing line with a moving dot at the current stage (not chips).
-    $('#brain-timeline').innerHTML = `
+    tl.innerHTML = `
       <div class="brain-tl-line"><i style="width:${pct}%"></i></div>
       <div class="brain-tl-dot" style="left:${pct}%"></div>
       <div class="brain-tl-marks">${STAGES.map((label, i) => {
