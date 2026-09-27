@@ -167,12 +167,15 @@ export function createBrain(root, cubeSession = smartCube) {
     // The session publishes a snapshot on every event — including many gyro/
     // status updates per second — so we must NOT re-queue the last move on
     // each one, or a single physical turn re-animates forever. Dedup by the
-    // move HISTORY LENGTH (not the move letter): a repeated move like R then R
-    // still grows the history, so it animates, while gyro updates do not.
-    if (snapshot.moves.length !== lastMirroredLen) {
+    // Mirror when a genuinely new move arrives OR a coalesced double replaces the last entry.
+    // (A U2 coalesces two quarter-turns into one 'U2' history entry — the length doesn't
+    // grow on the second quarter, but the last entry changes from 'U' to 'U2', so we must
+    // mirror it or the cube's faces stick at the first quarter.)
+    const lastEntry = snapshot.moves[snapshot.moves.length - 1];
+    if (lastEntry !== lastMirroredMove) {
       lastMirroredLen = snapshot.moves.length;
-      lastMirroredMove = snapshot.lastMove;
-      if (snapshot.lastMove) cube?.queueLiveMove(snapshot.lastMove, toRenderData(snapshot.state));
+      lastMirroredMove = lastEntry;
+      if (lastEntry) cube?.queueLiveMove(lastEntry, toRenderData(snapshot.state));
       else cube?.update(toRenderData(snapshot.state));
     }
   }
