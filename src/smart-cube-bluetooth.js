@@ -16,22 +16,28 @@ export const smartCube = createSmartCubeSession(async options => {
       // GAN model names and advertisements vary; let the user choose the BLE
       // device, then identify its protocol from the services it exposes.
       deviceSelection: 'any',
+      // Give the cube up to 8 s of advertisement watching up front so the
+      // library can derive the MAC straight from the BLE manufacturer data —
+      // the same source native apps use. This makes the manual prompt a rare
+      // last resort rather than the normal path.
+      enableAddressSearch: true,
       macAddressProvider: async (device, finalAttempt) => {
         selectedDevice = device;
-        if (!finalAttempt) {
-          const remembered = getRememberedMac(device.name);
-          if (remembered) {
-            usedRememberedMac = true;
-            return remembered;
-          }
-          return null;
+        // Returning null on the non-final attempt lets the library run its own
+        // second advertisement watch (up to 5 s more) before we fall back to a
+        // previously verified address, and only then to a manual prompt.
+        if (!finalAttempt) return null;
+        const remembered = getRememberedMac(device.name);
+        if (remembered) {
+          usedRememberedMac = true;
+          return remembered;
         }
-        return window.prompt('Cube MAC address needed for decryption. Enter its 12 hexadecimal digits, or Cancel and open “Asked for a cube MAC address?” in Cross Scout for Chrome instructions:');
+        return window.prompt('Cube MAC address needed for decryption. Enter its 12 hexadecimal digits (e.g. AA:BB:CC:DD:EE:FF), or Cancel and open “Asked for a cube MAC address?” in Cross Scout for Chrome instructions:');
       },
     });
     // connectSmartCube returns only after it validates decrypted cube data.
     // Save that proven address as a fallback if the browser's device ID changes.
-    if (selectedDevice) rememberMac(selectedDevice.name, connection.deviceMAC);
+    if (connection.deviceMAC) rememberMac(connection.deviceName, connection.deviceMAC);
     return connection;
   } catch (error) {
     // Do not silently retry a stale address on the next connection attempt.

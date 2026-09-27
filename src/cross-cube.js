@@ -4,9 +4,9 @@ export const FACE_COLORS = Object.freeze({ U:'white', D:'yellow', F:'green', B:'
 export const COLOR_HEX = Object.freeze({ white:'#ffffff', yellow:'#ffd500', green:'#009b48', blue:'#0051ba', red:'#e7332a', orange:'#ff6b00' });
 const NORMAL = { U:[0,1,0], D:[0,-1,0], F:[0,0,1], B:[0,0,-1], R:[1,0,0], L:[-1,0,0] };
 const FACE_BY_NORMAL = Object.fromEntries(Object.entries(NORMAL).map(([f,n])=>[n.join(','),f]));
-const OPPOSITE_FACE = Object.freeze({U:'D',D:'U',F:'B',B:'F',R:'L',L:'R'});
-const CORNERS = ['UFR','UBR','UBL','UFL','DFR','DBR','DBL','DFL'];
-const EDGES = ['UF','UR','UB','UL','FR','BR','BL','FL','DF','DR','DB','DL'];
+export const OPPOSITE_FACE = Object.freeze({U:'D',D:'U',F:'B',B:'F',R:'L',L:'R'});
+export const CORNERS = ['UFR','UBR','UBL','UFL','DFR','DBR','DBL','DFL'];
+export const EDGES = ['UF','UR','UB','UL','FR','BR','BL','FL','DF','DR','DB','DL'];
 const dot = (a,b) => a.reduce((sum,v,i)=>sum+v*b[i],0);
 const cross = (a,b) => [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const positionOf = id => [...id].reduce((p,f)=>p.map((v,i)=>v+NORMAL[f][i]),[0,0,0]);
