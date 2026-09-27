@@ -97,3 +97,6 @@
 .brain-toggles { display: flex; flex-wrap: wrap; gap: .5rem 1rem; padding: 1rem 1.25rem; }
 .brain-toggle { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; font-size: .9rem; }
 .brain-toggle input { width: 1.1rem; height: 1.1rem; }
+.brain-data-port { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: 1rem 1.25rem; border-top: 1px solid var(--hair, rgba(0,0,0,.12)); }
+.brain-data-port span { font-size: .85rem; color: var(--muted, #6b6f73); }
+.brain-data-port p { margin: 0; width: 100%; font-size: .82rem; }

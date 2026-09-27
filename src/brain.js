@@ -9,6 +9,7 @@ import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, ef
 import { analyze } from './solve-tracker.js';
 import { loadSolves, appendSolve } from './solve-store.js';
 import { summarize, ao5, ao12 } from './solve-metrics.js';
+import { exportAll, serializeExport, parseImport, importAll } from './data-port.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const title = color => color[0].toUpperCase() + color.slice(1);
@@ -92,6 +93,13 @@ export function createBrain(root, cubeSession = smartCube) {
     <details class="brain-debug">
       <summary><span>Coach &amp; visual debug menu</span><small>Toggle every affordance to inspect it</small><i aria-hidden="true"></i></summary>
       <div id="brain-toggles" class="brain-toggles"></div>
+      <div class="brain-data-port">
+        <span>Your data stays on this device.</span>
+        <button class="brain-button" id="brain-export" type="button">Export data</button>
+        <button class="brain-button" id="brain-import" type="button">Import data</button>
+        <input type="file" id="brain-import-file" accept="application/json,.json" hidden>
+        <p id="brain-port-status" role="status" aria-live="polite"></p>
+      </div>
     </details>`;
 
   const $ = selector => root.querySelector(selector);
@@ -285,6 +293,31 @@ export function createBrain(root, cubeSession = smartCube) {
     if (!input) return;
     toggle(input.dataset.brainToggle, input.checked);
     renderCoach();
+  });
+  $('#brain-export').addEventListener('click', () => {
+    try {
+      const blob = new Blob([serializeExport(exportAll(localStorage))], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `cubesight-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      $('#brain-port-status').textContent = 'Exported a backup of your local data.';
+    } catch (error) { $('#brain-port-status').textContent = `Export failed: ${error.message}`; }
+  });
+  $('#brain-import').addEventListener('click', () => $('#brain-import-file').click());
+  $('#brain-import-file').addEventListener('change', async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseImport(text);
+      importAll(localStorage, parsed, { clearOwned: false });
+      records = loadSolves(localStorage);
+      renderMetrics();
+      $('#brain-port-status').textContent = 'Imported. Metrics refreshed. Reload to update all trainers.';
+    } catch (error) { $('#brain-port-status').textContent = `Import failed: ${error.message}`; }
+    event.target.value = '';
   });
 
   renderToggles();
