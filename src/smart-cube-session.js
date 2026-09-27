@@ -2,6 +2,7 @@ import { applyMoves, createSolvedState, FACE_COLORS, parseScramble } from './cro
 
 const SOLVED_FACELETS = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
 const solvedState = () => createSolvedState();
+const DOUBLE_TURN_WINDOW = 50; // cube-tick gap below which two same-face same-direction quarters are one physical double turn
 const isSolvedState = state => state.cubies.every(cubie =>
   Object.entries(cubie.stickers).every(([face, color]) => FACE_COLORS[face] === color));
 
@@ -17,6 +18,7 @@ export function createSmartCubeSession(connectDevice) {
   let subscription = null;
   let generation = 0;
   let faceletsRequest = null;
+  let lastCoalesce = null;
   let snapshot = {
     phase: 'disconnected', detail: 'Connect a smart cube to mirror its turns.',
     deviceName: '', protocol: '', battery: null, facelets: null, gyro: null,
@@ -75,8 +77,26 @@ export function createSmartCubeSession(connectDevice) {
         const moves = parseScramble(event.move);
         if (moves.length !== 1) throw new Error('Invalid move');
         const [move] = moves;
-        const state = applyMoves(snapshot.state, [move]);
-        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, detail: 'Live cube updated. Analyze when ready.' });
+        const face = move[0];
+        const prime = move.includes("'");
+        const cubeTs = Number.isFinite(event.cubeTimestamp) ? event.cubeTimestamp : null;
+        // Double-turn coalescing: the GAN protocol emits a double (U2) as two
+        // quarter-turn MOVE events with a tiny cube-tick gap. Merge the second quarter into the
+        // first as a "U2" so it counts as one move, TPS isn't inflated,
+        // and a guided scramble's plan-matching doesn't briefly go off-plan.
+        if (lastCoalesce && lastCoalesce.face === face && lastCoalesce.prime === prime
+            && cubeTs !== null && lastCoalesce.cubeTs !== null
+            && (cubeTs - lastCoalesce.cubeTs) <= DOUBLE_TURN_WINDOW) {
+          const double = `${face}2${prime ? "'" : ''}`;
+          const state = applyMoves(snapshot.state, [move]);
+          const base = isSolvedState(state) ? [] : snapshot.moves.slice(0, -1);
+          publish({ state, moves: base.concat(double), lastMove: double, detail: 'Live cube updated.' });
+          lastCoalesce = null;
+        } else {
+          const state = applyMoves(snapshot.state, [move]);
+          publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, detail: 'Live cube updated. Analyze when ready.' });
+          lastCoalesce = { face, prime, cubeTs };
+        }
       } catch {
         publish({ phase: 'desynced', detail: `Unsupported move from cube: ${String(event.move).slice(0, 20)}. Solve it and sync again.` });
       }
