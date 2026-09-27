@@ -92,6 +92,7 @@ export function createBrain(root, cubeSession = smartCube) {
           <section class="brain-setup" aria-label="Solve setup">
             <div class="brain-setup-row">
               <div class="brain-mode" role="group" aria-label="Solve mode"><span class="control-label">Mode</span><div class="segmented"><button class="segment active" data-brain-mode="guided">Guided</button><button class="segment" data-brain-mode="free">Free</button></div></div>
+              <div class="brain-method" role="group" aria-label="Solving method"><span class="control-label">Method</span><div class="segmented">${METHODS.map(m => `<button class="segment${m.id === solveMethod.id ? ' active' : ''}" data-brain-method="${m.id}" title="${escape(m.description || '')}">${m.label}</button>`).join('')}</div></div>
               <div class="brain-cross-kind" role="group" aria-label="Cross style"><span class="control-label">Cross</span><div class="segmented"><button class="segment active" data-brain-cross="cross">Cross</button><button class="segment" data-brain-cross="xcross">X-cross</button><button class="segment" data-brain-cross="xxcross">Double X</button></div></div>
               <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-pseudo"><span>Pseudo F2L · D-shift</span></label>
               <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-inspection" checked><span>Inspection · 15s</span></label>
@@ -258,20 +259,12 @@ export function createBrain(root, cubeSession = smartCube) {
   }
 
   // Stage definitions for the bottom horizontal timeline. Labels are stage names only —
-  // the live pair count lives in the phase detail, so F2L is never shown twice.
-  const STAGES = ['Scramble', 'Cross', 'F2L', 'OLL', 'PLL', 'Solved'];
-  function stageIndex(progress, phase) {
-    const p = progress || {};
-    if (phase === 'applying' || phase === 'inspecting') return 0;       // Scramble stage
-    if (!p.crossDone) return 0;
-    if (!p.f2lDone) return 1 + Math.min(3, Math.max(0, (p.pairsSolved ?? 0)) / 4 * 3 | 0); // inside F2L
-    if (!p.ollDone) return 4;
-    if (!p.solved) return 5;
-    return 6;
-  }
+  // Stage definitions come from the chosen solving method (CFOP / Roux / ...).
+  function stageIndex(progress, phase) { return solveMethod.mapProgress(progress, phase); }
   function renderTimeline() {
     const snap = live.getSnapshot();
     const p = snap.progress || {};
+    const STAGES = solveMethod.stages;
     const current = stageIndex(p, snap.phase);
     const pct = (current / (STAGES.length - 1)) * 100;
     // A thin glowing line with a moving dot at the current stage (not chips).
@@ -449,6 +442,17 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-guided-wrap').hidden = !guided;
     $('#brain-start').textContent = guided ? 'Start guided' : 'Start free';
   }));
+  root.querySelectorAll('[data-brain-method]').forEach(btn => btn.addEventListener('click', () => {
+    root.querySelectorAll('[data-brain-method]').forEach(b => b.classList.toggle('active', b === btn));
+    solveMethod = getMethod(btn.dataset.brainMethod);
+    try { localStorage.setItem('cubesight-brain-method', solveMethod.id); } catch { /* keep in memory */ }
+    renderTimeline();
+  }));
+  (function restoreMethod() {
+    let id = DEFAULT_METHOD; try { id = localStorage.getItem('cubesight-brain-method') || DEFAULT_METHOD; } catch { /* ignore */ }
+    solveMethod = getMethod(id);
+    root.querySelectorAll('[data-brain-method]').forEach(b => b.classList.toggle('active', b.dataset.brainMethod === solveMethod.id));
+  })();
   root.querySelectorAll('[data-brain-cross]').forEach(btn => btn.addEventListener('click', () => {
     root.querySelectorAll('[data-brain-cross]').forEach(b => b.classList.toggle('active', b === btn));
     crossKind = btn.dataset.brainCross;
