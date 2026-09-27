@@ -2,7 +2,7 @@ import './brain.css';
 import { createCube3D } from './cube-3d.js';
 import { FACE_COLORS, toRenderData } from './cross-cube.js';
 import { smartCube } from './smart-cube-bluetooth.js';
-import { describeTurn, recoveryMoves } from './smart-cube-guidance.js';
+import { recoveryMoves } from './smart-cube-guidance.js';
 import { createSolveLive } from './solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from './solve-coach.js';
 import { loadSolves, appendSolve } from './solve-store.js';
@@ -191,9 +191,8 @@ export function createBrain(root, cubeSession = smartCube) {
 
   // --- Coach panel ------------------------------------------------------------------------------
   // --- Guided scramble cue + algorithm showcase + recovery ----------------
-  // The scramble flow under the cube is the single place the scramble is shown. The current move
-  // carries a tooltip describing how to turn it (an affordance), replacing the old separate
-  // turn-guide card the user disliked.
+  // The scramble flow under the cube is the single place the scramble is shown. The current
+  // move is the visual indicator (highlighted) — no ↺ symbol, no verbose text.
   function renderApplyGuide() {
     const snap = live.getSnapshot();
     const movesEl = $('#brain-moves');
@@ -202,22 +201,17 @@ export function createBrain(root, cubeSession = smartCube) {
     const scrambleMoves = snap.scrambleStr ? snap.scrambleStr.split(/\s+/).filter(Boolean) : [];
     if (snap.applyDetour.length) {
       // A wrong turn is folded into the scramble as an extra step (CubeStation-style):
-      // show what to do next, not a 'undo your wrong turn', and the prior done moves animate away.
+      // show the recovery path as a flow with the next move highlighted, not a notation paragraph.
       const recovery = recoveryMoves(snap.applyDetour, held.bottom, held.front);
       if (movesEl) {
         movesEl.hidden = false;
-        movesEl.innerHTML = `<p class="brain-moves-recovery">Off by ${snap.applyDetour.length}. Next do <strong>${escape(recovery.join(' '))}</strong>, then continue the scramble.</p>`;
+        movesEl.innerHTML = recovery.map((m, i) => `<i class="${i === 0 ? 'current' : ''}">${escape(m)}</i>`).join('');
       }
     } else {
-      const move = scrambleMoves[snap.applyStep];
+      const scramble = scrambleMoves.map((m, i) => `<i class="${i < snap.applyStep ? 'done' : ''} ${i === snap.applyStep ? 'current' : ''}">${escape(m)}</i>`).join('');
       if (movesEl) {
         movesEl.hidden = false;
-        movesEl.innerHTML = scrambleMoves.map((m, i) => {
-          const current = i === snap.applyStep;
-          const c = current ? describeTurn(m, held.bottom, held.front) : null;
-          const tip = c ? `<b class="brain-move-tip" title="${escape(c.text)}">${c.symbol || ''}</b><span class="brain-move-hint">${escape(c.text)}</span>` : escape(m);
-          return `<i class="${i < snap.applyStep ? 'done' : ''} ${current ? 'current' : ''}">${tip}</i>`;
-        }).join('');
+        movesEl.innerHTML = scramble;
       }
     }
   }
