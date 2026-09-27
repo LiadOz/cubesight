@@ -5,7 +5,6 @@ import { smartCube } from './smart-cube-bluetooth.js';
 import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
 import { createSolveLive } from './solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from './solve-coach.js';
-import { analyze } from './solve-tracker.js';
 import { loadSolves, appendSolve } from './solve-store.js';
 import { summarize, ao5, ao12 } from './solve-metrics.js';
 import { exportAll, serializeExport, parseImport, importAll } from './data-port.js';
@@ -28,7 +27,6 @@ const DEFAULT_TOGGLES = {
   rotationFlag: true,      // flag excessive whole-cube rotations
   efficiencyScore: true,  // chess.com-style accuracy analogue
   autoCross: true,         // detect cross from the held bottom at first move
-  moveFraction: false,     // move-fraction animation instead of arrows (WIP)
 };
 
 function loadToggles() {
@@ -198,27 +196,27 @@ export function createBrain(root, cubeSession = smartCube) {
     const sessionSnap = cubeSession.getSnapshot();
     const state = sessionSnap.state;
     const crossFace = snap.crossFace;
+    const p = snap.progress || {};
     const lines = [];
     if (snap.phase === 'applying') {
       lines.push({ tone: 'info', text: 'Perform the scramble shown in the cue. A wrong turn shows the return path without discarding the attempt.' });
-    } else if (snap.phase === 'solving' && crossFace && state) {
+    } else if ((snap.phase === 'solving' || snap.phase === 'done') && crossFace && state) {
       if (toggles.crossSuggest && optimalCross) {
         lines.push({ tone: 'info', text: `Optimal cross here: ${title(FACE_COLORS[optimalCross.face])} face in ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}.` });
       }
-      const a = analyze(state, crossFace);
       if (toggles.crossHindsight && snap.crossMoveCount != null && optimalCross) {
         const h = crossHindsight(snap.crossMoveCount, optimalCross.length, crossFace);
         if (h) lines.push({ tone: h.kind === 'optimal' ? 'good' : 'warn', text: h.text });
       }
-      if (a.crossDone && !a.f2lDone && toggles.f2lHint) {
+      if (p.crossDone && !p.f2lDone && toggles.f2lHint) {
         const hint = f2lNextPairHint(state, crossFace);
         if (hint) lines.push({ tone: 'info', text: hint.text });
       }
-      if (toggles.ollStage && a.f2lDone && !a.ollDone) {
+      if (toggles.ollStage && p.f2lDone && !p.ollDone) {
         const stage = ollStage(state, crossFace);
         lines.push({ tone: 'info', text: stage.eoDone ? 'Edges oriented — orient the corners (2-look OLL).' : 'Orient the last-layer edges first (2-look OLL).' });
       }
-      if (toggles.pllLens && a.ollDone && !a.solved) {
+      if (toggles.pllLens && p.ollDone && !p.solved) {
         const pll = pllLens(state, crossFace);
         if (pll?.name) lines.push({ tone: 'info', text: `PLL: ${pll.name} (${pll.family}). ${pll.cue}` });
       }
@@ -226,7 +224,7 @@ export function createBrain(root, cubeSession = smartCube) {
         lines.push({ tone: 'warn', text: `${snap.rotations} whole-cube rotation${snap.rotations === 1 ? '' : 's'} this solve — fewer rotations often save time.` });
       }
       if (toggles.efficiencyScore) {
-        const score = efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, rotations: snap.rotations, solved: a.solved, f2lPairs: a.pairsSolved, ollDone: a.ollDone });
+        const score = efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, rotations: snap.rotations, solved: p.solved, f2lPairs: p.pairsSolved, ollDone: p.ollDone });
         lines.push({ tone: 'good', text: `Solve efficiency so far: ${score}/100.` });
       }
     } else if (snap.phase === 'done' && snap.record) {
@@ -238,19 +236,26 @@ export function createBrain(root, cubeSession = smartCube) {
 
   function renderTimeline() {
     const snap = live.getSnapshot();
-    const a = snap.prev;
+    const p = snap.progress || {};
     const steps = [
-      { key: 'cross', label: 'Cross', done: a?.crossDone },
-      { key: 'f2l', label: `F2L ${a?.pairsSolved ?? 0}/4`, done: a?.f2lDone },
-      { key: 'oll', label: 'OLL', done: a?.ollDone },
-      { key: 'pll', label: 'PLL', done: a?.solved },
+      { key: 'cross', label: 'Cross', done: p.crossDone },
+      { key: 'f2l', label: `F2L ${p.pairsSolved ?? 0}/4`, done: p.f2lDone },
+      { key: 'oll', label: 'OLL', done: p.ollDone },
+      { key: 'pll', label: 'PLL', done: p.solved },
     ];
     $('#brain-timeline').innerHTML = steps.map(s => `<i class="${s.done ? 'done' : ''}"><span>${s.label}</span></i>`).join('');
     let label = 'Connect and start a solve';
     if (snap.phase === 'applying') label = 'Perform the scramble…';
-    else if (snap.phase === 'solving') label = a?.solved ? 'Solved' : (a?.ollDone ? 'PLL' : (a?.f2lDone ? 'OLL' : (a?.crossDone ? `F2L · ${a.pairsSolved}/4 pairs` : 'Building the cross')));
+    else if (snap.phase === 'solving') label = p.phase ? ({ 'pre-cross': 'Building the cross', cross: 'Cross done', 'oll': 'OLL', pll: 'PLL', solved: 'Solved' }[p.phase] || `F2L · ${p.pairsSolved ?? 0}/4`) : 'Solving';
     else if (snap.phase === 'done') label = 'Solved';
     $('#brain-phase-label').textContent = label;
+    // Live turn / time / TPS readout so it's obvious turns are being counted.
+    const moves = snap.solveMoveCount ?? 0;
+    const msElapsed = snap.elapsedMs ?? 0;
+    const tps = msElapsed > 0 ? (moves / (msElapsed / 1000)).toFixed(2) : '0.00';
+    $('#brain-phase-detail').textContent = (snap.phase === 'solving' || snap.phase === 'done')
+      ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s`
+      : 'Cross is detected from the face on the bottom at your first solving move.';
   }
 
   function renderMetrics() {

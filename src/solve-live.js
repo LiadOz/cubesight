@@ -39,7 +39,13 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let rotations = 0;
   let lastBottom = null;
   let crossMoveCount = null;
+  let crossAchieved = false;   // milestones — once reached, never regress
+  let f2lAchieved = false;
+  let ollAchieved = false;
+  let maxPairs = 0;
+  let liveMoveCount = 0;
   let prev = null;           // previous phase analysis during solving
+  let progress = null;       // monotonic phase snapshot the UI renders
   let mark = {};             // { solveStartAt, crossAt, f2lAt, ollAt }
   let solveMoves = [];        // canonical solve moves
   let record = null;
@@ -47,8 +53,9 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
 
   const snapshot = () => ({
     mode, phase, scrambleStr, applyStep, applyTotal: scrambleMoves.length, applyDetour: [...applyDetour],
-    solveMoves: [...solveMoves], crossFace, crossColor, rotations, crossMoveCount,
-    prev, record, done: phase === 'done',
+    solveMoves: [...solveMoves], solveMoveCount: liveMoveCount, elapsedMs: phase === 'solving' && solveStartAt ? Math.max(0, now() - solveStartAt) : null,
+    crossFace, crossColor, rotations, crossMoveCount,
+    progress, prev, record, done: phase === 'done',
   });
 
   function emit() { for (const l of listeners) l(snapshot()); }
@@ -56,7 +63,8 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   function resetSolve() {
     crossFace = null; crossColor = null; rotations = 0; lastBottom = null;
     crossMoveCount = null;
-    prev = null; mark = {}; solveMoves = []; record = null;
+    crossAchieved = false; f2lAchieved = false; ollAchieved = false; maxPairs = 0; liveMoveCount = 0;
+    prev = null; progress = null; mark = {}; solveMoves = []; record = null;
   }
 
   // Guided scramble: cue the user through the scramble moves, recovering on a
@@ -149,6 +157,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   }
 
   function onSolveMove(move, state, allMoves) {
+    liveMoveCount = Math.max(0, allMoves.length - solveStartIndex);
     if (crossFace === null) {
       const o = getOrientation() || {};
       crossFace = o.bottom || 'D';
@@ -162,17 +171,27 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       if (o.bottom && o.bottom !== lastBottom) { rotations++; lastBottom = o.bottom; }
     }
     const next = analyze(state, crossFace);
-    // Cross completion: false -> true. Stamp the extended-cross kind at the
-    // instant the cross finishes (an X-cross is a cross built with a pair).
-    if (!prev?.crossDone && next.crossDone && mark.crossAt == null) {
+    // Milestones are monotonic: once the cross / F2L / OLL is reached it stays
+    // reached, even if a later F2L insertion temporarily breaks a cross edge.
+    // The displayed phase never regresses (the user expects “once the cross is
+    // done, it’s done”); breakages surface as coach hindsight, not as a phase
+    // step backwards.
+    if (!crossAchieved && next.crossDone) {
+      crossAchieved = true;
       mark.crossAt = now();
       mark.xcross = extendedCross(state, crossFace).kind;
-      crossMoveCount = solveMoves.length;
+      crossMoveCount = liveMoveCount;
     }
-    // F2L completion (4 pairs).
-    if (next.f2lDone && mark.f2lAt == null) mark.f2lAt = now();
-    // OLL completion (LL oriented).
-    if (next.ollDone && mark.ollAt == null) mark.ollAt = now();
+    if (crossAchieved && next.pairsSolved > maxPairs) maxPairs = next.pairsSolved;
+    if (crossAchieved && !f2lAchieved && next.f2lDone) { f2lAchieved = true; mark.f2lAt = now(); }
+    if (f2lAchieved && !ollAchieved && next.ollDone) { ollAchieved = true; mark.ollAt = now(); }
+    let label;
+    if (next.solved) label = 'solved';
+    else if (ollAchieved) label = 'pll';
+    else if (f2lAchieved) label = 'oll';
+    else if (crossAchieved) label = maxPairs > 0 ? `f2l-${maxPairs}` : 'cross';
+    else label = 'pre-cross';
+    progress = { phase: label, crossDone: crossAchieved, pairsSolved: maxPairs, f2lDone: f2lAchieved, ollDone: ollAchieved, solved: next.solved };
     prev = next;
     if (next.solved) { finishSolve(state, allMoves); return; }
     emit();
