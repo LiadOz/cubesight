@@ -28,7 +28,8 @@ npm run dev
 - Responsive touch layout with collapsible settings and six color answers visible together on phones
 - Light/dark header toggle: follows the device initially, remembers explicit choices, and leaves cube colors unchanged
 - Cross Scout calculator: pasted/generated scrambles or live smart-cube turns, selectable color subsets or CN, selected-color-on-bottom inspection with a visibility-based and changeable front face, tracked pair highlights, and animated step/playback controls
-- Smart Cube Studio (`#/smart-cube`): a connection-first debug workspace with a live cube, decoded event log, gyro readout, and a real-cube scramble rehearsal that advances by tracked state and shows recovery after a wrong turn. The current GAN decoder does not verify wide/slice gestures as a single move.
+- **Brain** (`#/brain`): the smart-cube solve trainer and the base for the other live-cube trainers. Connect and sync a cube, pick a guided (WCA random-state) scramble or a free scramble, then solve. A live phase timeline (cross → F2L n/4 → OLL → PLL → solved) splits the solve, the cross is auto-detected from the face on the bottom at your first solving move (colour-neutral), and a Coach panel surfaces insights as you go — optimal-cross suggestion, non-optimal-cross hindsight, a next-pair readiness hint, 2-look OLL stage, the PLL case, excessive-rotation flag, and a chess.com-style efficiency score. A metrics strip tracks solves, best, ao5, ao12, median TPS and move count over time, all stored locally. A **Coach & visual debug menu** toggles every affordance so each can be inspected, and an **Export / Import data** control backs up or restores your local progress (the app stores everything on-device and sends nothing to a server).
+- **Debug** (`#/debug`, formerly Smart Cube Studio): a connection-first debug workspace with a live cube, decoded event log, gyro readout, and a real-cube scramble rehearsal that advances by tracked state and shows recovery after a wrong turn. The current GAN decoder does not verify wide/slice gestures as a single move.
   Implementation and comparisons: [`docs/smart-cube-studio.md`](docs/smart-cube-studio.md).
 - Cross Scout retrieval practice hides the selected plan, structural cue, and result list until the user commits to an answer, then reveals the verified moves and existing piece highlights. Self-ratings and commitment time remain local.
 - Two-sided PLL recognition covers all 21 standard cases on a full, fixed-view cube with random AUF. Learn starts with a small family, Mix interleaves all cases, and Transfer records a separate accuracy stream.
@@ -76,9 +77,12 @@ external source-attribution link still requires a connection when opened.
 Smart-cube pairing requires a Web Bluetooth browser (Chrome or Edge on Android
 or desktop) and a compatible cube. The Bluetooth connection and move stream stay
 local; the app does not send cube state or MAC address to the server. A verified
-cube MAC is remembered in this browser's local storage so it normally needs to
-be entered only once per browser profile. Clearing site data or using a different
-browser/profile will require entering it again. If asked for the MAC, expand
+cube MAC is normally derived automatically from the cube's BLE manufacturer
+advertising data (the same source native apps use), so no manual address entry is
+needed; a manual prompt remains only as a rare last resort if advertising
+yields nothing. A verified address is cached in this browser's local storage.
+Clearing site data or using a different browser/profile may require a fresh
+advertisement pass. If asked for the MAC, expand
 **Asked for a cube MAC address?** in Cross Scout for the
 Chrome device-list instructions. Open that internal page in regular Chrome,
 not the installed PWA, then return to CubeSight to enter the address.
