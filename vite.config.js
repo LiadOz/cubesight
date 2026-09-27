@@ -64,4 +64,5 @@ export default defineConfig({
     }),
   ],
   server: { hmr: false, host: true, allowedHost: true },
+  optimizeDeps: { exclude: ['cubing'] },
 });

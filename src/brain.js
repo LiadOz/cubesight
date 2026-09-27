@@ -4,7 +4,6 @@ import { FACE_COLORS, toRenderData } from './cross-cube.js';
 import { smartCube } from './smart-cube-bluetooth.js';
 import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
 import { createSolveLive } from './solve-live.js';
-import { generateWcaScramble } from './scramble.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from './solve-coach.js';
 import { analyze } from './solve-tracker.js';
 import { loadSolves, appendSolve } from './solve-store.js';
@@ -48,6 +47,8 @@ export function createBrain(root, cubeSession = smartCube) {
   let lastGyro = null;
   let lastStatusKey = '';
   let lastMirroredMove = null;
+  let lastMirroredLen = 0;
+  let scrambleLoad = null;
   let optimalCross = null;     // {face, length} from crossSuggestion during inspection
   let pendingSuggestion = null;
 
@@ -154,18 +155,17 @@ export function createBrain(root, cubeSession = smartCube) {
     if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro)].join('|');
     if (key !== lastStatusKey) { renderConnection(snapshot); lastStatusKey = key; }
-    if (snapshot.phase !== 'tracking') { lastMirroredMove = null; return; }
+    if (snapshot.phase !== 'tracking') { lastMirroredMove = null; lastMirroredLen = 0; return; }
     // The session publishes a snapshot on every event — including many gyro/
     // status updates per second — so we must NOT re-queue the last move on
-    // each one, or a single physical turn re-animates forever. Only animate when
-    // a genuinely new move arrives (Cross Scout dedups the same way).
-    if (snapshot.lastMove && snapshot.lastMove !== lastMirroredMove) {
+    // each one, or a single physical turn re-animates forever. Dedup by the
+    // move HISTORY LENGTH (not the move letter): a repeated move like R then R
+    // still grows the history, so it animates, while gyro updates do not.
+    if (snapshot.moves.length !== lastMirroredLen) {
+      lastMirroredLen = snapshot.moves.length;
       lastMirroredMove = snapshot.lastMove;
-      cube?.queueLiveMove(snapshot.lastMove, toRenderData(snapshot.state));
-    } else if (snapshot.lastMove === null && lastMirroredMove !== null) {
-      // Re-synced baseline: reset and redraw the solved cube.
-      lastMirroredMove = null;
-      cube?.update(toRenderData(snapshot.state));
+      if (snapshot.lastMove) cube?.queueLiveMove(snapshot.lastMove, toRenderData(snapshot.state));
+      else cube?.update(toRenderData(snapshot.state));
     }
   }
 
@@ -274,8 +274,20 @@ export function createBrain(root, cubeSession = smartCube) {
   $('#brain-disconnect').addEventListener('click', () => { void cubeSession.disconnect(); });
   $('#brain-reset-view').addEventListener('click', () => cube?.resetView());
   $('#brain-generate').addEventListener('click', async () => {
-    try { $('#brain-scramble').value = await generateWcaScramble(); }
-    catch (error) { showError(`Could not generate a scramble: ${error.message}`); }
+    const button = $('#brain-generate');
+    const original = button.textContent;
+    button.disabled = true; button.textContent = 'Generating…';
+    showError('');
+    try {
+      const mod = await (scrambleLoad || import('./scramble.js'));
+      scrambleLoad = Promise.resolve(mod);
+      $('#brain-scramble').value = await mod.generateWcaScramble();
+    } catch (error) {
+      showError(`Could not generate a scramble: ${error.message}`);
+    } finally {
+      button.disabled = cubeSession.getSnapshot().phase === 'tracking';
+      button.textContent = original;
+    }
   });
   $('#brain-start').addEventListener('click', async () => {
     showError('');
@@ -340,6 +352,8 @@ export function createBrain(root, cubeSession = smartCube) {
   renderMetrics();
   renderTimeline();
   renderCoach();
+  // Pre-warm the (heavy) WCA scramble loader so the first click is instant.
+  scrambleLoad = import('./scramble.js').then(m => m).catch(() => null);
   cubeSession.subscribe(onSession);
   live.subscribe(onLive);
 
