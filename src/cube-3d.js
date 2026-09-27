@@ -476,6 +476,31 @@ export function createCube3D(container, options = {}) {
     renderer.domElement.dataset.gyroTarget = targetGyroOrientation.toArray().map(number => number.toFixed(4)).join(',');
   }
 
+  // Which canonical faces are currently on the bottom / in front of the live
+  // (gyro-followed or hand-rotated) cube. Used by Brain to auto-detect the
+  // cross from the face the solver chose to put on the bottom at their first
+  // solving move. Best-effort: the face whose local normal, after the cube
+  // group rotation, points most toward world -Y is on the bottom.
+  const worldDown = new THREE.Vector3(0, -1, 0);
+  const worldFront = new THREE.Vector3(0, 0, 1);
+  function getHeldFaces() {
+    let best = bottomFace, bestDot = -2;
+    for (const [face, normal] of Object.entries(FACE_NORMALS)) {
+      const v = new THREE.Vector3(...normal).applyQuaternion(cubeGroup.quaternion);
+      const d = v.dot(worldDown);
+      if (d > bestDot) { bestDot = d; best = face; }
+    }
+    const opposite = { U: 'D', D: 'U', F: 'B', B: 'F', R: 'L', L: 'R' }[best];
+    let frontBest = frontFace, frontDot = -2;
+    for (const [face, normal] of Object.entries(FACE_NORMALS)) {
+      if (face === best || face === opposite) continue;
+      const v = new THREE.Vector3(...normal).applyQuaternion(cubeGroup.quaternion);
+      const d = v.dot(worldFront);
+      if (d > frontDot) { frontDot = d; frontBest = face; }
+    }
+    return { bottom: best, front: frontBest };
+  }
+
   let stopped = false;
   let feedbackActive = false;
   let animationFrame;
@@ -716,6 +741,7 @@ export function createCube3D(container, options = {}) {
     setOrientation,
     setGyroOrientation,
     recenterGyro,
+    getHeldFaces,
     setFullTouchRotation,
     resetView() {
       setMode(interactionMode);

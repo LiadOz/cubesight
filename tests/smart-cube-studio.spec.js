@@ -40,7 +40,7 @@ async function mountTrackedCube(page) {
 }
 
 test('opens as a connection-first diagnostic, not a simulated player', async ({ page }) => {
-  await page.goto('/#/smart-cube');
+  await page.goto('/#/debug');
   await expect(page.getByRole('tab', { name: 'Inspect tracking' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#studio-cube canvas')).toBeVisible();
   await expect(page.locator('#studio-start')).toBeDisabled();
@@ -89,7 +89,7 @@ test('scramble rehearsal advances only on device state and explains a mistake', 
 
 test('debug controls fit a phone viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/#/smart-cube');
+  await page.goto('/#/debug');
   await expect(page.locator('#studio-cube canvas')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('tab', { name: 'Scramble rehearsal' }).click();

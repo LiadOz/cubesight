@@ -105,12 +105,14 @@ const glancePacing = createGlancePacing();
 let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
-const TOOL_ROUTES = { corner: '/corners', f2l: '/f2l', pll: '/pll-recognition', scout: '/cross-scout', smart: '/smart-cube' };
-const TOOL_TITLES = { corner: 'Corner recognition', f2l: 'F2L deduction', pll: 'PLL recognition', scout: 'Cross Scout', smart: 'Smart Cube Studio' };
+const TOOL_ROUTES = { corner: '/corners', f2l: '/f2l', pll: '/pll-recognition', scout: '/cross-scout', brain: '/brain', smart: '/debug' };
+const TOOL_TITLES = { corner: 'Corner recognition', f2l: 'F2L deduction', pll: 'PLL recognition', scout: 'Cross Scout', brain: 'Brain', smart: 'Debug' };
 let scout = null;
 let scoutLoad = null;
 let smart = null;
 let smartLoad = null;
+let brain = null;
+let brainLoad = null;
 let pll = null;
 let pllLoad = null;
 let f2lCube3D = null;
@@ -151,7 +153,8 @@ document.querySelector('#app').innerHTML = `
       <a class="nav-link" href="#/f2l" data-tool="f2l">F2L deduction</a>
       <a class="nav-link" href="#/pll-recognition" data-tool="pll">PLL recognition</a>
       <a class="nav-link" href="#/cross-scout" data-tool="scout">Cross Scout</a>
-      <a class="nav-link" href="#/smart-cube" data-tool="smart">Smart Cube Studio</a>
+      <a class="nav-link" href="#/brain" data-tool="brain">Brain</a>
+      <a class="nav-link" href="#/debug" data-tool="smart">Debug</a>
     </nav>
     <div class="header-actions">
       <button id="theme-toggle" class="icon-button" aria-label="Switch to dark mode">
@@ -306,6 +309,7 @@ document.querySelector('#app').innerHTML = `
     </div>
     <div id="pll-view" hidden></div>
     <div id="scout-view" hidden></div>
+    <div id="brain-view" hidden></div>
     <div id="smart-view" hidden></div>
     <section class="retention-panel" aria-label="Adaptive practice progress"><div><span>Ready to review</span><strong id="review-due">0 cases</strong></div><p id="review-summary">Complete cases to build your review queue</p><small>Ready means its spacing interval has elapsed. Missed and slow patterns return sooner; fluent patterns return later.<br>Practice accuracy is separate from delayed retention.</small></section>
   </main>
@@ -862,8 +866,8 @@ function updateStatsUI() {
 }
 
 function updateLearningUI() {
-  document.querySelector('.retention-panel').hidden = activeTool === 'scout' || activeTool === 'pll';
-  if (activeTool === 'scout' || activeTool === 'pll') return;
+  document.querySelector('.retention-panel').hidden = activeTool === 'scout' || activeTool === 'pll' || activeTool === 'brain' || activeTool === 'smart';
+  if (activeTool === 'scout' || activeTool === 'pll' || activeTool === 'brain' || activeTool === 'smart') return;
   document.querySelector(`#${activeTool}-view .trainer-shell`)?.after(document.querySelector('.retention-panel'));
   const items = Object.fromEntries(Object.entries(learning.items).filter(([key]) => key.startsWith(`${activeTool === 'corner' ? 'corner' : 'f2l'}|`)));
   const summary = sessionSummary({ ...learning, items });
@@ -1389,6 +1393,8 @@ function updateHelp() {
 
 // Hash routes work on static hosts too, without a server-side SPA rewrite.
 function syncRoute(initial = false) {
+  // Old “Smart Cube Studio” link lived at #/smart-cube; redirect it to the renamed Debug view.
+  if (location.hash === '#/smart-cube') history.replaceState(null, '', `${location.pathname}${location.search}#/debug`);
   const tool = Object.keys(TOOL_ROUTES).find((key) => `#${TOOL_ROUTES[key]}` === location.hash) || 'corner';
   const hash = `#${TOOL_ROUTES[tool]}`;
   if (location.hash !== hash) history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
@@ -1407,6 +1413,7 @@ function setTool(tool, initial = false) {
   document.querySelector('#f2l-view').hidden = tool !== 'f2l';
   document.querySelector('#pll-view').hidden = tool !== 'pll';
   document.querySelector('#scout-view').hidden = tool !== 'scout';
+  document.querySelector('#brain-view').hidden = tool !== 'brain';
   document.querySelector('#smart-view').hidden = tool !== 'smart';
   // Choosing another trainer starts fresh; a corner timeout must not block F2L.
   paused = false;
@@ -1423,16 +1430,29 @@ function setTool(tool, initial = false) {
     f2lState.plannerGeneration += 1;
   }
   cancelCornerTimers();
-  if (tool === 'smart') {
+  if (tool === 'brain') {
+    state.locked = true;
+    f2lState.locked = true;
+    if (!brainLoad) {
+      document.querySelector('#brain-view').textContent = 'Loading Brain…';
+      brainLoad = import('./brain.js').then(({ createBrain }) => {
+        brain = createBrain(document.querySelector('#brain-view'));
+        brain.setActive(activeTool === 'brain');
+      }).catch((error) => {
+        document.querySelector('#brain-view').textContent = `Brain could not load: ${error.message}`;
+        brainLoad = null;
+      });
+    } else brain?.setActive(true);
+  } else if (tool === 'smart') {
     state.locked = true;
     f2lState.locked = true;
     if (!smartLoad) {
-      document.querySelector('#smart-view').textContent = 'Loading Smart Cube Studio…';
+      document.querySelector('#smart-view').textContent = 'Loading Smart Cube debug…';
       smartLoad = import('./smart-cube-studio.js').then(({ createSmartCubeStudio }) => {
         smart = createSmartCubeStudio(document.querySelector('#smart-view'));
         smart.setActive(activeTool === 'smart');
       }).catch((error) => {
-        document.querySelector('#smart-view').textContent = `Smart Cube Studio could not load: ${error.message}`;
+        document.querySelector('#smart-view').textContent = `Smart cube debug could not load: ${error.message}`;
         smartLoad = null;
       });
     } else smart?.setActive(true);
@@ -1492,6 +1512,7 @@ function placePausePrompt() {
 
 function pausePractice(reason = 'interrupted') {
   if (activeTool === 'smart') { smart?.setActive(false); return; }
+  if (activeTool === 'brain') { brain?.setActive(false); return; }
   if (activeTool === 'scout') { scout?.setActive(false); return; }
   if (activeTool === 'pll') { pll?.setActive(false); return; }
   if (paused || document.querySelector('#summary-dialog').open) return;
@@ -1521,11 +1542,13 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) pausePractice();
   else if (activeTool === 'scout') scout?.setActive(true);
   else if (activeTool === 'smart') smart?.setActive(true);
+  else if (activeTool === 'brain') brain?.setActive(true);
   else if (activeTool === 'pll') pll?.setActive(true);
 });
 document.querySelector('#help-dialog').addEventListener('close', () => {
   if (activeTool === 'scout' && !document.hidden) scout?.setActive(true);
   else if (activeTool === 'smart' && !document.hidden) smart?.setActive(true);
+  else if (activeTool === 'brain' && !document.hidden) brain?.setActive(true);
   else if (activeTool === 'pll' && !document.hidden) pll?.setActive(true);
 });
 document.querySelector('#summary-dialog').addEventListener('cancel', (event) => {

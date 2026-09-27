@@ -17,7 +17,8 @@ const routes = [
   ['f2l', 'f2l', 'F2L deduction'],
   ['pll-recognition', 'pll', 'PLL recognition'],
   ['cross-scout', 'scout', 'Cross Scout'],
-  ['smart-cube', 'smart', 'Smart Cube Studio'],
+  ['brain', 'brain', 'Brain'],
+  ['debug', 'smart', 'Debug'],
 ];
 
 for (const [path, tool, title] of routes) {
@@ -61,6 +62,12 @@ test('unknown routes fall back to corners without dropping query parameters', as
   await page.goto('/?source=test#/unknown');
   await expect(page).toHaveURL(/\?source=test#\/corners$/);
   await expect(page.locator('#corner-view')).toBeVisible();
+});
+
+test('the old #/smart-cube link redirects to the renamed Debug view', async ({ page }) => {
+  await page.goto('/#/smart-cube');
+  await expect(page).toHaveURL(/#\/debug$/);
+  await expect(page.locator('#smart-view')).toBeVisible();
 });
 
 test('direct Scout navigation does not arm the corner inactivity prompt', async ({ page }) => {

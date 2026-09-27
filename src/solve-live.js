@@ -38,6 +38,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let crossColor = null;
   let rotations = 0;
   let lastBottom = null;
+  let crossMoveCount = null;
   let prev = null;           // previous phase analysis during solving
   let mark = {};             // { solveStartAt, crossAt, f2lAt, ollAt }
   let solveMoves = [];        // canonical solve moves
@@ -46,7 +47,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
 
   const snapshot = () => ({
     mode, phase, scrambleStr, applyStep, applyTotal: scrambleMoves.length, applyDetour: [...applyDetour],
-    solveMoves: [...solveMoves], crossFace, crossColor, rotations,
+    solveMoves: [...solveMoves], crossFace, crossColor, rotations, crossMoveCount,
     prev, record, done: phase === 'done',
   });
 
@@ -54,6 +55,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
 
   function resetSolve() {
     crossFace = null; crossColor = null; rotations = 0; lastBottom = null;
+    crossMoveCount = null;
     prev = null; mark = {}; solveMoves = []; record = null;
   }
 
@@ -134,6 +136,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       tps: solveMs != null && solveMs > 0 ? moves.length / (solveMs / 1000) : null,
       phases,
       xcross: phases ? (mark.xcross || (crossFace ? extendedCross(state, crossFace).kind : null)) : null,
+      crossMoveCount,
       rotations,
       detours: 0,
       mistakes: 0,
@@ -164,6 +167,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (!prev?.crossDone && next.crossDone && mark.crossAt == null) {
       mark.crossAt = now();
       mark.xcross = extendedCross(state, crossFace).kind;
+      crossMoveCount = solveMoves.length;
     }
     // F2L completion (4 pairs).
     if (next.f2lDone && mark.f2lAt == null) mark.f2lAt = now();
