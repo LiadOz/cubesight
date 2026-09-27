@@ -69,64 +69,42 @@ export function createBrain(root, cubeSession = smartCube) {
         <p class="brain-cue-label" id="brain-cue-label" hidden>Scramble</p>
         <div id="brain-moves" class="brain-moves" aria-label="Scramble moves" hidden></div>
       </div>
-      <aside class="brain-hud">
-        <section class="brain-connection" aria-label="Smart cube connection">
-          <div><strong id="brain-device">No cube connected</strong><p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start a tracked solve.</p></div>
-          <div class="brain-controls"><button class="brain-button" id="brain-connect">Connect cube</button><button class="brain-button" id="brain-sync" hidden>Sync solved cube</button><button class="brain-button" id="brain-recenter" hidden>Recenter motion</button><button class="brain-button" id="brain-disconnect" hidden>Disconnect</button><button class="brain-button" id="brain-clear-cube" hidden>Clear saved cube</button></div>
-        </section>
-        <section class="brain-setup" aria-label="Solve setup">
-          <div class="brain-setup-row">
-            <div class="brain-mode" role="group" aria-label="Solve mode">
-              <span class="control-label">Mode</span>
-              <div class="segmented"><button class="segment active" data-brain-mode="guided">Guided</button><button class="segment" data-brain-mode="free">Free</button></div>
-            </div>
-            <div class="brain-cross-kind" role="group" aria-label="Cross style">
-              <span class="control-label">Cross</span>
-              <div class="segmented"><button class="segment active" data-brain-cross="cross">Cross</button><button class="segment" data-brain-cross="xcross">X-cross</button><button class="segment" data-brain-cross="xxcross">Double X</button></div>
-            </div>
-            <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-pseudo"><span>Pseudo F2L · D-shift</span></label>
-            <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-inspection" checked><span>Inspection · 15s</span></label>
+      <div class="brain-pill">
+        <div class="brain-pill-timeline" id="brain-timeline" role="progressbar" aria-label="Solve stage timeline"></div>
+        <div class="brain-pill-row">
+          <div class="brain-pill-phase">
+            <p class="eyebrow">Phase</p>
+            <h2 id="brain-phase-label">Connect and start a solve</h2>
+            <p id="brain-phase-detail" class="brain-phase-detail">Cross is read from the bottom at your first move.</p>
           </div>
-          <div class="brain-setup-actions"><button class="primary-button" id="brain-start">Start guided solve</button><button class="brain-button" id="brain-stop" hidden>Stop</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading the page (keeps the cube connected)">Reset view</button></div>
-          <details class="brain-advanced-scramble">
-            <summary><span>Use a specific scramble</span><i aria-hidden="true"></i></summary>
-            <div class="brain-scramble-wrap" id="brain-guided-wrap">
-              <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="Paste a scramble, or generate one to inspect before starting…"></textarea>
-              <div class="brain-scramble-actions"><button class="brain-button" id="brain-generate">New WCA scramble</button><button class="brain-button" id="brain-start-custom">Start with this scramble</button></div>
-            </div>
-          </details>
-          <p id="brain-error" class="brain-error" role="alert" hidden></p>
-        </section>
-        <section class="brain-phase" aria-live="polite">
-          <p class="eyebrow">Solve phase</p>
-          <h2 id="brain-phase-label">Connect and start a solve</h2>
-          <div id="brain-timeline" class="brain-timeline"></div>
-          <p id="brain-phase-detail" class="brain-phase-detail">Cross is detected from the face on the bottom at your first solving move.</p>
-        </section>
-        <div id="brain-coach" class="brain-coach" aria-live="polite"></div>
-        <section class="brain-metrics" aria-label="Your solve metrics">
-          <div class="brain-metrics-grid" id="brain-metrics-grid"></div>
-          <p class="brain-footnote">All data stays on this device. Nothing is sent to a server.</p>
-        </section>
-        <details class="brain-coach-settings">
-          <summary><span>Coach settings</span><small>Choose which insights appear</small><i aria-hidden="true"></i></summary>
-          <div id="brain-toggles" class="brain-toggles"></div>
-          <div class="brain-data-port">
-            <span>Your data stays on this device.</span>
-            <button class="brain-button" id="brain-export" type="button">Export data</button>
-            <button class="brain-button" id="brain-import" type="button">Import data</button>
-            <input type="file" id="brain-import-file" accept="application/json,.json" hidden>
-            <p id="brain-port-status" role="status" aria-live="polite"></p>
+          <div id="brain-coach" class="brain-pill-coach" aria-live="polite"></div>
+          <div class="brain-pill-metrics" aria-label="Your solve metrics">
+            <div class="brain-metrics-grid" id="brain-metrics-grid"></div>
+            <p class="brain-footnote">All data stays on this device.</p>
           </div>
+        </div>
+        <div class="brain-pill-actions"><button class="primary-button" id="brain-start">Start guided solve</button><button class="brain-button" id="brain-stop" hidden>Stop</button><button class="brain-button" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">Reset view</button><p id="brain-error" class="brain-error" role="alert" hidden></p></div>
+        <details class="brain-pill-setup">
+          <summary><span>Connect &amp; setup</span><i aria-hidden="true"></i></summary>
+          <section class="brain-connection" aria-label="Smart cube connection">
+            <div><strong id="brain-device">No cube connected</strong><p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start a tracked solve.</p></div>
+            <div class="brain-controls"><button class="brain-button" id="brain-connect">Connect cube</button><button class="brain-button" id="brain-sync" hidden>Sync solved cube</button><button class="brain-button" id="brain-recenter" hidden>Recenter motion</button><button class="brain-button" id="brain-disconnect" hidden>Disconnect</button><button class="brain-button" id="brain-clear-cube" hidden>Clear saved cube</button></div>
+          </section>
+          <section class="brain-setup" aria-label="Solve setup">
+            <div class="brain-setup-row">
+              <div class="brain-mode" role="group" aria-label="Solve mode"><span class="control-label">Mode</span><div class="segmented"><button class="segment active" data-brain-mode="guided">Guided</button><button class="segment" data-brain-mode="free">Free</button></div></div>
+              <div class="brain-cross-kind" role="group" aria-label="Cross style"><span class="control-label">Cross</span><div class="segmented"><button class="segment active" data-brain-cross="cross">Cross</button><button class="segment" data-brain-cross="xcross">X-cross</button><button class="segment" data-brain-cross="xxcross">Double X</button></div></div>
+              <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-pseudo"><span>Pseudo F2L · D-shift</span></label>
+              <label class="brain-pseudo-toggle"><input type="checkbox" id="brain-inspection" checked><span>Inspection · 15s</span></label>
+            </div>
+            <details class="brain-advanced-scramble"><summary><span>Use a specific scramble</span><i aria-hidden="true"></i></summary><div class="brain-scramble-wrap" id="brain-guided-wrap"><textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="Paste a scramble, or generate one to inspect before starting…"></textarea><div class="brain-scramble-actions"><button class="brain-button" id="brain-generate">New WCA scramble</button><button class="brain-button" id="brain-start-custom">Start with this scramble</button></div></div></details>
+          </section>
         </details>
-      </aside>
+      </div>
+      <section class="brain-review" id="brain-review" hidden aria-live="polite"></section>
     </section>
-    <details class="brain-diagnostics">
-      <summary><span>Connection diagnostics</span><small>What the attach is doing — send to dev</small><i aria-hidden="true"></i></summary>
-      <div class="brain-connection-log-head"><div><p class="eyebrow">Connection log</p><h2>What the attach is doing</h2></div><div class="brain-log-actions"><button class="brain-button" id="brain-send-log" type="button" title="Send this log to the dev server so the agent can read it">Send to dev</button><button class="brain-button" id="brain-clear-log" type="button">Clear log</button></div></div>
-      <ol id="brain-connection-log" class="brain-log-list"></ol>
-      <p id="brain-send-status" role="status" aria-live="polite"></p>
-    </details>`;
+    <details class="brain-diagnostics"><summary><span>Connection diagnostics</span><small>What the attach is doing — send to dev</small><i aria-hidden="true"></i></summary><div class="brain-connection-log-head"><div><p class="eyebrow">Connection log</p><h2>What the attach is doing</h2></div><div class="brain-log-actions"><button class="brain-button" id="brain-send-log" type="button" title="Send this log to the dev server so the agent can read it">Send to dev</button><button class="brain-button" id="brain-clear-log" type="button">Clear log</button></div></div><ol id="brain-connection-log" class="brain-log-list"></ol><p id="brain-send-status" role="status" aria-live="polite"></p></details>
+    <details class="brain-coach-settings"><summary><span>Coach settings</span><small>Choose which insights appear</small><i aria-hidden="true"></i></summary><div id="brain-toggles" class="brain-toggles"></div><div class="brain-data-port"><span>Your data stays on this device.</span><button class="brain-button" id="brain-export" type="button">Export data</button><button class="brain-button" id="brain-import" type="button">Import data</button><input type="file" id="brain-import-file" accept="application/json,.json" hidden><p id="brain-port-status" role="status" aria-live="polite"></p></div></details>`;
 
   const $ = selector => root.querySelector(selector);
 
@@ -285,23 +263,34 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-coach').innerHTML = lines.map(l => `<p class="brain-coach-line brain-coach-${l.tone}">${escape(l.text)}</p>`).join('') || '<p class="brain-coach-line brain-coach-muted">Coach insights appear here as you solve.</p>';
   }
 
+  // Stage definitions for the bottom horizontal timeline. Labels are stage names only —
+  // the live pair count lives in the phase detail, so F2L is never shown twice.
+  const STAGES = ['Scramble', 'Cross', 'F2L', 'OLL', 'PLL', 'Solved'];
+  function stageIndex(progress, phase) {
+    const p = progress || {};
+    if (phase === 'applying' || phase === 'inspecting') return 0;       // Scramble stage
+    if (!p.crossDone) return 0;
+    if (!p.f2lDone) return 1 + Math.min(3, Math.max(0, (p.pairsSolved ?? 0)) / 4 * 3 | 0); // inside F2L
+    if (!p.ollDone) return 4;
+    if (!p.solved) return 5;
+    return 6;
+  }
   function renderTimeline() {
     const snap = live.getSnapshot();
     const p = snap.progress || {};
-    const steps = [
-      { key: 'cross', label: 'Cross', done: p.crossDone },
-      { key: 'f2l', label: `F2L ${p.pairsSolved ?? 0}/4`, done: p.f2lDone },
-      { key: 'oll', label: 'OLL', done: p.ollDone },
-      { key: 'pll', label: 'PLL', done: p.solved },
-    ];
-    $('#brain-timeline').innerHTML = steps.map(s => `<i class="${s.done ? 'done' : ''}"><span>${s.label}</span></i>`).join('');
+    const current = stageIndex(p, snap.phase);
+    // Horizontal stage strip with a moving fill to the current stage.
+    $('#brain-timeline').innerHTML = STAGES.map((label, i) => {
+      const state = i < current ? 'done' : i === current ? 'current' : '';
+      return `<i class="${state}" data-stage="${i}"><span>${label}</span></i>`;
+    }).join('') + `<i class="fill" style="width:${(current / (STAGES.length - 1)) * 100}%"></i>`;
     let label = 'Connect and start a solve';
-    if (snap.phase === 'applying') label = 'Perform the scramble…';
+    if (snap.phase === 'applying') label = 'Perform the scramble';
     else if (snap.phase === 'inspecting') label = 'Inspection';
-    else if (snap.phase === 'solving') label = p.phase ? ({ 'pre-cross': 'Building the cross', cross: 'Cross done', 'oll': 'OLL', pll: 'PLL', solved: 'Solved' }[p.phase] || `F2L · ${p.pairsSolved ?? 0}/4`) : 'Solving';
+    else if (snap.phase === 'solving') label = p.phase ? ({ 'pre-cross': 'Building the cross', cross: 'Cross', 'f2l-0': 'F2L', 'f2l-1': 'F2L', 'f2l-2': 'F2L', 'f2l-3': 'F2L', 'f2l-4': 'F2L', 'oll': 'OLL', pll: 'PLL', solved: 'Solved' }[p.phase] || 'F2L') : 'Solving';
     else if (snap.phase === 'done') label = 'Solved';
     $('#brain-phase-label').textContent = label;
-    // Live turn / time / TPS readout, or the inspection countdown before the first move.
+    // Live turn / time / TPS readout (or the inspection countdown) — the pair count appears ONLY here.
     if (snap.phase === 'inspecting' && snap.inspection) {
       const remaining = snap.inspection.remainingMs;
       $('#brain-phase-detail').textContent = remaining != null ? `Inspect — ${(remaining / 1000).toFixed(1)}s left (clock starts on your first move)` : 'Inspect — start solving on your first move';
@@ -309,10 +298,51 @@ export function createBrain(root, cubeSession = smartCube) {
       const moves = snap.solveMoveCount ?? 0;
       const msElapsed = snap.elapsedMs ?? 0;
       const tps = msElapsed > 0 ? (moves / (msElapsed / 1000)).toFixed(2) : '0.00';
+      const pairs = p.f2lDone ? '4/4' : p.crossDone ? `${p.pairsSolved ?? 0}/4 pairs` : '';
       $('#brain-phase-detail').textContent = (snap.phase === 'solving' || snap.phase === 'done')
-        ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s`
+        ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s${pairs ? ' · ' + pairs : ''}`
         : 'Scramble ready — start solving on your first move. The clock starts when you turn.';
     }
+    // Show the end-game review when solved.
+    renderReview();
+  }
+
+  // End-game review: stats in the middle + cube snapshots at key moments + hindsight.
+  let snapshots = [];
+  function captureSnapshot(label) {
+    const state = cubeSession.getSnapshot().state;
+    if (!state) return;
+    snapshots.push({ label, at: Date.now(), render: toRenderData(state) });
+    snapshots = snapshots.slice(-12);
+  }
+  function renderReview() {
+    const snap = live.getSnapshot();
+    const panel = $('#brain-review');
+    if (snap.phase !== 'done' || !snap.record) { panel.hidden = true; panel.innerHTML = ''; return; }
+    const r = snap.record;
+    const s = summarize(records);
+    panel.hidden = false;
+    panel.innerHTML = `
+      <div class="brain-review-card">
+        <p class="eyebrow">Solve complete</p>
+        <h2>${ms(r.solveMs)} · ${r.moveCount} moves · ${r.tps?.toFixed(2) ?? '—'} TPS</h2>
+        <div class="brain-review-stats"><span>Solves ${s.solvedCount ?? 0}</span><span>Best ${ms(s.bestSolveMs)}</span><span>ao5 ${ms(ao5(records))}</span><span>ao12 ${ms(ao12(records))}</span></div>
+        <div class="brain-review-hindsight" id="brain-review-hindsight"></div>
+        <button class="brain-button" id="brain-review-close" type="button">Continue</button>
+      </div>`;
+    // Hindsight lines reuse the coach lenses on the FINAL state/snapshots (a light version; full per-pair
+    // solver hindsight is the follow-up). Show a couple of insights the coach already had.
+    const hindsight = [];
+    if (r.crossMoveCount != null && optimalCross && r.crossMoveCount > optimalCross.length)
+      hindsight.push({ tone: 'warn', text: `Your cross took ${r.crossMoveCount} moves; an optimal ${FACE_COLORS[optimalCross.face]} cross here is ${optimalCross.length}.` });
+    if (r.xcross) hindsight.push({ tone: 'good', text: `Extended cross: ${r.xcross === 'xxcross' ? 'double X-cross' : 'X-cross'} built with the cross.` });
+    if (r.rotations > 2) hindsight.push({ tone: 'warn', text: `${r.rotations} whole-cube rotation${r.rotations === 1 ? '' : 's'} — fewer rotations often save time.` });
+    $('#brain-review-hindsight').innerHTML = hindsight.length
+      ? hindsight.map(h => `<p class="brain-coach-line brain-coach-${h.tone}">${escape(h.text)}</p>`).join('')
+      : '<p class="brain-coach-line brain-coach-muted">No key-moment insights for this solve. Snapshots and per-pair hindsight arrive with the F2L solver lens.</p>';
+    // Bind the close button now that it exists (once).
+    const closeBtn = panel.querySelector('#brain-review-close');
+    if (closeBtn && !closeBtn.dataset.bound) { closeBtn.dataset.bound = '1'; closeBtn.addEventListener('click', () => { panel.hidden = true; live.cancel(); $('#brain-start').hidden = false; $('#brain-stop').hidden = true; }); }
   }
 
   function renderMetrics() {
@@ -328,12 +358,19 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-metrics-grid').innerHTML = cells.map(([k, v]) => `<article class="brain-metric"><span>${k}</span><strong>${v}</strong></article>`).join('');
   }
 
+  let lastCapturedStage = -1;
   function onLive(snap) {
     if (!active) return;
     renderTimeline();
     renderCoach();
     renderApplyGuide();
     refreshScrambleState();
+    // Capture a cube snapshot at each stage transition for the end-game review.
+    const stage = stageIndex(snap.progress, snap.phase);
+    if (snap.phase === 'solving' && stage !== lastCapturedStage) {
+      lastCapturedStage = stage;
+      captureSnapshot(STAGES[stage] || 'solve');
+    }
     if (snap.phase === 'done' && snap.record) {
       records = appendSolve(localStorage, records, snap.record);
       renderMetrics();
