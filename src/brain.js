@@ -10,6 +10,8 @@ import { analyze } from './solve-tracker.js';
 import { loadSolves, appendSolve } from './solve-store.js';
 import { summarize, ao5, ao12 } from './solve-metrics.js';
 import { exportAll, serializeExport, parseImport, importAll } from './data-port.js';
+import { subscribeConnection, clearConnectionLog } from './smart-cube-diag.js';
+import { clearSavedCubeData } from './smart-cube-bluetooth.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const title = color => color[0].toUpperCase() + color.slice(1);
@@ -53,7 +55,7 @@ export function createBrain(root, cubeSession = smartCube) {
     <section class="intro-row"><div><p class="eyebrow">Practice / Smart cube</p><h1>Brain</h1></div><p class="intro-copy">Connect your cube.<br>Solve. Learn what to fix.</p></section>
     <section class="brain-connection" aria-label="Smart cube connection">
       <div><strong id="brain-device">No cube connected</strong><p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start a tracked solve.</p></div>
-      <div class="brain-controls"><button class="brain-button" id="brain-connect">Connect cube</button><button class="brain-button" id="brain-sync" hidden>Sync solved cube</button><button class="brain-button" id="brain-recenter" hidden>Recenter motion</button><button class="brain-button" id="brain-disconnect" hidden>Disconnect</button></div>
+      <div class="brain-controls"><button class="brain-button" id="brain-connect">Connect cube</button><button class="brain-button" id="brain-sync" hidden>Sync solved cube</button><button class="brain-button" id="brain-recenter" hidden>Recenter motion</button><button class="brain-button" id="brain-disconnect" hidden>Disconnect</button><button class="brain-button" id="brain-clear-cube" hidden>Clear saved cube</button></div>
     </section>
     <section class="brain-setup" aria-label="Solve setup">
       <div class="brain-mode" role="group" aria-label="Solve mode">
@@ -85,6 +87,10 @@ export function createBrain(root, cubeSession = smartCube) {
         </div>
         <div id="brain-coach" class="brain-coach" aria-live="polite"></div>
       </div>
+    </section>
+    <section class="brain-connection-log" aria-label="Connection diagnostics">
+      <div class="brain-connection-log-head"><div><p class="eyebrow">Connection log</p><h2>What the attach is doing</h2></div><button class="brain-button" id="brain-clear-log" type="button">Clear log</button></div>
+      <ol id="brain-connection-log" class="brain-log-list"></ol>
     </section>
     <section class="brain-metrics" aria-label="Your solve metrics">
       <div class="section-heading"><div><p class="eyebrow">Progress</p><h2>Your metrics</h2></div></div>
@@ -137,6 +143,7 @@ export function createBrain(root, cubeSession = smartCube) {
     $('#brain-sync').hidden = !connected;
     $('#brain-recenter').hidden = !gyroLive;
     $('#brain-disconnect').hidden = snapshot.phase === 'disconnected';
+    $('#brain-clear-cube').hidden = snapshot.phase !== 'disconnected';
     const tracking = snapshot.phase === 'tracking';
     $('#brain-scramble').readOnly = tracking;
     $('#brain-generate').disabled = tracking;
@@ -335,6 +342,16 @@ export function createBrain(root, cubeSession = smartCube) {
   renderCoach();
   cubeSession.subscribe(onSession);
   live.subscribe(onLive);
+
+  function renderConnectionLog(entries) {
+    $('#brain-connection-log').innerHTML = entries.length ? entries.map(e => `<li class="brain-log-item brain-log-${e.kind || 'info'}"><span class="brain-log-time">${new Date(e.at).toLocaleTimeString()}</span><span>${escape(e.label)}</span></li>`).join('') : '<li class="brain-log-muted">No connection attempts yet in this session.</li>';
+  }
+  subscribeConnection(renderConnectionLog);
+  $('#brain-clear-log').addEventListener('click', () => { clearConnectionLog(); });
+  $('#brain-clear-cube').addEventListener('click', () => {
+    clearSavedCubeData();
+    message('Saved cube address cleared. Connect again to derive it from scratch.');
+  });
 
   return {
     setActive(value) {
