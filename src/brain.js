@@ -159,6 +159,8 @@ export function createBrain(root, cubeSession = smartCube) {
 
   function onSession(snapshot) {
     if (detached) return;
+    // Log EVERY snapshot before any phase guard, so a desync-causing move is captured (not skipped).
+    logConnection({ label: `session: phase=${snapshot.phase} moves=${snapshot.moves?.length ?? '-'} lastMove=${snapshot.lastMove ?? '-'} detail=${snapshot.detail ?? '-'} `, kind: 'debug' });
     const gyro = snapshot.protocol?.startsWith('GAN') ? snapshot.gyro : null;
     if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro)].join('|');
