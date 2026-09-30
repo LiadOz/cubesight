@@ -42,6 +42,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {string} error     #brain-error
  * @property {boolean} chromeDimmed   Mono: top bar dims while scramble/inspection/solving
  * @property {boolean} commandOpen    true on the render after esc asks for the command line (the shell focuses it)
+ * @property {boolean} debugOpen      the debug drawer (connection log, recordings, coach switches, data) is open
  */
 
 /** @typedef {Object} DeviceVM
@@ -172,7 +173,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *  |{type:'resetView'}|{type:'rebuildView'}|{type:'start'}|{type:'startCustom'}|{type:'generateScramble'}
  *  |{type:'setScrambleText', text:string}|{type:'cancel'}|{type:'next'}|{type:'retry'}|{type:'dismissResults'}
  *  |{type:'setPenalty', penalty:null|'+2'|'DNF'}|{type:'togglePenalty', penalty:'+2'|'DNF'}
- *  |{type:'setSetting', path:string, value:any}|{type:'toggleSettings'}|{type:'command', text:string}
+ *  |{type:'setSetting', path:string, value:any}|{type:'toggleSettings'}|{type:'toggleDebug'}|{type:'command', text:string}
  *  |{type:'toggleTimer'}|{type:'cycleCoach'}|{type:'export'}|{type:'import', file:File}|{type:'setStyle', style:BrainStyle}
  *  |{type:'sendLog'}|{type:'clearLog'}} BrainAction */
 

@@ -146,6 +146,13 @@ test('keys: space, esc, tab, penalties, retry per screen', () => {
   assert.equal(key('r', 'solving'), null);
   assert.deepEqual(key('t', 'solving'), { type: 'toggleTimer' });
   assert.deepEqual(key('c', 'idle'), { type: 'cycleCoach' });
+  // Panels: one key opens, esc closes (the debug drawer first), even from inside a text field.
+  assert.deepEqual(key('`', 'solving'), { type: 'toggleDebug' });
+  assert.deepEqual(key('Escape', 'solving', { debugOpen: true }), { type: 'toggleDebug' });
+  assert.deepEqual(key('Escape', 'idle', { debugOpen: true, settingsOpen: true }), { type: 'toggleDebug' });
+  assert.deepEqual(key('Escape', 'idle', { settingsOpen: true, editable: true }), { type: 'toggleSettings' });
+  assert.equal(key('Escape', 'idle', { editable: true }), null);
+  assert.equal(key('`', 'idle', { editable: true }), null);
 });
 
 test('keys are ignored while typing, repeating, with modifiers or a dialog open', () => {

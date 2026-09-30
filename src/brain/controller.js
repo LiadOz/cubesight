@@ -57,6 +57,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let lastScramble = '';
   let scrambleLoad = null;
   let settingsOpen = false;
+  let debugOpen = false;        // the debug drawer (connection log, recordings, coach switches, data)
   let commandOpen = false;      // one-shot: the next render asks the shell to focus the command line
   let scrambleNumber = 0;       // scrambles started in this view
   let error = '';
@@ -105,7 +106,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       session, live: liveSnap, records, settings, track, optimalCross, coach, error,
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
       now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.getHeldFaces?.() : null,
-      scrambleText, scrambleNumber, settingsOpen, commandOpen, toast,
+      scrambleText, scrambleNumber, settingsOpen, debugOpen, commandOpen, toast,
     }, vm);
     commandOpen = false;
     const prev = vm;
@@ -432,6 +433,13 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'setSetting': applySetting(action.path, action.value); break;
       case 'setStyle': applySetting('style', action.style); break;
       case 'toggleSettings': settingsOpen = !settingsOpen; render(); break;
+      case 'toggleDebug': {
+        debugOpen = !debugOpen;
+        if (debugOpen) pendingLog ??= getConnectionLog();
+        render();
+        if (debugOpen) paintConnectionLog();
+        break;
+      }
       case 'command': {
         const text = String(action.text ?? '').trim();
         // An empty command asks for the command line (it lives in the settings panel).
@@ -511,14 +519,14 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   }
 
   // The log holds up to 2000 lines and grows on every cube event: rebuild it at
-  // most once per frame, and only while the diagnostics panel is open.
+  // most once per frame, and only while the debug drawer is open.
   let pendingLog = null;
   let logFrame = 0;
   function paintConnectionLog() {
     logFrame = 0;
     const entries = pendingLog;
     const list = $('#brain-connection-log');
-    if (detached || !entries || !list || !$('.brain-diagnostics')?.open) return;
+    if (detached || !entries || !list || !debugOpen) return;
     pendingLog = null;
     list.innerHTML = entries.length ? entries.map(e => `<li class="brain-log-item brain-log-${e.kind || 'info'}"><span class="brain-log-time">${new Date(e.at).toLocaleTimeString()}</span><span>${escape(e.label)}</span></li>`).join('') : '<li class="brain-log-muted">No connection attempts yet in this session.</li>';
   }
@@ -526,12 +534,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     pendingLog = entries;
     if (!logFrame) logFrame = requestAnimationFrame(paintConnectionLog);
   }
-  const onDiagnosticsToggle = event => {
-    if (!event.target.matches?.('.brain-diagnostics')) return;
-    pendingLog ??= getConnectionLog();
-    paintConnectionLog();
-  };
-  root.addEventListener('toggle', onDiagnosticsToggle, true);
 
   // --- Keyboard and theme -------------------------------------------------------------------------
 
@@ -544,8 +546,10 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       key: event.key, repeat: event.repeat, ctrlKey: event.ctrlKey, metaKey: event.metaKey, altKey: event.altKey,
       editable: formControl(target),
       dialogOpen: Boolean(document.querySelector('dialog[open]')),
-      focusOnPage: !focused || focused === document.body || (root.contains(focused) && !formControl(focused) && !['BUTTON', 'A', 'SUMMARY'].includes(focused.tagName)),
-      settingsOpen,
+      // The settings tab itself (focused after a click on it) still lets tab/esc close the panel.
+      focusOnPage: !focused || focused === document.body || focused.matches?.('.b-settings > summary')
+        || (root.contains(focused) && !formControl(focused) && !['BUTTON', 'A', 'SUMMARY'].includes(focused.tagName)),
+      settingsOpen, debugOpen,
     }, vm.screen);
     if (!action) return;
     event.preventDefault();
@@ -598,7 +602,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       window.removeEventListener('error', onWindowError);
       window.removeEventListener('unhandledrejection', onUnhandledRejection);
       window.removeEventListener('keydown', onKeydown);
-      root.removeEventListener('toggle', onDiagnosticsToggle, true);
       root.removeEventListener('change', onToggleChange);
       themeObserver.disconnect();
       cancelAnimationFrame(raf); raf = 0;

@@ -400,7 +400,7 @@ function statsVM(records) {
  * @param {{session:Object, live:Object, records:Object[], settings:Object, track?:Object, optimalCross?:Object|null,
  *   coach?:import('./types.js').CoachLine[], error?:string, status?:string|null, theme?:'dark'|'light',
  *   supported?:boolean, now?:number, held?:{bottom:string, front:string}, scrambleText?:string,
- *   settingsOpen?:boolean, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
+ *   settingsOpen?:boolean, debugOpen?:boolean, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
  *   dShift?:number|null}} input
  * @param {import('./types.js').BrainVM|null} prev
  * @returns {import('./types.js').BrainVM}
@@ -456,6 +456,7 @@ export function buildViewModel(input, prev = null) {
     error: input.error ?? '',
     chromeDimmed: ['scramble', 'inspection', 'ready', 'solving'].includes(screen),
     commandOpen: Boolean(input.commandOpen),
+    debugOpen: Boolean(input.debugOpen),
   };
   // Keep identity for slices that did not change, so components can skip them.
   if (prev) {

@@ -47,12 +47,18 @@
 .b-btn:hover { background: var(--b-surface-2); color: var(--b-accent-text); }
 .b-btn.is-connecting::after { content: ''; display: inline-block; width: 10px; height: 10px; margin-left: 8px; border: 1.5px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -1px; animation: b-spin .8s linear infinite; }
 
-/* Top-level rows, in order: top bar, config bar, settings, stage, footer. */
-.b-settings { order: 2; }
+/* Top-level rows, in order: top bar (tabs + device chip), config bar, stage, footer. */
 
-/* --- Top bar: crumb + device chip -------------------------------------- */
+/* --- Top bar: brain / settings tabs + device chip ------------------------- */
 .b-top { order: 0; display: flex; align-items: center; justify-content: space-between; min-height: 40px; transition: opacity .4s var(--b-ease); }
-.b-crumb { color: var(--b-ink); font-size: 14px; }
+.b-tabs { display: flex; align-items: center; gap: 28px; }
+.b-tab {
+  position: relative; z-index: 61; display: inline-block; border: 0; border-bottom: 2px solid transparent; background: none;
+  padding: 6px 0 4px; list-style: none; cursor: pointer; color: var(--b-muted); font: inherit; font-size: 14px;
+}
+.b-tab::-webkit-details-marker { display: none; }
+.b-tab:hover { color: var(--b-ink); }
+.b-tab[aria-current="page"] { color: var(--b-ink); border-bottom-color: var(--b-accent); }
 .b-device { position: relative; display: flex; align-items: center; gap: 14px; }
 .b-device-toggle { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 6px 0; color: var(--b-muted); font-size: 13px; }
 .b-device-toggle:hover { color: var(--b-ink); }
@@ -229,21 +235,29 @@
 .brain[data-screen="results"] .b-stage > :not(.b-slot-results) { display: none; }
 .brain[data-screen="results"] .b-stage { margin-top: 12px; }
 .brain.is-chrome-dimmed .b-top { opacity: .35; }
-.brain.is-chrome-dimmed .b-top:hover { opacity: 1; }
+.brain.is-chrome-dimmed .b-top:hover, .brain.is-chrome-dimmed.is-settings-open .b-top { opacity: 1; }
 
-/* --- Settings: a page of its own when open ----------------------------------- */
-.b-settings > summary {
-  position: absolute; top: 34px; left: 72px; list-style: none; cursor: pointer; color: var(--b-muted); font-size: 14px;
+/* --- Settings: a panel over the solve view ----------------------------------- */
+/* The panel is the <details> body, fixed to the right over a dimmed backdrop
+   (the <details> element's own ::before; a click on it closes the panel). The
+   tab row stays above the backdrop on wide screens so its active item shows. */
+.b-settings[open]::before, .brain.is-debug-open::after { content: ''; position: fixed; inset: 0; z-index: 59; background: rgb(0 0 0 / .42); }
+.brain.is-debug-open::after { z-index: 69; }
+.b-settings-body, .b-debug {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(760px, 100vw); overflow-y: auto; margin: 0;
+  padding: 24px 32px 48px; background: var(--b-bg); color: var(--b-ink); box-shadow: -24px 0 60px rgb(0 0 0 / .32); text-align: left;
 }
-.b-settings > summary::-webkit-details-marker { display: none; }
-.b-settings > summary:hover, .b-settings[open] > summary { color: var(--b-ink); }
-.brain.is-settings-open > .b-configbar, .brain.is-settings-open > .b-stage { display: none; }
-.b-settings-body { display: grid; gap: 8px; margin-top: 20px; }
+.b-debug { z-index: 70; width: min(640px, 100vw); }
+.b-debug[hidden] { display: none; }
+.b-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+.b-panel-head h2 { font: 500 14px var(--b-font-mono); color: var(--b-muted); }
+.b-close { display: inline-flex; align-items: center; gap: 10px; }
+.b-settings-body { display: grid; align-content: start; gap: 8px; }
 .b-configbar-copy { order: 0; margin-top: 0; justify-self: center; }
 .b-settings-caption { text-align: center; color: var(--b-muted); font-size: 12px; margin-bottom: 36px; }
 .b-settings-sections { display: grid; gap: 44px; }
-.b-settings-section h3 { display: flex; align-items: center; gap: 16px; margin: 0 0 22px; font: 400 14px var(--b-font-sans); color: var(--b-accent-text); }
-.b-settings-section h3::after { content: ''; flex: 1; border-top: 1px solid var(--b-hairline); }
+.b-settings-section h3, .b-debug-section h3 { display: flex; align-items: center; gap: 16px; margin: 0 0 22px; font: 400 14px var(--b-font-sans); color: var(--b-accent-text); }
+.b-settings-section h3::after, .b-debug-section h3::after { content: ''; flex: 1; border-top: 1px solid var(--b-hairline); }
 .b-settings-section:first-child h3::after { content: '● = default'; flex: 1; border-top: 0; text-align: right; color: var(--b-muted); font-size: 12px; background: linear-gradient(var(--b-hairline), var(--b-hairline)) left center / calc(100% - 96px) 1px no-repeat; }
 .b-settings-rows { display: grid; gap: 22px; }
 .b-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: center; }
@@ -269,19 +283,19 @@
 .b-command input { width: 320px; max-width: 70vw; border: 0; border-bottom: 1px solid var(--b-hairline); background: none; padding: 6px 2px; color: var(--b-ink); font: 14px var(--b-font-mono); }
 .b-command input:focus { outline: none; border-bottom-color: var(--b-accent); }
 
-/* --- Footer: key hints, tools, drawers ---------------------------------------- */
-.b-foot { order: 4; display: grid; justify-items: center; gap: 12px; margin-top: 56px; }
-.b-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 32px; min-height: 26px; }
+/* --- Footer: key hints and two small tools ------------------------------------ */
+.b-foot { order: 4; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px 24px; margin-top: 32px; }
+.b-keys { grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 32px; min-height: 26px; }
 .b-key { display: inline-flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; color: var(--b-muted); font-size: 13px; }
 .b-key:hover { color: var(--b-ink); }
-.brain-error { color: var(--b-dnf); font-size: 14px; }
+.brain-error { grid-column: 1 / -1; text-align: center; color: var(--b-dnf); font-size: 14px; }
 .brain-error[hidden] { display: none; }
-.b-foot-tools { display: flex; gap: 16px; margin-top: 24px; }
-.b-drawer { justify-self: stretch; border-top: 1px solid var(--b-hairline); padding: 12px 0; font-size: 13px; }
-.b-drawer > summary { display: flex; gap: 14px; align-items: baseline; cursor: pointer; color: var(--b-muted); list-style: none; }
-.b-drawer > summary::-webkit-details-marker { display: none; }
-.b-drawer > summary small { color: var(--b-muted); font-size: 12px; }
-.b-drawer[open] > summary { color: var(--b-ink); margin-bottom: 14px; }
+.b-foot-tools { grid-column: 3; grid-row: 1; justify-self: end; display: flex; gap: 18px; }
+.b-foot-tools .b-textbtn { display: inline-flex; align-items: center; gap: 8px; }
+
+/* --- Debug drawer: connection log, recordings, coach switches, data ----------- */
+.b-debug-section { margin-bottom: 36px; }
+.b-debug-section > .b-label { margin: -8px 0 14px; }
 .brain-connection-log-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .brain-log-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .brain-log-actions select { border: 0; border-radius: var(--b-radius-control); padding: 7px 10px; background: var(--b-surface); color: var(--b-ink); font: inherit; }
@@ -291,6 +305,8 @@
 .brain-toggles label { display: inline-flex; gap: 8px; align-items: center; }
 .brain-data-port { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; color: var(--b-muted); }
 #brain-send-status, #brain-recording-status, #brain-port-status { color: var(--b-muted); font-size: 12px; }
+/* Below this the panels cover the whole screen (and the tab row with it). */
+@media (max-width: 999px) { .b-tab { z-index: auto; } }
 
 /* --- Motion ------------------------------------------------------------------ */
 @keyframes b-fade { from { opacity: 0; transform: translateY(4px); } }
@@ -307,9 +323,10 @@
   .brain { --b-cube-size: 130px; width: calc(100% - 32px); padding-top: 12px; min-height: calc(100vh - 140px); }
   :root .brain[data-brain-style] { --b-fs-clock: 104px; --b-fs-countdown: 132px; --b-fs-move: 22px; --b-fs-result: 68px; }
   .brain[data-screen="idle"], .brain[data-screen="disconnected"] { --b-cube-size: 200px; }
-  .b-crumb { display: none; }
-  .b-top { justify-content: flex-end; }
-  .b-settings > summary { top: 21px; left: 0; }
+  .b-foot { grid-template-columns: 1fr; }
+  .b-keys { grid-column: 1; }
+  .b-foot-tools { grid-column: 1; grid-row: 2; justify-self: center; }
+  .b-settings-body, .b-debug { width: 100vw; padding: 18px 16px 40px; }
   .b-configbar { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; max-width: 100%; font-size: 13px; }
   .b-clock { letter-spacing: -2px; }
   .b-moves { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px 8px; }
