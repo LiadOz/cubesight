@@ -6,12 +6,10 @@
 //   • free:   the user scrambles the cube themselves, taps “Start solving”,
 //     then solves freely.
 //
-// During the solve we timestamp each canonical move, auto-detect the cross
-// from the face on the bottom at the first solving move (colour-neutral), and
-// emit phase transitions (cross → F2L pairs → OLL → PLL → solved) with split
-// times. The cross-detection heuristic matches how a solver actually orients:
-// the cross colour is whatever they choose to put on the bottom when they
-// begin. When the cube reaches solved we hand back a record for the metrics
+// During the solve we timestamp each canonical move, detect the cross
+// (colour-neutral: the first face whose cross completes, the same inference the
+// analysis module uses; never the held orientation), and emit phase transitions
+// (cross → F2L pairs → OLL → PLL → solved) with split times. When the cube reaches solved we hand back a record for the metrics
 // layer (solve-metrics.js) and the persistent store (solve-store.js).
 //
 // This module owns no cube-state math of its own — it reuses cross-cube.js for
@@ -19,13 +17,17 @@
 // session in tests.
 
 import { applyMoves, sameCubeState, stateFromScramble, createSolvedState, OPPOSITE_FACE } from './cross-cube.js';
-import { analyze, extendedCross, solvedPairsPseudo, f2lDonePseudo } from './solve-tracker.js';
+import { analyze, extendedCross, solvedPairsPseudo, f2lDonePseudo, crossFrame, currentDShift } from './solve-tracker.js';
+import { createRotationTracker } from './rotation-tracker.js';
 import { followPlanTurn } from './smart-cube-guidance.js';
 import { logConnection } from './smart-cube-diag.js';
 import { cubeClockModulus, cubeElapsedMs } from './cube-clock.js';
 import { sameCornersAndEdges } from './facelets-state.js';
 
 const SOLVED = createSolvedState();
+const OFFSET_SUFFIX = ['', '', '2', "'"];   // the cross-layer turn that undoes a D-offset of k (as in solve-tracker.js)
+const CROSS_FACES = ['D', 'U', 'F', 'B', 'R', 'L'];   // same order as analysis/normalize.js FACES
+const EMPTY_ANALYSIS = Object.freeze({ crossDone: false, pairsSolved: 0, f2lDone: false, eoDone: false, coDone: false, solved: false });
 // Phases in which a lost connection interrupts the attempt.
 const ACTIVE_PHASES = new Set(['applying', 'inspecting', 'ready', 'solving']);
 const isSolved = state => sameCubeState(state, SOLVED);
@@ -113,11 +115,13 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let inspectionMs = null;       // inspection used before the solve clock started
   let penalty = null;            // null | '+2' | 'DNF' — fixed when the clock starts
   let inspectionTimer = null;
-  let lastBottom = null;
+  const rotationTracker = createRotationTracker();
+  let crossSeen = new Set();     // faces whose cross was complete after the previous move
   let crossMoveCount = null;
   let crossAchieved = false;   // milestones — once reached, never regress
   let f2lAchieved = false;
   let ollAchieved = false;
+  let pllFrameAchieved = false; // LL solved in the offset frame while the cross layer is still turned
   let eoAchieved = false;      // OLL edges oriented (two-look: EO)
   let coAchieved = false;      // OLL corners oriented (two-look: CO)
   let maxPairs = 0;
@@ -190,7 +194,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       inspection: phase === 'inspecting' ? inspectionView() : null,
       inspectionConfig: { ...inspection },
       penalty, inspectionMs,
-      crossFace, crossColor, rotations, crossMoveCount,
+      crossFace, crossColor, rotations, rotationMarks: rotationTracker.marks, crossMoveCount,
       progress, prev, skip: progress?.skip ?? null, record, done: phase === 'done',
     };
   };
@@ -198,9 +202,9 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   function emit() { for (const l of listeners) l(snapshot()); }
 
   function resetSolve() {
-    crossFace = null; crossColor = null; rotations = 0; lastBottom = null;
+    crossFace = null; crossColor = null; rotations = 0; rotationTracker.reset(); crossSeen = new Set();
     crossMoveCount = null;
-    crossAchieved = false; f2lAchieved = false; ollAchieved = false; eoAchieved = false; coAchieved = false; maxPairs = 0; pairsBeforeMove = 0;
+    crossAchieved = false; f2lAchieved = false; ollAchieved = false; pllFrameAchieved = false; eoAchieved = false; coAchieved = false; maxPairs = 0; pairsBeforeMove = 0;
     prev = null; progress = null; mark = {}; solveMoves = []; record = null;
     solveStartAt = null; inspectionStartAt = null; inspectionMs = null; penalty = null;
     interrupted = null; interruptions = 0; interruptedMs = 0; flags = []; lastMoveHostAt = null; hw = null;
@@ -331,12 +335,12 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       if (hardwareMs == null) return host;
       return cubeElapsedMs(hw.startTs, mark[`${name}Ts`], host, hw.modulus) ?? host;
     };
-    const cross = offset('cross'), f2l = offset('f2l'), oll = offset('oll');
+    const cross = offset('cross'), f2l = offset('f2l'), oll = offset('oll'), pllDone = offset('pll');
     const phases = cross != null ? {
       crossMs: Math.max(0, cross),
       f2lMs: f2l != null ? Math.max(0, f2l - cross) : null,
       ollMs: oll != null ? Math.max(0, oll - (f2l ?? cross)) : null,
-      pllMs: oll != null ? Math.max(0, solveMs - oll) : null,
+      pllMs: oll != null ? Math.max(0, (pllDone ?? solveMs) - oll) : null,
     } : null;
     record = {
       at: Date.now(),
@@ -356,7 +360,9 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       phases,
       xcross: phases ? (mark.xcross || (crossFace ? extendedCross(state, crossFace).kind : null)) : null,
       crossMoveCount,
+      dFixMs: pllDone != null ? Math.max(0, solveMs - pllDone) : null,   // pseudo: time from PLL (in the offset frame) to the cube being solved
       rotations,
+      rotationMarks: rotationTracker.marks,
       detours: 0,
       mistakes: 0,
       pllCase: null,
@@ -376,6 +382,33 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     return [ll, `${ll}2`, `${ll}'`].some(turn => isSolved(applyMoves(state, [turn])));
   }
 
+  // Solved in the solver's own frame: up to an AUF and (pseudo) up to the
+  // cross-layer offset the solver has not undone yet. The final cross-layer
+  // turn that resolves the offset (the "D fix") is not part of any stage.
+  function solvedInFrame(state, face) {
+    const k = currentDShift(state, face);
+    if (k === null) return false;
+    const base = k ? applyMoves(state, [`${face}${OFFSET_SUFFIX[k]}`]) : state;
+    return isSolved(base) || solvedUpToAuf(base, face);
+  }
+
+  // The cross face is the first face whose cross completes (any D-offset), with
+  // ties broken by more solved pairs, then the held bottom, then face order:
+  // the same inference as analysis/normalize.js inferCrossFace. Returns null
+  // until a cross exists.
+  function pickCrossFace(state, heldBottom) {
+    const done = [];
+    for (const face of CROSS_FACES) {
+      const frame = crossFrame(state, face);
+      if (frame.shift !== null && (pseudo || frame.shift === 0)) done.push({ face, pairs: frame.pairs.length });
+    }
+    const fresh = done.filter(e => !crossSeen.has(e.face));
+    crossSeen = new Set(done.map(e => e.face));
+    if (!fresh.length) return null;
+    fresh.sort((a, b) => b.pairs - a.pairs || (b.face === heldBottom) - (a.face === heldBottom) || CROSS_FACES.indexOf(a.face) - CROSS_FACES.indexOf(b.face));
+    return fresh[0].face;
+  }
+
   function onSolveMove(move, replaces, state, event = null) {
     lastMoveHostAt = now();
     if (hw && event) { hw.endTs = event.cubeTimestamp ?? null; hw.endEpoch = event.epoch ?? null; }
@@ -387,26 +420,31 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     solveMoves = pushMove(solveMoves, move, coalesced);
     const count = solveMoves.length;
     logConnection({ kind: 'debug', label: `[live] onSolveMove move=${move} replaces=${replaces} count=${count} crossFace=${crossFace ?? '-'}` });
+    const orient = (!coalesced || crossFace === null) ? (getOrientation() || {}) : null;
+    let lockedNow = false;
     if (crossFace === null) {
-      const o = getOrientation() || {};
-      crossFace = o.bottom || 'D';
-      crossColor = state.cubies.find(c => c.id.length === 1 && c.stickers[crossFace] !== undefined)?.stickers[crossFace] || null;
-      lastBottom = crossFace;
-    } else if (!coalesced) {
-      // Count whole-cube rotations: a change in which canonical face is on the
-      // bottom between solving moves is a regrip/rotation. This is the proxy
-      // the PLL lens uses to flag excessive looking-around.
-      const o = getOrientation() || {};
-      if (o.bottom && o.bottom !== lastBottom) { rotations++; lastBottom = o.bottom; }
+      const face = pickCrossFace(state, orient?.bottom);
+      if (face) {
+        crossFace = face;
+        crossColor = state.cubies.find(c => c.id.length === 1 && c.stickers[crossFace] !== undefined)?.stickers[crossFace] || null;
+        lockedNow = true;
+      }
     }
-    const next = analyze(state, crossFace);
+    // Whole-cube rotations: only a stable, persistent change of the held
+    // orientation counts (see rotation-tracker.js); a read on the intermediate
+    // quarter of a coalesced double is mid-turn and ignored.
+    if (orient && !coalesced) {
+      const tMs = Math.max(0, now() - solveStartAt);
+      if (rotationTracker.observe(orient, { at: tMs, idx: count })) rotations = rotationTracker.count;
+    }
+    const next = crossFace ? analyze(state, crossFace, { pseudo }) : EMPTY_ANALYSIS;
     // Milestones are monotonic: once the cross / F2L / OLL is reached it stays
     // reached, even if a later F2L insertion temporarily breaks a cross edge.
     // The displayed phase never regresses (the user expects “once the cross is
     // done, it’s done”); breakages surface as coach hindsight, not as a phase
     // step backwards. Each milestone remembers the solve-move count at which it
     // was reached (a coalesced double keeps the count of its first quarter).
-    if (!crossAchieved && next.crossDone) {
+    if (!crossAchieved && crossFace && (next.crossDone || lockedNow)) {
       crossAchieved = true;
       mark.crossAt = now(); mark.crossTs = ts; mark.crossIdx = count;
       mark.xcross = extendedCross(state, crossFace).kind;
@@ -414,9 +452,9 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     }
     // F2L pair progress. In pseudo mode, count pairs solved up to a
     // whole-D-layer rotation (the frame a pseudo-F2L user solves in).
-    const pairCount = pseudo ? solvedPairsPseudo(state, crossFace).length : next.pairsSolved;
+    const pairCount = !crossFace ? 0 : pseudo ? solvedPairsPseudo(state, crossFace).length : next.pairsSolved;
     if (crossAchieved && pairCount > maxPairs) maxPairs = pairCount;
-    const f2lComplete = pseudo ? f2lDonePseudo(state, crossFace) : next.f2lDone;
+    const f2lComplete = !crossFace ? false : pseudo ? f2lDonePseudo(state, crossFace) : next.f2lDone;
     if (crossAchieved && !f2lAchieved && f2lComplete) { f2lAchieved = true; mark.f2lAt = now(); mark.f2lTs = ts; mark.f2lIdx = count; }
     if (f2lAchieved && !eoAchieved && next.eoDone) { eoAchieved = true; mark.eoAt = now(); mark.eoIdx = count; }
     if (f2lAchieved && !coAchieved && next.coDone) { coAchieved = true; mark.coAt = now(); mark.coIdx = count; }
@@ -431,7 +469,18 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     //     X-cross is reported through record.xcross instead).
     const on = idx => idx === count;
     let skip = null;
-    if (on(mark.ollIdx) && (next.solved || solvedUpToAuf(state, crossFace))) {
+    // Skips only count for milestones reached after the cross lock: a lock that
+    // arrives mid-solve with everything done at once is not a skip. (A cross
+    // that was already built before the first move locks on move 1 and keeps
+    // the same-move rules: that is where a genuine skip shows.)
+    const llSolved = !crossFace ? false : pseudo ? solvedInFrame(state, crossFace) : (next.solved || solvedUpToAuf(state, crossFace));
+    // Pseudo: the last layer solved while the cross layer is still offset. PLL is
+    // credited here; the D fix (and AUF) that finish the cube are its own tail.
+    if (pseudo && ollAchieved && !pllFrameAchieved && llSolved && !next.solved && currentDShift(state, crossFace) !== 0) {
+      pllFrameAchieved = true; mark.pllAt = now(); mark.pllTs = ts; mark.pllIdx = count;
+    }
+    if (lockedNow && count > 1) skip = null;
+    else if (on(mark.ollIdx) && llSolved) {
       skip = on(mark.f2lIdx)
         ? { kind: 'pll', label: 'Last layer skipped — solved straight out of F2L!' }
         : { kind: 'pll', label: 'PLL skipped — solved straight after OLL!' };
