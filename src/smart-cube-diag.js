@@ -14,7 +14,7 @@ export function logConnection(entry) {
   const record = typeof entry === 'string' ? { label: entry } : { ...entry };
   record.at = Date.now();
   entries.push(record);
-  if (entries.length > 200) entries.shift();
+  if (entries.length > 2000) entries.shift();
   for (const listener of listeners) listener(entries.slice());
   try { console.log('[smart-cube]', record.label || record); } catch { /* console may be unavailable */ }
 }
