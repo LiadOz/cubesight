@@ -198,7 +198,10 @@ export function createRingTimeline(host, ctx = {}) {
     frame(f) {
       if (!current || !f) return;
       setLive(current.part, f.currentFill);
-      if (f.currentSplitText) setText(current.part.valueText, f.currentSplitText);
+      if (f.currentSplitText) {
+        setText(current.part.valueText, f.currentSplitText);
+        if (aside) setText(aside.querySelector('.b-oring-row-value.is-current'), f.currentSplitText);
+      }
       toggleClass(current.part.label, 'is-over', Boolean(f.currentOver));
     },
     destroy() { resize?.disconnect(); root.remove(); aside?.remove(); },

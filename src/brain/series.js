@@ -5,7 +5,7 @@
 import { resultMs, isDnf } from '../solve-metrics.js';
 import { fmtTime, fmtDelta, deltaTone } from './format.js';
 
-const TPS_WINDOW_MS = 1200;   // moving window for the TPS line
+const TPS_SIGMA_MS = 450;     // Gaussian kernel width for the TPS line (a hard window saw-tooths)
 const TPS_STEP_MS = 100;      // sample spacing
 const PAUSE_MS = 800;         // a gap between moves this long is marked as a pause
 
@@ -21,13 +21,16 @@ export function tpsSeries(moveTimes = [], { durationMs = null, stages = [], solv
   const duration = Math.max(Number.isFinite(durationMs) ? durationMs : 0, times[times.length - 1] ?? 0);
   const points = [];
   if (duration > 0) {
-    const half = TPS_WINDOW_MS / 2;
+    // Kernel density of the move times, in moves per second. Near the ends the
+    // kernel is renormalised by its mass inside [0, duration] so the line
+    // doesn't sag at the start and finish.
+    const k = 1 / (TPS_SIGMA_MS * Math.sqrt(2 * Math.PI));
+    const cdf = x => 0.5 * (1 + erf(x / (TPS_SIGMA_MS * Math.SQRT2)));
     for (let tMs = 0; tMs <= duration + 1e-6; tMs += TPS_STEP_MS) {
-      const from = Math.max(0, tMs - half);
-      const to = Math.min(duration, tMs + half);
-      const span = Math.max(1, to - from);
-      const count = times.filter(x => x > from && x <= to).length;
-      points.push({ tMs: Math.round(tMs), tps: count / (span / 1000) });
+      let density = 0;
+      for (const x of times) { const d = tMs - x; density += k * Math.exp(-(d * d) / (2 * TPS_SIGMA_MS * TPS_SIGMA_MS)); }
+      const mass = Math.max(0.5, cdf(duration - tMs) - cdf(-tMs));
+      points.push({ tMs: Math.round(tMs), tps: (density / mass) * 1000 });
     }
     if (points[points.length - 1].tMs < duration) points.push({ tMs: duration, tps: points[points.length - 1].tps });
   }
@@ -105,4 +108,11 @@ export function sparkline(records = [], { count = 23, currentAt = null } = {}) {
     return { i, ms: Number.isFinite(ms) ? ms : null, kind };
   });
   return { points, min: finite.length ? Math.min(...finite) : 0, max: finite.length ? Math.max(...finite) : 0 };
+}
+
+// Abramowitz–Stegun 7.1.26 (error < 1.5e-7), enough for chart smoothing.
+function erf(x) {
+  const sign = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a);
+  return sign * y;
 }

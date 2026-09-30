@@ -108,7 +108,7 @@
 .m-x { color: var(--b-warn-text); }
 .m-res-recent ol { list-style: none; padding: 0; margin-top: 14px; display: grid; gap: 7px; font-size: 15px; }
 .m-res-recent li.is-current { color: var(--b-accent-text); }
-.m-res-tag { margin-left: 10px; color: var(--b-warn-text); font-size: 12px; }
+.m-res-recent li.is-penalty { color: var(--b-warn-text); }
 .m-res-coach dl { display: grid; gap: 16px; margin-top: 14px; }
 .m-coach-row { display: grid; grid-template-columns: 80px 1fr; gap: 0 12px; font-size: 13px; line-height: 1.5; }
 .m-coach-row dt { color: var(--b-accent-text); }

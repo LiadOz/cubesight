@@ -31,7 +31,9 @@ export const DEFAULT_TOGGLES = Object.freeze({
 // DEFAULT_SETTINGS says otherwise).
 const ENUMS = {
   style: BRAIN_STYLES,
-  method: ['cfop', 'roux'],
+  // Roux is hidden for now: solve-methods.js keeps its stages, but no picker
+  // offers it and stored 'roux' normalises to 'cfop'.
+  method: ['cfop'],
   cross: ['cross', 'xcross', 'xxcross'],
   f2l: ['standard', 'pseudo'],
   oll: ['2look', '1look'],
@@ -208,6 +210,7 @@ const valuesFor = path => {
 
 function rowVisible(settings, path) {
   const insp = settings.inspection;
+  if (path === 'method') return ENUMS.method.length > 1;
   if (path === 'inspection.seconds') return insp.mode === 'custom';
   if (path === 'inspection.graceSeconds' || path === 'inspection.gracePenalty') return insp.mode !== 'off' && insp.mode !== 'unlimited' && insp.overtime === 'grace';
   if (path === 'inspection.overtime' || path === 'inspection.callouts' || path === 'voice') return insp.mode === 'wca' || insp.mode === 'custom';
@@ -257,7 +260,8 @@ export function buildConfigBar(settings) {
     options: values.map(v => ({ value: v, label: labels?.[v] ?? v, active: v === current })),
   });
   const look = { '2look': '2-look', '1look': '1-look' };
-  const items = [seg('method', ENUMS.method, settings.method)];
+  // A choice of one is not a choice: the method item appears once there are two.
+  const items = ENUMS.method.length > 1 ? [seg('method', ENUMS.method, settings.method)] : [];
   if (settings.method === 'cfop') {
     items.push(seg('cross', ENUMS.cross, settings.cross));
     items.push({ id: 'f2l', options: [{ value: settings.f2l === 'pseudo' ? 'standard' : 'pseudo', label: 'pseudo pairs', active: settings.f2l === 'pseudo' }] });
@@ -279,7 +283,7 @@ const OFF = ['off', 'false', 'no', '0', 'hide'];
  * Parse a command-line entry into { path, value }, or null.
  *   insp 10 | insp wca | insp off | insp unlimited | insp inf
  *   overtime count | grace 3 | grace dnf | callouts off | voice on
- *   oll 1 | pll 2-look | method roux | cross x | xxcross | pseudo on
+ *   oll 1 | pll 2-look | method cfop | cross x | xxcross | pseudo on
  *   style orbit | timer hide | coach after | timeline off | compare pb
  *   scramble paste | penalties off | preset relaxed
  */
@@ -310,7 +314,7 @@ export function parseCommand(text) {
       return look ? { path: cmd, value: look } : null;
     }
     case 'method': return ENUMS.method.includes(arg) ? { path: 'method', value: arg } : null;
-    case 'cfop': case 'roux': return { path: 'method', value: cmd };
+    case 'cfop': case 'roux': return ENUMS.method.includes(cmd) ? { path: 'method', value: cmd } : null;
     case 'cross': {
       const value = { '': 'cross', cross: 'cross', x: 'xcross', xcross: 'xcross', 'x-cross': 'xcross', xx: 'xxcross', xxcross: 'xxcross', 'xx-cross': 'xxcross' }[arg];
       return value ? { path: 'cross', value } : null;

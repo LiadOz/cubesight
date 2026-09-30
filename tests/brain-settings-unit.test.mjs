@@ -30,7 +30,7 @@ test('the v1 per-setting keys migrate into v2 settings', () => {
     'cubesight-brain-toggles-v1': JSON.stringify({ pllLens: false, unknown: true }),
   });
   const s = loadSettings(storage);
-  assert.equal(s.method, 'roux');
+  assert.equal(s.method, 'cfop', 'Roux is hidden for now: a stored roux falls back to cfop');
   assert.equal(s.cross, 'xcross');
   assert.equal(s.f2l, 'pseudo');
   assert.equal(s.inspection.mode, 'unlimited', 'unchecked inspection = no countdown, clock on first turn');
@@ -102,8 +102,7 @@ test('the settings panel shows only rows that apply', () => {
   assert.ok(!wca.includes('inspection.graceSeconds'));
   const grace = rows(setSetting(normalizeSettings(), 'inspection', { mode: 'custom', seconds: 10, overtime: 'grace' }));
   assert.ok(grace.includes('inspection.seconds') && grace.includes('inspection.graceSeconds') && grace.includes('inspection.gracePenalty'));
-  const roux = rows(normalizeSettings({ method: 'roux' }));
-  assert.ok(!roux.includes('oll'), 'CFOP-only rows hidden for Roux');
+  assert.ok(!wca.includes('method'), 'one offered method is not a choice');
   const panel = buildSettingsPanel(normalizeSettings(), true);
   assert.equal(panel.open, true);
   const style = panel.sections.find(s => s.id === 'look').rows[0];
@@ -112,8 +111,8 @@ test('the settings panel shows only rows that apply', () => {
 
 test('config bar and inspection labels', () => {
   const bar = buildConfigBar(normalizeSettings({ f2l: 'pseudo' }));
-  assert.deepEqual(bar.items.map(i => i.id), ['method', 'cross', 'f2l', 'oll', 'pll', 'inspection.mode', 'penalties']);
-  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', '', '', 'oll', 'pll', 'insp', '']);
+  assert.deepEqual(bar.items.map(i => i.id), ['cross', 'f2l', 'oll', 'pll', 'inspection.mode', 'penalties']);
+  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', '', 'oll', 'pll', 'insp', '']);
   const f2l = bar.items.find(i => i.id === 'f2l').options[0];
   assert.deepEqual([f2l.active, f2l.value], [true, 'standard'], 'a toggle carries the value it switches to');
   assert.deepEqual(bar.items.find(i => i.id === 'oll').options.map(o => [o.label, o.active]), [['1-look', false], ['2-look', true]]);
@@ -161,4 +160,20 @@ test('key hints follow the screen', () => {
   assert.deepEqual(keyHints('idle').map(h => h.key), ['space', 'tab', 'esc']);
   assert.deepEqual(keyHints('results').map(h => h.key), ['space', 'r', '2', 'd', 'tab']);
   assert.equal(keyHints('solving', { timerHidden: true }).find(h => h.key === 't').label, 'show timer');
+});
+
+test('Roux is not offered anywhere, and voice callouts start off', () => {
+  const s = normalizeSettings({ method: 'roux' });
+  assert.equal(s.method, 'cfop');
+  assert.equal(setSetting(normalizeSettings(), 'method', 'roux').method, 'cfop');
+  assert.equal(parseCommand('roux'), null);
+  assert.equal(parseCommand('method roux'), null);
+  const offered = [
+    ...buildConfigBar(s).items.flatMap(i => i.options.map(o => o.value)),
+    ...buildSettingsPanel(s).sections.flatMap(x => x.rows.flatMap(r => r.options.map(o => o.value))),
+  ];
+  assert.ok(!offered.includes('roux'));
+  assert.equal(DEFAULT_SETTINGS.voice, false, 'voice off by default');
+  assert.equal(DEFAULT_SETTINGS.inspection.callouts, true, 'visual 8 s / 12 s callouts stay on');
+  assert.equal(normalizeSettings({}).voice, false);
 });

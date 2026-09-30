@@ -67,7 +67,7 @@ for (const theme of ['dark', 'light']) {
       await expect(page.locator('.b-oring-dot')).not.toHaveClass(/is-hidden/);
       await expect(page.locator('.b-oring-seg.is-pseudo')).toHaveCount(1);
       await expect(page.locator('.b-oring-label.is-done').first()).toContainText('2.08');
-      await expect(page.locator('.b-oring-aside .b-oring-row-value.is-current')).toHaveText('0.94');
+      await expect(page.locator('.b-oring-aside .b-oring-row-value.is-current')).toHaveText('1.16');
       expect(await overlappingLabels(page, '.b-oring-label')).toEqual([]);
       await attach(page, testInfo, `solving-${theme}`);
       expect(errors).toEqual([]);
@@ -89,7 +89,7 @@ for (const theme of ['dark', 'light']) {
       expect(await page.locator('.b-oinsp-remaining').getAttribute('d')).toMatch(/^M /);
       await expect(page.locator('.b-oinsp-tick.is-callout')).toHaveCount(2);
       await expect(page.locator('.b-oinsp-tick.is-callout.is-passed')).toHaveCount(1);
-      await expect(page.locator('.b-oinsp-num')).toHaveText('6');
+      await expect(page.locator('.b-oinsp-num')).toHaveText('7');
       await expect(page.locator('.b-oinsp-callout-text')).toHaveText('“8 seconds”');
       await attach(page, testInfo, `inspection-${theme}`);
       expect(errors).toEqual([]);

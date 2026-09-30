@@ -13,7 +13,9 @@ test('stage plans follow the method, cross style and 1-/2-look settings', () => 
   assert.deepEqual(keys({ oll: '1look', pll: '1look' }), ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'oll', 'pll']);
   assert.deepEqual(keys({ cross: 'xcross' }), ['cross', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
   assert.deepEqual(keys({ cross: 'xxcross', oll: '1look' }), ['cross', 'pair3', 'pair4', 'oll', 'cp', 'ep']);
-  assert.deepEqual(keys({ method: 'roux' }), ['fb', 'sb', 'cmll', 'l6e']);
+  // Roux is hidden from the settings (normalises to cfop) but its plan is kept.
+  assert.deepEqual(buildStagePlan({ ...normalizeSettings(), method: 'roux' }).map(s => s.key), ['fb', 'sb', 'cmll', 'l6e']);
+  assert.deepEqual(keys({ method: 'roux' }), keys({}));
   assert.equal(buildStagePlan(normalizeSettings({ cross: 'xcross' }))[0].label, 'x-cross');
   const plan = buildStagePlan(normalizeSettings({ f2l: 'pseudo' }));
   assert.equal(planKey(plan), 'cross,pair1,pair2,pair3,pair4,eo,co,cp,ep');

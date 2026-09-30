@@ -112,7 +112,7 @@ export function createOrbitResults(host) {
         dd.className = `is-${r.session.tones?.[k] || 'none'}`;
       }
       reconcileChildren($('.b-ores-recent'), r.recent.map(x => ({
-        key: x.key, text: `${x.text}${x.penaltyTag}`,
+        key: x.key, text: x.text,   // already '14.97+' / 'DNF(13.20)'; the tag only colours it
         className: `b-ores-recent-item${x.current ? ' is-current' : ''}${x.penaltyTag ? ' is-penalty' : ''}`,
       })), 'span');
       renderCoach($('.b-ores-coach'), r.coach);

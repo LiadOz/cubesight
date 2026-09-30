@@ -84,9 +84,8 @@ export function createMonoResults(host) {
       return d;
     }));
     $('.m-res-recent ol').replaceChildren(...results.recent.map(r => {
-      const li = el('li', r.current ? 'is-current' : '', r.text);
-      if (r.penaltyTag) li.append(el('span', 'm-res-tag', r.penaltyTag));
-      return li;
+      // The text already reads '14.97+' / 'DNF(13.20)'; the tag only colours it.
+      return el('li', [r.current ? 'is-current' : '', r.penaltyTag ? 'is-penalty' : ''].filter(Boolean).join(' '), r.text);
     }));
     $('.m-res-coach dl').replaceChildren(...results.coach.map(c => {
       const row = el('div', 'm-coach-row');

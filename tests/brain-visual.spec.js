@@ -76,17 +76,16 @@ test('the shell updates in place and turns clicks into actions', async ({ page }
 test('settings rows keep the first UI\'s hooks and dispatch settings', async ({ page }) => {
   await openFixture(page, 'mono', 'dark', 'idle');
   await page.locator('.brain-pill-setup > summary').click();
-  await page.locator('[data-brain-method="roux"]').click();
   await page.locator('#brain-pseudo').uncheck();
   await page.locator('.b-configbar-copy .b-cfg[data-value="xcross"]').click();
   const actions = await page.evaluate(() => window.gallery.actions);
   expect(actions).toEqual([
     { type: 'toggleSettings' },
-    { type: 'setSetting', path: 'method', value: 'roux' },
     { type: 'setSetting', path: 'f2l', value: 'standard' },
     { type: 'setSetting', path: 'cross', value: 'xcross' },
   ]);
   await expect(page.locator('[data-brain-mode="guided"]')).toHaveCount(1);
+  await expect(page.locator('[data-brain-method="roux"]')).toHaveCount(0);
   await expect(page.locator('[data-brain-cross="xxcross"]')).toHaveCount(1);
   for (const id of ['#brain-inspection', '#brain-scramble', '#brain-generate', '#brain-start-custom', '#brain-toggles', '#brain-connection-log', '#brain-save-recording', '#brain-replay-speed']) {
     await expect(page.locator(id)).toHaveCount(1);
