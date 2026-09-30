@@ -128,3 +128,65 @@ for (const style of STYLES) {
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-brain-settings-v2')).toggles.f2lHint)).toBe(!before);
   });
 }
+
+// The site mode: the header button and the Brain's "mode" row are one theme.
+test('the mode row, the header button and the system setting share one theme; the icon shows the current mode', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/#/brain');
+  const brain = page.locator('#brain-view .brain');
+  await expect(brain).toBeVisible();
+  const html = page.locator('html');
+  const tab = brain.locator('.b-settings > summary');
+  const row = value => brain.locator(`[data-setting="theme"][data-value="${value}"]`);
+  const icon = async () => ({
+    sun: await page.locator('#theme-toggle .theme-sun').isVisible(),
+    moon: await page.locator('#theme-toggle .theme-moon').isVisible(),
+  });
+  const pressed = async () => Promise.all(['light', 'dark', 'system'].map(v => row(v).getAttribute('aria-pressed')));
+  const stored = () => page.evaluate(() => localStorage.getItem('cubesight-theme'));
+  const openSettings = async () => { if (!await brain.locator('.b-settings-body').isVisible()) await tab.click(); };
+  const closeSettings = async () => { if (await brain.locator('.b-settings-body').isVisible()) await page.keyboard.press('Escape'); };
+
+  // No stored choice: system, which is light here. The icon shows the current mode: a sun.
+  await page.evaluate(() => localStorage.removeItem('cubesight-theme'));
+  await page.reload();
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  expect(await icon()).toEqual({ sun: true, moon: false });
+  await openSettings();
+  await expect(brain.locator('.b-settings-body [data-setting="theme"]')).toHaveCount(3);
+  expect(await pressed()).toEqual(['false', 'false', 'true']);
+
+  // The row drives the site theme (and the icon); the button's label stays the action.
+  await row('dark').click();
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+  expect(await pressed()).toEqual(['false', 'true', 'false']);
+  expect(await stored()).toBe('dark');
+  await closeSettings();
+  expect(await icon()).toEqual({ sun: false, moon: true });
+  await expect(page.locator('#theme-toggle')).toHaveAttribute('aria-label', 'Switch to light mode');
+
+  // The header button updates the row.
+  await page.locator('#theme-toggle').click();
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  expect(await icon()).toEqual({ sun: true, moon: false });
+  await expect(page.locator('#theme-toggle')).toHaveAttribute('aria-label', 'Switch to dark mode');
+  await openSettings();
+  expect(await pressed()).toEqual(['true', 'false', 'false']);
+  expect(await stored()).toBe('light');
+
+  // System follows prefers-color-scheme, live.
+  await row('system').click();
+  expect(await stored()).toBeNull();
+  expect(await pressed()).toEqual(['false', 'false', 'true']);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+  expect(await pressed()).toEqual(['false', 'false', 'true']);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(html).toHaveAttribute('data-theme', 'light');
+  // Choosing the mode the page already shows still moves the highlight.
+  await row('light').click();
+  expect(await pressed()).toEqual(['true', 'false', 'false']);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(html).toHaveAttribute('data-theme', 'light');
+});

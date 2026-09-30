@@ -23,6 +23,7 @@ import { coachLines } from './coach-lines.js';
 import { resolveKey } from './keys.js';
 import { readStickerPalette, themedRender } from './cube-theme.js';
 import { fmtSeconds } from './format.js';
+import { getThemePreference, setThemePreference, THEME_EVENT } from '../theme.js';
 
 // Dev-server-only features (Send to dev) are compiled out of production builds.
 const DEV = Boolean(import.meta.env?.DEV);
@@ -108,7 +109,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       session, live: liveSnap, records, settings, track, optimalCross, coach, error,
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
       now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.getHeldFaces?.() : null,
-      scrambleText, scrambleNumber, settingsOpen, debugOpen, connectStep, commandOpen, toast,
+      scrambleText, scrambleNumber, settingsOpen, themePreference: getThemePreference(), debugOpen, connectStep, commandOpen, toast,
     }, vm);
     commandOpen = false;
     const prev = vm;
@@ -400,7 +401,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function dispatch(action) {
     if (detached || !action) return;
-    if (RECORDED.has(action.type) && !(action.type === 'setSetting' && LIVE_RECORDED_PATHS.test(action.path))) record('ui', { type: 'action', action });
+    // (The site mode is the page's, not the session's: a replay must not flip it.)
+    if (RECORDED.has(action.type) && !(action.type === 'setSetting' && (LIVE_RECORDED_PATHS.test(action.path) || action.path === 'theme'))) record('ui', { type: 'action', action });
     switch (action.type) {
       case 'connect': connectStep = ''; connectLogFrom = getConnectionLog().length; void cubeSession.connect(); break;
       case 'sync': void cubeSession.syncSolved().catch(() => {}); break;
@@ -434,7 +436,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       }
       case 'setPenalty': togglePenalty(action.penalty, false); break;
       case 'togglePenalty': togglePenalty(action.penalty, true); break;
-      case 'setSetting': applySetting(action.path, action.value); break;
+      // The site mode belongs to the page (src/theme.js), not to the Brain settings.
+      case 'setSetting': if (action.path === 'theme') setThemePreference(action.value); else applySetting(action.path, action.value); break;
       case 'setStyle': applySetting('style', action.style); break;
       case 'toggleSettings': settingsOpen = !settingsOpen; render(); break;
       case 'toggleDebug': {
@@ -451,7 +454,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         const parsed = parseCommand(text);
         if (!parsed) { showError(`Unknown command: ${text}`); break; }
         error = '';
-        applySetting(parsed.path, parsed.value);
+        if (parsed.path === 'theme') setThemePreference(parsed.value); else applySetting(parsed.path, parsed.value);
         break;
       }
       case 'toggleTimer': applySetting('timer', settings.timer === 'hide' ? 'visible' : 'hide'); break;
@@ -573,6 +576,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   const themeObserver = new MutationObserver(() => { retheme(); render(); });
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  // Choosing the mode the page already shows (system -> the same explicit mode) changes no attribute.
+  const onThemeChoice = () => render();
+  document.addEventListener(THEME_EVENT, onThemeChoice);
 
   // --- Wiring ----------------------------------------------------------------------------------------
 
@@ -618,6 +624,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       window.removeEventListener('keydown', onKeydown);
       root.removeEventListener('change', onToggleChange);
       themeObserver.disconnect();
+      document.removeEventListener(THEME_EVENT, onThemeChoice);
       cancelAnimationFrame(raf); raf = 0;
       cancelAnimationFrame(logFrame); logFrame = 0;
       if (instantFrame) cancelAnimationFrame(instantFrame);

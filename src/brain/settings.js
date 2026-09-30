@@ -137,6 +137,7 @@ export function getSetting(settings, path) {
 
 const LABELS = {
   style: { orbit: 'orbit', mono: 'mono' },
+  theme: { light: 'light', dark: 'dark', system: 'system' },
   method: { cfop: 'cfop', roux: 'roux' },
   f2l: { standard: 'standard', pseudo: 'pseudo pairs' },
   oll: { '2look': 'oll 2-look', '1look': 'oll 1-look' },
@@ -157,6 +158,7 @@ const LABELS = {
 
 const HELP = {
   style: 'Orbit: ring timeline around the cube. Mono: monkeytype-style lanes.',
+  theme: 'Light or dark for the whole site. System follows your device.',
   method: 'The timeline stages follow the method.',
   f2l: 'Pseudo pairs count pairs solved with the D layer offset.',
   oll: '2-look splits OLL into edges (EO) then corners (CO).',
@@ -178,7 +180,7 @@ const HELP = {
 };
 
 const ROW_LABELS = {
-  style: 'style', method: 'method', f2l: 'f2l pairs', oll: 'oll', pll: 'pll',
+  style: 'style', theme: 'mode', method: 'method', f2l: 'f2l pairs', oll: 'oll', pll: 'pll',
   'inspection.mode': 'inspection', 'inspection.seconds': 'seconds', 'inspection.overtime': 'overtime',
   'inspection.graceSeconds': 'grace', 'inspection.gracePenalty': 'then', 'inspection.callouts': 'callouts', voice: 'voice',
   penalties: 'penalties', scramble: 'scramble', coach: 'coach', crossHint: 'cross hint', timer: 'timer',
@@ -186,13 +188,16 @@ const ROW_LABELS = {
 };
 
 const SECTIONS = [
+  { id: 'look', label: 'look', rows: ['style', 'theme'] },
   { id: 'method', label: 'method', rows: ['method', 'f2l', 'oll', 'pll'] },
   { id: 'inspection', label: 'inspection', rows: ['inspection.mode', 'inspection.seconds', 'inspection.overtime', 'inspection.graceSeconds', 'inspection.gracePenalty', 'inspection.callouts', 'voice', 'penalties'] },
   { id: 'training', label: 'training', rows: ['scramble', 'coach', 'crossHint', 'timer', 'timeline', 'compare'] },
-  { id: 'look', label: 'look', rows: ['style'] },
 ];
 
+// The site appearance lives in src/theme.js, not in the Brain settings; the panel shows it as one more row.
+export const THEME_MODES = ['light', 'dark', 'system'];
 const valuesFor = path => {
+  if (path === 'theme') return THEME_MODES;
   if (ENUMS[path]) return ENUMS[path];
   if (path === 'inspection.mode') return ['wca', 'custom', 'unlimited', 'off'];
   if (path === 'inspection.overtime') return ['wca', 'count', 'grace', 'autostart'];
@@ -211,20 +216,23 @@ function rowVisible(settings, path) {
   return true;
 }
 
-/** SettingsPanelVM for the expanded settings panel. */
-export function buildSettingsPanel(settings, open = false) {
+/**
+ * SettingsPanelVM for the expanded settings panel.
+ * `themePreference` is the site mode ('light' | 'dark' | 'system') from src/theme.js.
+ */
+export function buildSettingsPanel(settings, open = false, themePreference = 'system') {
   return {
     open,
     sections: SECTIONS.map(section => ({
       id: section.id,
       label: section.label,
       rows: section.rows.filter(path => rowVisible(settings, path)).map(path => {
-        const value = getSetting(settings, path);
+        const value = path === 'theme' ? themePreference : getSetting(settings, path);
         if (path === 'inspection.seconds' || path === 'inspection.graceSeconds') {
           const def = getSetting(DEFAULT_SETTINGS, path);
           return { id: path, label: ROW_LABELS[path], help: HELP[path] || '', control: 'number', options: [], value, isDefault: value === def };
         }
-        const def = getSetting(DEFAULT_SETTINGS, path);
+        const def = path === 'theme' ? 'system' : getSetting(DEFAULT_SETTINGS, path);
         return {
           id: path, label: ROW_LABELS[path], help: HELP[path] || '', control: 'segmented',
           options: valuesFor(path).map(v => ({ value: String(v), label: LABELS[path]?.[String(v)] ?? String(v), active: v === value, isDefault: v === def })),
@@ -276,7 +284,7 @@ const OFF = ['off', 'false', 'no', '0', 'hide'];
  *   insp 10 | insp wca | insp off | insp unlimited | insp inf
  *   overtime count | grace 3 | grace dnf | callouts off | voice on
  *   oll 1 | pll 2-look | method cfop | pseudo on
- *   style orbit | timer hide | coach after | timeline off | compare pb
+ *   style orbit | mode dark | light | system | timer hide | coach after | timeline off | compare pb
  *   scramble paste | penalties off | preset relaxed
  */
 export function parseCommand(text) {
@@ -308,7 +316,9 @@ export function parseCommand(text) {
     case 'method': return ENUMS.method.includes(arg) ? { path: 'method', value: arg } : null;
     case 'cfop': case 'roux': return ENUMS.method.includes(cmd) ? { path: 'method', value: cmd } : null;
     case 'pseudo': return ON.includes(arg) || arg === '' ? { path: 'f2l', value: 'pseudo' } : OFF.includes(arg) ? { path: 'f2l', value: 'standard' } : null;
-    case 'style': case 'theme': return BRAIN_STYLES.includes(arg) ? { path: 'style', value: arg } : null;
+    case 'style': return BRAIN_STYLES.includes(arg) ? { path: 'style', value: arg } : null;
+    case 'mode': case 'theme': return THEME_MODES.includes(arg) ? { path: 'theme', value: arg } : BRAIN_STYLES.includes(arg) ? { path: 'style', value: arg } : null;
+    case 'light': case 'dark': case 'system': return { path: 'theme', value: cmd };
     case 'orbit': case 'mono': return { path: 'style', value: cmd };
     case 'timer': return ON.includes(arg) || arg === 'visible' ? { path: 'timer', value: 'visible' } : OFF.includes(arg) ? { path: 'timer', value: 'hide' } : null;
     case 'coach': return ENUMS.coach.includes(arg) ? { path: 'coach', value: arg } : ON.includes(arg) ? { path: 'coach', value: 'live' } : null;

@@ -84,6 +84,10 @@ test('the command line sets any setting', () => {
   assert.deepEqual(parseCommand('pll 2-look'), { path: 'pll', value: '2look' });
   assert.deepEqual(parseCommand('style mono'), { path: 'style', value: 'mono' });
   assert.deepEqual(parseCommand('orbit'), { path: 'style', value: 'orbit' });
+  assert.deepEqual(parseCommand('mode dark'), { path: 'theme', value: 'dark' });
+  assert.deepEqual(parseCommand('light'), { path: 'theme', value: 'light' });
+  assert.deepEqual(parseCommand('theme system'), { path: 'theme', value: 'system' });
+  assert.deepEqual(parseCommand('theme mono'), { path: 'style', value: 'mono' }, 'the old spelling still picks the style');
   assert.deepEqual(parseCommand('timer hide'), { path: 'timer', value: 'hide' });
   for (const text of ['cross x', 'xcross', 'xxcross', 'cross']) assert.equal(parseCommand(text), null, `${text}: x-cross is not a target`);
   assert.deepEqual(parseCommand('pseudo'), { path: 'f2l', value: 'pseudo' });
@@ -107,6 +111,11 @@ test('the settings panel shows only rows that apply', () => {
   assert.equal(panel.open, true);
   const style = panel.sections.find(s => s.id === 'look').rows[0];
   assert.deepEqual(style.options.map(o => [o.value, o.active, o.isDefault]), [['orbit', true, true], ['mono', false, false]]);
+  // The site mode is one more row beside the style; the preference comes from src/theme.js.
+  const mode = panel.sections.find(s => s.id === 'look').rows[1];
+  assert.deepEqual([mode.id, mode.label], ['theme', 'mode']);
+  assert.deepEqual(mode.options.map(o => [o.value, o.active]), [['light', false], ['dark', false], ['system', true]]);
+  assert.deepEqual(buildSettingsPanel(normalizeSettings(), false, 'dark').sections.find(s => s.id === 'look').rows[1].options.map(o => o.active), [false, true, false]);
 });
 
 test('config bar and inspection labels', () => {
