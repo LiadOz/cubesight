@@ -10,7 +10,10 @@
 /* ---- Cube hero (no box around it) ---- */
 .brain-cube-stage {
   position: relative;
-  min-height: 32rem;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+  min-height: 42rem;
   display: flex; flex-direction: column;
   background: transparent;
   border: none;
@@ -26,7 +29,7 @@
 .brain-cube-topline .status-dot { display: inline-flex; align-items: center; gap: .35rem; }
 .brain-cube-topline .status-dot i { width: .55rem; height: .55rem; border-radius: 50%; background: #0f9d58; }
 .brain-cube-topline .view-lock { margin-right: auto; }
-#brain-cube.cube-mount { flex: 1; min-height: 28rem; }
+#brain-cube.cube-mount { flex: 1; min-height: 38rem; }
 .brain-cube-stage .cube-caption { padding: .3rem .9rem .5rem; font-size: .8rem; color: var(--muted); }
 
 /* ---- Connect: a floating chip top-right (not a panel) ---- */
@@ -76,7 +79,8 @@
 .brain-pill-timeline { position: relative; height: 1.5rem; margin-bottom: .8rem; }
 .brain-tl-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; transform: translateY(-50%); background: var(--line); overflow: hidden; }
 .brain-tl-line i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 50%, transparent)); transition: width .4s cubic-bezier(.22,1,.36,1); }
-.brain-tl-dot { position: absolute; top: 50%; width: .8rem; height: .8rem; border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); transition: left .4s cubic-bezier(.22,1,.36,1); }
+.brain-tl-dot { position: absolute; top: 50%; width: .8rem; height: .8rem; border-radius: 50%; background: var(--accent); transform: translate(-50%, -50%); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); transition: left .4s cubic-bezier(.22,1,.36,1); animation: brain-dot-pulse 1.6s ease-in-out infinite; }
+@keyframes brain-dot-pulse { 0%, 100% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent); } 50% { box-shadow: 0 0 0 11px color-mix(in srgb, var(--accent) 30%, transparent); } }
 .brain-tl-marks { position: absolute; top: calc(50% + .55rem); left: 0; right: 0; }
 .brain-tl-marks span { position: absolute; transform: translateX(-50%); font-size: .66rem; color: var(--muted); white-space: nowrap; }
 
@@ -124,15 +128,17 @@
 .brain-scramble-actions { display: flex; gap: .4rem; }
 
 /* coach lines (floating text, no per-line borders) */
-.brain-coach-line { margin: 0; padding: 0; font-size: .88rem; color: var(--ink); }
+.brain-coach-line { margin: 0; padding: 0; font-size: .88rem; color: var(--ink); animation: brain-fade-in .3s ease; }
 .brain-coach-good { color: #0f9d58; }
 .brain-coach-warn { color: #e0a800; }
 .brain-coach-muted { color: var(--muted); }
 [data-theme="dark"] .brain-coach-warn { color: #ffd27a; }
 
 /* end-game review overlay (centered over the cube) */
-.brain-review { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 1rem; background: #102333cc; backdrop-filter: blur(4px); }
-.brain-review-card { width: min(28rem, 92vw); background: color-mix(in srgb, var(--panel) 95%, transparent); backdrop-filter: blur(12px); border: 1px solid color-mix(in srgb, var(--line) 50%, transparent); border-radius: 18px; padding: 1.4rem 1.5rem; box-shadow: 0 18px 50px #0006; }
+.brain-review { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 1rem; background: #102333cc; backdrop-filter: blur(4px); animation: brain-fade-in .3s ease; }
+.brain-review-card { width: min(28rem, 92vw); background: color-mix(in srgb, var(--panel) 95%, transparent); backdrop-filter: blur(12px); border: 1px solid color-mix(in srgb, var(--line) 50%, transparent); border-radius: 18px; padding: 1.4rem 1.5rem; box-shadow: 0 18px 50px #0006; animation: brain-review-in .45s cubic-bezier(.22,1,.36,1); }
+@keyframes brain-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes brain-review-in { from { opacity: 0; transform: translateY(2rem) } to { opacity: 1; transform: none; }
 .brain-review-card .eyebrow { color: var(--muted); }
 .brain-review-card h2 { margin: .2rem 0 .8rem; font-size: 1.3rem; color: var(--ink); }
 .brain-review-stats { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: .8rem; color: var(--muted); font-size: .82rem; }
