@@ -22,8 +22,12 @@ import { applyMoves, sameCubeState, stateFromScramble, createSolvedState, OPPOSI
 import { analyze, extendedCross, solvedPairsPseudo, f2lDonePseudo } from './solve-tracker.js';
 import { followPlanTurn } from './smart-cube-guidance.js';
 import { logConnection } from './smart-cube-diag.js';
+import { cubeClockModulus, cubeElapsedMs } from './cube-clock.js';
+import { sameCornersAndEdges } from './facelets-state.js';
 
 const SOLVED = createSolvedState();
+// Phases in which a lost connection interrupts the attempt.
+const ACTIVE_PHASES = new Set(['applying', 'inspecting', 'ready', 'solving']);
 const isSolved = state => sameCubeState(state, SOLVED);
 
 // Append a move event to a move list: a coalesced double (replaces: true)
@@ -90,7 +94,7 @@ export function inspectionPenalty(config, elapsedMs) {
 
 export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D', front: 'F' }), now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()) } = {}) {
   let mode = null;            // 'guided' | 'free' | null
-  let phase = 'idle';         // idle | applying | inspecting | ready (inspection off) | solving | done | desynced
+  let phase = 'idle';         // idle | applying | inspecting | ready (inspection off) | solving | interrupted | done | desynced
   let scrambleStr = null;
   let scrambleMoves = [];
   let planStates = [];
@@ -129,6 +133,20 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let mark = {};             // { crossAt, f2lAt, eoAt, coAt, ollAt, *Idx: solve-move count when reached }
   let solveMoves = [];        // canonical solve moves (doubles coalesced)
   let record = null;
+  // Connection loss (A1): the attempt is frozen in 'interrupted' (no running
+  // clock) until the cube is back; then it resumes only if the cube's reported
+  // state equals the tracked one. `onMismatch`: 'discard' (default) | 'dnf'.
+  let interrupted = null;        // { from, at, elapsedMs, state, verified }
+  let interruptions = 0;
+  let interruptedMs = 0;
+  let onMismatch = 'discard';
+  let autoResume = true;
+  let notice = null;             // why the last attempt ended without a result
+  let flags = [];                // 'desync' | 'interrupted': the result is not clean
+  let lastResyncSeq = 0;
+  let lastMoveHostAt = null;
+  // Hardware timing: the cube's own stamps of the first and last solving move.
+  let hw = null;                 // { startTs, startEpoch, endTs, endEpoch, modulus }
   const listeners = new Set();
 
   function inspectionView() {
@@ -156,6 +174,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     solveStartAt = inspectionStartAt + limitMs;
     inspectionMs = limitMs;
     penalty = null;
+    hw = null;                 // the clock started without a move: no cube stamp to time from
     stopInspectionTimer();
   }
 
@@ -164,7 +183,10 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     return {
       mode, phase, scrambleStr, applyStep, applyTotal: scrambleMoves.length, applyDetour: [...applyDetour],
       scrambleTurns: [...scrambleTurns],
-      solveMoves: [...solveMoves], solveMoveCount: solveMoves.length, elapsedMs: phase === 'solving' && solveStartAt != null ? Math.max(0, now() - solveStartAt) : null,
+      solveMoves: [...solveMoves], solveMoveCount: solveMoves.length,
+      elapsedMs: phase === 'solving' && solveStartAt != null ? Math.max(0, now() - solveStartAt) : phase === 'interrupted' ? interrupted?.elapsedMs ?? null : null,
+      interrupted: interrupted ? { from: interrupted.from, at: interrupted.at, elapsedMs: interrupted.elapsedMs, canResume: interrupted.verified, policy: onMismatch, autoResume } : null,
+      notice, flags: [...flags], interruptions,
       inspection: phase === 'inspecting' ? inspectionView() : null,
       inspectionConfig: { ...inspection },
       penalty, inspectionMs,
@@ -181,6 +203,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     crossAchieved = false; f2lAchieved = false; ollAchieved = false; eoAchieved = false; coAchieved = false; maxPairs = 0; pairsBeforeMove = 0;
     prev = null; progress = null; mark = {}; solveMoves = []; record = null;
     solveStartAt = null; inspectionStartAt = null; inspectionMs = null; penalty = null;
+    interrupted = null; interruptions = 0; interruptedMs = 0; flags = []; lastMoveHostAt = null; hw = null;
   }
 
   function stopInspectionTimer() {
@@ -192,6 +215,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   function syncSeq(snap) {
     lastSeq = snap.moveEvent?.seq ?? 0;
     lastEventMove = snap.moveEvent?.move ?? null;
+    lastResyncSeq = snap.resync?.seq ?? 0;
   }
 
   // Guided scramble: cue the user through the scramble moves, recovering on a
@@ -208,6 +232,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     // The plan starts from solved; on a scrambled cube the cues would be wrong.
     if (!isSolved(snap.state)) throw new Error('Solve the cube (or sync) before starting a guided scramble.');
     stopInspectionTimer();
+    notice = null;
     mode = 'guided';
     scrambleStr = text;
     scrambleMoves = planMoves;
@@ -228,6 +253,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     const snap = session.getSnapshot();
     if (isSolved(snap.state)) throw new Error('Scramble the cube first.');
     stopInspectionTimer();
+    notice = null;
     mode = 'free';
     scrambleStr = null; scrambleMoves = []; planStates = []; scrambledState = snap.state;
     applyStep = 0; applyDetour = []; applyBefore = null;
@@ -240,7 +266,8 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     emit();
   }
 
-  function cancel() {
+  function cancel(reason = null) {
+    notice = typeof reason === 'string' ? reason : null;
     mode = null; phase = 'idle'; scrambleStr = null; scrambleMoves = []; planStates = [];
     scrambledState = null; applyStep = 0; applyDetour = []; applyBefore = null; scrambleTurns = [];
     stopInspectionTimer();
@@ -284,14 +311,32 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     }
   }
 
-  function finishSolve(state) {
-    const solveMs = solveStartAt != null ? Math.max(0, now() - solveStartAt) : null;
+  // Official time: the cube's hardware stamps of the first and last solving
+  // move when they are usable (same connection, plausible against the host
+  // clock, attempt never interrupted or desynced), else the host clock.
+  // `endAt` overrides the host end (a result found after the fact).
+  function finishSolve(state, { endAt = null, dnf = null } = {}) {
+    const endHost = endAt ?? now();
+    const hostMs = solveStartAt != null ? Math.max(0, endHost - solveStartAt) : null;
+    const clean = !flags.length && !interruptions;
+    const hardwareMs = hw && clean && !dnf && hostMs != null && hw.startEpoch === hw.endEpoch
+      ? cubeElapsedMs(hw.startTs, hw.endTs, hostMs, hw.modulus) : null;
+    const solveMs = hardwareMs ?? hostMs;
     const moves = [...solveMoves];
-    const phases = mark.crossAt != null ? {
-      crossMs: Math.max(0, (mark.crossAt || solveStartAt) - solveStartAt),
-      f2lMs: mark.f2lAt != null ? Math.max(0, (mark.f2lAt || mark.crossAt || solveStartAt) - (mark.crossAt || solveStartAt)) : null,
-      ollMs: mark.ollAt != null ? Math.max(0, (mark.ollAt || mark.f2lAt || mark.crossAt || solveStartAt) - (mark.f2lAt || mark.crossAt || solveStartAt)) : null,
-      pllMs: mark.ollAt != null ? Math.max(0, (now()) - (mark.ollAt || mark.f2lAt || mark.crossAt || solveStartAt)) : null,
+    // Milestone offsets from the solve start, on the same clock as solveMs.
+    const offset = name => {
+      const at = mark[`${name}At`];
+      if (at == null) return null;
+      const host = Math.max(0, at - solveStartAt);
+      if (hardwareMs == null) return host;
+      return cubeElapsedMs(hw.startTs, mark[`${name}Ts`], host, hw.modulus) ?? host;
+    };
+    const cross = offset('cross'), f2l = offset('f2l'), oll = offset('oll');
+    const phases = cross != null ? {
+      crossMs: Math.max(0, cross),
+      f2lMs: f2l != null ? Math.max(0, f2l - cross) : null,
+      ollMs: oll != null ? Math.max(0, oll - (f2l ?? cross)) : null,
+      pllMs: oll != null ? Math.max(0, solveMs - oll) : null,
     } : null;
     record = {
       at: Date.now(),
@@ -299,8 +344,10 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       scrambleTurns: [...scrambleTurns].slice(-200),
       free: mode === 'free',
       crossFace, crossColor,
-      solveMs,
-      penalty,                 // null | '+2' | 'DNF' (solveMs stays the raw clock time)
+      solveMs,                 // official: cube hardware time when available, else host time
+      hostSolveMs: hostMs,     // always the host clock (what the running clock showed)
+      timing: hardwareMs != null ? 'cube' : 'host',
+      penalty: dnf ? 'DNF' : penalty,   // null | '+2' | 'DNF' (solveMs stays the raw clock time)
       inspectionMs,
       inspectionMode: inspection.mode,
       moveCount: moves.length,
@@ -314,9 +361,12 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       mistakes: 0,
       pllCase: null,
       ollCase: null,
-      solved: true,
+      solved: !dnf,
+      flags: dnf ? [...flags, dnf] : [...flags],
+      interruptions: { count: interruptions, ms: interruptedMs },
     };
     phase = 'done';
+    interrupted = null;
     emit();
   }
 
@@ -326,7 +376,10 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     return [ll, `${ll}2`, `${ll}'`].some(turn => isSolved(applyMoves(state, [turn])));
   }
 
-  function onSolveMove(move, replaces, state) {
+  function onSolveMove(move, replaces, state, event = null) {
+    lastMoveHostAt = now();
+    if (hw && event) { hw.endTs = event.cubeTimestamp ?? null; hw.endEpoch = event.epoch ?? null; }
+    const ts = event?.cubeTimestamp ?? null;
     // A coalesced double replaces the previous quarter: same move count, and
     // the regrip/rotation check already ran for that quarter.
     if (!replaces || !solveMoves.length) pairsBeforeMove = maxPairs;
@@ -355,7 +408,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     // was reached (a coalesced double keeps the count of its first quarter).
     if (!crossAchieved && next.crossDone) {
       crossAchieved = true;
-      mark.crossAt = now(); mark.crossIdx = count;
+      mark.crossAt = now(); mark.crossTs = ts; mark.crossIdx = count;
       mark.xcross = extendedCross(state, crossFace).kind;
       crossMoveCount = count;
     }
@@ -364,10 +417,10 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     const pairCount = pseudo ? solvedPairsPseudo(state, crossFace).length : next.pairsSolved;
     if (crossAchieved && pairCount > maxPairs) maxPairs = pairCount;
     const f2lComplete = pseudo ? f2lDonePseudo(state, crossFace) : next.f2lDone;
-    if (crossAchieved && !f2lAchieved && f2lComplete) { f2lAchieved = true; mark.f2lAt = now(); mark.f2lIdx = count; }
+    if (crossAchieved && !f2lAchieved && f2lComplete) { f2lAchieved = true; mark.f2lAt = now(); mark.f2lTs = ts; mark.f2lIdx = count; }
     if (f2lAchieved && !eoAchieved && next.eoDone) { eoAchieved = true; mark.eoAt = now(); mark.eoIdx = count; }
     if (f2lAchieved && !coAchieved && next.coDone) { coAchieved = true; mark.coAt = now(); mark.coIdx = count; }
-    if (eoAchieved && coAchieved && !ollAchieved) { ollAchieved = true; mark.ollAt = now(); mark.ollIdx = count; }
+    if (eoAchieved && coAchieved && !ollAchieved) { ollAchieved = true; mark.ollAt = now(); mark.ollTs = ts; mark.ollIdx = count; }
     // A SKIPPED phase is a milestone reached on the very move that completed
     // the previous milestone (no dedicated step for it): a celebratory hurrah.
     //   • PLL skipped: solved (or an AUF away) on the move OLL completed.
@@ -400,7 +453,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     emit();
   }
 
-  function startSolving() {
+  function startSolving(event = null) {
     // The first solving move starts the solve clock and ends inspection; the
     // inspection penalty is fixed now.
     const t = now();
@@ -410,19 +463,92 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     }
     phase = 'solving';
     solveStartAt = t;
+    const cubeTs = event?.cubeTimestamp ?? null;
+    hw = cubeTs == null ? null : { startTs: cubeTs, startEpoch: event.epoch ?? null, endTs: cubeTs, endEpoch: event.epoch ?? null, modulus: cubeClockModulus(session?.getSnapshot().protocol) };
     stopInspectionTimer();
+  }
+
+  // --- Connection loss ------------------------------------------------------------------
+
+  function interrupt(snap) {
+    maybeAutostart();
+    const t = now();
+    interrupted = {
+      from: phase, at: t, state: snap.state, verified: false,
+      elapsedMs: phase === 'solving' && solveStartAt != null ? Math.max(0, t - solveStartAt) : null,
+    };
+    phase = 'interrupted';
+    stopInspectionTimer();
+    logConnection({ kind: 'warn', label: `[live] INTERRUPTED from ${interrupted.from}: connection lost` });
+    emit();
+  }
+
+  // The cube is tracked again after an interruption: continue only if it is in
+  // exactly the position it was left in. Anything else is never continued.
+  function onCubeBack(snap) {
+    if (!interrupted) return;
+    if (sameCornersAndEdges(snap.state, interrupted.state)) {
+      interrupted.verified = true;
+      if (autoResume) resume(); else emit();
+      return;
+    }
+    if (onMismatch === 'dnf' && interrupted.from === 'solving') {
+      finishSolve(snap.state, { endAt: interrupted.at, dnf: 'disconnect' });
+      return;
+    }
+    cancel('Attempt discarded: the cube changed while it was disconnected.');
+  }
+
+  function resume() {
+    if (phase !== 'interrupted' || !interrupted?.verified) return false;
+    const gone = Math.max(0, now() - interrupted.at);
+    interruptions++; interruptedMs += gone;
+    phase = interrupted.from;
+    interrupted = null;
+    if (!flags.includes('interrupted')) flags.push('interrupted');
+    if (session) syncSeq(session.getSnapshot());
+    if (phase === 'inspecting') startInspectionTimer();
+    logConnection({ kind: 'debug', label: `[live] resumed ${phase} after ${gone}ms` });
+    emit();
+    return true;
+  }
+
+  // The session replaced its tracked state with the cube's own report (packets
+  // were missed). Inside a solve that makes the result untrustworthy.
+  function onResync(snap) {
+    if (phase === 'solving') {
+      if (!flags.includes('desync')) flags.push('desync');
+      if (isSolved(snap.state)) finishSolve(snap.state, { endAt: lastMoveHostAt });
+      else emit();
+    } else if (phase === 'inspecting' || phase === 'ready') {
+      scrambledState = snap.state;
+      if (isSolved(snap.state)) cancel('Attempt cancelled: the cube is solved.'); else emit();
+    } else if (phase === 'applying') {
+      cancel('Scramble cancelled: the cube state changed unexpectedly.');
+    }
   }
 
   function onSnapshot(snap) {
     if (snap.phase === 'desynced') {
       if (phase !== 'idle' && phase !== 'done' && phase !== 'desynced') {
-        phase = 'desynced'; stopInspectionTimer();
+        phase = 'desynced'; stopInspectionTimer(); interrupted = null;
         logConnection({ kind: 'error', label: '[live] onSnapshot DESYNC phase=desynced' });
         emit();
       }
       return;
     }
+    if (snap.phase === 'disconnected') {
+      // A dropped (or closed) connection must never leave a clock running.
+      if (ACTIVE_PHASES.has(phase)) interrupt(snap);
+      return;
+    }
     if (snap.phase !== 'tracking') return;
+    if (phase === 'interrupted') { onCubeBack(snap); return; }
+    const resyncSeq = snap.resync?.seq ?? 0;
+    if (resyncSeq > lastResyncSeq) {
+      lastResyncSeq = resyncSeq;
+      if (ACTIVE_PHASES.has(phase)) onResync(snap);
+    }
     const event = snap.moveEvent;
     if (!event || event.seq <= lastSeq) return;   // no new turn (gyro, battery, status, re-sync)
     lastSeq = event.seq;
@@ -437,7 +563,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       // The snapshot state is authoritative: a double that leaves the cube
       // scrambled is not a solving move.
       if (replaces && scrambledState && sameCubeState(snap.state, scrambledState)) return;
-      startSolving();
+      startSolving(event);
     }
     if (phase !== 'solving') return;
     if (replaces && !solveMoves.length) {
@@ -448,16 +574,24 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       // fall back to the previous event's quarter (a double is two identical
       // quarters).
       const extra = event.turn || (quarter && !quarter.endsWith('2') ? quarter : move);
-      onSolveMove(extra, false, snap.state);
+      onSolveMove(extra, false, snap.state, event);
       return;
     }
-    onSolveMove(move, replaces, snap.state);
+    onSolveMove(move, replaces, snap.state, event);
   }
 
   const unsub = session?.subscribe(onSnapshot);
 
   return {
     startGuided, startFree, cancel,
+    // resume() continues an interrupted attempt once the cube is back in the
+    // same position; setInterruptPolicy({ onMismatch: 'discard' | 'dnf', autoResume }).
+    resume,
+    setInterruptPolicy(config = {}) {
+      if (config.onMismatch === 'discard' || config.onMismatch === 'dnf') onMismatch = config.onMismatch;
+      if (typeof config.autoResume === 'boolean') autoResume = config.autoResume;
+      emit();
+    },
     setPseudo(value) { pseudo = Boolean(value); },
     // setInspection(config) — see DEFAULT_INSPECTION. The legacy
     // { enabled, seconds } shape is still accepted (normalizeInspection).

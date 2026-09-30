@@ -624,7 +624,11 @@ test('inspection off: no inspecting phase, the clock starts on the first move', 
     h.tick(1000);
     const r = finish(h);
     assert.equal(r.penalty, null);
-    assert.equal(r.solveMs, 1300);
+    // The rig's cube stamps are 1000 ticks apart against 1300 ms of host time:
+    // close enough to be trusted, so the cube's clock is the official time.
+    assert.equal(r.solveMs, 1000);
+    assert.equal(r.hostSolveMs, 1300);
+    assert.equal(r.timing, 'cube');
     assert.equal(r.inspectionMs, null);
   } finally { restore(); }
 });

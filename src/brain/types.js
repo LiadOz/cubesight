@@ -52,7 +52,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {boolean} supported
  * @property {boolean} gyro
  * @property {string} detail
- * @property {{connect:boolean, sync:boolean, recenter:boolean, disconnect:boolean, clearSaved:boolean}} actions
+ * @property {{connect:boolean, sync:boolean, recenter:boolean, disconnect:boolean, clearSaved:boolean, reconnect:boolean, resume:boolean}} actions
  */
 
 /** @typedef {Object} ScrambleVM
@@ -166,7 +166,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *   currentOver:boolean, inspection:{elapsedMs:number, remainingMs:number|null, overtimeMs:number, bigText:string,
  *   tone:string, caret:number, consequence:string}|null}} FrameVM */
 
-/** @typedef {{type:'connect'}|{type:'sync'}|{type:'recenter'}|{type:'disconnect'}|{type:'clearSavedCube'}
+/** @typedef {{type:'connect'}|{type:'reconnect'}|{type:'resumeSolve'}|{type:'sync'}|{type:'recenter'}|{type:'disconnect'}|{type:'clearSavedCube'}
  *  |{type:'resetView'}|{type:'rebuildView'}|{type:'start'}|{type:'startCustom'}|{type:'generateScramble'}
  *  |{type:'setScrambleText', text:string}|{type:'cancel'}|{type:'next'}|{type:'retry'}|{type:'dismissResults'}
  *  |{type:'setPenalty', penalty:null|'+2'|'DNF'}|{type:'togglePenalty', penalty:'+2'|'DNF'}

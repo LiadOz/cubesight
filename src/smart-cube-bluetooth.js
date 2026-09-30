@@ -1,9 +1,9 @@
-import { connectSmartCube } from 'smartcube-web-bluetooth';
-import { createSmartCubeSession } from './smart-cube-session.js';
+import { connectSmartCube, getRegisteredProtocols, getCachedMacForDevice } from 'smartcube-web-bluetooth';
+import { createSmartCubeSession, APP_SESSION_OPTIONS } from './smart-cube-session.js';
 import { getRememberedMac, rememberMac, forgetRememberedMac } from './smart-cube-mac.js';
 import { promptMacAddress } from './smart-cube-mac-dialog.js';
 import { logConnection } from './smart-cube-diag.js';
-import { recordingConnectDevice, recordSessionCalls, setCheckpointProvider } from './recorder.js';
+import { recordingConnectDevice, recordSessionCalls, setCheckpointProvider, now as recorderNow } from './recorder.js';
 
 // A replay (src/recording-replay.js) can take the place of the Bluetooth
 // adapter; the session itself stays the real one.
@@ -46,6 +46,53 @@ function logConnectionEnvironment() {
       .then(devices => logConnection({ kind: 'env', label: `Devices already permitted for this origin: ${devices.length ? devices.map(d => `"${d.name ?? '?'}" (id ${d.id})`).join(', ') : 'none'}` }))
       .catch(error => logConnection({ kind: 'env', label: `getDevices failed: ${error?.message || error}` }));
   } else logConnection({ kind: 'env', label: 'navigator.bluetooth.getDevices unavailable (enable chrome://flags/#enable-web-bluetooth-new-permissions-backend) — the address cannot be re-derived from a remembered device.' });
+}
+
+// The cube that last connected, so a dropped link can be re-established.
+let lastCubeName = null;
+const RECONNECT_ADVERTISEMENT_WAIT_MS = 12000;
+const needsTap = message => Object.assign(new Error(message), { needsGesture: true });
+
+// Wait until the cube is advertising again (it is back in range and awake).
+function waitForAdvertisement(device, timeoutMs) {
+  if (typeof device.watchAdvertisements !== 'function') return Promise.resolve(false);
+  return new Promise(resolve => {
+    const abort = new AbortController();
+    let timer = null;
+    const finish = seen => { clearTimeout(timer); device.removeEventListener('advertisementreceived', onAdvertisement); abort.abort(); resolve(seen); };
+    const onAdvertisement = () => finish(true);
+    device.addEventListener('advertisementreceived', onAdvertisement);
+    timer = setTimeout(() => finish(false), timeoutMs);
+    device.watchAdvertisements({ signal: abort.signal }).catch(() => finish(false));
+  });
+}
+
+// Re-establish the link to the cube that dropped WITHOUT a user gesture:
+// getDevices() returns the cube this origin was already granted, and
+// watchAdvertisements() tells us when it is reachable again. Anything that
+// needs the picker throws needsGesture so the session shows a one-tap Reconnect.
+async function reconnectSilently(options) {
+  if (!navigator.bluetooth?.getDevices) throw needsTap('This browser cannot reconnect on its own (enable chrome://flags/#enable-web-bluetooth-new-permissions-backend). Tap Reconnect.');
+  const devices = await navigator.bluetooth.getDevices();
+  const device = devices.find(d => d.name && d.name === lastCubeName);
+  if (!device) throw needsTap('The cube is not remembered by this page. Tap Reconnect.');
+  options.onStatus?.('Looking for your cube…');
+  logConnection({ kind: 'start', label: `Silent reconnect to "${device.name}"…` });
+  if (!await waitForAdvertisement(device, RECONNECT_ADVERTISEMENT_WAIT_MS)) throw new Error('The cube is not in range or is asleep.');
+  const protocol = getRegisteredProtocols().find(candidate => candidate.matchesDevice(device));
+  if (!protocol) throw needsTap('This cube model cannot reconnect on its own. Tap Reconnect.');
+  options.onStatus?.('Reconnecting…');
+  const mac = getCachedMacForDevice(device) || getRememberedMac(device.name);
+  const connection = await protocol.connect(device, async () => mac, { serviceUuids: new Set(), enableAddressSearch: false, onStatus: detail => logConnection({ label: String(detail), kind: 'status' }) });
+  logConnection({ label: `Reconnected: ${connection.deviceName} · ${connection.protocol?.name ?? ''}`, kind: 'ok' });
+  return connection;
+}
+
+function reconnectBluetooth(options) {
+  // A user tap may show the device picker (the normal connect path); automatic
+  // retries must stay silent.
+  if (options.gesture) return connectBluetooth(options);
+  return reconnectSilently(options);
 }
 
 // Web Bluetooth adapter. Protocol details stay behind it; consumers only see
@@ -98,6 +145,7 @@ async function connectBluetooth(options) {
     logConnection({ label: `Connected: ${connection.deviceName} · ${connection.protocol?.name ?? ''} · MAC ${connection.deviceMAC || '(none)'}`, kind: 'ok' });
     // Save that proven address as a fallback if the browser's device ID changes.
     if (connection.deviceMAC) rememberMac(connection.deviceName, connection.deviceMAC);
+    lastCubeName = connection.deviceName || null;
     return connection;
   } catch (error) {
     logConnection({ label: `Connection failed: ${error?.message || error}`, kind: 'error' });
@@ -111,5 +159,6 @@ async function connectBluetooth(options) {
 // raw input (handshake, cube events, commands, connect/sync/disconnect calls)
 // is recorded at this seam — always on — so any bug can be replayed.
 export const smartCube = recordSessionCalls(createSmartCubeSession(recordingConnectDevice(
-  options => (replayConnectDevice ? replayConnectDevice(options) : connectBluetooth(options)))));
+  options => (replayConnectDevice ? replayConnectDevice(options) : options.reconnect ? reconnectBluetooth(options) : connectBluetooth(options))),
+{ ...APP_SESSION_OPTIONS, now: recorderNow }));
 setCheckpointProvider(() => smartCube.getSnapshot());
