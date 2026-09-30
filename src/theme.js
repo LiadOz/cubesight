@@ -43,6 +43,10 @@ function apply() {
     const label = `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`;
     button.setAttribute('aria-label', label);
     button.title = label;
+    // The visible word is the mode you are in (the icon agrees), not the action.
+    button.dataset.mode = theme;
+    const word = button.querySelector('.theme-label');
+    if (word) word.textContent = theme;
   }
   document.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { theme, preference } }));
 }

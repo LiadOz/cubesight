@@ -3,6 +3,9 @@ import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
 import './styles.css';
 import { setupTheme } from './theme.js';
+import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
+import { TOOL_PATHS, resolveRoute, chooseHome, keyScope } from './routes.js';
+import { rememberDrill } from './drills/catalog.js';
 import { renderCube } from './cube-renderer.js';
 import { createCube3D } from './cube-3d.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
@@ -119,8 +122,12 @@ const glancePacing = createGlancePacing();
 let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
-const TOOL_ROUTES = { corner: '/corners', f2l: '/f2l', pll: '/pll-recognition', scout: '/cross-scout', brain: '/brain', smart: '/debug' };
-const TOOL_TITLES = { corner: 'Corner recognition', f2l: 'F2L deduction', pll: 'PLL recognition', scout: 'Cross Scout', brain: 'Brain', smart: 'Debug' };
+// tool id -> the element that shows it (routes live in src/routes.js).
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view' };
+let drillsHub = null;
+let drillsHubLoad = null;
+let algsPage = null;
+let progressPage = null;
 let scout = null;
 let scoutLoad = null;
 let smart = null;
@@ -158,24 +165,17 @@ let f2lState = {
 
 document.querySelector('#app').innerHTML = `
   <header class="site-header">
-    <a class="brand" href="#/corners" aria-label="Cubesight home">
-      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span>Cubesight<span class="brand-caption">Recognition training</span></span>
-    </a>
-    <nav class="main-nav" aria-label="Trainers">
-      <a class="nav-link active" href="#/corners" data-tool="corner">Corner recognition</a>
-      <a class="nav-link" href="#/f2l" data-tool="f2l">F2L deduction</a>
-      <a class="nav-link" href="#/pll-recognition" data-tool="pll">PLL recognition</a>
-      <a class="nav-link" href="#/cross-scout" data-tool="scout">Cross Scout</a>
-      <a class="nav-link" href="#/brain" data-tool="brain">Brain</a>
-      <a class="nav-link" href="#/debug" data-tool="smart">Debug</a>
+    <a class="brand" href="#/" aria-label="${APP_NAME} home">${APP_NAME.toLowerCase()}</a>
+    <nav class="main-nav" aria-label="Main">
+      ${NAV_ITEMS.map(item => `<a class="nav-link" href="${item.href}" data-nav="${item.id}">${item.label}</a>`).join('\n      ')}
     </nav>
     <div class="header-actions">
-      <button id="theme-toggle" class="icon-button" aria-label="Switch to dark mode">
+      <button id="theme-toggle" class="header-button theme-button" aria-label="Switch to dark mode">
         <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></svg>
         <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+        <span class="theme-label" aria-hidden="true">light</span>
       </button>
-      <button class="icon-button" data-action="open-help" aria-label="How to play">?</button>
+      <button class="header-button help-button" data-action="open-help" aria-label="How to play">?</button>
     </div>
   </header>
 
@@ -321,6 +321,9 @@ document.querySelector('#app').innerHTML = `
         <article><p class="eyebrow">03 / plan</p><h3>Choose efficiently</h3><p>The planner compares verified next-pair solutions with ergonomic weights, not raw move count alone.</p></article>
       </section>
     </div>
+    <div id="drills-view" class="cs-host" hidden></div>
+    <div id="algs-view" class="cs-host" hidden></div>
+    <div id="progress-view" class="cs-host" hidden></div>
     <div id="pll-view" hidden></div>
     <div id="scout-view" hidden></div>
     <div id="brain-view" hidden></div>
@@ -880,8 +883,8 @@ function updateStatsUI() {
 }
 
 function updateLearningUI() {
-  document.querySelector('.retention-panel').hidden = activeTool === 'scout' || activeTool === 'pll' || activeTool === 'brain' || activeTool === 'smart';
-  if (activeTool === 'scout' || activeTool === 'pll' || activeTool === 'brain' || activeTool === 'smart') return;
+  document.querySelector('.retention-panel').hidden = !keyScope(activeTool);
+  if (!keyScope(activeTool)) return;
   document.querySelector(`#${activeTool}-view .trainer-shell`)?.after(document.querySelector('.retention-panel'));
   const items = Object.fromEntries(Object.entries(learning.items).filter(([key]) => key.startsWith(`${activeTool === 'corner' ? 'corner' : 'f2l'}|`)));
   const summary = sessionSummary({ ...learning, items });
@@ -1406,34 +1409,35 @@ function updateHelp() {
 }
 
 // Hash routes work on static hosts too, without a server-side SPA rewrite.
+// Old hashes and unknown ones are replaced (not pushed) so Back still works.
+const isPhone = () => !(matchMedia('(pointer: fine)').matches || innerWidth >= 900);
+const cubeConnected = () => {
+  const phase = document.documentElement.dataset.cubePhase;
+  return Boolean(phase) && phase !== 'disconnected';
+};
 function syncRoute(initial = false) {
-  // Old “Smart Cube Studio” link lived at #/smart-cube; redirect it to the renamed Debug view.
-  if (location.hash === '#/smart-cube') history.replaceState(null, '', `${location.pathname}${location.search}#/debug`);
-  const tool = Object.keys(TOOL_ROUTES).find((key) => `#${TOOL_ROUTES[key]}` === location.hash) || 'corner';
-  const hash = `#${TOOL_ROUTES[tool]}`;
+  const { tool, hash } = resolveRoute(location.hash, { isPhone: isPhone(), cubeConnected: cubeConnected() });
   if (location.hash !== hash) history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
   setTool(tool, initial);
+  rememberDrill(localStorage, tool, hash);
 }
 
 function setTool(tool, initial = false) {
-  if (!Object.hasOwn(TOOL_ROUTES, tool) || (tool === activeTool && !initial)) return;
+  if (!Object.hasOwn(TOOL_PATHS, tool) || (tool === activeTool && !initial)) return;
   document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
   scout?.setActive(false);
   smart?.setActive(false);
   pll?.setActive(false);
+  brain?.setActive(false);
+  drillsHub?.setActive(false);
   activeTool = tool;
-  document.title = `${TOOL_TITLES[tool]} · Cubesight`;
-  document.querySelector('#corner-view').hidden = tool !== 'corner';
-  document.querySelector('#f2l-view').hidden = tool !== 'f2l';
-  document.querySelector('#pll-view').hidden = tool !== 'pll';
-  document.querySelector('#scout-view').hidden = tool !== 'scout';
-  document.querySelector('#brain-view').hidden = tool !== 'brain';
-  document.querySelector('#smart-view').hidden = tool !== 'smart';
+  document.title = `${PAGE_TITLES[tool]} · ${APP_NAME}`;
+  for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
   // Choosing another trainer starts fresh; a corner timeout must not block F2L.
   paused = false;
   document.querySelector('#pause-overlay').hidden = true;
-  document.querySelectorAll('[data-tool]').forEach((link) => {
-    const selected = link.dataset.tool === tool;
+  document.querySelectorAll('[data-nav]').forEach((link) => {
+    const selected = link.dataset.nav === NAV_FOR_TOOL[tool];
     link.classList.toggle('active', selected);
     if (selected) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
@@ -1457,6 +1461,10 @@ function setTool(tool, initial = false) {
         brainLoad = null;
       });
     } else brain?.setActive(true);
+  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress') {
+    state.locked = true;
+    f2lState.locked = true;
+    mountPage(tool);
   } else if (tool === 'smart') {
     state.locked = true;
     f2lState.locked = true;
@@ -1507,6 +1515,32 @@ function setTool(tool, initial = false) {
   updateLearningUI();
 }
 
+// The hub and the placeholders load on demand, like the trainers.
+const PLACEHOLDERS = {
+  algs: { title: 'algs', blurb: 'cases, algs and the ones you pick.', next: { label: 'drill what you know', href: '#/drills' } },
+  progress: { title: 'progress', blurb: 'your solves and drills in one place.', next: { label: 'back to solve', href: '#/solve' } },
+};
+function mountPage(tool) {
+  const root = document.querySelector(`#${TOOL_VIEWS[tool]}`);
+  const failed = (error) => { root.textContent = `This page could not load: ${error.message}. Try again.`; };
+  if (tool === 'drills') {
+    if (drillsHub) drillsHub.setActive(true);
+    else if (!drillsHubLoad) {
+      drillsHubLoad = import('./drills/hub.js').then(({ createDrillsHub }) => {
+        drillsHub = createDrillsHub(root);
+        drillsHub.setActive(activeTool === 'drills');
+      }).catch((error) => { drillsHubLoad = null; failed(error); });
+    }
+    return;
+  }
+  const held = tool === 'algs' ? algsPage : progressPage;
+  if (held) { held.setActive(true); return; }
+  import('./pages/placeholder.js').then(({ createPlaceholderPage }) => {
+    const page = createPlaceholderPage(root, PLACEHOLDERS[tool]);
+    if (tool === 'algs') algsPage = page; else progressPage = page;
+  }).catch(failed);
+}
+
 function armTrialTimeout(startedAt) {
   clearTimeout(trialTimeout);
   trialTimeout = setTimeout(() => {
@@ -1529,6 +1563,7 @@ function pausePractice(reason = 'interrupted') {
   if (activeTool === 'brain') { brain?.setActive(false); return; }
   if (activeTool === 'scout') { scout?.setActive(false); return; }
   if (activeTool === 'pll') { pll?.setActive(false); return; }
+  if (!keyScope(activeTool)) return;
   if (paused || document.querySelector('#summary-dialog').open) return;
   paused = true;
   cancelCornerTimers();
@@ -1572,7 +1607,7 @@ document.querySelector('#summary-dialog').addEventListener('cancel', (event) => 
 });
 
 document.addEventListener('click', (event) => {
-  const toolButton = event.target.closest('[data-tool]');
+  const toolButton = event.target.closest('[data-nav]');
   if (toolButton) return; // Native links preserve new-tab behavior; hashchange switches trainers.
   const f2lDrillButton = event.target.closest('[data-f2l-drill]');
   if (f2lDrillButton) return setF2LDrill(f2lDrillButton.dataset.f2lDrill);
@@ -1645,12 +1680,14 @@ document.querySelector('#planner-shift-d').addEventListener('change', (event) =>
 });
 
 document.addEventListener('keydown', (event) => {
-  // Brain owns its keyboard shortcuts (src/brain/keys.js); corner-trainer keys must not fire there.
-  if (activeTool === 'scout' || activeTool === 'pll' || activeTool === 'brain') return;
+  // Keys are scoped per route: only the corner and F2L drills use this handler. Every other page
+  // (solve, hub, algs, progress, studio, PLL, Scout) owns its keys or has none.
+  const scope = keyScope(activeTool);
+  if (!scope) return;
   if (event.repeat || paused || document.querySelector('dialog[open]')) return;
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
-  if (activeTool === 'f2l') {
+  if (scope === 'f2l') {
     if (f2lState.drill === 'scan' && !f2lState.scanRunning && event.key.toLowerCase() === 's') return startF2LScan();
     if (event.key.toLowerCase() === 'n') newF2LCase();
     return;
@@ -1672,7 +1709,6 @@ try {
 } catch (error) {
   console.warn('WebGL F2L cube unavailable.', error);
   document.querySelector('#f2l-cube').textContent = 'The F2L trainer needs WebGL. Enable hardware acceleration or try another browser.';
-  document.querySelector('[data-tool="f2l"]').title = 'F2L requires WebGL';
 }
 updateStatsUI();
 updateSprintUI();

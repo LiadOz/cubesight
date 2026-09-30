@@ -125,6 +125,7 @@ const TEMPLATE = `
   </div>
   <aside class="b-debug" id="brain-debug" role="dialog" aria-label="Debug" hidden>
     <div class="b-panel-head"><h2>debug</h2><button class="b-textbtn b-close" type="button" data-action="toggleDebug" aria-label="Close debug"><span>close</span><kbd>esc</kbd></button></div>
+    <p class="b-label brain-studio-link"><a href="#/dev/studio" data-testid="open-studio">open studio</a> · raw cube events, gyro and scramble rehearsal</p>
     <section class="brain-diagnostics b-debug-section" aria-label="Connection diagnostics">
       <h3><span>connection</span></h3>
       <div class="brain-connection-log-head"><p class="b-label">what the attach is doing</p><div class="brain-log-actions"><button class="b-btn" id="brain-send-log" type="button" title="Send this log to the dev server so the agent can read it">send to dev</button><button class="b-btn" id="brain-clear-log" type="button">clear log</button></div></div>

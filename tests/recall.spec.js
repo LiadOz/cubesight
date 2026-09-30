@@ -2,7 +2,7 @@ import { test, expect } from 'playwright/test';
 
 async function startRecall(page) {
   await page.clock.install();
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.clock.pauseAt(await page.evaluate(() => new Date(Date.now() + 1000).toISOString()));
   await page.locator('.training-settings').first().evaluate(el => { el.open = true; });
   await page.getByRole('button', { name: 'One-glance recall', exact: true }).click();

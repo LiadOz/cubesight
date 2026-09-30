@@ -7,7 +7,7 @@ const STYLES = ['orbit', 'mono'];
 const SEGMENTS = '#brain-timeline :is(.m-seg, .b-oring-seg)';
 
 async function mountTestBrain(page, style = 'orbit') {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.evaluate(async style => {
     localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));

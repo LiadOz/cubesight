@@ -1,0 +1,48 @@
+/* Shared look for the pages that live in the new visual language (drills hub,
+   algs, progress): the Orbit / Mono tokens plus a page frame. The tokens are
+   scoped to .brain[data-brain-style], so these pages carry both classes. */
+@import '../brain/css/tokens-orbit.css';
+@import '../brain/css/tokens-mono.css';
+
+/* The page behind takes the style's background, so the page is not a box in the site
+   (the same colours as the tokens' --b-page, for pages that are not #brain-view). */
+:root[data-theme="dark"]:has(.cs-host:not([hidden]) .cs-page[data-brain-style="orbit"]) { --cs-page: #141311; --cs-page-line: #34312b; }
+:root:not([data-theme="dark"]):has(.cs-host:not([hidden]) .cs-page[data-brain-style="orbit"]) { --cs-page: #f3f0e8; --cs-page-line: #dcd6c8; }
+:root[data-theme="dark"]:has(.cs-host:not([hidden]) .cs-page[data-brain-style="mono"]) { --cs-page: #16171b; --cs-page-line: #34373f; }
+:root:not([data-theme="dark"]):has(.cs-host:not([hidden]) .cs-page[data-brain-style="mono"]) { --cs-page: #f1eee6; --cs-page-line: #cbc6ba; }
+:root:has(.cs-host:not([hidden]) .cs-page),
+:root:has(.cs-host:not([hidden]) .cs-page) body,
+:root:has(.cs-host:not([hidden]) .cs-page) .site-header {
+  background: var(--cs-page);
+  border-color: var(--cs-page-line);
+}
+
+.cs-page.brain {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: min(1120px, 100% - 48px);
+  min-height: calc(100vh - 57px);
+  margin: 0 auto;
+  padding: 40px 0 56px;
+  background: var(--b-bg);
+  color: var(--b-ink);
+  font-family: var(--b-font-sans);
+  font-size: var(--b-fs-body);
+  -webkit-font-smoothing: antialiased;
+}
+.cs-page.brain *, .cs-page.brain *::before, .cs-page.brain *::after { box-sizing: border-box; }
+.cs-page :where(h1, p, ul) { margin: 0; padding: 0; }
+.cs-page kbd {
+  display: inline-block; min-width: 1.7em; padding: 2px 7px; border-radius: var(--b-radius-key);
+  background: var(--b-key-bg); color: var(--b-key-ink); font: 500 12px/1.5 var(--b-font-mono); text-align: center;
+}
+.cs-page a { color: inherit; text-decoration: none; }
+.cs-page :focus-visible { outline: 2px solid var(--b-accent); outline-offset: 3px; border-radius: 4px; }
+.cs-head h1 { font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.cs-sub { margin-top: 8px; color: var(--b-muted); font-size: 15px; }
+
+@media (max-width: 700px) {
+  .cs-page.brain { width: calc(100% - 32px); padding: 24px 0 40px; gap: 22px; min-height: calc(100vh - 100px); }
+  .cs-head h1 { font-size: 28px; }
+}

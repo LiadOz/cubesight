@@ -10,7 +10,7 @@ async function seed(page) {
     history.push({ at: now - 10 * 86400000 + 5, ms: 100, correct: false, family: 'green-red-white', mode: 'single' });
     localStorage.setItem('cubesight-progress-v2', JSON.stringify({ history }));
   });
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
 }
 
 test('trend uses actual date gaps, aligned attempt dots, and inspectable points', async ({ page }) => {
@@ -75,7 +75,7 @@ test('a slow outlier is pinned without flattening the useful timing range', asyn
       at: now + index, ms, correct: true, family: 'green-red-white', mode: 'single', glance: false,
     })) }));
   });
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'Show entries' }).click();
   await expect(page.locator('.rp-trend-note')).toContainText('chart ceiling is 500 ms');
   const ys = await page.locator('.rp-trend-point').evaluateAll(points => points.map(point => +point.getAttribute('cy')));

@@ -13,7 +13,7 @@ async function seed(page) {
     ];
     localStorage.setItem('cubesight-progress-v2', JSON.stringify({ history }));
   });
-  await page.goto('/#/corners');
+  await page.goto('/#/drills/corners');
 }
 
 test('piece and drill filters show correct-only times and specific color confusions', async ({ page }) => {
