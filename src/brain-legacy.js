@@ -59,7 +59,7 @@ const DEFAULT_TOGGLES = {
   ollStage: true,          // 2-look OLL stage labels
   rotationFlag: true,      // flag excessive whole-cube rotations
   efficiencyScore: true,  // chess.com-style accuracy analogue
-  autoCross: true,         // detect cross from the held bottom at first move
+  autoCross: true,         // detect the cross face from the cube (first face solved)
 };
 
 function loadToggles() {
@@ -137,7 +137,7 @@ function mountBrain(root, cubeSession, rebuild) {
           <div class="brain-pill-phase">
             <p class="eyebrow">Phase</p>
             <h2 id="brain-phase-label">Connect and start a solve</h2>
-            <p id="brain-phase-detail" class="brain-phase-detail">Cross is read from the bottom at your first move.</p>
+            <p id="brain-phase-detail" class="brain-phase-detail">Cross is detected from the first face you solve.</p>
           </div>
           <div id="brain-coach" class="brain-pill-coach" aria-live="polite"></div>
           <div class="brain-pill-metrics" aria-label="Your solve metrics">
@@ -436,7 +436,7 @@ function mountBrain(root, cubeSession, rebuild) {
       setText($('#brain-phase-detail'), (snap.phase === 'solving' || snap.phase === 'done')
         ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s${pairs ? ' · ' + pairs : ''}`
         : snap.phase === 'applying' ? `Scramble turn ${Math.min(snap.applyStep + 1, snap.applyTotal)} of ${snap.applyTotal}.`
-        : 'Cross is read from the bottom at your first move.');
+        : 'Cross is detected from the first face you solve.');
     }
     renderReview();
   }

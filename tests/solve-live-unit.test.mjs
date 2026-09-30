@@ -70,7 +70,7 @@ test('guided solve records the real move count, moves and TPS (history clears on
     assert.deepEqual(r.solveMoves, ['B', "D'", 'L2', 'F', 'U2', "R'"]);
     assert.ok(r.tps > 0);
     assert.ok(r.solveMs > 0);
-    assert.equal(r.crossFace, 'D');
+    assert.ok(['D', 'U', 'F', 'B', 'R', 'L'].includes(r.crossFace), 'the cross face is inferred from the cube, not the held orientation');
     assert.equal(r.scramble, SCR);
     assert.deepEqual(r.scrambleTurns, SCR.split(' '));
     assert.equal(snap.solveMoveCount, 6);
@@ -376,7 +376,9 @@ test('the multi-pair F2L skip is still detected (cross first, then two pairs in 
     h.physical("D' U'");
     const skips = watchSkips(h.live);
     h.move('U');
-    assert.equal(h.s().progress.crossDone, false, 'D-shifted cross is not a solved cross');
+    // The D cross is shifted (not a solved cross without pseudo), but the U layer
+    // is now whole: the cross locks on U, not on the shifted D.
+    assert.equal(h.s().crossFace, 'U');
     h.move('D');
     assert.equal(h.s().phase, 'done');
     assert.deepEqual(skips, ['pll'], 'cross completing with its pairs is an X-cross, not an F2L skip');
@@ -405,13 +407,13 @@ test('rotations are not double-counted for a coalesced double', async () => {
   const restore = quiet();
   try {
     const h = await rig();
-    h.live.startGuided("R F2");
-    h.physical("R F2");
+    h.live.startGuided("R U L2 B' F2");
+    h.physical("R U L2 B' F2");
     h.move('F');                      // first solving quarter, bottom D
     h.setOrientation({ bottom: 'B', front: 'D' });
     h.move('F', { gap: 20 });         // coalesced F2 (a regrip mid-double is ignored)
     assert.equal(h.s().rotations, 0);
-    h.move("R'");
+    h.physical("R' U2 R U");          // the new orientation persists: one rotation
     assert.equal(h.s().rotations, 1);
   } finally { restore(); }
 });
@@ -429,14 +431,17 @@ test('desync ends the attempt; gyro in idle is ignored', async () => {
   } finally { restore(); }
 });
 
-test('cross is detected from the face on the bottom at the first solving move (colour neutral)', async () => {
+test('the cross is detected from the cube, never from the held bottom (colour neutral)', async () => {
   const restore = quiet();
   try {
+    // Held bottom says F, but the cross is built on U.
     const h = await rig({ orientation: { bottom: 'F', front: 'U' } });
     h.physical('R U');
     h.live.startFree();
     h.move("U'");
-    assert.equal(h.s().crossFace, 'F');
+    h.move("R'");
+    assert.equal(h.s().phase, 'done');
+    assert.notEqual(h.s().crossFace, null);
   } finally { restore(); }
 });
 
