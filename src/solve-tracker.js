@@ -63,16 +63,35 @@ export function solvedPairs(state, crossFace) {
 // that same offset. Returns the empty list while the cross is not solved
 // under any offset (still building). Standard users (k = 0) get the plain
 // count; the toggle just widens the window to k = 1..3.
-const D_OFFSET_MOVES = ['', 'D', 'D2', "D'"];
-const dShift = (state, k) => (k ? applyMoves(state, [D_OFFSET_MOVES[k]]) : state);
-export function currentDShift(state, crossFace) {
-  for (let k = 0; k < 4; k++) if (crossSolved(dShift(state, k), crossFace)) return k;
+//
+// The offset turn for shift k is a turn of the cross face itself (D for a D
+// cross, U for a U cross, ...), so pseudo detection works for every cross face.
+const OFFSET_SUFFIX = ['', '', '2', "'"];
+const FACE_NORMAL_AXIS = { U: [1, 1], D: [1, -1], F: [2, 1], B: [2, -1], R: [0, 1], L: [0, -1] };
+const dShift = (state, k, crossFace = 'D') => (k ? applyMoves(state, [`${crossFace}${OFFSET_SUFFIX[k]}`]) : state);
+// Turning the cross layer keeps its pieces in that layer, so a cross that is
+// solved in any frame has all four cross edges in the cross layer. A cheap
+// necessary test that avoids three cube turns for most mid-solve positions.
+const crossEdgesInLayer = (state, crossFace) => {
+  const [axis, sign] = FACE_NORMAL_AXIS[crossFace];
+  return crossEdgeIds(crossFace).every(id => cubieAt(state, id).position[axis] === sign);
+};
+export function currentDShift(state, crossFace = 'D') {
+  if (!crossEdgesInLayer(state, crossFace)) return null;
+  for (let k = 0; k < 4; k++) if (crossSolved(dShift(state, k, crossFace), crossFace)) return k;
   return null;
 }
-export function solvedPairsPseudo(state, crossFace) {
+export function solvedPairsPseudo(state, crossFace = 'D') {
   const k = currentDShift(state, crossFace);
   if (k == null) return [];
-  return f2lPairSlots(crossFace).filter(pair => pairSolved(dShift(state, k), pair));
+  return f2lPairSlots(crossFace).filter(pair => pairSolved(dShift(state, k, crossFace), pair));
+}
+// One-pass frame read: the cross-face offset k (or null) and the pairs solved in
+// that frame, without recomputing the shift.
+export function crossFrame(state, crossFace = 'D') {
+  const shift = currentDShift(state, crossFace);
+  if (shift === null) return { shift: null, pairs: [] };
+  return { shift, pairs: f2lPairSlots(crossFace).filter(pair => pairSolved(dShift(state, shift, crossFace), pair)) };
 }
 export function f2lDonePseudo(state, crossFace) {
   return solvedPairsPseudo(state, crossFace).length === 4;
@@ -154,12 +173,18 @@ export function pairReadiness(state, pair) {
 
 // Full phase snapshot for a state and chosen cross face. `phase` is a label the
 // UI can render; the booleans are for lens logic.
-export function analyze(state, crossFace) {
+//
+// `{ pseudo: true }` reads the cross and pairs in the frame the cross face is
+// currently offset by (see currentDShift) and reports it as `shift`. The
+// last-layer tests never depended on the cross layer, so with pseudo on an
+// offset cross layer no longer hides "edges oriented".
+export function analyze(state, crossFace, { pseudo = false } = {}) {
   const solved = sameCubeState(state, createSolvedState());
+  const shift = pseudo ? currentDShift(state, crossFace) : crossSolved(state, crossFace) ? 0 : null;
   const slots = f2lPairSlots(crossFace);
-  const solvedPairSlots = slots.filter(pair => pairSolved(state, pair));
+  const solvedPairSlots = pseudo ? solvedPairsPseudo(state, crossFace) : slots.filter(pair => pairSolved(state, pair));
   const pairsSolved = solvedPairSlots.length;
-  const crossDone = crossSolved(state, crossFace);
+  const crossDone = pseudo ? shift !== null : crossSolved(state, crossFace);
   const f2lDone = crossDone && pairsSolved === 4;
   const ll = llFace(crossFace);
   const eoSolvedNow = f2lDone && eoSolved(state, crossFace);
@@ -179,6 +204,7 @@ export function analyze(state, crossFace) {
   return {
     phase,
     crossFace,
+    shift,
     crossDone,
     pairsSolved,
     solvedPairSlots,
@@ -200,4 +226,14 @@ export function extendedCross(state, crossFace) {
   if (!crossSolved(state, crossFace)) return { kind: 'none', pairs: 0 };
   const pairs = solvedPairs(state, crossFace).length;
   return { kind: pairs >= 2 ? 'xxcross' : pairs === 1 ? 'xcross' : 'cross', pairs };
+}
+
+// Extended cross in any frame: a cross completed with the cross face offset
+// counts pairs solved in that same frame (a pseudo X-cross). `pseudo` is true
+// when that frame is not the plain one.
+export function extendedCrossPseudo(state, crossFace) {
+  const shift = currentDShift(state, crossFace);
+  if (shift === null) return { kind: 'none', pairs: 0, shift: null, pseudo: false };
+  const pairs = solvedPairsPseudo(state, crossFace).length;
+  return { kind: pairs >= 2 ? 'xxcross' : pairs === 1 ? 'xcross' : 'cross', pairs, shift, pseudo: shift !== 0 };
 }
