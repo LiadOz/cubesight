@@ -131,9 +131,9 @@ test('a wrong turn during application does not balloon the recovery detour on gy
   live.startGuided("R U");
   session.emit('R');           // matches step 1
   session.emit('F');           // wrong: grace holds (no detour committed yet)
-  assert.equal(live.getSnapshot().applyDetour.length, 0, 'wrong turn starts a grace, no off-plan yet');
+  assert.equal(live.getSnapshot().applyDetour.length, 1, 'wrong turn commits the detour (no grace)');
   session.emitGyro(); session.emitGyro(); session.emitGyro();  // gyro/status snapshots, no new move
-  assert.equal(live.getSnapshot().applyDetour.length, 0, 'gyro updates during grace must not grow the detour');
+  assert.equal(live.getSnapshot().applyDetour.length, 1, 'gyro updates must not balloon the detour (stays 1)');
   session.emit("F'");        // recover: back on plan
   assert.equal(live.getSnapshot().applyDetour.length, 0);
 });
