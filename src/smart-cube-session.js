@@ -1,4 +1,5 @@
 import { applyMoves, createSolvedState, FACE_COLORS, parseScramble } from './cross-cube.js';
+import { logConnection } from './smart-cube-diag.js';
 
 const SOLVED_FACELETS = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
 const solvedState = () => createSolvedState();
@@ -76,6 +77,7 @@ export function createSmartCubeSession(connectDevice) {
       try {
         // Accept wide/slice moves (Uw, M, ...) as single moves instead of desyncing — the
         // cube model supports them and the user wants them tracked.
+        logConnection({ kind: 'debug', label: `[session] MOVE event.move=${JSON.stringify(event.move)} phase=${snapshot.phase} moves.len=${snapshot.moves.length}` });
         const moves = parseScramble(event.move, { allowWide: true });
         if (moves.length !== 1) throw new Error('Invalid move');
         const [move] = moves;
@@ -99,7 +101,8 @@ export function createSmartCubeSession(connectDevice) {
           publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, detail: 'Live cube updated. Analyze when ready.' });
           lastCoalesce = { face, prime, cubeTs };
         }
-      } catch {
+      } catch (error) {
+        logConnection({ kind: 'error', label: `[session] MOVE DESYNC move=${JSON.stringify(event.move)} phase=${snapshot.phase} error=${error.message}` });
         publish({ phase: 'desynced', detail: `Unsupported move from cube: ${String(event.move).slice(0, 20)}. Solve it and sync again.` });
       }
     } else if (event.type === 'BATTERY') {

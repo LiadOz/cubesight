@@ -21,6 +21,7 @@
 import { applyMoves, sameCubeState, stateFromScramble, createSolvedState } from './cross-cube.js';
 import { analyze, crossSolved, extendedCross, f2lPairSlots, pairSolved, solvedPairsPseudo, f2lDonePseudo, eoSolved, coSolved } from './solve-tracker.js';
 import { followPlanTurn, inverseMove } from './smart-cube-guidance.js';
+import { logConnection } from './smart-cube-diag.js';
 
 const SOLVED = createSolvedState();
 
@@ -186,6 +187,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
 
   function onSolveMove(move, state, allMoves) {
     liveMoveCount = Math.max(0, allMoves.length - solveStartIndex);
+    logConnection({ kind: 'debug', label: `[live] onSolveMove move=${move} liveMoveCount=${liveMoveCount} crossFace=${crossFace ?? '-'} state.cubies=${state.cubies.length}` });
     if (crossFace === null) {
       const o = getOrientation() || {};
       crossFace = o.bottom || 'D';
@@ -244,13 +246,15 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   }
 
   function onSnapshot(snap) {
-    if (snap.phase === 'desynced') { phase = 'desynced'; emit(); return; }
+    if (snap.phase === 'desynced') { phase = 'desynced'; logConnection({ kind: 'error', label: '[live] onSnapshot DESYNC phase=desynced' }); emit(); return; }
     if (phase === 'desynced' || phase === 'done') return;
     if (snap.phase !== 'tracking') return;
     // Process when a genuinely new move arrives OR a coalesced double replaces the last
     // entry (length unchanged, but the last move string changes U -> U2 — must not be skipped).
     const lastEntry = snap.moves[snap.moves.length - 1];
-    if (snap.moves.length !== lastProcessedLen || lastEntry !== lastProcessedMove) {
+    const guardFired = snap.moves.length !== lastProcessedLen || lastEntry !== lastProcessedMove;
+    logConnection({ kind: 'debug', label: `[live] onSnapshot phase=${phase} snap.phase=${snap.phase} moves.len=${snap.moves.length} lastProcessedLen=${lastProcessedLen} lastEntry=${lastEntry ?? '-'} lastProcessedMove=${lastProcessedMove ?? '-'} guard=${guardFired}` });
+    if (guardFired) {
       lastProcessedLen = snap.moves.length;
       lastProcessedMove = lastEntry;
       const move = snap.lastMove;
