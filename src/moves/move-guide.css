@@ -1,80 +1,19 @@
-/* Move guide (src/moves/move-guide.js). Colours and type come from the Brain
-   tokens only (var(--b-*)), so it follows Orbit / Mono x dark / light. */
+/* Move guide (src/moves/move-guide.js): plain notation chips. Colours and type come
+   from the Brain tokens only (var(--b-*)), so it follows Orbit / Mono x dark / light. */
 
-.mg-guide { display: block; max-width: 100%; color: var(--b-ink); font-family: var(--b-font-mono, ui-monospace, monospace); }
+.mg-guide { position: relative; display: block; max-width: 100%; color: var(--b-ink); font-family: var(--b-font-mono, ui-monospace, monospace); }
 .mg-guide[hidden] { display: none; }
 
-/* --- the strip of chips (approach C) -------------------------------------- */
-.mg-strip { display: flex; align-items: flex-start; gap: 6px; overflow-x: auto; padding: 4px 2px 34px; scrollbar-width: thin; }
+.mg-strip { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 6px 2px; scrollbar-width: thin; }
 .mg-strip i {
-  position: relative; flex: none; display: flex; flex-direction: column; align-items: center; box-sizing: border-box;
-  width: 58px; min-height: 82px; padding-top: 6px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar, 10px);
-  font-style: normal; text-align: center; color: var(--b-ink); background: transparent;
-  transition: width .18s var(--b-ease, ease), min-height .18s var(--b-ease, ease), background-color .18s, border-color .18s, opacity .18s;
+  flex: none; box-sizing: border-box; min-width: 44px; padding: 8px 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar, 10px);
+  font: 400 20px/1.1 var(--b-font-mono, ui-monospace, monospace); font-style: normal; letter-spacing: .02em; text-align: center;
+  color: var(--b-ink); background: transparent;
+  transition: background-color .18s, border-color .18s, color .18s, opacity .18s, transform .18s var(--b-ease, ease);
 }
-.mg-strip i.done { opacity: .45; }
-.mg-strip i.current { width: 104px; min-height: 150px; padding-top: 10px; border: 2px solid var(--b-accent); background: var(--b-surface); }
-.mg-strip i.mg-rot { border-style: dashed; }
-.mg-strip i.best { border-color: var(--b-accent); border-style: dotted; }
-.mg-strip i.played { border-color: var(--b-muted); }
-.mg-strip i.wrong, .mg-strip i.fix { border-color: var(--b-warn); background: var(--b-plus2-soft); }
-.mg-strip i.wrong .mg-label, .mg-strip i.fix .mg-label { color: var(--b-warn-text); }
-.mg-strip i.wrong .mg-lit, .mg-strip i.fix .mg-lit { fill: var(--b-warn); }
+.mg-strip i.done { opacity: .35; }
+.mg-strip i.current { min-width: 64px; padding: 10px 18px; border: 2px solid var(--b-accent); background: var(--b-surface); color: var(--b-accent-text, var(--b-ink)); font-size: 32px; font-weight: 500; }
+.mg-strip i.wrong { border-color: var(--b-warn); color: var(--b-warn-text); background: var(--b-plus2-soft); }
 
-.mg-strip .mg-glyph { width: 52px; height: 52px; flex: none; overflow: visible; }
-.mg-strip i.current .mg-glyph { width: 92px; height: 92px; }
-.mg-strip .mg-noglyph { width: 52px; height: 52px; display: grid; place-items: center; color: var(--b-muted); }
-.mg-label { margin-top: 4px; font-size: 16px; font-weight: 400; line-height: 1.2; letter-spacing: .02em; }
-.mg-strip i.current .mg-label { margin-top: 8px; font-size: 30px; font-weight: 500; }
-.mg-caption { display: none; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--b-muted); }
-.mg-strip i.current .mg-caption { display: block; }
-.mg-cross { display: none; position: absolute; top: 2px; right: 6px; font-size: 16px; font-weight: 500; color: var(--b-warn-text); }
-.mg-strip i.wrong .mg-cross { display: block; }
-
-/* Trigger brackets and their name sit under the chips. */
-.mg-strip i.mg-in::after { content: ''; position: absolute; left: 0; right: 0; bottom: -12px; height: 6px; border-bottom: 1px solid var(--b-muted); }
-
-.mg-strip i.mg-in:not(.mg-ge)::after { right: -6px; }
-.mg-strip i.mg-gs::after { border-left: 1px solid var(--b-muted); }
-.mg-strip i.mg-ge::after { border-right: 1px solid var(--b-muted); }
-.mg-strip i.mg-gs::before { content: attr(data-group); position: absolute; left: 0; bottom: -31px; font-size: 11px; white-space: nowrap; color: var(--b-muted); }
-
-/* --- the glyph -------------------------------------------------------------- */
-.mg-body { fill: var(--b-cube-body); stroke: var(--b-cube-body); stroke-width: .05; stroke-linejoin: round; }
-.mg-off { fill: var(--b-track); }
-.mg-lit { fill: var(--b-accent); }
-.mg-rotface { fill: color-mix(in srgb, var(--b-track) 60%, var(--b-ink) 40%); }
-.mg-st-w { fill: var(--b-st-w); } .mg-st-y { fill: var(--b-st-y); } .mg-st-g { fill: var(--b-st-g); }
-.mg-st-b { fill: var(--b-st-b); } .mg-st-r { fill: var(--b-st-r); } .mg-st-o { fill: var(--b-st-o); }
-.mg-shade { fill: #000; } .mg-shade-1 { opacity: .12; } .mg-shade-2 { opacity: .24; }
-.mg-dimmer { fill: var(--b-cube-body); opacity: .68; }
-.mg-halo { fill: none; stroke: var(--b-bg); stroke-opacity: .78; stroke-linecap: round; stroke-linejoin: round; }
-.mg-halo.mg-halo-head { fill: var(--b-bg); fill-opacity: .78; }
-.mg-arrow { fill: none; stroke: var(--b-ink); stroke-linecap: round; stroke-linejoin: round; }
-.mg-arrow-head { fill: var(--b-ink); stroke: var(--b-ink); stroke-width: .02; stroke-linejoin: round; }
-.wrong .mg-arrow, .fix .mg-arrow { stroke: var(--b-ink); }
-
-/* Fingertricks drawn on the cube: a finger or wrist marker and the push direction. */
-.mg-finger { display: none; }
-.mg-fingers-on .mg-strip i.current .mg-finger, .mg-glyph[data-fingers] .mg-finger { display: inline; }
-.mg-finger-halo { fill: none; stroke: var(--b-bg); stroke-opacity: .85; stroke-linecap: round; }
-.mg-finger-body { fill: none; stroke-linecap: round; }
-.mg-finger-body.mg-hand-right { stroke: var(--b-ink); }
-.mg-finger-body.mg-hand-left { stroke: var(--b-muted); }
-.mg-finger-body.mg-flick { stroke-dasharray: .55 .4; }
-.mg-finger-tip { stroke: var(--b-bg); stroke-width: .08; }
-.mg-finger-tip.mg-hand-right { fill: var(--b-accent); }
-.mg-finger-tip.mg-hand-left { fill: var(--b-muted); }
-.mg-push { fill: none; stroke: var(--b-accent); stroke-linecap: round; stroke-linejoin: round; }
-.mg-push-head { fill: var(--b-accent); }
-
-/* --- arrows / net stage (approaches A and D) -------------------------------- */
-.mg-stage { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
-.mg-stage[hidden] { display: none; }
-.mg-stage-art .mg-glyph { width: 180px; height: 180px; display: block; overflow: visible; }
-.mg-stage-art .mg-net { width: 280px; height: auto; }
-.mg-stage-text { margin: 0; max-width: 34ch; font-family: var(--b-font-sans, inherit); font-size: var(--b-fs-body, 15px); line-height: 1.4; color: var(--b-ink); }
-
-@media (prefers-reduced-motion: reduce) {
-  .mg-strip i { transition: none; }
-}
+/* Visible to assistive technology only. */
+.mg-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }

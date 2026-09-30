@@ -11,7 +11,6 @@
 import './css/base.css';
 import { reconcileChildren, setAttr, setText, toggleClass } from './dom.js';
 import { createMoveGuide } from '../moves/move-guide.js';
-import { displayMove } from '../moves/notation.js';
 import { readGuidePrefs, writeGuidePref } from '../moves/prefs.js';
 
 // The dev server's log sink (/__devlog) doesn't exist in production builds.
@@ -70,8 +69,7 @@ const TEMPLATE = `
           <div class="b-recovery-moves"></div>
         </div>
         <div class="b-guide-tools" hidden>
-          <button class="b-textbtn" id="brain-fingers" type="button" aria-pressed="true" title="Draw the fingertrick for the current move on its chip">fingers</button>
-          <button class="b-textbtn" id="brain-ghost" type="button" aria-pressed="true" title="Play the current move on the 3D cube">ghost</button>
+          <button class="b-textbtn" id="brain-cue" type="button" aria-pressed="true" aria-label="Show the current move on the 3D cube">cue</button>
         </div>
         <div id="brain-coach" class="b-coach" aria-live="polite"></div>
         <p class="b-idle-status"></p>
@@ -221,8 +219,7 @@ export function createShell(root, { dispatch }) {
     recoveryDo: $('#brain-recovery .b-recovery-do'),
     recoveryMoves: $('#brain-recovery .b-recovery-moves'),
     guideTools: $('.b-guide-tools'),
-    fingersButton: $('#brain-fingers'),
-    ghostButton: $('#brain-ghost'),
+    cueButton: $('#brain-cue'),
     coach: $('#brain-coach'),
     idleStatus: $('.b-idle-status'),
     start: $('#brain-start'),
@@ -253,8 +250,8 @@ export function createShell(root, { dispatch }) {
   let style = null;
   /** @type {{timeline:any, inspection:any, results:any}|null} */
   let components = null;
-  // The move guide draws the scramble (and, after a wrong turn, the way back) as chips and,
-  // when a live cube is shown, plays the current move on it as a ghost.
+  // The move guide draws the scramble (and, after a wrong turn, the way back) as plain
+  // notation chips and, when a live cube is shown, cues the current move on it.
   let cube3d = null;
   let planGuide = null;
   let recoveryGuide = null;
@@ -270,10 +267,9 @@ export function createShell(root, { dispatch }) {
     const button = target.closest('button');
     if (!button || !brain.contains(button)) return;
     if (button.id && CLICK_ACTIONS[button.id]) { dispatch(CLICK_ACTIONS[button.id]); return; }
-    if (button === parts.fingersButton || button === parts.ghostButton) {
-      const name = button === parts.fingersButton ? 'fingertricks' : 'ghost';
-      writeGuidePref(name, readGuidePrefs()[name] === false);
-      setAttr(button, 'aria-pressed', String(readGuidePrefs()[name] !== false));
+    if (button === parts.cueButton) {
+      writeGuidePref('cue', readGuidePrefs().cue === false);
+      setAttr(button, 'aria-pressed', String(readGuidePrefs().cue !== false));
       const { planGuide: plan, recoveryGuide: undo } = guides();
       plan.update({}); undo.update({});
       return;
@@ -441,7 +437,7 @@ export function createShell(root, { dispatch }) {
   // The scramble line is the move guide's chip strip. Chips are <i> elements whose
   // class is exactly their state ('done' | 'current' | '' plus 'wrong'), so a correct
   // turn changes only classes. After a WRONG turn the plan move stays current (marked
-  // wrong) and the way back is shown as its own strip with the ghost on the first move.
+  // wrong) and the way back is shown as its own strip with the cue on the first move.
   function updateScramble(scramble, prev) {
     if (scramble === prev) return;
     const moves = parts.moves;
@@ -459,7 +455,7 @@ export function createShell(root, { dispatch }) {
     const done = scramble.moves.filter(m => m.state === 'done').length;
     const started = scramble.moves.some(m => m.state !== 'todo');
     const way = scramble.recovery?.length ? scramble.recovery.map(m => m.text) : null;
-    // The plan guide holds the ghost unless a wrong turn hands it to the undo strip.
+    // The plan guide holds the cue unless a wrong turn hands it to the undo strip.
     plan.update({
       moves: scramble.moves.map(m => m.text), index: started ? done : -1,
       statuses: way && done < scramble.moves.length ? { [done]: 'wrong' } : {},
@@ -467,13 +463,12 @@ export function createShell(root, { dispatch }) {
     });
     parts.recoveryCue.hidden = !way;
     if (way) {
-      setText(parts.recoveryDo, `undo: ${way.map(displayMove).join(' ')}`);
-      undo.update({ moves: way, index: 0, statuses: Object.fromEntries(way.map((_, i) => [i, 'fix'])), held: scramble.held ?? undefined, cube3d, variant: 'chips' });
+      setText(parts.recoveryDo, 'undo:');
+      undo.update({ moves: way, index: 0, statuses: {}, held: scramble.held ?? undefined, cube3d });
     } else undo.update({ moves: [], index: -1, statuses: {}, cube3d: null });
     const prefs = readGuidePrefs();
     parts.guideTools.hidden = false;
-    setAttr(parts.fingersButton, 'aria-pressed', String(prefs.fingertricks !== false));
-    setAttr(parts.ghostButton, 'aria-pressed', String(prefs.ghost !== false));
+    setAttr(parts.cueButton, 'aria-pressed', String(prefs.cue !== false));
     // Paste box: show the scramble unless the user is typing in it.
     if (document.activeElement !== parts.scrambleText && parts.scrambleText.value !== scramble.text) parts.scrambleText.value = scramble.text;
     parts.scrambleText.readOnly = !scramble.editable;
@@ -619,7 +614,7 @@ export function createShell(root, { dispatch }) {
     brain.remove();
   }
 
-  /** The live 3D cube (or null): the move guide plays the current move on it as a ghost. */
+  /** The live 3D cube (or null): the move guide cues the current move on it. */
   function setCube(cube) {
     cube3d = cube;
     if (!cube) { planGuide?.update({ cube3d: null }); recoveryGuide?.update({ cube3d: null }); }

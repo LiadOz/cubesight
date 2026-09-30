@@ -508,7 +508,10 @@ export function createCube3D(container, options = {}) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const clock = new THREE.Clock();
   let moveAnimation = null;
-  let ghost = null;   // the move-guide preview: { move, held, loop, spec, group, materials, startedAt }
+  // the move cue (see 'Move cue' below); declared before the first frame() runs
+  let cueWanted = null;   // { id, move, held, loop, pose }
+  let cueLive = null;     // { key, spec, axis, peak, double, members, outline, startedAt, angle }
+  let cueSequence = 0;
   let liveMoveQueue = [];
   let liveMoveRunning = false;
   let applyingAnimationUpdate = false;
@@ -536,7 +539,7 @@ export function createCube3D(container, options = {}) {
       scoutCageMaterial.opacity = .68 + pulse * .27;
       if (!moveAnimation) scoutCages.forEach(cage => cage.scale.setScalar(1 + pulse * .025));
     }
-    if (ghost) tickGhost(performance.now());
+    tickCue(performance.now());
     renderer.render(scene, camera);
   }
   frame();
@@ -635,8 +638,6 @@ export function createCube3D(container, options = {}) {
       : interactionMode === 'scout'
         ? `Interactive Cross Scout cube showing all stickers. ${bottomFace} is held on the bottom and ${frontFace} in front.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
       : `Three-dimensional corner-recognition cube in a locked ${lockedViewOffset.label} solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
-    // A ghost copies sticker colours: rebuild it on the new state (same move, same phase).
-    if (ghost) { const { move, held, loop, startedAt, id } = ghost; disposeGhost(); buildGhost(move, held, loop, startedAt); ghost.id = id; }
     // Present the new case immediately rather than waiting for the next loop.
     renderer.render(scene, camera);
   }
@@ -652,6 +653,7 @@ export function createCube3D(container, options = {}) {
     return position && spec.layers.includes(position[0] * spec.axis[0] + position[1] * spec.axis[1] + position[2] * spec.axis[2]);
   });
   function animateMove(move, nextData, durationMs=260) {
+    teardownCue();   // a real turn owns the layers: the cue steps aside until it is done
     cancelMoveAnimation();
     const notation = String(move || '').trim();
     if (!isMove(notation)) {
@@ -719,6 +721,7 @@ export function createCube3D(container, options = {}) {
   // (including in a hidden tab), catch up to the verified latest state.
   // `speed` > 1 (a fast replay) shortens the turns so they keep up.
   function queueLiveMove(move, nextData, { speed = 1 } = {}) {
+    teardownCue();
     if (liveMoveQueue.length >= 6 || document.hidden) {
       update(nextData);
       return;
@@ -736,82 +739,131 @@ export function createCube3D(container, options = {}) {
     })();
   }
 
-  // --- Ghost preview ------------------------------------------------------------------
-  // showGhost(move, { loop, held }) lifts a translucent copy of the layer the move
-  // turns and plays the turn on top of the real cube, in the physical frame, so it
-  // is right however the cube is held (the gyro turns the whole group). `move` is
-  // written for the hold in `held` (default: what getHeldFaces reports now). With
-  // reduced motion (or loop:false) the copy is frozen mid-turn instead of looping.
-  const GHOST_PERIOD_MS = 2100;
-  function disposeGhost() {
-    if (!ghost) return;
-    cubeGroup.remove(ghost.group);
-    ghost.materials.forEach((material) => material.dispose());
-    ghost = null;
-    delete renderer.domElement.dataset.ghost;
-    delete renderer.domElement.dataset.ghostLayers;
-    delete renderer.domElement.dataset.ghostLoop;
+  // --- Move cue -----------------------------------------------------------------------
+  // setCue(move, { loop, held, pose }) makes the ACTUAL layer the move turns lean into
+  // the turn: it eases out to a partial turn (about 36 degrees, further and twice for a
+  // double), holds, eases back to rest, pauses and loops. `move` is written for the hold
+  // in `held`; without `held` the cue follows what getHeldFaces reports each frame, so the
+  // gyro re-orients it. The cue never fights a real turn: while animateMove or the live
+  // queue runs, the layer is put back at rest at once; the cue starts over (after a short
+  // beat) when the cube is idle again. `pose` (0..1) freezes the cue at that fraction of
+  // its peak (screenshots); reduced motion / loop:false freeze it at a small offset.
+  const CUE_PEAK = { quarter: 36, double: 60, rot: 30, rotDouble: 50 };
+  const CUE_START_DELAY_MS = 350;
+  const CUE_STILL_POSE = .45;
+  const smooth = t => { const x = Math.min(Math.max(t, 0), 1); return x * x * (3 - 2 * x); };
+  // One pulse: ease out, hold, ease back (fractions of the period), starting at `at`.
+  const pulse = (phase, at, out, hold, back) => {
+    const t = phase - at;
+    if (t <= 0) return 0;
+    if (t < out) return smooth(t / out);
+    if (t < out + hold) return 1;
+    if (t < out + hold + back) return 1 - smooth((t - out - hold) / back);
+    return 0;
+  };
+  function cueShape(phase, double) {
+    if (!double) return pulse(phase, 0, .28, .12, .28);
+    return Math.max(pulse(phase, 0, .14, .05, .14), pulse(phase, .36, .14, .05, .14));
   }
-  function buildGhost(move, held, loop, startedAt = performance.now()) {
+  const cueLoopMs = double => (double ? 2800 : 2400);
+  const cueOutlineMaterial = new THREE.LineBasicMaterial({ color: '#65e8ff', transparent: true, opacity: .75, toneMapped: false });
+  const cueQuat = new THREE.Quaternion();
+  const cueWorld = new THREE.Vector3();
+  function cueIdle() { return !moveAnimation && !liveMoveRunning && liveMoveQueue.length === 0; }
+  function teardownCue() {
+    if (!cueLive) return;
+    for (const { object, position, quaternion } of cueLive.members) { object.position.copy(position); object.quaternion.copy(quaternion); }
+    if (cueLive.outline) { cubeGroup.remove(cueLive.outline); cueLive.outline.children[0].geometry.dispose(); }
+    cueLive = null;
+    delete renderer.domElement.dataset.cue;
+    delete renderer.domElement.dataset.cueLayers;
+  }
+  function buildCue(held, now) {
+    const { move } = cueWanted;
     const spec = toPhysicalTurn(move, held);
-    const group = new THREE.Group();
-    const materials = [];
-    const bodyMaterial = new THREE.MeshBasicMaterial({ color: '#dff8f3', transparent: true, opacity: .07, depthWrite: false, toneMapped: false });
-    materials.push(bodyMaterial);
-    let count = 0;
-    for (const source of cubieMembers(spec).filter((child) => child.isMesh)) {
-      const material = source.material === cubieMaterial ? bodyMaterial
-        : new THREE.MeshBasicMaterial({ color: source.material.color, transparent: true, opacity: .62, depthWrite: false, toneMapped: false });
-      if (material !== bodyMaterial) materials.push(material);
-      const copy = new THREE.Mesh(source.geometry, material);
-      copy.position.copy(source.position); copy.quaternion.copy(source.quaternion); copy.scale.copy(source.scale);
-      copy.renderOrder = 20;
-      group.add(copy);
-      if (source.userData.kind === undefined) count++;
+    const double = Math.abs(spec.angle) > 90;
+    const members = cubieMembers(spec).map(object => ({ object, position: object.position.clone(), quaternion: object.quaternion.clone() }));
+    let outline = null;
+    if (spec.kind !== 'rot') {
+      const mean = spec.layers.reduce((sum, layer) => sum + layer, 0) / spec.layers.length;
+      const size = spec.axis.map(component => (component ? spec.layers.length + .06 : 3.06));
+      const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(...size.map(Math.abs))), cueOutlineMaterial);
+      box.position.set(...spec.axis.map(component => component * mean));
+      box.renderOrder = 10;
+      // the box sits at the layer's centre; the pivot turns it about the cube's axis
+      outline = new THREE.Group();
+      outline.add(box);
+      cubeGroup.add(outline);
     }
-    cubeGroup.add(group);
-    ghost = { move, held, loop, spec, group, materials, startedAt, axis: new THREE.Vector3(...spec.axis) };
-    // A face layer lifts away from the cube; slices and rotations cannot, so they swell slightly.
-    const mean = spec.layers.reduce((sum, layer) => sum + layer, 0) / spec.layers.length;
-    ghost.lift = spec.kind === 'face' || spec.kind === 'wide' ? Math.sign(mean) * .3 : 0;
-    ghost.swell = spec.kind === 'slice' ? 1.06 : spec.kind === 'rot' ? 1.12 : 1;
-    renderer.domElement.dataset.ghost = spec.move;
-    renderer.domElement.dataset.ghostLayers = String(count);
-    renderer.domElement.dataset.ghostLoop = String(loop);
-    tickGhost(startedAt);
+    const peak = spec.kind === 'rot' ? (double ? CUE_PEAK.rotDouble : CUE_PEAK.rot) : (double ? CUE_PEAK.double : CUE_PEAK.quarter);
+    cueLive = { key: `${move}|${held.bottom}${held.front}`, spec, held, axis: new THREE.Vector3(...spec.axis), peak, double, members, outline, startedAt: now + CUE_START_DELAY_MS, angle: 0 };
+    renderer.domElement.dataset.cue = spec.move;
+    renderer.domElement.dataset.cueLayers = spec.layers.join(',');
   }
-  function tickGhost(now) {
-    if (!ghost) return;
-    let turn = .5, lift = 1, fade = 1;
-    if (ghost.loop && !reducedMotion.matches) {
-      const phase = ((now - ghost.startedAt) % GHOST_PERIOD_MS) / GHOST_PERIOD_MS;
-      // lift, turn (eased), hold, fade and start over
-      const t = Math.min(Math.max((phase - .14) / .46, 0), 1);
-      turn = t * t * t * (t * (t * 6 - 15) + 10);
-      lift = Math.min(phase / .12, 1);
-      fade = phase > .86 ? Math.max(1 - (phase - .86) / .12, 0) : 1;
+  function tickCue(now) {
+    if (!cueWanted || !cueIdle()) { teardownCue(); return; }
+    const held = cueWanted.held ?? getHeldFaces();
+    const key = `${cueWanted.move}|${held.bottom}${held.front}`;
+    if (cueLive && cueLive.key !== key) teardownCue();
+    if (!cueLive) buildCue(held, now);
+    const live = cueLive;
+    let fraction;
+    if (cueWanted.pose != null) fraction = cueWanted.pose;
+    else if (!cueWanted.loop || reducedMotion.matches) fraction = CUE_STILL_POSE;
+    else if (now < live.startedAt) fraction = 0;
+    else {
+      const period = cueLoopMs(live.double);
+      fraction = cueShape(((now - live.startedAt) % period) / period, live.double);
     }
-    ghost.group.position.copy(ghost.axis).multiplyScalar(ghost.lift * lift);
-    ghost.group.quaternion.setFromAxisAngle(ghost.axis, ghost.spec.angle * Math.PI / 180 * turn);
-    ghost.group.scale.setScalar(1 + (ghost.swell - 1) * lift);
-    ghost.materials.forEach((material, index) => { material.opacity = (index === 0 ? .07 : .62) * fade; });
+    const angle = Math.sign(live.spec.angle) * live.peak * fraction;
+    live.angle = angle;
+    cueQuat.setFromAxisAngle(live.axis, angle * Math.PI / 180);
+    for (const { object, position, quaternion } of live.members) {
+      object.position.copy(position).applyQuaternion(cueQuat);
+      object.quaternion.copy(cueQuat).multiply(quaternion);
+    }
+    if (live.outline) live.outline.quaternion.copy(cueQuat);
   }
-  // Returns an id: two guides can share the cube, and each clears only its own ghost.
-  let ghostSequence = 0;
-  function showGhost(move, { loop = true, held } = {}) {
-    disposeGhost();
-    if (!isMove(String(move || ''))) return 0;
-    buildGhost(String(move).trim(), held ?? getHeldFaces(), Boolean(loop));
-    ghost.id = ++ghostSequence;
-    return ghost.id;
+  /** Start (or restart) the cue for `move`. Returns an id for clearCue. An unparseable move clears it. */
+  function setCue(move, { loop = true, held = null, pose = null } = {}) {
+    teardownCue();
+    const text = String(move || '').trim();
+    if (!isMove(text)) { cueWanted = null; return 0; }
+    cueWanted = { id: ++cueSequence, move: text, held, loop: Boolean(loop), pose };
+    renderer.domElement.dataset.cueLoop = String(Boolean(loop) && !reducedMotion.matches && pose == null);
+    return cueWanted.id;
   }
-  function clearGhost(id) { if (id === undefined || ghost?.id === id) disposeGhost(); }
+  function clearCue(id) {
+    if (id !== undefined && cueWanted?.id !== id) return;
+    cueWanted = null;
+    teardownCue();
+    delete renderer.domElement.dataset.cueLoop;
+  }
+  /**
+   * What the cue is doing now: { move, layer, angle, ... } (angle in degrees about `axis`,
+   * in the cube's own colour frame; right-handed, so R is negative). `layer` is the physical
+   * face for face and wide moves, else the move letter. `worldAxis` is the axis after the
+   * gyro / held rotation. `active` is false while a real turn owns the cube (angle 0).
+   */
+  function getCueState() {
+    if (!cueWanted) return null;
+    const live = cueLive;
+    const spec = live?.spec ?? toPhysicalTurn(cueWanted.move, cueWanted.held ?? getHeldFaces());
+    const axis = live?.axis ?? new THREE.Vector3(...spec.axis);
+    cueWorld.copy(axis).applyQuaternion(cubeGroup.quaternion);
+    return {
+      id: cueWanted.id, move: cueWanted.move, kind: spec.kind, layer: spec.face ?? spec.move.replace(/['2]$/, ''),
+      layers: [...spec.layers], axis: [...spec.axis], worldAxis: cueWorld.toArray().map(n => Math.round(n * 1000) / 1000),
+      direction: Math.sign(spec.angle), target: spec.angle, angle: live?.angle ?? 0, active: Boolean(live),
+    };
+  }
 
   return {
     update,
     animateMove,
-    showGhost,
-    clearGhost,
+    setCue,
+    clearCue,
+    getCueState,
     setTurnHint,
     queueLiveMove,
     setMode,
@@ -828,7 +880,8 @@ export function createCube3D(container, options = {}) {
     destroy() {
       liveMoveQueue = [];
       cancelMoveAnimation();
-      disposeGhost();
+      clearCue();
+      cueOutlineMaterial.dispose();
       setTurnHint(null);
       stopped = true;
       cancelAnimationFrame(animationFrame);

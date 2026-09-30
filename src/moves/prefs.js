@@ -1,6 +1,6 @@
 // Move-guide preferences. Kept in their own key so the guide works in any host.
 const KEY = 'cubesight-move-guide';
-const DEFAULTS = { fingertricks: true, ghost: true };
+const DEFAULTS = { cue: true };
 
 export function readGuidePrefs() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { ...DEFAULTS }; }
