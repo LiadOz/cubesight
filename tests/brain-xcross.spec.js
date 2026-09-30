@@ -80,7 +80,18 @@ for (const style of STYLES) {
     // Finish the solve: the stored splits keep the merged pair out of the skips.
     await page.evaluate(s => window.testBrain.emitTurns(s), "B2 R' F2 R F2 B2");
     await expect(brain.locator('#brain-phase-label')).toHaveText('Solved');
-    const splits = await page.evaluate(async () => (await import('/src/solve-store.js')).loadSolves(localStorage)[0].splits);
+    await expect.poll(() => page.evaluate(async () => {
+      const backend = await (await import('/src/store/idb.js')).openIdbBackend();
+      const n = (await backend.getAll()).length;
+      await backend.close();
+      return n;
+    })).toBe(1);   // the history is written to IndexedDB asynchronously
+    const splits = await page.evaluate(async () => {
+      const backend = await (await import('/src/store/idb.js')).openIdbBackend();
+      const all = await backend.getAll();
+      await backend.close();
+      return all[0].splits;
+    });
     const pair1 = splits.find(s => s.key === 'pair1');
     expect([pair1.ms, pair1.moves, pair1.skipped]).toEqual([0, 0, false]);
     await expect(brain.locator('#brain-review')).toContainText(/x-cross/i);
