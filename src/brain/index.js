@@ -38,6 +38,7 @@ export function createBrain(root, cubeSession = smartCube) {
   let createShell = null;
   const mount = () => {
     view?.detach();
+    root.replaceChildren();   // drop main.js's "Loading Brain…" placeholder
     view = mountBrainController(root, cubeSession, { createShell, loadStyle, rebuild: mount });
     view.setActive(active);
   };

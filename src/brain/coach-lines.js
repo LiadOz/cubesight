@@ -3,6 +3,8 @@
 // node tests don't need the cross solver or WASM. Keys are stable per line:
 // unchanged lines keep their DOM node, running counters use a fixed key.
 
+// 'pair 1' -> 'Pair 1'; step codes stay upper case ('eo' -> 'EO').
+const skipName = name => (/^(eo|co|cp|ep|oll|pll|cmll|l6e)$/.test(name) ? name.toUpperCase() : name[0].toUpperCase() + name.slice(1));
 const title = color => (color ? color[0].toUpperCase() + color.slice(1) : '');
 const seconds = ms => (ms == null ? '—' : !Number.isFinite(ms) ? 'DNF' : `${(ms / 1000).toFixed(2)}s`);
 
@@ -79,7 +81,7 @@ export function resultsCoach({ record, optimalCross, stages = [], plan = [], ave
     if (over && over.over > 200) out.push({ key: `slow-${over.s.key}`, tag: label(over.s.key), tone: 'warn', text: `${title(label(over.s.key))} was ${(over.over / 1000).toFixed(2)} s over your average.` });
   }
   for (const s of stages.filter(s => s.pseudo)) out.push({ key: `pseudo-${s.key}`, tag: 'pseudo', tone: 'info', text: `${title(label(s.key))} went in pseudo (D-shift).` });
-  for (const s of stages.filter(s => s.skipped && s.key !== 'cross')) out.push({ key: `skip-${s.key}`, tag: `${label(s.key)} skip`, tone: 'good', text: `${label(s.key).toUpperCase()} skip.` });
+  for (const s of stages.filter(s => s.skipped && s.key !== 'cross')) out.push({ key: `skip-${s.key}`, tag: `${label(s.key)} skip`, tone: 'good', text: `${skipName(label(s.key))} skip.` });
   if (record.rotations > 2) out.push({ key: 'rotations', tag: 'rotations', tone: 'warn', text: `${record.rotations} whole-cube rotation${record.rotations === 1 ? '' : 's'} — fewer rotations often save time.` });
   return out;
 }

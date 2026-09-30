@@ -74,7 +74,9 @@ export function deviceFor(session, supported = true) {
   const connected = !connecting && s.phase !== 'disconnected';
   const gyro = connected && Boolean(s.protocol?.startsWith('GAN')) && Boolean(s.gyro);
   const phase = { disconnected: 'disconnected', connecting: 'connecting', 'awaiting-solved': 'syncing', tracking: 'tracking', desynced: 'desynced' }[s.phase] ?? 'disconnected';
-  const detail = supported
+  // Without Web Bluetooth only a disconnected cube needs the explanation (a
+  // replayed recording connects through the adapter seam regardless).
+  const detail = supported || connected
     ? (connecting ? 'Select your cube in the picker…' : `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap Recenter motion to align.' : ''}`)
     : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
   return {

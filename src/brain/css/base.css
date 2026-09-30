@@ -99,7 +99,7 @@
 .b-slot-inspection { display: contents; }
 .b-scramble-head { order: 5; color: var(--b-muted); font-size: 14px; }
 .b-cube-wrap { order: 8; position: relative; width: var(--b-cube-size); height: var(--b-cube-size); margin: 8px 0 28px; transition: width .5s var(--b-ease), height .5s var(--b-ease); }
-.b-cube { position: absolute; inset: 0; }
+.b-cube { position: absolute; inset: 0; min-height: 0; }   /* not the site-wide .cube-mount 325 px */
 .b-cube-wrap::before { content: ''; position: absolute; inset: 40% -30% -18%; background: var(--b-cube-glow); pointer-events: none; }
 .b-cube-reset { position: absolute; right: -72px; bottom: 0; opacity: 0; transition: opacity .2s; }
 .b-cube-wrap:hover .b-cube-reset, .b-cube-reset:focus-visible { opacity: 1; }
@@ -220,6 +220,8 @@
 .brain:not([data-screen="solving"]):not([data-screen="ready"]) :is(.b-stepline, .b-clock, .b-sub) { display: none; }
 .brain:not([data-screen="idle"]) .b-stats { display: none; }
 .brain:not([data-screen="scramble"]) .b-scramble-head { display: none; }
+/* The scramble line belongs to the scramble screen; once applied it would crowd the clock. */
+.brain:not([data-screen="scramble"]) .b-moves { display: none; }
 .brain[data-screen="idle"], .brain[data-screen="disconnected"] { --b-cube-size: 280px; }
 .brain[data-screen="scramble"] { --b-cube-size: 210px; }
 .brain[data-screen="scramble"] .b-coach { margin-top: 72px; }
