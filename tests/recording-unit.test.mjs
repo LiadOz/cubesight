@@ -191,5 +191,116 @@ test('replayIntoSession drives an existing real session through its device seam'
   assert.deepEqual(session.getSnapshot().moves, expected);
   assert.ok(actions.some(a => a.kind === 'live.call' && a.method === 'startFree'));
   assert.equal(live.getSnapshot().phase, 'solving');
+  // The replay leaves a clean, disconnected session with the real adapter back.
+  assert.equal(session.getSnapshot().phase, 'disconnected');
+  assert.equal(routed, null);
   live.detach();
+});
+
+test('a replay is not recorded, and its end leaves the session disconnected with the real adapter', async () => {
+  const restore = quiet();
+  resetRecording();
+  const source = recordedApp();
+  await source.session.connect();
+  await flush();
+  source.device.move('B', 1);
+  source.live.startFree();
+  for (const [i, move] of ['R', 'U', "R'"].entries()) source.device.move(move, 100 + i * 200);
+  const json = serializeRecording();
+  await source.session.disconnect();
+  source.live.detach();
+
+  // The user's app, live-recording, connected to their real cube.
+  resetRecording();
+  const app = recordedApp();
+  let routed = null;
+  const realConnects = [];
+  const session = recordSessionCalls(createSmartCubeSession(recordingConnectDevice(options => {
+    if (routed) return routed(options);
+    realConnects.push(options);
+    return app.device.connectDevice(options);
+  })));
+  await session.connect();
+  await flush();
+  const before = JSON.parse(serializeRecording()).events.length;
+  const ends = [];
+  await replayIntoSession(JSON.parse(json), {
+    session, speed: 0, setConnectDevice: fn => { routed = fn; },
+    onEnd: info => ends.push({ ...info, phase: session.getSnapshot().phase }),
+  });
+  const events = JSON.parse(serializeRecording()).events;
+  // Only the disconnect of the real cube before the replay is recorded; nothing the replay drove.
+  const added = events.slice(before);
+  assert.deepEqual(added.filter(e => e.kind === 'cube-event'), [], 'replayed cube events are not in the live recording');
+  assert.deepEqual(added.filter(e => e.kind === 'session.call').map(e => e.data.method), ['disconnect']);
+  assert.deepEqual(ends, [{ aborted: false, phase: 'disconnected' }]);
+  assert.equal(routed, null);
+  // Connect goes to the real device again.
+  await session.connect();
+  await flush();
+  restore();
+  assert.equal(realConnects.length, 2);
+  assert.equal(session.getSnapshot().phase, 'tracking');
+  await session.disconnect();
+  app.live.detach();
+});
+
+test('a stopped replay ends early and still restores the session', async () => {
+  const restore = quiet();
+  resetRecording();
+  const source = recordedApp();
+  await source.session.connect();
+  await flush();
+  for (let i = 0; i < 10; i++) { source.device.move(i % 2 ? 'R' : "R'", i * 1000); await sleep(40); }
+  const json = serializeRecording();
+  await source.session.disconnect();
+  source.live.detach();
+
+  let routed = null;
+  const session = createSmartCubeSession(options => routed ? routed(options) : Promise.reject(new Error('no bluetooth in tests')));
+  const abort = new AbortController();
+  const ends = [];
+  const run = replayIntoSession(JSON.parse(json), {
+    session, speed: 1, setConnectDevice: fn => { routed = fn; }, signal: abort.signal, onEnd: info => ends.push(info),
+  });
+  await sleep(50);
+  abort.abort();
+  await run;
+  restore();
+  assert.deepEqual(ends, [{ aborted: true }]);
+  assert.equal(session.getSnapshot().phase, 'disconnected');
+  assert.equal(routed, null);
+  await session.connect();
+  assert.match(session.getSnapshot().detail, /no bluetooth in tests/);
+});
+
+test('an instant replay of a few thousand events is fast', async () => {
+  const restore = quiet();
+  resetRecording();
+  const app = recordedApp();
+  await app.session.connect();
+  await flush();
+  app.device.move('B', 1);
+  app.live.startFree();
+  // A GAN-like stream: gyro at ~20 Hz between turns, (R U R' U') x 6 repeated.
+  const cycle = ['R', 'U', "R'", "U'"];
+  let ts = 0;
+  for (let i = 0; i < 480; i++) {
+    app.device.move(cycle[i % 4], ts += 250);
+    for (let g = 0; g < 6; g++) app.device.emit({ type: 'GYRO', quaternion: { x: 0.01 * g, y: 0.2, z: -0.3, w: 0.93 }, velocity: { x: 1, y: 0, z: 0 }, timestamp: ts + g });
+  }
+  const expected = app.session.getSnapshot().moves;
+  const json = serializeRecording();
+  await app.session.disconnect();
+  app.live.detach();
+  const recording = JSON.parse(json);
+  assert.ok(recording.events.length > 3000, `${recording.events.length} events`);
+
+  const started = performance.now();
+  const result = await replayHeadless(recording);
+  const elapsed = performance.now() - started;
+  restore();
+  assert.deepEqual(result.session.moves, expected);
+  assert.deepEqual(result.desyncs, []);
+  assert.ok(elapsed < 2000, `instant replay took ${elapsed.toFixed(0)} ms`);
 });

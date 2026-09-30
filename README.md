@@ -97,9 +97,17 @@ Replay:
   instant) replays into the real Brain view: the shared session's Bluetooth
   adapter is swapped for the recording (the connected cube is disconnected),
   and recorded actions press the same buttons, so the 3D cube, coach and
-  timeline react as they did live. Replayed solves are not kept in your
-  history. For Playwright: `/?replay=<url>&replaySpeed=0#/brain`; wait for
-  `document.documentElement.dataset.replay` to become `done`.
+  timeline react as they did live. Nothing the replay drives is recorded, and
+  replayed solves are not kept in your history. Instant replays apply turns
+  without animation and take well under a second for a few thousand events;
+  4× shortens the turn animations. When the replay finishes or you press
+  **Stop replay** (in the diagnostics or the banner on the cube), the Bluetooth
+  adapter is restored and the session is left disconnected: an unfinished
+  replayed solve is cancelled (a finished one's review stays until you
+  continue), and **Connect** pairs your real cube straight away. For
+  Playwright: `/?replay=<url>&replaySpeed=0#/brain`; wait for
+  `document.documentElement.dataset.replay` to become `done` (`stopped` after
+  Stop, `error` on failure).
 
 Code: `src/recorder.js` (recorder and recording seams),
 `src/recording-replay.js` (replay device adapter/driver),

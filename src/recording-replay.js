@@ -229,12 +229,18 @@ export function createReplayDriver(input, { speed = 0, maxGapMs = 5000, onAction
     let previousT = events[0]?.t ?? 0;
     const timed = speed > 0 && Number.isFinite(speed);
     let lastYield = wallNow();
+    // Timed replays follow a schedule (recorded time since the start, long
+    // gaps capped) rather than sleeping each gap, so timer and rendering
+    // overhead does not accumulate over thousands of events.
+    const startWall = wallNow();
+    let scheduled = 0;
     for (index = 0; index < events.length; index++) {
       if (signal?.aborted) { trace('aborted'); break; }
       const e = events[index];
       if (timed) {
-        const gap = Math.min(maxGapMs, Math.max(0, e.t - previousT));
-        if (gap > 0) await sleep(gap / speed);
+        scheduled += Math.min(maxGapMs, Math.max(0, e.t - previousT));
+        const wait = startWall + scheduled / speed - wallNow();
+        if (wait >= 1) await sleep(wait);
       }
       previousT = e.t;
       clock = e.t;
