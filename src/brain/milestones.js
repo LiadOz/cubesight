@@ -17,6 +17,7 @@ export function createTrack() {
     inspectionMs: null,
     stamps: {
       crossAt: null, crossIdx: null,
+      xPairs: null,   // pairs already built when the cross completed (an X-cross / XX-cross), once the cross is done
       pairAt: [], pairIdx: [], pairPseudo: [],
       f2lAt: null, f2lIdx: null,
       eoAt: null, eoIdx: null,
@@ -62,7 +63,7 @@ export function trackMilestones(track, snap, t, { state = null } = {}) {
   const p = snap.progress || {};
   const st = next.stamps;
   const stamp = (name, idx = count) => { edit(); next.stamps[`${name}At`] = t; next.stamps[`${name}Idx`] = idx; };
-  if (p.crossDone && st.crossAt == null) stamp('cross');
+  if (p.crossDone && st.crossAt == null) { stamp('cross'); next.stamps.xPairs = Math.min(4, Math.max(0, p.pairsSolved ?? 0)); }
   const pairs = p.crossDone ? (p.pairsSolved ?? 0) : 0;
   if (pairs > next.stamps.pairAt.length) {
     edit();
@@ -110,7 +111,7 @@ function stageEnd(stamps, key) {
  * stage finished out of order (corners oriented before edges) ends no earlier
  * than the one before it, and gets zero time.
  * @returns {{stages:{key:string, startAt:number|null, endAt:number|null, ms:number|null, moves:number|null,
- *   skipped:boolean, pseudo:boolean, done:boolean}[], currentIndex:number}}
+ *   skipped:boolean, merged:boolean, pseudo:boolean, done:boolean}[], currentIndex:number}}
  */
 export function stageProgress(track, plan) {
   const stamps = track.stamps;
@@ -119,14 +120,16 @@ export function stageProgress(track, plan) {
   let currentIndex = plan.length;
   const stages = plan.map((stage, i) => {
     const end = track.active ? stageEnd(stamps, stage.key) : null;
-    const pseudo = /^pair\d$/.test(stage.key) ? Boolean(stamps.pairPseudo[Number(stage.key.slice(4)) - 1]) : false;
+    const pairNo = /^pair\d$/.test(stage.key) ? Number(stage.key.slice(4)) : 0;
+    const pseudo = pairNo ? Boolean(stamps.pairPseudo[pairNo - 1]) : false;
+    const merged = pairNo > 0 && pairNo <= (stamps.xPairs ?? 0);   // built with the cross: done at the same moment
     if (!end || currentIndex < plan.length) {
       if (currentIndex === plan.length) currentIndex = i;
-      return { key: stage.key, startAt: currentIndex === i ? prevAt : null, endAt: null, ms: null, moves: null, skipped: false, pseudo, done: false };
+      return { key: stage.key, startAt: currentIndex === i ? prevAt : null, endAt: null, ms: null, moves: null, skipped: false, merged: false, pseudo, done: false };
     }
     const endAt = Math.max(end.at, prevAt ?? end.at);
     const endIdx = Math.max(end.idx ?? prevIdx, prevIdx);
-    const out = { key: stage.key, startAt: prevAt, endAt, ms: prevAt == null ? null : endAt - prevAt, moves: endIdx - prevIdx, skipped: endIdx === prevIdx, pseudo, done: true };
+    const out = { key: stage.key, startAt: prevAt, endAt, ms: prevAt == null ? null : endAt - prevAt, moves: endIdx - prevIdx, skipped: !merged && endIdx === prevIdx, merged, pseudo, done: true };
     prevAt = endAt; prevIdx = endIdx;
     return out;
   });

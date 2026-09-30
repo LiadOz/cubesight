@@ -31,7 +31,7 @@ test('the v1 per-setting keys migrate into v2 settings', () => {
   });
   const s = loadSettings(storage);
   assert.equal(s.method, 'cfop', 'Roux is hidden for now: a stored roux falls back to cfop');
-  assert.equal(s.cross, 'xcross');
+  assert.equal('cross' in s, false, 'an old x-cross target is ignored');
   assert.equal(s.f2l, 'pseudo');
   assert.equal(s.inspection.mode, 'unlimited', 'unchecked inspection = no countdown, clock on first turn');
   assert.equal(s.toggles.pllLens, false);
@@ -85,7 +85,7 @@ test('the command line sets any setting', () => {
   assert.deepEqual(parseCommand('style mono'), { path: 'style', value: 'mono' });
   assert.deepEqual(parseCommand('orbit'), { path: 'style', value: 'orbit' });
   assert.deepEqual(parseCommand('timer hide'), { path: 'timer', value: 'hide' });
-  assert.deepEqual(parseCommand('cross x'), { path: 'cross', value: 'xcross' });
+  for (const text of ['cross x', 'xcross', 'xxcross', 'cross']) assert.equal(parseCommand(text), null, `${text}: x-cross is not a target`);
   assert.deepEqual(parseCommand('pseudo'), { path: 'f2l', value: 'pseudo' });
   assert.deepEqual(parseCommand('compare pb'), { path: 'compare', value: 'pb' });
   assert.deepEqual(parseCommand('preset relaxed'), { path: 'preset', value: 'relaxed' });
@@ -111,8 +111,8 @@ test('the settings panel shows only rows that apply', () => {
 
 test('config bar and inspection labels', () => {
   const bar = buildConfigBar(normalizeSettings({ f2l: 'pseudo' }));
-  assert.deepEqual(bar.items.map(i => i.id), ['cross', 'f2l', 'oll', 'pll', 'inspection.mode', 'penalties']);
-  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', '', 'oll', 'pll', 'insp', '']);
+  assert.deepEqual(bar.items.map(i => i.id), ['f2l', 'oll', 'pll', 'inspection.mode', 'penalties']);
+  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', 'oll', 'pll', 'insp', '']);
   const f2l = bar.items.find(i => i.id === 'f2l').options[0];
   assert.deepEqual([f2l.active, f2l.value], [true, 'standard'], 'a toggle carries the value it switches to');
   assert.deepEqual(bar.items.find(i => i.id === 'oll').options.map(o => [o.label, o.active]), [['1-look', false], ['2-look', true]]);

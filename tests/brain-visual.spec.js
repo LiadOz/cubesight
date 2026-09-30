@@ -77,16 +77,16 @@ test('settings rows keep the first UI\'s hooks and dispatch settings', async ({ 
   await openFixture(page, 'mono', 'dark', 'idle');
   await page.locator('.brain-pill-setup > summary').click();
   await page.locator('#brain-pseudo').uncheck();
-  await page.locator('.b-configbar-copy .b-cfg[data-value="xcross"]').click();
+  await page.locator('.b-configbar-copy .b-cfg[data-setting="oll"][data-value="1look"]').click();
   const actions = await page.evaluate(() => window.gallery.actions);
   expect(actions).toEqual([
     { type: 'toggleSettings' },
     { type: 'setSetting', path: 'f2l', value: 'standard' },
-    { type: 'setSetting', path: 'cross', value: 'xcross' },
+    { type: 'setSetting', path: 'oll', value: '1look' },
   ]);
   await expect(page.locator('[data-brain-mode="guided"]')).toHaveCount(1);
   await expect(page.locator('[data-brain-method="roux"]')).toHaveCount(0);
-  await expect(page.locator('[data-brain-cross="xxcross"]')).toHaveCount(1);
+  await expect(page.locator('[data-setting="cross"]')).toHaveCount(0);   // x-cross is an opportunity, not a target
   for (const id of ['#brain-inspection', '#brain-scramble', '#brain-generate', '#brain-start-custom', '#brain-toggles', '#brain-connection-log', '#brain-save-recording', '#brain-replay-speed']) {
     await expect(page.locator(id)).toHaveCount(1);
   }

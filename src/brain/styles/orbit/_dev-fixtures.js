@@ -101,7 +101,6 @@ export function inspection({ mode = 'wca', overtime = 'wca', limitMs = 15000, el
 const configBar = {
   items: [
     { id: 'method', options: [{ value: 'cfop', label: 'cfop', active: true }, { value: 'roux', label: 'roux', active: false }] },
-    { id: 'cross', options: [{ value: 'cross', label: 'cross', active: true }, { value: 'xcross', label: 'x-cross', active: false }] },
     { id: 'f2l', options: [{ value: 'pseudo', label: 'pseudo pairs', active: true }] },
     { id: 'oll', options: [{ value: '2look', label: 'oll 2-look', active: true }] },
     { id: 'pll', options: [{ value: '2look', label: 'pll 2-look', active: true }] },

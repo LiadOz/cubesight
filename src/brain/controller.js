@@ -16,7 +16,7 @@ import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
 import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
 import { attachBrainRecording } from '../brain-recording.js';
 import { loadSettings, saveSettings, setSetting, parseCommand } from './settings.js';
-import { buildStagePlan } from './stage-plan.js';
+import { buildStagePlan, xcrossLabel } from './stage-plan.js';
 import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './milestones.js';
 import { buildViewModel, frameState } from './view-model.js';
 import { coachLines } from './coach-lines.js';
@@ -100,7 +100,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (detached) return;
     const liveSnap = live.getSnapshot();
     const session = cubeSession.getSnapshot();
-    const coach = coachLines({ live: liveSnap, state: session.state, toggles: settings.toggles, optimalCross, coach: settings.coach }, LENSES);
+    const coach = coachLines({ live: liveSnap, state: session.state, toggles: settings.toggles, optimalCross, xcross: xcrossLabel(track.stamps.xPairs), coach: settings.coach }, LENSES);
     const next = buildViewModel({
       session, live: liveSnap, records, settings, track, optimalCross, coach, error,
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
@@ -255,7 +255,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function onLive(snap) {
     if (detached) return;
+    const hadX = track.stamps.xPairs;
     track = trackMilestones(track, snap, recorderNow(), { state: cubeSession.getSnapshot().state });
+    if (track.stamps.xPairs > 0 && !(hadX > 0)) showToast(`✦ ${xcrossLabel(track.stamps.xPairs)}`);   // celebrate the opportunity taken
     const skipInfo = snap.progress?.skip;
     if (skipInfo && !skips.some(s => s.kind === skipInfo.kind && s.label === skipInfo.label)) {
       skips.push({ kind: skipInfo.kind, label: skipInfo.label });
@@ -279,7 +281,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         ...snap.record,
         splits: splitsFromTrack(track, plan),
         moveTimes: track.moveTimes.slice(-200),
-        config: { method: settings.method, cross: settings.cross, f2l: settings.f2l, oll: settings.oll, pll: settings.pll, inspectionMode: snap.record.inspectionMode ?? settings.inspection.mode },
+        config: { method: settings.method, f2l: settings.f2l, oll: settings.oll, pll: settings.pll, inspectionMode: snap.record.inspectionMode ?? settings.inspection.mode },
       });
       statusOverride = `Solve logged · ${fmtSeconds(snap.record.solveMs)} · ${snap.record.moveCount} moves.`;
     }
@@ -300,7 +302,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     settings = next;
     if (next.f2l !== before.f2l) live.setPseudo(next.f2l === 'pseudo');
     if (JSON.stringify(next.inspection) !== JSON.stringify(before.inspection)) live.setInspection(next.inspection);
-    if (next.cross !== before.cross && scrambleText.trim()) void suggestCrossFor(scrambleText.trim());
     if (next.style !== before.style) void applyStyle(next.style);
     render();
   }
@@ -564,7 +565,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // Replayed actions go through dispatch; replayed solves and settings are restored after.
   attachBrainRecording({
     root, live, cubeSession, dispatch,
-    getContext: () => ({ toggles: settings.toggles, method: settings.method, crossKind: settings.cross, settings }),
+    getContext: () => ({ toggles: settings.toggles, method: settings.method, settings }),
     onSolvesRestored: () => {
       records = loadSolves(globalThis.localStorage);
       if (replayBackup) { const restore = replayBackup; replayBackup = null; applySettings(restore); }

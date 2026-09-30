@@ -9,7 +9,6 @@ import { BRAIN_STYLES, DEFAULT_BRAIN_STYLE } from './types.js';
 export const SETTINGS_KEY = 'cubesight-brain-settings-v2';
 const LEGACY_KEYS = {
   method: 'cubesight-brain-method',
-  cross: 'cubesight-brain-cross',
   pseudo: 'cubesight-brain-pseudo',
   inspection: 'cubesight-brain-inspection',
   toggles: 'cubesight-brain-toggles-v1',
@@ -34,7 +33,6 @@ const ENUMS = {
   // Roux is hidden for now: solve-methods.js keeps its stages, but no picker
   // offers it and stored 'roux' normalises to 'cfop'.
   method: ['cfop'],
-  cross: ['cross', 'xcross', 'xxcross'],
   f2l: ['standard', 'pseudo'],
   oll: ['2look', '1look'],
   pll: ['2look', '1look'],
@@ -51,7 +49,6 @@ export const DEFAULT_SETTINGS = Object.freeze({
   version: 2,
   style: DEFAULT_BRAIN_STYLE,
   method: 'cfop',
-  cross: 'cross',
   f2l: 'standard',
   oll: '2look',
   pll: '2look',
@@ -98,8 +95,6 @@ export function loadSettings(storage) {
   const legacy = {};
   const method = read(storage, LEGACY_KEYS.method);
   if (method) legacy.method = method;
-  const cross = read(storage, LEGACY_KEYS.cross);
-  if (cross) { try { legacy.cross = JSON.parse(cross); } catch { /* ignore */ } }
   if (read(storage, LEGACY_KEYS.pseudo) === 'true') legacy.f2l = 'pseudo';
   if (read(storage, LEGACY_KEYS.inspection) === 'false') legacy.inspection = normalizeInspection({ enabled: false });
   const toggles = read(storage, LEGACY_KEYS.toggles);
@@ -143,7 +138,6 @@ export function getSetting(settings, path) {
 const LABELS = {
   style: { orbit: 'orbit', mono: 'mono' },
   method: { cfop: 'cfop', roux: 'roux' },
-  cross: { cross: 'cross', xcross: 'x-cross', xxcross: 'xx-cross' },
   f2l: { standard: 'standard', pseudo: 'pseudo pairs' },
   oll: { '2look': 'oll 2-look', '1look': 'oll 1-look' },
   pll: { '2look': 'pll 2-look', '1look': 'pll 1-look' },
@@ -164,7 +158,6 @@ const LABELS = {
 const HELP = {
   style: 'Orbit: ring timeline around the cube. Mono: monkeytype-style lanes.',
   method: 'The timeline stages follow the method.',
-  cross: 'Solve target for the first stage.',
   f2l: 'Pseudo pairs count pairs solved with the D layer offset.',
   oll: '2-look splits OLL into edges (EO) then corners (CO).',
   pll: '2-look splits PLL into corners (CP) then edges (EP).',
@@ -185,7 +178,7 @@ const HELP = {
 };
 
 const ROW_LABELS = {
-  style: 'style', method: 'method', cross: 'cross', f2l: 'f2l pairs', oll: 'oll', pll: 'pll',
+  style: 'style', method: 'method', f2l: 'f2l pairs', oll: 'oll', pll: 'pll',
   'inspection.mode': 'inspection', 'inspection.seconds': 'seconds', 'inspection.overtime': 'overtime',
   'inspection.graceSeconds': 'grace', 'inspection.gracePenalty': 'then', 'inspection.callouts': 'callouts', voice: 'voice',
   penalties: 'penalties', scramble: 'scramble', coach: 'coach', crossHint: 'cross hint', timer: 'timer',
@@ -193,7 +186,7 @@ const ROW_LABELS = {
 };
 
 const SECTIONS = [
-  { id: 'method', label: 'method', rows: ['method', 'cross', 'f2l', 'oll', 'pll'] },
+  { id: 'method', label: 'method', rows: ['method', 'f2l', 'oll', 'pll'] },
   { id: 'inspection', label: 'inspection', rows: ['inspection.mode', 'inspection.seconds', 'inspection.overtime', 'inspection.graceSeconds', 'inspection.gracePenalty', 'inspection.callouts', 'voice', 'penalties'] },
   { id: 'training', label: 'training', rows: ['scramble', 'coach', 'crossHint', 'timer', 'timeline', 'compare'] },
   { id: 'look', label: 'look', rows: ['style'] },
@@ -214,7 +207,7 @@ function rowVisible(settings, path) {
   if (path === 'inspection.seconds') return insp.mode === 'custom';
   if (path === 'inspection.graceSeconds' || path === 'inspection.gracePenalty') return insp.mode !== 'off' && insp.mode !== 'unlimited' && insp.overtime === 'grace';
   if (path === 'inspection.overtime' || path === 'inspection.callouts' || path === 'voice') return insp.mode === 'wca' || insp.mode === 'custom';
-  if (path === 'f2l' || path === 'oll' || path === 'pll' || path === 'cross') return settings.method === 'cfop';
+  if (path === 'f2l' || path === 'oll' || path === 'pll') return settings.method === 'cfop';
   return true;
 }
 
@@ -263,7 +256,6 @@ export function buildConfigBar(settings) {
   // A choice of one is not a choice: the method item appears once there are two.
   const items = ENUMS.method.length > 1 ? [seg('method', ENUMS.method, settings.method)] : [];
   if (settings.method === 'cfop') {
-    items.push(seg('cross', ENUMS.cross, settings.cross));
     items.push({ id: 'f2l', options: [{ value: settings.f2l === 'pseudo' ? 'standard' : 'pseudo', label: 'pseudo pairs', active: settings.f2l === 'pseudo' }] });
     items.push(seg('oll', ['1look', '2look'], settings.oll, look, 'oll'));
     items.push(seg('pll', ['1look', '2look'], settings.pll, look, 'pll'));
@@ -283,7 +275,7 @@ const OFF = ['off', 'false', 'no', '0', 'hide'];
  * Parse a command-line entry into { path, value }, or null.
  *   insp 10 | insp wca | insp off | insp unlimited | insp inf
  *   overtime count | grace 3 | grace dnf | callouts off | voice on
- *   oll 1 | pll 2-look | method cfop | cross x | xxcross | pseudo on
+ *   oll 1 | pll 2-look | method cfop | pseudo on
  *   style orbit | timer hide | coach after | timeline off | compare pb
  *   scramble paste | penalties off | preset relaxed
  */
@@ -315,11 +307,6 @@ export function parseCommand(text) {
     }
     case 'method': return ENUMS.method.includes(arg) ? { path: 'method', value: arg } : null;
     case 'cfop': case 'roux': return ENUMS.method.includes(cmd) ? { path: 'method', value: cmd } : null;
-    case 'cross': {
-      const value = { '': 'cross', cross: 'cross', x: 'xcross', xcross: 'xcross', 'x-cross': 'xcross', xx: 'xxcross', xxcross: 'xxcross', 'xx-cross': 'xxcross' }[arg];
-      return value ? { path: 'cross', value } : null;
-    }
-    case 'xcross': case 'xxcross': return { path: 'cross', value: cmd };
     case 'pseudo': return ON.includes(arg) || arg === '' ? { path: 'f2l', value: 'pseudo' } : OFF.includes(arg) ? { path: 'f2l', value: 'standard' } : null;
     case 'style': case 'theme': return BRAIN_STYLES.includes(arg) ? { path: 'style', value: arg } : null;
     case 'orbit': case 'mono': return { path: 'style', value: cmd };

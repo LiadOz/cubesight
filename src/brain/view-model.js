@@ -14,7 +14,7 @@ import { recoveryMoves } from '../smart-cube-guidance.js';
 import { currentDShift } from '../solve-tracker.js';
 import { inspectionLimitMs, inspectionPenalty } from '../solve-live.js';
 import { summarize, ao5, ao12, resultMs, PLUS_TWO_MS } from '../solve-metrics.js';
-import { buildStagePlan, planKey as planKeyOf, planGroups, stageAverages, pbSplits } from './stage-plan.js';
+import { buildStagePlan, planKey as planKeyOf, planGroups, stageAverages, pbSplits, xcrossLabel, isMergedSplit } from './stage-plan.js';
 import { stageProgress, createTrack } from './milestones.js';
 import { tpsSeries, splitRows, donutArcs, sparkline } from './series.js';
 import { fmtTime, fmtSeconds, fmtDelta, deltaTone, fmtTps, fmtResult, penaltyTag } from './format.js';
@@ -193,7 +193,7 @@ function recordStages(record, track, plan) {
   const stages = (record.splits || []).filter(s => plan.some(p => p.key === s.key)).map(s => {
     const startAt = at;
     at += s.ms ?? 0;
-    return { key: s.key, label: plan.find(p => p.key === s.key)?.label, startAt, endAt: at, ms: s.ms, moves: s.moves, skipped: s.skipped, pseudo: s.pseudo, done: true };
+    return { key: s.key, label: plan.find(p => p.key === s.key)?.label, startAt, endAt: at, ms: s.ms, moves: s.moves, skipped: s.skipped, merged: isMergedSplit(s), pseudo: s.pseudo, done: true };
   });
   return { stages, solveStartAt: 0, moveTimes: record.moveTimes || [] };
 }
@@ -206,6 +206,9 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
   const currentIndex = solving ? Math.min(sp.currentIndex, plan.length - 1) : results ? plan.length : 0;
   const total = averages.totalAvgMs || 1;
   const prevByKey = new Map((prevTimeline?.segments || []).map(s => [s.key, s]));
+  // X-cross: pairs that were already built when the cross completed are done at
+  // the same moment; the cross segment carries the tag.
+  const xLabel = (solving || results) ? xcrossLabel(sp.stages.filter(st => st.merged).length) : null;
   const segments = plan.map((stage, i) => {
     const p = sp.stages[i];
     const avg = averages.byKey[stage.key];
@@ -214,9 +217,11 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
     const current = (solving && i === currentIndex && !p.done) || (preSolve && i === 0);
     const state = done ? (p.skipped ? 'skipped' : 'done') : current ? 'current' : 'future';
     const ref = settings.compare === 'pb' ? pbs[stage.key] : settings.compare === 'avg' ? avg.avgMs : null;
-    const deltaMs = done && !p.skipped && ref != null && p.ms != null ? p.ms - ref : null;
+    const deltaMs = done && !p.skipped && !p.merged && ref != null && p.ms != null ? p.ms - ref : null;
     const elapsed = current && p.startAt != null ? Math.max(0, now - p.startAt) : 0;
+    const merged = Boolean(done && p.merged);
     const tags = p.pseudo ? ['pseudo'] : [];
+    if (stage.key === 'cross' && done && xLabel) tags.push(xLabel);
     if (current && /^pair\d$/.test(stage.key) && settings.f2l === 'pseudo' && dShift) tags.push('pseudo');
     const prevSeg = prevByKey.get(stage.key);
     return {
@@ -226,7 +231,9 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
       fill: done ? 1 : current ? Math.min(1, elapsed / Math.max(1, avg.avgMs)) : 0,
       startedAt: current ? p.startAt : null,
       splitMs: done ? p.ms : null,
-      splitText: done ? (p.skipped ? 'skip' : fmtTime(p.ms)) : '',
+      splitText: done ? (p.skipped ? 'skip' : merged ? 'with cross' : fmtTime(p.ms)) : '',
+      merged,
+      xcross: stage.key === 'cross' && done ? xLabel : null,
       delta: deltaMs == null ? null : { ms: deltaMs, text: fmtDelta(deltaMs), tone: deltaTone(deltaMs) },
       moves: done ? p.moves : null,
       tags,
@@ -317,8 +324,7 @@ function methodSummary(record, settings) {
   const method = c.method || settings.method;
   const parts = [method];
   if (method === 'cfop') {
-    const cross = c.cross || settings.cross;
-    if (cross !== 'cross') parts.push(cross === 'xcross' ? 'x-cross' : 'xx-cross');
+    if (c.cross === 'xcross' || c.cross === 'xxcross') parts.push(c.cross === 'xcross' ? 'x-cross' : 'xx-cross');   // older records
     const oll = c.oll || settings.oll;
     const pll = c.pll || settings.pll;
     parts.push(oll === pll ? (oll === '1look' ? '1-look' : '2-look') : `oll ${oll === '1look' ? '1' : '2'}-look · pll ${pll === '1look' ? '1' : '2'}-look`);
@@ -411,7 +417,7 @@ export function buildViewModel(input, prev = null) {
   };
 
   const screen = screenFor(session, live);
-  const plan = cached('plan', [settings.method, settings.cross, settings.oll, settings.pll], () => buildStagePlan(settings));
+  const plan = cached('plan', [settings.method, settings.oll, settings.pll], () => buildStagePlan(settings));
   const averages = cached('averages', [records, plan], () => stageAverages(records, plan));
   const pbs = cached('pbs', [records, plan], () => pbSplits(records, plan));
   const dShift = input.dShift !== undefined ? input.dShift

@@ -115,7 +115,7 @@ export function createRingTimeline(host, ctx = {}) {
     toggleClass(part.label, 'is-skipped', state === 'skipped');
     toggleClass(part.label, 'is-future', state === 'future');
     const pseudoTag = seg.tags?.includes('pseudo') ? ' · pseudo' : '';
-    setText(part.name, state === 'skipped' ? `${ringName(seg)} skip` : `${ringName(seg)}${pseudoTag}`);
+    setText(part.name, state === 'skipped' ? `${ringName(seg)} skip` : seg.xcross ? seg.xcross : `${ringName(seg)}${pseudoTag}`);
     if (state === 'future') {
       setText(part.valueText, `~${secs(seg.avgMs)}`);
       setText(part.delta, '');

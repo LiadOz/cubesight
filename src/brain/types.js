@@ -114,7 +114,9 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {string} splitText   '1.96' | 'skip'
  * @property {{ms:number, text:string, tone:DeltaTone}|null} delta   vs avg | vs pb | null
  * @property {number|null} moves
- * @property {string[]} tags   ['pseudo']
+ * @property {string[]} tags   ['pseudo'], and 'x-cross' / 'xx-cross' on a cross that completed together with pairs
+ * @property {boolean} merged   a pair built together with the cross (done at the cross's moment; not a skip)
+ * @property {string|null} xcross   'x-cross' | 'xx-cross' | … on the cross segment when pairs came with it
  * @property {{label:string, fresh:boolean}|null} skip   fresh on the emit it happened (animate once)
  * @property {boolean} over    live split > avg
  */
@@ -152,7 +154,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *   bands:{key:string, label:string, fromMs:number, toMs:number}[], marks:{tMs:number, kind:'pause'|'skip', label:string}[],
  *   durationMs:number, maxTps:number}} TpsSeries */
 /** @typedef {{key:string, label:string, ms:number|null, text:string, deltaText:string, tone:DeltaTone, moves:number|null,
- *   avgMs:number|null, ratio:number, avgRatio:number, skipped:boolean, pseudo:boolean}} SplitRow */
+ *   avgMs:number|null, ratio:number, avgRatio:number, skipped:boolean, merged:boolean, pseudo:boolean}} SplitRow */
 /** @typedef {{key:string, tone:'good'|'warn'|'info'|'muted', text:string, tag?:string}} CoachLine */
 /** @typedef {{solves:number, best:string, ao5:string, ao12:string, medianTps:string, medianMoves:string}} StatsVM */
 /** @typedef {{key:string, label:string, action:BrainAction['type'], penalty?:'+2'|'DNF'}} KeyHint */
