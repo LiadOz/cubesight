@@ -62,6 +62,50 @@ navigation, but an unsupported move stops trusted tracking until the cube is
 synced from solved again. Cross Scout uses the move history as its solver input,
 so sessions longer than its 200-move input limit need a fresh solved baseline.
 
+## Recording and replaying smart-cube sessions
+
+Everything the app receives from outside is recorded continuously from the
+first connection (a ring buffer of the last 100k entries, `src/recorder.js`):
+every raw cube event verbatim (MOVE with move/face/direction/serial/cube and
+local timestamps, FACELETS, GYRO, BATTERY, DISCONNECT/errors), the connection
+handshake (status lines, device name, protocol, capabilities, connect errors),
+every command the app sends and its result, connect/sync/disconnect calls, the
+Brain's start/cancel/settings calls (including the exact generated scramble),
+Brain UI clicks that matter (mode, method, cross, coach toggles, recenter), the
+held-orientation reads and the tracker clock. There is nothing to arm first.
+
+Record:
+
+1. Use the Brain (`#/brain`) normally. When something goes wrong, open
+   **Connection diagnostics** and press **Save recording**. The browser
+   downloads `cubesight-recording-<time>.json`; under `npm run dev` it is also
+   written to `/tmp/cubesight-recordings/<time>.json` and the path is shown.
+2. **Start fresh recording** discards history but keeps the current connection
+   and tracked moves as the starting point (a checkpoint), so the next save
+   is small and still replays.
+
+Replay:
+
+- Command line (real session + real live tracker, recorded user actions at
+  their recorded times): `node scripts/replay-recording.mjs <file.json>`
+  (`--speed N` for original timing scaled by N, `--verbose`, `--diag` for the
+  `[smart-cube]` debug log). It prints every move, session and live phase
+  change, desync and `[session] listener threw` error, and exits 1 on a
+  desync/error, 2 if the replay ends in a different state from the one
+  recorded.
+- Browser: **Connection diagnostics → Load recording…** (speed 1×, 4× or
+  instant) replays into the real Brain view: the shared session's Bluetooth
+  adapter is swapped for the recording (the connected cube is disconnected),
+  and recorded actions press the same buttons, so the 3D cube, coach and
+  timeline react as they did live. Replayed solves are not kept in your
+  history. For Playwright: `/?replay=<url>&replaySpeed=0#/brain`; wait for
+  `document.documentElement.dataset.replay` to become `done`.
+
+Code: `src/recorder.js` (recorder and recording seams),
+`src/recording-replay.js` (replay device adapter/driver),
+`src/recording-harness.js` (headless replay), `src/brain-recording.js` (Brain
+buttons). `src/replay.js` scripts moves through the real session for tests.
+
 ## Install and use offline
 
 CubeSight is an installable Progressive Web App. On Android, open the deployed

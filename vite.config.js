@@ -46,6 +46,30 @@ const devLogPlugin = {
   },
 };
 
+// Dev-only recording sink: the Brain's "Save recording" POSTs the always-on
+// input recording here; replay it with `node scripts/replay-recording.mjs`.
+const recordingPlugin = {
+  name: 'cubesight-dev-recording',
+  configureServer(server) {
+    server.middlewares.use('/__recording', (request, response) => {
+      if (request.method !== 'POST') { response.statusCode = 405; response.end('405'); return; }
+      const chunks = [];
+      let size = 0;
+      request.on('data', chunk => { size += chunk.length; if (size > 200e6) request.destroy(); else chunks.push(chunk); });
+      request.on('end', () => {
+        try {
+          const dir = '/tmp/cubesight-recordings';
+          fs.mkdirSync(dir, { recursive: true });
+          const file = `${dir}/${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+          fs.writeFileSync(file, Buffer.concat(chunks));
+          response.setHeader('Content-Type', 'application/json');
+          response.end(JSON.stringify({ file }));
+        } catch (error) { response.statusCode = 500; response.end(String(error?.message || error)); }
+      });
+    });
+  },
+};
+
 // Installed apps have no update prompt UI, so activate new app shells
 // immediately instead of leaving a stale worker waiting indefinitely.
 export default defineConfig({
@@ -55,6 +79,7 @@ export default defineConfig({
   plugins: [
     buildInfoPlugin,
     devLogPlugin,
+    recordingPlugin,
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],

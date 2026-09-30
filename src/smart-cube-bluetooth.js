@@ -3,6 +3,13 @@ import { createSmartCubeSession } from './smart-cube-session.js';
 import { getRememberedMac, rememberMac, forgetRememberedMac } from './smart-cube-mac.js';
 import { promptMacAddress } from './smart-cube-mac-dialog.js';
 import { logConnection } from './smart-cube-diag.js';
+import { recordingConnectDevice, recordSessionCalls, setCheckpointProvider } from './recorder.js';
+
+// A replay (src/recording-replay.js) can take the place of the Bluetooth
+// adapter; the session itself stays the real one.
+let replayConnectDevice = null;
+export function setReplayConnectDevice(connectDevice) { replayConnectDevice = connectDevice || null; }
+export function isReplayAdapterInstalled() { return Boolean(replayConnectDevice); }
 
 // Forget every cached cube address (our per-name cache and the library's
 // per-device.id cache) so the next connection derives the MAC from scratch.
@@ -18,15 +25,39 @@ export function clearSavedCubeData() {
   logConnection({ label: 'Cleared saved cube address cache.', kind: 'clear' });
 }
 
-// One physical connection and move history shared by every trainer. Protocol
-// details stay behind this adapter; consumers only see canonical cube moves.
-export const smartCube = createSmartCubeSession(async options => {
+// Record the facts that decide whether the cube connects without a manual MAC:
+// the page origin (browser storage and Bluetooth permissions are per origin, so
+// localhost:5173 and localhost:5174 do not share them), the cached addresses,
+// advertisement-watching support and the devices this origin may already use.
+// Synchronous, so requestDevice keeps the click's user activation.
+function logConnectionEnvironment() {
+  const storage = globalThis.localStorage;
+  const cached = [];
+  try {
+    for (let i = 0; i < storage.length; i++) {
+      const k = storage.key(i);
+      if (k?.startsWith('cubesight-smartcube-mac-name:') || k?.startsWith('smartcube-ble-mac:')) cached.push(k);
+    }
+  } catch { /* storage unavailable */ }
+  const watch = typeof globalThis.BluetoothDevice !== 'undefined' && 'watchAdvertisements' in BluetoothDevice.prototype;
+  logConnection({ kind: 'env', label: `Origin ${location.origin} · secure=${window.isSecureContext} · watchAdvertisements=${watch ? 'yes' : 'NO (enable chrome://flags/#enable-experimental-web-platform-features)'} · cached addresses: ${cached.length ? cached.join(', ') : 'none for this origin'}` });
+  if (navigator.bluetooth?.getDevices) {
+    navigator.bluetooth.getDevices()
+      .then(devices => logConnection({ kind: 'env', label: `Devices already permitted for this origin: ${devices.length ? devices.map(d => `"${d.name ?? '?'}" (id ${d.id})`).join(', ') : 'none'}` }))
+      .catch(error => logConnection({ kind: 'env', label: `getDevices failed: ${error?.message || error}` }));
+  } else logConnection({ kind: 'env', label: 'navigator.bluetooth.getDevices unavailable (enable chrome://flags/#enable-web-bluetooth-new-permissions-backend) — the address cannot be re-derived from a remembered device.' });
+}
+
+// Web Bluetooth adapter. Protocol details stay behind it; consumers only see
+// canonical cube moves.
+async function connectBluetooth(options) {
   if (!window.isSecureContext || !navigator.bluetooth?.requestDevice) {
     throw new Error('Web Bluetooth needs HTTPS and a supported browser (Chrome or Edge on Android/desktop).');
   }
   let selectedDevice = null;
   let usedRememberedMac = false;
   logConnection({ label: 'Starting connection…', kind: 'start' });
+  logConnectionEnvironment();
   try {
     const connection = await connectSmartCube({
       ...options,
@@ -38,9 +69,12 @@ export const smartCube = createSmartCubeSession(async options => {
       // the same source native apps use. This makes the manual prompt a rare
       // last resort rather than the normal path.
       enableAddressSearch: true,
-      onStatus: detail => { logConnection({ label: String(detail), kind: 'status' }); },
+      onStatus: detail => { logConnection({ label: String(detail), kind: 'status' }); options.onDeviceStatus?.(detail); },
       macAddressProvider: async (device, finalAttempt) => {
         selectedDevice = device;
+        let libraryCached = false;
+        try { libraryCached = Boolean(globalThis.localStorage?.getItem(`smartcube-ble-mac:${device?.id}`)); } catch { /* storage unavailable */ }
+        logConnection({ kind: 'env', label: `Library address cache for device id ${device?.id ?? '?'}: ${libraryCached ? 'present' : 'missing'} · remembered by name: ${getRememberedMac(device?.name) ? 'present' : 'missing'}` });
         logConnection({ label: `MAC provider called (attempt ${finalAttempt ? 'final' : '1'}, device "${device?.name ?? '?'}", id ${device?.id ?? '?'}).`, kind: 'provider' });
         // Returning null on the non-final attempt lets the library run its own
         // second advertisement watch (up to 5 s more) before we fall back to a
@@ -71,4 +105,11 @@ export const smartCube = createSmartCubeSession(async options => {
     if (usedRememberedMac) forgetRememberedMac(selectedDevice?.name);
     throw error;
   }
-});
+}
+
+// One physical connection and move history shared by every trainer. Every
+// raw input (handshake, cube events, commands, connect/sync/disconnect calls)
+// is recorded at this seam — always on — so any bug can be replayed.
+export const smartCube = recordSessionCalls(createSmartCubeSession(recordingConnectDevice(
+  options => (replayConnectDevice ? replayConnectDevice(options) : connectBluetooth(options)))));
+setCheckpointProvider(() => smartCube.getSnapshot());

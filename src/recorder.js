@@ -1,0 +1,359 @@
+// Always-on input recorder for deterministic replay.
+//
+// Everything the app receives from outside — raw smart-cube events, the
+// connection handshake (status lines, device metadata, errors), every command
+// the app sends to the cube, user actions that feed the session / live
+// tracker, and the non-deterministic reads the tracker depends on (the held
+// orientation) — is appended here with a monotonic time offset `t` (ms since
+// the recorder started). src/recording-replay.js feeds a recording back
+// through the REAL session and live tracker.
+//
+// Clock: while an input is being dispatched (a cube event, a user action) the
+// recorder clock (`now()`) is frozen at that input's `t`. Consumers that take
+// an injectable clock (createSolveLive({ now })) therefore see exactly the
+// same times live and on replay, where the replay driver serves the recorded
+// `t` instead.
+//
+// The buffer is a ring (default 100k entries, ~15 min of gyro-heavy GAN
+// traffic); the header of the active connection is pinned so a trimmed
+// recording can still be replayed.
+
+export const RECORDING_FORMAT = 'cubesight-recording';
+export const RECORDING_VERSION = 1;
+const DEFAULT_CAP = 100_000;
+
+const perf = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+
+let origin = perf();
+let startedAt = Date.now();
+let events = [];
+let seq = 0;
+let dropped = 0;
+let cap = DEFAULT_CAP;
+let paused = 0;
+let frozen = null;          // t of the input currently being dispatched
+let replayHooks = null;     // { now(), read(kind, fallback) } while a replay drives the app
+let connectionCounter = 0;
+let commandCounter = 0;
+let header = [];            // pinned events of the active connection
+let checkpointProvider = null;
+
+// ---------------------------------------------------------------------------
+// JSON-safe encoding that keeps every field: non-finite numbers, undefined
+// array slots, Errors, byte buffers and Dates survive the round-trip.
+
+export function toJSONSafe(value, depth = 0, seen = new WeakSet()) {
+  if (value === null) return null;
+  const type = typeof value;
+  if (type === 'string' || type === 'boolean') return value;
+  if (type === 'number') return Number.isFinite(value) ? value : { $num: String(value) };
+  if (type === 'undefined') return { $undef: true };
+  if (type === 'bigint') return { $bigint: String(value) };
+  if (type === 'function' || type === 'symbol') return undefined;
+  if (depth > 8) return { $truncated: true };
+  if (seen.has(value)) return { $cycle: true };
+  seen.add(value);
+  try {
+    if (value instanceof Error || (value && typeof value.message === 'string' && typeof value.name === 'string' && 'stack' in value)) {
+      const out = { $error: { name: value.name, message: value.message, stack: String(value.stack || '') } };
+      for (const key of Object.keys(value)) {
+        const v = toJSONSafe(value[key], depth + 1, seen);
+        if (v !== undefined) out.$error[key] = v;
+      }
+      return out;
+    }
+    if (value instanceof Date) return { $date: value.toISOString() };
+    if (typeof ArrayBuffer !== 'undefined') {
+      if (value instanceof ArrayBuffer) return { $bytes: Array.from(new Uint8Array(value)), $kind: 'ArrayBuffer' };
+      if (ArrayBuffer.isView(value)) return { $bytes: Array.from(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)), $kind: value.constructor?.name || 'Uint8Array' };
+    }
+    if (Array.isArray(value)) return value.map(v => { const e = toJSONSafe(v, depth + 1, seen); return e === undefined ? null : e; });
+    const out = {};
+    for (const key of Object.keys(value)) {
+      const v = toJSONSafe(value[key], depth + 1, seen);
+      if (v !== undefined) out[key] = v;
+    }
+    return out;
+  } finally { seen.delete(value); }
+}
+
+export function fromJSONSafe(value) {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(fromJSONSafe);
+  if ('$num' in value) return Number(value.$num);
+  if ('$undef' in value) return undefined;
+  if ('$bigint' in value) return BigInt(value.$bigint);
+  if ('$date' in value) return new Date(value.$date);
+  if ('$bytes' in value) {
+    const bytes = Uint8Array.from(value.$bytes);
+    if (value.$kind === 'ArrayBuffer') return bytes.buffer;
+    if (value.$kind === 'DataView') return new DataView(bytes.buffer);
+    return bytes;
+  }
+  if ('$error' in value) {
+    const { name, message, stack, ...rest } = value.$error;
+    const error = new Error(message);
+    error.name = name;
+    if (stack) error.stack = stack;
+    for (const [k, v] of Object.entries(rest)) error[k] = fromJSONSafe(v);
+    return error;
+  }
+  const out = {};
+  for (const [k, v] of Object.entries(value)) out[k] = fromJSONSafe(v);
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Core buffer.
+
+/** Monotonic ms since the recorder started (virtual during replay, frozen during a dispatch). */
+export function now() {
+  if (frozen != null) return frozen;
+  if (replayHooks) return replayHooks.now();
+  return perf() - origin;
+}
+
+export function isRecording() { return paused === 0 && !replayHooks; }
+export function isReplaying() { return Boolean(replayHooks); }
+/** The running replay's speed (0 = instant), or null when not replaying. Views skip animations at instant speed. */
+export function replaySpeed() { return replayHooks ? (replayHooks.speed ?? 1) : null; }
+
+/** Append one entry. Returns its `t` (so the caller can freeze the clock on it). */
+export function record(kind, payload = {}, { pin = false } = {}) {
+  // During a replay the seams still wrap the replayed device; their clock must
+  // be the replay's virtual time, not the wall clock.
+  const t = frozen ?? (replayHooks ? replayHooks.now() : perf() - origin);
+  if (!isRecording()) return t;
+  const entry = { seq: ++seq, t, kind, data: toJSONSafe(payload) };
+  events.push(entry);
+  if (pin) header.push(entry);
+  if (events.length > cap) trim();
+  return t;
+}
+
+function trim() {
+  const removeCount = Math.max(1, Math.floor(cap * 0.1));
+  const removed = events.splice(0, removeCount);
+  dropped += removed.length;
+  // Keep the active connection's handshake so the tail still replays.
+  const keep = header.filter(h => removed.includes(h));
+  if (keep.length) events.unshift(...keep, { seq: keep[keep.length - 1].seq, t: keep[keep.length - 1].t, kind: 'trimmed', data: { dropped } });
+}
+
+/** Run fn with the recorder clock frozen at t (nested-safe). */
+export function withClock(t, fn) {
+  const previous = frozen;
+  frozen = t;
+  try { return fn(); } finally { frozen = previous; }
+}
+
+export function pauseRecording() { paused++; }
+export function resumeRecording() { paused = Math.max(0, paused - 1); }
+export function setRecordingCap(value) { cap = Math.max(100, value | 0); }
+
+/** Installed by a replay driver: serves the virtual clock and recorded reads. */
+export function setReplayHooks(hooks) { replayHooks = hooks || null; }
+
+/** Provides a {phase, moves, facelets} snapshot used to checkpoint on clear. */
+export function setCheckpointProvider(fn) { checkpointProvider = fn; }
+
+function checkpoint() {
+  try {
+    const s = checkpointProvider?.();
+    if (!s) return null;
+    return { phase: s.phase, moves: [...(s.moves || [])], facelets: s.facelets ?? null, deviceName: s.deviceName || '', protocol: s.protocol || '' };
+  } catch { return null; }
+}
+
+/**
+ * Start a fresh recording. The active connection's handshake is kept and a
+ * checkpoint of the session (phase + tracked moves) is written, so the replay
+ * can rebuild the tracked state without the discarded history.
+ */
+export function clearRecording() {
+  // The clock is NOT reset: consumers (the live tracker) hold times from it.
+  const keep = header.slice();
+  events = [];
+  dropped = 0;
+  events.push(...keep);
+  const cp = checkpoint();
+  if (cp && keep.length) events.push({ seq: ++seq, t: perf() - origin, kind: 'checkpoint', data: toJSONSafe(cp) });
+}
+
+/** Drop everything, including the pinned connection header (tests). */
+export function resetRecording() { header = []; clearRecording(); }
+
+/** A JSON-serializable copy of the recording (plus a final snapshot for divergence checks). */
+export function getRecording(extra = {}) {
+  return {
+    format: RECORDING_FORMAT,
+    version: RECORDING_VERSION,
+    createdAt: new Date().toISOString(),
+    startedAt,               // wall clock at t=0
+    durationMs: perf() - origin - (events[0]?.t ?? 0),
+    dropped,
+    env: typeof navigator !== 'undefined' ? { userAgent: navigator.userAgent, href: typeof location !== 'undefined' ? location.href : '' } : { node: typeof process !== 'undefined' ? process.version : '' },
+    final: checkpoint(),
+    ...extra,
+    events: events.map(e => ({ ...e })),
+  };
+}
+
+export function serializeRecording(extra) { return JSON.stringify(getRecording(extra)); }
+
+export function parseRecording(text) {
+  const data = typeof text === 'string' ? JSON.parse(text) : text;
+  if (!data || data.format !== RECORDING_FORMAT || !Array.isArray(data.events)) throw new Error('Not a CubeSight recording.');
+  return data;
+}
+
+/**
+ * A recorded read of a non-deterministic input (e.g. the held orientation).
+ * Live: compute, record, return. Replay: return the next recorded value.
+ */
+export function recordRead(kind, compute) {
+  if (replayHooks?.read) return replayHooks.read(kind, compute);
+  const value = compute();
+  record('read', { kind, value });
+  return value;
+}
+
+// ---------------------------------------------------------------------------
+// Device-adapter seam.
+
+/**
+ * Wrap a `connectDevice(options)` adapter so the handshake, every raw event
+ * from `events$`, every command and disconnect are recorded verbatim.
+ * The inner adapter is called synchronously (Web Bluetooth needs the click's
+ * user activation).
+ */
+export function recordingConnectDevice(connectDevice) {
+  return function connectRecorded(options = {}) {
+    const conn = ++connectionCounter;
+    header = [];
+    record('connect-start', { conn }, { pin: true });
+    const wrappedOptions = {
+      ...options,
+      onStatus: detail => {
+        record('status', { conn, detail });
+        return options.onStatus?.(detail);
+      },
+      // Library progress lines the adapter only logs (not shown by the session).
+      onDeviceStatus: detail => { record('status', { conn, detail, channel: 'device' }); },
+    };
+    let pending;
+    try { pending = connectDevice(wrappedOptions); }
+    catch (error) { record('connect-error', { conn, error }); throw error; }
+    return Promise.resolve(pending).then(connection => {
+      record('connected', {
+        conn,
+        deviceName: connection?.deviceName,
+        deviceMAC: connection?.deviceMAC ? String(connection.deviceMAC).replace(/[\da-f]{2}(?=:)/gi, 'XX') : connection?.deviceMAC,
+        protocol: connection?.protocol,
+        capabilities: connection?.capabilities,
+      }, { pin: true });
+      return wrapConnection(connection, conn);
+    }, error => {
+      record('connect-error', { conn, error });
+      header = [];
+      throw error;
+    });
+  };
+}
+
+function wrapConnection(connection, conn) {
+  if (!connection) return connection;
+  const events$ = {
+    subscribe(observer) {
+      const target = typeof observer === 'function' ? { next: observer } : (observer || {});
+      return connection.events$.subscribe({
+        next: event => {
+          const t = record('cube-event', { conn, event });
+          return withClock(t, () => target.next?.(event));
+        },
+        error: error => {
+          const t = record('cube-error', { conn, error });
+          return withClock(t, () => target.error?.(error));
+        },
+        complete: () => {
+          const t = record('cube-complete', { conn });
+          return withClock(t, () => target.complete?.());
+        },
+      });
+    },
+  };
+  const sendCommand = command => {
+    const id = ++commandCounter;
+    record('command', { conn, id, command });
+    let result;
+    try { result = connection.sendCommand(command); }
+    catch (error) { record('command-result', { conn, id, ok: false, error }); throw error; }
+    return Promise.resolve(result).then(value => { record('command-result', { conn, id, ok: true, value }); return value; },
+      error => { record('command-result', { conn, id, ok: false, error }); throw error; });
+  };
+  const disconnect = () => {
+    record('device-disconnect', { conn });
+    if (header.some(h => h.data?.conn === conn)) header = [];
+    return connection.disconnect();
+  };
+  const overrides = { events$, sendCommand, disconnect };
+  return new Proxy(connection, {
+    get(obj, prop) {
+      if (Object.hasOwn(overrides, prop)) return overrides[prop];
+      const value = Reflect.get(obj, prop, obj);
+      return typeof value === 'function' ? value.bind(obj) : value;
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// User-action seams.
+
+function wrapCalls(target, kind, methods) {
+  const out = Object.create(null);
+  for (const key of Object.keys(target)) out[key] = target[key];
+  for (const method of methods) {
+    const original = target[method];
+    if (typeof original !== 'function') continue;
+    out[method] = (...args) => {
+      const t = record(kind, { method, args });
+      try {
+        const result = withClock(t, () => original(...args));
+        if (result && typeof result.then === 'function') {
+          return result.then(v => v, error => { record(`${kind}-error`, { method, error }); throw error; });
+        }
+        return result;
+      } catch (error) {
+        record(`${kind}-error`, { method, error });
+        throw error;
+      }
+    };
+  }
+  return out;
+}
+
+/** Record connect/syncSolved/disconnect calls on a session (and its phase changes, for divergence checks). */
+export function recordSessionCalls(session) {
+  const wrapped = wrapCalls(session, 'session.call', ['connect', 'syncSolved', 'disconnect']);
+  let lastPhase = null;
+  session.subscribe(snap => {
+    if (snap.phase !== lastPhase) { lastPhase = snap.phase; record('observe.session', { phase: snap.phase, moves: snap.moves?.length ?? 0, lastMove: snap.lastMove ?? null, detail: snap.detail }); }
+  });
+  return wrapped;
+}
+
+/** Record calls into the live tracker (start guided with its exact scramble, free, cancel, settings). */
+export function recordLiveCalls(live) {
+  const wrapped = wrapCalls(live, 'live.call', ['startGuided', 'startFree', 'cancel', 'setPseudo', 'setInspection']);
+  let lastPhase = null;
+  live.subscribe(snap => {
+    if (snap.phase !== lastPhase) { lastPhase = snap.phase; record('observe.live', { phase: snap.phase, mode: snap.mode, solveMoveCount: snap.solveMoveCount }); }
+  });
+  return wrapped;
+}
+
+// Browser-side runtime errors are external inputs to debugging too.
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('error', e => record('runtime-error', { message: e.message, error: e.error }));
+  window.addEventListener('unhandledrejection', e => record('runtime-error', { message: 'unhandledrejection', error: e.reason }));
+}
