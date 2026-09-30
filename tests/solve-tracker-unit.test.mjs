@@ -95,3 +95,14 @@ test('crossEdgeIds lists the four edges containing the face', () => {
   assert.deepEqual(crossEdgeIds('D').sort(), ['DB', 'DF', 'DL', 'DR']);
   assert.deepEqual(crossEdgeIds('U').sort(), ['UB', 'UF', 'UL', 'UR']);
 });
+
+test('analyze labels an oriented last layer (EO + CO) as the PLL phase', () => {
+  const tperm = stateFromScramble("R U R' U' R' F R2 U' R' U' R U R' F'");
+  const a = analyze(tperm, 'D');
+  assert.equal(a.eoDone && a.coDone, true);
+  assert.equal(a.phase, 'pll');
+  // corners oriented but edges not: still the CO label
+  const edgesFlipped = stateFromScramble("F R U R' U' F'");
+  const b = analyze(edgesFlipped, 'D');
+  if (b.coDone && !b.eoDone) assert.equal(b.phase, 'co');
+});

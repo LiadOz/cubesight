@@ -159,8 +159,8 @@ export function analyze(state, crossFace) {
   const ollDone = eoDone && coDone;
   let phase;
   if (solved) phase = 'solved';
-  else if (coDone) phase = 'co';
   else if (eoDone && coDone) phase = 'pll';
+  else if (coDone) phase = 'co';
   else if (eoDone) phase = 'co-pending';
   else if (f2lDone && !eoDone) phase = 'eo';
   else if (crossDone) phase = pairsSolved > 0 ? `f2l-${pairsSolved}` : 'cross';

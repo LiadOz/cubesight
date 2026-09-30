@@ -2,65 +2,55 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSmartCubeSession } from '../src/smart-cube-session.js';
 import { createSolveLive } from '../src/solve-live.js';
-import { sameCubeState, createSolvedState } from '../src/cross-cube.js';
 
 const SOLVED = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
 
-let onNext;
-function doSubscribe(o) { onNext = o.next; function u() { onNext = null; } return { unsubscribe: u }; }
 function fakeCube() {
-  let facelets = SOLVED;
-  const events$ = { subscribe: doSubscribe };
-  const connection = { deviceName: 'GAN test', protocol: { name: 'GAN Gen4' }, capabilities: { facelets: true }, events$,
-    async sendCommand(c) { if (c.type === 'REQUEST_FACELETS') queueMicrotask(() => onNext({ type: 'FACELETS', facelets })); },
-    async disconnect() {} };
-  return { connection, connect: () => Promise.resolve(connection), emit: e => onNext(e), setFacelets: () => {} };
+  let onNext = null;
+  const connection = {
+    deviceName: 'GAN test', protocol: { name: 'GAN Gen4' }, capabilities: { facelets: true },
+    events$: { subscribe(o) { onNext = o.next; return { unsubscribe() { onNext = null; } }; } },
+    async sendCommand(c) { if (c.type === 'REQUEST_FACELETS') queueMicrotask(() => onNext({ type: 'FACELETS', facelets: SOLVED })); },
+    async disconnect() {},
+  };
+  return { connection, emit: (move, cubeTimestamp) => onNext({ type: 'MOVE', move, cubeTimestamp }) };
 }
 
-function trackLive(session) {
-  let lastProcessedMove = null, lastProcessedLen = 0;
-  const processed = [];
-  function onLive(snap) {
-    if (snap.phase !== 'tracking') return;
-    const lastEntry = snap.moves[snap.moves.length - 1];
-    if (snap.moves.length !== lastProcessedLen || lastEntry !== lastProcessedMove) {
-      lastProcessedLen = snap.moves.length;
-      lastProcessedMove = lastEntry;
-      processed.push({ move: snap.lastMove, len: snap.moves.length });
-    }
-  }
-  session.subscribe(onLive);
-  return processed;
+// A free solve on the real live tracker (the cube must be scrambled first: a
+// free solve refuses a solved cube). The tracker's own solveMoves list shows
+// which turns it handled.
+async function freeSolve() {
+  const device = fakeCube();
+  const session = createSmartCubeSession(() => Promise.resolve(device.connection));
+  const live = createSolveLive(session, { getOrientation: () => ({ bottom: 'D', front: 'F' }), now: () => 0 });
+  await session.connect();
+  await session.syncSolved();
+  device.emit('F', 0);   // scramble
+  live.startFree();
+  return { device, session, live };
 }
 
 test('a coalesced U2 is processed by the live tracker (not skipped)', async () => {
-  const device = fakeCube();
-  const session = createSmartCubeSession(() => Promise.resolve(device.connection));
-  const live = createSolveLive(session, { getOrientation: () => ({ bottom: 'D', front: 'F' }), now: () => 0 });
-  const processed = trackLive(session);
-  await session.connect();
-  await session.syncSolved();
-  live.startFree();
-  // first U (during inspection — starts the solve)
-  device.emit('U', 100);
-  // second U (coalesces to U2 in the session — length stays the same)
-  device.emit('U', 110);
-  const afterSecond = processed.at(-1);
-  assert.ok(afterSecond, 'coalesced U2 MUST be processed (not skipped)');
-  assert.equal(afterSecond.move, 'U2', 'the coalesced U2 is tracked as U2');
+  const { device, session, live } = await freeSolve();
+  device.emit('U', 100); // first quarter: starts the solve
+  assert.deepEqual(live.getSnapshot().solveMoves, ['U']);
+  assert.equal(live.getSnapshot().phase, 'solving');
+  device.emit('U', 110); // second quarter coalesces: history length stays the same, entry becomes U2
+  assert.deepEqual(session.getSnapshot().moves, ['F', 'U2']);
+  assert.deepEqual(live.getSnapshot().solveMoves, ['U2'], 'coalesced U2 MUST be processed (not skipped)');
+  assert.equal(live.getSnapshot().solveMoveCount, 1, 'the U2 counts as one move');
+  // Another coalesced U2 then F' returns the cube to solved; the tracker must see it and finish.
+  device.emit('U', 1000);
+  device.emit('U', 1010);
+  device.emit("F'", 2000);
+  assert.equal(live.getSnapshot().phase, 'done', 'the solve completes');
+  assert.equal(live.getSnapshot().record.moveCount, 3);
 });
 
 test('repeated distinct moves are both processed', async () => {
-  const device = fakeCube();
-  const session = createSmartCubeSession(() => Promise.resolve(device.connection));
-  const live = createSolveLive(session, { getOrientation: () => ({ bottom: 'D', front: 'F' }), now: () => 0 });
-  const processed = trackLive(session);
-  await session.connect();
-  await session.syncSolved();
-  live.startFree();
+  const { device, session, live } = await freeSolve();
   device.emit('R', 100);
-  device.emit('R', 120); // 200 ticks later — distinct, no coalesce
-  const afterR = processed.at(-1);
-  assert.ok(afterR, 'second R processed');
-  assert.equal(afterR.move, 'R', 'tracked as R');
+  device.emit('R', 400); // 300 ticks later — outside the double window, no coalesce
+  assert.deepEqual(session.getSnapshot().moves, ['F', 'R', 'R']);
+  assert.deepEqual(live.getSnapshot().solveMoves, ['R', 'R'], 'second R processed');
 });

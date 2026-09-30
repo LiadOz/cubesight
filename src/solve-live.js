@@ -18,30 +18,96 @@
 // state and solve-tracker.js for phase analysis — so it can be driven by a fake
 // session in tests.
 
-import { applyMoves, sameCubeState, stateFromScramble, createSolvedState } from './cross-cube.js';
-import { analyze, crossSolved, extendedCross, f2lPairSlots, pairSolved, solvedPairsPseudo, f2lDonePseudo, eoSolved, coSolved } from './solve-tracker.js';
-import { followPlanTurn, inverseMove } from './smart-cube-guidance.js';
+import { applyMoves, sameCubeState, stateFromScramble, createSolvedState, OPPOSITE_FACE } from './cross-cube.js';
+import { analyze, extendedCross, solvedPairsPseudo, f2lDonePseudo } from './solve-tracker.js';
+import { followPlanTurn } from './smart-cube-guidance.js';
 import { logConnection } from './smart-cube-diag.js';
 
 const SOLVED = createSolvedState();
+const isSolved = state => sameCubeState(state, SOLVED);
+
+// Append a move event to a move list: a coalesced double (replaces: true)
+// replaces the previous quarter instead of adding a second entry.
+function pushMove(list, move, replaces) {
+  return replaces && list.length ? [...list.slice(0, -1), move] : [...list, move];
+}
+
+// Inspection model (WCA 9f / A3a):
+//   mode      'wca' (15 s) | 'custom' (`seconds`) | 'unlimited' (no limit, never
+//             penalised) | 'off' (no inspection: phase 'ready', clock on first move)
+//   overtime  what happens past the limit:
+//             'wca'       first move after the limit +2, after limit + 2 s DNF
+//             'count'     no penalty, overtimeMs is exposed
+//             'grace'     after limit + graceSeconds apply gracePenalty
+//             'autostart' the solve clock starts by itself at the limit
+//   gracePenalty 'plus2' | 'dnf' | 'none';  callouts: WCA 8 s / 12 s calls.
+export const DEFAULT_INSPECTION = Object.freeze({ mode: 'wca', seconds: 15, overtime: 'wca', graceSeconds: 2, gracePenalty: 'plus2', callouts: true });
+const INSPECTION_MODES = ['wca', 'custom', 'unlimited', 'off'];
+const OVERTIME_MODES = ['wca', 'count', 'grace', 'autostart'];
+const GRACE_PENALTIES = { plus2: '+2', dnf: 'DNF', none: null };
+const WCA_LIMIT_MS = 15000;
+const WCA_DNF_AFTER_MS = 2000;
+const clampSeconds = value => Math.max(0, Math.min(60, value));
+
+// Merge a setInspection() argument into a config. Accepts the legacy
+// { enabled, seconds } shape: enabled:false -> 'unlimited' (inspecting phase,
+// no countdown, clock on the first move — the old behaviour), enabled:true ->
+// keep a limited mode (default wca), seconds alone -> 'custom'.
+export function normalizeInspection(input = {}, current = DEFAULT_INSPECTION) {
+  const next = { ...current };
+  const legacy = input.mode === undefined;
+  if (legacy && typeof input.enabled === 'boolean') {
+    if (!input.enabled) next.mode = 'unlimited';
+    else if (next.mode === 'off' || next.mode === 'unlimited') next.mode = 'wca';
+  }
+  if (INSPECTION_MODES.includes(input.mode)) next.mode = input.mode;
+  if (Number.isFinite(input.seconds)) {
+    next.seconds = clampSeconds(input.seconds);
+    if (legacy && input.enabled !== false && next.mode === 'wca' && next.seconds !== 15) next.mode = 'custom';
+  }
+  if (OVERTIME_MODES.includes(input.overtime)) next.overtime = input.overtime;
+  if (Number.isFinite(input.graceSeconds)) next.graceSeconds = clampSeconds(input.graceSeconds);
+  if (input.gracePenalty in GRACE_PENALTIES) next.gracePenalty = input.gracePenalty;
+  if (typeof input.callouts === 'boolean') next.callouts = input.callouts;
+  return next;
+}
+
+export function inspectionLimitMs(config) {
+  if (config.mode === 'wca') return WCA_LIMIT_MS;
+  if (config.mode === 'custom') return config.seconds * 1000;
+  return null;
+}
+
+// Penalty for starting the solve `elapsedMs` into inspection.
+export function inspectionPenalty(config, elapsedMs) {
+  const limit = inspectionLimitMs(config);
+  if (limit == null || elapsedMs <= limit) return null;
+  const over = elapsedMs - limit;
+  if (config.overtime === 'wca') return over <= WCA_DNF_AFTER_MS ? '+2' : 'DNF';
+  if (config.overtime === 'grace') return over <= config.graceSeconds * 1000 ? null : GRACE_PENALTIES[config.gracePenalty] ?? null;
+  return null;   // count, autostart
+}
 
 export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D', front: 'F' }), now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()) } = {}) {
   let mode = null;            // 'guided' | 'free' | null
-  let phase = 'idle';         // idle | applying | solving | done | desynced
+  let phase = 'idle';         // idle | applying | inspecting | ready (inspection off) | solving | done | desynced
   let scrambleStr = null;
   let scrambleMoves = [];
+  let planStates = [];
   let scrambledState = null;
   let applyStep = 0;
   let applyDetour = [];
-  let solveStartIndex = 0;
+  let applyBefore = null;      // { step, detour } before the last processed turn (for coalesced doubles)
+  let scrambleTurns = [];      // turns the user made while scrambling (doubles coalesced)
   let solveStartAt = 0;
   let crossFace = null;
   let crossColor = null;
   let rotations = 0;
   let pseudo = false;            // pseudo-F2L (D-shift) detection, opt-in
-  let inspectSeconds = 15;
-  let inspectionEnabled = true;
-  let inspectionEndsAt = null;
+  let inspection = { ...DEFAULT_INSPECTION };
+  let inspectionStartAt = null;  // when the scramble was done (inspection began)
+  let inspectionMs = null;       // inspection used before the solve clock started
+  let penalty = null;            // null | '+2' | 'DNF' — fixed when the clock starts
   let inspectionTimer = null;
   let lastBottom = null;
   let crossMoveCount = null;
@@ -51,31 +117,81 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let eoAchieved = false;      // OLL edges oriented (two-look: EO)
   let coAchieved = false;      // OLL corners oriented (two-look: CO)
   let maxPairs = 0;
-  let liveMoveCount = 0;
-  let lastProcessedLen = -1;   // dedup: only process a move when the history grows
-  let lastProcessedMove = null; // ...or when the last move string changes (coalesced U2)
+  let pairsBeforeMove = 0;     // maxPairs before the current (possibly coalesced) turn
+  // Dedup on the session's moveEvent.seq: every applied cube turn bumps it, so
+  // gyro/battery/status snapshots (same seq) are ignored, and a new start
+  // ignores whatever turn happened before it. moves.length is NOT usable: the
+  // session history empties whenever the cube is solved.
+  let lastSeq = 0;
+  let lastEventMove = null;    // move of the last seen turn (the quarter a coalesced double extends)
   let prev = null;           // previous phase analysis during solving
   let progress = null;       // monotonic phase snapshot the UI renders
-  let mark = {};             // { solveStartAt, crossAt, f2lAt, ollAt }
-  let solveMoves = [];        // canonical solve moves
+  let mark = {};             // { crossAt, f2lAt, eoAt, coAt, ollAt, *Idx: solve-move count when reached }
+  let solveMoves = [];        // canonical solve moves (doubles coalesced)
   let record = null;
   const listeners = new Set();
 
-  const snapshot = () => ({
-    mode, phase, scrambleStr, applyStep, applyTotal: scrambleMoves.length, applyDetour: [...applyDetour],
-    solveMoves: [...solveMoves], solveMoveCount: liveMoveCount, elapsedMs: phase === 'solving' && solveStartAt ? Math.max(0, now() - solveStartAt) : null,
-    inspection: phase === 'inspecting' ? { enabled: inspectionEnabled, remainingMs: inspectionEndsAt ? Math.max(0, inspectionEndsAt - now()) : null } : null,
-    crossFace, crossColor, rotations, crossMoveCount,
-    progress, prev, skip: progress?.skip ?? null, record, done: phase === 'done',
-  });
+  function inspectionView() {
+    const limitMs = inspectionLimitMs(inspection);
+    const elapsedMs = Math.max(0, now() - inspectionStartAt);
+    const limited = limitMs != null;
+    return {
+      mode: inspection.mode, overtime: inspection.overtime, enabled: true,
+      limitMs, elapsedMs,
+      remainingMs: limited ? Math.max(0, limitMs - elapsedMs) : null,
+      overtimeMs: limited ? Math.max(0, elapsedMs - limitMs) : 0,
+      penalty: inspectionPenalty(inspection, elapsedMs),
+      callout: inspection.callouts && limited ? (elapsedMs >= 12000 ? 12 : elapsedMs >= 8000 ? 8 : null) : null,
+    };
+  }
+
+  // Autostart: once the limit passes, the solve clock is running from the
+  // limit instant (the first move does not restart it). Evaluated lazily so a
+  // fake clock drives it in tests; the browser interval polls it.
+  function maybeAutostart() {
+    if (phase !== 'inspecting' || inspection.overtime !== 'autostart') return;
+    const limitMs = inspectionLimitMs(inspection);
+    if (limitMs == null || now() < inspectionStartAt + limitMs) return;
+    phase = 'solving';
+    solveStartAt = inspectionStartAt + limitMs;
+    inspectionMs = limitMs;
+    penalty = null;
+    stopInspectionTimer();
+  }
+
+  const snapshot = () => {
+    maybeAutostart();
+    return {
+      mode, phase, scrambleStr, applyStep, applyTotal: scrambleMoves.length, applyDetour: [...applyDetour],
+      scrambleTurns: [...scrambleTurns],
+      solveMoves: [...solveMoves], solveMoveCount: solveMoves.length, elapsedMs: phase === 'solving' && solveStartAt != null ? Math.max(0, now() - solveStartAt) : null,
+      inspection: phase === 'inspecting' ? inspectionView() : null,
+      inspectionConfig: { ...inspection },
+      penalty, inspectionMs,
+      crossFace, crossColor, rotations, crossMoveCount,
+      progress, prev, skip: progress?.skip ?? null, record, done: phase === 'done',
+    };
+  };
 
   function emit() { for (const l of listeners) l(snapshot()); }
 
   function resetSolve() {
     crossFace = null; crossColor = null; rotations = 0; lastBottom = null;
     crossMoveCount = null;
-    crossAchieved = false; f2lAchieved = false; ollAchieved = false; eoAchieved = false; coAchieved = false; maxPairs = 0; liveMoveCount = 0;
+    crossAchieved = false; f2lAchieved = false; ollAchieved = false; eoAchieved = false; coAchieved = false; maxPairs = 0; pairsBeforeMove = 0;
     prev = null; progress = null; mark = {}; solveMoves = []; record = null;
+    solveStartAt = null; inspectionStartAt = null; inspectionMs = null; penalty = null;
+  }
+
+  function stopInspectionTimer() {
+    if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
+  }
+
+  // Start listening from the session's current turn: anything before now is
+  // not part of this attempt.
+  function syncSeq(snap) {
+    lastSeq = snap.moveEvent?.seq ?? 0;
+    lastEventMove = snap.moveEvent?.move ?? null;
   }
 
   // Guided scramble: cue the user through the scramble moves, recovering on a
@@ -84,14 +200,23 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (!session || session.getSnapshot().phase !== 'tracking') {
       throw new Error('Sync a solved cube before starting a guided scramble.');
     }
+    // Validate everything before touching any state.
+    const text = String(scramble ?? '').trim();
+    const target = stateFromScramble(text);   // throws on an invalid scramble
+    const planMoves = text.split(/\s+/).filter(Boolean);
+    const snap = session.getSnapshot();
+    // The plan starts from solved; on a scrambled cube the cues would be wrong.
+    if (!isSolved(snap.state)) throw new Error('Solve the cube (or sync) before starting a guided scramble.');
+    stopInspectionTimer();
     mode = 'guided';
-    scrambleStr = scramble;
-    scrambleMoves = scramble.split(/\s+/).filter(Boolean);
-    lastProcessedLen = session.getSnapshot().moves.length;
-    scrambledState = stateFromScramble(scramble);
-    applyStep = 0; applyDetour = [];
-    phase = 'applying';
+    scrambleStr = text;
+    scrambleMoves = planMoves;
+    planStates = [SOLVED, ...planMoves.map((_, i) => applyMoves(SOLVED, planMoves.slice(0, i + 1)))];
+    scrambledState = target;
+    applyStep = 0; applyDetour = []; applyBefore = null; scrambleTurns = [];
+    syncSeq(snap);
     resetSolve();
+    phase = 'applying';
     emit();
   }
 
@@ -100,62 +225,68 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (!session || session.getSnapshot().phase !== 'tracking') {
       throw new Error('Sync a solved cube before starting a free solve.');
     }
-    mode = 'free';
-    scrambleStr = null; scrambleMoves = []; scrambledState = null;
-    applyStep = 0; applyDetour = [];
-    phase = 'inspecting';
     const snap = session.getSnapshot();
-    solveStartIndex = snap.moves.length;
-    lastProcessedLen = snap.moves.length;
-    solveStartAt = null;              // the solve clock starts on the first move, not now
+    if (isSolved(snap.state)) throw new Error('Scramble the cube first.');
+    stopInspectionTimer();
+    mode = 'free';
+    scrambleStr = null; scrambleMoves = []; planStates = []; scrambledState = snap.state;
+    applyStep = 0; applyDetour = []; applyBefore = null;
+    // The session history restarts at every solved state, so it is exactly the
+    // user's scramble.
+    scrambleTurns = [...snap.moves];
+    syncSeq(snap);
     resetSolve();
     enterInspection();
     emit();
   }
 
   function cancel() {
-    mode = null; phase = 'idle'; scrambleStr = null; scrambleMoves = [];
-    scrambledState = null; applyStep = 0; applyDetour = [];
-    lastProcessedLen = -1;
-    lastProcessedMove = null;
-    if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
+    mode = null; phase = 'idle'; scrambleStr = null; scrambleMoves = []; planStates = [];
+    scrambledState = null; applyStep = 0; applyDetour = []; applyBefore = null; scrambleTurns = [];
+    stopInspectionTimer();
     resetSolve();
     emit();
   }
 
-  function onApplyMove(move, state) {
+  function onApplyMove(move, replaces, state) {
     // Plan states include the solved start at index 0, so `step` counts how many
     // scramble moves have been completed (matching Cross Scout's contract).
-    const planStates = [SOLVED, ...scrambleMoves.map((_, i) => applyMoves(SOLVED, scrambleMoves.slice(0, i + 1)))];
-    const result = followPlanTurn(planStates, applyStep, applyDetour, state, move);
+    // A coalesced double replaces the previous quarter: re-evaluate it from the
+    // plan position before that quarter.
+    const from = replaces && applyBefore ? applyBefore : { step: applyStep, detour: applyDetour };
+    applyBefore = from;
+    const result = followPlanTurn(planStates, from.step, from.detour, state, move);
     applyStep = result.step;
     applyDetour = result.detour;
+    scrambleTurns = pushMove(scrambleTurns, move, replaces);
     if (sameCubeState(state, scrambledState)) {
       // Scramble fully applied — enter inspection (the solve clock starts on
       // the first solving move, not now).
-      phase = 'inspecting';
-      solveStartIndex = session.getSnapshot().moves.length;
-      solveStartAt = null;
       resetSolve();
       enterInspection();
     }
     emit();
   }
 
+  // Scramble done: wait for the first solving move, inspecting unless off.
   function enterInspection() {
-    inspectionEndsAt = inspectionEnabled ? now() + inspectSeconds * 1000 : null;
-    if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
-    // Only tick in a browser; the Node unit tests use a frozen clock and a
+    phase = inspection.mode === 'off' ? 'ready' : 'inspecting';
+    inspectionStartAt = now();
+    startInspectionTimer();
+  }
+
+  function startInspectionTimer() {
+    stopInspectionTimer();
+    // Only tick in a browser; the Node unit tests use a fake clock and a
     // live interval would keep the test process alive.
-    if (inspectionEnabled && inspectionEndsAt != null && typeof window !== 'undefined') {
-      inspectionTimer = setInterval(() => { if (phase === 'inspecting') emit(); else { clearInterval(inspectionTimer); inspectionTimer = null; } }, 250);
+    if (phase === 'inspecting' && typeof window !== 'undefined') {
+      inspectionTimer = setInterval(() => { if (phase === 'inspecting') emit(); else stopInspectionTimer(); }, 250);
     }
   }
 
-  function finishSolve(state, allMoves) {
-    const solveMs = solveStartAt ? Math.max(0, now() - solveStartAt) : null;
-    const moves = allMoves.slice(solveStartIndex);
-    solveMoves = moves;
+  function finishSolve(state) {
+    const solveMs = solveStartAt != null ? Math.max(0, now() - solveStartAt) : null;
+    const moves = [...solveMoves];
     const phases = mark.crossAt != null ? {
       crossMs: Math.max(0, (mark.crossAt || solveStartAt) - solveStartAt),
       f2lMs: mark.f2lAt != null ? Math.max(0, (mark.f2lAt || mark.crossAt || solveStartAt) - (mark.crossAt || solveStartAt)) : null,
@@ -165,9 +296,13 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     record = {
       at: Date.now(),
       scramble: scrambleStr || '',
+      scrambleTurns: [...scrambleTurns].slice(-200),
       free: mode === 'free',
       crossFace, crossColor,
       solveMs,
+      penalty,                 // null | '+2' | 'DNF' (solveMs stays the raw clock time)
+      inspectionMs,
+      inspectionMode: inspection.mode,
       moveCount: moves.length,
       solveMoves: moves.slice(-200),
       tps: solveMs != null && solveMs > 0 ? moves.length / (solveMs / 1000) : null,
@@ -185,52 +320,72 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     emit();
   }
 
-  function onSolveMove(move, state, allMoves) {
-    liveMoveCount = Math.max(0, allMoves.length - solveStartIndex);
-    logConnection({ kind: 'debug', label: `[live] onSolveMove move=${move} liveMoveCount=${liveMoveCount} crossFace=${crossFace ?? '-'} state.cubies=${state.cubies.length}` });
+  // Solved up to one turn of the last-layer face (an AUF away).
+  function solvedUpToAuf(state, face) {
+    const ll = OPPOSITE_FACE[face];
+    return [ll, `${ll}2`, `${ll}'`].some(turn => isSolved(applyMoves(state, [turn])));
+  }
+
+  function onSolveMove(move, replaces, state) {
+    // A coalesced double replaces the previous quarter: same move count, and
+    // the regrip/rotation check already ran for that quarter.
+    if (!replaces || !solveMoves.length) pairsBeforeMove = maxPairs;
+    const coalesced = replaces && solveMoves.length > 0;
+    solveMoves = pushMove(solveMoves, move, coalesced);
+    const count = solveMoves.length;
+    logConnection({ kind: 'debug', label: `[live] onSolveMove move=${move} replaces=${replaces} count=${count} crossFace=${crossFace ?? '-'}` });
     if (crossFace === null) {
       const o = getOrientation() || {};
       crossFace = o.bottom || 'D';
       crossColor = state.cubies.find(c => c.id.length === 1 && c.stickers[crossFace] !== undefined)?.stickers[crossFace] || null;
       lastBottom = crossFace;
-    } else {
+    } else if (!coalesced) {
       // Count whole-cube rotations: a change in which canonical face is on the
       // bottom between solving moves is a regrip/rotation. This is the proxy
       // the PLL lens uses to flag excessive looking-around.
       const o = getOrientation() || {};
       if (o.bottom && o.bottom !== lastBottom) { rotations++; lastBottom = o.bottom; }
     }
-    const prevOll = ollAchieved, prevEo = eoAchieved, prevCo = coAchieved, prevSolved = Boolean(prev && prev.solved), prevPairs = maxPairs;
     const next = analyze(state, crossFace);
     // Milestones are monotonic: once the cross / F2L / OLL is reached it stays
     // reached, even if a later F2L insertion temporarily breaks a cross edge.
     // The displayed phase never regresses (the user expects “once the cross is
     // done, it’s done”); breakages surface as coach hindsight, not as a phase
-    // step backwards.
-    // detect a SKIPPED phase (a milestone reached "for free"): a celebratory hurrah.
-    //   • OLL skipped: OLL done as part of F2L (ollDone became true at the same move F2L finished, or was already true when F2L finished) — no dedicated OLL step.
-    //   • PLL skipped: solved became true right after OLL (no dedicated PLL step).
-    //   • F2L pair skipped: two pairs solved in one move (a pair fell in "for free").
-    let skip = null;
-    if (!prevEo && next.eoDone && f2lAchieved) skip = { kind: 'eo', label: 'EO skipped — edges oriented while solving F2L!' };
-    else if (!prevCo && next.coDone && eoAchieved) skip = { kind: 'co', label: 'CO skipped — corners oriented right after EO!' };
-    else if (!prevSolved && next.solved && eoAchieved && coAchieved) skip = { kind: 'pll', label: 'PLL skipped — solved straight after OLL (EO + CO)!' };
-    else if (crossAchieved && (next.pairsSolved ?? 0) >= (prevPairs ?? 0) + 2) skip = { kind: 'f2l', label: `${(next.pairsSolved ?? 0) - (prevPairs ?? 0)} F2L pairs solved at once!` };
+    // step backwards. Each milestone remembers the solve-move count at which it
+    // was reached (a coalesced double keeps the count of its first quarter).
     if (!crossAchieved && next.crossDone) {
       crossAchieved = true;
-      mark.crossAt = now();
+      mark.crossAt = now(); mark.crossIdx = count;
       mark.xcross = extendedCross(state, crossFace).kind;
-      crossMoveCount = liveMoveCount;
+      crossMoveCount = count;
     }
     // F2L pair progress. In pseudo mode, count pairs solved up to a
     // whole-D-layer rotation (the frame a pseudo-F2L user solves in).
     const pairCount = pseudo ? solvedPairsPseudo(state, crossFace).length : next.pairsSolved;
     if (crossAchieved && pairCount > maxPairs) maxPairs = pairCount;
     const f2lComplete = pseudo ? f2lDonePseudo(state, crossFace) : next.f2lDone;
-    if (crossAchieved && !f2lAchieved && f2lComplete) { f2lAchieved = true; mark.f2lAt = now(); }
-    if (f2lAchieved && !eoAchieved && next.eoDone) { eoAchieved = true; mark.eoAt = now(); }
-    if (f2lAchieved && !coAchieved && next.coDone) { coAchieved = true; mark.coAt = now(); }
-    if (eoAchieved && coAchieved && !ollAchieved) { ollAchieved = true; mark.ollAt = now(); }
+    if (crossAchieved && !f2lAchieved && f2lComplete) { f2lAchieved = true; mark.f2lAt = now(); mark.f2lIdx = count; }
+    if (f2lAchieved && !eoAchieved && next.eoDone) { eoAchieved = true; mark.eoAt = now(); mark.eoIdx = count; }
+    if (f2lAchieved && !coAchieved && next.coDone) { coAchieved = true; mark.coAt = now(); mark.coIdx = count; }
+    if (eoAchieved && coAchieved && !ollAchieved) { ollAchieved = true; mark.ollAt = now(); mark.ollIdx = count; }
+    // A SKIPPED phase is a milestone reached on the very move that completed
+    // the previous milestone (no dedicated step for it): a celebratory hurrah.
+    //   • PLL skipped: solved (or an AUF away) on the move OLL completed.
+    //   • OLL skipped: EO + CO done on the move F2L completed.
+    //   • EO skipped: edges oriented on the move F2L completed (corners not).
+    //   • CO skipped: corners oriented on the move EO completed (after F2L).
+    //   • F2L pairs: two or more pairs solved in one move after the cross (an
+    //     X-cross is reported through record.xcross instead).
+    const on = idx => idx === count;
+    let skip = null;
+    if (on(mark.ollIdx) && (next.solved || solvedUpToAuf(state, crossFace))) {
+      skip = on(mark.f2lIdx)
+        ? { kind: 'pll', label: 'Last layer skipped — solved straight out of F2L!' }
+        : { kind: 'pll', label: 'PLL skipped — solved straight after OLL!' };
+    } else if (on(mark.ollIdx) && on(mark.f2lIdx)) skip = { kind: 'oll', label: 'OLL skipped — last layer oriented while solving F2L!' };
+    else if (on(mark.eoIdx) && on(mark.f2lIdx)) skip = { kind: 'eo', label: 'EO skipped — edges oriented while solving F2L!' };
+    else if (on(mark.coIdx) && on(mark.eoIdx) && !on(mark.f2lIdx)) skip = { kind: 'co', label: 'CO skipped — corners oriented along with the edges!' };
+    else if (crossAchieved && mark.crossIdx < count && maxPairs >= pairsBeforeMove + 2) skip = { kind: 'f2l', label: `${maxPairs - pairsBeforeMove} F2L pairs solved at once!` };
     let label;
     if (next.solved) label = 'solved';
     else if (eoAchieved && coAchieved) label = 'pll';
@@ -241,36 +396,62 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     else label = 'pre-cross';
     progress = { phase: label, crossDone: crossAchieved, pairsSolved: maxPairs, f2lDone: f2lAchieved, eoDone: eoAchieved, coDone: coAchieved, ollDone: eoAchieved && coAchieved, solved: next.solved, skip };
     prev = next;
-    if (next.solved) { finishSolve(state, allMoves); return; }
+    if (next.solved) { finishSolve(state); return; }
     emit();
   }
 
-  function onSnapshot(snap) {
-    if (snap.phase === 'desynced') { phase = 'desynced'; logConnection({ kind: 'error', label: '[live] onSnapshot DESYNC phase=desynced' }); emit(); return; }
-    if (phase === 'desynced' || phase === 'done') return;
-    if (snap.phase !== 'tracking') return;
-    // Process when a genuinely new move arrives OR a coalesced double replaces the last
-    // entry (length unchanged, but the last move string changes U -> U2 — must not be skipped).
-    const lastEntry = snap.moves[snap.moves.length - 1];
-    const guardFired = snap.moves.length !== lastProcessedLen || lastEntry !== lastProcessedMove;
-    logConnection({ kind: 'debug', label: `[live] onSnapshot phase=${phase} snap.phase=${snap.phase} moves.len=${snap.moves.length} lastProcessedLen=${lastProcessedLen} lastEntry=${lastEntry ?? '-'} lastProcessedMove=${lastProcessedMove ?? '-'} guard=${guardFired}` });
-    if (guardFired) {
-      lastProcessedLen = snap.moves.length;
-      lastProcessedMove = lastEntry;
-      const move = snap.lastMove;
-      if (!move) return;
-    if (phase === 'applying') { onApplyMove(move, snap.state); return; }
+  function startSolving() {
+    // The first solving move starts the solve clock and ends inspection; the
+    // inspection penalty is fixed now.
+    const t = now();
     if (phase === 'inspecting') {
-      // The first solving move starts the solve clock and ends inspection.
-      phase = 'solving';
-      solveStartAt = now();
-      enterInspection(); // no-op to clear countdown state
-      if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
-      onSolveMove(move, snap.state, snap.moves);
+      inspectionMs = Math.max(0, t - inspectionStartAt);
+      penalty = inspectionPenalty(inspection, inspectionMs);
+    }
+    phase = 'solving';
+    solveStartAt = t;
+    stopInspectionTimer();
+  }
+
+  function onSnapshot(snap) {
+    if (snap.phase === 'desynced') {
+      if (phase !== 'idle' && phase !== 'done' && phase !== 'desynced') {
+        phase = 'desynced'; stopInspectionTimer();
+        logConnection({ kind: 'error', label: '[live] onSnapshot DESYNC phase=desynced' });
+        emit();
+      }
       return;
     }
-    if (phase === 'solving') { onSolveMove(move, snap.state, snap.moves); }
-  }
+    if (snap.phase !== 'tracking') return;
+    const event = snap.moveEvent;
+    if (!event || event.seq <= lastSeq) return;   // no new turn (gyro, battery, status, re-sync)
+    lastSeq = event.seq;
+    const quarter = lastEventMove;                 // the quarter a coalesced double extends
+    lastEventMove = event.move;
+    if (phase === 'idle' || phase === 'done' || phase === 'desynced') return;
+    maybeAutostart();
+    const { move, replaces } = event;
+    logConnection({ kind: 'debug', label: `[live] onSnapshot phase=${phase} seq=${event.seq} move=${move} replaces=${replaces}` });
+    if (phase === 'applying') { onApplyMove(move, replaces, snap.state); return; }
+    if (phase === 'inspecting' || phase === 'ready') {
+      // The snapshot state is authoritative: a double that leaves the cube
+      // scrambled is not a solving move.
+      if (replaces && scrambledState && sameCubeState(snap.state, scrambledState)) return;
+      startSolving();
+    }
+    if (phase !== 'solving') return;
+    if (replaces && !solveMoves.length) {
+      // The first solving quarter was coalesced with the last scramble quarter
+      // (e.g. scramble ends in B', the user turns B' again quickly: "B2"). The
+      // scramble part is already accounted for, so the solve starts with the
+      // extra quarter alone. event.turn is the physical quarter just applied;
+      // fall back to the previous event's quarter (a double is two identical
+      // quarters).
+      const extra = event.turn || (quarter && !quarter.endsWith('2') ? quarter : move);
+      onSolveMove(extra, false, snap.state);
+      return;
+    }
+    onSolveMove(move, replaces, snap.state);
   }
 
   const unsub = session?.subscribe(onSnapshot);
@@ -278,12 +459,18 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   return {
     startGuided, startFree, cancel,
     setPseudo(value) { pseudo = Boolean(value); },
-    setInspection({ enabled, seconds } = {}) {
-      if (typeof enabled === 'boolean') inspectionEnabled = enabled;
-      if (Number.isFinite(seconds)) inspectSeconds = Math.max(0, Math.min(60, seconds));
-      if (phase === 'inspecting') enterInspection();
+    // setInspection(config) — see DEFAULT_INSPECTION. The legacy
+    // { enabled, seconds } shape is still accepted (normalizeInspection).
+    // Changing it while waiting keeps the inspection start time.
+    setInspection(config = {}) {
+      inspection = normalizeInspection(config, inspection);
+      if (phase === 'inspecting' || phase === 'ready') {
+        phase = inspection.mode === 'off' ? 'ready' : 'inspecting';
+        startInspectionTimer();
+      }
       emit();
     },
+    getInspection: () => ({ ...inspection }),
     subscribe(listener) { listeners.add(listener); listener(snapshot()); return () => listeners.delete(listener); },
     getSnapshot: snapshot,
     detach() { unsub?.(); },

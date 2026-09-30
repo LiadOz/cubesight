@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  computeTPS, ao5, ao12, summarize, rollingTrend, trendGroups,
-  phaseSplits, aggregateByCase, weakCases, median,
+  computeTPS, ao5, summarize, rollingTrend, trendGroups,
+  phaseSplits, weakCases, median,
 } from '../src/solve-metrics.js';
+import { ao12, resultMs, isDnf } from '../src/solve-metrics.js';
 import { loadSolves, saveSolves, appendSolve } from '../src/solve-store.js';
 
 function memoryStorage() {
@@ -79,7 +80,6 @@ test('aggregateByCase and weakCases rank lowest accuracy then slowest', () => {
     rec(20000, 60, { pllCase: 'Z', solved: false }),
     rec(20000, 60, { pllCase: 'Z', solved: false }),
   ];
-  const agg = aggregateByCase(rs, 'pllCase');
   const weak = weakCases(rs, 'pllCase', 6, 2);
   assert.equal(weak[0].case, 'Z');     // 0% accuracy, 2 attempts
   assert.equal(weak[0].accuracy, 0);
@@ -128,4 +128,36 @@ test('appendSolve ignores malformed records', () => {
   assert.equal(records.length, 0);
   records = appendSolve(storage, records, rec(10000, 55));
   assert.equal(records.length, 1);
+});
+
+test('summarize ignores untimed records for the best time (no 0.00s best)', () => {
+  const rs = [rec(1500, 50), rec(null, 40), rec(1200, 50)];
+  assert.equal(summarize(rs).bestSolveMs, 1200);
+  assert.equal(summarize([rec(null, 40)]).bestSolveMs, null);
+});
+
+test('penalties: +2 adds two seconds, DNF is the worst result (WCA averaging)', () => {
+  const p = (ms, penalty) => ({ ...rec(ms, 50), penalty });
+  assert.equal(resultMs(p(1000, '+2')), 3000);
+  assert.equal(resultMs(p(1000, 'DNF')), Infinity);
+  assert.equal(resultMs(p(1000, null)), 1000);
+  // one DNF is dropped as the worst
+  const oneDnf = [p(1000), p(2000, 'DNF'), p(1500), p(1200), p(1800)];
+  assert.equal(ao5(oneDnf), 1500);
+  // +2 counts toward the average
+  const plus2 = [p(1000), p(1000, '+2'), p(1500), p(1200), p(9000)];
+  assert.equal(ao5(plus2), (3000 + 1500 + 1200) / 3);
+  // two DNFs make the average a DNF
+  const twoDnf = [p(1000), p(2000, 'DNF'), p(1500), p(1200, 'DNF'), p(1800)];
+  assert.equal(ao5(twoDnf), Infinity);
+  assert.equal(isDnf(ao5(twoDnf)), true);
+  const twelve = Array.from({ length: 12 }, (_, i) => p(1000 + i * 100, i === 3 ? 'DNF' : null));
+  assert.ok(Number.isFinite(ao12(twelve)));
+  twelve[5] = p(1000, 'DNF');
+  assert.equal(ao12(twelve), Infinity);
+  // summarize: best/mean use official results and skip DNFs
+  const s = summarize([p(1000, '+2'), p(2500), p(500, 'DNF')]);
+  assert.equal(s.bestSolveMs, 2500);
+  assert.equal(s.dnfCount, 1);
+  assert.equal(s.meanSolveMs, 2750);
 });

@@ -1,43 +1,54 @@
 // Solving-method configurations that drive the timeline stages.
 //
-// Each method defines the stages its timeline shows and a `mapProgress` function that
-// turns the live tracker's monotonic `progress` (crossDone / pairsSolved / f2lDone /
-// ollDone / solved) into a stage index for THIS method. CFOP is fully detected by
-// the live tracker; other methods (Roux, ZZ, Petrus, …) list their stages so the UI is configurable
-// now, with their `mapProgress` to be implemented alongside their
-// method-specific milestone detection in the tracker (a documented TODO).
+// Each method lists the stages you WORK THROUGH, in order, followed by a finish point
+// ('Solved') as the last entry. `mapProgress` turns the live tracker's monotonic
+// `progress` (crossDone / pairsSolved / f2lDone / eoDone / coDone / ollDone / solved)
+// into the index of the stage you are CURRENTLY working on: before the cross is done
+// that is the first stage (Cross); once the cross is done it is F2L; and so on. A
+// solved cube maps to the finish point (stages.length - 1). There is no Scramble stage:
+// scrambling/inspection map to the first stage, since that is what you are about to do.
+//
+// CFOP is fully detected by the live tracker; other methods (Roux, ZZ, Petrus, …) list
+// their stages so the UI is configurable now, with their `mapProgress` to be implemented
+// alongside their method-specific milestone detection in the tracker (a documented TODO).
 
+export const FINISH_STAGE = 'Solved';
+
+// OLL is split into two looks (EO then CO) by default.
+// TODO: there is no 1-look/2-look OLL setting yet. When one is added, a 1-look method
+// should list a single 'OLL' stage (current until progress.ollDone) instead of EO/CO,
+// and brain.js's skip-marker mapping should point eo/co/oll skips at it.
 export const METHODS = [
   {
     id: 'cfop',
     label: 'CFOP',
-    description: 'Cross → F2L → OLL → PLL.',
-    stages: ['Scramble', 'Cross', 'F2L', 'EO', 'CO', 'PLL', 'Solved'],
-    mapProgress(progress, phase) {
+    description: 'Cross → F2L → OLL (2-look: EO, CO) → PLL.',
+    stages: ['Cross', 'F2L', 'EO', 'CO', 'PLL', FINISH_STAGE],
+    mapProgress(progress) {
       const p = progress || {};
-      if (phase === 'applying' || phase === 'inspecting') return 0;  // Scramble
-      if (!p.crossDone) return 0;                            // pre-cross
-      if (!p.f2lDone) return 1;                               // Cross
-      if (!p.eoDone) return 2;                               // F2L (pair count in phase detail)
-      if (!p.coDone) return 3;                               // EO (orient edges)
-      if (!p.solved) return 4;                               // CO (orient corners = OLL done)
-      return 5;                                             // Solved
+      if (p.solved) return 5;                      // finish
+      if (!p.crossDone) return 0;                  // building the cross (also scramble/inspection)
+      if (!p.f2lDone) return 1;                    // F2L (pair count in phase detail)
+      if (!p.eoDone) return 2;                     // OLL look 1: orient edges
+      if (!p.coDone) return 3;                     // OLL look 2: orient corners
+      return 4;                                    // PLL
     },
   },
   {
     id: 'roux',
     label: 'Roux',
-    description: 'First Block → SB Pairs → CMLL → L6E. (Stage detection is CFOP-based for now — Roux milestones are a TODO.)',
-    stages: ['Scramble', 'First Block', 'SB Pairs', 'CMLL', 'L6E', 'Solved'],
-    // TODO: detect Roux milestones (first block, SB pairs, CMLL, L6E) in the live tracker.
-    mapProgress(progress, phase) {
+    description: 'First Block → Second Block → CMLL → L6E. (Stage detection is CFOP-based for now — Roux milestones are a TODO.)',
+    stages: ['First Block', 'SB', 'CMLL', 'L6E', FINISH_STAGE],
+    // TODO: detect Roux milestones (first block, second block, CMLL, L6E) in the live tracker.
+    // Until then the CFOP milestones stand in: cross ≈ first block, F2L ≈ second block,
+    // OLL ≈ CMLL, solve ≈ L6E.
+    mapProgress(progress) {
       const p = progress || {};
-      if (phase === 'applying' || phase === 'inspecting') return 0;
-      if (!p.crossDone) return 0;        // Roux "First Block" ≈ cross for now
-      if (!p.f2lDone) return 1 + Math.min(3, Math.max(0, Math.floor((p.pairsSolved ?? 0) / 4 * 3)));
-      if (!p.ollDone) return 4;
-      if (!p.solved) return 5;
-      return 6;
+      if (p.solved) return 4;                      // finish
+      if (!p.crossDone) return 0;                  // First Block
+      if (!p.f2lDone) return 1;                    // SB
+      if (!p.ollDone) return 2;                    // CMLL
+      return 3;                                    // L6E
     },
   },
 ];

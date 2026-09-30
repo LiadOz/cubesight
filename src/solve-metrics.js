@@ -39,15 +39,32 @@ function mean(values) {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
+// Official result of a timed solve under its inspection penalty: +2 adds two
+// seconds, a DNF is Infinity (worse than any time, so it sorts last and is the
+// "worst" dropped by a trimmed average). null when the solve has no time.
+export const PLUS_TWO_MS = 2000;
+export function resultMs(record) {
+  if (!record) return null;
+  if (record.penalty === 'DNF') return Infinity;
+  const ms = num(record.solveMs);
+  if (ms === null) return null;
+  return record.penalty === '+2' ? ms + PLUS_TWO_MS : ms;
+}
+export const isDnf = value => value === Infinity;
+
 // Trimmed mean of the last `n` records' `field`: drop the best and worst, mean
 // the rest. Returns null until enough records exist (>= 5 for ao5, etc.), again
 // matching competition reporting which only reports an average once it is full.
+// For solve times, inspection penalties apply (WCA 9f): +2 counts, a DNF is the
+// worst result, and two or more DNFs make the average a DNF (Infinity).
 export function trimmedAverage(records, n, field = 'solveMs') {
-  const last = records.filter(r => r && num(r[field]) !== null).slice(-n);
+  const value = field === 'solveMs' ? resultMs : r => num(r[field]);
+  const last = records.filter(r => r && value(r) !== null).slice(-n).map(value);
   if (last.length < n) return null;
-  const sorted = [...last].sort((a, b) => a[field] - b[field]);
+  const sorted = [...last].sort((a, b) => a - b);
   const middle = sorted.slice(1, -1);
-  return mean(middle.map(r => r[field]));
+  if (middle.some(isDnf)) return Infinity;
+  return mean(middle);
 }
 
 export const ao5 = (records, field = 'solveMs') => trimmedAverage(records, 5, field);
@@ -104,12 +121,16 @@ export function trendGroups(records, grouping = 'day') {
 // Overall summary for a header strip: counts, current ao, lifetime mean/best.
 export function summarize(records) {
   const solved = records.filter(r => r.solved);
-  const solveMs = solved.map(r => r.solveMs);
+  // Official results (penalties applied); DNFs and untimed solves (null) are
+  // excluded from best/median/mean — a missing clock must not read as 0.00s.
+  const results = solved.map(resultMs);
+  const solveMs = results.filter(Number.isFinite);
   const tps = solved.map(r => r.tps).filter(Number.isFinite);
   const moveCounts = solved.map(r => r.moveCount);
   return {
     count: records.length,
     solvedCount: solved.length,
+    dnfCount: results.filter(isDnf).length,
     bestSolveMs: solveMs.length ? Math.min(...solveMs) : null,
     medianSolveMs: median(solveMs),
     meanSolveMs: mean(solveMs),
