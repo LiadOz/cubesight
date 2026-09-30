@@ -1,0 +1,89 @@
+/* Mono tokens (docs/design/brain-v2/tokens.md). The site mode comes from
+   :root[data-theme]; components only read var(--b-*). */
+
+.brain[data-brain-style="mono"] {
+  --b-font-ui: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --b-font-num: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --b-font-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --b-weight-clock: 300;
+  --b-fs-clock: 168px;
+  --b-fs-countdown: 168px;
+  --b-fs-result: 80px;
+  --b-fs-move: 36px;
+  --b-fs-body: 14px;
+  --b-fs-label: 12px;
+  --b-radius-key: 4px;
+  --b-radius-control: 6px;
+  --b-radius-bar: 8px;
+  --b-ease: cubic-bezier(.22, 1, .36, 1);
+  --b-ease-pop: cubic-bezier(.34, 1.56, .64, 1);
+  /* Muted stickers so the single accent wins (F ×0.84, R ×0.68 shading in 3D). */
+  --b-st-w: #e8e6de; --b-st-y: #f2c94c; --b-st-g: #3fa66a; --b-st-b: #3d6fd6; --b-st-r: #d9534a; --b-st-o: #e98a3c;
+}
+
+:root[data-theme="dark"] .brain[data-brain-style="mono"] {
+  --b-bg: #16171b;
+  --b-canvas: #101114;
+  --b-surface: #1f2126;
+  --b-surface-2: #1f2126;
+  --b-ink: #d9d6cb;
+  --b-muted: #8a8e99;
+  --b-faint: #6b6f7a;
+  --b-accent: #e7b34c;
+  --b-accent-text: #e7b34c;
+  --b-accent-soft: #6b5424;
+  --b-on-accent: #16171b;
+  --b-good: #e7b34c;
+  --b-warn: #e0675e;
+  --b-warn-text: #e0675e;
+  --b-plus2: #e0675e;
+  --b-plus2-soft: #5a2d2a;
+  --b-dnf: #e0675e;
+  --b-track: #34373f;
+  --b-fill: #e7b34c;
+  --b-fill-live: #e7b34c;
+  --b-hairline: #34373f;
+  --b-cube-body: #0b0c0e;
+  --b-cube-shadow: none;
+  --b-cube-glow: none;
+  --b-key-bg: #1f2126;
+  --b-key-ink: #d9d6cb;
+  --b-chart-band: #1c1d22;
+  --b-chart-band-alt: #191a1e;
+}
+
+:root:not([data-theme="dark"]) .brain[data-brain-style="mono"] {
+  --b-bg: #f1eee6;
+  --b-canvas: #e4e0d6;
+  --b-surface: #e8e5dc;
+  --b-surface-2: #e8e5dc;
+  --b-ink: #2b2a27;
+  --b-muted: #625f58;
+  --b-faint: #cbc6ba;
+  --b-accent: #8a5e07;
+  --b-accent-text: #8a5e07;
+  --b-accent-soft: #f3e6c4;
+  --b-on-accent: #f1eee6;
+  --b-good: #8a5e07;
+  --b-warn: #b8392f;
+  --b-warn-text: #b8392f;
+  --b-plus2: #b8392f;
+  --b-plus2-soft: #f7e0db;
+  --b-dnf: #b8392f;
+  --b-track: #cbc6ba;
+  --b-fill: #8a5e07;
+  --b-fill-live: #8a5e07;
+  --b-hairline: #cbc6ba;
+  --b-cube-body: #1b1c1f;
+  --b-cube-shadow: none;
+  --b-cube-glow: none;
+  --b-key-bg: #e8e5dc;
+  --b-key-ink: #2b2a27;
+  --b-chart-band: #ebe7dd;
+  --b-chart-band-alt: #efebe3;
+}
+
+/* The page behind the Brain takes the style's background, so the view is not
+   a box inside the site. */
+:root[data-theme="dark"]:has(#brain-view:not([hidden]) .brain[data-brain-style="mono"]) { --b-page: #16171b; --b-page-line: #34373f; }
+:root:not([data-theme="dark"]):has(#brain-view:not([hidden]) .brain[data-brain-style="mono"]) { --b-page: #f1eee6; --b-page-line: #cbc6ba; }
