@@ -142,7 +142,8 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {TpsSeries} tpsSeries
  * @property {SplitRow[]} splits
  * @property {{centerValue:string, centerLabel:string, arcs:{key:string, label:string, fraction:number, tone:DeltaTone|'skip'}[]}} donut
- * @property {{ao5:string, ao12:string, pb:string, mean:string, tones:Object<string, DeltaTone>}} session
+ * @property {{ao5:string, ao12:string, pb:string, mean:string, tones:Object<string, DeltaTone>,
+ *   count:number, worst:string, mo3:string, ao50:string, ao100:string}} session   this solve's automatic session
  * @property {{points:{i:number, ms:number|null, kind:'normal'|'plus2'|'dnf'|'pb'|'current'}[], min:number, max:number}} spark
  * @property {{key:string, text:string, penaltyTag:string, current:boolean}[]} recent
  * @property {{key:string, tag:string, text:string, alg?:string, tone:'good'|'warn'|'info'}[]} coach
@@ -154,7 +155,24 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
 /** @typedef {{key:string, label:string, ms:number|null, text:string, deltaText:string, tone:DeltaTone, moves:number|null,
  *   avgMs:number|null, ratio:number, avgRatio:number, skipped:boolean, pseudo:boolean}} SplitRow */
 /** @typedef {{key:string, tone:'good'|'warn'|'info'|'muted', text:string, tag?:string}} CoachLine */
-/** @typedef {{solves:number, best:string, ao5:string, ao12:string, medianTps:string, medianMoves:string}} StatsVM */
+/** Session focus: what the user is training (src/store/focus.js). Every statistic is computed within one focus.
+ * @typedef {'speed'|'flow'|'learning'} Focus */
+/** One scope of statistics (all time or one session) of ONE focus, as display strings; '—' until an average
+ * has enough solves. Speed reads time/averages/pb, flow reads `flow`, learning reads `learning`.
+ * `flow.gapCv` is the spread of the gaps between moves as a percentage of their mean (lower is steadier);
+ * `flow.pauses` counts gaps longer than 2x a solve's median gap. `learning.reviewAccuracy` is '—' until the
+ * solve review (src/analysis) stores `reviewAccuracy` (0..100) on records.
+ * @typedef {{solves:string, best:string, worst:string, mean:string, mo3:string, ao5:string, ao12:string, ao50:string, ao100:string,
+ *   pb:{mo3:string, ao5:string, ao12:string, ao50:string, ao100:string},
+ *   flow:{meanTps:string, tpsStd:string, gapCv:string, pauses:string, pausesPerSolve:string},
+ *   learning:{meanMoves:string, medianMoves:string, bestMoves:string, reviewAccuracy:string}}} ScopeStatsVM */
+/** The top-level fields (solves .. pb, allTime, session) describe the ACTIVE focus (`focus`); `byFocus` has all
+ * three (session = that focus's most recent session); `mixed` is the explicit all-foci view, flagged
+ * `mixed: true`: never compare it with a single-focus number.
+ * @typedef {{focus:Focus, solves:string, best:string, ao5:string, ao12:string, medianTps:string, medianMoves:string,
+ *   worst:string, mo3:string, ao50:string, ao100:string, pb:ScopeStatsVM['pb'],
+ *   allTime:ScopeStatsVM, session:ScopeStatsVM,
+ *   byFocus:Object<Focus, {allTime:ScopeStatsVM, session:ScopeStatsVM}>, mixed:ScopeStatsVM & {mixed:true}}} StatsVM */
 /** @typedef {{key:string, label:string, action:BrainAction['type'], penalty?:'+2'|'DNF'}} KeyHint */
 /** Config bar: clicking an option dispatches setSetting(item.id, option.value).
  * @typedef {{items:{id:string, label?:string, options:{value:string, label:string, active:boolean}[]}[]}} ConfigBarVM */
@@ -169,7 +187,8 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
 /** @typedef {{type:'connect'}|{type:'sync'}|{type:'recenter'}|{type:'disconnect'}|{type:'clearSavedCube'}
  *  |{type:'resetView'}|{type:'rebuildView'}|{type:'start'}|{type:'startCustom'}|{type:'generateScramble'}
  *  |{type:'setScrambleText', text:string}|{type:'cancel'}|{type:'next'}|{type:'retry'}|{type:'dismissResults'}
- *  |{type:'setPenalty', penalty:null|'+2'|'DNF'}|{type:'togglePenalty', penalty:'+2'|'DNF'}
+ *  |{type:'setPenalty', penalty:null|'none'|'+2'|'DNF', at?:number}|{type:'togglePenalty', penalty:'+2'|'DNF'}
+ *  |{type:'deleteSolve', at?:number}|{type:'undoDelete'}
  *  |{type:'setSetting', path:string, value:any}|{type:'toggleSettings'}|{type:'command', text:string}
  *  |{type:'toggleTimer'}|{type:'cycleCoach'}|{type:'export'}|{type:'import', file:File}|{type:'setStyle', style:BrainStyle}
  *  |{type:'sendLog'}|{type:'clearLog'}} BrainAction */

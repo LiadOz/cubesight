@@ -5,6 +5,8 @@
 
 import { DEFAULT_INSPECTION, normalizeInspection } from '../solve-live.js';
 import { BRAIN_STYLES, DEFAULT_BRAIN_STYLE } from './types.js';
+import { DEFAULT_SESSION_GAP_MIN, normalizeGapMin } from '../store/sessions.js';
+import { FOCI, DEFAULT_FOCUS, normalizeFocus } from '../store/focus.js';
 
 export const SETTINGS_KEY = 'cubesight-brain-settings-v2';
 const LEGACY_KEYS = {
@@ -64,6 +66,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   timer: 'visible',
   timeline: 'on',
   compare: 'avg',
+  // Automatic sessions (src/store): what you are training (a change starts a new session)
+  // and the idle minutes between solves that start one.
+  session: { focus: DEFAULT_FOCUS, gapMin: DEFAULT_SESSION_GAP_MIN },
   toggles: { ...DEFAULT_TOGGLES },
 });
 
@@ -77,9 +82,12 @@ export const PRESETS = {
 /** Validate any (possibly partial or stale) settings object into a full one. */
 export function normalizeSettings(raw = {}) {
   const input = raw && typeof raw === 'object' ? raw : {};
-  const out = { ...DEFAULT_SETTINGS, toggles: { ...DEFAULT_TOGGLES }, inspection: { ...DEFAULT_INSPECTION } };
+  const out = { ...DEFAULT_SETTINGS, toggles: { ...DEFAULT_TOGGLES }, inspection: { ...DEFAULT_INSPECTION }, session: { ...DEFAULT_SETTINGS.session } };
   for (const [key, allowed] of Object.entries(ENUMS)) if (allowed.includes(input[key])) out[key] = input[key];
   if (typeof input.voice === 'boolean') out.voice = input.voice;
+  if (input.session && typeof input.session === 'object') {
+    out.session = { focus: normalizeFocus(input.session.focus), gapMin: normalizeGapMin(input.session.gapMin ?? DEFAULT_SESSION_GAP_MIN) };
+  }
   if (input.inspection && typeof input.inspection === 'object') out.inspection = normalizeInspection(input.inspection, DEFAULT_INSPECTION);
   if (input.toggles && typeof input.toggles === 'object') {
     for (const key of Object.keys(DEFAULT_TOGGLES)) if (typeof input.toggles[key] === 'boolean') out.toggles[key] = input.toggles[key];
@@ -129,6 +137,7 @@ export function setSetting(settings, path, value) {
     return normalizeSettings({ ...settings, inspection: normalizeInspection(patch && typeof patch === 'object' ? patch : {}, settings.inspection) });
   }
   if (head === 'toggles' && sub) return normalizeSettings({ ...settings, toggles: { ...settings.toggles, [sub]: Boolean(value) } });
+  if (head === 'session' && sub) return normalizeSettings({ ...settings, session: { ...settings.session, [sub]: value } });
   if (head === 'voice') return normalizeSettings({ ...settings, voice: Boolean(value) });
   return normalizeSettings({ ...settings, [head]: value });
 }
@@ -160,6 +169,8 @@ const LABELS = {
   'inspection.callouts': { true: '8 s + 12 s', false: 'off' },
   voice: { true: 'on', false: 'off' },
 };
+
+const FOCUS_LABELS = { speed: 'speed', flow: 'flow', learning: 'learning' };
 
 const HELP = {
   style: 'Orbit: ring timeline around the cube. Mono: monkeytype-style lanes.',
@@ -271,6 +282,7 @@ export function buildConfigBar(settings) {
   const insp = settings.inspection;
   items.push(seg('inspection.mode', ['wca', 'custom', 'unlimited', 'off'], insp.mode, { wca: '15s', custom: `${insp.seconds}s`, unlimited: '∞', off: 'off' }, 'insp'));
   items.push({ id: 'penalties', options: [{ value: settings.penalties === 'apply' ? 'ignore' : 'apply', label: 'wca penalties', active: settings.penalties === 'apply' }] });
+  items.push(seg('session.focus', FOCI, settings.session.focus, FOCUS_LABELS, 'focus'));
   return { items };
 }
 
@@ -285,7 +297,8 @@ const OFF = ['off', 'false', 'no', '0', 'hide'];
  *   overtime count | grace 3 | grace dnf | callouts off | voice on
  *   oll 1 | pll 2-look | method cfop | cross x | xxcross | pseudo on
  *   style orbit | timer hide | coach after | timeline off | compare pb
- *   scramble paste | penalties off | preset relaxed
+ *   scramble paste | penalties off | preset relaxed | session 45 (idle minutes that start a new session)
+ *   focus speed | flow | learning (also: speed / flow / learning)
  */
 export function parseCommand(text) {
   const [cmdRaw, ...rest] = String(text || '').trim().toLowerCase().split(/\s+/);
@@ -330,6 +343,9 @@ export function parseCommand(text) {
     case 'compare': return { avg: 'avg', average: 'avg', pb: 'pb', raw: 'raw', off: 'raw' }[arg] ? { path: 'compare', value: { avg: 'avg', average: 'avg', pb: 'pb', raw: 'raw', off: 'raw' }[arg] } : null;
     case 'scramble': return ENUMS.scramble.includes(arg) ? { path: 'scramble', value: arg } : null;
     case 'penalties': return ON.includes(arg) || arg === 'apply' ? { path: 'penalties', value: 'apply' } : OFF.includes(arg) || arg === 'ignore' ? { path: 'penalties', value: 'ignore' } : null;
+    case 'session': case 'sessiongap': return Number.isFinite(num) && num > 0 ? { path: 'session.gapMin', value: num } : null;
+    case 'focus': return FOCI.includes(arg) ? { path: 'session.focus', value: arg } : null;
+    case 'speed': case 'flow': case 'learning': return { path: 'session.focus', value: cmd };
     case 'preset': return PRESETS[arg] ? { path: 'preset', value: arg } : null;
     default: return null;
   }

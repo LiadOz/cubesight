@@ -4,10 +4,19 @@ import { test, expect } from 'playwright/test';
 // visual shell and styles are tested separately): the real smart-cube session
 // with a fake GAN connection, the real live tracker, solve store, recorder and
 // keyboard. The stub exposes every view-model the controller renders.
-async function mountController(page) {
+
+// The solves as stored in IndexedDB (after every queued write has landed).
+const storedSolves = page => page.evaluate(async () => {
+  await window.testBrain.view.flushHistory();
+  const backend = await (await import('/src/store/idb.js')).openIdbBackend();
+  const all = await backend.getAll();
+  await backend.close();
+  return all;
+});
+async function mountController(page, { fresh = true } = {}) {
   await page.goto('/');
-  await page.evaluate(async () => {
-    localStorage.clear();
+  await page.evaluate(async fresh => {
+    if (fresh) localStorage.clear();
     const { mountBrainController } = await import('/src/brain/controller.js');
     const { createSmartCubeSession } = await import('/src/smart-cube-session.js');
     const solved = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
@@ -48,7 +57,7 @@ async function mountController(page) {
     const view = mountBrainController(root, session, { createShell, loadStyle, rebuild() {} });
     window.testBrain = { session, view, log, emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn) };
     await session.connect();
-  });
+  }, fresh);
 }
 
 const vm = page => page.evaluate(() => {
@@ -87,7 +96,7 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   expect(v.results.moves).toBe('13');
   expect(v.results.time.penalty).toBe(null);
 
-  const stored = await page.evaluate(async () => (await import('/src/solve-store.js')).loadSolves(localStorage));
+  const stored = await storedSolves(page);
   expect(stored).toHaveLength(1);
   const [record] = stored;
   expect(record.moveTimes).toHaveLength(13);
@@ -103,7 +112,7 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   expect((await vm(page)).results.time.penalty).toBe(null);
   await page.keyboard.press('d');
   expect((await vm(page)).results.time.text).toBe('DNF');
-  expect((await page.evaluate(async () => (await import('/src/solve-store.js')).loadSolves(localStorage)))[0].penalty).toBe('DNF');
+  expect((await storedSolves(page))[0].penalty).toBe('DNF');
   await page.keyboard.press('Escape');
   expect(await page.evaluate(() => window.testBrain.log.commandOpens)).toBe(1);
   expect((await vm(page)).settingsOpen).toBe(true);
@@ -171,4 +180,56 @@ test('controller: settings changed during a replay stay in memory', async ({ pag
   expect(await saved()).toBe(null);
   await page.evaluate(() => window.stubDispatch({ type: 'setSetting', path: 'timer', value: 'hide' }));
   expect(await saved()).toBe('mono');
+});
+
+test('history: solves survive a reload; any solve can be edited, deleted and restored', async ({ page }) => {
+  test.setTimeout(60_000);
+  await mountController(page);
+  await page.evaluate(async () => { // a clean IndexedDB: the app's own view may have opened it already
+    const backend = await (await import('/src/store/idb.js')).openIdbBackend();
+    await backend.apply({ clear: true });
+    await backend.close();
+  });
+  await page.reload();
+  await mountController(page, { fresh: false });
+  await expect.poll(async () => (await vm(page)).screen).toBe('idle');
+
+  const solveOnce = async scramble => {
+    await page.evaluate(s => { window.stubDispatch({ type: 'setSetting', path: 'inspection', value: { mode: 'off' } }); window.stubDispatch({ type: 'setScrambleText', text: s }); window.stubDispatch({ type: 'start' }); }, scramble);
+    await page.evaluate(s => window.testBrain.emitTurns(s), scramble);
+    await page.evaluate(s => window.testBrain.emitTurns(s), inverse(scramble));
+    await expect.poll(async () => (await vm(page)).screen).toBe('results');
+  };
+  await solveOnce("R U R' U'");
+  await page.evaluate(() => window.stubDispatch({ type: 'dismissResults' }));
+  await solveOnce("F R U' R'");
+  expect((await storedSolves(page))).toHaveLength(2);
+
+  // Reload: the history is still there and both solves share one automatic session.
+  await page.reload();
+  await mountController(page, { fresh: false });
+  await expect.poll(() => page.evaluate(() => window.testBrain.log.vm?.stats.allTime.solves)).toBe('2');
+  let stored = await storedSolves(page);
+  expect(stored.map(r => r.sessionId)).toEqual([stored[0].sessionId, stored[0].sessionId]);
+  expect(await page.evaluate(() => window.testBrain.log.vm.stats.session.solves)).toBe('2');
+
+  // Edit the penalty of the OLDER solve, not the latest.
+  const [older, newer] = stored;
+  await page.evaluate(at => window.stubDispatch({ type: 'setPenalty', at, penalty: '+2' }), older.at);
+  stored = await storedSolves(page);
+  expect(stored.map(r => r.penalty)).toEqual(['+2', null]);
+
+  // Delete the older solve, then undo: it comes back in place with its penalty.
+  await page.evaluate(at => window.stubDispatch({ type: 'deleteSolve', at }), older.at);
+  expect((await storedSolves(page)).map(r => r.at)).toEqual([newer.at]);
+  expect(await page.evaluate(() => window.testBrain.log.vm.stats.allTime.solves)).toBe('1');
+  await page.evaluate(() => window.stubDispatch({ type: 'undoDelete' }));
+  stored = await storedSolves(page);
+  expect(stored.map(r => [r.at, r.penalty])).toEqual([[older.at, '+2'], [newer.at, null]]);
+  expect(await page.evaluate(() => window.testBrain.log.vm.stats.allTime.solves)).toBe('2');
+
+  // The deleted-and-restored state survives another reload.
+  await page.reload();
+  await mountController(page, { fresh: false });
+  await expect.poll(() => page.evaluate(() => window.testBrain.log.vm?.stats.allTime.solves)).toBe('2');
 });

@@ -111,8 +111,8 @@ test('the settings panel shows only rows that apply', () => {
 
 test('config bar and inspection labels', () => {
   const bar = buildConfigBar(normalizeSettings({ f2l: 'pseudo' }));
-  assert.deepEqual(bar.items.map(i => i.id), ['cross', 'f2l', 'oll', 'pll', 'inspection.mode', 'penalties']);
-  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', '', 'oll', 'pll', 'insp', '']);
+  assert.deepEqual(bar.items.map(i => i.id), ['cross', 'f2l', 'oll', 'pll', 'inspection.mode', 'penalties', 'session.focus']);
+  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', '', 'oll', 'pll', 'insp', '', 'focus']);
   const f2l = bar.items.find(i => i.id === 'f2l').options[0];
   assert.deepEqual([f2l.active, f2l.value], [true, 'standard'], 'a toggle carries the value it switches to');
   assert.deepEqual(bar.items.find(i => i.id === 'oll').options.map(o => [o.label, o.active]), [['1-look', false], ['2-look', true]]);
