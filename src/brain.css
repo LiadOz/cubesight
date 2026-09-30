@@ -10,9 +10,6 @@
 /* ---- Cube hero (no box around it) ---- */
 .brain-cube-stage {
   position: relative;
-  width: 100%;
-  max-width: 44rem;
-  margin: 0 auto;
   min-height: 42rem;
   display: flex; flex-direction: column;
   background: transparent;
