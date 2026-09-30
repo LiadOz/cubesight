@@ -11,7 +11,6 @@ import { FOCI, DEFAULT_FOCUS, normalizeFocus } from '../store/focus.js';
 export const SETTINGS_KEY = 'cubesight-brain-settings-v2';
 const LEGACY_KEYS = {
   method: 'cubesight-brain-method',
-  cross: 'cubesight-brain-cross',
   pseudo: 'cubesight-brain-pseudo',
   inspection: 'cubesight-brain-inspection',
   toggles: 'cubesight-brain-toggles-v1',
@@ -36,7 +35,6 @@ const ENUMS = {
   // Roux is hidden for now: solve-methods.js keeps its stages, but no picker
   // offers it and stored 'roux' normalises to 'cfop'.
   method: ['cfop'],
-  cross: ['cross', 'xcross', 'xxcross'],
   f2l: ['standard', 'pseudo'],
   oll: ['2look', '1look'],
   pll: ['2look', '1look'],
@@ -53,7 +51,6 @@ export const DEFAULT_SETTINGS = Object.freeze({
   version: 2,
   style: DEFAULT_BRAIN_STYLE,
   method: 'cfop',
-  cross: 'cross',
   f2l: 'standard',
   oll: '2look',
   pll: '2look',
@@ -106,8 +103,6 @@ export function loadSettings(storage) {
   const legacy = {};
   const method = read(storage, LEGACY_KEYS.method);
   if (method) legacy.method = method;
-  const cross = read(storage, LEGACY_KEYS.cross);
-  if (cross) { try { legacy.cross = JSON.parse(cross); } catch { /* ignore */ } }
   if (read(storage, LEGACY_KEYS.pseudo) === 'true') legacy.f2l = 'pseudo';
   if (read(storage, LEGACY_KEYS.inspection) === 'false') legacy.inspection = normalizeInspection({ enabled: false });
   const toggles = read(storage, LEGACY_KEYS.toggles);
@@ -151,8 +146,8 @@ export function getSetting(settings, path) {
 
 const LABELS = {
   style: { orbit: 'orbit', mono: 'mono' },
+  theme: { light: 'light', dark: 'dark', system: 'system' },
   method: { cfop: 'cfop', roux: 'roux' },
-  cross: { cross: 'cross', xcross: 'x-cross', xxcross: 'xx-cross' },
   f2l: { standard: 'standard', pseudo: 'pseudo pairs' },
   oll: { '2look': 'oll 2-look', '1look': 'oll 1-look' },
   pll: { '2look': 'pll 2-look', '1look': 'pll 1-look' },
@@ -174,8 +169,8 @@ const FOCUS_LABELS = { speed: 'speed', flow: 'flow', learning: 'learning' };
 
 const HELP = {
   style: 'Orbit: ring timeline around the cube. Mono: monkeytype-style lanes.',
+  theme: 'Light or dark for the whole site. System follows your device.',
   method: 'The timeline stages follow the method.',
-  cross: 'Solve target for the first stage.',
   f2l: 'Pseudo pairs count pairs solved with the D layer offset.',
   oll: '2-look splits OLL into edges (EO) then corners (CO).',
   pll: '2-look splits PLL into corners (CP) then edges (EP).',
@@ -196,7 +191,7 @@ const HELP = {
 };
 
 const ROW_LABELS = {
-  style: 'style', method: 'method', cross: 'cross', f2l: 'f2l pairs', oll: 'oll', pll: 'pll',
+  style: 'style', theme: 'mode', method: 'method', f2l: 'f2l pairs', oll: 'oll', pll: 'pll',
   'inspection.mode': 'inspection', 'inspection.seconds': 'seconds', 'inspection.overtime': 'overtime',
   'inspection.graceSeconds': 'grace', 'inspection.gracePenalty': 'then', 'inspection.callouts': 'callouts', voice: 'voice',
   penalties: 'penalties', scramble: 'scramble', coach: 'coach', crossHint: 'cross hint', timer: 'timer',
@@ -204,13 +199,16 @@ const ROW_LABELS = {
 };
 
 const SECTIONS = [
-  { id: 'method', label: 'method', rows: ['method', 'cross', 'f2l', 'oll', 'pll'] },
+  { id: 'look', label: 'look', rows: ['style', 'theme'] },
+  { id: 'method', label: 'method', rows: ['method', 'f2l', 'oll', 'pll'] },
   { id: 'inspection', label: 'inspection', rows: ['inspection.mode', 'inspection.seconds', 'inspection.overtime', 'inspection.graceSeconds', 'inspection.gracePenalty', 'inspection.callouts', 'voice', 'penalties'] },
   { id: 'training', label: 'training', rows: ['scramble', 'coach', 'crossHint', 'timer', 'timeline', 'compare'] },
-  { id: 'look', label: 'look', rows: ['style'] },
 ];
 
+// The site appearance lives in src/theme.js, not in the Brain settings; the panel shows it as one more row.
+export const THEME_MODES = ['light', 'dark', 'system'];
 const valuesFor = path => {
+  if (path === 'theme') return THEME_MODES;
   if (ENUMS[path]) return ENUMS[path];
   if (path === 'inspection.mode') return ['wca', 'custom', 'unlimited', 'off'];
   if (path === 'inspection.overtime') return ['wca', 'count', 'grace', 'autostart'];
@@ -225,24 +223,27 @@ function rowVisible(settings, path) {
   if (path === 'inspection.seconds') return insp.mode === 'custom';
   if (path === 'inspection.graceSeconds' || path === 'inspection.gracePenalty') return insp.mode !== 'off' && insp.mode !== 'unlimited' && insp.overtime === 'grace';
   if (path === 'inspection.overtime' || path === 'inspection.callouts' || path === 'voice') return insp.mode === 'wca' || insp.mode === 'custom';
-  if (path === 'f2l' || path === 'oll' || path === 'pll' || path === 'cross') return settings.method === 'cfop';
+  if (path === 'f2l' || path === 'oll' || path === 'pll') return settings.method === 'cfop';
   return true;
 }
 
-/** SettingsPanelVM for the expanded settings panel. */
-export function buildSettingsPanel(settings, open = false) {
+/**
+ * SettingsPanelVM for the expanded settings panel.
+ * `themePreference` is the site mode ('light' | 'dark' | 'system') from src/theme.js.
+ */
+export function buildSettingsPanel(settings, open = false, themePreference = 'system') {
   return {
     open,
     sections: SECTIONS.map(section => ({
       id: section.id,
       label: section.label,
       rows: section.rows.filter(path => rowVisible(settings, path)).map(path => {
-        const value = getSetting(settings, path);
+        const value = path === 'theme' ? themePreference : getSetting(settings, path);
         if (path === 'inspection.seconds' || path === 'inspection.graceSeconds') {
           const def = getSetting(DEFAULT_SETTINGS, path);
           return { id: path, label: ROW_LABELS[path], help: HELP[path] || '', control: 'number', options: [], value, isDefault: value === def };
         }
-        const def = getSetting(DEFAULT_SETTINGS, path);
+        const def = path === 'theme' ? 'system' : getSetting(DEFAULT_SETTINGS, path);
         return {
           id: path, label: ROW_LABELS[path], help: HELP[path] || '', control: 'segmented',
           options: valuesFor(path).map(v => ({ value: String(v), label: LABELS[path]?.[String(v)] ?? String(v), active: v === value, isDefault: v === def })),
@@ -274,7 +275,6 @@ export function buildConfigBar(settings) {
   // A choice of one is not a choice: the method item appears once there are two.
   const items = ENUMS.method.length > 1 ? [seg('method', ENUMS.method, settings.method)] : [];
   if (settings.method === 'cfop') {
-    items.push(seg('cross', ENUMS.cross, settings.cross));
     items.push({ id: 'f2l', options: [{ value: settings.f2l === 'pseudo' ? 'standard' : 'pseudo', label: 'pseudo pairs', active: settings.f2l === 'pseudo' }] });
     items.push(seg('oll', ['1look', '2look'], settings.oll, look, 'oll'));
     items.push(seg('pll', ['1look', '2look'], settings.pll, look, 'pll'));
@@ -295,8 +295,8 @@ const OFF = ['off', 'false', 'no', '0', 'hide'];
  * Parse a command-line entry into { path, value }, or null.
  *   insp 10 | insp wca | insp off | insp unlimited | insp inf
  *   overtime count | grace 3 | grace dnf | callouts off | voice on
- *   oll 1 | pll 2-look | method cfop | cross x | xxcross | pseudo on
- *   style orbit | timer hide | coach after | timeline off | compare pb
+ *   oll 1 | pll 2-look | method cfop | pseudo on
+ *   style orbit | mode dark | light | system | timer hide | coach after | timeline off | compare pb
  *   scramble paste | penalties off | preset relaxed | session 45 (idle minutes that start a new session)
  *   focus speed | flow | learning (also: speed / flow / learning)
  */
@@ -328,13 +328,10 @@ export function parseCommand(text) {
     }
     case 'method': return ENUMS.method.includes(arg) ? { path: 'method', value: arg } : null;
     case 'cfop': case 'roux': return ENUMS.method.includes(cmd) ? { path: 'method', value: cmd } : null;
-    case 'cross': {
-      const value = { '': 'cross', cross: 'cross', x: 'xcross', xcross: 'xcross', 'x-cross': 'xcross', xx: 'xxcross', xxcross: 'xxcross', 'xx-cross': 'xxcross' }[arg];
-      return value ? { path: 'cross', value } : null;
-    }
-    case 'xcross': case 'xxcross': return { path: 'cross', value: cmd };
     case 'pseudo': return ON.includes(arg) || arg === '' ? { path: 'f2l', value: 'pseudo' } : OFF.includes(arg) ? { path: 'f2l', value: 'standard' } : null;
-    case 'style': case 'theme': return BRAIN_STYLES.includes(arg) ? { path: 'style', value: arg } : null;
+    case 'style': return BRAIN_STYLES.includes(arg) ? { path: 'style', value: arg } : null;
+    case 'mode': case 'theme': return THEME_MODES.includes(arg) ? { path: 'theme', value: arg } : BRAIN_STYLES.includes(arg) ? { path: 'style', value: arg } : null;
+    case 'light': case 'dark': case 'system': return { path: 'theme', value: cmd };
     case 'orbit': case 'mono': return { path: 'style', value: cmd };
     case 'timer': return ON.includes(arg) || arg === 'visible' ? { path: 'timer', value: 'visible' } : OFF.includes(arg) ? { path: 'timer', value: 'hide' } : null;
     case 'coach': return ENUMS.coach.includes(arg) ? { path: 'coach', value: arg } : ON.includes(arg) ? { path: 'coach', value: 'live' } : null;

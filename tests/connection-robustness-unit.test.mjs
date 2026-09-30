@@ -360,13 +360,13 @@ test('the Brain shows connection lost, a one-tap reconnect and a resume', async 
     cube.turn("U'", { gap: 500 });
     cube.disconnect();
     assert.equal(screenFor(cube.session.getSnapshot(), live.getSnapshot()), 'disconnected');
-    const lost = deviceFor(cube.session.getSnapshot(), true, live.getSnapshot());
+    const lost = deviceFor(cube.session.getSnapshot(), true, '', live.getSnapshot());
     assert.equal(lost.actions.reconnect, true);
     assert.equal(lost.actions.resume, false);
     assert.match(lost.detail, /Connection lost/);
     assert.equal(await cube.session.reconnect(), true);
     await flush();
-    const back = deviceFor(cube.session.getSnapshot(), true, live.getSnapshot());
+    const back = deviceFor(cube.session.getSnapshot(), true, '', live.getSnapshot());
     assert.equal(back.actions.resume, true);
     assert.equal(screenFor(cube.session.getSnapshot(), live.getSnapshot()), 'disconnected', 'paused until resumed');
     live.resume();

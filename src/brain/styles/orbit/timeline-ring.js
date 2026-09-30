@@ -8,7 +8,7 @@
 
 import { arcPath, fillAngle, placeLabels, polar, ringLayout } from '../../charts/arc.js';
 import { reconcileChildren, setAttr, setText, svg, toggleClass } from '../../dom.js';
-import { CX, CY, R, SPARK_PATH, VB_H, VB_W, VIEWBOX, ringHandoff, ringName, secs } from './geometry.js';
+import { CX, CY, R, SPARK_PATH, VB_H, VB_W, VIEWBOX, ringName, secs } from './geometry.js';
 
 const PSEUDO_R = R - 15;
 const TICK = 14;
@@ -22,7 +22,10 @@ export function createRingTimeline(host, ctx = {}) {
   const startTick = svg('line', { class: 'b-oring-start', x1: CX, y1: CY - R - TICK, x2: CX, y2: CY - R + TICK });
   const dot = svg('g', { class: 'b-oring-dot' });
   dot.append(svg('circle', { class: 'b-oring-dot-halo', r: 11 }), svg('circle', { class: 'b-oring-dot-core', r: 5.5 }));
-  root.append(floor, arcsLayer, startTick, labelsLayer, dot);
+  // Connecting: a short arc sweeps the ring around the cube (static dots for reduced motion).
+  const connecting = svg('g', { class: 'b-oring-connect' });
+  connecting.append(svg('circle', { class: 'b-oring-connect-dots', cx: CX, cy: CY, r: R }), svg('circle', { class: 'b-oring-connect-sweep', cx: CX, cy: CY, r: R, pathLength: 100 }));
+  root.append(floor, connecting, arcsLayer, startTick, labelsLayer, dot);
   host.append(root);
 
   // Optional right-column split list (the shell passes ctx.aside for Orbit).
@@ -115,7 +118,7 @@ export function createRingTimeline(host, ctx = {}) {
     toggleClass(part.label, 'is-skipped', state === 'skipped');
     toggleClass(part.label, 'is-future', state === 'future');
     const pseudoTag = seg.tags?.includes('pseudo') ? ' · pseudo' : '';
-    setText(part.name, state === 'skipped' ? `${ringName(seg)} skip` : `${ringName(seg)}${pseudoTag}`);
+    setText(part.name, state === 'skipped' ? `${ringName(seg)} skip` : seg.xcross ? seg.xcross : `${ringName(seg)}${pseudoTag}`);
     if (state === 'future') {
       setText(part.valueText, `~${secs(seg.avgMs)}`);
       setText(part.delta, '');
@@ -164,15 +167,9 @@ export function createRingTimeline(host, ctx = {}) {
       const timeline = vm.timeline;
       lastTimeline = timeline;
       lastScreen = vm.screen;
-      const onResults = vm.screen === 'results';
-      const visible = Boolean(timeline?.visible) && vm.screen !== 'inspection' && !onResults;
-      if (onResults && wasVisible) {
-        // Hand the ring's box to the results donut before it fades out.
-        const rect = root.getBoundingClientRect?.();
-        if (rect && rect.width) { ringHandoff.rect = rect; ringHandoff.at = Date.now(); }
-      }
+      // The finished ring stays on the results screen, around the live cube.
+      const visible = Boolean(timeline?.visible) && vm.screen !== 'inspection';
       toggleClass(root, 'is-hidden', !visible);
-      toggleClass(root, 'is-leaving', onResults);
       if (aside) toggleClass(aside, 'is-hidden', !visible);
       if (!timeline || !timeline.segments?.length) { wasVisible = false; return; }
       if (timeline.planKey !== planKey) build(timeline);
@@ -220,7 +217,7 @@ function buildFloor() {
   grad.append(svg('stop', { offset: '0%', class: 'b-glow-0' }), svg('stop', { offset: '55%', class: 'b-glow-1' }), svg('stop', { offset: '100%', class: 'b-glow-2' }));
   defs.append(grad);
   g.append(defs,
-    svg('ellipse', { class: 'b-oring-glow', cx: CX, cy: CY + 148, rx: 150, ry: 34, fill: `url(#${id})` }),
-    svg('ellipse', { class: 'b-oring-shadow', cx: CX, cy: CY + 150, rx: 100, ry: 12 }));
+    svg('ellipse', { class: 'b-oring-glow', cx: CX, cy: CY + 150, rx: 140, ry: 32, fill: `url(#${id})` }),
+    svg('ellipse', { class: 'b-oring-shadow', cx: CX, cy: CY + 152, rx: 96, ry: 12 }));
   return g;
 }

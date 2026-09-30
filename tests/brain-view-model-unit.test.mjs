@@ -214,3 +214,35 @@ test('coach lines port the v1 texts and keys', () => {
   const results = resultsCoach({ record: { crossMoveCount: 8, rotations: 1, xcross: 'xcross' }, optimalCross: { face: 'D', length: 6 }, faceColors: { D: 'yellow' } });
   assert.deepEqual(results.map(r => r.tag), ['cross', 'xcross']);
 });
+
+test('an x-cross is a tag on the cross segment and the merged pairs are done at the same moment', async () => {
+  const { createTrack, trackMilestones } = await import('../src/brain/milestones.js');
+  const settings = normalizeSettings();
+  const live = (count, progress) => ({ phase: 'solving', solveMoveCount: count, elapsedMs: 3000, inspectionMs: 8000, crossFace: 'D', inspectionConfig: { ...DEFAULT_INSPECTION }, progress });
+  let track = createTrack();
+  track = trackMilestones(track, live(1, { crossDone: false }), 1000);
+  const snap = live(5, { crossDone: true, pairsSolved: 1, f2lDone: false, eoDone: false, coDone: false, ollDone: false, solved: false, skip: null });
+  track = trackMilestones(track, snap, 4000);
+  const vm = buildViewModel({ session: tracking, live: snap, records: [], settings, track, now: 4000 });
+  const [cross, pair1, pair2] = vm.timeline.segments;
+  assert.equal(vm.timeline.segments.length, 9, 'the plan is always the cross and four pairs');
+  assert.deepEqual([cross.state, cross.xcross, cross.tags.includes('x-cross')], ['done', 'x-cross', true]);
+  assert.deepEqual([pair1.state, pair1.merged, pair1.splitText, pair1.delta], ['done', true, 'with cross', null]);
+  assert.deepEqual([pair2.state, pair2.merged], ['current', false]);
+  assert.equal(vm.timeline.currentIndex, 2);
+  const coach = coachLines({ live: snap, state: {}, toggles: { rotationFlag: false }, xcross: 'x-cross' }, { faceColors: {} });
+  assert.equal(coach[0].key, 'xcross');
+  assert.equal(coach[0].tone, 'good');
+  assert.match(coach[0].text, /^X-cross!/);
+});
+
+test('connecting: the device status is the latest step; a failure keeps its reason and offers a retry', () => {
+  const connecting = { phase: 'connecting', detail: 'Select your cube…' };
+  assert.deepEqual([deviceFor(connecting, false).detail, deviceFor(connecting, false).busy], ['Select your cube…', true], 'even without Web Bluetooth: the attach is under way');
+  assert.equal(deviceFor(connecting, true, 'MAC provider called (attempt 1).').detail, 'MAC provider called (attempt 1).');
+  assert.equal(deviceFor({ phase: 'awaiting-solved', detail: 'Connected. Checking whether the cube is solved…' }, true).busy, true);
+  const failed = deviceFor({ phase: 'disconnected', detail: 'Connection failed: GATT server busy' }, false);
+  assert.deepEqual([failed.failed, failed.busy, failed.detail, failed.actions.connect], [true, false, 'Connection failed: GATT server busy', true]);
+  assert.equal(deviceFor({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.' }, true).failed, false);
+  assert.equal(deviceFor({ phase: 'disconnected', detail: '' }, false).detail, 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.');
+});

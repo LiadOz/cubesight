@@ -123,13 +123,19 @@ for (const theme of ['dark', 'light']) {
       expect(errors).toEqual([]);
     });
 
-    test('results show time, chart, donut, splits and session', async ({ page }, testInfo) => {
+    test('results keep the cube inside its finished ring beside the time, chart, splits and session', async ({ page }, testInfo) => {
       const errors = await open(page, 'results', theme);
       await expect(page.locator('.b-ores')).not.toHaveClass(/is-hidden/);
       await expect(page.locator('.b-ores-num')).toHaveText('14.07');
       expect(await page.locator('.b-ch-tps .b-ch-line').getAttribute('d')).toMatch(/^M /);
-      await expect(page.locator('.b-ch-donut-arc')).toHaveCount(8);
-      await expect(page.locator('.b-ch-donut-skip')).toHaveCount(1);
+      // The stage stays: one live cube inside the finished ring (the donut), left of the stats.
+      await expect(page.locator('.b-oring')).not.toHaveClass(/is-hidden/);
+      await expect(page.locator('.b-oring-seg.is-done')).toHaveCount(8);
+      await expect(page.locator('.b-oring-seg.is-skipped')).toHaveCount(1);
+      await expect(page.locator('canvas')).toHaveCount(1);
+      const [cube, stats] = await Promise.all([page.locator('#brain-cube').boundingBox(), page.locator('.b-ores').boundingBox()]);
+      expect(cube.width, 'the cube keeps a real size').toBeGreaterThan(200);
+      expect(cube.x + cube.width).toBeLessThanOrEqual(stats.x + 1);
       await expect(page.locator('.b-ch-split')).toHaveCount(9);
       await expect(page.locator('.b-ores-recent-item')).toHaveCount(7);
       await expect(page.locator('.b-ores-coach-line')).toHaveCount(4);
@@ -160,8 +166,12 @@ test('the two modes resolve different tokens', async ({ page }) => {
   expect(bg.light).toBe('rgb(243, 240, 232)');
 });
 
-test('the shared charts render in their Mono variants', async ({ page }) => {
+test('the shared charts render in their Mono variants, with a small cube beside them', async ({ page }) => {
   const errors = await open(page, 'mono:results', 'dark');
+  await expect(page.locator('canvas')).toHaveCount(1);
+  const [cube, stats] = await Promise.all([page.locator('#brain-cube').boundingBox(), page.locator('.m-res').boundingBox()]);
+  expect(cube.width).toBeGreaterThan(150);
+  expect(cube.x + cube.width).toBeLessThanOrEqual(stats.x + 1);
   await expect(page.locator('.b-ch-tps.is-mono .b-ch-line')).toHaveCount(1);
   await expect(page.locator('.b-ch-tps.is-mono .b-ch-area')).toHaveCount(0);
   await expect(page.locator('.b-ch-splits.is-columns .b-ch-split')).toHaveCount(9);

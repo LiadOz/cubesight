@@ -164,9 +164,10 @@ export function brainFixtures({ style = 'orbit', theme = 'dark' } = {}) {
   // Results: the example solve as the latest record.
   const records = [...EXAMPLE_HISTORY, EXAMPLE_RECORD];
   const done = { ...liveSolving(null, 68, { phase: 'solved', crossDone: true, pairsSolved: 4, f2lDone: true, eoDone: true, coDone: true, ollDone: true, solved: true, skip: null }), phase: 'done', record: EXAMPLE_RECORD, done: true };
-  out.results = vm({ live: done, records, track: createTrack(), optimalCross: { face: 'D', length: 6, solution: "F' R D2 L' B2 D" } });
-  out.resultsPlus2 = vm({ live: done, records: [...EXAMPLE_HISTORY, { ...EXAMPLE_RECORD, penalty: '+2' }], track: createTrack() });
-  out.resultsDnf = vm({ live: done, records: [...EXAMPLE_HISTORY, { ...EXAMPLE_RECORD, penalty: 'DNF' }], track: createTrack() });
+  const finished = exampleTrack(EXAMPLE_SPLITS.length).track;
+  out.results = vm({ live: done, records, track: finished, optimalCross: { face: 'D', length: 6, solution: "F' R D2 L' B2 D" } });
+  out.resultsPlus2 = vm({ live: done, records: [...EXAMPLE_HISTORY, { ...EXAMPLE_RECORD, penalty: '+2' }], track: finished });
+  out.resultsDnf = vm({ live: done, records: [...EXAMPLE_HISTORY, { ...EXAMPLE_RECORD, penalty: 'DNF' }], track: finished });
   out.desynced = vm({ session: { ...SESSION, phase: 'desynced', detail: 'Unsupported move from cube: x. Solve it and sync again.' }, live: { ...idleLive, phase: 'desynced' } });
   out.settings = vm({ live: idleLive, settingsOpen: true });
   return out;

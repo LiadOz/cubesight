@@ -63,13 +63,13 @@ export function splitRows(stages, plan, averages, { compare = 'avg', pbs = {} } 
   const rows = stages.map(s => {
     const avgMs = averages?.byKey?.[s.key]?.avgMs ?? null;
     const ref = compare === 'pb' ? pbs[s.key] ?? null : compare === 'avg' ? avgMs : null;
-    const delta = !s.skipped && s.ms != null && ref != null ? s.ms - ref : null;
+    const delta = !s.skipped && !s.merged && s.ms != null && ref != null ? s.ms - ref : null;
     return {
       key: s.key, label: labelOf(s.key), ms: s.ms,
-      text: s.skipped ? 'skip' : fmtTime(s.ms),
+      text: s.skipped ? 'skip' : s.merged ? 'merged' : fmtTime(s.ms),
       deltaText: delta == null ? '' : fmtDelta(delta),
       tone: delta == null ? 'none' : deltaTone(delta),
-      moves: s.moves, avgMs, ratio: 0, avgRatio: 0, skipped: Boolean(s.skipped), pseudo: Boolean(s.pseudo),
+      moves: s.moves, avgMs, ratio: 0, avgRatio: 0, skipped: Boolean(s.skipped), merged: Boolean(s.merged), pseudo: Boolean(s.pseudo),
     };
   });
   const scale = Math.max(1, ...rows.map(r => Math.max(r.ms ?? 0, r.avgMs ?? 0)));
@@ -82,7 +82,7 @@ export function donutArcs(stages, plan, averages) {
   const total = stages.reduce((sum, s) => sum + (s.ms ?? 0), 0);
   return stages.map(s => {
     const avgMs = averages?.byKey?.[s.key]?.avgMs;
-    const tone = s.skipped ? 'skip' : avgMs == null || s.ms == null ? 'none' : deltaTone(s.ms - avgMs);
+    const tone = s.skipped ? 'skip' : s.merged ? 'none' : avgMs == null || s.ms == null ? 'none' : deltaTone(s.ms - avgMs);
     return { key: s.key, label: plan.find(p => p.key === s.key)?.short ?? s.key, fraction: total > 0 ? (s.ms ?? 0) / total : 0, tone };
   });
 }

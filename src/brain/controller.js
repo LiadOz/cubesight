@@ -17,13 +17,14 @@ import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
 import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
 import { attachBrainRecording } from '../brain-recording.js';
 import { loadSettings, saveSettings, setSetting, parseCommand } from './settings.js';
-import { buildStagePlan } from './stage-plan.js';
+import { buildStagePlan, xcrossLabel } from './stage-plan.js';
 import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './milestones.js';
 import { buildViewModel, frameState } from './view-model.js';
 import { coachLines } from './coach-lines.js';
 import { resolveKey } from './keys.js';
 import { readStickerPalette, themedRender } from './cube-theme.js';
 import { fmtSeconds, fmtResult } from './format.js';
+import { getThemePreference, setThemePreference, THEME_EVENT } from '../theme.js';
 
 // Dev-server-only features (Send to dev) are compiled out of production builds.
 const DEV = Boolean(import.meta.env?.DEV);
@@ -63,9 +64,12 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let lastScramble = '';
   let scrambleLoad = null;
   let settingsOpen = false;
+  let debugOpen = false;        // the debug drawer (connection log, recordings, coach switches, data)
   let commandOpen = false;      // one-shot: the next render asks the shell to focus the command line
   let scrambleNumber = 0;       // scrambles started in this view
   let error = '';
+  let connectStep = '';         // the latest step of a running connection attempt (session detail or connection log)
+  let connectLogFrom = 0;       // connection-log length when the attempt began
   let statusOverride = null;    // a message() until the connection status next changes
   let replayBackup = null;      // settings before a replay changed them (restored after)
   let generating = false;
@@ -107,12 +111,12 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (detached) return;
     const liveSnap = live.getSnapshot();
     const session = cubeSession.getSnapshot();
-    const coach = coachLines({ live: liveSnap, state: session.state, toggles: settings.toggles, optimalCross, coach: settings.coach }, LENSES);
+    const coach = coachLines({ live: liveSnap, state: session.state, toggles: settings.toggles, optimalCross, xcross: xcrossLabel(track.stamps.xPairs), coach: settings.coach }, LENSES);
     const next = buildViewModel({
       session, live: liveSnap, records, settings, track, optimalCross, coach, error,
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
       now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.getHeldFaces?.() : null,
-      scrambleText, scrambleNumber, settingsOpen, commandOpen, toast,
+      scrambleText, scrambleNumber, settingsOpen, themePreference: getThemePreference(), debugOpen, connectStep, commandOpen, toast,
     }, vm);
     commandOpen = false;
     const prev = vm;
@@ -206,6 +210,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (sessionLogLabel !== lastSessionLogLabel) { lastSessionLogLabel = sessionLogLabel; logConnection({ label: sessionLogLabel, kind: 'debug' }); }
     const gyro = snapshot.protocol?.startsWith('GAN') ? snapshot.gyro : null;
     if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
+    if (snapshot.phase === 'connecting') connectStep = snapshot.detail || connectStep;
+    else connectStep = '';
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro), snapshot.battery].join('|');
     let changed = false;
     if (key !== lastStatusKey) { lastStatusKey = key; statusOverride = null; changed = true; }
@@ -262,7 +268,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function onLive(snap) {
     if (detached) return;
+    const hadX = track.stamps.xPairs;
     track = trackMilestones(track, snap, recorderNow(), { state: cubeSession.getSnapshot().state });
+    if (track.stamps.xPairs > 0 && !(hadX > 0)) showToast(`✦ ${xcrossLabel(track.stamps.xPairs)}`);   // celebrate the opportunity taken
     const skipInfo = snap.progress?.skip;
     if (skipInfo && !skips.some(s => s.kind === skipInfo.kind && s.label === skipInfo.label)) {
       skips.push({ kind: skipInfo.kind, label: skipInfo.label });
@@ -287,7 +295,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         focus: settings.session.focus,   // a focus change starts a new session (store/sessions.js)
         splits: splitsFromTrack(track, plan),
         moveTimes: track.moveTimes.slice(-200),
-        config: { method: settings.method, cross: settings.cross, f2l: settings.f2l, oll: settings.oll, pll: settings.pll, inspectionMode: snap.record.inspectionMode ?? settings.inspection.mode },
+        config: { method: settings.method, f2l: settings.f2l, oll: settings.oll, pll: settings.pll, inspectionMode: snap.record.inspectionMode ?? settings.inspection.mode },
       };
       const replaying = isReplaying();   // replayed solves stay out of the stored history
       withHistory(store => { if (replaying) store.beginEphemeral(); store.append(entry); });
@@ -310,7 +318,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     settings = next;
     if (next.f2l !== before.f2l) live.setPseudo(next.f2l === 'pseudo');
     if (JSON.stringify(next.inspection) !== JSON.stringify(before.inspection)) live.setInspection(next.inspection);
-    if (next.cross !== before.cross && scrambleText.trim()) void suggestCrossFor(scrambleText.trim());
     if (next.style !== before.style) void applyStyle(next.style);
     if (next.session.gapMin !== before.session.gapMin && history && !isReplaying()) { history.setSessionGapMin(next.session.gapMin); history.regroupSessions(); records = history.records; }
     render();
@@ -445,9 +452,10 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function dispatch(action) {
     if (detached || !action) return;
-    if (RECORDED.has(action.type) && !(action.type === 'setSetting' && LIVE_RECORDED_PATHS.test(action.path))) record('ui', { type: 'action', action });
+    // (The site mode is the page's, not the session's: a replay must not flip it.)
+    if (RECORDED.has(action.type) && !(action.type === 'setSetting' && (LIVE_RECORDED_PATHS.test(action.path) || action.path === 'theme'))) record('ui', { type: 'action', action });
     switch (action.type) {
-      case 'connect': void cubeSession.connect(); break;
+      case 'connect': connectStep = ''; connectLogFrom = getConnectionLog().length; void cubeSession.connect(); break;
       case 'reconnect': void cubeSession.reconnect({ gesture: true }); break;
       case 'resumeSolve': live.resume(); break;
       case 'sync': void cubeSession.syncSolved().catch(() => {}); break;
@@ -483,9 +491,17 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'togglePenalty': setPenaltyAt(currentAt(), action.penalty, true); break;
       case 'deleteSolve': deleteSolve(action.at); break;
       case 'undoDelete': undoDelete(); break;
-      case 'setSetting': applySetting(action.path, action.value); break;
+      // The site mode belongs to the page (src/theme.js), not to the Brain settings.
+      case 'setSetting': if (action.path === 'theme') setThemePreference(action.value); else applySetting(action.path, action.value); break;
       case 'setStyle': applySetting('style', action.style); break;
       case 'toggleSettings': settingsOpen = !settingsOpen; render(); break;
+      case 'toggleDebug': {
+        debugOpen = !debugOpen;
+        if (debugOpen) pendingLog ??= getConnectionLog();
+        render();
+        if (debugOpen) paintConnectionLog();
+        break;
+      }
       case 'command': {
         const text = String(action.text ?? '').trim();
         // An empty command asks for the command line (it lives in the settings panel).
@@ -493,7 +509,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         const parsed = parseCommand(text);
         if (!parsed) { showError(`Unknown command: ${text}`); break; }
         error = '';
-        applySetting(parsed.path, parsed.value);
+        if (parsed.path === 'theme') setThemePreference(parsed.value); else applySetting(parsed.path, parsed.value);
         break;
       }
       case 'toggleTimer': applySetting('timer', settings.timer === 'hide' ? 'visible' : 'hide'); break;
@@ -571,27 +587,31 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   }
 
   // The log holds up to 2000 lines and grows on every cube event: rebuild it at
-  // most once per frame, and only while the diagnostics panel is open.
+  // most once per frame, and only while the debug drawer is open.
   let pendingLog = null;
   let logFrame = 0;
   function paintConnectionLog() {
     logFrame = 0;
     const entries = pendingLog;
     const list = $('#brain-connection-log');
-    if (detached || !entries || !list || !$('.brain-diagnostics')?.open) return;
+    if (detached || !entries || !list || !debugOpen) return;
     pendingLog = null;
     list.innerHTML = entries.length ? entries.map(e => `<li class="brain-log-item brain-log-${e.kind || 'info'}"><span class="brain-log-time">${new Date(e.at).toLocaleTimeString()}</span><span>${escape(e.label)}</span></li>`).join('') : '<li class="brain-log-muted">No connection attempts yet in this session.</li>';
   }
+  // The adapter logs steps the session never sees (the address lookup, the manual-address
+  // prompt): while connecting, the newest of them is the status line too.
+  const redactMac = text => String(text || '').replace(/([\da-f]{2}:){5}[\da-f]{2}/gi, 'XX:XX:XX:XX:XX:XX');
+  function followConnectionSteps(entries) {
+    if (detached || cubeSession.getSnapshot().phase !== 'connecting') return;
+    const step = entries.slice(connectLogFrom).reverse().find(e => e.kind !== 'debug' && e.kind !== 'env' && e.label);
+    const text = step ? redactMac(step.label).slice(0, 140) : '';
+    if (text && text !== connectStep) { connectStep = text; render(); }
+  }
   function renderConnectionLog(entries) {
+    followConnectionSteps(entries);
     pendingLog = entries;
     if (!logFrame) logFrame = requestAnimationFrame(paintConnectionLog);
   }
-  const onDiagnosticsToggle = event => {
-    if (!event.target.matches?.('.brain-diagnostics')) return;
-    pendingLog ??= getConnectionLog();
-    paintConnectionLog();
-  };
-  root.addEventListener('toggle', onDiagnosticsToggle, true);
 
   // --- Keyboard and theme -------------------------------------------------------------------------
 
@@ -604,8 +624,10 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       key: event.key, repeat: event.repeat, ctrlKey: event.ctrlKey, metaKey: event.metaKey, altKey: event.altKey,
       editable: formControl(target),
       dialogOpen: Boolean(document.querySelector('dialog[open]')),
-      focusOnPage: !focused || focused === document.body || (root.contains(focused) && !formControl(focused) && !['BUTTON', 'A', 'SUMMARY'].includes(focused.tagName)),
-      settingsOpen,
+      // The settings tab itself (focused after a click on it) still lets tab/esc close the panel.
+      focusOnPage: !focused || focused === document.body || focused.matches?.('.b-settings > summary')
+        || (root.contains(focused) && !formControl(focused) && !['BUTTON', 'A', 'SUMMARY'].includes(focused.tagName)),
+      settingsOpen, debugOpen,
     }, vm.screen);
     if (!action) return;
     event.preventDefault();
@@ -615,6 +637,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   const themeObserver = new MutationObserver(() => { retheme(); render(); });
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  // Choosing the mode the page already shows (system -> the same explicit mode) changes no attribute.
+  const onThemeChoice = () => render();
+  document.addEventListener(THEME_EVENT, onThemeChoice);
 
   // --- Wiring ----------------------------------------------------------------------------------------
 
@@ -625,7 +650,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // Replayed actions go through dispatch; replayed solves and settings are restored after.
   attachBrainRecording({
     root, live, cubeSession, dispatch,
-    getContext: () => ({ toggles: settings.toggles, method: settings.method, crossKind: settings.cross, settings }),
+    getContext: () => ({ toggles: settings.toggles, method: settings.method, settings }),
     onSolvesRestored: () => {
       history?.endEphemeral();
       records = history?.records ?? [];
@@ -661,9 +686,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       window.removeEventListener('error', onWindowError);
       window.removeEventListener('unhandledrejection', onUnhandledRejection);
       window.removeEventListener('keydown', onKeydown);
-      root.removeEventListener('toggle', onDiagnosticsToggle, true);
       root.removeEventListener('change', onToggleChange);
       themeObserver.disconnect();
+      document.removeEventListener(THEME_EVENT, onThemeChoice);
       cancelAnimationFrame(raf); raf = 0;
       cancelAnimationFrame(logFrame); logFrame = 0;
       if (instantFrame) cancelAnimationFrame(instantFrame);

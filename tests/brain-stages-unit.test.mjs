@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildStagePlan, planKey, planGroups, stageAverages, pbSplits, DEFAULT_SOLVE_MS } from '../src/brain/stage-plan.js';
+import { buildStagePlan, planKey, planGroups, stageAverages, pbSplits, xcrossLabel, isMergedSplit, DEFAULT_SOLVE_MS } from '../src/brain/stage-plan.js';
 import { createTrack, trackMilestones, stageProgress, splitsFromTrack } from '../src/brain/milestones.js';
 import { tpsSeries, splitRows, donutArcs, sparkline } from '../src/brain/series.js';
 import { fmtTime, fmtDelta, deltaTone, fmtResult, penaltyTag, fmtSeconds } from '../src/brain/format.js';
@@ -8,15 +8,20 @@ import { normalizeSettings } from '../src/brain/settings.js';
 
 const keys = settings => buildStagePlan(normalizeSettings(settings)).map(s => s.key);
 
-test('stage plans follow the method, cross style and 1-/2-look settings', () => {
+test('stage plans follow the method and 1-/2-look settings; x-cross is never a target', () => {
   assert.deepEqual(keys({}), ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
   assert.deepEqual(keys({ oll: '1look', pll: '1look' }), ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'oll', 'pll']);
-  assert.deepEqual(keys({ cross: 'xcross' }), ['cross', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
-  assert.deepEqual(keys({ cross: 'xxcross', oll: '1look' }), ['cross', 'pair3', 'pair4', 'oll', 'cp', 'ep']);
+  // An old stored cross target is ignored: the plan always has the cross and four pairs.
+  assert.deepEqual(keys({ cross: 'xcross' }), keys({}));
+  assert.deepEqual(keys({ cross: 'xxcross', oll: '1look' }), ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'oll', 'cp', 'ep']);
   // Roux is hidden from the settings (normalises to cfop) but its plan is kept.
   assert.deepEqual(buildStagePlan({ ...normalizeSettings(), method: 'roux' }).map(s => s.key), ['fb', 'sb', 'cmll', 'l6e']);
   assert.deepEqual(keys({ method: 'roux' }), keys({}));
-  assert.equal(buildStagePlan(normalizeSettings({ cross: 'xcross' }))[0].label, 'x-cross');
+  assert.equal(buildStagePlan(normalizeSettings({ cross: 'xcross' }))[0].label, 'cross');
+  assert.equal('cross' in normalizeSettings({ cross: 'xcross' }), false, 'the stored value is dropped');
+  assert.equal(xcrossLabel(0), null);
+  assert.equal(xcrossLabel(1), 'x-cross');
+  assert.equal(xcrossLabel(2), 'xx-cross');
   const plan = buildStagePlan(normalizeSettings({ f2l: 'pseudo' }));
   assert.equal(planKey(plan), 'cross,pair1,pair2,pair3,pair4,eo,co,cp,ep');
   assert.deepEqual(planGroups(plan, { f2l: 'pseudo' }).map(g => [g.id, g.sub, g.from, g.to]), [['f2l', 'pseudo', 1, 4], ['oll', '2-look', 5, 6], ['pll', '2-look', 7, 8]]);
@@ -85,6 +90,31 @@ test('milestones: stamps, move times and splits, with an EO skip', () => {
   assert.equal(byKey.cp.skipped, false, 'CP falls back to the solve end');
   assert.equal(byKey.ep.skipped, true);
   assert.equal(splits.reduce((sum, s) => sum + s.ms, 0), 8000, 'splits add up to the solve time');
+});
+
+test('milestones: a cross completed with pairs is an x-cross; the merged pairs are done at the same moment, not skips', () => {
+  const plan = buildStagePlan(normalizeSettings());
+  const track = drive([
+    [5000, solving(1, { crossDone: false }, { elapsedMs: 0 })],
+    [7000, solving(5, { crossDone: true, pairsSolved: 2 })],    // the cross and two pairs at once
+    [9000, solving(9, { crossDone: true, pairsSolved: 3 })],
+  ]);
+  assert.equal(track.stamps.xPairs, 2);
+  const sp = stageProgress(track, plan);
+  assert.deepEqual(sp.stages.slice(0, 4).map(s => [s.key, s.done, s.merged, s.skipped]), [['cross', true, false, false], ['pair1', true, true, false], ['pair2', true, true, false], ['pair3', true, false, false]]);
+  assert.equal(sp.currentIndex, 4, 'the timeline continues at pair 4');
+  assert.equal(sp.stages[1].endAt, sp.stages[0].endAt, 'merged pairs end with the cross');
+  const splits = splitsFromTrack(track, plan);
+  assert.ok(splits.slice(1, 3).every(isMergedSplit), 'stored as zero-time, zero-move, not skipped');
+  assert.ok(!isMergedSplit(splits[3]));
+  // Merged pairs do not drag the pair averages or pbs down to zero.
+  const records = [{ solveMs: 16000, solved: true, splits }, { solveMs: 16000, solved: true, splits: [{ key: 'pair1', ms: 2000, moves: 6 }] }];
+  assert.equal(stageAverages(records, plan).byKey.pair1.avgMs, 2000);
+  assert.equal(pbSplits(records, plan).pair1, 2000);
+  // A plain cross with pairs solved later is not one.
+  const plain = drive([[5000, solving(1, { crossDone: false }, { elapsedMs: 0 })], [7000, solving(5, { crossDone: true, pairsSolved: 0 })], [9000, solving(9, { crossDone: true, pairsSolved: 1 })]]);
+  assert.equal(plain.stamps.xPairs, 0);
+  assert.ok(stageProgress(plain, plan).stages.every(s => !s.merged));
 });
 
 test('milestones: current stage while solving, reset on the next attempt, autostart origin', () => {
