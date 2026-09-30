@@ -162,8 +162,9 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
     const record = list => window.guidanceMutations.push(...list.map(m => `${m.target.id || m.target.tagName}:${m.type}:${m.attributeName ?? ''}`));
     window.coachObserver = new MutationObserver(record);
     window.coachObserver.observe(root.querySelector('#brain-coach'), { childList: true, subtree: true, characterData: true, attributes: true });
-    // A correct turn may move the class and aria-current of the chips; nothing else may change.
-    window.cueObserver = new MutationObserver(list => record(list.filter(m => m.type !== 'attributes' || !['class', 'aria-current'].includes(m.attributeName))));
+    // A correct turn may move the class of the chips and update the screen-reader line; nothing else may change.
+    const srLine = m => m.target.closest?.('.mg-sr') || m.target.parentElement?.closest?.('.mg-sr');
+    window.cueObserver = new MutationObserver(list => record(list.filter(m => !srLine(m) && (m.type !== 'attributes' || m.attributeName !== 'class'))));
     window.cueObserver.observe(root.querySelector('#brain-moves'), { childList: true, subtree: true, characterData: true, attributes: true });
   });
   const firstFour = scramble.split(' ').slice(0, 4).join(' ');

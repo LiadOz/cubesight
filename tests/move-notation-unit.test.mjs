@@ -3,9 +3,18 @@ import assert from 'node:assert/strict';
 import {
   describeMove, displayMove, expandToHeld, heldAfter, invertMove, invertSequence, isMove, normalizeMove, parseMove, parseSequence, toPhysicalTurn,
 } from '../src/moves/notation.js';
-import { arrowPaths, camFor, makeCam, rot, screenSense } from '../src/moves/geometry.js';
 import { groupMoves } from '../src/moves/triggers.js';
-import { fingertrick } from '../src/moves/fingertricks.js';
+
+/** Right-handed rotation of v about the +axis (0 x, 1 y, 2 z) by deg. */
+function rot(v, ax, deg) {
+  const r = deg * Math.PI / 180;
+  let c = Math.cos(r), s = Math.sin(r);
+  if (deg % 90 === 0) { c = Math.round(c); s = Math.round(s); }
+  const [x, y, z] = v;
+  if (ax === 0) return [x, y * c - z * s, y * s + z * c];
+  if (ax === 1) return [x * c + z * s, y, -x * s + z * c];
+  return [x * c - y * s, x * s + y * c, z];
+}
 import { parseScramble } from '../src/cross-cube.js';
 import { describeTurn } from '../src/smart-cube-guidance.js';
 
@@ -113,15 +122,6 @@ test("r U R' U' r' F R F' leaves the D layer intact", () => {
   for (const q of solved().filter(c => c.p[1] === -1)) assert.deepEqual(at(after, q.p), q);
 });
 
-test('arrows read clockwise on screen for plain moves and anticlockwise for primes', () => {
-  for (const face of ['R', 'U', 'F', 'L', 'B', 'D']) for (const suffix of ['', "'"]) {
-    const mv = parseMove(face + suffix);
-    const cam = makeCam(camFor(mv));
-    const [main] = arrowPaths(mv, cam);
-    assert.equal(screenSense(main.pts) > 0, !mv.prime, `${mv.str}`);
-  }
-});
-
 test('heldAfter: rotations change the held orientation, other moves do not', () => {
   const home = { bottom: 'D', front: 'F' };
   assert.deepEqual(heldAfter(home, 'R'), home);
@@ -185,11 +185,4 @@ test('triggers group known chunks', () => {
   assert.deepEqual(groupMoves("R' F R F'"), [[0, 3, 'sledgehammer']]);
   assert.deepEqual(groupMoves('R U F', 'none'), []);
   assert.deepEqual(groupMoves('R U F', [[0, 1, 'x']]), [[0, 1, 'x']]);
-});
-
-test('fingertricks: table lookups accept display primes and know nothing about B', () => {
-  assert.equal(fingertrick('R').hand, 'right');
-  assert.equal(fingertrick('R′').digit, 'ring');
-  assert.equal(fingertrick("U'").hand, 'left');
-  assert.equal(fingertrick('B'), null);
 });

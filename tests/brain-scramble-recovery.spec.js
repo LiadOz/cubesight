@@ -6,8 +6,9 @@ import { mountTestBrain, startGuidedScramble } from './helpers/fake-brain.js';
 // detour existed, so the recovery bubble had nothing to attach to).
 const SCRAMBLE = "R2 D' F2 U B2 L' U2 F";   // two correct turns (R2, D') put the plan on F2
 const classes = page => page.evaluate(() => [...document.querySelectorAll('#brain-test #brain-moves i')].map(i => i.className));
+const cue = page => page.locator('#brain-test canvas').getAttribute('data-cue');
 const head = (page, n) => classes(page).then(list => list.slice(0, n));
-const recoveryText = page => page.evaluate(() => [...document.querySelectorAll('#brain-test #brain-recovery .mg-label')].map(n => n.textContent));
+const recoveryText = page => page.evaluate(() => [...document.querySelectorAll('#brain-test #brain-recovery .mg-strip i')].map(n => n.textContent));
 
 for (const style of ['orbit', 'mono']) {
   for (const [name, wrong, undo] of [['a wrong face', 'L', ['L′']], ['a wrong double', 'U2', ['U2']], ['a wrong prime', "U'", ['U']]]) {
@@ -22,6 +23,8 @@ for (const style of ['orbit', 'mono']) {
       await page.evaluate(() => window.testBrain.emitTurns("R2 D'"));
       await expect(brain.locator('#brain-phase-detail')).toHaveText(/Scramble turn 3 of/);
       expect(await head(page, 4)).toEqual(['done', 'done', 'current', '']);
+      // the 3D cue is on the current plan move (it restarts after the live turn animation)
+      await expect.poll(() => cue(page)).toBe('F2');
 
       await page.evaluate(w => window.testBrain.emitTurns(w), wrong);
       // The plan move stays marked current, now as wrong; the way back is shown.
@@ -29,15 +32,19 @@ for (const style of ['orbit', 'mono']) {
       await expect(brain.locator('#brain-recovery')).toBeVisible();
       await expect(brain.locator('#brain-recovery')).toContainText(/undo/i);
       expect(await recoveryText(page)).toEqual(undo);
+      // a wrong turn hands the cue to the first recovery move
+      await expect.poll(() => cue(page)).toBe(undo[0].replace('′', "'"));
 
       // Following the recovery returns to the plan and the underline is back on F2.
       await page.evaluate(u => window.testBrain.emitTurns(u), undo.map(m => m.replace('′', "'")).join(' '));
       await expect.poll(() => head(page, 4)).toEqual(['done', 'done', 'current', '']);
       await expect(brain.locator('#brain-recovery')).toBeHidden();
+      await expect.poll(() => cue(page)).toBe('F2');
 
       // ...and the scramble can be finished: inspection starts.
       await page.evaluate(s => window.testBrain.emitTurns(s), SCRAMBLE.split(' ').slice(2).join(' '));
       await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
+      await expect.poll(() => cue(page)).toBeNull();   // scramble done: the cue stops
       expect(errors).toEqual([]);
     });
   }
