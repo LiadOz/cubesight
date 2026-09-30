@@ -1,0 +1,287 @@
+/* Orbit style (C / C-dark). Only --b-* tokens.
+ *
+ * Layout contract with the shell (src/brain/shell.js), Orbit only:
+ *   .brain[data-brain-style="orbit"][data-screen]
+ *     .brain-body                     two columns: stage | hero
+ *       .brain-stage                  the square-ish stage the rings wrap
+ *         [data-slot="cube"]          the 3D cube, centred
+ *         [data-slot="timeline"]      ring overlay (createRingTimeline)
+ *         [data-slot="inspection"]    ring overlay (createInspectionRing)
+ *       .brain-hero                   right column: step, clock, asides
+ *         [data-slot="inspection-aside"], [data-slot="timeline-aside"]
+ *     [data-slot="results"]           results screen (createOrbitResults)
+ */
+
+.brain[data-brain-style="orbit"] {
+  background: var(--b-bg);
+  color: var(--b-ink);
+  font-family: var(--b-font-sans);
+}
+
+/* --- Layout -------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] .brain-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, .9fr);
+  align-items: center;
+  column-gap: clamp(16px, 3vw, 48px);
+}
+.brain[data-brain-style="orbit"] .brain-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 800 / 620;   /* matches the ring viewBox (geometry.js) */
+  isolation: isolate;
+}
+.brain[data-brain-style="orbit"] .brain-stage > [data-slot="cube"] {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -54%);
+  z-index: 1;
+}
+.brain[data-brain-style="orbit"] .brain-stage > [data-slot="timeline"],
+.brain[data-brain-style="orbit"] .brain-stage > [data-slot="inspection"] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.brain[data-brain-style="orbit"] .brain-stage > [data-slot="timeline"] { z-index: 0; }
+.brain[data-brain-style="orbit"] .brain-stage > [data-slot="inspection"] { z-index: 2; }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-body { display: none; }
+
+/* --- Ring overlays (shared) ---------------------------------------------- */
+.b-oring, .b-oinsp { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; font-family: var(--b-font-mono); }
+.b-oinsp.is-hidden { display: none; }
+
+/* The floor (shadow + glow) stays while the ring is hidden. */
+.b-oring-shadow { fill: var(--b-cube-shadow-color); }
+.b-oring-glow { opacity: 0; }
+:root[data-theme="dark"] .b-oring-glow { opacity: 1; }
+.b-glow-0 { stop-color: var(--b-accent); stop-opacity: .22; }
+.b-glow-1 { stop-color: var(--b-accent); stop-opacity: .07; }
+.b-glow-2 { stop-color: var(--b-accent); stop-opacity: 0; }
+.b-oring.is-hidden .b-oring-arcs,
+.b-oring.is-hidden .b-oring-labels,
+.b-oring.is-hidden .b-oring-start,
+.b-oring.is-hidden .b-oring-dot { display: none; }
+
+/* Arcs */
+.b-oring-track { fill: none; stroke: var(--b-track); stroke-width: var(--b-ring-track); }
+.b-oring-done { fill: none; stroke: var(--b-fill); stroke-width: var(--b-ring-fill); opacity: 0; }
+.b-oring-live { fill: none; stroke: var(--b-fill-live); stroke-width: var(--b-ring-live); stroke-linecap: round; }
+.b-oring-pseudo { fill: none; stroke: var(--b-faint); stroke-width: 1.6; stroke-dasharray: 3 5; opacity: 0; }
+.b-oring-seg.is-pseudo .b-oring-pseudo { opacity: .9; }
+.b-oring-seg.is-pseudo.is-current .b-oring-pseudo,
+.b-oring-seg.is-pseudo.is-done .b-oring-pseudo { stroke: var(--b-accent); }
+.b-oring-seg.is-done .b-oring-track { opacity: 0; }
+.b-oring-seg.is-done .b-oring-done { opacity: 1; animation: b-oring-done-in 180ms var(--b-ease) both; }
+.b-oring-seg.is-skipped .b-oring-track { opacity: 0; }
+.b-oring-skip { opacity: 0; }
+.b-oring-seg.is-skipped .b-oring-skip { opacity: 1; }
+.b-oring-skip-dot { fill: var(--b-accent); }
+.b-oring-spark { fill: var(--b-accent); }
+.b-oring-skip.is-fresh .b-oring-spark { animation: b-oring-spark 380ms var(--b-ease-pop) both; transform-box: fill-box; transform-origin: center; }
+.b-oring-start, .b-oinsp-start { stroke: var(--b-ink); stroke-width: 2; }
+.b-oring-dot.is-hidden, .b-oinsp-dot.is-hidden { display: none; }
+.b-oring-dot-halo, .b-oinsp-dot-halo { fill: var(--b-accent); opacity: .22; }
+.b-oring-dot-core, .b-oinsp-dot-core { fill: var(--b-bg); stroke: var(--b-fill-live); stroke-width: 3; }
+
+/* Ghost pace map at idle */
+.b-oring.is-ghost .b-oring-track { opacity: .85; }
+.b-oring.is-ghost .b-oring-pseudo { stroke: var(--b-faint); }
+
+/* Draw-in: tracks draw clockwise from 12 o'clock (480 ms). */
+.b-oring.is-entering .b-oring-track { stroke-dasharray: 1; stroke-dashoffset: 1; animation: b-oring-draw 480ms var(--b-ease) forwards; }
+.b-oring.is-entering .b-oring-seg:nth-child(2) .b-oring-track { animation-delay: 40ms; }
+.b-oring.is-entering .b-oring-seg:nth-child(3) .b-oring-track { animation-delay: 80ms; }
+.b-oring.is-entering .b-oring-seg:nth-child(4) .b-oring-track { animation-delay: 120ms; }
+.b-oring.is-entering .b-oring-seg:nth-child(5) .b-oring-track { animation-delay: 160ms; }
+.b-oring.is-entering .b-oring-seg:nth-child(6) .b-oring-track { animation-delay: 200ms; }
+.b-oring.is-entering .b-oring-seg:nth-child(n+7) .b-oring-track { animation-delay: 240ms; }
+.b-oring.is-leaving .b-oring-arcs, .b-oring.is-leaving .b-oring-labels { transition: opacity 300ms var(--b-ease); opacity: 0; }
+
+/* Labels (viewBox units; the stage scales them) */
+.b-oring-labels { font-size: 15px; }   /* timeline-ring.js sets the size from the rendered width */
+.b-oring-label { fill: var(--b-muted); font-variant-numeric: tabular-nums; }
+.b-oring-name { fill: var(--b-muted); }
+.b-oring-value { fill: var(--b-faint); }
+.b-oring-label.is-done .b-oring-name { fill: var(--b-ink); }
+.b-oring-label.is-done .b-oring-value { fill: var(--b-muted); }
+.b-oring-label.is-current .b-oring-name,
+.b-oring-label.is-current .b-oring-value,
+.b-oring-label.is-skipped .b-oring-name,
+.b-oring-label.is-skipped .b-oring-value { fill: var(--b-accent-text); }
+.b-oring-label.is-current.is-over .b-oring-value { fill: var(--b-warn-text); }
+.b-oring-delta.is-faster { fill: var(--b-accent-text); }
+.b-oring-delta.is-slower, .b-oring-delta.is-even, .b-oring-delta.is-none { fill: var(--b-muted); }
+.b-oring.is-ghost .b-oring-label .b-oring-name { fill: var(--b-muted); }
+
+/* --- Inspection ring ------------------------------------------------------ */
+.b-oinsp-track { fill: none; stroke: var(--b-track); stroke-width: var(--b-ring-track); }
+.b-oinsp.is-unlimited .b-oinsp-track { stroke-dasharray: 2 7; stroke-linecap: round; }
+.b-oinsp-remaining { fill: none; stroke: var(--b-fill-live); stroke-width: var(--b-ring-live); stroke-linecap: round; }
+.b-oinsp.is-unlimited .b-oinsp-remaining { stroke: var(--b-muted); }
+.b-oinsp.is-unlimited .b-oinsp-dot-core { stroke: var(--b-muted); }
+.b-oinsp.is-unlimited .b-oinsp-dot-halo { fill: var(--b-muted); }
+.b-oinsp-over { fill: none; stroke: var(--b-warn); stroke-width: var(--b-ring-live); stroke-linecap: round; }
+.b-oinsp.is-overtime-grace:not(.is-penalty) .b-oinsp-over { stroke: var(--b-muted); }
+.b-oinsp.is-dnf .b-oinsp-over { stroke: var(--b-dnf); }
+.b-oinsp.is-over .b-oinsp-dot-core { stroke: var(--b-warn); transition: stroke 150ms linear; }
+.b-oinsp.is-over .b-oinsp-dot-halo { fill: var(--b-warn); }
+.b-oinsp.is-overtime-grace.is-over:not(.is-penalty) .b-oinsp-dot-core { stroke: var(--b-muted); }
+.b-oinsp.is-dnf .b-oinsp-dot-core { stroke: var(--b-dnf); }
+.b-oinsp-off { stroke: var(--b-muted); stroke-width: 2; display: none; }
+.b-oinsp.is-off .b-oinsp-off { display: inline; }
+.b-oinsp-scale line { stroke: var(--b-track); stroke-width: 1.4; }
+.b-oinsp-tick line { stroke: var(--b-faint); stroke-width: 2; }
+.b-oinsp-tick.is-callout line { stroke-width: 2.4; }
+.b-oinsp-tick.is-passed line { stroke: var(--b-ink); animation: b-oinsp-tick-pulse 300ms var(--b-ease) both; transform-box: fill-box; transform-origin: center; }
+.b-oinsp-tick.is-count line { stroke: var(--b-warn); }
+.b-oinsp-tick-label { fill: var(--b-muted); font-size: 15px; }
+.b-oinsp-tick.is-passed .b-oinsp-tick-label { fill: var(--b-ink); }
+.b-oinsp-tick.is-count .b-oinsp-tick-label { fill: var(--b-warn-text); font-size: 13px; }
+/* Zones fade in once the limit passes */
+.b-oinsp-zones { opacity: 0; transition: opacity 200ms linear; }
+.b-oinsp.is-over .b-oinsp-zones { opacity: 1; }
+.b-oinsp-zone-arc { fill: none; }
+.b-oinsp-zone.is-plus2 .b-oinsp-zone-arc { stroke: var(--b-plus2-soft); stroke-width: 16; }
+.b-oinsp-zone.is-grace .b-oinsp-zone-arc { stroke: var(--b-surface-2); stroke-width: 16; }
+.b-oinsp-zone.is-dnf .b-oinsp-zone-arc { stroke: var(--b-dnf); stroke-width: 2; stroke-dasharray: 4 5; }
+.b-oinsp-zone-edge { stroke-width: 2.4; }
+.b-oinsp-zone.is-plus2 .b-oinsp-zone-edge { stroke: var(--b-plus2); }
+.b-oinsp-zone.is-dnf .b-oinsp-zone-edge { stroke: var(--b-dnf); }
+.b-oinsp-zone-label { font-size: 14px; }
+.b-oinsp-zone.is-plus2 .b-oinsp-zone-title { fill: var(--b-warn-text); }
+.b-oinsp-zone.is-dnf .b-oinsp-zone-title { fill: var(--b-dnf); }
+.b-oinsp-zone.is-grace .b-oinsp-zone-title { fill: var(--b-muted); }
+.b-oinsp-zone-sub { fill: var(--b-muted); }
+
+/* --- Right column: inspection countdown ---------------------------------- */
+.b-oinsp-aside.is-hidden, .b-oring-aside.is-hidden { display: none; }
+.b-oinsp-aside { display: grid; gap: 0; }
+.b-oinsp-aside p { margin: 0; }
+.b-oinsp-eyebrow { font: 500 14px var(--b-font-mono); letter-spacing: .02em; color: var(--b-accent-text); }
+.b-oinsp-eyebrow.is-warn { color: var(--b-warn-text); }
+.b-oinsp-sentence { margin-top: 14px !important; font-size: 16px; font-weight: 500; color: var(--b-muted); }
+.b-oinsp-big { display: flex; align-items: baseline; gap: 18px; margin-top: 8px !important; font: 300 var(--b-fs-countdown)/1 var(--b-font-num); letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--b-ink); }
+.b-oinsp-big.is-warn { color: var(--b-warn); }
+.b-oinsp-big.is-error { color: var(--b-dnf); }
+.b-oinsp-unit { font: 400 24px var(--b-font-sans); letter-spacing: 0; color: var(--b-muted); }
+.b-oinsp-callout { display: flex; align-items: center; gap: 12px; margin-top: 20px !important; font: 500 15px var(--b-font-mono); color: var(--b-ink); }
+.b-oinsp-callout.is-hidden { display: none; }
+.b-oinsp-callout i { width: 10px; height: 10px; border-radius: 50%; background: var(--b-ink); }
+.b-oinsp-callout-at { font-weight: 400; color: var(--b-muted); }
+.b-oinsp-meter { display: grid; gap: 10px; margin-top: 18px; }
+.b-oinsp-meter[hidden] { display: none; }
+.b-oinsp-inspected { font: 500 16px var(--b-font-mono); color: var(--b-ink); margin-bottom: 18px !important; }
+.b-oinsp-bar { position: relative; height: 5px; border-radius: 3px; background: linear-gradient(to right, var(--b-plus2-soft) 0 60%, transparent 60%); }
+.b-oinsp-bar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--b-plus2); }
+.b-oinsp-bar-dnf { position: absolute; left: 61%; right: 0; top: 2px; border-top: 2px dotted var(--b-dnf); }
+.b-oinsp-bar-labels { position: relative; height: 16px; font: 12px var(--b-font-mono); color: var(--b-muted); }
+.b-oinsp-bar-labels span { position: absolute; top: 0; }
+.b-oinsp-bar-labels span:nth-child(1) { left: 0; }
+.b-oinsp-bar-labels span:nth-child(2) { left: 60%; transform: translateX(-50%); }
+.b-oinsp-bar-labels span:nth-child(3) { right: 0; color: var(--b-dnf); }
+.b-oinsp-penalty-head { margin-top: 26px !important; font-size: 14px; font-weight: 500; color: var(--b-muted); }
+.b-oinsp-penalty { display: flex; align-items: baseline; gap: 24px; font: 500 16px var(--b-font-mono); color: var(--b-ink); }
+.b-oinsp-penalty-now { font: 600 28px var(--b-font-sans); }
+.b-oinsp-penalty-now.is-warn { color: var(--b-warn-text); }
+.b-oinsp-penalty-now.is-dnf { color: var(--b-dnf); }
+.b-oinsp-penalty-now.is-muted { color: var(--b-muted); }
+.b-oinsp-rules { margin-top: 18px !important; font-size: 14px; font-weight: 500; color: var(--b-muted); }
+
+/* --- Right column: live split list ---------------------------------------- */
+.b-oring-aside {
+  display: grid;
+  grid-template-columns: minmax(6em, 1fr) auto 4.5em;
+  column-gap: 32px;
+  row-gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid var(--b-hairline);
+  font: 15px var(--b-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.b-oring-row-label { color: var(--b-muted); }
+.b-oring-row-value { color: var(--b-ink); font-weight: 500; text-align: right; }
+.b-oring-row-delta { color: var(--b-muted); font-size: 13px; text-align: right; }
+.b-oring-row-delta.is-faster { color: var(--b-accent-text); }
+.b-oring-row-delta.is-slower { color: var(--b-warn-text); }
+.b-oring-row.is-current, .b-oring-row-value.is-current, .b-oring-row.is-skipped { color: var(--b-accent-text); }
+
+/* --- Results -------------------------------------------------------------- */
+.b-ores.is-hidden { display: none; }
+.b-ores { display: grid; gap: 28px; font-variant-numeric: tabular-nums; }
+.b-ores p, .b-ores dl, .b-ores dd, .b-ores ul { margin: 0; }
+.b-ores-eyebrow { font: 13px var(--b-font-mono); color: var(--b-muted); }
+.b-ores-top { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 1.55fr) minmax(220px, .8fr); gap: clamp(20px, 3vw, 48px); align-items: start; }
+.b-ores-big { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; font: 300 var(--b-fs-result)/1 var(--b-font-num); letter-spacing: -.03em; color: var(--b-accent); }
+.b-ores-big.is-warn { color: var(--b-warn); }
+.b-ores-big.is-error { color: var(--b-dnf); }
+.b-ores-unit { font: 400 26px var(--b-font-sans); color: var(--b-muted); letter-spacing: 0; }
+.b-ores-unit.is-hidden { display: none; }
+.b-ores-penalty { font: 600 28px var(--b-font-sans); letter-spacing: 0; }
+.b-ores-stats { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 8px 28px; margin-top: 32px !important; }
+.b-ores-stats dt, .b-ores-avgs dt { font: 13px var(--b-font-mono); color: var(--b-muted); }
+.b-ores-stats dd { margin-top: 6px !important; font: 500 26px var(--b-font-mono); color: var(--b-ink); }
+.b-ores-vs.is-faster { color: var(--b-accent-text); }
+.b-ores-vs.is-slower { color: var(--b-warn-text); }
+.b-ores-method { margin-top: 18px !important; font: 13px var(--b-font-mono); color: var(--b-muted); }
+.b-ores-chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px !important; }
+.b-ores-legend { display: inline-flex; align-items: center; gap: 8px; font: 12px var(--b-font-mono); color: var(--b-muted); }
+.b-ores-legend i { width: 22px; border-top: 1.5px dashed var(--b-muted); }
+.b-ores-donut-host { align-self: center; }
+.b-ores-rule { border: 0; border-top: 1px solid var(--b-hairline); margin: 0; }
+.b-ores-bottom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); }
+.b-ores-splits-head { display: grid; grid-template-columns: 4.2em minmax(80px, 1fr) 4.2em 4.4em; column-gap: 16px; align-items: baseline; margin-bottom: 18px !important; }
+.b-ores-splits-head .b-ores-eyebrow:first-child { grid-column: 1; }
+.b-ores-avg-key { grid-column: 2; justify-self: end; display: inline-flex; gap: 8px; align-items: center; font: 12px var(--b-font-mono); color: var(--b-muted); }
+.b-ores-avg-key i { width: 2px; height: 14px; background: var(--b-ink); }
+.b-ores-vs-head { grid-column: 4; text-align: right; }
+.b-ores-session { display: grid; gap: 12px; align-content: start; }
+.b-ores-session-row { display: grid; grid-template-columns: auto minmax(160px, 1fr); gap: 32px; align-items: center; margin-bottom: 10px; }
+.b-ores-avgs { display: grid; grid-template-columns: repeat(4, auto); gap: 6px 30px; }
+.b-ores-avgs dd { margin-top: 6px !important; font: 600 var(--b-fs-stat) var(--b-font-sans); color: var(--b-ink); }
+.b-ores-avgs dd.is-faster { color: var(--b-accent-text); }
+.b-ores-recent { display: flex; flex-wrap: wrap; gap: 8px 22px; font: 15px var(--b-font-mono); color: var(--b-ink); margin-bottom: 10px !important; }
+.b-ores-recent-item.is-current { color: var(--b-accent-text); }
+.b-ores-recent-item.is-penalty { color: var(--b-warn-text); }
+.b-ores-coach { display: grid; gap: 10px; padding: 0; list-style: none; }
+.b-ores-coach-line { position: relative; padding-left: 18px; font: 500 15px/1.45 var(--b-font-sans); color: var(--b-ink); }
+.b-ores-coach-line::before { content: ''; position: absolute; left: 0; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: var(--b-ink); }
+.b-ores-coach-line.is-good::before { background: var(--b-accent); }
+.b-ores-coach-line.is-warn::before { background: var(--b-warn); }
+.b-ores-coach-line code { margin-left: 16px; font: 14px var(--b-font-mono); color: var(--b-accent-text); }
+.b-ores.is-entering .b-ores-time, .b-ores.is-entering .b-ores-chart { animation: b-ores-rise 320ms var(--b-ease) both; }
+.b-ores.is-entering .b-ores-bottom { animation: b-ores-rise 360ms 80ms var(--b-ease) both; }
+
+/* --- Motion --------------------------------------------------------------- */
+@keyframes b-oring-draw { to { stroke-dashoffset: 0; } }
+@keyframes b-oring-done-in { from { stroke-width: var(--b-ring-live); opacity: .6; } }
+@keyframes b-oring-spark { 0% { transform: scale(0) rotate(-20deg); } 70% { transform: scale(1.15) rotate(0); } 100% { transform: scale(1) rotate(0); } }
+@keyframes b-oinsp-tick-pulse { 50% { transform: scale(1.4); } }
+@keyframes b-ores-rise { from { opacity: 0; transform: translateY(8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .b-oring.is-entering .b-oring-track, .b-oring-seg.is-done .b-oring-done, .b-oring-skip.is-fresh .b-oring-spark,
+  .b-oinsp-tick.is-passed line, .b-ores.is-entering * { animation: none !important; stroke-dasharray: none; }
+}
+
+/* --- Phone (C-09): one column, smaller ring, bigger label text -------------- */
+@media (max-width: 720px) {
+  .brain[data-brain-style="orbit"] .brain-body { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
+  .brain[data-brain-style="orbit"] .brain-stage > [data-slot="cube"] { width: 34%; }
+  .b-oinsp-tick-label { font-size: 26px; }
+  .b-oinsp-zone-label { font-size: 22px; }
+  .b-oinsp-aside, .b-oring-aside { font-size: 13px; }
+  .b-oinsp-big { gap: 10px; }
+  .b-oring-aside { grid-template-columns: repeat(4, auto); grid-auto-flow: column; grid-template-rows: auto auto auto; column-gap: 20px; row-gap: 6px; justify-content: start; padding-top: 16px; }
+  .b-ores-top, .b-ores-bottom { grid-template-columns: minmax(0, 1fr); }
+  .b-ores-stats, .b-ores-avgs { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 16px; }
+  .b-ores-stats dd { font-size: 20px; }
+  .b-ores-session-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .b-ores-donut-host { display: none; }
+  .b-ores-spark-host { max-width: 300px; }
+  .b-ores-splits-head, .b-ores .b-ch-splits.is-rows { grid-template-columns: 2.8em minmax(56px, 1fr) 3.3em 3.5em; column-gap: 10px; }
+  .b-ores .b-ch-band-label, .b-ores .b-ch-axis { font-size: 15px; }
+}
