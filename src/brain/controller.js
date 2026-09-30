@@ -84,6 +84,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let cube = null;
   try { cube = createCube3D(shell.slots.cube, { mode: 'scout' }); }
   catch { shell.slots.cube.textContent = 'The Brain needs WebGL. Enable hardware acceleration or try another browser.'; }
+  shell.setCube?.(cube);   // the move guide plays its ghost on this cube
 
   // Recorded seam: start/cancel/settings calls (with the exact scramble), the
   // held-orientation reads and the clock are captured for deterministic replay.
@@ -606,6 +607,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       clearTimeout(toastTimer);
       live?.cancel();   // stops its inspection interval
       live?.detach();
+      shell.setCube?.(null);
       cube?.destroy();  // releases the WebGL context and its render loop
       cube = null;
       shell.destroy();

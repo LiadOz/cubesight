@@ -10,7 +10,8 @@
 // current segment fill, inspection caret) between emits.
 
 import { FACE_COLORS } from '../cross-cube.js';
-import { recoveryMoves } from '../smart-cube-guidance.js';
+import { inverseMove, recoveryMoves } from '../smart-cube-guidance.js';
+import { logConnection } from '../smart-cube-diag.js';
 import { currentDShift } from '../solve-tracker.js';
 import { inspectionLimitMs, inspectionPenalty } from '../solve-live.js';
 import { summarize, ao5, ao12, resultMs, PLUS_TWO_MS } from '../solve-metrics.js';
@@ -292,15 +293,23 @@ function scrambleVM({ live, settings, scrambleText, held, number }) {
   const step = applying ? live.applyStep : 0;
   let recovery = null;
   if (detour.length) {
-    try { recovery = recoveryMoves(detour, held?.bottom ?? 'D', held?.front ?? 'F').map((m, i) => ({ key: `r${i}`, text: m, state: i === 0 ? 'current' : 'todo' })); }
-    catch { recovery = null; }
+    let way;
+    try { way = recoveryMoves(detour, held?.bottom ?? 'D', held?.front ?? 'F'); }
+    catch (error) {
+      // Never leave the user stuck without a way back: log it and fall back to the plain
+      // inverse of the detour (the canonical frame, which is right for the default hold).
+      logConnection({ label: `recovery cue failed, using the plain inverse: ${error?.message || error}`, detour: detour.slice(), held });
+      way = detour.slice().reverse().map(inverseMove);
+    }
+    recovery = way.map((m, i) => ({ key: `r${i}`, text: m, state: i === 0 ? 'current' : 'todo' }));
   }
   const busy = ['applying', 'solving', 'done'].includes(live?.phase);
   return {
     source: settings.scramble,
-    moves: moves.map((m, i) => ({ key: `s${i}`, text: m, state: !applying ? 'todo' : i < step ? 'done' : i === step && !detour.length ? 'current' : 'todo' })),
+    moves: moves.map((m, i) => ({ key: `s${i}`, text: m, state: !applying ? 'todo' : i < step ? 'done' : i === step ? 'current' : 'todo' })),
     recovery,
     wrongTurn: detour.length ? detour[0] : null,
+    held: held ? { bottom: held.bottom, front: held.front } : null,
     step,
     total: applying ? live.applyTotal : moves.length,
     editable: !busy,

@@ -144,20 +144,18 @@
 .b-slot-results[hidden] { display: none; }
 .b-results-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 
-/* Scramble line: ten moves per row, the current one underlined. */
-.b-moves { order: 35; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 30px 12px; width: 100%; max-width: 960px; margin-top: 32px; font: 400 var(--b-fs-move)/1.2 var(--b-font-mono); }
+/* Scramble line: the move guide's chip strip (src/moves/move-guide.css), the current
+   move enlarged. After a wrong turn the way back sits under it. */
+.b-moves { order: 35; width: 100%; max-width: 960px; margin-top: 24px; }
 .b-moves[hidden] { display: none; }
-.b-moves i { position: relative; font-style: normal; text-align: left; color: var(--b-ink); transition: color .25s; }
-.b-moves i.done { color: var(--b-track); }
-.b-moves i.current { color: var(--b-accent-text); }
-.b-moves i.current::after { content: ''; position: absolute; left: 0; width: 1.25em; bottom: -8px; height: 3px; border-radius: 2px; background: currentColor; }
-.b-moves i.wrong { color: var(--b-warn-text); }
-.b-recovery {
-  position: absolute; left: -.9em; top: calc(100% + 18px); z-index: 2; display: inline-flex; align-items: baseline; gap: 12px; white-space: nowrap;
-  padding: 6px 12px; border-radius: 6px; background: var(--b-plus2-soft); color: var(--b-warn-text); font-size: 14px;
-}
-.b-recovery::before { content: ''; position: absolute; left: 1.9em; top: -5px; width: 10px; height: 10px; background: inherit; transform: rotate(45deg); }
-.b-recovery-moves b { color: var(--b-ink); font-size: 18px; font-weight: 500; margin-right: 6px; }
+.b-recovery-cue { order: 36; display: flex; align-items: center; gap: 14px; width: 100%; max-width: 960px; margin-top: 4px; padding: 8px 14px; border: 1px solid var(--b-warn); border-radius: var(--b-radius-bar); color: var(--b-warn-text); }
+.b-recovery-cue[hidden] { display: none; }
+.b-recovery-do { margin: 0; font: 500 16px var(--b-font-mono); white-space: nowrap; }
+.b-recovery-moves { min-width: 0; flex: 1; }
+.b-recovery-moves .mg-strip { padding-bottom: 4px; }
+.b-guide-tools { order: 37; display: flex; gap: 14px; margin-top: 6px; }
+.b-guide-tools[hidden] { display: none; }
+.b-guide-tools .b-textbtn[aria-pressed="false"] { text-decoration: line-through; opacity: .7; }
 
 /* --- Layouts ----------------------------------------------------------------
    The stage is .brain-body > (.brain-stage [cube, timeline, inspection] +
@@ -183,7 +181,7 @@
 .brain[data-layout="orbit"] .b-toast { order: 22; align-self: flex-start; margin: 0 0 18px; text-align: left; font: 600 22px var(--b-font-sans); }
 .brain[data-layout="orbit"] .b-aside { order: 24; align-self: stretch; }
 .brain[data-layout="orbit"] .b-sub { order: 30; margin-top: 26px; font: 14px var(--b-font-mono); }
-.brain[data-layout="orbit"] .b-moves { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 26px 20px; max-width: 440px; margin-top: 30px; }
+.brain[data-layout="orbit"] .b-moves, .brain[data-layout="orbit"] .b-recovery-cue { max-width: 520px; }
 .brain[data-layout="orbit"] .b-coach { justify-items: start; text-align: left; font-family: var(--b-font-sans); }
 .brain[data-layout="orbit"] .b-coach-line { font-size: 15px; font-weight: 500; }
 .brain[data-layout="orbit"][data-screen="scramble"] .b-coach { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--b-hairline); align-self: stretch; }
@@ -198,13 +196,6 @@
 .brain[data-layout="orbit"] .b-stat { flex-direction: column; gap: 6px; }
 .brain[data-layout="orbit"] .b-stat dt { font: 12px var(--b-font-mono); }
 .brain[data-layout="orbit"] .b-stat dd { font: 600 24px var(--b-font-sans); }
-/* Orbit scramble (C-02): the wrong move is a tinted chip, the fix a small badge on it. */
-.brain[data-layout="orbit"] .b-moves i.current.wrong { background: var(--b-plus2-soft); border-radius: 6px; box-shadow: 0 0 0 6px var(--b-plus2-soft); }
-.brain[data-layout="orbit"] .b-moves i.current.wrong::after { display: none; }
-.brain[data-layout="orbit"] .b-recovery { left: auto; right: -1.6em; top: -1.15em; gap: 0; padding: 2px 8px; border-radius: 999px; background: var(--b-accent); color: var(--b-on-accent); font-size: 12px; }
-.brain[data-layout="orbit"] .b-recovery::before, .brain[data-layout="orbit"] .b-recovery-do, .brain[data-layout="orbit"] .b-recovery-fix { display: none; }
-.brain[data-layout="orbit"] .b-recovery-moves b { margin: 0; color: inherit; font: 500 12px var(--b-font-mono); }
-.brain[data-layout="orbit"] .b-recovery-moves b + b { margin-left: 6px; }
 .brain[data-layout="orbit"]:not([data-screen="solving"]) [data-slot="timeline-aside"] { display: none; }
 .brain[data-layout="orbit"] > .b-configbar { background: none; padding: 0; margin-top: 30px; gap: 4px 14px; font: 500 14px var(--b-font-mono); }
 .brain[data-layout="orbit"] .b-configbar-copy { background: none; font: 500 14px var(--b-font-mono); }
@@ -221,7 +212,7 @@
 .brain:not([data-screen="idle"]) .b-stats { display: none; }
 .brain:not([data-screen="scramble"]) .b-scramble-head { display: none; }
 /* The scramble line belongs to the scramble screen; once applied it would crowd the clock. */
-.brain:not([data-screen="scramble"]) .b-moves { display: none; }
+.brain:not([data-screen="scramble"]) :is(.b-moves, .b-recovery-cue, .b-guide-tools) { display: none; }
 .brain[data-screen="idle"], .brain[data-screen="disconnected"] { --b-cube-size: 280px; }
 .brain[data-screen="scramble"] { --b-cube-size: 210px; }
 .brain[data-screen="scramble"] .b-coach { margin-top: 72px; }
@@ -312,7 +303,6 @@
   .b-settings > summary { top: 21px; left: 0; }
   .b-configbar { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; max-width: 100%; font-size: 13px; }
   .b-clock { letter-spacing: -2px; }
-  .b-moves { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px 8px; }
   .b-row { grid-template-columns: 1fr; gap: 10px; }
   .b-stats { gap: 8px 20px; }
   .b-keys { display: none; }
