@@ -8,7 +8,7 @@ import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, ef
 import { loadSolves, appendSolve } from './solve-store.js';
 import { summarize, ao5, ao12 } from './solve-metrics.js';
 import { exportAll, serializeExport, parseImport, importAll } from './data-port.js';
-import { subscribeConnection, clearConnectionLog, getConnectionLog } from './smart-cube-diag.js';
+import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnection } from './smart-cube-diag.js';
 import { clearSavedCubeData } from './smart-cube-bluetooth.js';
 import { METHODS, getMethod, DEFAULT_METHOD } from './solve-methods.js';
 
