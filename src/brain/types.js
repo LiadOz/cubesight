@@ -172,19 +172,23 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
 
 /** A mounted view part. update() receives the new and previous view-model.
  * @typedef {{update:(vm:BrainVM, prev:BrainVM|null)=>void, frame?:(f:FrameVM)=>void, destroy:()=>void}} Component */
-/** @typedef {(host:HTMLElement, ctx:{dispatch:(a:BrainAction)=>void}) => Component} ComponentFactory */
+/** A style part factory. `aside` is a second host in the right-hand column, passed
+ * only when the style declares it in StyleModule.asides.
+ * @typedef {(host:HTMLElement, ctx:{dispatch:(a:BrainAction)=>void, aside?:HTMLElement}) => Component} ComponentFactory */
 /** A visual style: the parts that differ between Orbit and Mono. The shell
  * (layout, clock, coach, settings, compat ids) is shared.
  * @typedef {{id:BrainStyle, layout:'column'|'orbit', timeline:ComponentFactory, inspection:ComponentFactory,
- *   results:ComponentFactory}} StyleModule */
+ *   results:ComponentFactory, asides?:{timeline?:boolean, inspection?:boolean}}} StyleModule */
 
-/* Chart APIs (src/brain/charts/*, SVG only, coloured by CSS classes/variables):
+/* Chart APIs (src/brain/charts/*, coloured by CSS classes/variables; SVG except the
+ * split bars, which are HTML in a CSS grid because they are mostly text):
  *   createTpsLine(host, {variant:'mono'|'orbit'}) -> {update(series:TpsSeries, {drawIn:boolean}), destroy}
  *   createSplitBars(host, {layout:'columns'|'rows'}) -> {update(rows:SplitRow[]), destroy}
  *   createSparkline(host) -> {update(spark), destroy}
  *   createDonut(host) -> {update(donut), destroy}
  * Shell API (src/brain/shell.js):
- *   createShell(root, {dispatch}) -> {slots:{cube, timeline, inspection, results}, update(vm, prev), frame(f),
+ *   createShell(root, {dispatch}) -> {slots:{cube, timeline, inspection, results, inspectionAside, timelineAside},
+ *     update(vm, prev), frame(f),
  *     setStyle(mod:StyleModule), destroy()}
  *   The cube slot (#brain-cube) is never re-created; the controller mounts the 3D cube once.
  * Theme tokens: CSS custom properties --b-* per :root[data-theme] .brain[data-brain-style]

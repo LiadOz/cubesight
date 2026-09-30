@@ -8,14 +8,14 @@ import { test, expect } from 'playwright/test';
 const STYLES = ['mono', 'orbit'];
 const THEMES = ['dark', 'light'];
 const SCREENS = { idle: 'idle', 'inspection-overtime': 'overtime', solving: 'solving', results: 'results' };
-const GALLERY = { mono: '/src/brain/styles/mono/_gallery.html' };
+const GALLERY = '/src/brain/_gallery.html';
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
 async function openFixture(page, style, theme, fixture) {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto(`${GALLERY[style]}?fx=${fixture}&theme=${theme}`);
+  await page.goto(`${GALLERY}?style=${style}&fx=${fixture}&theme=${theme}`);
   await page.waitForSelector('html[data-gallery-ready]');
   await page.evaluate(() => document.fonts.ready);
   return errors;
@@ -25,7 +25,6 @@ for (const style of STYLES) {
   for (const theme of THEMES) {
     for (const [screen, fixture] of Object.entries(SCREENS)) {
       test(`${style} · ${theme} · ${screen}`, async ({ page }) => {
-        test.fixme(!GALLERY[style], `${style} style is built separately`);
         const errors = await openFixture(page, style, theme, fixture);
         await expect(page.locator('.brain')).toHaveAttribute('data-brain-style', style);
         await expect(page).toHaveScreenshot(`${style}-${theme}-${screen}.png`, {
@@ -92,4 +91,23 @@ test('settings rows keep the first UI\'s hooks and dispatch settings', async ({ 
   for (const id of ['#brain-inspection', '#brain-scramble', '#brain-generate', '#brain-start-custom', '#brain-toggles', '#brain-connection-log', '#brain-save-recording', '#brain-replay-speed']) {
     await expect(page.locator(id)).toHaveCount(1);
   }
+});
+
+test('switching style keeps the cube mount and moves the parts between layouts', async ({ page }) => {
+  await openFixture(page, 'orbit', 'dark', 'solving');
+  const result = await page.evaluate(() => {
+    const { shell, vm, styles } = window.gallery;
+    const cube = shell.slots.cube;
+    const canvases = () => shell.root.querySelectorAll('canvas').length;
+    const before = { canvases: canvases(), ring: Boolean(shell.root.querySelector('.b-oring')), aside: !shell.slots.timelineAside.hidden };
+    shell.setStyle(styles.mono);
+    shell.update({ ...vm, style: 'mono' }, null);
+    const mono = { canvases: canvases(), ring: Boolean(shell.root.querySelector('.b-oring')), linear: Boolean(shell.root.querySelector('.m-seg')), aside: !shell.slots.timelineAside.hidden, layout: shell.root.dataset.layout };
+    shell.setStyle(styles.orbit);
+    return { before, mono, sameCube: shell.slots.cube === cube && document.querySelector('#brain-cube') === cube, layout: shell.root.dataset.layout };
+  });
+  expect(result.before).toEqual({ canvases: 1, ring: true, aside: true });
+  expect(result.mono).toEqual({ canvases: 1, ring: false, linear: true, aside: false, layout: 'column' });
+  expect(result.sameCube).toBe(true);
+  expect(result.layout).toBe('orbit');
 });

@@ -39,29 +39,37 @@ const TEMPLATE = `
   </header>
   <nav class="b-configbar" aria-label="Quick settings"></nav>
   <main class="b-stage" aria-label="Live solve">
-    <p class="b-scramble-head"></p>
-    <div class="b-cube-wrap">
-      <div id="brain-cube" class="cube-mount b-cube"></div>
-      <button class="b-textbtn b-cube-reset" id="brain-reset-view" type="button" title="Reset the camera">reset view</button>
+    <div class="brain-body">
+      <div class="brain-stage">
+        <div class="b-cube-wrap" data-slot="cube">
+          <div id="brain-cube" class="cube-mount b-cube"></div>
+          <button class="b-textbtn b-cube-reset" id="brain-reset-view" type="button" title="Reset the camera">reset view</button>
+        </div>
+        <div class="b-slot b-slot-timeline brain-cube-timeline" id="brain-timeline" data-slot="timeline" role="progressbar" aria-label="Solve stage timeline"></div>
+        <div class="b-slot b-slot-inspection" data-slot="inspection"></div>
+      </div>
+      <div class="brain-hero">
+        <p class="b-scramble-head"></p>
+        <p class="b-stepline"></p>
+        <div class="b-steptitle"><strong></strong><span class="b-steptags"></span></div>
+        <div class="b-clock" aria-hidden="true">0.00</div>
+        <p class="b-toast" role="status" hidden></p>
+        <div class="b-aside" data-slot="inspection-aside"></div>
+        <div class="b-aside" data-slot="timeline-aside"></div>
+        <p class="b-sub"></p>
+        <div id="brain-moves" class="brain-moves b-moves" aria-label="Scramble moves" hidden></div>
+        <div id="brain-coach" class="b-coach" aria-live="polite"></div>
+        <p class="b-idle-status"></p>
+        <div class="b-primary">
+          <button class="b-start" id="brain-start" type="button"><span>start scramble</span><kbd>space</kbd></button>
+          <button class="b-start b-start-alt" type="button" data-primary="connect" hidden><span>connect cube</span></button>
+          <button class="b-textbtn" id="brain-stop" type="button" hidden>cancel</button>
+        </div>
+        <dl class="b-stats"></dl>
+      </div>
     </div>
-    <div class="b-slot b-slot-inspection"></div>
-    <p class="b-stepline"></p>
-    <div class="b-steptitle"><strong></strong><span class="b-steptags"></span></div>
-    <div class="b-clock" aria-hidden="true">0.00</div>
-    <p class="b-sub"></p>
-    <div id="brain-moves" class="brain-moves b-moves" aria-label="Scramble moves" hidden></div>
-    <div id="brain-coach" class="b-coach" aria-live="polite"></div>
-    <p class="b-idle-status"></p>
-    <div class="b-primary">
-      <button class="b-start" id="brain-start" type="button"><span>start scramble</span><kbd>space</kbd></button>
-      <button class="b-start b-start-alt" type="button" data-primary="connect" hidden><span>connect cube</span></button>
-      <button class="b-textbtn" id="brain-stop" type="button" hidden>cancel</button>
-    </div>
-    <dl class="b-stats"></dl>
-    <p class="b-toast" role="status" hidden></p>
-    <div class="b-slot b-slot-timeline brain-cube-timeline" id="brain-timeline" role="progressbar" aria-label="Solve stage timeline"></div>
     <section class="brain-review b-slot-results" id="brain-review" hidden aria-live="polite">
-      <div class="b-slot b-results-host"></div>
+      <div class="b-slot b-results-host" data-slot="results"></div>
       <div class="b-results-actions"><button class="b-textbtn" id="brain-review-close" type="button">continue</button></div>
     </section>
   </main>
@@ -209,6 +217,8 @@ export function createShell(root, { dispatch }) {
     timeline: parts.timeline,
     inspection: $('.b-slot-inspection'),
     results: $('.b-results-host'),
+    inspectionAside: $('[data-slot="inspection-aside"]'),
+    timelineAside: $('[data-slot="timeline-aside"]'),
   };
 
   /** @type {BrainVM|null} */
@@ -521,12 +531,16 @@ export function createShell(root, { dispatch }) {
     style = mod;
     brain.dataset.brainStyle = mod.id;
     brain.dataset.layout = mod.layout;
-    for (const slot of [slots.timeline, slots.inspection, slots.results]) slot.replaceChildren();
-    const ctx = { dispatch };
+    for (const slot of [slots.timeline, slots.inspection, slots.results, slots.inspectionAside, slots.timelineAside]) slot.replaceChildren();
+    // Styles that draw part of a view in the right-hand column (Orbit) get a
+    // second host for it; the other style's asides stay empty and hidden.
+    const asides = mod.asides ?? {};
+    slots.inspectionAside.hidden = !asides.inspection;
+    slots.timelineAside.hidden = !asides.timeline;
     components = {
-      timeline: mod.timeline(slots.timeline, ctx),
-      inspection: mod.inspection(slots.inspection, ctx),
-      results: mod.results(slots.results, ctx),
+      timeline: mod.timeline(slots.timeline, { dispatch, aside: asides.timeline ? slots.timelineAside : undefined }),
+      inspection: mod.inspection(slots.inspection, { dispatch, aside: asides.inspection ? slots.inspectionAside : undefined }),
+      results: mod.results(slots.results, { dispatch }),
     };
     if (last) {
       const vm = last;

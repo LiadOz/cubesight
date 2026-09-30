@@ -1,9 +1,11 @@
-// Orbit style visual checks, driven by the style's dev harness and fixtures
-// (src/brain/styles/orbit/_dev.html). Structural assertions plus an attached
-// screenshot per state, for Orbit dark and light, desktop and phone.
+// Orbit style visual checks through the real shell (src/brain/_gallery.html)
+// with the Orbit dev fixtures; the inspection-variants grid uses the style's
+// own harness (src/brain/styles/orbit/_dev.html). Structural assertions plus
+// an attached screenshot per state, for Orbit dark and light, desktop and phone.
 import { expect, test } from 'playwright/test';
 
 const HARNESS = '/src/brain/styles/orbit/_dev.html';
+const GALLERY = '/src/brain/_gallery.html';
 const SIZES = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } };
 
 async function open(page, state, theme, size = 'desktop') {
@@ -11,8 +13,14 @@ async function open(page, state, theme, size = 'desktop') {
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.setViewportSize(SIZES[size]);
-  await page.goto(`${HARNESS}?state=${state}&theme=${theme}`);
-  await page.waitForFunction(() => document.documentElement.dataset.harness === 'ready');
+  if (state === 'variants') {
+    await page.goto(`${HARNESS}?state=${state}&theme=${theme}`);
+    await page.waitForFunction(() => document.documentElement.dataset.harness === 'ready');
+  } else {
+    const [style, fx] = state.includes(':') ? state.split(':') : ['orbit', state];
+    await page.goto(`${GALLERY}?style=${style}&fx=${fx}&theme=${theme}`);
+    await page.waitForSelector('html[data-gallery-ready]');
+  }
   await page.evaluate(() => document.fonts.ready);
   return errors;
 }
@@ -153,7 +161,7 @@ test('the two modes resolve different tokens', async ({ page }) => {
 });
 
 test('the shared charts render in their Mono variants', async ({ page }) => {
-  const errors = await open(page, 'charts-mono', 'dark');
+  const errors = await open(page, 'mono:results', 'dark');
   await expect(page.locator('.b-ch-tps.is-mono .b-ch-line')).toHaveCount(1);
   await expect(page.locator('.b-ch-tps.is-mono .b-ch-area')).toHaveCount(0);
   await expect(page.locator('.b-ch-splits.is-columns .b-ch-split')).toHaveCount(9);

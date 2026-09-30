@@ -21,7 +21,7 @@
   box-sizing: border-box;
   background: var(--b-bg);
   color: var(--b-ink);
-  font-family: var(--b-font-ui);
+  font-family: var(--b-font-sans);
   font-size: var(--b-fs-body);
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
@@ -153,6 +153,62 @@
 .b-recovery::before { content: ''; position: absolute; left: 1.9em; top: -5px; width: 10px; height: 10px; background: inherit; transform: rotate(45deg); }
 .b-recovery-moves b { color: var(--b-ink); font-size: 18px; font-weight: 500; margin-right: 6px; }
 
+/* --- Layouts ----------------------------------------------------------------
+   The stage is .brain-body > (.brain-stage [cube, timeline, inspection] +
+   .brain-hero [text, clock, asides, actions]). The column layout (Mono)
+   flattens both wrappers so the parts form one ordered column; the orbit
+   layout keeps them as two columns (see orbit.css). */
+.brain[data-layout="column"] :is(.brain-body, .brain-stage, .brain-hero) { display: contents; }
+.b-aside:empty, .b-aside[hidden] { display: none; }
+
+.brain[data-layout="orbit"] .b-stage { align-items: stretch; text-align: left; margin-top: 12px; }
+.brain[data-layout="orbit"] .brain-body { flex: 1; }
+.brain[data-layout="orbit"] .brain-stage > .b-cube-wrap { height: auto; margin: 0; }
+.brain[data-layout="orbit"] .b-cube-wrap::before { display: none; }   /* the ring SVG draws the floor */
+.brain[data-layout="orbit"] .b-cube-reset { right: -24px; }
+.brain[data-layout="orbit"] .brain-stage > .b-slot-inspection { display: block; }
+.brain[data-layout="orbit"] .b-slot-timeline { margin-top: 0; animation: none; }
+.brain[data-layout="orbit"] .brain-hero { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; max-width: 520px; }
+.brain[data-layout="orbit"] .b-scramble-head { order: 5; font: 500 14px var(--b-font-mono); color: var(--b-accent-text); }
+.brain[data-layout="orbit"] .b-stepline { order: 10; justify-content: flex-start; font: 500 14px var(--b-font-mono); color: var(--b-accent-text); }
+.brain[data-layout="orbit"] .b-clock { order: 20; margin: 18px 0 14px; letter-spacing: -.02em; }
+.brain[data-layout="orbit"] .b-steptitle:not(:has(strong:empty)) { order: 21; display: flex; align-items: center; gap: 26px; margin-bottom: 30px; font: 700 var(--b-fs-step) var(--b-font-sans); color: var(--b-ink); }
+.brain[data-layout="orbit"] .b-tag { padding: 6px 12px; border-radius: 999px; background: var(--b-accent-soft); color: var(--b-accent-text); font: 400 14px var(--b-font-mono); }
+.brain[data-layout="orbit"] .b-toast { order: 22; align-self: flex-start; margin: 0 0 18px; text-align: left; font: 600 22px var(--b-font-sans); }
+.brain[data-layout="orbit"] .b-aside { order: 24; align-self: stretch; }
+.brain[data-layout="orbit"] .b-sub { order: 30; margin-top: 26px; font: 14px var(--b-font-mono); }
+.brain[data-layout="orbit"] .b-moves { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 26px 20px; max-width: 440px; margin-top: 30px; }
+.brain[data-layout="orbit"] .b-coach { justify-items: start; text-align: left; font-family: var(--b-font-sans); }
+.brain[data-layout="orbit"] .b-coach-line { font-size: 15px; font-weight: 500; }
+.brain[data-layout="orbit"][data-screen="scramble"] .b-coach { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--b-hairline); align-self: stretch; }
+.brain[data-layout="orbit"] .b-idle-status { font: 500 16px var(--b-font-sans); margin-top: 14px; }
+.brain[data-layout="orbit"][data-screen="idle"] .brain-hero .b-clock { display: block; order: 43; color: var(--b-track); }
+.brain[data-layout="orbit"] .b-primary { margin: 28px 0 34px; }
+.brain[data-layout="orbit"] #brain-stop { position: static; }
+.brain[data-layout="orbit"] .b-start { gap: 60px; padding: 12px 22px 12px 32px; border: 0; border-radius: 999px; background: var(--b-ink); color: var(--b-bg); font: 700 18px var(--b-font-sans); letter-spacing: 0; }
+.brain[data-layout="orbit"] .b-start:hover { background: var(--b-accent); color: var(--b-on-accent); }
+.brain[data-layout="orbit"] .b-start kbd { padding: 5px 16px; background: var(--b-bg); color: var(--b-ink); }
+.brain[data-layout="orbit"] .b-stats { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 6px 48px; }
+.brain[data-layout="orbit"] .b-stat { flex-direction: column; gap: 6px; }
+.brain[data-layout="orbit"] .b-stat dt { font: 12px var(--b-font-mono); }
+.brain[data-layout="orbit"] .b-stat dd { font: 600 24px var(--b-font-sans); }
+/* Orbit scramble (C-02): the wrong move is a tinted chip, the fix a small badge on it. */
+.brain[data-layout="orbit"] .b-moves i.current.wrong { background: var(--b-plus2-soft); border-radius: 6px; box-shadow: 0 0 0 6px var(--b-plus2-soft); }
+.brain[data-layout="orbit"] .b-moves i.current.wrong::after { display: none; }
+.brain[data-layout="orbit"] .b-recovery { left: auto; right: -1.6em; top: -1.15em; gap: 0; padding: 2px 8px; border-radius: 999px; background: var(--b-accent); color: var(--b-on-accent); font-size: 12px; }
+.brain[data-layout="orbit"] .b-recovery::before, .brain[data-layout="orbit"] .b-recovery-do, .brain[data-layout="orbit"] .b-recovery-fix { display: none; }
+.brain[data-layout="orbit"] .b-recovery-moves b { margin: 0; color: inherit; font: 500 12px var(--b-font-mono); }
+.brain[data-layout="orbit"] .b-recovery-moves b + b { margin-left: 6px; }
+.brain[data-layout="orbit"]:not([data-screen="solving"]) [data-slot="timeline-aside"] { display: none; }
+.brain[data-layout="orbit"] > .b-configbar { background: none; padding: 0; margin-top: 30px; gap: 4px 14px; font: 500 14px var(--b-font-mono); }
+.brain[data-layout="orbit"] .b-configbar-copy { background: none; font: 500 14px var(--b-font-mono); }
+.brain[data-layout="orbit"] .b-sep { color: var(--b-hairline); }
+@media (max-width: 720px) {
+  .brain[data-layout="orbit"] .brain-hero { max-width: none; }
+  .brain[data-layout="orbit"] .b-clock { margin: 8px 0; }
+  .brain[data-layout="orbit"] .b-stats { gap: 6px 22px; }
+}
+
 /* --- Screens: what each one shows ------------------------------------------ */
 .brain:not([data-screen="idle"]):not([data-screen="disconnected"]):not([data-screen="desynced"]) > .b-configbar { display: none; }
 .brain:not([data-screen="solving"]):not([data-screen="ready"]) :is(.b-stepline, .b-clock, .b-sub) { display: none; }
@@ -178,7 +234,7 @@
 .b-configbar-copy { order: 0; margin-top: 0; justify-self: center; }
 .b-settings-caption { text-align: center; color: var(--b-muted); font-size: 12px; margin-bottom: 36px; }
 .b-settings-sections { display: grid; gap: 44px; }
-.b-settings-section h3 { display: flex; align-items: center; gap: 16px; margin: 0 0 22px; font: 400 14px var(--b-font-ui); color: var(--b-accent-text); }
+.b-settings-section h3 { display: flex; align-items: center; gap: 16px; margin: 0 0 22px; font: 400 14px var(--b-font-sans); color: var(--b-accent-text); }
 .b-settings-section h3::after { content: ''; flex: 1; border-top: 1px solid var(--b-hairline); }
 .b-settings-section:first-child h3::after { content: '● = default'; flex: 1; border-top: 0; text-align: right; color: var(--b-muted); font-size: 12px; background: linear-gradient(var(--b-hairline), var(--b-hairline)) left center / calc(100% - 96px) 1px no-repeat; }
 .b-settings-rows { display: grid; gap: 22px; }
