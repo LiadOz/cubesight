@@ -110,6 +110,16 @@ export function coSolved(state, crossFace) {
   return corners.length === 4 && corners.every(c => c.stickers[ll] === llColor);
 }
 
+// Corners permuted (2-look PLL, first look done): after some AUF of the last
+// layer every last-layer corner sits in its home slot, whatever its
+// orientation. After OLL this means only the edges are left to permute.
+const HOME = new Map(createSolvedState().cubies.map(c => [c.id, c.position.join(',')]));
+export function cpSolved(state, crossFace) {
+  const ll = llFace(crossFace);
+  const cornersHome = s => s.cubies.every(c => c.id.length !== 3 || !c.id.includes(ll) || c.position.join(',') === HOME.get(c.id));
+  return ['', ll, `${ll}2`, `${ll}'`].some(auf => cornersHome(auf ? applyMoves(state, [auf]) : state));
+}
+
 // A connected (but not necessarily solved) F2L pair: the corner and edge are
 // adjacent and their touching stickers agree. Reused by the keyhole lens and
 // the "a pair was already together" hindsight.
@@ -157,6 +167,7 @@ export function analyze(state, crossFace) {
   const eoDone = eoSolvedNow;
   const coDone = coSolvedNow;
   const ollDone = eoDone && coDone;
+  const cpDone = ollDone && cpSolved(state, crossFace);
   let phase;
   if (solved) phase = 'solved';
   else if (eoDone && coDone) phase = 'pll';
@@ -175,6 +186,7 @@ export function analyze(state, crossFace) {
     eoDone: eoDone,
     coDone: coDone,
     ollDone,
+    cpDone,
     pllDone: solved,
     solved,
     llFace: ll,
