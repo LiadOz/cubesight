@@ -29,13 +29,13 @@ async function mountController(page) {
         tick += 1000; observer?.next({ type: 'MOVE', move, cubeTimestamp: tick });
       }
     };
-    const log = { updates: 0, frames: 0, styles: [], vm: null, frame: null };
+    const log = { updates: 0, frames: 0, commandOpens: 0, styles: [], vm: null, frame: null };
     const createShell = (root, { dispatch }) => {
-      root.innerHTML = '<div class="brain" data-brain-style="orbit"><div class="stub-cube" style="width:200px;height:200px"></div></div>';
+      root.innerHTML = '<div class="brain" data-brain-style="orbit"><div class="stub-cube" style="width:200px;height:200px"></div><div id="brain-toggles"></div></div>';
       window.stubDispatch = dispatch;
       return {
         slots: { cube: root.querySelector('.stub-cube'), timeline: null, inspection: null, results: null },
-        update(vm) { log.updates++; log.vm = vm; },
+        update(vm) { log.updates++; log.vm = vm; if (vm.commandOpen) log.commandOpens++; },
         frame(f) { log.frames++; log.frame = f; },
         setStyle(mod) { log.styles.push(mod.id); },
         destroy() {},
@@ -70,6 +70,7 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   await page.evaluate(s => { window.stubDispatch({ type: 'setScrambleText', text: s }); window.stubDispatch({ type: 'start' }); }, scramble);
   let v = await vm(page);
   expect(v.screen).toBe('scramble');
+  expect(v.scramble.number).toBe(1);
   expect(v.label).toBe('Perform the scramble');
   expect(v.scramble.moves.map(m => m.state).slice(0, 2)).toEqual(['current', 'todo']);
 
@@ -104,6 +105,7 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   expect((await vm(page)).results.time.text).toBe('DNF');
   expect((await page.evaluate(async () => (await import('/src/solve-store.js')).loadSolves(localStorage)))[0].penalty).toBe('DNF');
   await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.testBrain.log.commandOpens)).toBe(1);
   expect((await vm(page)).settingsOpen).toBe(true);
   await page.keyboard.press('Escape');
   expect((await vm(page)).settingsOpen).toBe(false);
@@ -123,6 +125,11 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-brain-settings-v2')).style)).toBe('mono');
   await page.evaluate(() => window.stubDispatch({ type: 'command', text: 'bogus 3' }));
   expect((await vm(page)).error).toBe('Unknown command: bogus 3');
+
+  // The controller fills the coach switches and applies them.
+  expect(await page.locator('#brain-toggles [data-brain-toggle]').count()).toBe(8);
+  await page.locator('[data-brain-toggle="f2lHint"]').uncheck();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-brain-settings-v2')).toggles.f2lHint)).toBe(false);
 
   // Free mode refuses a solved cube with a clear error.
   await page.evaluate(() => { window.stubDispatch({ type: 'setSetting', path: 'scramble', value: 'free' }); window.stubDispatch({ type: 'start' }); });

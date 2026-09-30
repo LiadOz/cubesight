@@ -245,18 +245,28 @@ export function inspectionLabel(inspection) {
   return `insp ${inspection.mode === 'custom' ? inspection.seconds : 15}s`;
 }
 
-/** ConfigBarVM: the one-line monkeytype-style bar. */
+/**
+ * ConfigBarVM: the one-line monkeytype-style bar. Clicking an option
+ * dispatches setSetting(item.id, option.value): segmented items list every
+ * value; single-option toggles (pseudo pairs, penalties) carry the value
+ * they switch to.
+ */
 export function buildConfigBar(settings) {
-  const seg = (id, values, current) => ({ id, options: values.map(v => ({ value: v, label: LABELS[id]?.[v] ?? v, active: v === current })) });
+  const seg = (id, values, current, labels = LABELS[id], label) => ({
+    id, ...(label ? { label } : {}),
+    options: values.map(v => ({ value: v, label: labels?.[v] ?? v, active: v === current })),
+  });
+  const look = { '2look': '2-look', '1look': '1-look' };
   const items = [seg('method', ENUMS.method, settings.method)];
   if (settings.method === 'cfop') {
     items.push(seg('cross', ENUMS.cross, settings.cross));
-    items.push({ id: 'f2l', options: [{ value: 'pseudo', label: 'pseudo pairs', active: settings.f2l === 'pseudo' }] });
-    items.push({ id: 'oll', options: [{ value: settings.oll, label: LABELS.oll[settings.oll], active: true }] });
-    items.push({ id: 'pll', options: [{ value: settings.pll, label: LABELS.pll[settings.pll], active: true }] });
+    items.push({ id: 'f2l', options: [{ value: settings.f2l === 'pseudo' ? 'standard' : 'pseudo', label: 'pseudo pairs', active: settings.f2l === 'pseudo' }] });
+    items.push(seg('oll', ['1look', '2look'], settings.oll, look, 'oll'));
+    items.push(seg('pll', ['1look', '2look'], settings.pll, look, 'pll'));
   }
-  items.push({ id: 'inspection', options: [{ value: settings.inspection.mode, label: inspectionLabel(settings.inspection), active: true }] });
-  items.push({ id: 'penalties', options: [{ value: settings.penalties, label: LABELS.penalties[settings.penalties], active: settings.penalties === 'apply' }] });
+  const insp = settings.inspection;
+  items.push(seg('inspection.mode', ['wca', 'custom', 'unlimited', 'off'], insp.mode, { wca: '15s', custom: `${insp.seconds}s`, unlimited: '∞', off: 'off' }, 'insp'));
+  items.push({ id: 'penalties', options: [{ value: settings.penalties === 'apply' ? 'ignore' : 'apply', label: 'wca penalties', active: settings.penalties === 'apply' }] });
   return { items };
 }
 

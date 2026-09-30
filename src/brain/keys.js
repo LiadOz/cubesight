@@ -64,8 +64,8 @@ export function keyHints(screen, { timerHidden = false, coach = 'live' } = {}) {
     case 'results': return [
       { key: 'space', label: 'next scramble', action: 'next' },
       { key: 'r', label: 'retry this scramble', action: 'retry' },
-      { key: '2', label: '+2', action: 'togglePenalty' },
-      { key: 'd', label: 'dnf', action: 'togglePenalty' },
+      { key: '2', label: '+2', action: 'togglePenalty', penalty: '+2' },
+      { key: 'd', label: 'dnf', action: 'togglePenalty', penalty: 'DNF' },
       { key: 'tab', label: 'settings', action: 'toggleSettings' },
     ];
     default: return [];

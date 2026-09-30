@@ -54,6 +54,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let lastScramble = '';
   let scrambleLoad = null;
   let settingsOpen = false;
+  let commandOpen = false;      // one-shot: the next render asks the shell to focus the command line
+  let scrambleNumber = 0;       // scrambles started in this view
   let error = '';
   let statusOverride = null;    // a message() until the connection status next changes
   let replayBackup = null;      // settings before a replay changed them (restored after)
@@ -100,13 +102,33 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       session, live: liveSnap, records, settings, track, optimalCross, coach, error,
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
       now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.getHeldFaces?.() : null,
-      scrambleText, settingsOpen, toast,
+      scrambleText, scrambleNumber, settingsOpen, commandOpen, toast,
     }, vm);
+    commandOpen = false;
     const prev = vm;
     vm = next;
     shell.update(next, prev);
+    renderToggles();
     ensureLoop();
   }
+
+  // Coach lens switches (#brain-toggles): the controller owns them.
+  let paintedToggles = null;
+  function renderToggles() {
+    const box = $('#brain-toggles');
+    if (!box || paintedToggles === settings.toggles) return;
+    paintedToggles = settings.toggles;
+    const entries = Object.entries(settings.toggles);
+    if (box.querySelectorAll('[data-brain-toggle]').length !== entries.length) {
+      box.innerHTML = entries.map(([key]) => `<label class="brain-toggle"><input type="checkbox" data-brain-toggle="${key}"><span>${key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())}</span></label>`).join('');
+    }
+    for (const [key, value] of entries) { const input = box.querySelector(`[data-brain-toggle="${key}"]`); if (input && input.checked !== value) input.checked = value; }
+  }
+  const onToggleChange = event => {
+    const input = event.target.closest?.('[data-brain-toggle]');
+    if (input && root.contains(input)) dispatch({ type: 'setSetting', path: `toggles.${input.dataset.brainToggle}`, value: input.checked });
+  };
+  root.addEventListener('change', onToggleChange);
 
   function ensureLoop() {
     if (raf || detached || !active || !vm || !TIMING_SCREENS.has(vm.screen)) return;
@@ -129,18 +151,13 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   // --- Cube mirror -------------------------------------------------------------------------
 
+  // Sticker colours come from the style's --b-st-* tokens (the page background
+  // follows the style through CSS alone).
   const themed = data => themedRender(data, palette ?? (palette = readStickerPalette(brainEl())));
   function retheme() {
     palette = null;
-    syncPageBackground();
     const state = cubeSession.getSnapshot().state;
     if (state) cube?.update(themed(toRenderData(state)));
-  }
-  // The page behind the Brain uses the style's background.
-  function syncPageBackground() {
-    const bg = active && !detached ? getComputedStyle(brainEl()).getPropertyValue('--b-bg').trim() : '';
-    if (bg) document.documentElement.style.setProperty('--b-bg-page', bg);
-    else document.documentElement.style.removeProperty('--b-bg-page');
   }
 
   // Animate a mirrored turn. A fast replay shortens the animation so the cube
@@ -317,6 +334,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function startGuidedWith(scramble) {
     try { live.startGuided(scramble); } catch (err) { showError(err.message); return false; }
+    scrambleNumber++;
     lastScramble = scramble;
     skips = [];
     void suggestCrossFor(scramble);
@@ -328,6 +346,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (cubeSession.getSnapshot().phase !== 'tracking') { showError('Connect and sync a solved cube first.'); return; }
     if (settings.scramble === 'free') {
       try { live.startFree(); } catch (err) { showError(err.message); return; }
+      scrambleNumber++;
       skips = [];
       void suggestCrossFor(cubeSession.getSnapshot().moves.join(' '));
     } else {
@@ -409,8 +428,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'toggleSettings': settingsOpen = !settingsOpen; render(); break;
       case 'command': {
         const text = String(action.text ?? '').trim();
-        // An empty command opens the settings panel, where the command line lives.
-        if (!text) { settingsOpen = true; render(); break; }
+        // An empty command asks for the command line (it lives in the settings panel).
+        if (!text) { settingsOpen = true; commandOpen = true; render(); break; }
         const parsed = parseCommand(text);
         if (!parsed) { showError(`Unknown command: ${text}`); break; }
         error = '';
@@ -559,8 +578,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     setActive(value) {
       if (detached) return;
       active = value;
-      if (!value) { live.cancel(); cancelAnimationFrame(raf); raf = 0; syncPageBackground(); }
-      else { syncPageBackground(); render(); }
+      if (!value) { live.cancel(); cancelAnimationFrame(raf); raf = 0; }
+      else render();
     },
     detach() {
       if (detached) return;
@@ -573,6 +592,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       window.removeEventListener('unhandledrejection', onUnhandledRejection);
       window.removeEventListener('keydown', onKeydown);
       root.removeEventListener('toggle', onDiagnosticsToggle, true);
+      root.removeEventListener('change', onToggleChange);
       themeObserver.disconnect();
       cancelAnimationFrame(raf); raf = 0;
       cancelAnimationFrame(logFrame); logFrame = 0;
@@ -582,7 +602,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       live?.detach();
       cube?.destroy();  // releases the WebGL context and its render loop
       cube = null;
-      syncPageBackground();
       shell.destroy();
       root.innerHTML = '';
     },

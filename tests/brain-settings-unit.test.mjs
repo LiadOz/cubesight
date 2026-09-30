@@ -112,8 +112,16 @@ test('the settings panel shows only rows that apply', () => {
 
 test('config bar and inspection labels', () => {
   const bar = buildConfigBar(normalizeSettings({ f2l: 'pseudo' }));
-  assert.deepEqual(bar.items.map(i => i.id), ['method', 'cross', 'f2l', 'oll', 'pll', 'inspection', 'penalties']);
-  assert.equal(bar.items.find(i => i.id === 'f2l').options[0].active, true);
+  assert.deepEqual(bar.items.map(i => i.id), ['method', 'cross', 'f2l', 'oll', 'pll', 'inspection.mode', 'penalties']);
+  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', '', '', 'oll', 'pll', 'insp', '']);
+  const f2l = bar.items.find(i => i.id === 'f2l').options[0];
+  assert.deepEqual([f2l.active, f2l.value], [true, 'standard'], 'a toggle carries the value it switches to');
+  assert.deepEqual(bar.items.find(i => i.id === 'oll').options.map(o => [o.label, o.active]), [['1-look', false], ['2-look', true]]);
+  assert.deepEqual(bar.items.find(i => i.id === 'inspection.mode').options.map(o => o.label), ['15s', '15s', '∞', 'off']);
+  // Every option is a valid setSetting(item.id, option.value).
+  for (const item of bar.items) for (const option of item.options) assert.notEqual(setSetting(normalizeSettings({ f2l: 'pseudo' }), item.id, option.value), null);
+  assert.equal(setSetting(normalizeSettings(), 'inspection.mode', 'off').inspection.mode, 'off');
+  assert.equal(setSetting(normalizeSettings(), 'penalties', 'ignore').penalties, 'ignore');
   assert.equal(inspectionLabel({ mode: 'wca', seconds: 15 }), 'insp 15s');
   assert.equal(inspectionLabel({ mode: 'custom', seconds: 10 }), 'insp 10s');
   assert.equal(inspectionLabel({ mode: 'unlimited' }), 'insp ∞');

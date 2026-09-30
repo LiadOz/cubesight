@@ -97,31 +97,30 @@ export function deviceFor(session, supported = true) {
 
 // --- Inspection ------------------------------------------------------------------------
 
-/** Static layout of the inspection lane/ring for a config. */
+/**
+ * Static layout of the inspection lane/ring for a config. The full scale is
+ * the limit + 2 s (60 s per lap when unlimited). Zones: normal up to the
+ * limit, then per overtime rule — wca: +2 for 2 s then an open-ended DNF;
+ * count: one open-ended count zone with +1/+2/+3 ticks; grace: the grace
+ * period, then a 2 s +2 zone or an open-ended DNF (nothing for no penalty).
+ */
 export function inspectionLayout(config) {
   const limit = inspectionLimitMs(config);
-  if (limit == null) return { limitMs: null, scaleMs: 60000, zones: [{ kind: 'normal', fromMs: 0, toMs: null }], ticks: [] };
+  if (limit == null) return { limitMs: null, scaleMs: 60000, zones: [], ticks: [] };
   const zones = [{ kind: 'normal', fromMs: 0, toMs: limit }];
   const ticks = [];
-  if (config.callouts) for (const at of [8000, 12000]) if (at < limit) ticks.push({ atMs: at, label: `${at / 1000} s`, kind: 'callout' });
-  ticks.push({ atMs: limit, label: `${limit / 1000} s`, kind: 'limit' });
-  let scaleMs = limit;
-  if (config.overtime === 'wca') {
-    zones.push({ kind: 'plus2', fromMs: limit, toMs: limit + PLUS_TWO_MS }, { kind: 'dnf', fromMs: limit + PLUS_TWO_MS, toMs: null });
-    ticks.push({ atMs: limit + PLUS_TWO_MS, label: 'dnf', kind: 'limit' });
-    scaleMs = limit + PLUS_TWO_MS;
-  } else if (config.overtime === 'grace') {
+  if (config.overtime === 'wca') zones.push({ kind: 'plus2', fromMs: limit, toMs: limit + PLUS_TWO_MS }, { kind: 'dnf', fromMs: limit + PLUS_TWO_MS, toMs: null });
+  if (config.overtime === 'count') zones.push({ kind: 'count', fromMs: limit, toMs: null });
+  if (config.overtime === 'grace') {
     const grace = config.graceSeconds * 1000;
-    const after = { plus2: 'plus2', dnf: 'dnf', none: 'count' }[config.gracePenalty] ?? 'count';
-    zones.push({ kind: 'grace', fromMs: limit, toMs: limit + grace }, { kind: after, fromMs: limit + grace, toMs: null });
-    if (grace > 0) ticks.push({ atMs: limit + grace, label: after === 'count' ? 'grace' : after === 'plus2' ? '+2' : 'dnf', kind: 'limit' });
-    scaleMs = limit + Math.max(PLUS_TWO_MS, grace + 1000);
-  } else if (config.overtime === 'count') {
-    zones.push({ kind: 'count', fromMs: limit, toMs: null });
-    for (let n = 1; n <= 3; n++) ticks.push({ atMs: limit + n * 1000, label: `+${n}`, kind: 'count' });
-    scaleMs = limit + 3000;
+    zones.push({ kind: 'grace', fromMs: limit, toMs: limit + grace });
+    if (config.gracePenalty === 'plus2') zones.push({ kind: 'plus2', fromMs: limit + grace, toMs: limit + grace + PLUS_TWO_MS });
+    if (config.gracePenalty === 'dnf') zones.push({ kind: 'dnf', fromMs: limit + grace, toMs: null });
   }
-  return { limitMs: limit, scaleMs, zones, ticks };
+  if (config.callouts && limit >= 12000) ticks.push({ atMs: 8000, label: '8s', kind: 'callout' }, { atMs: 12000, label: '12s', kind: 'callout' });
+  ticks.push({ atMs: limit, label: '', kind: 'limit' });
+  if (config.overtime === 'count') for (let n = 1; n <= 3; n++) ticks.push({ atMs: limit + n * 1000, label: `+${n}`, kind: 'count' });
+  return { limitMs: limit, scaleMs: limit + PLUS_TWO_MS, zones, ticks };
 }
 
 /** The moving part of inspection at `elapsedMs` (recomputed every frame). */
@@ -134,10 +133,12 @@ export function inspectionState(config, elapsedMs) {
   const penalty = inspectionPenalty(config, elapsed);
   const callout = config.callouts && limit != null ? (elapsed >= 12000 ? 12 : elapsed >= 8000 ? 8 : null) : null;
   let bigText;
-  if (limit == null) bigText = String(Math.floor(elapsed / 1000));
-  else if (remainingMs > 0) bigText = String(Math.ceil(remainingMs / 1000));
-  else bigText = config.overtime === 'autostart' ? '0' : `+${Math.max(1, Math.ceil(overtimeMs / 1000))}`;
-  const tone = penalty === 'DNF' ? 'error' : overtimeMs > 0 && config.overtime !== 'autostart' ? 'warn' : 'accent';
+  if (limit == null) bigText = `${Math.floor(elapsed / 60000)}:${String(Math.floor(elapsed / 1000) % 60).padStart(2, '0')}`;
+  else if (overtimeMs <= 0) bigText = String(Math.ceil(remainingMs / 1000));
+  else if (config.overtime === 'grace') bigText = `+${(overtimeMs / 1000).toFixed(1)}`;
+  else if (config.overtime === 'autostart') bigText = '0';
+  else bigText = `+${Math.max(1, Math.floor(overtimeMs / 1000))}`;
+  const tone = penalty === 'DNF' ? 'error' : overtimeMs > 0 && config.overtime !== 'grace' && config.overtime !== 'autostart' ? 'warn' : 'accent';
   const s = ms => (ms / 1000).toFixed(1);
   let consequence = '';
   const secs = limit == null ? null : limit / 1000;
@@ -277,7 +278,7 @@ function clockVM({ screen, live, settings, now, timeline, result }) {
 
 // --- Scramble --------------------------------------------------------------------------------
 
-function scrambleVM({ live, settings, scrambleText, held }) {
+function scrambleVM({ live, settings, scrambleText, held, number }) {
   const applying = live?.phase === 'applying';
   const text = applying ? (live.scrambleStr || '') : (scrambleText || '');
   if (!applying && !text) return null;
@@ -299,24 +300,25 @@ function scrambleVM({ live, settings, scrambleText, held }) {
     total: applying ? live.applyTotal : moves.length,
     editable: !busy,
     text,
+    ...(Number.isFinite(number) && number > 0 ? { number } : {}),
   };
 }
 
 // --- Results -----------------------------------------------------------------------------------
 
+// Short method line for the results header, e.g. 'cfop · 2-look · pseudo'.
 function methodSummary(record, settings) {
   const c = record.config || {};
   const method = c.method || settings.method;
   const parts = [method];
   if (method === 'cfop') {
+    const cross = c.cross || settings.cross;
+    if (cross !== 'cross') parts.push(cross === 'xcross' ? 'x-cross' : 'xx-cross');
     const oll = c.oll || settings.oll;
     const pll = c.pll || settings.pll;
     parts.push(oll === pll ? (oll === '1look' ? '1-look' : '2-look') : `oll ${oll === '1look' ? '1' : '2'}-look · pll ${pll === '1look' ? '1' : '2'}-look`);
-    if ((c.f2l || settings.f2l) === 'pseudo') parts.push('pseudo pairs');
+    if ((c.f2l || settings.f2l) === 'pseudo') parts.push('pseudo');
   }
-  const mode = record.inspectionMode || settings.inspection.mode;
-  parts.push(mode === 'wca' ? 'wca' : mode);
-  parts.push(record.penalty === '+2' ? '+2' : record.penalty === 'DNF' ? 'dnf' : 'no penalty');
   return parts.join(' · ');
 }
 
@@ -387,7 +389,8 @@ function statsVM(records) {
  * @param {{session:Object, live:Object, records:Object[], settings:Object, track?:Object, optimalCross?:Object|null,
  *   coach?:import('./types.js').CoachLine[], error?:string, status?:string|null, theme?:'dark'|'light',
  *   supported?:boolean, now?:number, held?:{bottom:string, front:string}, scrambleText?:string,
- *   settingsOpen?:boolean, toast?:{text:string, tone:string}|null, dShift?:number|null}} input
+ *   settingsOpen?:boolean, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
+ *   dShift?:number|null}} input
  * @param {import('./types.js').BrainVM|null} prev
  * @returns {import('./types.js').BrainVM}
  */
@@ -429,7 +432,7 @@ export function buildViewModel(input, prev = null) {
     device,
     configBar,
     settings: settingsPanel,
-    scramble: scrambleVM({ live, settings, scrambleText: input.scrambleText, held: input.held }),
+    scramble: scrambleVM({ live, settings, scrambleText: input.scrambleText, held: input.held, number: input.scrambleNumber }),
     clock: clockVM({ screen, live, settings, now, timeline, result }),
     inspection: inspectionVM(live, now),
     timeline,
@@ -441,6 +444,7 @@ export function buildViewModel(input, prev = null) {
     status: input.status ?? device.detail,
     error: input.error ?? '',
     chromeDimmed: ['scramble', 'inspection', 'ready', 'solving'].includes(screen),
+    commandOpen: Boolean(input.commandOpen),
   };
   // Keep identity for slices that did not change, so components can skip them.
   if (prev) {

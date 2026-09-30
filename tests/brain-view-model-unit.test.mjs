@@ -53,14 +53,18 @@ test('inspection layouts for every overtime rule', () => {
   const wca = layout({});
   assert.equal(wca.scaleMs, 17000);
   assert.deepEqual(wca.zones.map(z => [z.kind, z.fromMs, z.toMs]), [['normal', 0, 15000], ['plus2', 15000, 17000], ['dnf', 17000, null]]);
-  assert.deepEqual(wca.ticks.map(t => t.label), ['8 s', '12 s', '15 s', 'dnf']);
-  assert.deepEqual(layout({ callouts: false }).ticks.map(t => t.kind), ['limit', 'limit']);
-  assert.deepEqual(layout({ overtime: 'count' }).ticks.filter(t => t.kind === 'count').map(t => t.label), ['+1', '+2', '+3']);
+  assert.deepEqual(wca.ticks.map(t => [t.label, t.kind, t.atMs]), [['8s', 'callout', 8000], ['12s', 'callout', 12000], ['', 'limit', 15000]]);
+  assert.deepEqual(layout({ callouts: false }).ticks.map(t => t.kind), ['limit']);
+  const count = layout({ overtime: 'count' });
+  assert.deepEqual(count.zones.map(z => [z.kind, z.toMs]), [['normal', 15000], ['count', null]]);
+  assert.deepEqual(count.ticks.filter(t => t.kind === 'count').map(t => t.label), ['+1', '+2', '+3']);
   const grace = layout({ mode: 'custom', seconds: 10, overtime: 'grace', graceSeconds: 3, gracePenalty: 'dnf' });
-  assert.deepEqual(grace.zones.map(z => z.kind), ['normal', 'grace', 'dnf']);
-  assert.deepEqual(grace.ticks.map(t => t.label), ['8 s', '10 s', 'dnf']);
-  assert.equal(layout({ overtime: 'autostart' }).scaleMs, 15000);
-  assert.equal(layout({ mode: 'unlimited' }).limitMs, null);
+  assert.deepEqual(grace.zones.map(z => [z.kind, z.fromMs, z.toMs]), [['normal', 0, 10000], ['grace', 10000, 13000], ['dnf', 13000, null]]);
+  assert.deepEqual(grace.ticks.map(t => t.kind), ['limit'], 'no callouts under a 12 s limit');
+  assert.deepEqual(layout({ overtime: 'grace', gracePenalty: 'plus2' }).zones.map(z => [z.kind, z.toMs]).slice(-1), [['plus2', 19000]]);
+  assert.deepEqual(layout({ overtime: 'grace', gracePenalty: 'none' }).zones.map(z => z.kind), ['normal', 'grace']);
+  assert.equal(layout({ overtime: 'autostart' }).scaleMs, 17000);
+  assert.deepEqual(layout({ mode: 'unlimited' }), { limitMs: null, scaleMs: 60000, zones: [], ticks: [] });
 });
 
 test('inspection state at the WCA boundaries', () => {
@@ -78,8 +82,10 @@ test('inspection state at the WCA boundaries', () => {
   assert.equal(at(8500).caret, 0.5);
   const count = inspectionState({ ...DEFAULT_INSPECTION, overtime: 'count' }, 17200);
   assert.equal(count.penalty, null);
-  assert.equal(count.bigText, '+3');
-  assert.equal(inspectionState({ ...DEFAULT_INSPECTION, mode: 'unlimited' }, 61000).bigText, '61');
+  assert.equal(count.bigText, '+2', 'whole seconds over');
+  assert.equal(inspectionState({ ...DEFAULT_INSPECTION, mode: 'unlimited' }, 61000).bigText, '1:01');
+  assert.equal(inspectionState({ ...DEFAULT_INSPECTION, overtime: 'grace' }, 16300).bigText, '+1.3');
+  assert.equal(inspectionState({ ...DEFAULT_INSPECTION, overtime: 'grace' }, 16300).tone, 'accent', 'grace time is not a warning yet');
   assert.equal(inspectionState({ ...DEFAULT_INSPECTION, mode: 'custom', seconds: 10, overtime: 'grace', graceSeconds: 2, gracePenalty: 'none' }, 13000).penalty, null);
 });
 
@@ -142,7 +148,7 @@ test('results fixture: time, splits, charts, history with penalties, coach', () 
   assert.equal(r.moves, '68');
   assert.equal(r.tps, '4.83');
   assert.equal(r.inspection, '8.70');
-  assert.equal(r.method, 'cfop · 2-look · pseudo pairs · wca · no penalty');
+  assert.equal(r.method, 'cfop · 2-look · pseudo');
   assert.equal(r.splits.length, 9);
   assert.equal(r.splits.find(s => s.key === 'eo').text, 'skip');
   assert.ok(r.recent.some(x => x.text === '14.97+'));
