@@ -65,9 +65,12 @@ for (const style of STYLES) {
     await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
     expect(Object.keys(await states())).toEqual(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
 
-    // "B R": the cross completes with one pair.
+    // "B R": crosses complete on two faces at once (D with one pair, B with two).
+    // The cross locks to the face with more solved pairs (the same rule as
+    // src/analysis inferCrossFace), so this is a double X-cross on B.
     await page.evaluate(() => window.testBrain.emitTurns('B R'));
-    await expect.poll(states).toMatchObject({ cross: 'done', pair1: 'done', pair2: 'current' });
+    await expect.poll(states).toMatchObject({ cross: 'done', pair1: 'done', pair2: 'done', pair3: 'current' });
+    await expect(brain.locator(`${SEGMENTS}[data-key="pair2"]`)).not.toHaveAttribute('data-state', 'skipped');
     await expect(brain.locator(`${SEGMENTS}[data-key="pair1"]`)).not.toHaveAttribute('data-state', 'skipped');
     await expect(brain.locator('#brain-coach')).toContainText('X-cross!');
     await expect(brain.locator('.b-toast')).toContainText('x-cross');
@@ -92,8 +95,10 @@ for (const style of STYLES) {
       await backend.close();
       return all[0].splits;
     });
-    const pair1 = splits.find(s => s.key === 'pair1');
-    expect([pair1.ms, pair1.moves, pair1.skipped]).toEqual([0, 0, false]);
+    for (const key of ['pair1', 'pair2']) {
+      const pair = splits.find(s => s.key === key);
+      expect([pair.ms, pair.moves, pair.skipped]).toEqual([0, 0, false]);
+    }
     await expect(brain.locator('#brain-review')).toContainText(/x-cross/i);
     expect(errors).toEqual([]);
   });

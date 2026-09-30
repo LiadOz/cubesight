@@ -25,7 +25,7 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
   if (snap?.phase === 'applying') {
     lines.push({ tone: 'info', text: 'Perform the scramble shown in the cue. A wrong turn shows the return path without discarding the attempt.' });
   } else if ((snap?.phase === 'solving' || snap?.phase === 'done') && crossFace && state && showLive) {
-    if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross[0].toUpperCase()}${xcross.slice(1)}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'} — the scramble allowed it and you took it.` });
+    if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross.startsWith('xx') ? 'XX-cross' : 'X-cross'}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'} — the scramble allowed it and you took it.` });
     if (toggles.crossSuggest && optimalCross) {
       lines.push({ tone: 'info', text: `Optimal cross here: ${title(lenses.faceColors[optimalCross.face])} face in ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}.` });
     }
