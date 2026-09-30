@@ -64,3 +64,6 @@ export function penaltyTag(record) {
 }
 
 export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** Moves for display: `R U R'` -> `R U R′` (docs/design/VOICE.md 4.4). Storage stays ASCII. */
+export const fmtMoves = text => String(text ?? '').replace(/'/g, '′');

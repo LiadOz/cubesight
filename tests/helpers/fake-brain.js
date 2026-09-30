@@ -1,10 +1,12 @@
 // Shared by the Brain specs that drive a fake GAN cube: mounts the real Brain on
 // a scripted smart-cube connection and exposes window.testBrain.emitTurns().
-export async function mountTestBrain(page, style = 'orbit') {
-  await page.goto('/');
-  await page.evaluate(async style => {
-    localStorage.clear();
-    localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
+export async function mountTestBrain(page, style = 'orbit', { route = false, settings = {}, keepStorage = false } = {}) {
+  // route: mount into the real #brain-view on the Brain route (so the page-level theme rules apply).
+  await page.goto(route ? '/#/brain' : '/');
+  if (route) await page.waitForSelector('#brain-view .brain', { state: 'attached' });
+  await page.evaluate(async ({ style, route, settings, keepStorage }) => {
+    if (!keepStorage) localStorage.clear();
+    localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
     const { createBrain } = await import('/src/brain.js');
     const { createSmartCubeSession } = await import('/src/smart-cube-session.js');
     const solved = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
@@ -28,13 +30,27 @@ export async function mountTestBrain(page, style = 'orbit') {
         tick += 1000; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick });
       }
     };
-    window.testBrain = { session, emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn) };
-    const root = document.createElement('div');
-    root.id = 'brain-test';
-    document.body.append(root);
-    await createBrain(root, session).ready;
+    // Timed turns: real waits between moves (the host clock drives the move times) and matching
+    // cube timestamps. gapFor(i, move) returns the wait before move i in ms.
+    const emitTimed = async (moves, gapFor = () => 60) => {
+      const list = moves.split(/\s+/).filter(Boolean);
+      for (let i = 0; i < list.length; i++) {
+        const gap = Math.max(1, gapFor(i, list[i]));
+        await new Promise(resolve => setTimeout(resolve, gap));
+        const raw = list[i];
+        if (raw.endsWith('2')) {
+          tick += gap; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
+          tick += 20; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
+        } else { tick += gap; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick }); }
+      }
+    };
+    window.testBrain = { session, emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn), emitTimed };
+    const root = route ? document.querySelector('#brain-view') : document.createElement('div');
+    if (route) root.replaceChildren(); else { root.id = 'brain-test'; document.body.append(root); }
+    window.testBrain.handle = createBrain(root, session);
+    await window.testBrain.handle.ready;
     await session.connect();
-  }, style);
+  }, { style, route, settings, keepStorage });
 }
 
 /** Start a guided scramble from the advanced "use a specific scramble" box. */
@@ -44,4 +60,20 @@ export async function startGuidedScramble(page, scramble) {
   await brain.locator('.brain-advanced-scramble > summary').click();
   await brain.locator('#brain-scramble').fill(scramble);
   await brain.locator('#brain-start-custom').click();
+}
+
+/**
+ * Scramble, inspect and solve `solution` with real pauses: `gaps` maps a move index to the wait (ms)
+ * before it (default 60). Returns when the results screen is showing.
+ */
+export async function playSolve(page, scramble, solution, { gaps = {}, base = 60, brain = '#brain-test' } = {}) {
+  const root = page.locator(brain);
+  await root.locator('.brain-pill-setup > summary').click();
+  await root.locator('.brain-advanced-scramble > summary').click();
+  await root.locator('#brain-scramble').fill(scramble);
+  await root.locator('#brain-start-custom').click();
+  await page.evaluate(s => window.testBrain.emitTurns(s), scramble);
+  await root.locator('#brain-phase-label').filter({ hasText: 'Inspection' }).waitFor();
+  await page.evaluate(([s, gaps, base]) => window.testBrain.emitTimed(s, i => gaps[i] ?? base), [solution, gaps, base]);
+  await root.locator('#brain-phase-label').filter({ hasText: 'Solved' }).waitFor();
 }

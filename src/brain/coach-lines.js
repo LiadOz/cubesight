@@ -20,17 +20,18 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
   const lines = [];
   const p = snap?.progress || {};
   const crossFace = snap?.crossFace;
+  const colorOf = face => (lenses.faceColors?.[face] ?? face ?? '').toLowerCase();
   const showLive = coach === 'live' || (coach === 'after' && snap?.phase === 'done');
   if (coach === 'off') return [{ key: 'off', tone: 'muted', text: 'Coach is off.' }];
   if (snap?.phase === 'applying') {
     lines.push({ tone: 'info', text: 'Perform the scramble shown in the cue. A wrong turn shows the return path without discarding the attempt.' });
   } else if ((snap?.phase === 'solving' || snap?.phase === 'done') && crossFace && state && showLive) {
-    if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross.startsWith('xx') ? 'XX-cross' : 'X-cross'}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'} — the scramble allowed it and you took it.` });
+    if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross.startsWith('xx') ? 'XX-cross' : 'X-cross'}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'}. The scramble allowed it and you took it.` });
     if (toggles.crossSuggest && optimalCross) {
-      lines.push({ tone: 'info', text: `Optimal cross here: ${title(lenses.faceColors[optimalCross.face])} face in ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}.` });
+      lines.push({ tone: 'info', text: `Best cross: ${colorOf(optimalCross.face)}, ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}` });
     }
     if (toggles.crossHindsight && snap.crossMoveCount != null && optimalCross) {
-      const h = lenses.crossHindsight(snap.crossMoveCount, optimalCross.length, crossFace);
+      const h = lenses.crossHindsight(snap.crossMoveCount, optimalCross.length, colorOf(crossFace));
       if (h) lines.push({ tone: h.kind === 'optimal' ? 'good' : 'warn', text: h.text });
     }
     if (p.crossDone && !p.f2lDone && toggles.f2lHint) {
@@ -39,14 +40,14 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
     }
     if (toggles.ollStage && p.f2lDone && !p.ollDone) {
       const stage = lenses.ollStage(state, crossFace);
-      lines.push({ tone: 'info', text: stage.eoDone ? 'Edges oriented — orient the corners (2-look OLL).' : 'Orient the last-layer edges first (2-look OLL).' });
+      lines.push({ tone: 'info', text: stage.eoDone ? 'Edges oriented. Orient the corners (2-look OLL).' : 'Orient the last-layer edges first (2-look OLL).' });
     }
     if (toggles.pllLens && p.ollDone && !p.solved) {
       const pll = lenses.pllLens(state, crossFace);
       if (pll?.name) lines.push({ tone: 'info', text: `PLL: ${pll.name} (${pll.family}). ${pll.cue}` });
     }
     if (toggles.rotationFlag && snap.rotations > 2) {
-      lines.push({ key: 'rotations', tone: 'warn', text: `${snap.rotations} whole-cube rotation${snap.rotations === 1 ? '' : 's'} this solve — fewer rotations often save time.` });
+      lines.push({ key: 'rotations', tone: 'warn', text: `${snap.rotations} rotation${snap.rotations === 1 ? '' : 's'} this solve. Fewer often saves time.` });
     }
     if (toggles.efficiencyScore) {
       const score = lenses.efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, rotations: snap.rotations, solved: p.solved, f2lPairs: p.pairsSolved, ollDone: p.ollDone });
@@ -83,6 +84,6 @@ export function resultsCoach({ record, optimalCross, stages = [], plan = [], ave
   }
   for (const s of stages.filter(s => s.pseudo)) out.push({ key: `pseudo-${s.key}`, tag: 'pseudo', tone: 'info', text: `${title(label(s.key))} went in pseudo (D-shift).` });
   for (const s of stages.filter(s => s.skipped && s.key !== 'cross')) out.push({ key: `skip-${s.key}`, tag: `${label(s.key)} skip`, tone: 'good', text: `${skipName(label(s.key))} skip.` });
-  if (record.rotations > 2) out.push({ key: 'rotations', tag: 'rotations', tone: 'warn', text: `${record.rotations} whole-cube rotation${record.rotations === 1 ? '' : 's'} — fewer rotations often save time.` });
+  if (record.rotations > 2) out.push({ key: 'rotations', tag: 'rotations', tone: 'warn', text: `${record.rotations} rotation${record.rotations === 1 ? '' : 's'}. Fewer often saves time.` });
   return out;
 }

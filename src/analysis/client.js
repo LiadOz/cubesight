@@ -1,0 +1,84 @@
+// Main-thread client of the analysis worker. The worker (and the WASM tables it builds, about
+// 0.5 to 0.8 s once) loads on first use, runs one analysis at a time, and is dropped after a short
+// idle spell. Results are cached per record `at` (and per engine version), so reopening a solve is
+// free. Everything stays on this device.
+import { analysisInputFromRecord } from './record.js';
+import { SUMMARY_VERSION } from './summary.js';
+
+const IDLE_MS = 30_000;
+const TIMEOUT_MS = 45_000;
+
+/**
+ * @param {{createWorker?:()=>Worker, idleMs?:number, timeoutMs?:number}} [options]  createWorker is injectable for tests
+ */
+export function createAnalysisClient({
+  createWorker = () => new Worker(new URL('./worker.js', import.meta.url), { type: 'module' }),
+  idleMs = IDLE_MS, timeoutMs = TIMEOUT_MS,
+} = {}) {
+  let worker = null;
+  let idleTimer = 0;
+  let nextId = 0;
+  let chain = Promise.resolve();
+  const pending = new Map();
+  const cache = new Map();   // `${at}` -> Promise<summary|null>
+
+  function drop(error) {
+    clearTimeout(idleTimer);
+    worker?.terminate();
+    worker = null;
+    for (const item of pending.values()) { clearTimeout(item.timer); item.reject(error ?? new Error('Analysis worker stopped')); }
+    pending.clear();
+  }
+
+  function ensure() {
+    if (worker) return worker;
+    worker = createWorker();
+    worker.onmessage = ({ data }) => {
+      const item = pending.get(data?.id);
+      if (!item) return;
+      pending.delete(data.id);
+      clearTimeout(item.timer);
+      if (data.type === 'result') item.resolve(data.result); else item.reject(new Error(data.message || 'Analysis failed'));
+    };
+    worker.onerror = event => drop(new Error(event?.message || 'The analysis worker failed to load'));
+    return worker;
+  }
+
+  function run(input) {
+    return new Promise((resolve, reject) => {
+      const id = ++nextId;
+      clearTimeout(idleTimer);
+      const w = ensure();
+      const timer = setTimeout(() => drop(new Error('Analysis timed out')), timeoutMs);
+      pending.set(id, { resolve, reject, timer });
+      w.postMessage({ type: 'analyze', id, input, summary: true, options: { pairs: true } });
+    }).finally(() => {
+      if (!pending.size) { clearTimeout(idleTimer); idleTimer = setTimeout(() => drop(), idleMs); }
+    });
+  }
+
+  return {
+    /**
+     * The compact summary (summary.js) for a record, or null when the record cannot be analysed
+     * (free solve, DNF, truncated move list) or the analysis failed. Never rejects.
+     */
+    analyze(record) {
+      const stored = record?.analysis;
+      if (stored && stored.v === SUMMARY_VERSION) return Promise.resolve(stored);
+      const { input } = analysisInputFromRecord(record);
+      if (!input) return Promise.resolve(null);
+      const key = String(record.at);
+      if (cache.has(key)) return cache.get(key);
+      const job = (chain = chain.then(() => run(input), () => run(input))).catch(() => { cache.delete(key); return null; });
+      cache.set(key, job);
+      return job;
+    },
+    /** Drop the worker now (tests, detach). */
+    destroy() { drop(); },
+    get cached() { return cache.size; },
+  };
+}
+
+let shared = null;
+/** The page-wide client (lazy: nothing loads until the first analysis). */
+export function analysisClient() { return shared ??= createAnalysisClient(); }

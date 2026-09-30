@@ -13,6 +13,7 @@
 
 import { SOLVE_STORE_KEY, SOLVE_STORE_CAP } from './solve-metrics.js';
 import { normalizeFocus } from './store/focus.js';
+import { cleanAnalysis, cleanRotationMarks } from './store/analysis-field.js';
 
 export const LOCAL_VERSION = 1;
 const VERSION = LOCAL_VERSION;
@@ -68,6 +69,11 @@ export function cleanRecord(raw) {
       pseudo: Boolean(s.pseudo),
     })) : null,
     moveTimes: Array.isArray(r.moveTimes) ? r.moveTimes.filter(Number.isFinite).slice(-200) : null,
+    // Solve review (src/analysis): where the cube was turned in the hands, the pseudo D-fix tail, and the
+    // compact analysis summary the analysis worker computes once the solve is finished (null until then).
+    rotationMarks: cleanRotationMarks(r.rotationMarks),
+    dFixMs: finite(r.dFixMs),
+    analysis: cleanAnalysis(r.analysis),
     config: r.config && typeof r.config === 'object' ? Object.fromEntries(CONFIG_KEYS
       .filter(k => typeof r.config[k] === 'string').map(k => [k, r.config[k].slice(0, 16)])) : null,
   };

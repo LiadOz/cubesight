@@ -71,9 +71,17 @@ export function phaseText(live) {
 
 // --- Device --------------------------------------------------------------------------
 
+// The session's own status lines are shared with the scout and debug views, which still
+// have an Analyze button; on the Brain the next step is a scramble (docs/design/VOICE.md).
+export function brainDetail(text = '') {
+  return String(text)
+    .replace(/^Solved baseline synced\..*$/, "Cube synced. Start a scramble when you're ready.")
+    .replace(/ Analyze when ready\.$/, '');
+}
+
 /** @returns {import('./types.js').DeviceVM} */
 export function deviceFor(session, supported = true, connectStep = '', live = null) {
-  const s = session || { phase: 'disconnected', detail: '' };
+  const s = session ? { ...session, detail: brainDetail(session.detail) } : { phase: 'disconnected', detail: '' };
   const connecting = s.phase === 'connecting';
   const connected = !connecting && s.phase !== 'disconnected';
   const gyro = connected && Boolean(s.protocol?.startsWith('GAN')) && Boolean(s.gyro);
