@@ -24,7 +24,7 @@ test('screens for every session and live phase', () => {
 });
 
 test('phase text reproduces the v1 label and detail strings exactly', () => {
-  assert.deepEqual(phaseText({ phase: 'idle' }), { label: 'Connect and start a solve', detail: 'Cross is read from the bottom at your first move.' });
+  assert.deepEqual(phaseText({ phase: 'idle' }), { label: 'Connect and start a solve', detail: 'Cross is detected from the first face you solve.' });
   assert.deepEqual(phaseText({ phase: 'applying', applyStep: 2, applyTotal: 13 }), { label: 'Perform the scramble', detail: 'Scramble turn 3 of 13.' });
   assert.deepEqual(phaseText({ phase: 'inspecting', inspection: { remainingMs: 6340 } }), { label: 'Inspection', detail: 'Inspect — 6.3s left (clock starts on your first move)' });
   assert.equal(phaseText({ phase: 'inspecting', inspection: { remainingMs: null } }).detail, 'Inspect — start solving on your first move');

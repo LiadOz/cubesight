@@ -26,7 +26,7 @@ export const DEFAULT_TOGGLES = Object.freeze({
   ollStage: true,          // 2-look OLL stage labels
   rotationFlag: true,      // flag excessive whole-cube rotations
   efficiencyScore: true,   // chess.com-style accuracy analogue
-  autoCross: true,         // detect cross from the held bottom at first move
+  autoCross: true,         // detect the cross face from the cube (first face solved)
 });
 
 // Enumerated settings: path -> allowed values (the first is the default unless

@@ -64,7 +64,7 @@ export function phaseText(live) {
     detail = (snap.phase === 'solving' || snap.phase === 'done')
       ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s${pairs ? ' · ' + pairs : ''}`
       : snap.phase === 'applying' ? `Scramble turn ${Math.min(snap.applyStep + 1, snap.applyTotal)} of ${snap.applyTotal}.`
-        : 'Cross is read from the bottom at your first move.';
+        : 'Cross is detected from the first face you solve.';
   }
   return { label, detail };
 }
