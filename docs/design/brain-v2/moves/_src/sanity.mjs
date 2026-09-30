@@ -1,0 +1,13 @@
+import fs from 'fs';
+import { svg } from '../../_src/lib.mjs';
+import { THEMES, guidedCube, netSVG, ollSVG, chip } from './draw.mjs';
+import { solved, apply } from './geom.mjs';
+const th = THEMES['orbit-dark'];
+let b = '';
+const st = apply(solved(), ["R","U'","F"]);
+const ms = ["R","R'","R2","L","B'","D","M'","x","y'","Rw","U"];
+ms.forEach((m,i)=>{ b += guidedCube(120+ (i%6)*220, 140+Math.floor(i/6)*260, 34, th, st, m); });
+b += netSVG(60, 560, 16, th, st, "R'");
+const o = ollSVG(520, 650, 24, th, st, "R'"); b += o.svg;
+b += chip(700,560,"R'",th,{status:'current'}).svg; b += chip(820,560,"R2",th,{status:'next'}).svg; b += chip(880,560,"y'",th,{status:'next'}).svg;b += chip(940,560,"M",th,{status:'wrong'}).svg;
+fs.writeFileSync('/tmp/sanity.svg', svg(1400,760,b,{bg:th.bg,fonts:th.fonts}));
