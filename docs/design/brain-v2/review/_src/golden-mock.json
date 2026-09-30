@@ -1,0 +1,266 @@
+{
+ "scramble": "D2 F2 U' B2 R2 U2 F2 U' L2 D' B' L' U F' R' D2 R U' F2 L'",
+ "userCross": [
+  "F'",
+  "D'",
+  "F",
+  "D",
+  "B",
+  "D'",
+  "R",
+  "D'"
+ ],
+ "d0": 6,
+ "positions": [
+  {
+   "i": 0,
+   "d": 6,
+   "best": [
+    "F'",
+    "D'",
+    "F",
+    "R",
+    "D'",
+    "F"
+   ],
+   "firstMoves": [
+    "D",
+    "F'",
+    "B",
+    "L'"
+   ]
+  },
+  {
+   "i": 1,
+   "d": 5,
+   "best": [
+    "D'",
+    "F",
+    "R",
+    "D'",
+    "F"
+   ],
+   "firstMoves": [
+    "D'",
+    "B"
+   ],
+   "move": "F'",
+   "loss": 0
+  },
+  {
+   "i": 2,
+   "d": 4,
+   "best": [
+    "F",
+    "R",
+    "D'",
+    "F"
+   ],
+   "firstMoves": [
+    "F"
+   ],
+   "move": "D'",
+   "loss": 0
+  },
+  {
+   "i": 3,
+   "d": 3,
+   "best": [
+    "R",
+    "D'",
+    "F"
+   ],
+   "firstMoves": [
+    "R"
+   ],
+   "move": "F",
+   "loss": 0
+  },
+  {
+   "i": 4,
+   "d": 4,
+   "best": [
+    "D",
+    "L'",
+    "D",
+    "F'"
+   ],
+   "firstMoves": [
+    "D",
+    "D'",
+    "B",
+    "B'"
+   ],
+   "move": "D",
+   "loss": 2
+  },
+  {
+   "i": 5,
+   "d": 3,
+   "best": [
+    "D'",
+    "R",
+    "D'"
+   ],
+   "firstMoves": [
+    "D'"
+   ],
+   "move": "B",
+   "loss": 0
+  },
+  {
+   "i": 6,
+   "d": 2,
+   "best": [
+    "R",
+    "D'"
+   ],
+   "firstMoves": [
+    "R"
+   ],
+   "move": "D'",
+   "loss": 0
+  },
+  {
+   "i": 7,
+   "d": 1,
+   "best": [
+    "D'"
+   ],
+   "firstMoves": [
+    "D'"
+   ],
+   "move": "R",
+   "loss": 0
+  },
+  {
+   "i": 8,
+   "d": 0,
+   "best": [],
+   "firstMoves": [],
+   "move": "D'",
+   "loss": 0
+  }
+ ],
+ "perFace": {
+  "U": 5,
+  "D": 6,
+  "F": 5,
+  "B": 4,
+  "R": 5,
+  "L": 6
+ },
+ "xc": {
+  "U": 7,
+  "D": 6,
+  "F": 7,
+  "B": 5,
+  "R": 7,
+  "L": 6
+ },
+ "pairs": [
+  {
+   "slot": "BL",
+   "moves": [
+    "D",
+    "L'",
+    "U'",
+    "L",
+    "D'"
+   ],
+   "weight": 5,
+   "pseudo": true
+  },
+  {
+   "slot": "FL",
+   "moves": [
+    "U2",
+    "R2",
+    "F",
+    "R2",
+    "U2",
+    "F'"
+   ],
+   "weight": 14,
+   "pseudo": false
+  },
+  {
+   "slot": "FR",
+   "moves": [
+    "R",
+    "F",
+    "R",
+    "U'",
+    "F'",
+    "U'",
+    "R'"
+   ],
+   "weight": 15,
+   "pseudo": false
+  },
+  {
+   "slot": "BR",
+   "moves": [
+    "U'",
+    "B",
+    "R",
+    "B2",
+    "U'",
+    "R'",
+    "B'"
+   ],
+   "weight": 19,
+   "pseudo": false
+  }
+ ],
+ "pseudoTrace": [
+  {
+   "move": "(cross done)",
+   "k": 0,
+   "pairs": [],
+   "plainPairs": 0
+  },
+  {
+   "move": "D",
+   "k": 3,
+   "pairs": [],
+   "plainPairs": 0
+  },
+  {
+   "move": "L'",
+   "k": null,
+   "pairs": [],
+   "plainPairs": 0
+  },
+  {
+   "move": "U'",
+   "k": null,
+   "pairs": [],
+   "plainPairs": 0
+  },
+  {
+   "move": "L",
+   "k": 3,
+   "pairs": [
+    "BL"
+   ],
+   "plainPairs": 0
+  },
+  {
+   "move": "D'",
+   "k": 0,
+   "pairs": [
+    "BL"
+   ],
+   "plainPairs": 1
+  }
+ ],
+ "bench": {
+  "wasmInstantiateMs": 17,
+  "firstCrossQueryColdMs": 779,
+  "warmCrossQueryMs": 0.029,
+  "crossReviewAllPositionsMs": 18.2,
+  "xcrossAllFacesMs": 882,
+  "pairOptionsMs": 527
+ }
+}
