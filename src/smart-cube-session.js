@@ -1,25 +1,61 @@
 import { applyMoves, createSolvedState, FACE_COLORS, parseScramble } from './cross-cube.js';
 import { logConnection } from './smart-cube-diag.js';
+import { sameCornersAndEdges, stateFromFacelets } from './facelets-state.js';
 
 const SOLVED_FACELETS = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
 const solvedState = () => createSolvedState();
 const DOUBLE_TURN_WINDOW = 50; // cube-tick gap below which two same-face same-direction quarters are one physical double turn
+const QUIET_MS = 400;          // no cube turn for this long before a facelet report is trusted to match the tracked state
+const IDLE_CHECK_QUIET_MS = 2000;
 const isSolvedState = state => state.cubies.every(cubie =>
   Object.entries(cubie.stickers).every(([face, color]) => FACE_COLORS[face] === color));
+const defaultSchedule = (fn, ms) => { const id = setTimeout(fn, ms); return () => clearTimeout(id); };
+
+/** What the app runs with (smart-cube-bluetooth.js and the headless replay both use this). */
+export const APP_SESSION_OPTIONS = Object.freeze({
+  periodicCheckMs: 20000,
+  autoReconnect: Object.freeze({ delaysMs: Object.freeze([1000, 2000, 4000, 8000, 15000]) }),
+});
+
+const LINK_NONE = Object.freeze({ status: 'none' });
 
 /**
  * Device-neutral cube stream for trainers. A connection adapter supplies
- * connect({ onStatus }) and emits MOVE/FACELETS/GYRO/DISCONNECT.
+ * connect({ onStatus, reconnect, gesture }) and emits MOVE/FACELETS/GYRO/DISCONNECT.
  * Only a verified solved baseline starts the move history used by solvers.
+ *
+ * Robustness (see docs/ideas/FEATURES.md A1/A6):
+ *   - an unexpected drop keeps the tracked position and (with `autoReconnect`)
+ *     retries with backoff; on reconnect the cube's facelets are compared with
+ *     the tracked state instead of demanding a solved cube;
+ *   - dropped packets (serial gaps, library-recovered moves) and a periodic
+ *     idle check trigger a facelet comparison; a disagreement that survives a
+ *     second, quiet report re-baselines the tracked state (snapshot.resync).
+ * Options: `now` (ms clock, the recorder's in the app), `schedule(fn, ms)` ->
+ * cancel (virtual time in headless replays), `periodicCheckMs` (0 = off),
+ * `autoReconnect: { delaysMs }` (null = off).
  */
-export function createSmartCubeSession(connectDevice) {
+export function createSmartCubeSession(connectDevice, { now = () => Date.now(), schedule = defaultSchedule, periodicCheckMs = 0, autoReconnect = null } = {}) {
   const listeners = new Set();
   const eventListeners = new Set();
   let connection = null;
   let subscription = null;
   let generation = 0;
+  let epoch = 0;              // physical connection counter: cube clocks only compare within one
   let faceletsRequest = null;
   let lastCoalesce = null;
+  let lastSerial = null;
+  let lastMoveAt = -Infinity;
+  let lastCheckAt = -Infinity;
+  let needCheck = false;      // a gap was seen: verify once the cube is quiet
+  let suspect = null;         // first disagreeing facelet report: { moveAt }
+  let cancelRecheck = null;
+  let resumeCtx = null;       // tracked position kept across an unexpected drop
+  let cancelRetry = null;
+  let retryAttempt = 0;
+  let reconnectSeq = 0;
+  let resyncSeq = 0;
+  let gaps = 0;
   let snapshot = {
     phase: 'disconnected', detail: 'Connect a smart cube to mirror its turns.',
     deviceName: '', protocol: '', battery: null, facelets: null, gyro: null,
@@ -28,8 +64,19 @@ export function createSmartCubeSession(connectDevice) {
     // not on moves.length: the history empties whenever the cube is solved, and
     // a coalesced double replaces the previous quarter (replaces: true) instead
     // of appending. `turn` is the physical turn just applied (the second quarter
-    // of a double), for animating the mirror.
+    // of a double), for animating the mirror. The cube's own stamps ride along
+    // (cubeTimestamp / localTimestamp / serial / epoch; startCubeTimestamp is the
+    // first quarter of a coalesced double) so official times can come from the
+    // cube's hardware clock.
     moveEvent: null,
+    // Connection health: { status: 'none'|'up'|'lost'|'reconnecting', attempt,
+    // maxAttempts, retryAt, needsGesture, reason }.
+    link: LINK_NONE,
+    // Bumped when the tracked state was replaced by the cube's own report
+    // (missed packets), and when a reconnect finished verifying: { seq, match, at }.
+    resync: null, reconnectEvent: null,
+    // Facelet-check health: { status: 'unchecked'|'ok'|'suspect'|'rebaselined', gaps, checkedAt }.
+    sync: { status: 'unchecked', gaps: 0, checkedAt: null },
   };
   let moveSeq = 0;
 
@@ -48,6 +95,7 @@ export function createSmartCubeSession(connectDevice) {
 
   function establishSolvedBaseline() {
     lastCoalesce = null;
+    suspect = null; needCheck = false;
     publish({ phase: 'tracking', detail: 'Solved baseline synced. Turn the cube, then Analyze.', state: solvedState(), moves: [], lastMove: null });
   }
 
@@ -59,6 +107,52 @@ export function createSmartCubeSession(connectDevice) {
     if (error) request.reject(error);
     else request.resolve(facelets);
   }
+
+  // --- Desync detection ---------------------------------------------------------------------
+
+  function requestCheck(reason) {
+    if (!connection || !connection.capabilities?.facelets || snapshot.phase !== 'tracking' || faceletsRequest) return;
+    lastCheckAt = now();
+    logConnection({ kind: 'debug', label: `[session] facelet check (${reason})` });
+    Promise.resolve(connection.sendCommand({ type: 'REQUEST_FACELETS' })).catch(() => {});
+  }
+
+  function scheduleRecheck() {
+    cancelRecheck?.();
+    cancelRecheck = schedule(() => { cancelRecheck = null; requestCheck('recheck'); }, QUIET_MS + 100);
+  }
+
+  function setSync(status) {
+    if (snapshot.sync.status === status && snapshot.sync.gaps === gaps) return;
+    publish({ sync: { status, gaps, checkedAt: now() } });
+  }
+
+  // A facelet report while tracking. Reports are only conclusive when the cube
+  // has been still for QUIET_MS (a move still in flight would look like a
+  // mismatch); a disagreement must repeat, with no turn in between, before the
+  // tracked state is replaced (a single odd report never moves it).
+  function verifyFacelets(facelets) {
+    if (now() - lastMoveAt < QUIET_MS) { if (suspect || needCheck) scheduleRecheck(); return; }
+    const reported = stateFromFacelets(facelets);
+    if (!reported) { logConnection({ kind: 'error', label: `[session] facelet report is not a valid cube: ${String(facelets).slice(0, 60)}` }); return; }
+    needCheck = false;
+    if (sameCornersAndEdges(reported, snapshot.state)) { suspect = null; setSync('ok'); return; }
+    if (!suspect || suspect.moveAt !== lastMoveAt) {
+      suspect = { moveAt: lastMoveAt };
+      setSync('suspect');
+      scheduleRecheck();
+      return;
+    }
+    suspect = null; lastCoalesce = null;
+    logConnection({ kind: 'warn', label: '[session] tracked state disagrees with the cube; re-baselined from its facelets' });
+    publish({
+      state: reported, moves: [], lastMove: null, detail: 'The cube state was re-read after a missed move.',
+      resync: { seq: ++resyncSeq, reason: 'facelet-mismatch', at: now() },
+      sync: { status: 'rebaselined', gaps, checkedAt: now() },
+    });
+  }
+
+  // --- Events -------------------------------------------------------------------------------
 
   function onEvent(event) {
     // Keep protocol observations separate from the trusted solved-baseline
@@ -81,13 +175,18 @@ export function createSmartCubeSession(connectDevice) {
     for (const listener of eventListeners) {
       try { listener(observation); } catch { /* A diagnostic consumer must not stop tracking. */ }
     }
+    if (event.type !== 'DISCONNECT' && event.type !== 'MOVE' && snapshot.phase === 'tracking'
+        && periodicCheckMs > 0 && now() - lastCheckAt >= periodicCheckMs && now() - lastMoveAt >= IDLE_CHECK_QUIET_MS) {
+      requestCheck('idle');
+    }
     if (event.type === 'FACELETS') {
       publish({ facelets: event.facelets });
       endFaceletsRequest(null, event.facelets);
       if (snapshot.phase === 'awaiting-solved') {
-        if (event.facelets === SOLVED_FACELETS) establishSolvedBaseline();
+        if (resumeCtx) finishResume(event.facelets);
+        else if (event.facelets === SOLVED_FACELETS) establishSolvedBaseline();
         else publish({ detail: 'Cube connected. Solve it, then tap Sync solved cube.' });
-      }
+      } else if (snapshot.phase === 'tracking') verifyFacelets(event.facelets);
     } else if (event.type === 'MOVE' && snapshot.phase === 'tracking') {
       logConnection({ kind: 'debug', label: `[session] MOVE event.move=${JSON.stringify(event.move)} phase=${snapshot.phase} moves.len=${snapshot.moves.length}` });
       // Only parsing and applying the move can desync; listener failures are
@@ -108,6 +207,24 @@ export function createSmartCubeSession(connectDevice) {
       const prime = move.endsWith("'");
       const quarterTurn = !move.endsWith('2');
       const cubeTs = Number.isFinite(event.cubeTimestamp) ? event.cubeTimestamp : null;
+      const serial = Number.isInteger(event.serial) ? event.serial : null;
+      const localTs = Number.isFinite(event.localTimestamp) ? event.localTimestamp : null;
+      // Dropped packets: GAN serials are sequential mod 256, and the library
+      // marks moves it had to recover from the cube's history with a null local
+      // timestamp. Either way the cube's own report settles whether we agree.
+      let gap = event.localTimestamp === null;
+      if (serial !== null) {
+        if (lastSerial !== null && serial !== ((lastSerial + 1) & 0xFF)) gap = true;
+        lastSerial = serial;
+      }
+      lastMoveAt = now();
+      if (gap) {
+        gaps++; needCheck = true;
+        snapshot = { ...snapshot, sync: { ...snapshot.sync, gaps } };
+        logConnection({ kind: 'warn', label: `[session] dropped packet suspected at serial ${serial ?? '?'}; checking the cube state` });
+        scheduleRecheck();
+      }
+      const stamps = { cubeTimestamp: cubeTs, localTimestamp: localTs, serial, epoch };
       // Double-turn coalescing: the GAN protocol emits a double (U2) as two
       // quarter-turn MOVE events with a tiny cube-tick gap. Merge the second
       // quarter into the first as one "U2" so it counts as one move, TPS isn't
@@ -118,11 +235,12 @@ export function createSmartCubeSession(connectDevice) {
           && last === move && cubeTs !== null && lastCoalesce.cubeTs !== null
           && cubeTs >= lastCoalesce.cubeTs && cubeTs - lastCoalesce.cubeTs <= DOUBLE_TURN_WINDOW) {
         const double = `${face}2`;
+        const startCubeTimestamp = lastCoalesce.cubeTs;
         lastCoalesce = null;
-        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves.slice(0, -1), double], lastMove: double, moveEvent: { seq: ++moveSeq, move: double, turn: move, replaces: true }, detail: 'Live cube updated.' });
+        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves.slice(0, -1), double], lastMove: double, moveEvent: { seq: ++moveSeq, move: double, turn: move, replaces: true, ...stamps, startCubeTimestamp }, detail: 'Live cube updated.' });
       } else {
         lastCoalesce = quarterTurn ? { face, prime, cubeTs } : null;
-        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, moveEvent: { seq: ++moveSeq, move, turn: move, replaces: false }, detail: 'Live cube updated. Analyze when ready.' });
+        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, moveEvent: { seq: ++moveSeq, move, turn: move, replaces: false, ...stamps, startCubeTimestamp: cubeTs }, detail: 'Live cube updated. Analyze when ready.' });
       }
     } else if (event.type === 'BATTERY') {
       publish({ battery: event.batteryLevel });
@@ -133,18 +251,76 @@ export function createSmartCubeSession(connectDevice) {
         publish({ gyro: { x: q.x, y: q.y, z: q.z, w: q.w } });
       }
     } else if (event.type === 'DISCONNECT') {
-      endFaceletsRequest(new Error('Cube disconnected.'));
-      subscription?.unsubscribe();
-      subscription = null;
-      connection = null;
-      publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '', gyro: null });
+      handleDrop();
     }
+  }
+
+  // --- Connection lifecycle -----------------------------------------------------------------
+
+  function detach() {
+    endFaceletsRequest(new Error('Cube disconnected.'));
+    cancelRecheck?.(); cancelRecheck = null;
+    subscription?.unsubscribe();
+    subscription = null;
+    connection = null;
+    suspect = null; needCheck = false;
+  }
+
+  function cancelRetries() {
+    cancelRetry?.(); cancelRetry = null;
+    retryAttempt = 0;
+  }
+
+  // The cube went away without the user asking. Keep the tracked position so a
+  // reconnect can be verified against it, and retry (bounded, with backoff).
+  function handleDrop() {
+    const wasTracking = snapshot.phase === 'tracking';
+    detach();
+    if (wasTracking) resumeCtx = { state: snapshot.state, moves: snapshot.moves, lostAt: now() };
+    if (!resumeCtx) {
+      publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '', gyro: null, link: LINK_NONE });
+      return;
+    }
+    logConnection({ kind: 'warn', label: `[session] connection lost (phase was ${wasTracking ? 'tracking' : 'reconnecting'})` });
+    publish({ phase: 'disconnected', detail: 'Connection lost. Reconnecting…', gyro: null, link: { status: 'lost', attempt: retryAttempt, maxAttempts: autoReconnect?.delaysMs?.length ?? 0, reason: 'dropped' } });
+    scheduleRetry();
+  }
+
+  function scheduleRetry() {
+    cancelRetry?.(); cancelRetry = null;
+    const delays = autoReconnect?.delaysMs;
+    if (!resumeCtx || !delays || retryAttempt >= delays.length) {
+      publish({ phase: 'disconnected', detail: 'Connection lost. Tap Reconnect.', link: { status: 'lost', attempt: retryAttempt, maxAttempts: delays?.length ?? 0, needsGesture: true, reason: 'gave-up' } });
+      return;
+    }
+    const delay = delays[retryAttempt];
+    publish({ link: { status: 'lost', attempt: retryAttempt, maxAttempts: delays.length, retryAt: now() + delay, reason: 'waiting' } });
+    cancelRetry = schedule(() => { cancelRetry = null; retryAttempt++; void attemptReconnect({ gesture: false }); }, delay);
+  }
+
+  function attach(connected, { resume }) {
+    connection = connected;
+    epoch++;
+    lastSerial = null; lastMoveAt = -Infinity; lastCheckAt = now(); gaps = 0;
+    subscription = connected.events$.subscribe({
+      next: onEvent,
+      error: error => onEvent({ type: 'DISCONNECT', error }),
+      complete: () => onEvent({ type: 'DISCONNECT' }),
+    });
+    publish({
+      phase: 'awaiting-solved', detail: resume ? 'Reconnected. Checking the cube…' : 'Connected. Checking whether the cube is solved…',
+      deviceName: connected.deviceName || 'Smart cube',
+      protocol: connected.protocol?.name || '', battery: null, facelets: null, gyro: null,
+      link: { status: 'up' }, sync: { status: 'unchecked', gaps: 0, checkedAt: null },
+    });
   }
 
   async function connect() {
     if (snapshot.phase !== 'disconnected') return;
+    cancelRetries();
+    resumeCtx = null;
     const token = ++generation;
-    publish({ phase: 'connecting', detail: 'Select your cube…' });
+    publish({ phase: 'connecting', detail: 'Select your cube…', link: LINK_NONE });
     try {
       // Call the adapter immediately: requestDevice requires the click's user activation.
       const pending = connectDevice({
@@ -152,16 +328,7 @@ export function createSmartCubeSession(connectDevice) {
       });
       const connected = await pending;
       if (token !== generation) { await connected.disconnect(); return; }
-      connection = connected;
-      subscription = connected.events$.subscribe({
-        next: onEvent,
-        error: error => onEvent({ type: 'DISCONNECT', error }),
-      });
-      publish({
-        phase: 'awaiting-solved', detail: 'Connected. Checking whether the cube is solved…',
-        deviceName: connected.deviceName || 'Smart cube',
-        protocol: connected.protocol?.name || '', battery: null, facelets: null, gyro: null,
-      });
+      attach(connected, { resume: false });
       if (connected.capabilities?.facelets) {
         connected.sendCommand({ type: 'REQUEST_FACELETS' }).catch(() => {
           if (token === generation && snapshot.phase === 'awaiting-solved') publish({ detail: 'Could not read cube state. Solve it, then tap Sync solved cube.' });
@@ -170,6 +337,65 @@ export function createSmartCubeSession(connectDevice) {
     } catch (error) {
       if (token === generation) publish({ phase: 'disconnected', detail: error?.name === 'NotFoundError' ? 'No cube selected.' : `Connection failed: ${error.message}` });
     }
+  }
+
+  // Reconnect after an unexpected drop. `gesture: true` is a user tap (the
+  // adapter may then show the device picker); automatic retries run without one.
+  async function attemptReconnect({ gesture }) {
+    if (snapshot.phase !== 'disconnected' || !resumeCtx) return false;
+    cancelRetry?.(); cancelRetry = null;
+    const token = ++generation;
+    publish({ phase: 'connecting', detail: 'Reconnecting…', link: { status: 'reconnecting', attempt: retryAttempt, maxAttempts: autoReconnect?.delaysMs?.length ?? 0 } });
+    try {
+      const pending = connectDevice({
+        reconnect: true, gesture,
+        onStatus: detail => { if (token === generation) publish({ detail }); },
+      });
+      const connected = await pending;
+      if (token !== generation) { await connected.disconnect(); return false; }
+      retryAttempt = 0;
+      attach(connected, { resume: true });
+      if (connected.capabilities?.facelets) {
+        connected.sendCommand({ type: 'REQUEST_FACELETS' }).catch(() => {
+          if (token === generation && snapshot.phase === 'awaiting-solved') {
+            resumeCtx = null;
+            publish({ detail: 'Could not read cube state. Solve it, then tap Sync solved cube.' });
+          }
+        });
+      } else {
+        resumeCtx = null;
+        publish({ detail: 'This cube cannot report its state. Start only when it is physically solved.' });
+      }
+      return true;
+    } catch (error) {
+      if (token !== generation) return false;
+      const needsGesture = Boolean(error?.needsGesture) || (gesture && error?.name === 'NotFoundError');
+      logConnection({ kind: 'warn', label: `[session] reconnect attempt ${retryAttempt} failed: ${error?.message || error}` });
+      publish({ phase: 'disconnected', detail: `Reconnect failed: ${error?.message || error}`, link: { status: 'lost', attempt: retryAttempt, maxAttempts: autoReconnect?.delaysMs?.length ?? 0, needsGesture, reason: 'failed' } });
+      if (!needsGesture && !gesture) scheduleRetry();
+      return false;
+    }
+  }
+
+  // The first facelet report after a reconnect: compare it with the position
+  // that was tracked when the link dropped. No solved cube is needed.
+  function finishResume(facelets) {
+    const ctx = resumeCtx;
+    resumeCtx = null;
+    const reported = stateFromFacelets(facelets);
+    if (!reported) {
+      publish({ detail: 'Reconnected, but the cube state could not be read. Solve it, then tap Sync solved cube.' });
+      return;
+    }
+    const match = sameCornersAndEdges(reported, ctx.state);
+    lastCoalesce = null; suspect = null; needCheck = false;
+    publish({
+      phase: 'tracking',
+      detail: match ? 'Reconnected. The cube is where it was.' : 'Reconnected. The cube changed while it was disconnected; its state was re-read.',
+      state: match ? ctx.state : reported, moves: match ? ctx.moves : [], lastMove: null,
+      reconnectEvent: { seq: ++reconnectSeq, match, at: now() },
+      sync: { status: match ? 'ok' : 'rebaselined', gaps, checkedAt: now() },
+    });
   }
 
   async function syncSolved() {
@@ -194,17 +420,22 @@ export function createSmartCubeSession(connectDevice) {
 
   async function disconnect() {
     ++generation;
-    endFaceletsRequest(new Error('Cube disconnected.'));
+    cancelRetries();
+    resumeCtx = null;
     const old = connection;
-    connection = null;
-    subscription?.unsubscribe();
-    subscription = null;
-    publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '', gyro: null });
+    detach();
+    publish({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.', deviceName: '', protocol: '', gyro: null, link: LINK_NONE });
     await old?.disconnect();
   }
 
+  // One-tap / automatic reconnect to the cube that dropped.
+  async function reconnect({ gesture = true } = {}) {
+    if (snapshot.phase !== 'disconnected' || !resumeCtx) return false;
+    return attemptReconnect({ gesture });
+  }
+
   return {
-    connect, disconnect, syncSolved,
+    connect, disconnect, syncSolved, reconnect,
     getSnapshot: () => snapshot,
     subscribe(listener) { listeners.add(listener); listener(snapshot); return () => listeners.delete(listener); },
     subscribeEvents(listener) { eventListeners.add(listener); return () => eventListeners.delete(listener); },

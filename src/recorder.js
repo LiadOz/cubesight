@@ -19,7 +19,9 @@
 // recording can still be replayed.
 
 export const RECORDING_FORMAT = 'cubesight-recording';
-export const RECORDING_VERSION = 1;
+// v2: recordings may contain link-loss / reconnect / desync-check behaviour, so a
+// replay runs the session with the app's robustness options (APP_SESSION_OPTIONS).
+export const RECORDING_VERSION = 2;
 const DEFAULT_CAP = 100_000;
 
 const perf = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
@@ -231,7 +233,7 @@ export function recordingConnectDevice(connectDevice) {
   return function connectRecorded(options = {}) {
     const conn = ++connectionCounter;
     header = [];
-    record('connect-start', { conn }, { pin: true });
+    record('connect-start', { conn, reconnect: Boolean(options.reconnect), gesture: Boolean(options.gesture) }, { pin: true });
     const wrappedOptions = {
       ...options,
       onStatus: detail => {
@@ -334,20 +336,40 @@ function wrapCalls(target, kind, methods) {
 
 /** Record connect/syncSolved/disconnect calls on a session (and its phase changes, for divergence checks). */
 export function recordSessionCalls(session) {
-  const wrapped = wrapCalls(session, 'session.call', ['connect', 'syncSolved', 'disconnect']);
-  let lastPhase = null;
+  const wrapped = wrapCalls(session, 'session.call', ['connect', 'syncSolved', 'disconnect', 'reconnect']);
+  let lastKey = null;
   session.subscribe(snap => {
-    if (snap.phase !== lastPhase) { lastPhase = snap.phase; record('observe.session', { phase: snap.phase, moves: snap.moves?.length ?? 0, lastMove: snap.lastMove ?? null, detail: snap.detail }); }
+    // Every state transition a replay must reproduce: phase, link health
+    // (lost / reconnecting / up), re-baselines, finished reconnect checks and
+    // the facelet-check verdict.
+    const link = snap.link?.status ?? 'none';
+    const key = [snap.phase, link, snap.resync?.seq ?? 0, snap.reconnectEvent?.seq ?? 0, snap.sync?.status ?? ''].join('|');
+    if (key !== lastKey) {
+      lastKey = key;
+      record('observe.session', {
+        phase: snap.phase, moves: snap.moves?.length ?? 0, lastMove: snap.lastMove ?? null, detail: snap.detail,
+        link, resync: snap.resync?.seq ?? 0, reconnect: snap.reconnectEvent ? { seq: snap.reconnectEvent.seq, match: snap.reconnectEvent.match } : null,
+        sync: snap.sync?.status ?? null,
+      });
+    }
   });
   return wrapped;
 }
 
 /** Record calls into the live tracker (start guided with its exact scramble, free, cancel, settings). */
 export function recordLiveCalls(live) {
-  const wrapped = wrapCalls(live, 'live.call', ['startGuided', 'startFree', 'cancel', 'setPseudo', 'setInspection']);
+  const wrapped = wrapCalls(live, 'live.call', ['startGuided', 'startFree', 'cancel', 'setPseudo', 'setInspection', 'resume', 'setInterruptPolicy']);
   let lastPhase = null;
   live.subscribe(snap => {
-    if (snap.phase !== lastPhase) { lastPhase = snap.phase; record('observe.live', { phase: snap.phase, mode: snap.mode, solveMoveCount: snap.solveMoveCount }); }
+    if (snap.phase !== lastPhase) {
+      lastPhase = snap.phase;
+      record('observe.live', {
+        phase: snap.phase, mode: snap.mode, solveMoveCount: snap.solveMoveCount,
+        ...(snap.interrupted ? { interrupted: { from: snap.interrupted.from, canResume: snap.interrupted.canResume } } : {}),
+        ...(snap.notice ? { notice: snap.notice } : {}),
+        ...(snap.record ? { result: { solveMs: snap.record.solveMs, hostSolveMs: snap.record.hostSolveMs, timing: snap.record.timing, penalty: snap.record.penalty, flags: snap.record.flags } } : {}),
+      });
+    }
   });
   return wrapped;
 }

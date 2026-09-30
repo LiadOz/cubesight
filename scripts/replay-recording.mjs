@@ -45,9 +45,13 @@ const result = await replayHeadless(recording, { speed, verbose, onLine: line =>
 originalLog('');
 originalLog('Summary');
 originalLog(`  session: phase=${result.session.phase} moves(${result.session.moves.length})=[${result.session.moves.join(' ')}]`);
-originalLog(`  live:    phase=${result.live.phase}${result.live.progress?.phase ? '/' + result.live.progress.phase : ''} mode=${result.live.mode ?? '-'}${result.live.record ? ` solved in ${result.live.record.solveMs?.toFixed(0)}ms, ${result.live.record.moveCount} moves` : ''}`);
+originalLog(`  live:    phase=${result.live.phase}${result.live.progress?.phase ? '/' + result.live.progress.phase : ''} mode=${result.live.mode ?? '-'}${result.live.record ? ` solved in ${result.live.record.solveMs?.toFixed(0)}ms (${result.live.record.timing} clock; host ${result.live.record.hostSolveMs?.toFixed(0)}ms), ${result.live.record.moveCount} moves${result.live.record.flags?.length ? ' [' + result.live.record.flags.join(',') + ']' : ''}` : ''}`);
 originalLog(`  session phases replayed: ${result.sessionPhases.join(' > ')}`);
 if (result.recordedSessionPhases.length) originalLog(`  session phases recorded: ${result.recordedSessionPhases.join(' > ')}`);
+originalLog(`  live phases replayed: ${result.livePhases.join(' > ')}`);
+if (result.recordedLivePhases.length) originalLog(`  live phases recorded: ${result.recordedLivePhases.join(' > ')}`);
+const linkEvents = recording.events.filter(e => e.kind === 'observe.session' && e.data?.link && e.data.link !== 'none');
+if (linkEvents.length) originalLog(`  link states recorded: ${linkEvents.map(e => e.data.link).filter((l, i, a) => l !== a[i - 1]).join(' > ')}`);
 for (const d of result.desyncs) originalLog(`  DESYNC (${d.source}) at ${(d.t / 1000).toFixed(3)}s ${d.detail ?? ''}`);
 for (const e of result.errors) originalLog(`  ERROR ${e.split('\n')[0]}`);
 for (const a of result.actionErrors) originalLog(`  ACTION FAILED ${a.action.kind} ${a.action.method ?? ''}: ${a.error}`);

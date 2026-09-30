@@ -190,7 +190,8 @@ test('replayIntoSession drives an existing real session through its device seam'
   restore();
   assert.deepEqual(session.getSnapshot().moves, expected);
   assert.ok(actions.some(a => a.kind === 'live.call' && a.method === 'startFree'));
-  assert.equal(live.getSnapshot().phase, 'solving');
+  // The replay's own disconnect at the end interrupts the attempt (no running clock).
+  assert.equal(live.getSnapshot().phase, 'interrupted');
   // The replay leaves a clean, disconnected session with the real adapter back.
   assert.equal(session.getSnapshot().phase, 'disconnected');
   assert.equal(routed, null);

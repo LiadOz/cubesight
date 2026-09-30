@@ -52,6 +52,30 @@ export function createReplayDriver(input, { speed = 0, maxGapMs = 5000, onAction
   const divergences = [];
   const actionErrors = [];
 
+  // Virtual timers for the session's own scheduling (reconnect backoff, facelet
+  // rechecks): they fire as the recorded clock passes them, so the replayed app
+  // reacts at the same points as the live one.
+  const timers = [];
+  let timerSeq = 0;
+  function schedule(fn, ms) {
+    const timer = { at: clock + ms, fn, seq: ++timerSeq, cancelled: false };
+    timers.push(timer);
+    return () => { timer.cancelled = true; };
+  }
+  async function fireDueTimers(until) {
+    for (;;) {
+      let next = null;
+      for (const timer of timers) if (!timer.cancelled && timer.at <= until && (!next || timer.at < next.at || (timer.at === next.at && timer.seq < next.seq))) next = timer;
+      if (!next) break;
+      timers.splice(timers.indexOf(next), 1);
+      clock = Math.max(clock, next.at);
+      trace('timer', { at: next.at });
+      try { next.fn(); } catch (error) { actionErrors.push({ t: clock, action: { kind: 'timer' }, error: String(error?.message || error) }); }
+      await yieldMacrotask();
+    }
+    for (let i = timers.length - 1; i >= 0; i--) if (timers[i].cancelled) timers.splice(i, 1);
+  }
+
   const trace = (type, detail = {}) => onTrace({ t: clock, type, ...detail });
   const diverge = (message, detail = {}) => { divergences.push({ t: clock, message, ...detail }); trace('divergence', { message, ...detail }); };
 
@@ -87,15 +111,18 @@ export function createReplayDriver(input, { speed = 0, maxGapMs = 5000, onAction
       },
       sendCommand(command) {
         trace('command', { conn, command });
-        const recordedCommand = state.commands.shift();
-        const result = state.results.shift();
-        if (recordedCommand && recordedCommand.command?.type !== command?.type) {
-          diverge(`app sent ${command?.type} where the recording sent ${recordedCommand.command?.type}`);
-        }
-        if (!recordedCommand && command?.type === 'REQUEST_FACELETS' && answerUnmatchedFacelets && latestFacelets) {
-          // Not in the recording: answer from the most recent recorded cube state.
-          diverge('unrecorded REQUEST_FACELETS answered from the recording');
-          queueMicrotask(() => state.observer?.next?.({ type: 'FACELETS', facelets: latestFacelets, replaySynthetic: true }));
+        // The next recorded command of the same type (timer-driven commands can
+        // land in a different order than the recording's other commands).
+        const at = state.commands.findIndex(c => c.command?.type === command?.type);
+        const recordedCommand = at >= 0 ? state.commands.splice(at, 1)[0] : null;
+        const resultAt = recordedCommand ? state.results.findIndex(r => r.id === recordedCommand.id) : -1;
+        const result = resultAt >= 0 ? state.results.splice(resultAt, 1)[0] : null;
+        if (!recordedCommand) {
+          diverge(`app sent ${command?.type}, which the recording did not`);
+          if (command?.type === 'REQUEST_FACELETS' && answerUnmatchedFacelets && latestFacelets) {
+            // Not in the recording: answer from the most recent recorded cube state.
+            queueMicrotask(() => state.observer?.next?.({ type: 'FACELETS', facelets: latestFacelets, replaySynthetic: true }));
+          }
         }
         if (result && !result.ok) return Promise.reject(fromJSONSafe(result.error));
         return Promise.resolve(result ? fromJSONSafe(result.value) : undefined);
@@ -163,7 +190,7 @@ export function createReplayDriver(input, { speed = 0, maxGapMs = 5000, onAction
         if (!pendingConnect) {
           // Trimmed / cleared recording: the Connect click is gone, the handshake is pinned.
           trace('synthetic-connect', { conn: d.conn });
-          runAction({ kind: 'session.call', method: 'connect', args: [], synthetic: true });
+          runAction({ kind: 'session.call', method: d.reconnect ? 'reconnect' : 'connect', args: d.reconnect ? [{ gesture: Boolean(d.gesture) }] : [], synthetic: true });
           await yieldMacrotask();
           if (!pendingConnect) diverge('recording connected, but the app did not call connectDevice');
         }
@@ -243,7 +270,8 @@ export function createReplayDriver(input, { speed = 0, maxGapMs = 5000, onAction
         if (wait >= 1) await sleep(wait);
       }
       previousT = e.t;
-      clock = e.t;
+      if (timers.length) await fireDueTimers(e.t);
+      clock = Math.max(clock, e.t);
       // settle: true = macrotask (connect handshake, user actions), 'microtask'
       // = raw cube event, false = nothing to settle.
       const settle = await dispatch(e);
@@ -257,7 +285,7 @@ export function createReplayDriver(input, { speed = 0, maxGapMs = 5000, onAction
   }
 
   return {
-    connectDevice, run, read,
+    connectDevice, run, read, schedule,
     setOnAction(fn) { onAction = fn; },
     now: () => clock,
     get recording() { return recording; },
