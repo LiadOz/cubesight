@@ -1,9 +1,7 @@
 // Diagnostic replay: runs scenarios through the replay harness and prints exactly what the
 // session/tracker/mirror do at each step, so we can see why tracking stops.
 import { createReplaySession, createReplayScript } from '../src/replay.js';
-import { createSmartCubeSession } from '../src/smart-cube-session.js';
 import { createSolveLive } from '../src/solve-live.js';
-import { sameCubeState, createSolvedState } from '../src/cross-cube.js';
 
 function trace(label, session, solveLive) {
   let lastMove = null, lastLen = 0;

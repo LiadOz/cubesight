@@ -4,7 +4,7 @@ import {
   crossHindsight, f2lNextPairHint, betterInsertionHindsight,
   ollStage, pllLens, efficiencyScore,
 } from '../src/solve-coach.js';
-import { stateFromScramble, createSolvedState, applyMoves } from '../src/cross-cube.js';
+import { stateFromScramble, createSolvedState } from '../src/cross-cube.js';
 import { f2lPairSlots } from '../src/solve-tracker.js';
 
 test('crossHindsight flags extra moves vs an optimal cross', () => {

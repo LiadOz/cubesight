@@ -13,9 +13,9 @@
 // when unavailable.
 
 import { solveCross } from './cross-solver.js';
-import { analyze, canonicalizeForRecognition, f2lPairSlots, pairSolved, pairReadiness, crossSolved, llFace } from './solve-tracker.js';
+import { canonicalizeForRecognition, f2lPairSlots, pairSolved, pairReadiness } from './solve-tracker.js';
 import { identifyPllCase, isPllState } from './pll-logic.js';
-import { FACE_COLORS, OPPOSITE_FACE } from './cross-cube.js';
+import { FACE_COLORS } from './cross-cube.js';
 
 // --- Cross lens ---------------------------------------------------------------
 
