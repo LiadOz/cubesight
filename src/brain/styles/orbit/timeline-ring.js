@@ -22,7 +22,10 @@ export function createRingTimeline(host, ctx = {}) {
   const startTick = svg('line', { class: 'b-oring-start', x1: CX, y1: CY - R - TICK, x2: CX, y2: CY - R + TICK });
   const dot = svg('g', { class: 'b-oring-dot' });
   dot.append(svg('circle', { class: 'b-oring-dot-halo', r: 11 }), svg('circle', { class: 'b-oring-dot-core', r: 5.5 }));
-  root.append(floor, arcsLayer, startTick, labelsLayer, dot);
+  // Connecting: a short arc sweeps the ring around the cube (static dots for reduced motion).
+  const connecting = svg('g', { class: 'b-oring-connect' });
+  connecting.append(svg('circle', { class: 'b-oring-connect-dots', cx: CX, cy: CY, r: R }), svg('circle', { class: 'b-oring-connect-sweep', cx: CX, cy: CY, r: R, pathLength: 100 }));
+  root.append(floor, connecting, arcsLayer, startTick, labelsLayer, dot);
   host.append(root);
 
   // Optional right-column split list (the shell passes ctx.aside for Orbit).

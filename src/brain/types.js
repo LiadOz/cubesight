@@ -52,7 +52,9 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {number|null} battery
  * @property {boolean} supported
  * @property {boolean} gyro
- * @property {string} detail
+ * @property {string} detail   while connecting: the latest step of the attach
+ * @property {boolean} busy     connecting, or checking the cube's first state
+ * @property {boolean} failed   the last attempt failed (detail has the reason; connect again to retry)
  * @property {{connect:boolean, sync:boolean, recenter:boolean, disconnect:boolean, clearSaved:boolean}} actions
  */
 

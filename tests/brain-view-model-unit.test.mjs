@@ -235,3 +235,14 @@ test('an x-cross is a tag on the cross segment and the merged pairs are done at 
   assert.equal(coach[0].tone, 'good');
   assert.match(coach[0].text, /^X-cross!/);
 });
+
+test('connecting: the device status is the latest step; a failure keeps its reason and offers a retry', () => {
+  const connecting = { phase: 'connecting', detail: 'Select your cube…' };
+  assert.deepEqual([deviceFor(connecting, false).detail, deviceFor(connecting, false).busy], ['Select your cube…', true], 'even without Web Bluetooth: the attach is under way');
+  assert.equal(deviceFor(connecting, true, 'MAC provider called (attempt 1).').detail, 'MAC provider called (attempt 1).');
+  assert.equal(deviceFor({ phase: 'awaiting-solved', detail: 'Connected. Checking whether the cube is solved…' }, true).busy, true);
+  const failed = deviceFor({ phase: 'disconnected', detail: 'Connection failed: GATT server busy' }, false);
+  assert.deepEqual([failed.failed, failed.busy, failed.detail, failed.actions.connect], [true, false, 'Connection failed: GATT server busy', true]);
+  assert.equal(deviceFor({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.' }, true).failed, false);
+  assert.equal(deviceFor({ phase: 'disconnected', detail: '' }, false).detail, 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.');
+});

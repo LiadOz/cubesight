@@ -61,6 +61,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let commandOpen = false;      // one-shot: the next render asks the shell to focus the command line
   let scrambleNumber = 0;       // scrambles started in this view
   let error = '';
+  let connectStep = '';         // the latest step of a running connection attempt (session detail or connection log)
+  let connectLogFrom = 0;       // connection-log length when the attempt began
   let statusOverride = null;    // a message() until the connection status next changes
   let replayBackup = null;      // settings before a replay changed them (restored after)
   let generating = false;
@@ -106,7 +108,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       session, live: liveSnap, records, settings, track, optimalCross, coach, error,
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
       now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.getHeldFaces?.() : null,
-      scrambleText, scrambleNumber, settingsOpen, debugOpen, commandOpen, toast,
+      scrambleText, scrambleNumber, settingsOpen, debugOpen, connectStep, commandOpen, toast,
     }, vm);
     commandOpen = false;
     const prev = vm;
@@ -200,6 +202,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (sessionLogLabel !== lastSessionLogLabel) { lastSessionLogLabel = sessionLogLabel; logConnection({ label: sessionLogLabel, kind: 'debug' }); }
     const gyro = snapshot.protocol?.startsWith('GAN') ? snapshot.gyro : null;
     if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
+    if (snapshot.phase === 'connecting') connectStep = snapshot.detail || connectStep;
+    else connectStep = '';
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro), snapshot.battery].join('|');
     let changed = false;
     if (key !== lastStatusKey) { lastStatusKey = key; statusOverride = null; changed = true; }
@@ -398,7 +402,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (detached || !action) return;
     if (RECORDED.has(action.type) && !(action.type === 'setSetting' && LIVE_RECORDED_PATHS.test(action.path))) record('ui', { type: 'action', action });
     switch (action.type) {
-      case 'connect': void cubeSession.connect(); break;
+      case 'connect': connectStep = ''; connectLogFrom = getConnectionLog().length; void cubeSession.connect(); break;
       case 'sync': void cubeSession.syncSolved().catch(() => {}); break;
       case 'recenter': cube?.recenterGyro(); message('Cube motion recentered.'); break;
       case 'disconnect': void cubeSession.disconnect(); break;
@@ -530,7 +534,17 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     pendingLog = null;
     list.innerHTML = entries.length ? entries.map(e => `<li class="brain-log-item brain-log-${e.kind || 'info'}"><span class="brain-log-time">${new Date(e.at).toLocaleTimeString()}</span><span>${escape(e.label)}</span></li>`).join('') : '<li class="brain-log-muted">No connection attempts yet in this session.</li>';
   }
+  // The adapter logs steps the session never sees (the address lookup, the manual-address
+  // prompt): while connecting, the newest of them is the status line too.
+  const redactMac = text => String(text || '').replace(/([\da-f]{2}:){5}[\da-f]{2}/gi, 'XX:XX:XX:XX:XX:XX');
+  function followConnectionSteps(entries) {
+    if (detached || cubeSession.getSnapshot().phase !== 'connecting') return;
+    const step = entries.slice(connectLogFrom).reverse().find(e => e.kind !== 'debug' && e.kind !== 'env' && e.label);
+    const text = step ? redactMac(step.label).slice(0, 140) : '';
+    if (text && text !== connectStep) { connectStep = text; render(); }
+  }
   function renderConnectionLog(entries) {
+    followConnectionSteps(entries);
     pendingLog = entries;
     if (!logFrame) logFrame = requestAnimationFrame(paintConnectionLog);
   }

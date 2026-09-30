@@ -90,7 +90,8 @@ const TEMPLATE = `
         <p class="b-sub"></p>
         <div id="brain-moves" class="brain-moves b-moves" aria-label="Scramble moves" hidden></div>
         <div id="brain-coach" class="b-coach" aria-live="polite"></div>
-        <p class="b-idle-status"></p>
+        <p class="b-idle-status" aria-live="polite"></p>
+        <div class="b-progress" aria-hidden="true"><i></i></div>
         <div class="b-primary">
           <button class="b-start" id="brain-start" type="button"><span>start scramble</span><kbd>space</kbd></button>
           <button class="b-start b-start-alt" type="button" data-primary="connect" hidden><span>connect cube</span></button>
@@ -511,13 +512,17 @@ export function createShell(root, { dispatch }) {
   function updatePrimary(vm) {
     const screen = vm.screen;
     parts.start.hidden = screen !== 'idle';
-    const alt = screen === 'disconnected' ? { action: 'connect', label: vm.device.phase === 'connecting' ? 'connecting…' : 'connect cube' }
+    const busy = vm.device.busy;   // the attach is under way: the button stays, disabled, with a spinner
+    const alt = screen === 'disconnected' || screen === 'connecting'
+      ? { action: 'connect', label: busy ? 'connecting…' : vm.device.failed ? 'retry connection' : 'connect cube' }
       : screen === 'desynced' ? { action: 'sync', label: 'sync solved cube' } : null;
     parts.primaryAlt.hidden = !alt;
     if (alt) {
       parts.primaryAlt.dataset.primary = alt.action;
       setText(parts.primaryAlt.querySelector('span'), alt.label);
-      parts.primaryAlt.disabled = vm.device.phase === 'connecting';
+      parts.primaryAlt.disabled = screen !== 'desynced' && busy;
+      toggleClass(parts.primaryAlt, 'is-connecting', screen !== 'desynced' && busy);
+      setAttr(parts.primaryAlt, 'aria-busy', busy ? 'true' : null);
     }
     parts.stop.hidden = !(screen === 'scramble' || screen === 'inspection' || screen === 'ready' || screen === 'solving');
   }
@@ -539,7 +544,9 @@ export function createShell(root, { dispatch }) {
     updateStats(vm.stats, p?.stats);
     updateKeys(vm.keys, p?.keys);
     updatePrimary(vm);
-    setText(parts.idleStatus, vm.screen === 'idle' || vm.screen === 'disconnected' || vm.screen === 'desynced' ? vm.status : '');
+    const showStatus = vm.screen === 'idle' || vm.screen === 'disconnected' || vm.screen === 'desynced' || vm.screen === 'connecting';
+    setText(parts.idleStatus, showStatus ? vm.status : '');
+    parts.idleStatus.dataset.tone = vm.screen === 'disconnected' && vm.device.failed ? 'error' : 'text';
     parts.toast.hidden = !vm.toast;
     if (vm.toast) { setText(parts.toast, vm.toast.text); parts.toast.dataset.tone = vm.toast.tone; }
     parts.error.hidden = !vm.error;
@@ -547,7 +554,8 @@ export function createShell(root, { dispatch }) {
     setText($('#brain-phase-label'), vm.phaseText.label);
     setText($('#brain-phase-detail'), vm.phaseText.detail);
     // Timeline host (aria lives on the host so both styles share it).
-    parts.timeline.hidden = !vm.timeline.visible;
+    // Orbit keeps its ring host while connecting: the ring sweeps around the cube then.
+    parts.timeline.hidden = !(vm.timeline.visible || (vm.screen === 'connecting' && style?.layout === 'orbit'));
     toggleClass(parts.timeline, 'is-ghost', vm.timeline.ghost);
     setAttr(parts.timeline, 'aria-valuemin', 0);
     setAttr(parts.timeline, 'aria-valuemax', vm.timeline.aria.max);

@@ -68,7 +68,7 @@ export function phaseText(live) {
 // --- Device --------------------------------------------------------------------------
 
 /** @returns {import('./types.js').DeviceVM} */
-export function deviceFor(session, supported = true) {
+export function deviceFor(session, supported = true, connectStep = '') {
   const s = session || { phase: 'disconnected', detail: '' };
   const connecting = s.phase === 'connecting';
   const connected = !connecting && s.phase !== 'disconnected';
@@ -76,9 +76,13 @@ export function deviceFor(session, supported = true) {
   const phase = { disconnected: 'disconnected', connecting: 'connecting', 'awaiting-solved': 'syncing', tracking: 'tracking', desynced: 'desynced' }[s.phase] ?? 'disconnected';
   // Without Web Bluetooth only a disconnected cube needs the explanation (a
   // replayed recording connects through the adapter seam regardless).
-  const detail = supported || connected
-    ? (connecting ? 'Select your cube in the picker…' : `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap Recenter motion to align.' : ''}`)
-    : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
+  // While connecting, the status line is the latest step of the attach (the picker, the advertisement
+  // watch, the address lookup, the manual-address prompt, …), newest of the session detail and the log.
+  const failed = s.phase === 'disconnected' && /^(Connection failed|No cube selected)/.test(s.detail ?? '');
+  const detail = connecting ? (connectStep || s.detail || 'Select your cube…')
+    : failed ? s.detail
+      : supported || connected ? `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap Recenter motion to align.' : ''}`
+        : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
   return {
     phase,
     name: connected ? (s.deviceName || 'Smart cube') : connecting ? 'connecting…' : 'No cube',
@@ -87,6 +91,9 @@ export function deviceFor(session, supported = true) {
     supported,
     gyro,
     detail,
+    // The attach is under way (the picker, the address lookup, the first read of the cube), or just failed.
+    busy: connecting || phase === 'syncing',
+    failed,
     actions: {
       // Offered even without Web Bluetooth: connecting then explains what's missing.
       connect: s.phase === 'disconnected',
@@ -400,7 +407,7 @@ function statsVM(records) {
  * @param {{session:Object, live:Object, records:Object[], settings:Object, track?:Object, optimalCross?:Object|null,
  *   coach?:import('./types.js').CoachLine[], error?:string, status?:string|null, theme?:'dark'|'light',
  *   supported?:boolean, now?:number, held?:{bottom:string, front:string}, scrambleText?:string,
- *   settingsOpen?:boolean, debugOpen?:boolean, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
+ *   settingsOpen?:boolean, debugOpen?:boolean, connectStep?:string, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
  *   dShift?:number|null}} input
  * @param {import('./types.js').BrainVM|null} prev
  * @returns {import('./types.js').BrainVM}
@@ -426,7 +433,7 @@ export function buildViewModel(input, prev = null) {
   const result = screen === 'results'
     ? cached('results', [live?.record, records, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross], () => resultsVM({ live, records, settings, plan, track, optimalCross }))
     : null;
-  const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true], () => deviceFor(session, input.supported ?? true));
+  const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, input.connectStep ?? ''], () => deviceFor(session, input.supported ?? true, input.connectStep ?? ''));
   const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen)], () => buildSettingsPanel(settings, Boolean(input.settingsOpen)));
   const configBar = cached('configBar', [settings], () => buildConfigBar(settings));
   const stats = cached('stats', [records], () => statsVM(records));

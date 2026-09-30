@@ -87,6 +87,14 @@
 .b-oring-dot-halo, .b-oinsp-dot-halo { fill: var(--b-accent); opacity: .22; }
 .b-oring-dot-core, .b-oinsp-dot-core { fill: var(--b-bg); stroke: var(--b-fill-live); stroke-width: 3; }
 
+/* Connecting: an indeterminate sweep around the cube */
+.b-oring-connect { display: none; }
+.brain[data-screen="connecting"] .b-oring-connect { display: block; }
+.b-oring-connect-dots { fill: none; stroke: var(--b-track); stroke-width: 2; stroke-dasharray: 1 11; stroke-linecap: round; }
+.b-oring-connect-sweep { fill: none; stroke: var(--b-accent); stroke-width: var(--b-ring-live); stroke-linecap: round; stroke-dasharray: 22 78; transform-origin: 50% 50%; transform-box: view-box; animation: b-oring-sweep 1.6s linear infinite; }
+@keyframes b-oring-sweep { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .b-oring-connect-sweep { display: none; } .b-oring-connect-dots { stroke: var(--b-muted); } }
+
 /* Ghost pace map at idle */
 .b-oring.is-ghost .b-oring-track { opacity: .85; }
 .b-oring.is-ghost .b-oring-pseudo { stroke: var(--b-faint); }
