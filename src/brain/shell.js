@@ -552,7 +552,7 @@ export function createShell(root, { dispatch }) {
   function updatePrimary(vm) {
     const screen = vm.screen;
     parts.start.hidden = screen !== 'idle';
-    const busy = vm.device.busy;   // the attach is under way: the button stays, disabled, with a spinner
+    const busy = vm.device.busy;   // the attach is under way: the button stays, disabled, as plain text
     const alt = screen === 'disconnected' || screen === 'connecting'
       ? (vm.device.actions.resume ? { action: 'resume', label: 'resume solve' }
         : vm.device.actions.reconnect ? { action: 'reconnect', label: 'reconnect cube' }

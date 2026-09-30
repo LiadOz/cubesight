@@ -72,6 +72,15 @@ for (const style of STYLES) {
     await expect(button).toHaveClass(/is-connecting/);
     await expect(button).toHaveText('connecting…');
     await expect(indicator).toBeVisible();
+    // Exactly one animation runs: the ring sweep (Orbit) or the lane (Mono). The chip and button are static.
+    await expect(brain.locator('.b-device')).toContainText('connecting…');
+    const animated = await brain.evaluate(el => {
+      const still = root => [root, ...root.querySelectorAll('*')].every(n => n.getAnimations().length === 0
+        && ['::before', '::after'].every(pseudo => getComputedStyle(n, pseudo).animationName === 'none'));
+      return { chip: still(el.querySelector('.b-device')), button: still(el.querySelector('.b-start-alt')) };
+    });
+    expect(animated).toEqual({ chip: true, button: true });
+    expect(await indicator.evaluate(n => n.getAnimations().length)).toBeGreaterThan(0);
     // The line under the button is the newest step: the picker, then the adapter's status.
     await expect(status).toHaveText('Starting connection…');
     const order = await brain.evaluate(el => {
