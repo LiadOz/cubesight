@@ -74,7 +74,9 @@ export function createSmartCubeSession(connectDevice) {
       }
     } else if (event.type === 'MOVE' && snapshot.phase === 'tracking') {
       try {
-        const moves = parseScramble(event.move);
+        // Accept wide/slice moves (Uw, M, ...) as single moves instead of desyncing — the
+        // cube model supports them and the user wants them tracked.
+        const moves = parseScramble(event.move, { allowWide: true });
         if (moves.length !== 1) throw new Error('Invalid move');
         const [move] = moves;
         const face = move[0];
