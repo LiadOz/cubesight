@@ -713,19 +713,20 @@ export function createCube3D(container, options = {}) {
   // Smart-cube packets can arrive faster than a teaching animation. Keep
   // turns in order, then shorten animations under load. If we fall far behind
   // (including in a hidden tab), catch up to the verified latest state.
-  function queueLiveMove(move, nextData) {
+  // `speed` > 1 (a fast replay) shortens the turns so they keep up.
+  function queueLiveMove(move, nextData, { speed = 1 } = {}) {
     if (liveMoveQueue.length >= 6 || document.hidden) {
       update(nextData);
       return;
     }
-    liveMoveQueue.push({ move, nextData });
+    liveMoveQueue.push({ move, nextData, scale: 1 / Math.sqrt(Math.max(1, speed)) });
     if (liveMoveRunning) return;
     liveMoveRunning = true;
     void (async () => {
       try {
         while (liveMoveQueue.length && !stopped) {
           const next = liveMoveQueue.shift();
-          await animateMove(next.move, next.nextData, liveMoveQueue.length > 2 ? 65 : 105);
+          await animateMove(next.move, next.nextData, (liveMoveQueue.length > 2 ? 65 : 105) * next.scale);
         }
       } finally { liveMoveRunning = false; }
     })();
