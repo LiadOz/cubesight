@@ -247,6 +247,8 @@ export function createShell(root, { dispatch }) {
     if (button === parts.deviceToggle) { setDeviceMenu(parts.deviceMenu.hidden); return; }
     if (button.id === 'brain-import') { $('#brain-import-file').click(); return; }
     if (button.dataset.primary === 'connect') { dispatch({ type: 'connect' }); return; }
+    if (button.dataset.primary === 'reconnect') { dispatch({ type: 'reconnect' }); return; }
+    if (button.dataset.primary === 'resume') { dispatch({ type: 'resumeSolve' }); return; }
     if (button.dataset.primary === 'sync') { dispatch({ type: 'sync' }); return; }
     if (button.dataset.setting) {
       dispatch({ type: 'setSetting', path: button.dataset.setting, value: button.dataset.value });
@@ -481,7 +483,10 @@ export function createShell(root, { dispatch }) {
   function updatePrimary(vm) {
     const screen = vm.screen;
     parts.start.hidden = screen !== 'idle';
-    const alt = screen === 'disconnected' ? { action: 'connect', label: vm.device.phase === 'connecting' ? 'connecting…' : 'connect cube' }
+    const alt = screen === 'disconnected'
+      ? (vm.device.actions.resume ? { action: 'resume', label: 'resume solve' }
+        : vm.device.actions.reconnect ? { action: 'reconnect', label: 'reconnect cube' }
+          : { action: 'connect', label: vm.device.phase === 'connecting' ? 'connecting…' : 'connect cube' })
       : screen === 'desynced' ? { action: 'sync', label: 'sync solved cube' } : null;
     parts.primaryAlt.hidden = !alt;
     if (alt) {

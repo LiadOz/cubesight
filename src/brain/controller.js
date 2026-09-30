@@ -397,6 +397,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (RECORDED.has(action.type) && !(action.type === 'setSetting' && LIVE_RECORDED_PATHS.test(action.path))) record('ui', { type: 'action', action });
     switch (action.type) {
       case 'connect': void cubeSession.connect(); break;
+      case 'reconnect': void cubeSession.reconnect({ gesture: true }); break;
+      case 'resumeSolve': live.resume(); break;
       case 'sync': void cubeSession.syncSolved().catch(() => {}); break;
       case 'recenter': cube?.recenterGyro(); message('Cube motion recentered.'); break;
       case 'disconnect': void cubeSession.disconnect(); break;

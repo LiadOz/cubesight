@@ -31,7 +31,8 @@ export function screenFor(session, live) {
   const lp = live?.phase;
   if (lp === 'done') return 'results';
   if (session?.phase === 'desynced' || lp === 'desynced') return 'desynced';
-  if (!session || session.phase === 'disconnected') return 'disconnected';
+  // A solve paused by a lost connection shows the connection screen (reconnect / resume).
+  if (!session || session.phase === 'disconnected' || lp === 'interrupted') return 'disconnected';
   if (session.phase === 'connecting' || session.phase === 'awaiting-solved') return 'connecting';
   return { applying: 'scramble', inspecting: 'inspection', ready: 'ready', solving: 'solving' }[lp] ?? 'idle';
 }
@@ -68,7 +69,7 @@ export function phaseText(live) {
 // --- Device --------------------------------------------------------------------------
 
 /** @returns {import('./types.js').DeviceVM} */
-export function deviceFor(session, supported = true) {
+export function deviceFor(session, supported = true, live = null) {
   const s = session || { phase: 'disconnected', detail: '' };
   const connecting = s.phase === 'connecting';
   const connected = !connecting && s.phase !== 'disconnected';
@@ -94,6 +95,9 @@ export function deviceFor(session, supported = true) {
       recenter: gyro,
       disconnect: s.phase !== 'disconnected',
       clearSaved: s.phase === 'disconnected',
+      // After an unexpected drop: one-tap reconnect, and resuming a paused solve.
+      reconnect: s.phase === 'disconnected' && s.link?.status === 'lost',
+      resume: Boolean(live?.interrupted?.canResume),
     },
   };
 }
@@ -275,7 +279,7 @@ function clockVM({ screen, live, settings, now, timeline, result }) {
     return {
       text: result.text, ms: result.ms, startedAt: null, running: false, hidden: false,
       tone: result.penalty === 'DNF' ? 'error' : result.penalty === '+2' ? 'warn' : 'accent',
-      sub: `${result.record.moveCount} moves · ${fmtTps(result.record.tps)} tps`, stepLine: [], stepTitle: '', stepTags: [],
+      sub: `${result.record.moveCount} moves · ${fmtTps(result.record.tps)} tps${live?.record?.timing === 'cube' ? ' · cube clock' : ''}${live?.record?.flags?.length ? ` · ${live.record.flags.join(', ')}` : ''}`, stepLine: [], stepTitle: '', stepTags: [],
     };
   }
   return { text: '0.00', ms: null, startedAt: null, running: false, hidden: false, tone: 'text', sub: '', stepLine: [], stepTitle: '', stepTags: [] };
@@ -420,7 +424,7 @@ export function buildViewModel(input, prev = null) {
   const result = screen === 'results'
     ? cached('results', [live?.record, records, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross], () => resultsVM({ live, records, settings, plan, track, optimalCross }))
     : null;
-  const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true], () => deviceFor(session, input.supported ?? true));
+  const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, live));
   const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen)], () => buildSettingsPanel(settings, Boolean(input.settingsOpen)));
   const configBar = cached('configBar', [settings], () => buildConfigBar(settings));
   const stats = cached('stats', [records], () => statsVM(records));
@@ -446,7 +450,9 @@ export function buildViewModel(input, prev = null) {
     stats,
     keys,
     toast: input.toast ?? null,
-    status: input.status ?? device.detail,
+    status: input.status ?? (live?.phase === 'interrupted'
+      ? `Connection lost — your ${live.interrupted.from === 'solving' ? 'solve' : 'attempt'} is paused. ${live.interrupted.canResume ? 'The cube is back: resume.' : device.detail}`
+      : live?.notice && screen === 'disconnected' ? live.notice : device.detail),
     error: input.error ?? '',
     chromeDimmed: ['scramble', 'inspection', 'ready', 'solving'].includes(screen),
     commandOpen: Boolean(input.commandOpen),

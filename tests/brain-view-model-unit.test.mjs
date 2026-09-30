@@ -40,7 +40,7 @@ test('device view: actions, gyro and unsupported browsers', () => {
   const d = deviceFor({ ...tracking, gyro: { x: 0, y: 0, z: 0, w: 1 }, battery: 84 });
   assert.equal(d.phase, 'tracking');
   assert.equal(d.gyro, true);
-  assert.deepEqual(d.actions, { connect: false, sync: true, recenter: true, disconnect: true, clearSaved: false });
+  assert.deepEqual(d.actions, { connect: false, sync: true, recenter: true, disconnect: true, clearSaved: false, reconnect: false, resume: false });
   assert.match(d.detail, /Recenter motion/);
   const off = deviceFor({ phase: 'disconnected', detail: 'x' }, false);
   assert.equal(off.actions.connect, true, 'connect stays offered; trying it explains what is missing');
