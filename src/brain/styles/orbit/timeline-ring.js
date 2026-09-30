@@ -108,6 +108,7 @@ export function createRingTimeline(host, ctx = {}) {
   function paintSegment(part, seg, ghost) {
     const state = ghost ? 'future' : seg.state;
     for (const s of ['future', 'current', 'done', 'skipped']) toggleClass(part.g, `is-${s}`, state === s);
+    setAttr(part.g, 'data-state', seg.state);   // same hook as Mono's segments (the model's state, even as a ghost)
     toggleClass(part.g, 'is-pseudo', seg.tags?.includes('pseudo'));
     toggleClass(part.label, 'is-current', state === 'current');
     toggleClass(part.label, 'is-done', state === 'done');
@@ -182,7 +183,8 @@ export function createRingTimeline(host, ctx = {}) {
         root.classList.add('is-entering');
       }
       wasVisible = visible;
-      if (!visible) return;
+      // Paint even while hidden (inspection shows the inspection ring instead) so
+      // the segment states stay true and the ring is right the moment it returns.
       if (prev && prev.timeline === timeline && prev.screen === vm.screen) return;
       toggleClass(root, 'is-ghost', timeline.ghost);
       current = null;

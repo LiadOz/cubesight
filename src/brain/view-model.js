@@ -86,7 +86,8 @@ export function deviceFor(session, supported = true) {
     gyro,
     detail,
     actions: {
-      connect: s.phase === 'disconnected' && supported,
+      // Offered even without Web Bluetooth: connecting then explains what's missing.
+      connect: s.phase === 'disconnected',
       sync: connected,
       recenter: gyro,
       disconnect: s.phase !== 'disconnected',
@@ -199,6 +200,7 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
   const sp = stageProgress(track || createTrack(), plan);
   const solving = screen === 'solving';
   const results = screen === 'results';
+  const preSolve = screen === 'inspection' || screen === 'ready';
   const currentIndex = solving ? Math.min(sp.currentIndex, plan.length - 1) : results ? plan.length : 0;
   const total = averages.totalAvgMs || 1;
   const prevByKey = new Map((prevTimeline?.segments || []).map(s => [s.key, s]));
@@ -206,7 +208,8 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
     const p = sp.stages[i];
     const avg = averages.byKey[stage.key];
     const done = (solving || results) && p.done;
-    const current = solving && i === currentIndex && !p.done;
+    // From inspection on, the timeline sits on the first stage (the cross).
+    const current = (solving && i === currentIndex && !p.done) || (preSolve && i === 0);
     const state = done ? (p.skipped ? 'skipped' : 'done') : current ? 'current' : 'future';
     const ref = settings.compare === 'pb' ? pbs[stage.key] : settings.compare === 'avg' ? avg.avgMs : null;
     const deltaMs = done && !p.skipped && ref != null && p.ms != null ? p.ms - ref : null;
@@ -234,7 +237,7 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
   const label = results ? 'solved' : plan[currentIndex]?.label ?? '';
   return {
     visible: settings.timeline === 'on' && visibleScreens.includes(screen),
-    ghost: ['idle', 'scramble', 'inspection', 'ready'].includes(screen),
+    ghost: ['idle', 'scramble'].includes(screen),
     planKey: `${planKeyOf(plan)}|${settings.f2l}`,
     groups: planGroups(plan, settings),
     segments,

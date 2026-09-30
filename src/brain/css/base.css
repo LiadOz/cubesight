@@ -53,7 +53,7 @@
 /* --- Top bar: crumb + device chip -------------------------------------- */
 .b-top { order: 0; display: flex; align-items: center; justify-content: space-between; min-height: 40px; transition: opacity .4s var(--b-ease); }
 .b-crumb { color: var(--b-ink); font-size: 14px; }
-.b-device { position: relative; }
+.b-device { position: relative; display: flex; align-items: center; gap: 14px; }
 .b-device-toggle { display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 6px 0; color: var(--b-muted); font-size: 13px; }
 .b-device-toggle:hover { color: var(--b-ink); }
 .b-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--b-faint); }
@@ -64,6 +64,8 @@
 .b-battery::after { content: ''; position: absolute; right: -4px; top: 2px; width: 2px; height: 4px; border-radius: 0 1px 1px 0; background: currentColor; }
 .b-battery i { position: absolute; inset: 1.5px; right: auto; width: calc((100% - 3px) * var(--level, 0)); border-radius: 1px; background: currentColor; }
 .b-battery-text { min-width: 3ch; }
+.b-connect { color: var(--b-accent-text); font-size: 13px; }
+.b-connect.is-connecting::after { content: ''; display: inline-block; width: 9px; height: 9px; margin-left: 6px; border: 1.5px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -1px; animation: b-spin .8s linear infinite; }
 .b-device-menu {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: 300px; padding: 16px;
   border-radius: var(--b-radius-bar); background: var(--b-surface); box-shadow: 0 12px 40px rgb(0 0 0 / .28);
@@ -74,7 +76,11 @@
 .b-device-menu p { color: var(--b-muted); font-size: 13px; line-height: 1.45; }
 .b-device-menu .brain-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .b-device-menu .b-btn { background: var(--b-bg); }
-.brain-replay-banner { display: flex; gap: 8px; align-items: center; color: var(--b-accent-text); font-size: 13px; }
+.b-banner { order: 0; display: flex; justify-content: center; }
+.b-banner:empty { display: none; }
+.brain-replay-banner { display: flex; gap: 12px; align-items: center; margin-top: 10px; padding: 6px 14px; border-radius: var(--b-radius-control); background: var(--b-accent-soft); color: var(--b-accent-text); font-size: 13px; }
+.brain-replay-banner[hidden] { display: none; }
+.brain-replay-banner button { border: 0; background: none; padding: 0; color: var(--b-ink); text-decoration: underline; font-size: 13px; }
 
 /* --- Config bar ----------------------------------------------------------- */
 .b-configbar {

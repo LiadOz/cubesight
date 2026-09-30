@@ -135,7 +135,9 @@ export function attachBrainRecording({ root, live, cubeSession, getContext = () 
       el.setAttribute('role', 'status');
       el.innerHTML = '<span></span> <button class="brain-chip" type="button">Stop replay</button>';
       el.querySelector('button').addEventListener('click', () => abort?.abort());
-      chip.querySelector('.brain-controls')?.before(el);
+      // v2 shell: a banner slot under the top bar; v1: inside the connect chip.
+      const slot = $('[data-slot="banner"]');
+      if (slot) slot.append(el); else chip.querySelector('.brain-controls')?.before(el);
       // Connecting the real cube dismisses the "replay finished" notice.
       $('#brain-connect')?.addEventListener('click', () => { if (!abort) banner(null); });
     }

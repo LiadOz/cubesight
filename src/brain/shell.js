@@ -24,11 +24,11 @@ const TEMPLATE = `
         <i class="b-dot" aria-hidden="true"></i><span id="brain-device-inline">No cube</span>
         <span class="b-battery" aria-hidden="true"><i></i></span><span class="b-battery-text"></span>
       </button>
+      <button class="b-textbtn b-connect" id="brain-connect" type="button" hidden>connect</button>
       <div class="b-device-menu" id="b-device-menu" hidden>
         <strong id="brain-device">No cube connected</strong>
         <p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start.</p>
         <div class="brain-controls">
-          <button class="b-btn" id="brain-connect" type="button">connect</button>
           <button class="b-btn" id="brain-sync" type="button" hidden>sync solved</button>
           <button class="b-btn" id="brain-recenter" type="button" hidden>recenter</button>
           <button class="b-btn" id="brain-disconnect" type="button" hidden>disconnect</button>
@@ -37,6 +37,7 @@ const TEMPLATE = `
       </div>
     </div>
   </header>
+  <div class="b-banner" data-slot="banner"></div>
   <nav class="b-configbar" aria-label="Quick settings"></nav>
   <main class="b-stage" aria-label="Live solve">
     <div class="brain-body">
@@ -299,11 +300,16 @@ export function createShell(root, { dispatch }) {
     $('.b-battery').hidden = battery == null;
     $('.b-battery i').style.setProperty('--level', battery == null ? '0' : String(battery / 100));
     setText($('.b-battery-text'), battery == null ? '' : `${battery}%`);
-    for (const [id, key] of [['brain-connect', 'connect'], ['brain-sync', 'sync'], ['brain-recenter', 'recenter'], ['brain-disconnect', 'disconnect'], ['brain-clear-cube', 'clearSaved']]) {
+    for (const [id, key] of [['brain-sync', 'sync'], ['brain-recenter', 'recenter'], ['brain-disconnect', 'disconnect'], ['brain-clear-cube', 'clearSaved']]) {
       $(`#${id}`).hidden = !device.actions[key];
     }
-    toggleClass($('#brain-connect'), 'is-connecting', device.phase === 'connecting');
-    $('#brain-connect').disabled = !device.supported || device.phase === 'connecting';
+    // Connect sits beside the chip whenever no cube is connected (every screen);
+    // the disconnected screen also offers it as the primary action.
+    const connect = $('#brain-connect');
+    connect.hidden = !device.actions.connect && device.phase !== 'connecting';
+    toggleClass(connect, 'is-connecting', device.phase === 'connecting');
+    connect.disabled = device.phase === 'connecting';
+    setText(connect, device.phase === 'connecting' ? 'connecting…' : 'connect');
   }
 
   function renderOptions(container, items) {
@@ -473,7 +479,7 @@ export function createShell(root, { dispatch }) {
     if (alt) {
       parts.primaryAlt.dataset.primary = alt.action;
       setText(parts.primaryAlt.querySelector('span'), alt.label);
-      parts.primaryAlt.disabled = !vm.device.supported || vm.device.phase === 'connecting';
+      parts.primaryAlt.disabled = vm.device.phase === 'connecting';
     }
     parts.stop.hidden = !(screen === 'scramble' || screen === 'inspection' || screen === 'ready' || screen === 'solving');
   }

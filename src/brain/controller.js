@@ -334,6 +334,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function startGuidedWith(scramble) {
     try { live.startGuided(scramble); } catch (err) { showError(err.message); return false; }
+    settingsOpen = false;   // a solve started from the settings panel goes back to the cube
     scrambleNumber++;
     lastScramble = scramble;
     skips = [];
@@ -346,6 +347,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (cubeSession.getSnapshot().phase !== 'tracking') { showError('Connect and sync a solved cube first.'); return; }
     if (settings.scramble === 'free') {
       try { live.startFree(); } catch (err) { showError(err.message); return; }
+      settingsOpen = false;
       scrambleNumber++;
       skips = [];
       void suggestCrossFor(cubeSession.getSnapshot().moves.join(' '));

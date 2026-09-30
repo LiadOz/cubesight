@@ -43,7 +43,8 @@ test('device view: actions, gyro and unsupported browsers', () => {
   assert.deepEqual(d.actions, { connect: false, sync: true, recenter: true, disconnect: true, clearSaved: false });
   assert.match(d.detail, /Recenter motion/);
   const off = deviceFor({ phase: 'disconnected', detail: 'x' }, false);
-  assert.equal(off.actions.connect, false);
+  assert.equal(off.actions.connect, true, 'connect stays offered; trying it explains what is missing');
+  assert.equal(off.supported, false);
   assert.match(off.detail, /Web Bluetooth needs/);
   assert.equal(deviceFor({ phase: 'awaiting-solved', detail: '' }).phase, 'syncing');
 });
