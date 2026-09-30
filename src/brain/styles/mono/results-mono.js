@@ -6,6 +6,7 @@ import { setText } from '../../dom.js';
 import { createTpsLine } from '../../charts/tps-line.js';
 import { createSplitBars } from '../../charts/split-bars.js';
 import { createSparkline } from '../../charts/sparkline.js';
+import { createReviewPanel } from '../../review/panel.js';
 
 /** @typedef {import('../../types.js').BrainVM} BrainVM */
 /** @typedef {import('../../types.js').ResultsVM} ResultsVM */
@@ -39,24 +40,26 @@ const TEMPLATE = `
     <div class="m-res-splits-cols"></div>
     <div class="m-res-splits-rows"></div>
   </section>
+  <section class="m-res-review" aria-label="Review"></section>
   <div class="m-res-bottom">
     <section class="m-res-session" aria-label="Session">
       <dl class="m-res-session-stats"></dl>
       <div class="m-res-spark"></div>
     </section>
     <section class="m-res-recent" aria-label="Recent solves"><p class="b-label">recent</p><ol></ol></section>
-    <section class="m-res-coach" aria-label="Coach"><p class="b-label">coach</p><dl></dl></section>
   </div>`;
 
 /** @type {import('../../types.js').ComponentFactory} */
-export function createMonoResults(host) {
+export function createMonoResults(host, ctx = {}) {
   const root = el('div', 'm-res');
   root.innerHTML = TEMPLATE;   // one-time mount
   host.append(root);
   const $ = selector => root.querySelector(selector);
-  const tps = createTpsLine($('.m-res-chart-host'), { variant: 'mono' });
-  const cols = createSplitBars($('.m-res-splits-cols'), { layout: 'columns' });
-  const rows = createSplitBars($('.m-res-splits-rows'), { layout: 'rows' });
+  const select = (kind, key) => ctx.dispatch?.(kind === 'marker' ? { type: 'selectMarker', id: key } : { type: 'openDetail', kind: 'stage', key });
+  const tps = createTpsLine($('.m-res-chart-host'), { variant: 'mono', onSelect: select });
+  const cols = createSplitBars($('.m-res-splits-cols'), { layout: 'columns', onSelect: key => select('stage', key) });
+  const rows = createSplitBars($('.m-res-splits-rows'), { layout: 'rows', onSelect: key => select('stage', key) });
+  const review = createReviewPanel($('.m-res-review'), { dispatch: action => ctx.dispatch?.(action) });
   const spark = createSparkline($('.m-res-spark'));
   /** @type {ResultsVM|null} */
   let shown = null;
@@ -72,7 +75,7 @@ export function createMonoResults(host) {
     setText($('.m-res-tps'), results.tps);
     setText($('.m-res-insp'), results.inspection);
     setText($('.m-res-method'), results.method);
-    if (fresh || results.tpsSeries !== shown?.tpsSeries) tps.update(results.tpsSeries, { drawIn: fresh });
+    if (fresh || results.tpsSeries !== shown?.tpsSeries || results.review !== shown?.review) tps.update(results.tpsSeries, { drawIn: fresh, markers: results.review.markers });
     if (fresh || results.splits !== shown?.splits) { cols.update(results.splits); rows.update(results.splits); }
     if (fresh || results.spark !== shown?.spark) spark.update(results.spark);
 
@@ -87,14 +90,7 @@ export function createMonoResults(host) {
       // The text already reads '14.97+' / 'DNF(13.20)'; the tag only colours it.
       return el('li', [r.current ? 'is-current' : '', r.penaltyTag ? 'is-penalty' : ''].filter(Boolean).join(' '), r.text);
     }));
-    $('.m-res-coach dl').replaceChildren(...results.coach.map(c => {
-      const row = el('div', 'm-coach-row');
-      row.dataset.tone = c.tone;
-      const dd = el('dd', null, c.text);
-      if (c.alg) dd.append(el('span', 'm-coach-alg', c.alg));
-      row.append(el('dt', null, c.tag), dd);
-      return row;
-    }));
+    review.update(results.review);
     shown = results;
   }
 
@@ -106,6 +102,6 @@ export function createMonoResults(host) {
 
   return {
     update,
-    destroy() { tps.destroy(); cols.destroy(); rows.destroy(); spark.destroy(); root.remove(); },
+    destroy() { tps.destroy(); cols.destroy(); rows.destroy(); spark.destroy(); review.destroy(); root.remove(); },
   };
 }

@@ -97,7 +97,7 @@
 .m-legend .m-legend-avg { background: var(--b-muted); }
 .m-res-splits header { display: flex; justify-content: space-between; margin-bottom: 14px; }
 .m-res-splits-rows { display: none; }
-.m-res-bottom { display: grid; grid-template-columns: 1.15fr .45fr 1.5fr; gap: 36px; margin-top: 18px; }
+.m-res-bottom { display: grid; grid-template-columns: 1.4fr .6fr; gap: 36px; margin-top: 18px; }
 .m-res-session-stats { display: grid; grid-template-columns: repeat(4, auto); justify-content: start; gap: 0 38px; }
 .m-res-session-stats dt { color: var(--b-muted); font-size: 13px; }
 .m-res-session-stats dd { margin-top: 8px; color: var(--b-ink); font: 300 27px/1 var(--b-font-num); }
@@ -151,3 +151,13 @@
     flex: 1; padding: 14px; border: 1.5px solid var(--b-accent); border-radius: var(--b-radius-bar); color: var(--b-accent-text); font-size: 16px;
   }
 }
+
+/* --- Results review: stages and coach markers on the lane ----------------------------- */
+.m-tl.is-reviewing .m-seg, .m-tl.is-reviewing .m-row { cursor: pointer; }
+.m-tl.is-reviewing .m-seg:hover .m-seg-label, .m-tl.is-reviewing .m-row:hover .m-row-name { color: var(--b-accent-text); text-decoration: underline dotted; text-underline-offset: 4px; }
+.m-mk { position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; padding: 0; border: 2px solid var(--b-muted); border-radius: 50%; background: var(--b-bg); cursor: pointer; z-index: 1; }
+.m-mk.is-small { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-width: 1.5px; }
+.m-mk.is-warn { border-color: var(--b-warn); }
+.m-mk.is-good { border-color: var(--b-good); background: var(--b-good); }
+.m-mk.is-selected, .m-mk:hover, .m-mk:focus-visible { border-color: var(--b-ink); outline: none; }
+.m-res-review { margin-top: 6px; }

@@ -138,5 +138,5 @@ export function stageProgress(track, plan) {
 
 /** Splits to store on the solve record: [{ key, ms, moves, skipped, pseudo }]. */
 export function splitsFromTrack(track, plan) {
-  return stageProgress(track, plan).stages.filter(s => s.done).map(s => ({ key: s.key, ms: s.ms, moves: s.moves, skipped: s.skipped, pseudo: s.pseudo }));
+  return stageProgress(track, plan).stages.filter(s => s.done).map(s => ({ key: s.key, ms: s.ms, moves: s.moves, skipped: s.skipped, pseudo: s.pseudo, ...(s.merged ? { merged: true } : {}) }));
 }

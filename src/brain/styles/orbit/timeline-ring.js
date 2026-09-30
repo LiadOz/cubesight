@@ -9,6 +9,7 @@
 import { arcPath, fillAngle, placeLabels, polar, ringLayout } from '../../charts/arc.js';
 import { reconcileChildren, setAttr, setText, svg, toggleClass } from '../../dom.js';
 import { CX, CY, R, SPARK_PATH, VB_H, VB_W, VIEWBOX, ringName, secs } from './geometry.js';
+import { groupEndLabels } from './end-labels.js';
 
 const PSEUDO_R = R - 15;
 const TICK = 14;
@@ -19,13 +20,14 @@ export function createRingTimeline(host, ctx = {}) {
   const floor = buildFloor();
   const arcsLayer = svg('g', { class: 'b-oring-arcs' });
   const labelsLayer = svg('g', { class: 'b-oring-labels' });
+  const markersLayer = svg('g', { class: 'b-oring-markers' });
   const startTick = svg('line', { class: 'b-oring-start', x1: CX, y1: CY - R - TICK, x2: CX, y2: CY - R + TICK });
   const dot = svg('g', { class: 'b-oring-dot' });
   dot.append(svg('circle', { class: 'b-oring-dot-halo', r: 11 }), svg('circle', { class: 'b-oring-dot-core', r: 5.5 }));
   // Connecting: a short arc sweeps the ring around the cube (static dots for reduced motion).
   const connecting = svg('g', { class: 'b-oring-connect' });
   connecting.append(svg('circle', { class: 'b-oring-connect-dots', cx: CX, cy: CY, r: R }), svg('circle', { class: 'b-oring-connect-sweep', cx: CX, cy: CY, r: R, pathLength: 100 }));
-  root.append(floor, connecting, arcsLayer, startTick, labelsLayer, dot);
+  root.append(floor, connecting, arcsLayer, startTick, labelsLayer, markersLayer, dot);
   host.append(root);
 
   // Optional right-column split list (the shell passes ctx.aside for Orbit).
@@ -54,6 +56,8 @@ export function createRingTimeline(host, ctx = {}) {
   let layout = [];
   let current = null;       // {part, seg}
   let wasVisible = false;
+  let resultsOn = false;    // the finished ring: arcs and markers take clicks
+  let shownReview = null;
 
   function build(timeline) {
     arcsLayer.replaceChildren();
@@ -62,12 +66,9 @@ export function createRingTimeline(host, ctx = {}) {
     layout = ringLayout(timeline.segments.map(s => ({ key: s.key, weight: s.weight })));
     // Labels keep a readable on-screen size (about 12 px) whatever the stage
     // width, so compute their size in viewBox units from the rendered width.
+    // Their places are set in placeAllLabels (they depend on which stages ended together).
     const font = labelFontUnits();
     labelsLayer.style.fontSize = `${font}px`;
-    const labelPos = placeLabels(layout.map(l => ({ key: l.key, angle: l.mid, height: font * 2.3 })), {
-      cx: CX, cy: CY, r: R, offset: 14 + font, minGap: font * 2.3, top: font * 1.4, bottom: VB_H - font * 1.2,
-    });
-    const posByKey = new Map(labelPos.map(p => [p.key, p]));
     layout.forEach((l, i) => {
       const seg = timeline.segments[i];
       const g = svg('g', { class: 'b-oring-seg', 'data-key': seg.key });
@@ -90,21 +91,66 @@ export function createRingTimeline(host, ctx = {}) {
         spark(sparkPos.x - skipPos.x, sparkPos.y - skipPos.y, 1.25),
         spark(sparkPos.x - skipPos.x + 15, sparkPos.y - skipPos.y + 12, 0.55),
       );
-      g.append(track, done, pseudo, live, skip);
+      g.append(track, done, pseudo, live, skip, svg('path', { class: 'b-oring-hit', d: arcPath(CX, CY, R, l.a0, l.a1) }));
       arcsLayer.append(g);
 
-      const p = posByKey.get(seg.key);
-      const label = svg('text', { class: 'b-oring-label', x: p.x, y: p.y, dy: '-0.35em', 'text-anchor': p.anchor });
-      const name = svg('tspan', { class: 'b-oring-name', x: p.x });
-      const value = svg('tspan', { class: 'b-oring-value', x: p.x, dy: '1.15em' });
+      const label = svg('text', { class: 'b-oring-label', x: 0, y: 0, dy: '-0.35em', 'text-anchor': 'middle' });
+      const name = svg('tspan', { class: 'b-oring-name', x: 0 });
+      const value = svg('tspan', { class: 'b-oring-value', x: 0, dy: '1.15em' });
       const valueText = svg('tspan', {});
       const delta = svg('tspan', { class: 'b-oring-delta' });
       value.append(valueText, delta);
       label.append(name, value);
       labelsLayer.append(label);
       parts.set(seg.key, { g, track, done, live, pseudo, skip, label, name, valueText, delta, layout: l });
+      g.addEventListener('click', () => { if (resultsOn) ctx.dispatch?.({ type: 'openDetail', kind: 'stage', key: seg.key }); });
     });
     planKey = timeline.planKey;
+    lastFont = font;
+  }
+
+  // Coach markers on the finished ring (results): at the moment they happened, inside their stage's arc.
+  function renderMarkers(review) {
+    markersLayer.replaceChildren();
+    if (!review) return;
+    const ordered = review.markers.slice().sort((a, b) => Number(a.prominent) - Number(b.prominent) || Number(a.selected) - Number(b.selected));
+    for (const m of ordered) {
+      const part = parts.get(m.seg);
+      if (!part) continue;
+      const angle = part.layout.a0 + (part.layout.a1 - part.layout.a0) * m.frac;
+      const p = polar(CX, CY, R, angle);
+      const g = svg('g', { class: `b-mk is-${m.tone} ${m.prominent ? 'is-prominent' : 'is-small'}${m.selected ? ' is-selected' : ''}`, transform: `translate(${p.x} ${p.y})`, role: 'button', tabindex: 0, 'aria-label': `${m.label}, ${m.stageLabel}`, 'data-marker': m.id });
+      const title = svg('title');
+      title.textContent = `${m.label} · ${m.stageLabel} · ${m.costText}`;
+      g.append(title, svg('circle', { class: 'b-mk-hit', r: 15 }), svg('circle', { class: 'b-mk-dot', r: m.prominent ? 8 : 5 }));
+      g.addEventListener('click', event => { event.stopPropagation(); ctx.dispatch?.({ type: 'selectMarker', id: m.id }); });
+      g.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); ctx.dispatch?.({ type: 'selectMarker', id: m.id }); } });
+      markersLayer.append(g);
+    }
+  }
+
+  // Place every visible label outside the ring without overlaps. Stages that ended together share the
+  // first one's label; the others hide (see end-labels.js). Runs after the segments are painted.
+  function placeAllLabels(timeline) {
+    const font = labelFontUnits();
+    const groups = groupEndLabels(timeline.segments, ringName);
+    const anchors = [];
+    for (const group of groups) {
+      const first = parts.get(group.keys[0]);
+      const last = parts.get(group.keys[group.keys.length - 1]);
+      if (!first || !last) continue;
+      for (const key of group.keys.slice(1)) toggleClass(parts.get(key)?.label, 'is-grouped', true);
+      toggleClass(first.label, 'is-grouped', false);
+      toggleClass(first.label, 'is-group-lead', group.keys.length > 1);
+      if (group.name) { setText(first.name, group.name); setText(first.valueText, group.value); setText(first.delta, ''); }
+      anchors.push({ key: group.keys[0], angle: (first.layout.a0 + last.layout.a1) / 2, height: font * 2.3 });
+    }
+    const placed = placeLabels(anchors, { cx: CX, cy: CY, r: R, offset: 14 + font, minGap: font * 2.3, top: font * 1.4, bottom: VB_H - font * 1.2 });
+    for (const p of placed) {
+      const part = parts.get(p.key);
+      part.label.setAttribute('x', p.x); part.label.setAttribute('y', p.y); part.label.setAttribute('text-anchor', p.anchor);
+      part.name.setAttribute('x', p.x); part.valueText.parentNode.setAttribute('x', p.x);
+    }
     lastFont = font;
   }
 
@@ -173,6 +219,13 @@ export function createRingTimeline(host, ctx = {}) {
       if (aside) toggleClass(aside, 'is-hidden', !visible);
       if (!timeline || !timeline.segments?.length) { wasVisible = false; return; }
       if (timeline.planKey !== planKey) build(timeline);
+      const review = vm.screen === 'results' ? vm.results?.review ?? null : null;
+      if (review !== shownReview) {
+        shownReview = review;
+        resultsOn = Boolean(review);
+        toggleClass(root, 'is-results', resultsOn);
+        renderMarkers(review);
+      }
       if (visible && !wasVisible) {
         // Draw the ring in from 12 o'clock when it (re)appears.
         root.classList.remove('is-entering');
@@ -192,6 +245,7 @@ export function createRingTimeline(host, ctx = {}) {
         if (!timeline.ghost && seg.state === 'current' && i === timeline.currentIndex) current = { part, seg };
       });
       toggleClass(dot, 'is-hidden', !current);
+      placeAllLabels(timeline);
       renderAside(timeline);
     },
     frame(f) {

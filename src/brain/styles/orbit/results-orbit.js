@@ -6,6 +6,7 @@
 import { createSparkline } from '../../charts/sparkline.js';
 import { createSplitBars } from '../../charts/split-bars.js';
 import { createTpsLine } from '../../charts/tps-line.js';
+import { createReviewPanel } from '../../review/panel.js';
 import { reconcileChildren, setText, toggleClass } from '../../dom.js';
 
 const TEMPLATE = `
@@ -26,6 +27,7 @@ const TEMPLATE = `
       <div class="b-ores-chart-host"></div>
     </div>
   </section>
+  <section class="b-ores-review"></section>
   <hr class="b-ores-rule">
   <section class="b-ores-bottom">
     <div class="b-ores-splits">
@@ -45,20 +47,20 @@ const TEMPLATE = `
       </div>
       <p class="b-ores-eyebrow">recent</p>
       <p class="b-ores-recent"></p>
-      <p class="b-ores-eyebrow">coach</p>
-      <ul class="b-ores-coach"></ul>
     </div>
   </section>`;
 
 /** @type {import('../../types.js').ComponentFactory} */
-export function createOrbitResults(host) {
+export function createOrbitResults(host, ctx = {}) {
   const root = document.createElement('div');
   root.className = 'b-ores is-hidden';
   root.innerHTML = TEMPLATE;   // one-time mount template
   host.append(root);
   const $ = sel => root.querySelector(sel);
-  const tps = createTpsLine($('.b-ores-chart-host'), { variant: 'orbit' });
-  const splits = createSplitBars($('.b-ores-splits-host'), { layout: 'rows' });
+  const select = (kind, key) => ctx.dispatch?.(kind === 'marker' ? { type: 'selectMarker', id: key } : { type: 'openDetail', kind: 'stage', key });
+  const tps = createTpsLine($('.b-ores-chart-host'), { variant: 'orbit', onSelect: select });
+  const splits = createSplitBars($('.b-ores-splits-host'), { layout: 'rows', onSelect: key => select('stage', key) });
+  const review = createReviewPanel($('.b-ores-review'), { dispatch: action => ctx.dispatch?.(action) });
   const spark = createSparkline($('.b-ores-spark-host'));
   let key = null;
 
@@ -82,7 +84,7 @@ export function createOrbitResults(host) {
       setText($('.b-ores-method'), r.method);
       const avg = r.tpsSeries?.avgFlat;
       setText($('.b-ores-avg-label'), avg != null ? `your avg ${avg.toFixed(2)}` : '');
-      tps.update(r.tpsSeries, { drawIn: fresh });
+      tps.update(r.tpsSeries, { drawIn: fresh, markers: r.review.markers });
       splits.update(r.splits);
       spark.update(r.spark);
       for (const k of ['ao5', 'ao12', 'pb', 'mean']) {
@@ -94,26 +96,13 @@ export function createOrbitResults(host) {
         key: x.key, text: x.text,   // already '14.97+' / 'DNF(13.20)'; the tag only colours it
         className: `b-ores-recent-item${x.current ? ' is-current' : ''}${x.penaltyTag ? ' is-penalty' : ''}`,
       })), 'span');
-      renderCoach($('.b-ores-coach'), r.coach);
+      review.update(r.review);
       if (fresh) {
         root.classList.remove('is-entering');
         void root.offsetWidth;
         root.classList.add('is-entering');
       }
     },
-    destroy() { tps.destroy(); splits.destroy(); spark.destroy(); root.remove(); },
+    destroy() { tps.destroy(); splits.destroy(); spark.destroy(); review.destroy(); root.remove(); },
   };
-}
-
-function renderCoach(list, lines = []) {
-  reconcileChildren(list, lines.map(l => ({ key: l.key, text: '', className: `b-ores-coach-line is-${l.tone}` })), 'li');
-  lines.forEach((l, i) => {
-    const li = list.children[i];
-    const text = document.createElement('span');
-    text.textContent = l.text;
-    const parts = [text];
-    if (l.alg) { const alg = document.createElement('code'); alg.textContent = l.alg; parts.push(alg); }
-    li.replaceChildren(...parts);
-    if (l.tag) li.dataset.tag = l.tag;
-  });
 }

@@ -151,8 +151,29 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *   count:number, worst:string, mo3:string, ao50:string, ao100:string}} session   this solve's automatic session
  * @property {{points:{i:number, ms:number|null, kind:'normal'|'plus2'|'dnf'|'pb'|'current'}[], min:number, max:number}} spark
  * @property {{key:string, text:string, penaltyTag:string, current:boolean}[]} recent
- * @property {{key:string, tag:string, text:string, alg?:string, tone:'good'|'warn'|'info'}[]} coach
+ * @property {{key:string, tag:string, text:string, alg?:string, tone:'good'|'warn'|'info'}[]} coach   v1 list, kept for callers; the screen shows `review`
+ * @property {ReviewVM} review   coach markers, the selected note, the open detail and the pins (src/brain/review)
  */
+
+/** The solve review on the results screen. Markers sit at the moment they happened: `seg` is the stage key and `frac` (0..1)
+ * the place inside that stage's arc or lane segment (time based); `tMs`/`tFrac` place them on the TPS chart.
+ * `prominent` = one of the few that matter (the rest are drawn small, never dropped). status: 'pending' while the analysis
+ * worker runs, 'done' when the summary is on the record, 'none' when the solve cannot be analysed (free, DNF, truncated).
+ * @typedef {{status:'pending'|'done'|'none',
+ *   markers:{id:string, kind:string, tone:'good'|'warn'|'info', label:string, stage:string, stageLabel:string, seg:string, frac:number, tMs:number,
+ *     tFrac:number, prominent:boolean, rank:number, selected:boolean, at:number, costText:string}[],
+ *   selectedId:string|null,
+ *   coach:{markerId:string|null, tag:string, tone:'good'|'warn'|'info', text:string, compare:string|null, better:string|null},
+ *   detail:ReviewDetailVM|null, focus:Focus,
+ *   pin:{available:boolean, pinned:boolean, trainer:string|null, count:number, payload:Object|null}}} ReviewVM */
+/** The detail of a stage or marker: the moves, the stage against your average, labels, yours vs better, the pin.
+ * `cursor`/`start`/`from`/`to` are cube positions (solve moves applied). compare.status: better | shortest | none-yet | pseudo |
+ * merged | skipped | pending | unavailable.
+ * @typedef {{kind:'stage'|'marker', key:string, stageKey:string, title:string, replayable:boolean, from:number, to:number, start:number,
+ *   cursor:number, moves:{i:number, at:number, text:string, flags:string[]}[], stats:Object<string,string>,
+ *   labels:{text:string, tone:string}[],
+ *   compare:{status:string, from:number, yours:string[], better:string[], text:string, yoursText:string, betterText:string},
+ *   variant:'yours'|'better', pin:{available:boolean, pinned:boolean, payload:Object|null, trainer:string|null}}} ReviewDetailVM */
 
 /** @typedef {{points:{tMs:number, tps:number}[], avg:{fromMs:number, toMs:number, tps:number}[], avgFlat:number|null,
  *   bands:{key:string, label:string, fromMs:number, toMs:number}[], marks:{tMs:number, kind:'pause'|'skip', label:string}[],
@@ -196,7 +217,9 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *  |{type:'deleteSolve', at?:number}|{type:'undoDelete'}
  *  |{type:'setSetting', path:string, value:any}|{type:'toggleSettings'}|{type:'toggleDebug'}|{type:'command', text:string}
  *  |{type:'toggleTimer'}|{type:'cycleCoach'}|{type:'export'}|{type:'import', file:File}|{type:'setStyle', style:BrainStyle}
- *  |{type:'sendLog'}|{type:'clearLog'}} BrainAction */
+ *  |{type:'sendLog'}|{type:'clearLog'}
+ *  |{type:'selectMarker', id:string}|{type:'openDetail', kind:'stage'|'marker', key:string}|{type:'closeDetail'}|{type:'jumpTo', at:number}
+ *  |{type:'playVariant', variant:'yours'|'better'}|{type:'stepMarker', delta:number}|{type:'togglePin'}} BrainAction */
 
 /** A mounted view part. update() receives the new and previous view-model.
  * @typedef {{update:(vm:BrainVM, prev:BrainVM|null)=>void, frame?:(f:FrameVM)=>void, destroy:()=>void}} Component */

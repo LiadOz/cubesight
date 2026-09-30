@@ -67,6 +67,7 @@ export function cleanRecord(raw) {
       moves: Number.isFinite(s.moves) ? Math.max(0, Math.floor(s.moves)) : null,
       skipped: Boolean(s.skipped),
       pseudo: Boolean(s.pseudo),
+      ...(s.merged ? { merged: true } : {}),   // built together with the cross (an x-cross pair), not a skip
     })) : null,
     moveTimes: Array.isArray(r.moveTimes) ? r.moveTimes.filter(Number.isFinite).slice(-200) : null,
     // Solve review (src/analysis): where the cube was turned in the hands, the pseudo D-fix tail, and the

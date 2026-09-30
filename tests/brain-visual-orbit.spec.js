@@ -138,7 +138,11 @@ for (const theme of ['dark', 'light']) {
       expect(cube.x + cube.width).toBeLessThanOrEqual(stats.x + 1);
       await expect(page.locator('.b-ch-split')).toHaveCount(9);
       await expect(page.locator('.b-ores-recent-item')).toHaveCount(7);
-      await expect(page.locator('.b-ores-coach-line')).toHaveCount(4);
+      // The coach is one card with the selected marker's note, and the markers sit on the ring and the chart.
+      await expect(page.locator('.b-rev-note')).toHaveCount(1);
+      await expect(page.locator('.b-rev-chip')).toHaveCount(5);
+      await expect(page.locator('.b-oring-markers .b-mk')).toHaveCount(5);
+      await expect(page.locator('.b-ch-markers .b-mk')).toHaveCount(5);
       await attach(page, testInfo, `results-${theme}`);
       expect(errors).toEqual([]);
     });

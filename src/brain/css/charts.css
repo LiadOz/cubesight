@@ -92,3 +92,13 @@
   .b-ch-line.is-drawing { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
   .b-ch-bar-fill { animation: none; }
 }
+
+/* --- Review markers and clickable stages ------------------------------------ */
+.b-ch-band.is-link { cursor: pointer; }
+.b-ch-band.is-link:hover { fill: var(--b-surface); opacity: .9; }
+.b-ch-markers .b-mk { cursor: pointer; }
+.b-ch-markers .b-mk:focus { outline: none; }
+.b-ch-markers .b-mk:focus-visible .b-mk-dot { stroke: var(--b-ink); }
+.b-ch-split-label.is-link { padding: 0; border: 0; background: none; font: inherit; color: var(--b-muted); text-align: left; cursor: pointer; }
+.b-ch-split-label.is-link:hover, .b-ch-split.is-link:hover .b-ch-split-label { color: var(--b-ink); text-decoration: underline dotted; text-underline-offset: 4px; }
+.b-ch-split.is-selected .b-ch-split-label { color: var(--b-accent-text); }
