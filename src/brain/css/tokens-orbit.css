@@ -1,0 +1,95 @@
+/* Orbit tokens (docs/design/brain-v2/tokens.md). Mode comes from the site-wide
+   :root[data-theme]; components read only var(--b-*). Dark is the priority. */
+
+.brain[data-brain-style="orbit"] {
+  --b-font-sans: 'Manrope Variable', 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --b-font-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --b-font-num: var(--b-font-sans);
+  --b-ease: cubic-bezier(.22, 1, .36, 1);
+  --b-ease-pop: cubic-bezier(.34, 1.56, .64, 1);
+  --b-ease-collapse: cubic-bezier(.5, 0, .2, 1);
+  --b-fs-clock: 168px;
+  --b-fs-countdown: 220px;
+  --b-fs-result: 120px;
+  --b-fs-step: 34px;
+  --b-fs-stat: 26px;
+  --b-fs-split: 13px;
+  --b-fs-label: 12px;
+  --b-radius-key: 6px;
+  --b-radius-control: 999px;
+  --b-ring-track: 3px;
+  --b-ring-fill: 6px;
+  --b-ring-live: 8px;
+
+  /* Vivid sticker palette; the 3D cube reads these. */
+  --b-st-w: #f4f4f0; --b-st-y: #ffd43b; --b-st-g: #16a34a; --b-st-b: #2563eb; --b-st-r: #e5302b; --b-st-o: #ff7a1a;
+
+  /* orbit-light (also the fallback when no mode is set) */
+  --b-bg: #f3f0e8;
+  --b-canvas: #e9e4d8;
+  --b-surface: #ebe6da;
+  --b-surface-2: #e6e0d3;
+  --b-ink: #1c1b18;
+  --b-muted: #65605a;
+  --b-faint: #b3ad9f;
+  --b-accent: #0a7d71;
+  --b-accent-text: #07695e;
+  --b-accent-soft: #d3e6e1;
+  --b-on-accent: #ffffff;
+  --b-good: #0a7d71;
+  --b-warn: #c77700;
+  --b-warn-text: #9a5c00;
+  --b-plus2: #c77700;
+  --b-plus2-soft: #f1dcb4;
+  --b-dnf: #c8372d;
+  --b-track: #dcd6c8;
+  --b-fill: #1c1b18;
+  --b-fill-live: #0a7d71;
+  --b-hairline: #dcd6c8;
+  --b-chart-band: #e9e4d8;
+  --b-cube-body: #1c1b18;
+  --b-cube-shadow-color: rgb(28 27 24 / .07);
+  --b-cube-glow: none;
+  --b-key-bg: #37352f;
+  --b-key-ink: #e9e4d8;
+}
+
+:root[data-theme="dark"] .brain[data-brain-style="orbit"] {
+  --b-bg: #141311;
+  --b-canvas: #0d0c0b;
+  --b-surface: #1d1b18;
+  --b-surface-2: #2b2925;
+  --b-ink: #ece6d8;
+  --b-muted: #9a9486;
+  --b-faint: #6d675c;
+  --b-accent: #3dbfad;
+  --b-accent-text: #3dbfad;
+  --b-accent-soft: #16403a;
+  --b-on-accent: #0b1f1c;
+  --b-good: #3dbfad;
+  --b-warn: #e6a642;
+  --b-warn-text: #e6a642;
+  --b-plus2: #e6a642;
+  --b-plus2-soft: #4d3715;
+  --b-dnf: #ec6b5f;
+  --b-track: #34312b;
+  --b-fill: #ece6d8;
+  --b-fill-live: #3dbfad;
+  --b-hairline: #34312b;
+  --b-chart-band: #1b1a17;
+  --b-cube-body: #1d1b18;
+  --b-cube-shadow-color: rgb(0 0 0 / .35);
+  --b-cube-glow: radial-gradient(closest-side, rgb(61 191 173 / .22), rgb(61 191 173 / .07) 55%, transparent);
+  --b-key-bg: #2b2925;
+  --b-key-ink: #d9d2c3;
+}
+
+@media (max-width: 720px) {
+  .brain[data-brain-style="orbit"] {
+    --b-fs-clock: 112px;
+    --b-fs-countdown: 132px;
+    --b-fs-result: 72px;
+    --b-fs-step: 26px;
+    --b-fs-stat: 20px;
+  }
+}
