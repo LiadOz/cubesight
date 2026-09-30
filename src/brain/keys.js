@@ -9,6 +9,7 @@
 //          navigation of controls still works)
 //   r      retry this scramble (results)
 //   2 / d  toggle +2 / DNF on the finished solve (results)
+//   del    delete this solve (results) · u undo the last delete
 //   t      hide/show the timer · c cycle coach (live/after/off)
 
 const TIMING = new Set(['scramble', 'inspection', 'ready', 'solving']);
@@ -42,7 +43,9 @@ export function resolveKey(event, screen) {
     if (lower === 'r') return { type: 'retry' };
     if (lower === '2') return { type: 'togglePenalty', penalty: '+2' };
     if (lower === 'd') return { type: 'togglePenalty', penalty: 'DNF' };
+    if (key === 'Delete' || key === 'Backspace') return { type: 'deleteSolve' };
   }
+  if ((screen === 'results' || screen === 'idle') && lower === 'u') return { type: 'undoDelete' };
   if (lower === 't') return { type: 'toggleTimer' };
   if (lower === 'c') return { type: 'cycleCoach' };
   return null;

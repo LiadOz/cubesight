@@ -13,7 +13,9 @@ import { FACE_COLORS } from '../cross-cube.js';
 import { recoveryMoves } from '../smart-cube-guidance.js';
 import { currentDShift } from '../solve-tracker.js';
 import { inspectionLimitMs, inspectionPenalty } from '../solve-live.js';
-import { summarize, ao5, ao12, resultMs, PLUS_TWO_MS } from '../solve-metrics.js';
+import { summarize, ao5, ao12, scopeStats, flowStats, learningStats, resultMs, PLUS_TWO_MS } from '../solve-metrics.js';
+import { sessionRecords, currentSessionId } from '../store/sessions.js';
+import { FOCI, focusOf, inFocus, normalizeFocus } from '../store/focus.js';
 import { buildStagePlan, planKey as planKeyOf, planGroups, stageAverages, pbSplits } from './stage-plan.js';
 import { stageProgress, createTrack } from './milestones.js';
 import { tpsSeries, splitRows, donutArcs, sparkline } from './series.js';
@@ -335,6 +337,8 @@ function resultsVM({ live, records, settings, plan, track, optimalCross }) {
   const record = live?.record;
   if (!record) return null;
   const stored = records.find(r => r.at === record.at) ?? record;
+  // Comparisons (vs average, vs PB, the strip, the session) stay within this solve's focus.
+  records = inFocus(records, focusOf(stored));
   const penalty = settings.penalties === 'ignore' ? null : stored.penalty ?? null;
   const shown = { ...stored, penalty };
   const ms = resultMs(shown);
@@ -346,12 +350,18 @@ function resultsVM({ live, records, settings, plan, track, optimalCross }) {
   const vsAo12 = Number.isFinite(prevAo12) && Number.isFinite(ms) ? { text: fmtDelta(ms - prevAo12), tone: deltaTone(ms - prevAo12) } : null;
   const tpsValues = others.map(r => r.tps).filter(Number.isFinite).sort((a, b) => a - b);
   const avgFlat = tpsValues.length ? tpsValues[Math.floor(tpsValues.length / 2)] : null;
-  const summary = summarize(records);
-  const a5 = ao5(records); const a12 = ao12(records);
-  const prevA5 = ao5(others);
+  // The session strip is per session (automatic sessions, see store/sessions.js);
+  // records without sessions count as one.
+  const inSession = sessionRecords(records, stored.sessionId);
+  const sessionOthers = inSession.filter(r => r.at !== stored.at);
+  const summary = summarize(inSession);
+  const sessionStats = scopeStats(inSession);
+  const a5 = ao5(inSession); const a12 = ao12(inSession);
+  const prevA5 = ao5(sessionOthers);
+  const prevSessionAo12 = ao12(sessionOthers);
   const tones = {
     ao5: Number.isFinite(a5) && Number.isFinite(prevA5) ? deltaTone(a5 - prevA5) : 'none',
-    ao12: Number.isFinite(a12) && Number.isFinite(prevAo12) ? deltaTone(a12 - prevAo12) : 'none',
+    ao12: Number.isFinite(a12) && Number.isFinite(prevSessionAo12) ? deltaTone(a12 - prevSessionAo12) : 'none',
     pb: Number.isFinite(ms) && summary.bestSolveMs === ms ? 'faster' : 'none',
     mean: 'none',
   };
@@ -372,7 +382,7 @@ function resultsVM({ live, records, settings, plan, track, optimalCross }) {
       tpsSeries: tpsSeries(moveTimes, { durationMs: stored.solveMs, stages, solveStartAt, averages, avgFlat }),
       splits: splitRows(stages, plan, averages, { compare: settings.compare, pbs }),
       donut: { centerValue: String(stored.moveCount ?? 0), centerLabel: 'moves', arcs: donutArcs(stages, plan, averages) },
-      session: { ao5: fmtTime(a5), ao12: fmtTime(a12), pb: fmtTime(summary.bestSolveMs), mean: fmtTime(summary.meanSolveMs), tones },
+      session: { ao5: fmtTime(a5), ao12: fmtTime(a12), pb: fmtTime(summary.bestSolveMs), mean: fmtTime(summary.meanSolveMs), tones, count: inSession.length, worst: fmtTime(sessionStats.worst), mo3: fmtTime(sessionStats.mo3), ao50: fmtTime(sessionStats.ao50), ao100: fmtTime(sessionStats.ao100) },
       spark: sparkline(records, { currentAt: stored.at }),
       recent: records.slice(-7).reverse().map(r => ({ key: String(r.at), text: fmtResult(r, 'short'), penaltyTag: penaltyTag(r), current: r.at === stored.at })),
       coach: resultsCoach({ record: stored, optimalCross, stages, plan, averages, faceColors: FACE_COLORS }),
@@ -380,15 +390,64 @@ function resultsVM({ live, records, settings, plan, track, optimalCross }) {
   };
 }
 
-function statsVM(records) {
-  const s = summarize(records);
+// One scope (all time or one session) as display strings; '—' until an
+// average has enough solves, 'DNF' when it is one.
+function scopeVM(records) {
+  const st = scopeStats(records);
+  const flow = flowStats(records);
+  const learning = learningStats(records);
+  const fixed = (n, digits) => (Number.isFinite(n) ? n.toFixed(digits) : '—');
   return {
+    solves: String(st.count),
+    best: fmtSeconds(st.best),
+    worst: fmtSeconds(st.worst),
+    mean: fmtSeconds(st.mean),
+    mo3: fmtSeconds(st.mo3),
+    ao5: fmtSeconds(st.ao5),
+    ao12: fmtSeconds(st.ao12),
+    ao50: fmtSeconds(st.ao50),
+    ao100: fmtSeconds(st.ao100),
+    pb: { mo3: fmtSeconds(st.bestMo3), ao5: fmtSeconds(st.bestAo5), ao12: fmtSeconds(st.bestAo12), ao50: fmtSeconds(st.bestAo50), ao100: fmtSeconds(st.bestAo100) },
+    // Flow: steady TPS, few pauses. gapCv is the spread of the gaps between moves as a percentage of their mean.
+    flow: {
+      meanTps: fmtTps(flow.meanTps), tpsStd: fixed(flow.tpsStd, 2),
+      gapCv: Number.isFinite(flow.gapCv) ? `${Math.round(flow.gapCv * 100)}%` : '—',
+      pauses: flow.pauses == null ? '—' : String(flow.pauses), pausesPerSolve: fixed(flow.pausesPerSolve, 1),
+    },
+    // Learning: move count; reviewAccuracy waits for the solve review (src/analysis) to score solves.
+    learning: {
+      meanMoves: fixed(learning.meanMoves, 1), medianMoves: fixed(learning.medianMoves, 0), bestMoves: fixed(learning.bestMoves, 0),
+      reviewAccuracy: Number.isFinite(learning.reviewAccuracy) ? `${Math.round(learning.reviewAccuracy)}%` : '—',
+    },
+  };
+}
+
+// Every statistic is computed within one focus (speed, flow or learning) so a slow
+// learning solve never spoils a speed average. The top-level fields describe the
+// active focus; `byFocus` has all three; `mixed` is the explicit all-foci view.
+function statsVM(all, focus) {
+  const active = normalizeFocus(focus);
+  const byFocus = {};
+  for (const f of FOCI) {
+    const recs = inFocus(all, f);
+    byFocus[f] = { allTime: scopeVM(recs), session: scopeVM(sessionRecords(recs, currentSessionId(recs))) };
+  }
+  const records = inFocus(all, active);
+  const s = summarize(records);
+  const here = byFocus[active];
+  return {
+    focus: active,
     solves: String(s.solvedCount ?? 0),
     best: fmtSeconds(s.bestSolveMs),
     ao5: fmtSeconds(ao5(records)),
     ao12: fmtSeconds(ao12(records)),
     medianTps: s.medianTPS?.toFixed(2) ?? '—',
     medianMoves: s.medianMoveCount != null ? String(s.medianMoveCount) : '—',
+    worst: here.allTime.worst, mo3: here.allTime.mo3, ao50: here.allTime.ao50, ao100: here.allTime.ao100, pb: here.allTime.pb,
+    allTime: here.allTime,
+    session: here.session,
+    byFocus,
+    mixed: { mixed: true, ...scopeVM(all) },
   };
 }
 
@@ -416,8 +475,10 @@ export function buildViewModel(input, prev = null) {
 
   const screen = screenFor(session, live);
   const plan = cached('plan', [settings.method, settings.cross, settings.oll, settings.pll], () => buildStagePlan(settings));
-  const averages = cached('averages', [records, plan], () => stageAverages(records, plan));
-  const pbs = cached('pbs', [records, plan], () => pbSplits(records, plan));
+  const activeFocus = normalizeFocus(settings.session?.focus);
+  const focusRecords = cached('focusRecords', [records, activeFocus], () => inFocus(records, activeFocus));
+  const averages = cached('averages', [focusRecords, plan], () => stageAverages(focusRecords, plan));
+  const pbs = cached('pbs', [focusRecords, plan], () => pbSplits(focusRecords, plan));
   const dShift = input.dShift !== undefined ? input.dShift
     : (screen === 'solving' && settings.f2l === 'pseudo' && session?.state && live?.crossFace ? currentDShift(session.state, live.crossFace) : null);
   const timeline = timelineVM({ screen, settings, plan, averages, pbs, track, live, now, prevTimeline: prev?.timeline, dShift });
@@ -427,7 +488,7 @@ export function buildViewModel(input, prev = null) {
   const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, live));
   const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen)], () => buildSettingsPanel(settings, Boolean(input.settingsOpen)));
   const configBar = cached('configBar', [settings], () => buildConfigBar(settings));
-  const stats = cached('stats', [records], () => statsVM(records));
+  const stats = cached('stats', [records, activeFocus], () => statsVM(records, activeFocus));
   const keys = cached('keys', [screen, settings.timer, settings.coach], () => keyHints(screen, { timerHidden: settings.timer === 'hide', coach: settings.coach }));
   const coachIn = input.coach ?? [];
   const coach = prev && sameLines(prev.coach, coachIn) ? prev.coach : coachIn;

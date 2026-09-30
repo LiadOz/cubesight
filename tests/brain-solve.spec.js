@@ -84,11 +84,19 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   await expect(brain.locator('#brain-review')).toBeVisible();
 
   // The tracker re-emits while done (e.g. toggling inspection); the solve is stored once.
-  const storedSolves = () => page.evaluate(async () => (await import('/src/solve-store.js')).loadSolves(localStorage).length);
+  // The solve history lives in IndexedDB; writes land asynchronously.
+  const storedSolves = () => page.evaluate(async () => {
+    const backend = await (await import('/src/store/idb.js')).openIdbBackend();
+    const count = (await backend.getAll()).length;
+    await backend.close();
+    return count;
+  });
+  await expect.poll(storedSolves).toBe(1);
   await page.evaluate(() => {
     const box = document.querySelector('#brain-test #brain-inspection');
     for (let i = 0; i < 3; i++) box.click();
   });
+  await page.waitForTimeout(300);
   expect(await storedSolves()).toBe(1);
   await brain.locator('#brain-review-close').click();
   await expect(brain.locator('#brain-generate')).toBeEnabled();

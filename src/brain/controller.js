@@ -9,8 +9,9 @@ import { createCube3D } from '../cube-3d.js';
 import { FACE_COLORS, toRenderData } from '../cross-cube.js';
 import { createSolveLive } from '../solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from '../solve-coach.js';
-import { loadSolves, appendSolve, updateSolve } from '../solve-store.js';
-import { exportAll, serializeExport, parseImport, importAll } from '../data-port.js';
+import { openHistory } from '../store/history.js';
+import { SOLVE_STORE_KEY } from '../solve-metrics.js';
+import { exportAll, serializeExport, parseImport, importAll, historyFromImport } from '../data-port.js';
 import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnection } from '../smart-cube-diag.js';
 import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
 import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
@@ -22,7 +23,7 @@ import { buildViewModel, frameState } from './view-model.js';
 import { coachLines } from './coach-lines.js';
 import { resolveKey } from './keys.js';
 import { readStickerPalette, themedRender } from './cube-theme.js';
-import { fmtSeconds } from './format.js';
+import { fmtSeconds, fmtResult } from './format.js';
 
 // Dev-server-only features (Send to dev) are compiled out of production builds.
 const DEV = Boolean(import.meta.env?.DEV);
@@ -32,7 +33,7 @@ const TIMING_SCREENS = new Set(['inspection', 'ready', 'solving']);
 const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 // UI actions recorded for replay. Start/cancel and the pseudo/inspection
 // settings are already recorded at the live-tracker seam (live.call).
-const RECORDED = new Set(['setSetting', 'setStyle', 'toggleTimer', 'cycleCoach', 'setPenalty', 'togglePenalty']);
+const RECORDED = new Set(['setSetting', 'setStyle', 'toggleTimer', 'cycleCoach', 'setPenalty', 'togglePenalty', 'deleteSolve', 'undoDelete']);
 const LIVE_RECORDED_PATHS = /^(f2l|inspection)(\.|$)/;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -42,7 +43,12 @@ const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&a
  */
 export function mountBrainController(root, cubeSession, { createShell, loadStyle, rebuild }) {
   let settings = loadSettings(globalThis.localStorage);
-  let records = loadSolves(globalThis.localStorage);
+  // The solve history lives in IndexedDB (src/store/history.js) and opens asynchronously; until
+  // it is ready `records` is empty and history writes wait in `pendingHistory`.
+  let records = [];
+  let history = null;
+  let pendingHistory = [];
+  const undoStack = [];         // solves deleted in this view, newest last (undoDelete)
   let active = true;
   let detached = false;
   let vm = null;
@@ -275,12 +281,15 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     // the record object: each finished solve is stored exactly once, with its splits.
     if (snap.phase === 'done' && snap.record && snap.record !== savedRecord) {
       savedRecord = snap.record;
-      records = appendSolve(globalThis.localStorage, records, {
+      const entry = {
         ...snap.record,
+        focus: settings.session.focus,   // a focus change starts a new session (store/sessions.js)
         splits: splitsFromTrack(track, plan),
         moveTimes: track.moveTimes.slice(-200),
         config: { method: settings.method, cross: settings.cross, f2l: settings.f2l, oll: settings.oll, pll: settings.pll, inspectionMode: snap.record.inspectionMode ?? settings.inspection.mode },
-      });
+      };
+      const replaying = isReplaying();   // replayed solves stay out of the stored history
+      withHistory(store => { if (replaying) store.beginEphemeral(); store.append(entry); });
       statusOverride = `Solve logged · ${fmtSeconds(snap.record.solveMs)} · ${snap.record.moveCount} moves.`;
     }
     if (active) render();
@@ -302,6 +311,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (JSON.stringify(next.inspection) !== JSON.stringify(before.inspection)) live.setInspection(next.inspection);
     if (next.cross !== before.cross && scrambleText.trim()) void suggestCrossFor(scrambleText.trim());
     if (next.style !== before.style) void applyStyle(next.style);
+    if (next.session.gapMin !== before.session.gapMin && history && !isReplaying()) { history.setSessionGapMin(next.session.gapMin); history.regroupSessions(); records = history.records; }
     render();
   }
 
@@ -381,14 +391,54 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function cancel() { live.cancel(); optimalCross = null; render(); }
 
-  function togglePenalty(penalty, toggle) {
-    const at = savedRecord?.at ?? live.getSnapshot().record?.at;
+  const currentAt = () => savedRecord?.at ?? live.getSnapshot().record?.at;
+
+  // Set (or with toggle, flip) the penalty of any stored solve; the current result by default.
+  function setPenaltyAt(at, penalty, toggle) {
     const stored = records.find(r => r.at === at);
-    if (!stored) return;
-    const next = toggle && stored.penalty === penalty ? null : penalty;
-    records = updateSolve(globalThis.localStorage, records, at, { penalty: next });
+    if (!stored || !history) return;
+    const wanted = penalty === 'none' ? null : penalty ?? null;
+    const next = toggle && stored.penalty === wanted ? null : wanted;
+    if (!history.setPenalty(at, next)) { message('History is read-only right now.'); return; }
+    records = history.records;
     render();
   }
+
+  function deleteSolve(at) {
+    const target = Number.isFinite(at) ? at : currentAt();
+    const removed = history?.remove(target);
+    if (!removed) { if (history?.readOnly) message('History is read-only right now.'); return; }
+    undoStack.push(removed);
+    if (undoStack.length > 20) undoStack.shift();
+    records = history.records;
+    if (currentAt() === target) { live.cancel(); optimalCross = null; }
+    message(`Deleted ${fmtResult(removed)} · u to undo`);
+  }
+
+  function undoDelete() {
+    const record = undoStack.pop();
+    if (!record || !history) return;
+    history.restore(record);
+    records = history.records;
+    message(`Restored ${fmtResult(record)}`);
+  }
+
+  // Run a history write now, or once the history has opened.
+  function withHistory(fn) {
+    if (!history) { pendingHistory.push(fn); return; }
+    fn(history);
+    records = history.records;
+  }
+
+  const historyReady = openHistory({ sessionGapMin: settings.session.gapMin }).then(store => {
+    history = store;
+    if (detached) return;
+    for (const fn of pendingHistory) fn(store);
+    pendingHistory = [];
+    records = store.records;
+    if (store.warning) error = store.warning;
+    render();
+  }).catch(err => { if (!detached) showError(`Could not open your history: ${err.message}`); });
 
   // --- Actions ----------------------------------------------------------------------------------
 
@@ -428,8 +478,10 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         scrambleText = scramble;
         return start();
       }
-      case 'setPenalty': togglePenalty(action.penalty, false); break;
-      case 'togglePenalty': togglePenalty(action.penalty, true); break;
+      case 'setPenalty': setPenaltyAt(Number.isFinite(action.at) ? action.at : currentAt(), action.penalty, false); break;
+      case 'togglePenalty': setPenaltyAt(currentAt(), action.penalty, true); break;
+      case 'deleteSolve': deleteSolve(action.at); break;
+      case 'undoDelete': undoDelete(); break;
       case 'setSetting': applySetting(action.path, action.value); break;
       case 'setStyle': applySetting('style', action.style); break;
       case 'toggleSettings': settingsOpen = !settingsOpen; render(); break;
@@ -445,7 +497,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       }
       case 'toggleTimer': applySetting('timer', settings.timer === 'hide' ? 'visible' : 'hide'); break;
       case 'cycleCoach': applySetting('coach', { live: 'after', after: 'off', off: 'live' }[settings.coach]); break;
-      case 'export': exportData(); break;
+      case 'export': void exportData(); break;
       case 'import': void importData(action.file); break;
       case 'sendLog': void sendLog(); break;
       case 'clearLog': clearConnectionLog(); break;
@@ -457,9 +509,11 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // --- Data port ---------------------------------------------------------------------------------
 
   const setStatusText = (selector, text) => { const el = $(selector); if (el) el.textContent = text; };
-  function exportData() {
+  async function exportData() {
     try {
-      const blob = new Blob([serializeExport(exportAll(globalThis.localStorage))], { type: 'application/json' });
+      await historyReady;
+      await history?.flush();
+      const blob = new Blob([serializeExport(exportAll(globalThis.localStorage, history ? history.records : null))], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `cubesight-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -472,8 +526,12 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (!file) return;
     try {
       const parsed = parseImport(await file.text());
-      importAll(globalThis.localStorage, parsed, { clearOwned: false });
-      records = loadSolves(globalThis.localStorage);
+      await historyReady;
+      importAll(globalThis.localStorage, parsed, { clearOwned: false, skipKeys: history ? [SOLVE_STORE_KEY] : [] });
+      if (history && !history.importRecords(historyFromImport(parsed))) {
+        if (history.readOnly) throw new Error('the history is read-only right now');
+      }
+      records = history?.records ?? [];
       applySettings(loadSettings(globalThis.localStorage));
       setStatusText('#brain-port-status', 'Imported. Metrics refreshed. Reload to update all trainers.');
       render();
@@ -568,7 +626,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     root, live, cubeSession, dispatch,
     getContext: () => ({ toggles: settings.toggles, method: settings.method, crossKind: settings.cross, settings }),
     onSolvesRestored: () => {
-      records = loadSolves(globalThis.localStorage);
+      history?.endEphemeral();
+      records = history?.records ?? [];
       if (replayBackup) { const restore = replayBackup; replayBackup = null; applySettings(restore); }
       render();
     },
@@ -583,6 +642,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     /** @returns {import('./types.js').BrainVM|null} */
     getViewModel: () => vm,
     dispatch,
+    /** Resolves once the history is open and every queued write has reached IndexedDB (tests, export). */
+    async flushHistory() { await historyReady; await history?.flush(); },
     setActive(value) {
       if (detached) return;
       active = value;
