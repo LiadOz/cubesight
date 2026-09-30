@@ -4,6 +4,7 @@ import { stateFromScramble, applyMoves, createSolvedState } from '../src/cross-c
 import {
   analyze, crossSolved, crossSolvedFaces, f2lPairSlots, solvedPairs,
   pairSolved, ollSolved, extendedCross, llFace, crossEdgeIds,
+  currentDShift, solvedPairsPseudo, f2lDonePseudo, crossFrame, extendedCrossPseudo,
 } from '../src/solve-tracker.js';
 
 test('a solved cube is in the solved phase with a D cross', () => {
@@ -105,4 +106,56 @@ test('analyze labels an oriented last layer (EO + CO) as the PLL phase', () => {
   const edgesFlipped = stateFromScramble("F R U R' U' F'");
   const b = analyze(edgesFlipped, 'D');
   if (b.coDone && !b.eoDone) assert.equal(b.phase, 'co');
+});
+
+// --- Pseudo detection for any cross face; EO/CO while the cross layer is offset ---
+
+test('pseudo detection works for every cross face (no D hard-wiring)', () => {
+  // A solved cube with the cross layer turned: k is the turn that undoes it.
+  for (const face of ['U', 'D', 'F', 'B', 'R', 'L']) {
+    for (const [turn, k] of [[face, 3], [`${face}2`, 2], [`${face}'`, 1]]) {
+      const s = applyMoves(createSolvedState(), [turn]);
+      assert.equal(currentDShift(s, face), k, `${face} layer after ${turn}`);
+      assert.equal(solvedPairsPseudo(s, face).length, 4);
+      assert.equal(f2lDonePseudo(s, face), true);
+    }
+  }
+  // A U-offset cube with the cross on U: the D-only version read this as null.
+  assert.equal(currentDShift(applyMoves(createSolvedState(), ['U']), 'U'), 3);
+  // Turning the opposite layer does not offset this cross.
+  assert.equal(currentDShift(applyMoves(createSolvedState(), ['D']), 'U'), 0);
+  assert.equal(currentDShift(createSolvedState()), 0, 'crossFace defaults to D');
+});
+
+test('crossFrame reads the shift and the pairs in that frame in one pass', () => {
+  const offset = applyMoves(createSolvedState(), ['D']);
+  const frame = crossFrame(offset, 'D');
+  assert.equal(frame.shift, 3);
+  assert.equal(frame.pairs.length, 4);
+  assert.deepEqual(crossFrame(stateFromScramble('F R'), 'D'), { shift: null, pairs: [] });
+});
+
+test('analyze with pseudo: an offset cross layer no longer hides EO and CO', () => {
+  const offset = applyMoves(createSolvedState(), ['D']);
+  const plain = analyze(offset, 'D');
+  assert.equal(plain.eoDone, false, 'default behaviour is unchanged');
+  assert.equal(plain.crossDone, false);
+  const pseudo = analyze(offset, 'D', { pseudo: true });
+  assert.equal(pseudo.shift, 3);
+  assert.equal(pseudo.crossDone, true);
+  assert.equal(pseudo.f2lDone, true);
+  assert.equal(pseudo.eoDone, true);
+  assert.equal(pseudo.coDone, true);
+  assert.equal(pseudo.phase, 'pll');
+  // Cross on another face.
+  assert.equal(analyze(applyMoves(createSolvedState(), ['F']), 'F', { pseudo: true }).eoDone, true);
+  assert.equal(analyze(createSolvedState(), 'D').shift, 0);
+  assert.equal(analyze(stateFromScramble('F R'), 'D').shift, null);
+});
+
+test('extendedCrossPseudo counts pairs in the current frame', () => {
+  const offset = applyMoves(createSolvedState(), ['D']);
+  assert.deepEqual(extendedCrossPseudo(offset, 'D'), { kind: 'xxcross', pairs: 4, shift: 3, pseudo: true });
+  assert.deepEqual(extendedCrossPseudo(stateFromScramble('F R'), 'D'), { kind: 'none', pairs: 0, shift: null, pseudo: false });
+  assert.equal(extendedCrossPseudo(createSolvedState(), 'D').pseudo, false);
 });
