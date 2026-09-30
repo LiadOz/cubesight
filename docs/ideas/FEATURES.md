@@ -244,3 +244,14 @@ These are the "2 spare minutes on the bus" part of the product. The design rules
 6. **Brands:** which non-GAN cubes can you test with? Support can't be claimed without a recording from real hardware.
 7. **Voice callouts** default: on (WCA-like) or off (quiet by default)?
 8. **Roux:** keep it in the method picker while its stages still use CFOP milestones, or hide it until real Roux detection exists?
+
+## Decisions (2026-09-30)
+
+1. **Timing source:** official times come from the cube's hardware timestamps when a smart cube is connected.
+2. **Sessions:** automatic, no naming. A large idle gap between solves starts a new session.
+3. **Storage:** move solve history to IndexedDB (removes the 1000-solve cap).
+4. **Manual timer placement:** open (see the conversation).
+5. **Mini-game scoring:** per-skill progress, no single site-wide XP.
+6. **Brands:** GAN only; the user has no other smart cubes to test with.
+7. **Voice callouts:** off by default.
+8. **Roux:** hidden from the method picker for now (the user doesn't solve Roux yet); may return later with real Roux detection.
