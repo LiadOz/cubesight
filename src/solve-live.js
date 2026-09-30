@@ -52,6 +52,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let maxPairs = 0;
   let liveMoveCount = 0;
   let lastProcessedLen = -1;   // dedup: only process a move when the history grows
+  let lastProcessedMove = null; // ...or when the last move string changes (coalesced U2)
   let prev = null;           // previous phase analysis during solving
   let progress = null;       // monotonic phase snapshot the UI renders
   let mark = {};             // { solveStartAt, crossAt, f2lAt, ollAt }
@@ -115,6 +116,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     mode = null; phase = 'idle'; scrambleStr = null; scrambleMoves = [];
     scrambledState = null; applyStep = 0; applyDetour = [];
     lastProcessedLen = -1;
+    lastProcessedMove = null;
     if (inspectionTimer) { clearInterval(inspectionTimer); inspectionTimer = null; }
     resetSolve();
     emit();
@@ -245,13 +247,14 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (snap.phase === 'desynced') { phase = 'desynced'; emit(); return; }
     if (phase === 'desynced' || phase === 'done') return;
     if (snap.phase !== 'tracking') return;
-    // The session publishes a snapshot on every event (gyro/status too), so only
-    // act on a genuinely new move (history grew) — otherwise a single wrong
-    // turn during the scramble would balloon the recovery detour.
-    if (snap.moves.length <= lastProcessedLen) return;
-    lastProcessedLen = snap.moves.length;
-    const move = snap.lastMove;
-    if (!move) return;
+    // Process when a genuinely new move arrives OR a coalesced double replaces the last
+    // entry (length unchanged, but the last move string changes U -> U2 — must not be skipped).
+    const lastEntry = snap.moves[snap.moves.length - 1];
+    if (snap.moves.length !== lastProcessedLen || lastEntry !== lastProcessedMove) {
+      lastProcessedLen = snap.moves.length;
+      lastProcessedMove = lastEntry;
+      const move = snap.lastMove;
+      if (!move) return;
     if (phase === 'applying') { onApplyMove(move, snap.state); return; }
     if (phase === 'inspecting') {
       // The first solving move starts the solve clock and ends inspection.
@@ -263,6 +266,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       return;
     }
     if (phase === 'solving') { onSolveMove(move, snap.state, snap.moves); }
+  }
   }
 
   const unsub = session?.subscribe(onSnapshot);
