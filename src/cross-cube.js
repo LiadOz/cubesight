@@ -69,13 +69,18 @@ export function suggestInspectionFront(state,bottomFace='D',pieceIds=[]) {
   return {...best,choices:ranked.length,tiedChoices:ranked.filter(candidate=>candidate.score===best.score).length};
 }
 
-export function parseScramble(input='', { allowWide = false } = {}) {
+// allowRotations (opt-in, used by the move guide) also admits lowercase wide
+// (r) and whole-cube rotations (x y z) as algorithm notation writes them; the
+// smart-cube session never passes it, so its behaviour is unchanged.
+export function parseScramble(input='', { allowWide = false, allowRotations = false } = {}) {
   if (typeof input !== 'string') throw new TypeError('Enter a scramble as move notation.');
   const tokens = input.trim().replace(/[′’]/g,"'").split(/\s+/).filter(Boolean);
   if (tokens.length > 200) throw new Error('Use at most 200 moves.');
   // allowWide also admits slice moves (M, E, S): smart cubes and the move model
   // treat both as ordinary single moves, but manual scramble entry stays strict.
-  for (const token of tokens) if (!(allowWide ? /^(?:[URFDLB]w?|[MES])(?:2|')?$/ : /^[URFDLB](?:2|')?$/).test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B${allowWide ? ', a wide move such as Rw, or a slice move (M, E, S),' : ''} with 2 or a prime.`);
+  const pattern = allowRotations ? /^(?:[URFDLB]w?|[urfdlb]|[MESxyz])(?:2|')?$/
+    : allowWide ? /^(?:[URFDLB]w?|[MES])(?:2|')?$/ : /^[URFDLB](?:2|')?$/;
+  for (const token of tokens) if (!pattern.test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B${allowWide ? ', a wide move such as Rw, or a slice move (M, E, S),' : ''}${allowRotations ? ' a lowercase wide move (r), a rotation (x, y, z),' : ''} with 2 or a prime.`);
   return tokens;
 }
 
