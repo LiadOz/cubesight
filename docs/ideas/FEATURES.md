@@ -250,8 +250,9 @@ These are the "2 spare minutes on the bus" part of the product. The design rules
 1. **Timing source:** official times come from the cube's hardware timestamps when a smart cube is connected.
 2. **Sessions:** automatic, no naming. A large idle gap between solves starts a new session.
 3. **Storage:** move solve history to IndexedDB (removes the 1000-solve cap).
-4. **Manual timer placement:** open (see the conversation).
+4. **Manual timer:** NOT in Brain (Brain's value comes from smart-cube moves). A separate lightweight timer page sharing inspection, penalties, history and stats; works on iOS.
 5. **Mini-game scoring:** per-skill progress, no single site-wide XP.
 6. **Brands:** GAN only; the user has no other smart cubes to test with.
 7. **Voice callouts:** off by default.
 8. **Roux:** hidden from the method picker for now (the user doesn't solve Roux yet); may return later with real Roux detection.
+9. **Review external solves (idea, P1):** import a reconstruction (scramble + solution text, alg.cubing.net links, SpeedCubeDB / cubesolv.es style) and run the same solve review on it: cross optimality, F2L pair choice, move waste, LL alg/AUF choice. No per-move timing, so no pause/TPS labels. Also lets users study top solvers' reconstructions. The WCA publishes scrambles and results (not solutions), so WCA import = official scrambles to practise with.
