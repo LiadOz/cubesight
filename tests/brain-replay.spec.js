@@ -101,13 +101,14 @@ test('stopping a replay returns the Brain to a clean, disconnected state', async
   await openReplay(page, json, 1);
   const view = page.locator('#brain-view');
   await expect(view.locator('#brain-replay-banner')).toContainText('Replaying a recording');
-  await expect(view.locator('#brain-disconnect')).toBeVisible();   // the replayed cube is "connected"
+  await expect(view.locator('.brain-connect-chip')).toHaveAttribute('data-phase', 'tracking');   // the replayed cube is "connected"
   expect(await page.evaluate(async () => (await import('/src/smart-cube-bluetooth.js')).isReplayAdapterInstalled())).toBe(true);
   await view.locator('#brain-replay-banner button').click();
   await page.waitForFunction(() => document.documentElement.dataset.replay === 'stopped');
   await expect(view.locator('#brain-replay-banner')).toContainText('Replay stopped · Connect your cube');
   await expect(view.locator('#brain-replay-banner button')).toBeHidden();
-  await expect(view.locator('#brain-start')).toBeVisible();
+  // Back to the no-cube screen: connecting is the next step, nothing is mid-solve.
+  await expect(view.locator('[data-primary="connect"]')).toBeVisible();
   await expect(view.locator('#brain-stop')).toBeHidden();
   expect(await page.evaluate(async () => (await import('/src/smart-cube-bluetooth.js')).smartCube.getSnapshot().phase)).toBe('disconnected');
   await expectCleanDisconnected(page);

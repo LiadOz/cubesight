@@ -1645,7 +1645,8 @@ document.querySelector('#planner-shift-d').addEventListener('change', (event) =>
 });
 
 document.addEventListener('keydown', (event) => {
-  if (activeTool === 'scout' || activeTool === 'pll') return;
+  // Brain owns its keyboard shortcuts (src/brain/keys.js); corner-trainer keys must not fire there.
+  if (activeTool === 'scout' || activeTool === 'pll' || activeTool === 'brain') return;
   if (event.repeat || paused || document.querySelector('dialog[open]')) return;
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;

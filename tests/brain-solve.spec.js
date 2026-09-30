@@ -1,9 +1,16 @@
 import { test, expect } from 'playwright/test';
 
-async function mountTestBrain(page) {
+const STYLES = ['orbit', 'mono'];
+
+// Timeline hooks shared by both styles: every stage segment carries data-key and
+// data-state (future | current | done | skipped).
+const SEGMENTS = '#brain-timeline :is(.m-seg, .b-oring-seg)';
+
+async function mountTestBrain(page, style = 'orbit') {
   await page.goto('/');
-  await page.evaluate(async () => {
+  await page.evaluate(async style => {
     localStorage.clear();
+    localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
     const { createBrain } = await import('/src/brain.js');
     const { createSmartCubeSession } = await import('/src/smart-cube-session.js');
     const solved = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
@@ -32,25 +39,27 @@ async function mountTestBrain(page) {
     const root = document.createElement('div');
     root.id = 'brain-test';
     document.body.append(root);
-    createBrain(root, session);
+    await createBrain(root, session).ready;
     await session.connect();
-  });
+  }, style);
 }
 
 // Regression: the first solving move after a guided scramble used to throw
 // inside a Brain live-tracker subscriber (ReferenceError: STAGES is not
 // defined). The exception escaped through the session's MOVE handler and
 // desynced the cube with "Unsupported move from cube: R".
-test('Brain survives the scramble-to-solve transition and tracks the solve', async ({ page }) => {
+for (const style of STYLES) {
+test(`Brain survives the scramble-to-solve transition and tracks the solve (${style})`, async ({ page }) => {
   test.setTimeout(60_000);
   const errors = [];
   page.on('pageerror', error => errors.push(`pageerror: ${error.stack || error.message}`));
   page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
 
-  await mountTestBrain(page);
+  await mountTestBrain(page, style);
 
   const brain = page.locator('#brain-test');
   await expect.poll(() => page.evaluate(() => window.testBrain.session.getSnapshot().phase)).toBe('tracking');
+  await expect(brain.locator('.brain')).toHaveAttribute('data-brain-style', style);
 
   const scramble = "R2 D' F2 U B2 L' U2 F R' D2 B U' L2";
   await brain.locator('.brain-pill-setup > summary').click();
@@ -111,11 +120,11 @@ const inverse = moves => moves.split(/\s+/).filter(Boolean).reverse().map(m => m
 
 // The guidance text must not be rebuilt on every move (that replays its fade-in and
 // flickers), and the timeline marker sits on the stage currently being worked on.
-test('Brain guidance is stable across moves and the timeline tracks the current stage', async ({ page }) => {
+test(`Brain guidance is stable across moves and the timeline tracks the current stage (${style})`, async ({ page }) => {
   test.setTimeout(60_000);
   const errors = [];
   page.on('pageerror', error => errors.push(`pageerror: ${error.stack || error.message}`));
-  await mountTestBrain(page);
+  await mountTestBrain(page, style);
   const brain = page.locator('#brain-test');
   await expect.poll(() => page.evaluate(() => window.testBrain.session.getSnapshot().phase)).toBe('tracking');
 
@@ -175,55 +184,57 @@ test('Brain guidance is stable across moves and the timeline tracks the current 
   await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
   const timeline = brain.locator('#brain-timeline');
   await expect(timeline).toBeVisible();
-  await expect(timeline.locator('.brain-tl-marks span')).toHaveText(['Cross', 'F2L', 'EO', 'CO', 'PLL', 'Solved']);
-  const current = () => timeline.locator('.brain-tl-marks span.current');
-  const done = () => timeline.locator('.brain-tl-marks span.done');
-  await expect(current()).toHaveText('Cross');
-  await expect(done()).toHaveCount(0);
+  const keys = state => page.evaluate(([sel, state]) => [...document.querySelectorAll(`#brain-test ${sel}`)]
+    .filter(el => !state || el.dataset.state === state).map(el => el.dataset.key), [SEGMENTS, state]);
+  expect(await keys()).toEqual(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);   // no Scramble stage
+  const current = async () => (await keys('current'))[0] ?? null;
+  const finished = async () => [...await keys('done'), ...await keys('skipped')];
+  await expect.poll(current).toBe('cross');
+  expect(await finished()).toEqual([]);
   await page.waitForTimeout(600);  // let the swoop-in finish before the screenshot
   const shot = async name => {
     await page.waitForTimeout(500);  // fill/dot transitions
-    await brain.locator('.brain-cube-stage').screenshot({ path: test.info().outputPath(`${name}.png`) });
+    await page.screenshot({ path: test.info().outputPath(`${style}-${name}.png`) });
   };
   await shot('1-inspection');
 
   await page.evaluate(() => window.testBrain.emitTurns("R'"));
   await expect(brain.locator('#brain-phase-label')).toHaveText('Building the cross');
-  await expect(current()).toHaveText('Cross');
+  await expect.poll(current).toBe('cross');
   await shot('2-pre-cross');
 
   // Coach lines that don't change keep their nodes between solving moves too.
   const coachNodes = () => page.evaluate(() => { window.coachNodes = [...document.querySelectorAll('#brain-test #brain-coach .brain-coach-line')]; });
   const coachKept = () => page.evaluate(() => window.coachNodes.filter(n => n.isConnected).length);
   await page.evaluate(() => window.testBrain.emitTurns('F2'));
-  await expect(current()).toHaveText('F2L');
-  await expect(done()).toHaveText(['Cross']);
+  await expect.poll(current).toMatch(/^pair[1-4]$/);   // the cross is done; F2L is next
+  expect(await keys('done')).toContain('cross');
   await shot('3-after-cross');
   await coachNodes();
   await page.evaluate(s => window.testBrain.emitTurns(s), "R U'");
   expect(await coachKept()).toBeGreaterThan(0);
   await page.evaluate(() => window.testBrain.emitTurns("R'"));
-  await expect(current()).toHaveText('EO');
-  await expect(done()).toHaveText(['Cross', 'F2L']);
+  await expect.poll(current).toBe('eo');
+  expect(await finished()).toEqual(expect.arrayContaining(['cross', 'pair1', 'pair2', 'pair3', 'pair4']));
   await shot('4-after-f2l');
 
   await page.evaluate(s => window.testBrain.emitTurns(s), steps.eo);
-  await expect(current()).toHaveText('CO');
+  await expect.poll(current).toBe('co');
   await page.evaluate(s => window.testBrain.emitTurns(s), steps.co);
-  await expect(current()).toHaveText('PLL');
+  await expect.poll(current).toBe('cp');
   await shot('5-after-oll');
   await page.evaluate(s => window.testBrain.emitTurns(s), steps.pll);
   await expect(brain.locator('#brain-phase-label')).toHaveText('Solved');
-  await expect(current()).toHaveText('Solved');
-  await expect(done()).toHaveText(['Cross', 'F2L', 'EO', 'CO', 'PLL']);
+  expect((await finished()).sort()).toEqual(['co', 'cp', 'cross', 'eo', 'ep', 'pair1', 'pair2', 'pair3', 'pair4']);
   await expect(brain.locator('#brain-review')).toBeVisible();
   await page.waitForTimeout(600);
   await page.screenshot({ path: test.info().outputPath('6-solved-review.png') });
   // The review is not rebuilt (and its entry animation not replayed) when the tracker re-emits.
-  const card = await brain.locator('.brain-review-card').elementHandle();
+  const card = await brain.locator('#brain-review .b-results-host > *').first().elementHandle();
   await page.evaluate(() => { const box = document.querySelector('#brain-test #brain-inspection'); box.click(); box.click(); });
   expect(await card.evaluate(el => el.isConnected)).toBe(true);
   await page.evaluate(() => { document.querySelector('#brain-test #brain-review').style.display = 'none'; });
   await shot('7-solved');
   expect(errors).toEqual([]);
 });
+}

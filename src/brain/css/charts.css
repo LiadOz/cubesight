@@ -1,0 +1,92 @@
+/* Shared Brain charts (Orbit + Mono). Only --b-* tokens; no hex values. */
+
+/* --- TPS line --------------------------------------------------------- */
+.b-ch-tps { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--b-font-mono); }
+.b-ch-band { fill: var(--b-chart-band, var(--b-surface)); }
+.b-ch-band.is-alt { fill: transparent; }
+.b-ch-band-label, .b-ch-axis { fill: var(--b-muted); font-size: 11px; }
+.b-ch-grid line { stroke: var(--b-hairline); stroke-width: 1; opacity: .7; }
+.b-ch-avg { fill: none; stroke: var(--b-muted); stroke-width: 1.4; stroke-dasharray: 5 5; }
+.b-ch-tps.is-mono .b-ch-avg { stroke-dasharray: 4 4; }
+.b-ch-area { fill: var(--b-accent); opacity: .12; stroke: none; }
+.b-ch-line { fill: none; stroke: var(--b-accent); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.b-ch-line.is-drawing { stroke-dasharray: 1; stroke-dashoffset: 1; animation: b-ch-draw 600ms var(--b-ease, ease-out) forwards; }
+.b-ch-mark.is-pause circle { fill: var(--b-bg); stroke: var(--b-warn); stroke-width: 2; }
+.b-ch-mark.is-pause text { fill: var(--b-warn-text); font-size: 11px; }
+.b-ch-mark.is-skip path { fill: var(--b-accent); }
+@keyframes b-ch-draw { to { stroke-dashoffset: 0; } }
+
+/* --- Split bars --------------------------------------------------------- */
+.b-ch-splits { font-family: var(--b-font-mono); font-variant-numeric: tabular-nums; color: var(--b-ink); }
+.b-ch-splits.is-rows { display: grid; grid-template-columns: 4.2em minmax(80px, 1fr) 4.2em 4.4em; column-gap: 16px; row-gap: 14px; align-items: center; }
+.b-ch-splits.is-rows .b-ch-split { display: contents; }
+.b-ch-split-label { color: var(--b-muted); font-size: 13px; }
+.b-ch-split-value { font-size: 14px; text-align: right; }
+.b-ch-split-delta { font-size: 12px; text-align: right; color: var(--b-muted); }
+.b-ch-split-delta.is-faster { color: var(--b-accent-text); }
+.b-ch-split-delta.is-slower { color: var(--b-warn-text); }
+.b-ch-split.is-skip .b-ch-split-value { color: var(--b-accent-text); }
+.b-ch-bar { position: relative; display: block; height: 6px; border-radius: 3px; background: var(--b-track); }
+.b-ch-bar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--b-fill); transform-origin: left; animation: b-ch-grow 420ms var(--b-ease, ease-out) both; }
+.b-ch-split.is-faster .b-ch-bar-fill { background: var(--b-accent); }
+.b-ch-bar-avg { position: absolute; top: -6px; width: 2px; height: 18px; margin-left: -1px; background: var(--b-ink); opacity: .85; }
+.b-ch-bar-spark { position: absolute; left: 0; top: 50%; transform: translate(-2px, -52%); color: var(--b-accent); font-style: normal; font-size: 13px; line-height: 1; }
+.b-ch-splits .b-ch-split:nth-child(1) .b-ch-bar-fill { animation-delay: 0ms; }
+.b-ch-splits .b-ch-split:nth-child(2) .b-ch-bar-fill { animation-delay: 30ms; }
+.b-ch-splits .b-ch-split:nth-child(3) .b-ch-bar-fill { animation-delay: 60ms; }
+.b-ch-splits .b-ch-split:nth-child(4) .b-ch-bar-fill { animation-delay: 90ms; }
+.b-ch-splits .b-ch-split:nth-child(5) .b-ch-bar-fill { animation-delay: 120ms; }
+.b-ch-splits .b-ch-split:nth-child(6) .b-ch-bar-fill { animation-delay: 150ms; }
+.b-ch-splits .b-ch-split:nth-child(7) .b-ch-bar-fill { animation-delay: 180ms; }
+.b-ch-splits .b-ch-split:nth-child(8) .b-ch-bar-fill { animation-delay: 210ms; }
+.b-ch-splits .b-ch-split:nth-child(9) .b-ch-bar-fill { animation-delay: 240ms; }
+@keyframes b-ch-grow { from { transform: scaleX(0); } }
+
+/* columns (Mono A-08): one column per step */
+.b-ch-splits.is-columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 20px; }
+.b-ch-splits.is-columns .b-ch-split { display: grid; gap: 6px; align-content: start; }
+.b-ch-splits.is-columns .b-ch-split-label { font-size: 12px; }
+.b-ch-splits.is-columns .b-ch-split-value { font-size: 22px; font-weight: 300; text-align: left; }
+.b-ch-splits.is-columns .b-ch-split.is-pseudo .b-ch-split-label { color: var(--b-accent-text); }
+.b-ch-split-meta { display: flex; gap: 10px; font-size: 11px; }
+.b-ch-split-meta .b-ch-split-delta { text-align: left; font-size: 11px; }
+.b-ch-split-moves { color: var(--b-muted); }
+.b-ch-splits.is-columns .b-ch-bar { height: 4px; margin-top: 6px; }
+.b-ch-splits.is-columns .b-ch-split.is-slower .b-ch-bar-fill { background: var(--b-warn); }
+.b-ch-splits.is-columns .b-ch-split.is-faster .b-ch-bar-fill,
+.b-ch-splits.is-columns .b-ch-split.is-even .b-ch-bar-fill { background: var(--b-accent); }
+
+/* --- Sparkline ---------------------------------------------------------- */
+.b-ch-spark svg { display: block; width: 100%; height: auto; overflow: visible; }
+.b-ch-spark-line { fill: none; stroke: var(--b-muted); stroke-width: 1.4; stroke-linejoin: round; }
+.b-ch-spark-dot.is-plus2 { fill: var(--b-plus2); }
+.b-ch-spark-dot.is-pb { fill: var(--b-bg); stroke: var(--b-ink); stroke-width: 1.6; }
+.b-ch-spark-dot.is-current { fill: var(--b-accent); }
+.b-ch-spark-dnf line { stroke: var(--b-dnf); stroke-width: 1.8; stroke-linecap: round; }
+.b-ch-spark-legend { display: flex; gap: 12px; margin: 6px 0 0; font: 11px var(--b-font-mono); color: var(--b-muted); }
+.b-ch-spark-legend span::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; vertical-align: 0; }
+.b-ch-spark-legend .b-ch-spark-n::before { display: none; }
+.b-ch-spark-legend .is-pb::before { background: var(--b-ink); }
+.b-ch-spark-legend .is-plus2::before { background: var(--b-plus2); }
+.b-ch-spark-legend .is-dnf::before { content: '✕'; width: auto; height: auto; border-radius: 0; color: var(--b-dnf); background: none; }
+
+/* --- Donut -------------------------------------------------------------- */
+.b-ch-donut { display: grid; justify-items: center; }
+.b-ch-donut svg { display: block; width: 100%; max-width: 300px; height: auto; overflow: visible; }
+.b-ch-donut-track { fill: none; stroke: var(--b-track); stroke-width: 2; }
+.b-ch-donut-arc { fill: none; stroke-width: 18; stroke-linecap: butt; stroke: var(--b-fill); }
+.b-ch-donut-arc.is-faster { stroke: var(--b-accent); }
+.b-ch-donut-arc.is-even, .b-ch-donut-arc.is-none { stroke: var(--b-muted); }
+.b-ch-donut-skip path { fill: var(--b-accent); }
+.b-ch-donut-label { fill: var(--b-muted); font: 12px var(--b-font-mono); }
+.b-ch-donut-value { fill: var(--b-ink); font: 600 30px var(--b-font-num, var(--b-font-sans)); font-variant-numeric: tabular-nums; }
+.b-ch-donut-center-label { fill: var(--b-muted); font: 12px var(--b-font-mono); }
+.b-ch-donut-legend { display: flex; gap: 18px; margin: 4px 0 0; font: 11px var(--b-font-mono); color: var(--b-muted); }
+.b-ch-donut-legend span::before { content: ''; display: inline-block; width: 14px; height: 5px; margin-right: 6px; border-radius: 3px; vertical-align: 2px; }
+.b-ch-donut-legend .is-faster::before { background: var(--b-accent); }
+.b-ch-donut-legend .is-slower::before { background: var(--b-fill); }
+
+@media (prefers-reduced-motion: reduce) {
+  .b-ch-line.is-drawing { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+  .b-ch-bar-fill { animation: none; }
+}

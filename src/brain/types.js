@@ -41,6 +41,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {string} status    aria-live status
  * @property {string} error     #brain-error
  * @property {boolean} chromeDimmed   Mono: top bar dims while scramble/inspection/solving
+ * @property {boolean} commandOpen    true on the render after esc asks for the command line (the shell focuses it)
  */
 
 /** @typedef {Object} DeviceVM
@@ -63,6 +64,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {number} total
  * @property {boolean} editable
  * @property {string} text   current scramble text
+ * @property {number} [number] this session's scramble count ("scramble 24")
  */
 
 /** @typedef {Object} ClockVM
@@ -153,12 +155,14 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *   avgMs:number|null, ratio:number, avgRatio:number, skipped:boolean, pseudo:boolean}} SplitRow */
 /** @typedef {{key:string, tone:'good'|'warn'|'info'|'muted', text:string, tag?:string}} CoachLine */
 /** @typedef {{solves:number, best:string, ao5:string, ao12:string, medianTps:string, medianMoves:string}} StatsVM */
-/** @typedef {{key:string, label:string, action:BrainAction['type']}} KeyHint */
-/** @typedef {{items:{id:string, options:{value:string, label:string, active:boolean}[]}[]}} ConfigBarVM */
+/** @typedef {{key:string, label:string, action:BrainAction['type'], penalty?:'+2'|'DNF'}} KeyHint */
+/** Config bar: clicking an option dispatches setSetting(item.id, option.value).
+ * @typedef {{items:{id:string, label?:string, options:{value:string, label:string, active:boolean}[]}[]}} ConfigBarVM */
 /** @typedef {{open:boolean, sections:{id:string, label:string, rows:{id:string, label:string, help:string,
  *   control:'segmented'|'number', options:{value:string, label:string, active:boolean, isDefault:boolean}[], value?:number}[]}[]}} SettingsPanelVM */
 
-/** @typedef {{startedAtSolve:number|null, clockText:string, currentFill:number, currentSplitText:string,
+/** caret: 0..1 fraction of InspectionVM.scaleMs (for unlimited inspection, of the current minute lap).
+ * @typedef {{startedAtSolve:number|null, clockText:string, currentFill:number, currentSplitText:string,
  *   currentOver:boolean, inspection:{elapsedMs:number, remainingMs:number|null, overtimeMs:number, bigText:string,
  *   tone:string, caret:number, consequence:string}|null}} FrameVM */
 
@@ -172,19 +176,29 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
 
 /** A mounted view part. update() receives the new and previous view-model.
  * @typedef {{update:(vm:BrainVM, prev:BrainVM|null)=>void, frame?:(f:FrameVM)=>void, destroy:()=>void}} Component */
-/** @typedef {(host:HTMLElement, ctx:{dispatch:(a:BrainAction)=>void}) => Component} ComponentFactory */
+/** A style part factory. `aside` is a second host in the right-hand column, passed
+ * only when the style declares it in StyleModule.asides.
+ * @typedef {(host:HTMLElement, ctx:{dispatch:(a:BrainAction)=>void, aside?:HTMLElement}) => Component} ComponentFactory */
 /** A visual style: the parts that differ between Orbit and Mono. The shell
  * (layout, clock, coach, settings, compat ids) is shared.
  * @typedef {{id:BrainStyle, layout:'column'|'orbit', timeline:ComponentFactory, inspection:ComponentFactory,
- *   results:ComponentFactory}} StyleModule */
+ *   results:ComponentFactory, asides?:{timeline?:boolean, inspection?:boolean}}} StyleModule */
 
-/* Chart APIs (src/brain/charts/*, SVG only, coloured by CSS classes/variables):
+/* Actions the shell dispatches: setSetting uses the settings row id / config-bar item id as
+ * the path (e.g. 'inspection.mode', 'toggles.f2lHint'); #brain-pseudo sends
+ * setSetting('f2l', 'pseudo'|'standard'); #brain-inspection sends setSetting('inspection', {enabled})
+ * (the legacy shape); the settings <details> toggle sends toggleSettings; {type:'command', text:''}
+ * asks for the command line (vm.commandOpen). The controller fills #brain-toggles and
+ * #brain-connection-log itself.
+ * Chart APIs (src/brain/charts/*, coloured by CSS classes/variables; SVG except the
+ * split bars, which are HTML in a CSS grid because they are mostly text):
  *   createTpsLine(host, {variant:'mono'|'orbit'}) -> {update(series:TpsSeries, {drawIn:boolean}), destroy}
  *   createSplitBars(host, {layout:'columns'|'rows'}) -> {update(rows:SplitRow[]), destroy}
  *   createSparkline(host) -> {update(spark), destroy}
  *   createDonut(host) -> {update(donut), destroy}
  * Shell API (src/brain/shell.js):
- *   createShell(root, {dispatch}) -> {slots:{cube, timeline, inspection, results}, update(vm, prev), frame(f),
+ *   createShell(root, {dispatch}) -> {slots:{cube, timeline, inspection, results, inspectionAside, timelineAside},
+ *     update(vm, prev), frame(f),
  *     setStyle(mod:StyleModule), destroy()}
  *   The cube slot (#brain-cube) is never re-created; the controller mounts the 3D cube once.
  * Theme tokens: CSS custom properties --b-* per :root[data-theme] .brain[data-brain-style]
