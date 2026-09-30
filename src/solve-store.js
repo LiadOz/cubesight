@@ -31,6 +31,8 @@ export function cleanRecord(raw) {
     focus: normalizeFocus(r.focus),
     sessionId: typeof r.sessionId === 'string' && r.sessionId ? r.sessionId.slice(0, 32) : null,
     scramble: typeof r.scramble === 'string' ? r.scramble : '',
+    // Timed by hand (src/timer): no moves, no analysis. Absent on smart-cube solves.
+    ...(r.source === 'manual' ? { source: 'manual' } : {}),
     free: Boolean(r.free),
     crossFace: typeof r.crossFace === 'string' ? r.crossFace : null,
     crossColor: typeof r.crossColor === 'string' ? r.crossColor : null,

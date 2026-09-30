@@ -1,0 +1,119 @@
+/* The manual timer. Reads only the Brain v2 tokens (docs/design/brain-v2/tokens.md): the root is
+   `.brain.tm[data-brain-style]` under the site's :root[data-theme], so Orbit and Mono, dark and
+   light, all come from src/brain/css/tokens-*.css. `.brain.tm` outranks the Brain's own `.brain`
+   layout rules when both stylesheets are on the page. */
+
+.brain.tm {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(1040px, 100% - 32px);
+  min-height: var(--tm-min-height, 100dvh);
+  margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) 0 max(20px, env(safe-area-inset-bottom));
+  background: var(--b-bg);
+  color: var(--b-ink);
+  font-family: var(--b-font-sans);
+  font-size: var(--b-fs-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+.tm button { font: inherit; color: inherit; cursor: pointer; }
+.tm p { margin: 0; }
+.tm [hidden] { display: none !important; }
+.tm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Chrome (top bar, scramble, stats, keys) steps back while an attempt is under way. */
+.tm-top, .tm-scramble-row, .tm-stats, .tm-controls, .tm-keys { transition: opacity .4s var(--b-ease); }
+.tm.is-busy .tm-top, .tm.is-busy .tm-stats, .tm.is-busy .tm-controls { opacity: 0; pointer-events: none; }
+.tm[data-phase="running"] .tm-scramble-row, .tm[data-phase="running"] .tm-keys { opacity: .18; }
+
+.tm-top { display: flex; align-items: center; justify-content: space-between; min-height: 36px; color: var(--b-muted); font-size: 14px; }
+.tm-options { display: flex; gap: 6px; }
+.tm-opt, .tm-textbtn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; border: 0;
+  border-radius: var(--b-radius-control); background: none; color: var(--b-muted); font-size: var(--b-fs-label);
+}
+.tm-opt { background: var(--b-surface); }
+.tm-opt:hover, .tm-textbtn:hover { color: var(--b-ink); }
+.tm-textbtn.is-on { color: var(--b-accent-text); }
+.tm kbd {
+  display: inline-block; min-width: 1.7em; padding: 2px 7px; border-radius: var(--b-radius-key);
+  background: var(--b-key-bg); color: var(--b-key-ink); font: 500 12px/1.5 var(--b-font-mono); text-align: center;
+}
+.tm :focus-visible { outline: 2px solid var(--b-accent); outline-offset: 3px; border-radius: 4px; }
+
+.tm-scramble-row { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: clamp(8px, 3vh, 28px); text-align: center; }
+.tm-scramble {
+  max-width: 60ch; color: var(--b-ink); font: 500 clamp(17px, 2.4vw, 24px)/1.6 var(--b-font-mono);
+  letter-spacing: .04em; word-spacing: .18em; text-wrap: balance;
+}
+.tm-scramble[data-state="loading"], .tm-scramble[data-state="failed"] { color: var(--b-muted); font-size: 15px; letter-spacing: 0; word-spacing: 0; }
+
+/* The timer area: everything between the scramble and the stats. Touch and hold here. */
+.tm-pad {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  min-height: 200px; margin: 4px 0; border-radius: var(--b-radius-bar);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;
+}
+.tm-time {
+  font: var(--b-weight-clock) clamp(76px, 22vw, var(--b-fs-clock))/1 var(--b-font-num); letter-spacing: -.02em;
+  color: var(--b-ink); transition: color .12s linear;
+}
+.tm-time[data-tone="holding"] { color: var(--b-warn); }
+.tm-time[data-tone="ready"] { color: var(--b-good); }
+.tm-time[data-tone="plus2"] { color: var(--b-warn); }
+.tm-time[data-tone="dnf"] { color: var(--b-dnf); }
+.tm-sub { min-height: 1.5em; color: var(--b-muted); font-size: 15px; text-align: center; }
+.tm.is-busy .tm-sub { color: var(--b-faint); }
+
+/* Inspection: Orbit draws the ring (src/brain/styles/orbit) with the count in its centre; Mono
+   draws its own countdown number over the lane (src/brain/styles/mono). */
+.tm-insp { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.tm-insp-stage { position: relative; width: min(100%, 520px); aspect-ratio: 640 / 500; }
+.tm-ring { position: absolute; inset: 0; }
+.tm-count {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font: var(--b-weight-clock) clamp(84px, 24vw, var(--b-fs-countdown))/1 var(--b-font-num); letter-spacing: -.02em; color: var(--b-ink);
+}
+.tm-count[data-tone="warn"] { color: var(--b-warn); }
+.tm-count[data-tone="error"] { color: var(--b-dnf); }
+.tm-consequence { margin-top: 6px; color: var(--b-muted); font-size: 14px; text-align: center; }
+.tm[data-hold="holding"] .tm-count { color: var(--b-warn); }
+.tm[data-hold="ready"] .tm-count, .tm[data-hold="ready"] .m-insp-big { color: var(--b-good); }
+.tm[data-hold="holding"] .m-insp-big { color: var(--b-warn); }
+.tm-insp[data-kind="lane"] .tm-insp-stage, .tm-insp[data-kind="lane"] .tm-consequence { display: none; }
+.tm-insp[data-kind="lane"] { align-items: center; text-align: center; max-width: 720px; }
+.tm-insp[data-kind="ring"] .tm-ring svg { overflow: visible; }
+
+.tm-stats {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; min-height: 28px;
+  color: var(--b-muted); font-size: 14px;
+}
+.tm-stat { display: inline-flex; align-items: baseline; gap: 8px; }
+.tm-stat-value { color: var(--b-ink); font: 500 var(--b-fs-stat)/1.1 var(--b-font-num); }
+.tm-stat-count, .tm-stat-empty { color: var(--b-muted); font-size: var(--b-fs-label); }
+.tm-stat-count { margin-left: 6px; }
+.tm-stat-label { font-size: var(--b-fs-label); }
+
+.tm-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; min-height: 32px; margin-top: 4px; }
+.tm-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; min-height: 26px; margin-top: 8px; color: var(--b-muted); font-size: 13px; }
+.tm-key { display: inline-flex; align-items: center; gap: 10px; }
+
+/* Touch screens: the key hints give way to the buttons (docs/design/VOICE.md 5, D7). */
+@media (pointer: coarse) {
+  .tm-keys { display: none; }
+  .tm-controls kbd { display: none; }
+  .tm-opt, .tm-textbtn { min-height: 44px; padding: 8px 16px; font-size: 14px; }
+  .tm-pad { min-height: 46vh; }
+}
+@media (max-width: 720px) {
+  .brain.tm { width: calc(100% - 24px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm * { transition: none !important; animation: none !important; }
+}
