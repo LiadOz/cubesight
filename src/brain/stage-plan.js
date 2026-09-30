@@ -4,12 +4,12 @@
 //
 // Stage keys are stable ids stored in solve records (record.splits[].key):
 //   CFOP  cross | pair1..pair4 | eo co (2-look) or oll | cp ep (2-look) or pll
-//         An x-cross includes pair 1 (xx-cross pairs 1 and 2), so those
-//         pair segments are left out of the plan.
+//         X-cross is not a stage or a target: it is an opportunity a solver
+//         takes when the scramble allows. The plan always has the cross and
+//         four pairs; when the cross completes together with pairs, the
+//         tracker marks those pair stages as merged (see milestones.js).
 //   Roux  fb | sb | cmll | l6e  (mapped on CFOP milestones until Roux
 //         detection exists; see solve-methods.js)
-
-const CROSS_LABEL = { cross: 'cross', xcross: 'x-cross', xxcross: 'xx-cross' };
 
 /** @typedef {{key:string, label:string, short:string, group:string|null}} StageDef */
 
@@ -23,16 +23,23 @@ export function buildStagePlan(settings = {}) {
       { key: 'l6e', label: 'l6e', short: 'l6e', group: null },
     ];
   }
-  const cross = settings.cross || 'cross';
-  const firstPair = cross === 'xxcross' ? 3 : cross === 'xcross' ? 2 : 1;
-  const plan = [{ key: 'cross', label: CROSS_LABEL[cross] || 'cross', short: cross === 'cross' ? 'x' : cross === 'xcross' ? 'xc' : 'xxc', group: null }];
-  for (let n = firstPair; n <= 4; n++) plan.push({ key: `pair${n}`, label: `pair ${n}`, short: `p${n}`, group: 'f2l' });
+  const plan = [{ key: 'cross', label: 'cross', short: 'x', group: null }];
+  for (let n = 1; n <= 4; n++) plan.push({ key: `pair${n}`, label: `pair ${n}`, short: `p${n}`, group: 'f2l' });
   if (settings.oll === '1look') plan.push({ key: 'oll', label: 'oll', short: 'oll', group: null });
   else plan.push({ key: 'eo', label: 'eo', short: 'eo', group: 'oll' }, { key: 'co', label: 'co', short: 'co', group: 'oll' });
   if (settings.pll === '1look') plan.push({ key: 'pll', label: 'pll', short: 'pll', group: null });
   else plan.push({ key: 'cp', label: 'cp', short: 'cp', group: 'pll' }, { key: 'ep', label: 'ep', short: 'ep', group: 'pll' });
   return plan;
 }
+
+/** 'x-cross', 'xx-cross', … for n pairs built with the cross (null for none). */
+export const xcrossLabel = n => (n > 0 ? `${'x'.repeat(Math.min(4, n))}-cross` : null);
+
+/**
+ * A stored split of a pair that was built together with the cross: it took no
+ * time and no moves but is not a skip. (Skips are stored with skipped: true.)
+ */
+export const isMergedSplit = s => Boolean(s) && /^pair\d$/.test(s.key) && !s.skipped && s.ms === 0 && s.moves === 0;
 
 export const planKey = plan => plan.map(s => s.key).join(',');
 
@@ -92,7 +99,7 @@ export function stageAverages(records = [], plan, { window = 50 } = {}) {
   const planShare = plan.reduce((sum, s) => sum + (DEFAULT_SHARE[s.key] ?? 0.1), 0) || 1;
   const byKey = {};
   for (const stage of plan) {
-    const fromSplits = recent.map(r => r.splits?.find(s => s.key === stage.key)).filter(s => s && Number.isFinite(s.ms));
+    const fromSplits = recent.map(r => r.splits?.find(s => s.key === stage.key)).filter(s => s && Number.isFinite(s.ms) && !isMergedSplit(s));
     let avgMs = null; let avgMoves = null; let source = 'default';
     if (fromSplits.length) {
       avgMs = mean(fromSplits.map(s => s.ms));
@@ -115,7 +122,7 @@ export function stageAverages(records = [], plan, { window = 50 } = {}) {
 export function pbSplits(records = [], plan) {
   const out = {};
   for (const stage of plan) {
-    const values = records.map(r => r?.splits?.find(s => s.key === stage.key)).filter(s => s && !s.skipped && Number.isFinite(s.ms)).map(s => s.ms);
+    const values = records.map(r => r?.splits?.find(s => s.key === stage.key)).filter(s => s && !s.skipped && !isMergedSplit(s) && Number.isFinite(s.ms)).map(s => s.ms);
     out[stage.key] = values.length ? Math.min(...values) : null;
   }
   return out;

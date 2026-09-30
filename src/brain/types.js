@@ -42,6 +42,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {string} error     #brain-error
  * @property {boolean} chromeDimmed   Mono: top bar dims while scramble/inspection/solving
  * @property {boolean} commandOpen    true on the render after esc asks for the command line (the shell focuses it)
+ * @property {boolean} debugOpen      the debug drawer (connection log, recordings, coach switches, data) is open
  */
 
 /** @typedef {Object} DeviceVM
@@ -51,7 +52,9 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {number|null} battery
  * @property {boolean} supported
  * @property {boolean} gyro
- * @property {string} detail
+ * @property {string} detail   while connecting: the latest step of the attach
+ * @property {boolean} busy     connecting, or checking the cube's first state
+ * @property {boolean} failed   the last attempt failed (detail has the reason; connect again to retry)
  * @property {{connect:boolean, sync:boolean, recenter:boolean, disconnect:boolean, clearSaved:boolean, reconnect:boolean, resume:boolean}} actions
  */
 
@@ -114,7 +117,9 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {string} splitText   '1.96' | 'skip'
  * @property {{ms:number, text:string, tone:DeltaTone}|null} delta   vs avg | vs pb | null
  * @property {number|null} moves
- * @property {string[]} tags   ['pseudo']
+ * @property {string[]} tags   ['pseudo'], and 'x-cross' / 'xx-cross' on a cross that completed together with pairs
+ * @property {boolean} merged   a pair built together with the cross (done at the cross's moment; not a skip)
+ * @property {string|null} xcross   'x-cross' | 'xx-cross' | … on the cross segment when pairs came with it
  * @property {{label:string, fresh:boolean}|null} skip   fresh on the emit it happened (animate once)
  * @property {boolean} over    live split > avg
  */
@@ -153,7 +158,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *   bands:{key:string, label:string, fromMs:number, toMs:number}[], marks:{tMs:number, kind:'pause'|'skip', label:string}[],
  *   durationMs:number, maxTps:number}} TpsSeries */
 /** @typedef {{key:string, label:string, ms:number|null, text:string, deltaText:string, tone:DeltaTone, moves:number|null,
- *   avgMs:number|null, ratio:number, avgRatio:number, skipped:boolean, pseudo:boolean}} SplitRow */
+ *   avgMs:number|null, ratio:number, avgRatio:number, skipped:boolean, merged:boolean, pseudo:boolean}} SplitRow */
 /** @typedef {{key:string, tone:'good'|'warn'|'info'|'muted', text:string, tag?:string}} CoachLine */
 /** Session focus: what the user is training (src/store/focus.js). Every statistic is computed within one focus.
  * @typedef {'speed'|'flow'|'learning'} Focus */
@@ -189,7 +194,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  *  |{type:'setScrambleText', text:string}|{type:'cancel'}|{type:'next'}|{type:'retry'}|{type:'dismissResults'}
  *  |{type:'setPenalty', penalty:null|'none'|'+2'|'DNF', at?:number}|{type:'togglePenalty', penalty:'+2'|'DNF'}
  *  |{type:'deleteSolve', at?:number}|{type:'undoDelete'}
- *  |{type:'setSetting', path:string, value:any}|{type:'toggleSettings'}|{type:'command', text:string}
+ *  |{type:'setSetting', path:string, value:any}|{type:'toggleSettings'}|{type:'toggleDebug'}|{type:'command', text:string}
  *  |{type:'toggleTimer'}|{type:'cycleCoach'}|{type:'export'}|{type:'import', file:File}|{type:'setStyle', style:BrainStyle}
  *  |{type:'sendLog'}|{type:'clearLog'}} BrainAction */
 

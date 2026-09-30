@@ -17,7 +17,7 @@ import { inspectionLimitMs, inspectionPenalty } from '../solve-live.js';
 import { summarize, ao5, ao12, scopeStats, flowStats, learningStats, resultMs, PLUS_TWO_MS } from '../solve-metrics.js';
 import { sessionRecords, currentSessionId } from '../store/sessions.js';
 import { FOCI, focusOf, inFocus, normalizeFocus } from '../store/focus.js';
-import { buildStagePlan, planKey as planKeyOf, planGroups, stageAverages, pbSplits } from './stage-plan.js';
+import { buildStagePlan, planKey as planKeyOf, planGroups, stageAverages, pbSplits, xcrossLabel, isMergedSplit } from './stage-plan.js';
 import { stageProgress, createTrack } from './milestones.js';
 import { tpsSeries, splitRows, donutArcs, sparkline } from './series.js';
 import { fmtTime, fmtSeconds, fmtDelta, deltaTone, fmtTps, fmtResult, penaltyTag } from './format.js';
@@ -72,7 +72,7 @@ export function phaseText(live) {
 // --- Device --------------------------------------------------------------------------
 
 /** @returns {import('./types.js').DeviceVM} */
-export function deviceFor(session, supported = true, live = null) {
+export function deviceFor(session, supported = true, connectStep = '', live = null) {
   const s = session || { phase: 'disconnected', detail: '' };
   const connecting = s.phase === 'connecting';
   const connected = !connecting && s.phase !== 'disconnected';
@@ -80,9 +80,13 @@ export function deviceFor(session, supported = true, live = null) {
   const phase = { disconnected: 'disconnected', connecting: 'connecting', 'awaiting-solved': 'syncing', tracking: 'tracking', desynced: 'desynced' }[s.phase] ?? 'disconnected';
   // Without Web Bluetooth only a disconnected cube needs the explanation (a
   // replayed recording connects through the adapter seam regardless).
-  const detail = supported || connected
-    ? (connecting ? 'Select your cube in the picker…' : `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap Recenter motion to align.' : ''}`)
-    : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
+  // While connecting, the status line is the latest step of the attach (the picker, the advertisement
+  // watch, the address lookup, the manual-address prompt, …), newest of the session detail and the log.
+  const failed = s.phase === 'disconnected' && /^(Connection failed|No cube selected)/.test(s.detail ?? '');
+  const detail = connecting ? (connectStep || s.detail || 'Select your cube…')
+    : failed ? s.detail
+      : supported || connected ? `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap Recenter motion to align.' : ''}`
+        : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
   return {
     phase,
     name: connected ? (s.deviceName || 'Smart cube') : connecting ? 'connecting…' : 'No cube',
@@ -91,6 +95,9 @@ export function deviceFor(session, supported = true, live = null) {
     supported,
     gyro,
     detail,
+    // The attach is under way (the picker, the address lookup, the first read of the cube), or just failed.
+    busy: connecting || phase === 'syncing',
+    failed,
     actions: {
       // Offered even without Web Bluetooth: connecting then explains what's missing.
       connect: s.phase === 'disconnected',
@@ -200,7 +207,7 @@ function recordStages(record, track, plan) {
   const stages = (record.splits || []).filter(s => plan.some(p => p.key === s.key)).map(s => {
     const startAt = at;
     at += s.ms ?? 0;
-    return { key: s.key, label: plan.find(p => p.key === s.key)?.label, startAt, endAt: at, ms: s.ms, moves: s.moves, skipped: s.skipped, pseudo: s.pseudo, done: true };
+    return { key: s.key, label: plan.find(p => p.key === s.key)?.label, startAt, endAt: at, ms: s.ms, moves: s.moves, skipped: s.skipped, merged: isMergedSplit(s), pseudo: s.pseudo, done: true };
   });
   return { stages, solveStartAt: 0, moveTimes: record.moveTimes || [] };
 }
@@ -212,7 +219,14 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
   const preSolve = screen === 'inspection' || screen === 'ready';
   const currentIndex = solving ? Math.min(sp.currentIndex, plan.length - 1) : results ? plan.length : 0;
   const total = averages.totalAvgMs || 1;
+  // Arc widths follow the averages, with a floor so a stage that is always skipped keeps a visible arc.
+  const rawWeights = plan.map(stage => averages.byKey[stage.key].avgMs / total);
+  const floored = rawWeights.map(w => Math.max(w, 0.03));
+  const flooredSum = floored.reduce((sum, w) => sum + w, 0) || 1;
   const prevByKey = new Map((prevTimeline?.segments || []).map(s => [s.key, s]));
+  // X-cross: pairs that were already built when the cross completed are done at
+  // the same moment; the cross segment carries the tag.
+  const xLabel = (solving || results) ? xcrossLabel(sp.stages.filter(st => st.merged).length) : null;
   const segments = plan.map((stage, i) => {
     const p = sp.stages[i];
     const avg = averages.byKey[stage.key];
@@ -221,19 +235,23 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
     const current = (solving && i === currentIndex && !p.done) || (preSolve && i === 0);
     const state = done ? (p.skipped ? 'skipped' : 'done') : current ? 'current' : 'future';
     const ref = settings.compare === 'pb' ? pbs[stage.key] : settings.compare === 'avg' ? avg.avgMs : null;
-    const deltaMs = done && !p.skipped && ref != null && p.ms != null ? p.ms - ref : null;
+    const deltaMs = done && !p.skipped && !p.merged && ref != null && p.ms != null ? p.ms - ref : null;
     const elapsed = current && p.startAt != null ? Math.max(0, now - p.startAt) : 0;
+    const merged = Boolean(done && p.merged);
     const tags = p.pseudo ? ['pseudo'] : [];
+    if (stage.key === 'cross' && done && xLabel) tags.push(xLabel);
     if (current && /^pair\d$/.test(stage.key) && settings.f2l === 'pseudo' && dShift) tags.push('pseudo');
     const prevSeg = prevByKey.get(stage.key);
     return {
       key: stage.key, label: stage.label, short: stage.short, group: stage.group,
-      weight: avg.avgMs / total, avgMs: avg.avgMs, avgSource: avg.source,
+      weight: floored[i] / flooredSum, avgMs: avg.avgMs, avgSource: avg.source,
       state,
       fill: done ? 1 : current ? Math.min(1, elapsed / Math.max(1, avg.avgMs)) : 0,
       startedAt: current ? p.startAt : null,
       splitMs: done ? p.ms : null,
-      splitText: done ? (p.skipped ? 'skip' : fmtTime(p.ms)) : '',
+      splitText: done ? (p.skipped ? 'skip' : merged ? 'with cross' : fmtTime(p.ms)) : '',
+      merged,
+      xcross: stage.key === 'cross' && done ? xLabel : null,
       delta: deltaMs == null ? null : { ms: deltaMs, text: fmtDelta(deltaMs), tone: deltaTone(deltaMs) },
       moves: done ? p.moves : null,
       tags,
@@ -332,8 +350,7 @@ function methodSummary(record, settings) {
   const method = c.method || settings.method;
   const parts = [method];
   if (method === 'cfop') {
-    const cross = c.cross || settings.cross;
-    if (cross !== 'cross') parts.push(cross === 'xcross' ? 'x-cross' : 'xx-cross');
+    if (c.cross === 'xcross' || c.cross === 'xxcross') parts.push(c.cross === 'xcross' ? 'x-cross' : 'xx-cross');   // older records
     const oll = c.oll || settings.oll;
     const pll = c.pll || settings.pll;
     parts.push(oll === pll ? (oll === '1look' ? '1-look' : '2-look') : `oll ${oll === '1look' ? '1' : '2'}-look · pll ${pll === '1look' ? '1' : '2'}-look`);
@@ -466,7 +483,7 @@ function statsVM(all, focus) {
  * @param {{session:Object, live:Object, records:Object[], settings:Object, track?:Object, optimalCross?:Object|null,
  *   coach?:import('./types.js').CoachLine[], error?:string, status?:string|null, theme?:'dark'|'light',
  *   supported?:boolean, now?:number, held?:{bottom:string, front:string}, scrambleText?:string,
- *   settingsOpen?:boolean, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
+ *   settingsOpen?:boolean, themePreference?:'light'|'dark'|'system', debugOpen?:boolean, connectStep?:string, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
  *   dShift?:number|null}} input
  * @param {import('./types.js').BrainVM|null} prev
  * @returns {import('./types.js').BrainVM}
@@ -483,7 +500,7 @@ export function buildViewModel(input, prev = null) {
   };
 
   const screen = screenFor(session, live);
-  const plan = cached('plan', [settings.method, settings.cross, settings.oll, settings.pll], () => buildStagePlan(settings));
+  const plan = cached('plan', [settings.method, settings.oll, settings.pll], () => buildStagePlan(settings));
   const activeFocus = normalizeFocus(settings.session?.focus);
   const focusRecords = cached('focusRecords', [records, activeFocus], () => inFocus(records, activeFocus));
   const averages = cached('averages', [focusRecords, plan], () => stageAverages(focusRecords, plan));
@@ -494,8 +511,9 @@ export function buildViewModel(input, prev = null) {
   const result = screen === 'results'
     ? cached('results', [live?.record, records, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross], () => resultsVM({ live, records, settings, plan, track, optimalCross }))
     : null;
-  const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, live));
-  const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen)], () => buildSettingsPanel(settings, Boolean(input.settingsOpen)));
+  const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, input.connectStep ?? '', session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, input.connectStep ?? '', live));
+  const themePreference = input.themePreference ?? 'system';
+  const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen), themePreference], () => buildSettingsPanel(settings, Boolean(input.settingsOpen), themePreference));
   const configBar = cached('configBar', [settings], () => buildConfigBar(settings));
   const stats = cached('stats', [records, activeFocus], () => statsVM(records, activeFocus));
   const keys = cached('keys', [screen, settings.timer, settings.coach], () => keyHints(screen, { timerHidden: settings.timer === 'hide', coach: settings.coach }));
@@ -526,6 +544,7 @@ export function buildViewModel(input, prev = null) {
     error: input.error ?? '',
     chromeDimmed: ['scramble', 'inspection', 'ready', 'solving'].includes(screen),
     commandOpen: Boolean(input.commandOpen),
+    debugOpen: Boolean(input.debugOpen),
   };
   // Keep identity for slices that did not change, so components can skip them.
   if (prev) {

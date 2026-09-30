@@ -15,7 +15,7 @@ export function createSplitBars(host, { layout = 'rows' } = {}) {
   return {
     /** @param {import('../types.js').SplitRow[]} rows */
     update(rows = []) {
-      const items = rows.map(r => ({ key: r.key, text: '', className: `b-ch-split is-${r.skipped ? 'skip' : r.tone}${r.pseudo ? ' is-pseudo' : ''}` }));
+      const items = rows.map(r => ({ key: r.key, text: '', className: `b-ch-split is-${r.skipped ? 'skip' : r.tone}${r.pseudo ? ' is-pseudo' : ''}${r.merged ? ' is-merged' : ''}` }));
       reconcileChildren(root, items, 'div');
       rows.forEach((r, i) => fillRow(root.children[i], r, layout));
     },

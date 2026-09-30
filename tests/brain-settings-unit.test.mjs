@@ -31,7 +31,7 @@ test('the v1 per-setting keys migrate into v2 settings', () => {
   });
   const s = loadSettings(storage);
   assert.equal(s.method, 'cfop', 'Roux is hidden for now: a stored roux falls back to cfop');
-  assert.equal(s.cross, 'xcross');
+  assert.equal('cross' in s, false, 'an old x-cross target is ignored');
   assert.equal(s.f2l, 'pseudo');
   assert.equal(s.inspection.mode, 'unlimited', 'unchecked inspection = no countdown, clock on first turn');
   assert.equal(s.toggles.pllLens, false);
@@ -84,8 +84,12 @@ test('the command line sets any setting', () => {
   assert.deepEqual(parseCommand('pll 2-look'), { path: 'pll', value: '2look' });
   assert.deepEqual(parseCommand('style mono'), { path: 'style', value: 'mono' });
   assert.deepEqual(parseCommand('orbit'), { path: 'style', value: 'orbit' });
+  assert.deepEqual(parseCommand('mode dark'), { path: 'theme', value: 'dark' });
+  assert.deepEqual(parseCommand('light'), { path: 'theme', value: 'light' });
+  assert.deepEqual(parseCommand('theme system'), { path: 'theme', value: 'system' });
+  assert.deepEqual(parseCommand('theme mono'), { path: 'style', value: 'mono' }, 'the old spelling still picks the style');
   assert.deepEqual(parseCommand('timer hide'), { path: 'timer', value: 'hide' });
-  assert.deepEqual(parseCommand('cross x'), { path: 'cross', value: 'xcross' });
+  for (const text of ['cross x', 'xcross', 'xxcross', 'cross']) assert.equal(parseCommand(text), null, `${text}: x-cross is not a target`);
   assert.deepEqual(parseCommand('pseudo'), { path: 'f2l', value: 'pseudo' });
   assert.deepEqual(parseCommand('compare pb'), { path: 'compare', value: 'pb' });
   assert.deepEqual(parseCommand('preset relaxed'), { path: 'preset', value: 'relaxed' });
@@ -107,12 +111,17 @@ test('the settings panel shows only rows that apply', () => {
   assert.equal(panel.open, true);
   const style = panel.sections.find(s => s.id === 'look').rows[0];
   assert.deepEqual(style.options.map(o => [o.value, o.active, o.isDefault]), [['orbit', true, true], ['mono', false, false]]);
+  // The site mode is one more row beside the style; the preference comes from src/theme.js.
+  const mode = panel.sections.find(s => s.id === 'look').rows[1];
+  assert.deepEqual([mode.id, mode.label], ['theme', 'mode']);
+  assert.deepEqual(mode.options.map(o => [o.value, o.active]), [['light', false], ['dark', false], ['system', true]]);
+  assert.deepEqual(buildSettingsPanel(normalizeSettings(), false, 'dark').sections.find(s => s.id === 'look').rows[1].options.map(o => o.active), [false, true, false]);
 });
 
 test('config bar and inspection labels', () => {
   const bar = buildConfigBar(normalizeSettings({ f2l: 'pseudo' }));
-  assert.deepEqual(bar.items.map(i => i.id), ['cross', 'f2l', 'oll', 'pll', 'inspection.mode', 'penalties', 'session.focus']);
-  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', '', 'oll', 'pll', 'insp', '', 'focus']);
+  assert.deepEqual(bar.items.map(i => i.id), ['f2l', 'oll', 'pll', 'inspection.mode', 'penalties', 'session.focus']);
+  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', 'oll', 'pll', 'insp', '', 'focus']);
   const f2l = bar.items.find(i => i.id === 'f2l').options[0];
   assert.deepEqual([f2l.active, f2l.value], [true, 'standard'], 'a toggle carries the value it switches to');
   assert.deepEqual(bar.items.find(i => i.id === 'oll').options.map(o => [o.label, o.active]), [['1-look', false], ['2-look', true]]);
@@ -146,6 +155,13 @@ test('keys: space, esc, tab, penalties, retry per screen', () => {
   assert.equal(key('r', 'solving'), null);
   assert.deepEqual(key('t', 'solving'), { type: 'toggleTimer' });
   assert.deepEqual(key('c', 'idle'), { type: 'cycleCoach' });
+  // Panels: one key opens, esc closes (the debug drawer first), even from inside a text field.
+  assert.deepEqual(key('`', 'solving'), { type: 'toggleDebug' });
+  assert.deepEqual(key('Escape', 'solving', { debugOpen: true }), { type: 'toggleDebug' });
+  assert.deepEqual(key('Escape', 'idle', { debugOpen: true, settingsOpen: true }), { type: 'toggleDebug' });
+  assert.deepEqual(key('Escape', 'idle', { settingsOpen: true, editable: true }), { type: 'toggleSettings' });
+  assert.equal(key('Escape', 'idle', { editable: true }), null);
+  assert.equal(key('`', 'idle', { editable: true }), null);
 });
 
 test('keys are ignored while typing, repeating, with modifiers or a dialog open', () => {

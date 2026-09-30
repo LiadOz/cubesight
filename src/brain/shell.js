@@ -1,6 +1,6 @@
 // Brain v2 shell: the layout and every part shared by the Orbit and Mono styles
-// (device chip, config bar, settings panel, scramble line, clock, coach, key
-// hints, results frame, diagnostics). The style module supplies the timeline,
+// (tabs and device chip, config bar, settings panel, scramble line, clock,
+// coach, key hints, results frame, debug drawer). The style module supplies the timeline,
 // the inspection view and the results body. Updates are in place: each part
 // compares its view-model slice with the previous one and patches the DOM.
 //
@@ -23,7 +23,34 @@ const DEV = Boolean(import.meta.env?.DEV);
 
 const TEMPLATE = `
   <header class="b-top">
-    <p class="b-crumb"><span>brain</span></p>
+    <nav class="b-tabs" aria-label="Brain views">
+      <button class="b-tab b-tab-brain" type="button" data-tab="brain" aria-current="page">brain</button>
+      <details class="brain-pill-setup b-settings">
+        <summary class="b-tab"><span>settings</span></summary>
+        <div class="b-settings-body" role="region" aria-label="Settings">
+          <div class="b-panel-head"><h2>settings</h2><button class="b-textbtn b-close" type="button" data-action="toggleSettings" aria-label="Close settings"><span>close</span><kbd>esc</kbd></button></div>
+          <nav class="b-configbar b-configbar-copy" aria-label="Quick settings"></nav>
+          <p class="b-settings-caption">quick settings above · everything else lives here · defaults follow wca regulations</p>
+          <div class="b-settings-sections"></div>
+          <section class="b-settings-section b-quick" aria-label="Quick toggles">
+            <h3><span>quick</span></h3>
+            <label class="b-check"><input type="checkbox" id="brain-pseudo"><span>pseudo f2l · d-shift</span></label>
+            <label class="b-check"><input type="checkbox" id="brain-inspection" checked><span>inspection countdown</span></label>
+            <details class="brain-advanced-scramble">
+              <summary><span>use a specific scramble</span></summary>
+              <div class="brain-scramble-wrap" id="brain-guided-wrap">
+                <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="paste a scramble, or generate one…"></textarea>
+                <div class="brain-scramble-actions">
+                  <button class="b-btn" id="brain-generate" type="button">new wca scramble</button>
+                  <button class="b-btn" id="brain-start-custom" type="button">start with this scramble</button>
+                </div>
+              </div>
+            </details>
+            <form class="b-command" autocomplete="off"><label><kbd>type</kbd><input name="command" placeholder="“insp 10” · “oll 1” · “style orbit”" aria-label="Settings command"></label></form>
+          </section>
+        </div>
+      </details>
+    </nav>
     <div class="b-device brain-connect-chip" aria-label="Smart cube connection">
       <button class="b-device-toggle" type="button" aria-expanded="false" aria-controls="b-device-menu">
         <i class="b-dot" aria-hidden="true"></i><span id="brain-device-inline">No cube</span>
@@ -72,7 +99,8 @@ const TEMPLATE = `
           <button class="b-textbtn" id="brain-cue" type="button" aria-pressed="true" aria-label="Show the current move on the 3D cube">cue</button>
         </div>
         <div id="brain-coach" class="b-coach" aria-live="polite"></div>
-        <p class="b-idle-status"></p>
+        <p class="b-idle-status" aria-live="polite"></p>
+        <div class="b-progress" aria-hidden="true"><i></i></div>
         <div class="b-primary">
           <button class="b-start" id="brain-start" type="button"><span>start scramble</span><kbd>space</kbd></button>
           <button class="b-start b-start-alt" type="button" data-primary="connect" hidden><span>connect cube</span></button>
@@ -86,48 +114,35 @@ const TEMPLATE = `
       <div class="b-results-actions"><button class="b-textbtn" id="brain-review-close" type="button">continue</button></div>
     </section>
   </main>
-  <details class="brain-pill-setup b-settings">
-    <summary><span>settings</span></summary>
-    <div class="b-settings-body">
-      <nav class="b-configbar b-configbar-copy" aria-label="Quick settings"></nav>
-      <p class="b-settings-caption">the bar above is the quick path; everything else lives here · defaults follow wca regulations</p>
-      <div class="b-settings-sections"></div>
-      <section class="b-settings-section b-quick" aria-label="Quick toggles">
-        <h3><span>quick</span></h3>
-        <label class="b-check"><input type="checkbox" id="brain-pseudo"><span>pseudo f2l · d-shift</span></label>
-        <label class="b-check"><input type="checkbox" id="brain-inspection" checked><span>inspection countdown</span></label>
-        <details class="brain-advanced-scramble">
-          <summary><span>use a specific scramble</span></summary>
-          <div class="brain-scramble-wrap" id="brain-guided-wrap">
-            <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="paste a scramble, or generate one…"></textarea>
-            <div class="brain-scramble-actions">
-              <button class="b-btn" id="brain-generate" type="button">new wca scramble</button>
-              <button class="b-btn" id="brain-start-custom" type="button">start with this scramble</button>
-            </div>
-          </div>
-        </details>
-        <form class="b-command" autocomplete="off"><label><kbd>type</kbd><input name="command" placeholder="“insp 10” · “oll 1” · “style orbit”" aria-label="Settings command"></label></form>
-      </section>
-    </div>
-  </details>
-  <footer class="b-foot">
+  <div class="b-foot">
     <div class="b-keys"></div>
     <p id="brain-error" class="brain-error" role="alert" hidden></p>
     <div class="b-sr" aria-live="polite"><h2 id="brain-phase-label">Connect and start a solve</h2><p id="brain-phase-detail" class="brain-phase-detail"></p></div>
     <div class="b-foot-tools">
       <button class="b-textbtn" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">rebuild view</button>
+      <button class="b-textbtn" id="brain-debug-toggle" type="button" aria-expanded="false" aria-controls="brain-debug" title="Connection log, recordings, coach switches and your data"><span>debug</span><kbd>\`</kbd></button>
     </div>
-    <details class="brain-coach-settings b-drawer"><summary><span>coach &amp; data</span><small>choose which insights appear · export your solves</small></summary>
-      <div id="brain-toggles" class="brain-toggles"></div>
-      <div class="brain-data-port"><span>your data stays on this device.</span><button class="b-btn" id="brain-export" type="button">export data</button><button class="b-btn" id="brain-import" type="button">import data</button><input type="file" id="brain-import-file" accept="application/json,.json" hidden><p id="brain-port-status" role="status" aria-live="polite"></p></div>
-    </details>
-    <details class="brain-diagnostics b-drawer"><summary><span>connection diagnostics</span><small>what the attach is doing — send to dev</small></summary>
-      <div class="brain-connection-log-head"><p class="b-label">connection log</p><div class="brain-log-actions"><button class="b-btn" id="brain-send-log" type="button" title="Send this log to the dev server so the agent can read it">send to dev</button><button class="b-btn" id="brain-clear-log" type="button">clear log</button></div></div>
+  </div>
+  <aside class="b-debug" id="brain-debug" role="dialog" aria-label="Debug" hidden>
+    <div class="b-panel-head"><h2>debug</h2><button class="b-textbtn b-close" type="button" data-action="toggleDebug" aria-label="Close debug"><span>close</span><kbd>esc</kbd></button></div>
+    <section class="brain-diagnostics b-debug-section" aria-label="Connection diagnostics">
+      <h3><span>connection</span></h3>
+      <div class="brain-connection-log-head"><p class="b-label">what the attach is doing</p><div class="brain-log-actions"><button class="b-btn" id="brain-send-log" type="button" title="Send this log to the dev server so the agent can read it">send to dev</button><button class="b-btn" id="brain-clear-log" type="button">clear log</button></div></div>
       <ol id="brain-connection-log" class="brain-log-list"></ol><p id="brain-send-status" role="status" aria-live="polite"></p>
+    </section>
+    <section class="brain-recording b-debug-section" aria-label="Recordings">
+      <h3><span>recordings</span></h3>
+      <p class="b-label">everything the cube and you sent is recorded continuously; save it to reproduce a problem</p>
       <div class="brain-log-actions brain-recording-actions"><button class="b-btn" id="brain-save-recording" type="button" title="Everything the cube and you sent is recorded continuously. Save it to reproduce a problem.">save recording</button><button class="b-btn" id="brain-clear-recording" type="button">start fresh recording</button><button class="b-btn" id="brain-load-recording" type="button" title="Replay a saved recording into this view">load recording…</button><select id="brain-replay-speed" aria-label="Replay speed"><option value="1">1×</option><option value="4">4×</option><option value="0">instant</option></select><button class="b-btn" id="brain-replay-stop" type="button" hidden>stop replay</button><input type="file" id="brain-load-recording-file" accept="application/json,.json" hidden></div>
       <p id="brain-recording-status" role="status" aria-live="polite"></p>
-    </details>
-  </footer>`;
+    </section>
+    <section class="brain-coach-settings b-debug-section" aria-label="Coach and data">
+      <h3><span>coach &amp; data</span></h3>
+      <p class="b-label">choose which insights appear</p>
+      <div id="brain-toggles" class="brain-toggles"></div>
+      <div class="brain-data-port"><span>your data stays on this device.</span><button class="b-btn" id="brain-export" type="button">export data</button><button class="b-btn" id="brain-import" type="button">import data</button><input type="file" id="brain-import-file" accept="application/json,.json" hidden><p id="brain-port-status" role="status" aria-live="polite"></p></div>
+    </section>
+  </aside>`;
 
 // Buttons whose click is one action.
 const CLICK_ACTIONS = {
@@ -197,16 +212,15 @@ export function createShell(root, { dispatch }) {
   brain.innerHTML = TEMPLATE;   // one-time mount; updates below are in place
   root.append(brain);
   const $ = selector => brain.querySelector(selector);
-  if (!DEV) {
-    $('#brain-send-log')?.remove();
-    const hint = $('.brain-diagnostics > summary small');
-    if (hint) hint.textContent = 'what the attach is doing · save a recording';
-  }
+  if (!DEV) $('#brain-send-log')?.remove();   // Send to dev only exists on the dev server
 
   const parts = {
     configBar: brain.querySelector(':scope > .b-configbar'),
     configCopy: $('.b-configbar-copy'),
     deviceToggle: $('.b-device-toggle'),
+    debug: $('#brain-debug'),
+    debugToggle: $('#brain-debug-toggle'),
+    brainTab: $('.b-tab-brain'),
     deviceMenu: $('.b-device-menu'),
     scrambleHead: $('.b-scramble-head'),
     stepLine: $('.b-stepline'),
@@ -264,8 +278,12 @@ export function createShell(root, { dispatch }) {
   // --- Events: thin delegation to actions ---------------------------------
   brain.addEventListener('click', event => {
     const target = /** @type {HTMLElement} */ (event.target);
+    // The backdrop behind the settings panel is the <details> element's own ::before.
+    if (target === parts.settings && parts.settings.open) { dispatch({ type: 'toggleSettings' }); return; }
     const button = target.closest('button');
     if (!button || !brain.contains(button)) return;
+    if (button === parts.brainTab) { if (parts.settings.open) dispatch({ type: 'toggleSettings' }); return; }
+    if (button === parts.debugToggle) { dispatch({ type: 'toggleDebug' }); return; }
     if (button.id && CLICK_ACTIONS[button.id]) { dispatch(CLICK_ACTIONS[button.id]); return; }
     if (button === parts.cueButton) {
       writeGuidePref('cue', readGuidePrefs().cue === false);
@@ -311,13 +329,26 @@ export function createShell(root, { dispatch }) {
   // summary); keep the controller's open state in step with it.
   parts.settings.addEventListener('toggle', () => {
     if (last && parts.settings.open !== last.settings.open) dispatch({ type: 'toggleSettings' });
-    toggleClass(brain, 'is-settings-open', parts.settings.open);
+    syncSettingsOpen();
   });
   const onDocClick = event => {
     if (!parts.deviceMenu.hidden && !$('.b-device').contains(/** @type {Node} */ (event.target))) setDeviceMenu(false);
   };
   document.addEventListener('click', onDocClick);
 
+  // One active item in the tab row: settings while its panel is open, brain otherwise.
+  function syncSettingsOpen() {
+    const open = parts.settings.open;
+    toggleClass(brain, 'is-settings-open', open);
+    setAttr(parts.brainTab, 'aria-current', open ? null : 'page');
+    setAttr(parts.settings.querySelector(':scope > summary'), 'aria-current', open ? 'page' : null);
+    parts.settings.querySelector(':scope > summary').setAttribute('aria-expanded', String(open));
+  }
+  function syncDebugOpen(open) {
+    parts.debug.hidden = !open;
+    toggleClass(brain, 'is-debug-open', open);
+    parts.debugToggle.setAttribute('aria-expanded', String(open));
+  }
   function setDeviceMenu(open) {
     parts.deviceMenu.hidden = !open;
     parts.deviceToggle.setAttribute('aria-expanded', String(open));
@@ -346,7 +377,8 @@ export function createShell(root, { dispatch }) {
     // Connect sits beside the chip whenever no cube is connected (every screen);
     // the disconnected screen also offers it as the primary action.
     const connect = $('#brain-connect');
-    connect.hidden = !device.actions.connect && device.phase !== 'connecting';
+    // (While the attach runs the primary button carries the progress, so this one steps aside.)
+    connect.hidden = !device.actions.connect;
     toggleClass(connect, 'is-connecting', device.phase === 'connecting');
     connect.disabled = device.phase === 'connecting';
     setText(connect, device.phase === 'connecting' ? 'connecting…' : 'connect');
@@ -382,7 +414,7 @@ export function createShell(root, { dispatch }) {
   function updateSettings(settings, prev) {
     if (settings === prev) return;
     if (settings.open !== prev?.open && parts.settings.open !== settings.open) parts.settings.open = settings.open;
-    toggleClass(brain, 'is-settings-open', parts.settings.open);
+    syncSettingsOpen();
     renderKeyed(parts.sections, settings.sections, s => s.id,
       section => {
         const node = el('section', 'b-settings-section');
@@ -520,16 +552,19 @@ export function createShell(root, { dispatch }) {
   function updatePrimary(vm) {
     const screen = vm.screen;
     parts.start.hidden = screen !== 'idle';
-    const alt = screen === 'disconnected'
+    const busy = vm.device.busy;   // the attach is under way: the button stays, disabled, with a spinner
+    const alt = screen === 'disconnected' || screen === 'connecting'
       ? (vm.device.actions.resume ? { action: 'resume', label: 'resume solve' }
         : vm.device.actions.reconnect ? { action: 'reconnect', label: 'reconnect cube' }
-          : { action: 'connect', label: vm.device.phase === 'connecting' ? 'connecting…' : 'connect cube' })
+          : { action: 'connect', label: busy ? 'connecting…' : vm.device.failed ? 'retry connection' : 'connect cube' })
       : screen === 'desynced' ? { action: 'sync', label: 'sync solved cube' } : null;
     parts.primaryAlt.hidden = !alt;
     if (alt) {
       parts.primaryAlt.dataset.primary = alt.action;
       setText(parts.primaryAlt.querySelector('span'), alt.label);
-      parts.primaryAlt.disabled = vm.device.phase === 'connecting';
+      parts.primaryAlt.disabled = screen !== 'desynced' && busy;
+      toggleClass(parts.primaryAlt, 'is-connecting', screen !== 'desynced' && busy);
+      setAttr(parts.primaryAlt, 'aria-busy', busy ? 'true' : null);
     }
     parts.stop.hidden = !(screen === 'scramble' || screen === 'inspection' || screen === 'ready' || screen === 'solving');
   }
@@ -541,6 +576,7 @@ export function createShell(root, { dispatch }) {
     brain.dataset.screen = vm.screen;
     brain.dataset.theme = vm.theme;
     toggleClass(brain, 'is-chrome-dimmed', vm.chromeDimmed);
+    if (vm.debugOpen !== p?.debugOpen) syncDebugOpen(Boolean(vm.debugOpen));
     updateDevice(vm.device, p?.device);
     updateConfigBar(vm.configBar, p?.configBar);
     updateSettings(vm.settings, p?.settings);
@@ -550,7 +586,9 @@ export function createShell(root, { dispatch }) {
     updateStats(vm.stats, p?.stats);
     updateKeys(vm.keys, p?.keys);
     updatePrimary(vm);
-    setText(parts.idleStatus, vm.screen === 'idle' || vm.screen === 'disconnected' || vm.screen === 'desynced' ? vm.status : '');
+    const showStatus = vm.screen === 'idle' || vm.screen === 'disconnected' || vm.screen === 'desynced' || vm.screen === 'connecting';
+    setText(parts.idleStatus, showStatus ? vm.status : '');
+    parts.idleStatus.dataset.tone = vm.screen === 'disconnected' && vm.device.failed ? 'error' : 'text';
     parts.toast.hidden = !vm.toast;
     if (vm.toast) { setText(parts.toast, vm.toast.text); parts.toast.dataset.tone = vm.toast.tone; }
     parts.error.hidden = !vm.error;
@@ -558,7 +596,8 @@ export function createShell(root, { dispatch }) {
     setText($('#brain-phase-label'), vm.phaseText.label);
     setText($('#brain-phase-detail'), vm.phaseText.detail);
     // Timeline host (aria lives on the host so both styles share it).
-    parts.timeline.hidden = !vm.timeline.visible;
+    // Orbit keeps its ring host while connecting: the ring sweeps around the cube then.
+    parts.timeline.hidden = !(vm.timeline.visible || (vm.screen === 'connecting' && style?.layout === 'orbit'));
     toggleClass(parts.timeline, 'is-ghost', vm.timeline.ghost);
     setAttr(parts.timeline, 'aria-valuemin', 0);
     setAttr(parts.timeline, 'aria-valuemax', vm.timeline.aria.max);

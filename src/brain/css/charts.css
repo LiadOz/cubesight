@@ -21,11 +21,13 @@
 .b-ch-splits.is-rows { display: grid; grid-template-columns: 4.2em minmax(80px, 1fr) 4.2em 4.4em; column-gap: 16px; row-gap: 14px; align-items: center; }
 .b-ch-splits.is-rows .b-ch-split { display: contents; }
 .b-ch-split-label { color: var(--b-muted); font-size: 13px; }
-.b-ch-split-value { font-size: 14px; text-align: right; }
+.b-ch-split-value { font-size: 14px; text-align: right; white-space: nowrap; }
 .b-ch-split-delta { font-size: 12px; text-align: right; color: var(--b-muted); }
 .b-ch-split-delta.is-faster { color: var(--b-accent-text); }
 .b-ch-split-delta.is-slower { color: var(--b-warn-text); }
 .b-ch-split.is-skip .b-ch-split-value { color: var(--b-accent-text); }
+.b-ch-split.is-merged .b-ch-split-value { color: var(--b-muted); }
+.b-ch-splits.is-columns .b-ch-split.is-merged .b-ch-split-value { font-size: 14px; line-height: 2; }
 .b-ch-bar { position: relative; display: block; height: 6px; border-radius: 3px; background: var(--b-track); }
 .b-ch-bar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--b-fill); transform-origin: left; animation: b-ch-grow 420ms var(--b-ease, ease-out) both; }
 .b-ch-split.is-faster .b-ch-bar-fill { background: var(--b-accent); }

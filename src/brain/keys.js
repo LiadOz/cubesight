@@ -4,9 +4,11 @@
 // default when there is one).
 //
 //   space  start (idle) · next scramble (results) · connect (disconnected)
-//   esc    abort the scramble/inspection/solve · open the command line (idle/results)
+//   esc    close the debug drawer or settings first; else abort the scramble/inspection/solve ·
+//          open the command line (idle/results)
 //   tab ,  settings (tab only while focus is on the page, so keyboard
 //          navigation of controls still works)
+//   `      debug drawer (connection log, recordings, coach switches, data)
 //   r      retry this scramble (results)
 //   2 / d  toggle +2 / DNF on the finished solve (results)
 //   del    delete this solve (results) · u undo the last delete
@@ -16,15 +18,18 @@ const TIMING = new Set(['scramble', 'inspection', 'ready', 'solving']);
 
 /**
  * @param {{key:string, repeat?:boolean, ctrlKey?:boolean, metaKey?:boolean, altKey?:boolean,
- *   editable?:boolean, dialogOpen?:boolean, focusOnPage?:boolean, settingsOpen?:boolean}} event
+ *   editable?:boolean, dialogOpen?:boolean, focusOnPage?:boolean, settingsOpen?:boolean, debugOpen?:boolean}} event
  * @param {import('./types.js').Screen} screen
  * @returns {import('./types.js').BrainAction|null}
  */
 export function resolveKey(event, screen) {
   if (!event || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return null;
-  if (event.editable || event.dialogOpen) return null;
   const key = event.key === 'Spacebar' ? ' ' : event.key;
+  // Esc leaves an open panel even from inside one of its text fields.
+  if (event.editable && !(key === 'Escape' && (event.settingsOpen || event.debugOpen))) return null;
+  if (event.dialogOpen) return null;
   if (key === 'Escape') {
+    if (event.debugOpen) return { type: 'toggleDebug' };
     if (event.settingsOpen) return { type: 'toggleSettings' };
     if (TIMING.has(screen)) return { type: 'cancel' };
     if (screen === 'idle' || screen === 'results') return { type: 'command', text: '' };
@@ -32,6 +37,7 @@ export function resolveKey(event, screen) {
   }
   if (key === 'Tab') return event.focusOnPage ? { type: 'toggleSettings' } : null;
   if (key === ',') return { type: 'toggleSettings' };
+  if (key === '`') return { type: 'toggleDebug' };
   if (key === ' ') {
     if (screen === 'idle') return { type: 'start' };
     if (screen === 'results') return { type: 'next' };

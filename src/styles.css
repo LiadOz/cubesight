@@ -18,8 +18,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, select:focus-visib
 .header-actions { display: flex; justify-self: end; gap: 8px; }
 .icon-button { justify-self: end; width: 42px; height: 42px; border: 1px solid var(--line); background: white; border-radius: 50%; font: 500 14px var(--mono); display: grid; place-items: center; }
 .icon-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.theme-sun, :root[data-theme="dark"] .theme-moon { display: none; }
-:root[data-theme="dark"] .theme-sun { display: block; }
+/* The icon shows the current mode (sun in light, moon in dark); the button label says what a click does. */
+.theme-moon, :root[data-theme="dark"] .theme-sun { display: none; }
+:root[data-theme="dark"] .theme-moon { display: block; }
 main { width: min(1200px, calc(100% - 56px)); margin: auto; }
 .intro-row { display: flex; justify-content: space-between; align-items: center; padding: 30px 0 24px; gap: 24px; }
 .eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
