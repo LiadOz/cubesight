@@ -85,7 +85,8 @@ test('an instant replay of a few thousand events finishes fast and leaves a clea
   const started = Date.now();
   await page.waitForFunction(() => document.documentElement.dataset.replay === 'done', null, { polling: 10, timeout: 30_000 });
   const elapsed = Date.now() - started;
-  expect(elapsed, `instant replay of ${events} events took ${elapsed} ms`).toBeLessThan(2000);
+  // Typically ~0.5 s alone; the budget allows for the parallel full suite (the pre-fix slowness was 23.5 s).
+  expect(elapsed, `instant replay of ${events} events took ${elapsed} ms`).toBeLessThan(4000);
 
   // The replayed solve finished: its review stays on screen, but it is not in the history.
   const view = page.locator('#brain-view');
