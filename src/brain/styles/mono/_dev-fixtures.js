@@ -170,7 +170,7 @@ function results() {
     splits: PLAN.map(s => {
       const ms = s.splitMs; const d = ms == null ? null : ms - s.avgMs;
       return {
-        key: s.key, label: s.pseudo ? `${s.label}*` : s.label, ms, text: ms == null ? 'skip' : sec(ms),
+        key: s.key, label: s.label, ms, text: ms == null ? 'skip' : sec(ms),
         deltaText: d == null ? `avg ${sec(s.avgMs)}` : signed(d), tone: d == null ? 'none' : d < 0 ? 'faster' : 'slower',
         moves: s.moves || null, avgMs: s.avgMs, ratio: ms == null ? 0 : ms / 2600, avgRatio: s.avgMs / 2600,
         skipped: Boolean(s.skipped), pseudo: Boolean(s.pseudo),

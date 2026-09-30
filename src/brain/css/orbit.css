@@ -55,7 +55,7 @@
 .b-oinsp.is-hidden { display: none; }
 
 /* The floor (shadow + glow) stays while the ring is hidden. */
-.b-oring-shadow { fill: var(--b-cube-shadow-color); }
+.b-oring-shadow { fill: var(--b-cube-shadow); }
 .b-oring-glow { opacity: 0; }
 :root[data-theme="dark"] .b-oring-glow { opacity: 1; }
 .b-glow-0 { stop-color: var(--b-accent); stop-opacity: .22; }

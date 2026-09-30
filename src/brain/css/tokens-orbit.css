@@ -20,6 +20,10 @@
   --b-ring-track: 3px;
   --b-ring-fill: 6px;
   --b-ring-live: 8px;
+  --b-fs-body: 15px;
+  --b-fs-move: 34px;
+  --b-weight-clock: 300;
+  --b-radius-bar: 12px;
 
   /* Vivid sticker palette; the 3D cube reads these. */
   --b-st-w: #f4f4f0; --b-st-y: #ffd43b; --b-st-g: #16a34a; --b-st-b: #2563eb; --b-st-r: #e5302b; --b-st-o: #ff7a1a;
@@ -48,7 +52,7 @@
   --b-hairline: #dcd6c8;
   --b-chart-band: #e9e4d8;
   --b-cube-body: #1c1b18;
-  --b-cube-shadow-color: rgb(28 27 24 / .07);
+  --b-cube-shadow: rgb(28 27 24 / .07);
   --b-cube-glow: none;
   --b-key-bg: #37352f;
   --b-key-ink: #e9e4d8;
@@ -78,7 +82,7 @@
   --b-hairline: #34312b;
   --b-chart-band: #1b1a17;
   --b-cube-body: #1d1b18;
-  --b-cube-shadow-color: rgb(0 0 0 / .35);
+  --b-cube-shadow: rgb(0 0 0 / .35);
   --b-cube-glow: radial-gradient(closest-side, rgb(61 191 173 / .22), rgb(61 191 173 / .07) 55%, transparent);
   --b-key-bg: #2b2925;
   --b-key-ink: #d9d2c3;
@@ -93,3 +97,7 @@
     --b-fs-stat: 20px;
   }
 }
+
+/* The page behind the Brain takes the style's background (see base.css). */
+:root[data-theme="dark"]:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"]) { --b-page: #141311; --b-page-line: #34312b; }
+:root:not([data-theme="dark"]):has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"]) { --b-page: #f3f0e8; --b-page-line: #dcd6c8; }

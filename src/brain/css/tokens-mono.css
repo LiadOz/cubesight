@@ -2,7 +2,7 @@
    :root[data-theme]; components only read var(--b-*). */
 
 .brain[data-brain-style="mono"] {
-  --b-font-ui: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --b-font-sans: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   --b-font-num: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   --b-font-mono: 'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   --b-weight-clock: 300;

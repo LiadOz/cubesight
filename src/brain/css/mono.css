@@ -103,8 +103,6 @@
 .m-res-session-stats dd { margin-top: 8px; color: var(--b-ink); font: 300 27px/1 var(--b-font-num); }
 .m-res-session-stats [data-tone="faster"] dd { color: var(--b-accent); }
 .m-res-spark { margin-top: 28px; }
-.m-res-spark-legend { color: var(--b-muted); font-size: 12px; }
-.m-res-spark-legend i { font-style: normal; display: inline-block; }
 .m-dot-plus2 { width: 6px; height: 6px; border-radius: 50%; background: var(--b-warn); }
 .m-dot-pb { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--b-muted); }
 .m-x { color: var(--b-warn-text); }
@@ -119,43 +117,6 @@
 .m-coach-alg { display: block; color: var(--b-accent-text); }
 /* Results continue: a quiet text action on desktop (space does the same). */
 .brain[data-brain-style="mono"] .b-results-actions .b-textbtn { font-size: 13px; }
-
-/* Chart visuals (used by the stand-in charts; the shared charts style themselves). */
-.c-tps { display: block; width: 100%; height: auto; overflow: visible; }
-.c-band { fill: var(--b-chart-band); }
-.c-band-alt { fill: var(--b-chart-band-alt); }
-.c-grid { stroke: var(--b-hairline); stroke-width: 1; opacity: .6; }
-.c-axis-label { fill: var(--b-muted); font: 12px var(--b-font-mono); }
-.c-area { fill: var(--b-accent); opacity: .08; }
-.c-line { fill: none; stroke: var(--b-accent); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
-.c-avg { fill: none; stroke: var(--b-muted); stroke-width: 1.4; stroke-dasharray: 4 4; }
-.c-pause { fill: var(--b-bg); stroke: var(--b-warn); stroke-width: 2; }
-.c-pause-label { fill: var(--b-warn-text); font: 12px var(--b-font-mono); }
-.c-skip { fill: var(--b-accent); font: 15px var(--b-font-mono); }
-.c-splits-columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 20px; }
-.c-splits-columns .c-split { display: grid; gap: 6px; }
-.c-split-label { color: var(--b-muted); font-size: 13px; }
-.c-split.is-pseudo .c-split-label { color: var(--b-accent-text); }
-.c-splits-columns .c-split-value { color: var(--b-ink); font: 300 23px/1.2 var(--b-font-num); }
-.c-split.is-skipped .c-split-value { color: var(--b-accent-text); }
-.c-split-meta { display: flex; gap: 14px; font-size: 12px; color: var(--b-muted); }
-.c-split[data-tone="faster"] .c-split-delta { color: var(--b-good); }
-.c-split[data-tone="slower"] .c-split-delta { color: var(--b-warn-text); }
-.c-split-bar { position: relative; display: block; height: 4px; margin-top: 8px; border-radius: 2px; background: var(--b-track); }
-.c-split-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--b-accent); }
-.c-split[data-tone="slower"] .c-split-bar i { background: var(--b-warn); }
-.c-split-bar b { position: absolute; top: -5px; width: 2px; height: 14px; background: var(--b-ink); }
-.c-splits-rows { display: grid; gap: 12px; }
-.c-splits-rows .c-split { display: grid; grid-template-columns: 88px 1fr 56px; gap: 14px; align-items: center; }
-.c-splits-rows .c-split-bar { margin: 0; }
-.c-splits-rows .c-split-value { text-align: right; color: var(--b-ink); font-size: 14px; }
-.c-split-skip { background: none; height: auto; color: var(--b-accent-text); font-size: 13px; }
-.c-spark { display: block; width: 100%; max-width: 440px; height: auto; overflow: visible; }
-.c-spark-line { fill: none; stroke: var(--b-muted); stroke-width: 1.5; stroke-linejoin: round; }
-.c-spark-plus2 { fill: var(--b-warn); }
-.c-spark-pb { fill: var(--b-bg); stroke: var(--b-muted); stroke-width: 1.5; }
-.c-spark-current { fill: var(--b-accent); }
-.c-spark-dnf { fill: var(--b-warn); font: 13px var(--b-font-mono); }
 
 /* --- Phone --------------------------------------------------------------------- */
 @media (max-width: 640px) {

@@ -3,9 +3,9 @@
 // split, then session stats with a sparkline, recent times and coach notes.
 
 import { setText } from '../../dom.js';
-// Swap for the shared charts when they land:
-//   import { createTpsLine } from '../../charts/tps-line.js'; (and split-bars.js, sparkline.js)
-import { createSparkline, createSplitBars, createTpsLine } from './_chart-stubs.js';
+import { createTpsLine } from '../../charts/tps-line.js';
+import { createSplitBars } from '../../charts/split-bars.js';
+import { createSparkline } from '../../charts/sparkline.js';
 
 /** @typedef {import('../../types.js').BrainVM} BrainVM */
 /** @typedef {import('../../types.js').ResultsVM} ResultsVM */
@@ -43,7 +43,6 @@ const TEMPLATE = `
     <section class="m-res-session" aria-label="Session">
       <dl class="m-res-session-stats"></dl>
       <div class="m-res-spark"></div>
-      <p class="m-res-spark-legend">last <span class="m-res-spark-n"></span> · <i class="m-dot-plus2"></i> +2 · <i class="m-x">×</i> dnf · <i class="m-dot-pb"></i> pb</p>
     </section>
     <section class="m-res-recent" aria-label="Recent solves"><p class="b-label">recent</p><ol></ol></section>
     <section class="m-res-coach" aria-label="Coach"><p class="b-label">coach</p><dl></dl></section>
@@ -76,7 +75,6 @@ export function createMonoResults(host) {
     if (fresh || results.tpsSeries !== shown?.tpsSeries) tps.update(results.tpsSeries, { drawIn: fresh });
     if (fresh || results.splits !== shown?.splits) { cols.update(results.splits); rows.update(results.splits); }
     if (fresh || results.spark !== shown?.spark) spark.update(results.spark);
-    setText($('.m-res-spark-n'), String(results.spark.points.length));
 
     const stats = [['ao5', results.session.ao5], ['ao12', results.session.ao12], ['pb', results.session.pb], ['mean', results.session.mean]];
     $('.m-res-session-stats').replaceChildren(...stats.map(([k, v]) => {

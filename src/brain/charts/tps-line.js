@@ -6,7 +6,7 @@
 import '../css/charts.css';
 import { svg } from '../dom.js';
 
-const W = 560, H = 250;
+const BASE_W = 560, BASE_H = 250;
 const PAD = { l: 30, r: 8, t: 26, b: 26 };
 
 /** Smooth path through points (Catmull-Rom to cubic Bézier), y clamped to the plot. */
@@ -24,6 +24,8 @@ export function smoothPath(pts, yMin, yMax) {
 }
 
 export function createTpsLine(host, { variant = 'orbit' } = {}) {
+  // Mono gives the chart a full-width slot (A-08); Orbit a middle column (C-08).
+  const W = variant === 'mono' ? 860 : BASE_W, H = variant === 'mono' ? 290 : BASE_H;
   const root = svg('svg', { class: `b-ch-tps is-${variant}`, viewBox: `0 0 ${W} ${H}`, role: 'img' });
   host.append(root);
 
