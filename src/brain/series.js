@@ -66,7 +66,7 @@ export function splitRows(stages, plan, averages, { compare = 'avg', pbs = {} } 
     const delta = !s.skipped && !s.merged && s.ms != null && ref != null ? s.ms - ref : null;
     return {
       key: s.key, label: labelOf(s.key), ms: s.ms,
-      text: s.skipped ? 'skip' : s.merged ? 'with cross' : fmtTime(s.ms),
+      text: s.skipped ? 'skip' : s.merged ? 'merged' : fmtTime(s.ms),
       deltaText: delta == null ? '' : fmtDelta(delta),
       tone: delta == null ? 'none' : deltaTone(delta),
       moves: s.moves, avgMs, ratio: 0, avgRatio: 0, skipped: Boolean(s.skipped), merged: Boolean(s.merged), pseudo: Boolean(s.pseudo),

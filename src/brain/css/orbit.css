@@ -27,15 +27,19 @@
 }
 .brain[data-brain-style="orbit"] .brain-stage {
   position: relative;
-  width: 100%;
-  aspect-ratio: 800 / 620;   /* matches the ring viewBox (geometry.js) */
+  /* As wide as the column, but never taller than the screen has room for. */
+  width: min(100%, calc((100vh - 230px) * 640 / 500));
+  margin-inline: auto;
+  aspect-ratio: 640 / 500;   /* matches the ring viewBox (geometry.js) */
   isolation: isolate;
 }
+/* The cube fills the ring: its mount is ~54 % of the stage width (the ring's
+   diameter is 62.5 %), so the ring hugs the cube. */
 .brain[data-brain-style="orbit"] .brain-stage > [data-slot="cube"] {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 36%;
+  width: 54%;
   aspect-ratio: 1;
   transform: translate(-50%, -54%);
   z-index: 1;
@@ -48,7 +52,20 @@
 }
 .brain[data-brain-style="orbit"] .brain-stage > [data-slot="timeline"] { z-index: 0; }
 .brain[data-brain-style="orbit"] .brain-stage > [data-slot="inspection"] { z-index: 2; }
-.brain[data-brain-style="orbit"][data-screen="results"] .brain-body { display: none; }
+
+/* Results: the stage (cube inside its finished ring) stays beside the stats and
+   follows them while they scroll; the hero column (clock, steps) steps aside.
+   The shell's cube slot is the same element throughout: only the layout moves. */
+.brain[data-brain-style="orbit"][data-screen="results"] .b-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  column-gap: clamp(20px, 3vw, 48px);
+  align-items: start;
+}
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-body { display: contents; }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-hero { display: none; }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-stage { grid-column: 1; position: sticky; top: 16px; }
+.brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 2; }
 
 /* --- Ring overlays (shared) ---------------------------------------------- */
 .b-oring, .b-oinsp { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; font-family: var(--b-font-mono); }
@@ -107,7 +124,6 @@
 .b-oring.is-entering .b-oring-seg:nth-child(5) .b-oring-track { animation-delay: 160ms; }
 .b-oring.is-entering .b-oring-seg:nth-child(6) .b-oring-track { animation-delay: 200ms; }
 .b-oring.is-entering .b-oring-seg:nth-child(n+7) .b-oring-track { animation-delay: 240ms; }
-.b-oring.is-leaving .b-oring-arcs, .b-oring.is-leaving .b-oring-labels { transition: opacity 300ms var(--b-ease); opacity: 0; }
 
 /* Labels (viewBox units; the stage scales them) */
 .b-oring-labels { font-size: 15px; }   /* timeline-ring.js sets the size from the rendered width */
@@ -222,7 +238,7 @@
 .b-ores { display: grid; gap: 28px; font-variant-numeric: tabular-nums; }
 .b-ores p, .b-ores dl, .b-ores dd, .b-ores ul { margin: 0; }
 .b-ores-eyebrow { font: 13px var(--b-font-mono); color: var(--b-muted); }
-.b-ores-top { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 1.55fr) minmax(220px, .8fr); gap: clamp(20px, 3vw, 48px); align-items: start; }
+.b-ores-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
 .b-ores-big { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; font: 300 var(--b-fs-result)/1 var(--b-font-num); letter-spacing: -.03em; color: var(--b-accent); }
 .b-ores-big.is-warn { color: var(--b-warn); }
 .b-ores-big.is-error { color: var(--b-dnf); }
@@ -238,9 +254,8 @@
 .b-ores-chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px !important; }
 .b-ores-legend { display: inline-flex; align-items: center; gap: 8px; font: 12px var(--b-font-mono); color: var(--b-muted); }
 .b-ores-legend i { width: 22px; border-top: 1.5px dashed var(--b-muted); }
-.b-ores-donut-host { align-self: center; }
 .b-ores-rule { border: 0; border-top: 1px solid var(--b-hairline); margin: 0; }
-.b-ores-bottom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); }
+.b-ores-bottom { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; }
 .b-ores-splits-head { display: grid; grid-template-columns: 4.2em minmax(80px, 1fr) 4.2em 4.4em; column-gap: 16px; align-items: baseline; margin-bottom: 18px !important; }
 .b-ores-splits-head .b-ores-eyebrow:first-child { grid-column: 1; }
 .b-ores-avg-key { grid-column: 2; justify-self: end; display: inline-flex; gap: 8px; align-items: center; font: 12px var(--b-font-mono); color: var(--b-muted); }
@@ -278,7 +293,10 @@
 /* --- Phone (C-09): one column, smaller ring, bigger label text -------------- */
 @media (max-width: 720px) {
   .brain[data-brain-style="orbit"] .brain-body { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
-  .brain[data-brain-style="orbit"] .brain-stage > [data-slot="cube"] { width: 34%; }
+  .brain[data-brain-style="orbit"][data-screen="results"] .b-stage { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+  .brain[data-brain-style="orbit"][data-screen="results"] .brain-stage { position: relative; top: auto; grid-column: 1; }
+  .brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 1; }
+  .b-oring-delta { display: none; }   /* the labels would run off the screen; the list below carries the deltas */
   .b-oinsp-tick-label { font-size: 26px; }
   .b-oinsp-zone-label { font-size: 22px; }
   .b-oinsp-aside, .b-oring-aside { font-size: 13px; }
@@ -288,7 +306,6 @@
   .b-ores-stats, .b-ores-avgs { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 16px; }
   .b-ores-stats dd { font-size: 20px; }
   .b-ores-session-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .b-ores-donut-host { display: none; }
   .b-ores-spark-host { max-width: 300px; }
   .b-ores-splits-head, .b-ores .b-ch-splits.is-rows { grid-template-columns: 2.8em minmax(56px, 1fr) 3.3em 3.5em; column-gap: 10px; }
   .b-ores .b-ch-band-label, .b-ores .b-ch-axis { font-size: 15px; }

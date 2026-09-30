@@ -108,7 +108,8 @@
 .b-slot-inspection { display: contents; }
 .b-scramble-head { order: 5; color: var(--b-muted); font-size: 14px; }
 .b-cube-wrap { order: 8; position: relative; width: var(--b-cube-size); height: var(--b-cube-size); margin: 8px 0 28px; transition: width .5s var(--b-ease), height .5s var(--b-ease); }
-.b-cube { position: absolute; inset: 0; min-height: 0; }   /* not the site-wide .cube-mount 325 px */
+/* The mount fills its wrap exactly: neither the site-wide .cube-mount min-height (325 px) nor its phone height (clamp) applies. */
+.brain .b-cube { position: absolute; inset: 0; height: auto; min-height: 0; }
 .b-cube-wrap::before { content: ''; position: absolute; inset: 40% -30% -18%; background: var(--b-cube-glow); pointer-events: none; }
 .b-cube-reset { position: absolute; right: -72px; bottom: 0; opacity: 0; transition: opacity .2s; }
 .b-cube-wrap:hover .b-cube-reset, .b-cube-reset:focus-visible { opacity: 1; }
@@ -135,6 +136,7 @@
 /* Connecting: the status line sits under the (busy) connect button, and Mono gets a thin indeterminate lane
    (Orbit sweeps the ring around the cube instead; see orbit.css). */
 .brain[data-screen="connecting"] .b-idle-status { order: 45; margin-top: 4px; }
+.brain[data-screen="connecting"] .b-coach { display: none; }
 .b-progress { order: 46; display: none; position: relative; width: min(360px, 100%); height: 2px; margin-top: 16px; overflow: hidden; border-radius: 2px; background: var(--b-track); }
 .b-progress i { position: absolute; inset: 0 auto 0 0; width: 30%; border-radius: 2px; background: var(--b-accent); animation: b-indeterminate 1.3s var(--b-ease) infinite; }
 .brain[data-layout="column"][data-screen="connecting"] .b-progress { display: block; }
@@ -242,8 +244,13 @@
 .brain[data-screen="scramble"] { --b-cube-size: 210px; }
 .brain[data-screen="scramble"] .b-coach { margin-top: 72px; }
 .brain[data-screen="scramble"] .b-coach-line:first-child { color: var(--b-warn-text); }
-.brain[data-screen="results"] .b-stage > :not(.b-slot-results) { display: none; }
 .brain[data-screen="results"] .b-stage { margin-top: 12px; }
+/* Results (Mono): a small cube area beside the stats (Orbit: orbit.css). */
+.brain[data-layout="column"][data-screen="results"] :is(.brain-hero > *, .b-slot-timeline, .b-slot-inspection) { display: none; }
+.brain[data-layout="column"][data-screen="results"] .b-stage { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); column-gap: 36px; align-items: start; }
+.brain[data-layout="column"][data-screen="results"] { --b-cube-size: 240px; }
+.brain[data-layout="column"][data-screen="results"] .b-cube-wrap { grid-column: 1; grid-row: 1; position: sticky; top: 16px; margin: 0; }
+.brain[data-layout="column"][data-screen="results"] .b-slot-results { grid-column: 2; grid-row: 1; min-width: 0; }
 .brain.is-chrome-dimmed .b-top { opacity: .35; }
 .brain.is-chrome-dimmed .b-top:hover, .brain.is-chrome-dimmed.is-settings-open .b-top { opacity: 1; }
 
@@ -336,14 +343,18 @@
   .brain { --b-cube-size: 130px; width: calc(100% - 32px); padding-top: 12px; min-height: calc(100vh - 140px); }
   :root .brain[data-brain-style] { --b-fs-clock: 104px; --b-fs-countdown: 132px; --b-fs-move: 22px; --b-fs-result: 68px; }
   .brain[data-screen="idle"], .brain[data-screen="disconnected"], .brain[data-screen="connecting"] { --b-cube-size: 200px; }
+  .brain[data-layout="column"][data-screen="results"] .b-stage { grid-template-columns: minmax(0, 1fr); row-gap: 16px; }
+  .brain[data-layout="column"][data-screen="results"] { --b-cube-size: 150px; }
+  .brain[data-layout="column"][data-screen="results"] .b-cube-wrap { position: relative; top: auto; justify-self: center; }
+  .brain[data-layout="column"][data-screen="results"] .b-slot-results { grid-column: 1; grid-row: 2; }
   .b-foot { grid-template-columns: 1fr; }
-  .b-keys { grid-column: 1; }
   .b-foot-tools { grid-column: 1; grid-row: 2; justify-self: center; }
   .b-settings-body, .b-debug { width: 100vw; padding: 18px 16px 40px; }
   .b-configbar { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; max-width: 100%; font-size: 13px; }
+  .b-cfg, .b-cfg-label, .b-sep { flex: none; white-space: nowrap; }   /* scroll the bar sideways instead of wrapping words */
   .b-clock { letter-spacing: -2px; }
   .b-moves { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px 8px; }
   .b-row { grid-template-columns: 1fr; gap: 10px; }
   .b-stats { gap: 8px 20px; }
-  .b-keys { display: none; }
+  .b-keys { display: none; grid-column: 1; }
 }

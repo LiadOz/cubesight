@@ -1,14 +1,12 @@
-// Orbit results (C-08): time and stats, the TPS chart, and the solve donut
-// on top; splits and the session (averages, sparkline, recent, coach) below.
-// When a new result arrives, the donut flies in from where the timeline ring
-// was (the ring "detaches" from the cube and becomes the donut).
+// Orbit results (C-08): time and stats and the TPS chart, then splits and the
+// session (averages, sparkline, recent, coach), in a column beside the stage.
+// The stage (the live cube inside its finished ring, which is the solve donut)
+// stays on screen while the stats are read; see orbit.css for the layout.
 
-import { createDonut } from '../../charts/donut.js';
 import { createSparkline } from '../../charts/sparkline.js';
 import { createSplitBars } from '../../charts/split-bars.js';
 import { createTpsLine } from '../../charts/tps-line.js';
 import { reconcileChildren, setText, toggleClass } from '../../dom.js';
-import { ringHandoff } from './geometry.js';
 
 const TEMPLATE = `
   <section class="b-ores-top">
@@ -27,7 +25,6 @@ const TEMPLATE = `
       <p class="b-ores-chart-head"><span class="b-ores-eyebrow">turns per second</span><span class="b-ores-legend"><i aria-hidden="true"></i><span class="b-ores-avg-label"></span></span></p>
       <div class="b-ores-chart-host"></div>
     </div>
-    <div class="b-ores-donut-host"></div>
   </section>
   <hr class="b-ores-rule">
   <section class="b-ores-bottom">
@@ -61,26 +58,9 @@ export function createOrbitResults(host) {
   host.append(root);
   const $ = sel => root.querySelector(sel);
   const tps = createTpsLine($('.b-ores-chart-host'), { variant: 'orbit' });
-  const donut = createDonut($('.b-ores-donut-host'));
   const splits = createSplitBars($('.b-ores-splits-host'), { layout: 'rows' });
   const spark = createSparkline($('.b-ores-spark-host'));
   let key = null;
-
-  function flyInFromRing() {
-    const from = ringHandoff.rect;
-    const el = donut.element;
-    if (!from || Date.now() - ringHandoff.at > 3000 || !el.animate) return;
-    const to = el.getBoundingClientRect();
-    if (!to.width) return;
-    const scale = from.height / Math.max(1, to.height) * 0.72;
-    const dx = (from.left + from.width / 2) - (to.left + to.width / 2);
-    const dy = (from.top + from.height / 2) - (to.top + to.height / 2);
-    el.animate([
-      { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 0.4 },
-      { transform: 'none', opacity: 1 },
-    ], { duration: 500, easing: 'cubic-bezier(.22,1,.36,1)' });
-    ringHandoff.rect = null;
-  }
 
   return {
     update(vm, prev) {
@@ -103,7 +83,6 @@ export function createOrbitResults(host) {
       const avg = r.tpsSeries?.avgFlat;
       setText($('.b-ores-avg-label'), avg != null ? `your avg ${avg.toFixed(2)}` : '');
       tps.update(r.tpsSeries, { drawIn: fresh });
-      donut.update(r.donut);
       splits.update(r.splits);
       spark.update(r.spark);
       for (const k of ['ao5', 'ao12', 'pb', 'mean']) {
@@ -120,10 +99,9 @@ export function createOrbitResults(host) {
         root.classList.remove('is-entering');
         void root.offsetWidth;
         root.classList.add('is-entering');
-        requestAnimationFrame(flyInFromRing);
       }
     },
-    destroy() { tps.destroy(); donut.destroy(); splits.destroy(); spark.destroy(); root.remove(); },
+    destroy() { tps.destroy(); splits.destroy(); spark.destroy(); root.remove(); },
   };
 }
 

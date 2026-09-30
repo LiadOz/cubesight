@@ -1,6 +1,6 @@
 // Brain v2 shell: the layout and every part shared by the Orbit and Mono styles
-// (device chip, config bar, settings panel, scramble line, clock, coach, key
-// hints, results frame, diagnostics). The style module supplies the timeline,
+// (tabs and device chip, config bar, settings panel, scramble line, clock,
+// coach, key hints, results frame, debug drawer). The style module supplies the timeline,
 // the inspection view and the results body. Updates are in place: each part
 // compares its view-model slice with the previous one and patches the DOM.
 //
@@ -345,7 +345,8 @@ export function createShell(root, { dispatch }) {
     // Connect sits beside the chip whenever no cube is connected (every screen);
     // the disconnected screen also offers it as the primary action.
     const connect = $('#brain-connect');
-    connect.hidden = !device.actions.connect && device.phase !== 'connecting';
+    // (While the attach runs the primary button carries the progress, so this one steps aside.)
+    connect.hidden = !device.actions.connect;
     toggleClass(connect, 'is-connecting', device.phase === 'connecting');
     connect.disabled = device.phase === 'connecting';
     setText(connect, device.phase === 'connecting' ? 'connecting…' : 'connect');

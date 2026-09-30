@@ -212,6 +212,10 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
   const preSolve = screen === 'inspection' || screen === 'ready';
   const currentIndex = solving ? Math.min(sp.currentIndex, plan.length - 1) : results ? plan.length : 0;
   const total = averages.totalAvgMs || 1;
+  // Arc widths follow the averages, with a floor so a stage that is always skipped keeps a visible arc.
+  const rawWeights = plan.map(stage => averages.byKey[stage.key].avgMs / total);
+  const floored = rawWeights.map(w => Math.max(w, 0.03));
+  const flooredSum = floored.reduce((sum, w) => sum + w, 0) || 1;
   const prevByKey = new Map((prevTimeline?.segments || []).map(s => [s.key, s]));
   // X-cross: pairs that were already built when the cross completed are done at
   // the same moment; the cross segment carries the tag.
@@ -233,7 +237,7 @@ function timelineVM({ screen, settings, plan, averages, pbs, track, live, now, p
     const prevSeg = prevByKey.get(stage.key);
     return {
       key: stage.key, label: stage.label, short: stage.short, group: stage.group,
-      weight: avg.avgMs / total, avgMs: avg.avgMs, avgSource: avg.source,
+      weight: floored[i] / flooredSum, avgMs: avg.avgMs, avgSource: avg.source,
       state,
       fill: done ? 1 : current ? Math.min(1, elapsed / Math.max(1, avg.avgMs)) : 0,
       startedAt: current ? p.startAt : null,
@@ -407,7 +411,7 @@ function statsVM(records) {
  * @param {{session:Object, live:Object, records:Object[], settings:Object, track?:Object, optimalCross?:Object|null,
  *   coach?:import('./types.js').CoachLine[], error?:string, status?:string|null, theme?:'dark'|'light',
  *   supported?:boolean, now?:number, held?:{bottom:string, front:string}, scrambleText?:string,
- *   settingsOpen?:boolean, debugOpen?:boolean, connectStep?:string, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
+ *   settingsOpen?:boolean, themePreference?:'light'|'dark'|'system', debugOpen?:boolean, connectStep?:string, commandOpen?:boolean, scrambleNumber?:number, toast?:{text:string, tone:string}|null,
  *   dShift?:number|null}} input
  * @param {import('./types.js').BrainVM|null} prev
  * @returns {import('./types.js').BrainVM}
@@ -434,7 +438,8 @@ export function buildViewModel(input, prev = null) {
     ? cached('results', [live?.record, records, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross], () => resultsVM({ live, records, settings, plan, track, optimalCross }))
     : null;
   const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, input.connectStep ?? ''], () => deviceFor(session, input.supported ?? true, input.connectStep ?? ''));
-  const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen)], () => buildSettingsPanel(settings, Boolean(input.settingsOpen)));
+  const themePreference = input.themePreference ?? 'system';
+  const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen), themePreference], () => buildSettingsPanel(settings, Boolean(input.settingsOpen), themePreference));
   const configBar = cached('configBar', [settings], () => buildConfigBar(settings));
   const stats = cached('stats', [records], () => statsVM(records));
   const keys = cached('keys', [screen, settings.timer, settings.coach], () => keyHints(screen, { timerHidden: settings.timer === 'hide', coach: settings.coach }));
