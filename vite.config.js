@@ -111,6 +111,8 @@ export default defineConfig({
       },
     }),
   ],
-  server: { hmr: false, host: true, allowedHost: true },
-  optimizeDeps: { exclude: ['cubing'] },
+  server: { hmr: false, host: true, allowedHost: true, watch: { ignored: [/[\\/]\.claude[\\/]/, /[\\/]test-results[\\/]/] } },
+  // Only crawl the app's own entry for dependency pre-bundling; agent worktrees
+  // under .claude/ contain their own index.html and build output.
+  optimizeDeps: { entries: ['index.html'], exclude: ['cubing'] },
 });
