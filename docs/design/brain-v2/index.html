@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brain v2 — design directions</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0f1013; color: #d9d6cb; font: 14px/1.5 ui-monospace, 'DM Mono', Menlo, monospace; }
+  header, section { max-width: 1480px; margin: 0 auto; padding: 32px 40px 8px; }
+  h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+  h2 { font-size: 18px; font-weight: 500; margin: 32px 0 4px; }
+  h2 small { color: #6b6f7a; font-size: 13px; font-weight: 400; margin-left: 12px; }
+  p.lead { color: #8a8e98; margin: 0 0 8px; max-width: 900px; }
+  nav a { color: #e7b34c; margin-right: 16px; text-decoration: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 28px 24px; margin-top: 16px; }
+  figure { margin: 0; }
+  figure a { display: block; border-radius: 8px; overflow: hidden; outline: 1px solid #25272d; background: #16171b; }
+  figure a:hover { outline-color: #e7b34c; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { color: #8a8e98; font-size: 12.5px; margin-top: 8px; }
+  figcaption b { color: #d9d6cb; font-weight: 500; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Brain v2 — design directions</h1>
+  <p class="lead">Three directions for the Brain smart-cube trainer, each covering idle, guided scramble, inspection, WCA overtime, inspection-config variants, solving, skip, results, mobile and settings. Click any frame to open the SVG at full size. Rationale, palettes, type scales and motion specs are in <code>README.md</code>.</p>
+  <nav><a href="#chosen">Chosen · Orbit &amp; Mono × dark/light</a><a href="#A">A · Mono</a><a href="#B">B · Pit wall</a><a href="#C">C · Orbit</a></nav>
+</header>
+<main id="gallery"></main>
+<script>
+const CAPTIONS = {
+  '01-idle': ['Idle / connected', 'Cube connected (device + battery), 3D mirror, one start action, inline method config.'],
+  '02-scramble': ['Guided scramble', 'Current move highlighted, done moves dimmed; a wrong turn (L instead of L′) with the L2 recovery.'],
+  '03-inspection': ['Inspection', 'The timeline has swooped in; the 15 s WCA countdown drains, 8 s callout passed, optional cross hint.'],
+  '04-overtime': ['Overtime (WCA)', 'Past 15 s: overtime counts +1, +2…; the +2 zone is live and DNF is visible ahead at 17 s.'],
+  '05-inspection-variants': ['Inspection variants', 'How the lane adapts to config: WCA, custom length, unlimited, count-only, grace, auto-start, callouts, off.'],
+  '06-solving': ['Solving · F2L pair 3', 'Big running timer, current step prominent, segments filling live with splits; pseudo pair flagged.'],
+  '07-skip': ['Solving · EO skip', 'The skipped OLL step collapses to a spark with a subtle celebration; now in PLL corners.'],
+  '08-results': ['Results', 'Time, moves, TPS, TPS-over-solve chart, split bars vs average, ao5/ao12/PB, history with penalties, coach.'],
+  '09-mobile': ['Mobile / portrait', 'Inspection, solving and results on a phone.'],
+  '10-settings': ['Settings', 'Config bar plus the expanded settings: method, inspection & penalties, training aids. WCA defaults.'],
+  '11-motion': ['Motion storyboard', 'Keyframes of the scramble → inspection swoop-in.'],
+};
+const CHOSEN = [
+  ['C-dark-', 'Orbit · dark', 'priority mode — warm ink background, lifted brand teal, cream finished arcs, teal glow under the cube'],
+  ['C-', 'Orbit · light', 'the original paper version'],
+  ['A-', 'Mono · dark', 'the original monkeytype-dark version'],
+  ['A-light-', 'Mono · light', 'paper background, amber darkened to bronze for AA'],
+];
+const DIRS_HEAD = 'All explored directions';
+const DIRS = [
+  ['A', 'Mono', 'pure monkeytype-dark minimal · DM Mono · one amber accent · hairline timeline'],
+  ['B', 'Pit wall', 'bold broadcast / F1 timing tower · Manrope display · lime accent · timing band'],
+  ['C', 'Orbit', 'light, editorial · circular ring timeline around the cube · brand teal'],
+];
+const FILES = ["A-01-idle.svg", "A-02-scramble.svg", "A-03-inspection.svg", "A-04-overtime.svg", "A-05-inspection-variants.svg", "A-06-solving.svg", "A-07-skip.svg", "A-08-results.svg", "A-09-mobile.svg", "A-10-settings.svg", "A-11-motion.svg", "A-light-01-idle.svg", "A-light-06-solving.svg", "A-light-08-results.svg", "A-light-09-mobile.svg", "A-light-10-settings.svg", "B-01-idle.svg", "B-02-scramble.svg", "B-03-inspection.svg", "B-04-overtime.svg", "B-05-inspection-variants.svg", "B-06-solving.svg", "B-07-skip.svg", "B-08-results.svg", "B-09-mobile.svg", "B-10-settings.svg", "C-01-idle.svg", "C-02-scramble.svg", "C-03-inspection.svg", "C-04-overtime.svg", "C-05-inspection-variants.svg", "C-06-solving.svg", "C-07-skip.svg", "C-08-results.svg", "C-09-mobile.svg", "C-10-settings.svg", "C-dark-01-idle.svg", "C-dark-03-inspection.svg", "C-dark-04-overtime.svg", "C-dark-06-solving.svg", "C-dark-07-skip.svg", "C-dark-08-results.svg", "C-dark-09-mobile.svg", "C-dark-10-settings.svg"];
+const main = document.getElementById('gallery');
+const variant = f => f.startsWith('C-dark-') ? 'C-dark-' : f.startsWith('A-light-') ? 'A-light-' : f.slice(0, 2);
+const keyOf = f => f.slice(variant(f).length, -4);
+function fig(f, label) {
+  const key = keyOf(f); const [title, cap] = CAPTIONS[key] || [key, ''];
+  return `<figure><a href="${f}" target="_blank"><img loading="lazy" src="${f}" alt="${label} ${title}"></a><figcaption><b>${label} · ${title}</b> — ${cap}</figcaption></figure>`;
+}
+{
+  const sec = document.createElement('section'); sec.id = 'chosen';
+  let html = `<h2>Chosen: Orbit &amp; Mono × dark/light<small>two switchable Brain styles; the site theme picks the mode · tokens in tokens.md</small></h2>`;
+  for (const [pfx, name, sub] of CHOSEN) {
+    const list = FILES.filter(f => variant(f) === pfx);
+    html += `<h3 style="font-weight:500;font-size:15px;margin:24px 0 0">${name} <small style="color:#6b6f7a;font-weight:400">— ${sub}</small></h3><div class="grid">${list.map(f => fig(f, name)).join('')}</div>`;
+  }
+  sec.innerHTML = html; main.appendChild(sec);
+}
+for (const [d, name, sub] of DIRS) {
+  const sec = document.createElement('section'); sec.id = d;
+  sec.innerHTML = `<h2>${d} · ${name}<small>${sub}</small></h2><div class="grid"></div>`;
+  const grid = sec.querySelector('.grid');
+  for (const f of FILES.filter(f => variant(f) === d + '-')) {
+    const key = keyOf(f); const [title, cap] = CAPTIONS[key] || [key, ''];
+    grid.insertAdjacentHTML('beforeend', `<figure><a href="${f}" target="_blank"><img loading="lazy" src="${f}" alt="${d} ${title}"></a><figcaption><b>${d}-${key.slice(0, 2)} ${title}</b> — ${cap}</figcaption></figure>`);
+  }
+  main.appendChild(sec);
+}
+</script>
+</body>
+</html>
