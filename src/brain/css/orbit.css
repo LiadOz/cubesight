@@ -310,3 +310,17 @@
   .b-ores-splits-head, .b-ores .b-ch-splits.is-rows { grid-template-columns: 2.8em minmax(56px, 1fr) 3.3em 3.5em; column-gap: 10px; }
   .b-ores .b-ch-band-label, .b-ores .b-ch-axis { font-size: 15px; }
 }
+
+/* --- Results: the finished ring takes clicks (stages and coach markers) ---------------- */
+.b-oring-label.is-grouped { display: none; }
+.b-oring-label.is-group-lead { fill: var(--b-accent-text); }
+.b-oring.is-results .b-oring-seg { cursor: pointer; }
+.b-oring-hit { fill: none; stroke: transparent; stroke-width: 26px; pointer-events: none; }
+.b-oring.is-results .b-oring-hit { pointer-events: stroke; }
+.b-oring.is-results .b-mk { pointer-events: auto; }
+.b-oring.is-results .b-oring-seg:hover .b-oring-done { stroke-width: calc(var(--b-ring-fill) + 2px); }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-stage > [data-slot="timeline"] { z-index: 2; }
+.b-oring-markers .b-mk-dot { stroke-width: 2.5; }
+.b-oring-markers .b-mk.is-small .b-mk-dot { stroke-width: 2; }
+.b-oring-markers .b-mk:focus { outline: none; }
+.b-oring-markers .b-mk:focus-visible .b-mk-dot { stroke: var(--b-ink); }

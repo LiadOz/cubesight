@@ -174,7 +174,7 @@ test('keys are ignored while typing, repeating, with modifiers or a dialog open'
 
 test('key hints follow the screen', () => {
   assert.deepEqual(keyHints('idle').map(h => h.key), ['space', 'tab', 'esc']);
-  assert.deepEqual(keyHints('results').map(h => h.key), ['space', 'r', '2', 'd', 'tab']);
+  assert.deepEqual(keyHints('results').map(h => h.key), ['space', '[ ]', 'r', '2', 'd', 'tab']);
   assert.equal(keyHints('solving', { timerHidden: true }).find(h => h.key === 't').label, 'show timer');
 });
 

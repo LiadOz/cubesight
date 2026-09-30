@@ -24,6 +24,9 @@ import { fmtTime, fmtSeconds, fmtDelta, deltaTone, fmtTps, fmtResult, penaltyTag
 import { buildSettingsPanel, buildConfigBar, inspectionLabel } from './settings.js';
 import { keyHints } from './keys.js';
 import { resultsCoach } from './coach-lines.js';
+import { buildMarkers } from './review/markers.js';
+import { reviewBaselines } from './review/baselines.js';
+import { buildDetail } from './review/detail.js';
 
 const MEMO = new WeakMap();   // vm -> cached inputs/slices for the next build
 
@@ -71,9 +74,17 @@ export function phaseText(live) {
 
 // --- Device --------------------------------------------------------------------------
 
+// The session's own status lines are shared with the scout and debug views, which still
+// have an Analyze button; on the Brain the next step is a scramble (docs/design/VOICE.md).
+export function brainDetail(text = '') {
+  return String(text)
+    .replace(/^Solved baseline synced\..*$/, "Cube synced. Start a scramble when you're ready.")
+    .replace(/ Analyze when ready\.$/, '');
+}
+
 /** @returns {import('./types.js').DeviceVM} */
 export function deviceFor(session, supported = true, connectStep = '', live = null) {
-  const s = session || { phase: 'disconnected', detail: '' };
+  const s = session ? { ...session, detail: brainDetail(session.detail) } : { phase: 'disconnected', detail: '' };
   const connecting = s.phase === 'connecting';
   const connected = !connecting && s.phase !== 'disconnected';
   const gyro = connected && Boolean(s.protocol?.startsWith('GAN')) && Boolean(s.gyro);
@@ -201,13 +212,13 @@ function inspectionVM(live, now) {
 function recordStages(record, track, plan) {
   if (track?.active && track.stamps.solvedAt != null) {
     const sp = stageProgress(track, plan);
-    return { stages: sp.stages.filter(s => s.done).map(s => ({ ...s, label: plan.find(p => p.key === s.key)?.label })), solveStartAt: track.solveStartAt, moveTimes: track.moveTimes };
+    return { stages: sp.stages.filter(s => s.done).map(s => ({ ...s, label: plan.find(p => p.key === s.key)?.label, short: plan.find(p => p.key === s.key)?.short })), solveStartAt: track.solveStartAt, moveTimes: track.moveTimes };
   }
   let at = 0;
   const stages = (record.splits || []).filter(s => plan.some(p => p.key === s.key)).map(s => {
     const startAt = at;
     at += s.ms ?? 0;
-    return { key: s.key, label: plan.find(p => p.key === s.key)?.label, startAt, endAt: at, ms: s.ms, moves: s.moves, skipped: s.skipped, merged: isMergedSplit(s), pseudo: s.pseudo, done: true };
+    return { key: s.key, label: plan.find(p => p.key === s.key)?.label, short: plan.find(p => p.key === s.key)?.short, startAt, endAt: at, ms: s.ms, moves: s.moves, skipped: s.skipped, merged: isMergedSplit(s), pseudo: s.pseudo, done: true };
   });
   return { stages, solveStartAt: 0, moveTimes: record.moveTimes || [] };
 }
@@ -359,7 +370,7 @@ function methodSummary(record, settings) {
   return parts.join(' · ');
 }
 
-function resultsVM({ live, records, settings, plan, track, optimalCross }) {
+function resultsVM({ live, records, settings, plan, track, optimalCross, reviewUi, pins, analysisStatus }) {
   const record = live?.record;
   if (!record) return null;
   const stored = records.find(r => r.at === record.at) ?? record;
@@ -372,6 +383,7 @@ function resultsVM({ live, records, settings, plan, track, optimalCross }) {
   const averages = stageAverages(others, plan);
   const pbs = pbSplits(others, plan);
   const { stages, solveStartAt, moveTimes } = recordStages(stored, track, plan);
+  const review = reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus: focusOf(stored), ui: reviewUi, pins, analysisStatus, durationMs: stored.solveMs });
   const prevAo12 = ao12(others);
   const vsAo12 = Number.isFinite(prevAo12) && Number.isFinite(ms) ? { text: fmtDelta(ms - prevAo12), tone: deltaTone(ms - prevAo12) } : null;
   const tpsValues = others.map(r => r.tps).filter(Number.isFinite).sort((a, b) => a - b);
@@ -411,8 +423,48 @@ function resultsVM({ live, records, settings, plan, track, optimalCross }) {
       session: { ao5: fmtTime(a5), ao12: fmtTime(a12), pb: fmtTime(summary.bestSolveMs), mean: fmtTime(summary.meanSolveMs), tones, count: inSession.length, worst: fmtTime(sessionStats.worst), mo3: fmtTime(sessionStats.mo3), ao50: fmtTime(sessionStats.ao50), ao100: fmtTime(sessionStats.ao100) },
       spark: sparkline(records, { currentAt: stored.at }),
       recent: records.slice(-7).reverse().map(r => ({ key: String(r.at), text: fmtResult(r, 'short'), penaltyTag: penaltyTag(r), current: r.at === stored.at })),
-      coach: resultsCoach({ record: stored, optimalCross, stages, plan, averages, faceColors: FACE_COLORS }),
+      coach: resultsCoach({ record: stored, optimalCross, stages, plan, averages, faceColors: FACE_COLORS }),   // kept for callers of the v1 list; the screen shows `review.coach`
+      review,
     },
+  };
+}
+
+// --- Review: markers on the timeline, the selected note, the detail view -------------------------
+
+/** @returns {import('./types.js').ReviewVM} */
+function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus, ui = {}, pins = [], analysisStatus = 'none', durationMs }) {
+  const baselines = reviewBaselines(others);
+  const pending = analysisStatus === 'pending';
+  const { markers, defaultId } = buildMarkers({ record: stored, stages, plan, baselines, focus, faceColors: FACE_COLORS });
+  const selectedId = markers.some(m => m.id === ui.selectedId) ? ui.selectedId : defaultId;
+  // Where each marker sits: inside its stage (by time), so the ring and the lane can place it, and on the time axis.
+  const rows = new Map(stages.filter(s => s.startAt != null && s.endAt != null).map(s => [s.key, { from: s.startAt - solveStartAt, to: s.endAt - solveStartAt }]));
+  const total = Math.max(1, durationMs ?? 0, ...markers.map(m => m.tMs));
+  const shown = markers.map(m => {
+    const row = rows.get(m.stage);
+    const span = row ? row.to - row.from : 0;
+    const frac = row && span > 0 ? Math.min(1, Math.max(0, (m.tMs - row.from) / span)) : 0.5;
+    return {
+      id: m.id, kind: m.kind, tone: m.tone, label: m.label, stage: m.stage, stageLabel: m.stageLabel, seg: m.stage, frac, tMs: m.tMs, tFrac: Math.min(1, m.tMs / total),
+      prominent: m.prominent, rank: m.rank, selected: m.id === selectedId, at: m.at, costText: m.tone === 'good' ? `saves ~${Math.round(m.cost)}` : `~${Math.max(1, Math.round(m.rawCost ?? m.cost))} lost`,
+    };
+  });
+  const selected = markers.find(m => m.id === selectedId) ?? null;
+  const detail = ui.detail ? buildDetail({ ...ui.detail, record: stored, markers, rows: stages.map(s => ({ ...s, label: plan.find(p => p.key === s.key)?.label })), plan, averages, baselines, pending, pins, cursor: ui.cursor, variant: ui.variant }) : null;
+  const selectedPin = selected && detail === null ? buildDetail({ kind: 'marker', key: selected.id, record: stored, markers, rows: stages, plan, averages, baselines, pending, pins }) : null;
+  const coach = selected ? {
+    markerId: selected.id, tag: selected.label, tone: selected.tone, text: selected.note, compare: selected.compare,
+    better: selected.better ? `yours ${selected.better.yours.length} · better ${selected.better.moves.length}` : null,
+  } : {
+    markerId: null, tag: pending ? 'review' : 'clean', tone: pending ? 'info' : 'good',
+    text: pending ? 'reviewing this solve…' : analysisStatus === 'done' ? 'Nothing to flag. Clean solve.' : 'No review for this solve.', compare: null, better: null,
+  };
+  const pinSource = detail?.pin ?? selectedPin?.pin ?? { available: false, pinned: false, payload: null, trainer: null };
+  return {
+    status: analysisStatus,
+    markers: shown, selectedId, coach, detail,
+    focus,
+    pin: { available: pinSource.available, pinned: pinSource.pinned, trainer: pinSource.trainer, count: pins.length, payload: pinSource.payload },
   };
 }
 
@@ -503,13 +555,16 @@ export function buildViewModel(input, prev = null) {
   const plan = cached('plan', [settings.method, settings.oll, settings.pll], () => buildStagePlan(settings));
   const activeFocus = normalizeFocus(settings.session?.focus);
   const focusRecords = cached('focusRecords', [records, activeFocus], () => inFocus(records, activeFocus));
-  const averages = cached('averages', [focusRecords, plan], () => stageAverages(focusRecords, plan));
-  const pbs = cached('pbs', [focusRecords, plan], () => pbSplits(focusRecords, plan));
+  // On the results the pace map and the deltas compare this solve with the others, not with itself.
+  const reviewedAt = screen === 'results' ? live?.record?.at ?? null : null;
+  const paceRecords = cached('paceRecords', [focusRecords, reviewedAt], () => (reviewedAt == null ? focusRecords : focusRecords.filter(r => r.at !== reviewedAt)));
+  const averages = cached('averages', [paceRecords, plan], () => stageAverages(paceRecords, plan));
+  const pbs = cached('pbs', [paceRecords, plan], () => pbSplits(paceRecords, plan));
   const dShift = input.dShift !== undefined ? input.dShift
     : (screen === 'solving' && settings.f2l === 'pseudo' && session?.state && live?.crossFace ? currentDShift(session.state, live.crossFace) : null);
   const timeline = timelineVM({ screen, settings, plan, averages, pbs, track, live, now, prevTimeline: prev?.timeline, dShift });
   const result = screen === 'results'
-    ? cached('results', [live?.record, records, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross], () => resultsVM({ live, records, settings, plan, track, optimalCross }))
+    ? cached('results', [live?.record, records, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross, input.reviewUi, input.pins, input.analysisStatus], () => resultsVM({ live, records, settings, plan, track, optimalCross, reviewUi: input.reviewUi, pins: input.pins ?? [], analysisStatus: input.analysisStatus ?? 'none' }))
     : null;
   const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, input.connectStep ?? '', session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, input.connectStep ?? '', live));
   const themePreference = input.themePreference ?? 'system';

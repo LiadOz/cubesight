@@ -64,7 +64,20 @@ function historyRecord(i, n) {
   };
 }
 
+// What the analysis worker would store for the example solve: a detour in the cross, a 0.9 s stop
+// in pair 4, a rotation, the EO skip and a pseudo pair 3 (hand-made: the gallery runs without a solver).
+const EXAMPLE_ANALYSIS = {
+  v: 1, engine: 1, face: 'D', solved: true, timed: true,
+  marks: { cross: 7, pairs: [14, 23, 30, 40], eo: 40, co: 48, cp: 57, solved: 67 }, xcross: null,
+  skips: [{ kind: 'eo', idx: 40 }], pseudo: [3],
+  pauses: [{ i: 31, ms: 900, allow: 450, stage: 'pair4', boundary: 'f2l-f2l' }], medianGapMs: 210, cancels: [],
+  cross: { moves: 8, d0: 6, extra: 2, total: 2, done: true, proven: true, best: "F' D' F R D' F2", faces: { U: 5, D: 6, F: 6, B: 6, R: 7, L: 6 },
+    losses: [{ i: 3, move: 'D', loss: 2, d: 3, best: "R D' F", after: 4 }] },
+  pairs: [{ n: 1, unsupported: 'pseudo' }, { n: 2, unsupported: 'pseudo' }],
+};
+
 export const EXAMPLE_RECORD = {
+  rotationMarks: [{ idx: 12, tMs: 3300, from: 'D', to: 'F' }], analysis: EXAMPLE_ANALYSIS,
   at: AT, scramble: "R2 D' F2 U B2 L' U2 F R' D2 B U' L2", free: false, crossFace: 'D', crossColor: 'yellow',
   solveMs: 14070, penalty: null, inspectionMs: 8700, inspectionMode: 'wca',
   moveCount: 68, solveMoves: [], tps: 68 / 14.07, phases: null, xcross: 'cross',

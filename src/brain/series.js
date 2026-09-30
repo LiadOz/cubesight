@@ -35,7 +35,7 @@ export function tpsSeries(moveTimes = [], { durationMs = null, stages = [], solv
     if (points[points.length - 1].tMs < duration) points.push({ tMs: duration, tps: points[points.length - 1].tps });
   }
   const bands = stages.filter(s => s.endAt != null && s.startAt != null)
-    .map(s => ({ key: s.key, label: s.label ?? s.key, fromMs: s.startAt - solveStartAt, toMs: s.endAt - solveStartAt }));
+    .map(s => ({ key: s.key, label: s.label ?? s.key, short: s.short ?? null, fromMs: s.startAt - solveStartAt, toMs: s.endAt - solveStartAt }));
   const avg = averages ? bands.map(b => {
     const a = averages.byKey?.[b.key];
     const tps = a && a.avgMs > 0 ? a.avgMoves / (a.avgMs / 1000) : null;

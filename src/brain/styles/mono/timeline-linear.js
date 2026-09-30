@@ -36,7 +36,7 @@ function buildRow(seg) {
 }
 
 /** @type {import('../../types.js').ComponentFactory} */
-export function createLinearTimeline(host) {
+export function createLinearTimeline(host, ctx = {}) {
   const root = el('div', 'm-tl');
   const insp = el('p', 'm-tl-insp');
   const cols = el('div', 'm-tl-cols');
@@ -53,6 +53,34 @@ export function createLinearTimeline(host) {
   /** @type {Map<string, HTMLElement>} */
   let colEls = new Map();
   let currentKey = null;
+  let shownReview = null;
+  let resultsOn = false;
+
+  // On the finished solve a stage opens its detail and its coach markers sit on the lane.
+  root.addEventListener('click', event => {
+    if (!resultsOn) return;
+    const target = /** @type {HTMLElement} */ (event.target);
+    const marker = target.closest('.m-mk');
+    if (marker) { event.stopPropagation(); ctx.dispatch?.({ type: 'selectMarker', id: marker.dataset.marker }); return; }
+    const seg = target.closest('.m-seg, .m-row');
+    if (seg?.dataset.key) ctx.dispatch?.({ type: 'openDetail', kind: 'stage', key: seg.dataset.key });
+  });
+
+  function renderMarkers(review) {
+    for (const old of root.querySelectorAll('.m-mk')) old.remove();
+    if (!review) return;
+    for (const m of review.markers) {
+      const track = segEls.get(m.seg)?.querySelector('.m-seg-track');
+      if (!track) continue;
+      const dot = el('button', `m-mk is-${m.tone} ${m.prominent ? 'is-prominent' : 'is-small'}${m.selected ? ' is-selected' : ''}`);
+      dot.type = 'button';
+      dot.dataset.marker = m.id;
+      dot.style.left = `${(m.frac * 100).toFixed(2)}%`;
+      dot.title = `${m.label} · ${m.stageLabel} · ${m.costText}`;
+      dot.setAttribute('aria-label', `${m.label}, ${m.stageLabel}`);
+      track.append(dot);
+    }
+  }
 
   function rebuild(timeline) {
     cols.replaceChildren();
@@ -93,8 +121,12 @@ export function createLinearTimeline(host) {
   /** @param {BrainVM} vm @param {BrainVM|null} prev */
   function update(vm, prev) {
     const timeline = vm.timeline;
-    if (timeline === prev?.timeline && planKey === timeline.planKey) return;
-    if (timeline.planKey !== planKey) rebuild(timeline);
+    const review = vm.screen === 'results' ? vm.results?.review ?? null : null;
+    const reviewChanged = review !== shownReview;
+    if (timeline === prev?.timeline && planKey === timeline.planKey && !reviewChanged) return;
+    const rebuilt = timeline.planKey !== planKey;
+    if (rebuilt) rebuild(timeline);
+    if (reviewChanged || rebuilt) { shownReview = review; resultsOn = Boolean(review); toggleClass(root, 'is-reviewing', resultsOn); renderMarkers(review); }
     toggleClass(root, 'is-ghost', timeline.ghost);
     toggleClass(root, 'is-results', vm.screen === 'results');
     setText(insp, timeline.insp?.text ?? '');

@@ -6,7 +6,8 @@
 // Behaviour is ported from the v1 src/brain.js; the DOM lives in shell.js.
 
 import { createCube3D } from '../cube-3d.js';
-import { FACE_COLORS, toRenderData } from '../cross-cube.js';
+import { FACE_COLORS, toRenderData, stateFromScramble, applyMoves } from '../cross-cube.js';
+import { analysisInputFromRecord } from '../analysis/record.js';
 import { createSolveLive } from '../solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from '../solve-coach.js';
 import { openHistory } from '../store/history.js';
@@ -85,6 +86,14 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let lastCapturedStage = -1;
   let raf = 0;
   let styleToken = 0;
+  // Solve review: the selected marker, the open detail (a stage or a marker), the cube position it shows,
+  // and whether the cube is held on a review position instead of mirroring the real cube.
+  const NO_REVIEW = { selectedId: null, detail: null, cursor: null, variant: 'yours' };
+  let reviewUi = NO_REVIEW;
+  let reviewHold = false;
+  let playToken = 0;
+  const analysisState = new Map();   // record.at -> 'pending' | 'done' | 'none'
+  const NO_PINS = [];
 
   const shell = createShell(root, { dispatch });
   const $ = selector => root.querySelector(selector);
@@ -117,6 +126,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
       now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.getHeldFaces?.() : null,
       scrambleText, scrambleNumber, settingsOpen, themePreference: getThemePreference(), debugOpen, connectStep, commandOpen, toast,
+      reviewUi, pins: history?.pins.list ?? NO_PINS, analysisStatus: analysisState.get(currentAt()) ?? 'none',
     }, vm);
     commandOpen = false;
     const prev = vm;
@@ -217,6 +227,10 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (key !== lastStatusKey) { lastStatusKey = key; statusOverride = null; changed = true; }
     if (snapshot.phase !== 'tracking') {
       lastMirroredMove = null; lastMirroredLen = 0; lastMirroredState = null;
+    } else if (reviewHold) {
+      // A review position is on the cube: keep the bookkeeping, show the real cube again when it closes.
+      lastMirroredSeq = snapshot.moveEvent?.seq ?? lastMirroredSeq;
+      lastMirroredState = snapshot.state;
     } else if (snapshot.moveEvent !== undefined) {
       // Sessions bump moveEvent.seq on every applied turn (a coalesced double has
       // replaces:true and `turn` is the quarter just applied). A state replaced
@@ -299,9 +313,91 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       };
       const replaying = isReplaying();   // replayed solves stay out of the stored history
       withHistory(store => { if (replaying) store.beginEphemeral(); store.append(entry); });
+      startAnalysis(entry);
       statusOverride = `Solve logged · ${fmtSeconds(snap.record.solveMs)} · ${snap.record.moveCount} moves.`;
     }
+    // Leaving the results (a new scramble, cancel) puts the real cube back.
+    if (snap.phase !== 'done' && (reviewHold || reviewUi !== NO_REVIEW)) closeReview();
     if (active) render();
+  }
+
+  // --- Solve review -------------------------------------------------------------------------------
+  // The finished solve is analysed in a Web Worker (src/analysis), once, and the compact summary is
+  // stored on the record; the markers, the detail view and the pins are built from that.
+
+  function startAnalysis(entry) {
+    const at = entry.at;
+    if (!analysisInputFromRecord(entry).input) { analysisState.set(at, 'none'); return; }
+    analysisState.set(at, 'pending');
+    void import('../analysis/client.js').then(({ analysisClient }) => analysisClient().analyze(entry)).catch(() => null).then(summary => {
+      if (detached) return;
+      analysisState.set(at, summary ? 'done' : 'none');
+      if (summary) withHistory(store => { store.update(at, { analysis: summary }); });
+      if (active) render();
+    });
+  }
+
+  const reviewRecord = () => records.find(r => r.at === currentAt()) ?? live.getSnapshot().record ?? null;
+  const replayable = rec => Boolean(rec?.scramble) && Array.isArray(rec.solveMoves) && rec.solveMoves.length === rec.moveCount;
+  const positionState = (rec, n) => stateFromScramble([rec.scramble, ...rec.solveMoves.slice(0, Math.max(0, n))].join(' '));
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  /** Show the cube after `n` solve moves (0 = scrambled). The real cube's mirror waits until the review closes. */
+  function showPosition(n) {
+    const rec = reviewRecord();
+    if (!cube || !replayable(rec)) return;
+    reviewHold = true;
+    playToken++;
+    cube.update(themed(toRenderData(positionState(rec, n))));
+    reviewUi = { ...reviewUi, cursor: n };
+  }
+
+  /** Animate `moves` on the cube from position `from` (yours or the better solution). */
+  async function playMoves(from, moves, variant) {
+    const rec = reviewRecord();
+    if (!cube || !replayable(rec)) return;
+    reviewHold = true;
+    const token = ++playToken;
+    let state = positionState(rec, from);
+    cube.update(themed(toRenderData(state)));
+    reviewUi = { ...reviewUi, variant, cursor: from };
+    render();
+    await pause(320);
+    for (const move of moves) {
+      if (token !== playToken || detached) return;
+      state = applyMoves(state, [move]);
+      await cube.animateMove(move, themed(toRenderData(state)), 380);
+      await pause(90);
+    }
+  }
+
+  function closeReview() {
+    playToken++;
+    reviewUi = NO_REVIEW;
+    if (reviewHold) {
+      reviewHold = false;
+      const state = cubeSession.getSnapshot().state;
+      if (state) showState(state);
+    }
+  }
+
+  function openDetail(detail) {
+    const rec = reviewRecord();
+    if (!rec) return;
+    reviewUi = { ...reviewUi, detail, variant: 'yours', cursor: null, ...(detail.kind === 'marker' ? { selectedId: detail.key } : {}) };
+    render();   // builds the detail (and its start position) for the view-model
+    const d = vm?.results?.review?.detail;
+    if (d?.replayable) showPosition(d.start);
+    render();
+  }
+
+  function togglePin() {
+    const payload = vm?.results?.review?.pin?.payload;
+    if (!payload || !history) return;
+    if (history.readOnly) { message('History is read-only right now.'); return; }
+    const pinned = history.pins.toggle(payload);
+    showToast(pinned ? `pinned · ${history.pins.count}` : `unpinned · ${history.pins.count}`);
+    render();
   }
 
   // --- Settings -------------------------------------------------------------------------------
@@ -397,7 +493,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (startGuidedWith(scramble)) render();
   }
 
-  function cancel() { live.cancel(); optimalCross = null; render(); }
+  function cancel() { closeReview(); live.cancel(); optimalCross = null; render(); }
 
   const currentAt = () => savedRecord?.at ?? live.getSnapshot().record?.at;
 
@@ -475,6 +571,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'cancel': cancel(); break;
       case 'dismissResults': cancel(); break;
       case 'next': {
+        closeReview();
         live.cancel(); optimalCross = null;
         if (settings.scramble === 'free') { render(); break; }
         scrambleText = settings.scramble === 'paste' ? scrambleText : '';
@@ -482,6 +579,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       }
       case 'retry': {
         const scramble = live.getSnapshot().record?.scramble || lastScramble;
+        closeReview();
         live.cancel(); optimalCross = null;
         if (!scramble) { render(); break; }
         scrambleText = scramble;
@@ -491,6 +589,26 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'togglePenalty': setPenaltyAt(currentAt(), action.penalty, true); break;
       case 'deleteSolve': deleteSolve(action.at); break;
       case 'undoDelete': undoDelete(); break;
+      case 'selectMarker': reviewUi = { ...reviewUi, selectedId: action.id }; openDetail({ kind: 'marker', key: action.id }); break;
+      case 'openDetail': openDetail({ kind: action.kind === 'marker' ? 'marker' : 'stage', key: action.key }); break;
+      case 'closeDetail': closeReview(); render(); break;
+      case 'jumpTo': if (Number.isInteger(action.at)) { showPosition(action.at); render(); } break;
+      case 'playVariant': {
+        const compare = vm?.results?.review?.detail?.compare;
+        if (!compare || compare.status === 'pending') break;
+        const moves = action.variant === 'better' ? compare.better : compare.yours;
+        if (moves.length) return playMoves(compare.from, moves, action.variant);
+        break;
+      }
+      case 'stepMarker': {
+        const list = vm?.results?.review?.markers ?? [];
+        if (!list.length) break;
+        const at = Math.max(0, list.findIndex(m => m.id === vm.results.review.selectedId));
+        const next = list[(at + (action.delta < 0 ? -1 : 1) + list.length) % list.length];
+        openDetail({ kind: 'marker', key: next.id });
+        break;
+      }
+      case 'togglePin': togglePin(); break;
       // The site mode belongs to the page (src/theme.js), not to the Brain settings.
       case 'setSetting': if (action.path === 'theme') setThemePreference(action.value); else applySetting(action.path, action.value); break;
       case 'setStyle': applySetting('style', action.style); break;
@@ -617,6 +735,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   function onKeydown(event) {
     if (!active || detached || !vm) return;
+    if (event.key === 'Escape' && reviewUi.detail && vm.screen === 'results' && !settingsOpen && !debugOpen) { event.preventDefault(); dispatch({ type: 'closeDetail' }); return; }
     const target = event.target;
     const focused = document.activeElement;
     const formControl = el => el && (FORM_TAGS.has(el.tagName) || el.isContentEditable);

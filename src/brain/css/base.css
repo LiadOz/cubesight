@@ -2,7 +2,10 @@
    and sizes come from the style's tokens (var(--b-*)); nothing here uses a
    literal colour. */
 
-/* The page behind the Brain (set by the style's token file via :has). */
+/* The page behind the Brain (set by the style's token file via :has). The root paints the canvas
+   too, so the colour runs edge to edge (window corners, bands beside the column, under a short
+   page) and never shows the site's own blue-grey. */
+:root:has(#brain-view:not([hidden]) .brain[data-brain-style]),
 :root:has(#brain-view:not([hidden]) .brain[data-brain-style]) body,
 :root:has(#brain-view:not([hidden]) .brain[data-brain-style]) .site-header {
   background: var(--b-page);

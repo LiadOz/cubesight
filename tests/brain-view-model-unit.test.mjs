@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildViewModel, frameState, screenFor, phaseText, deviceFor, inspectionLayout, inspectionState } from '../src/brain/view-model.js';
+import { buildViewModel, frameState, screenFor, phaseText, deviceFor, brainDetail, inspectionLayout, inspectionState } from '../src/brain/view-model.js';
 import { brainFixtures, FIXTURE_NAMES, EXAMPLE_RECORD } from '../src/brain/fixtures.js';
 import { coachLines, resultsCoach } from '../src/brain/coach-lines.js';
 import { normalizeSettings } from '../src/brain/settings.js';
@@ -202,8 +202,8 @@ test('coach lines port the v1 texts and keys', () => {
   const live = { phase: 'solving', crossFace: 'D', crossMoveCount: 8, rotations: 3, progress: { crossDone: true, f2lDone: false } };
   const lines = coachLines({ live, state: {}, toggles, optimalCross: { face: 'D', length: 6 } }, lenses);
   assert.deepEqual(lines.map(l => l.text), [
-    'Optimal cross here: Yellow face in 6 moves.', 'cross 8 vs 6', 'hint',
-    '3 whole-cube rotations this solve — fewer rotations often save time.', 'Solve efficiency so far: 88/100.',
+    'Best cross: yellow, 6 moves', 'cross 8 vs 6', 'hint',
+    '3 rotations this solve. Fewer often saves time.', 'Solve efficiency so far: 88/100.',
   ]);
   assert.deepEqual(lines.slice(-2).map(l => l.key), ['rotations', 'efficiency']);
   assert.equal(lines[1].tone, 'warn');
@@ -245,4 +245,18 @@ test('connecting: the device status is the latest step; a failure keeps its reas
   assert.deepEqual([failed.failed, failed.busy, failed.detail, failed.actions.connect], [true, false, 'Connection failed: GATT server busy', true]);
   assert.equal(deviceFor({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.' }, true).failed, false);
   assert.equal(deviceFor({ phase: 'disconnected', detail: '' }, false).detail, 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.');
+});
+
+test('the Brain words the session status without the scout button names (VOICE.md)', () => {
+  assert.equal(brainDetail('Solved baseline synced. Turn the cube, then Analyze.'), "Cube synced. Start a scramble when you're ready.");
+  assert.equal(brainDetail('Live cube updated. Analyze when ready.'), 'Live cube updated.');
+  assert.equal(brainDetail('Live cube updated.'), 'Live cube updated.');
+  assert.equal(deviceFor({ phase: 'tracking', detail: 'Solved baseline synced. Turn the cube, then Analyze.', deviceName: 'GAN', protocol: 'GAN Gen4' }).detail, "Cube synced. Start a scramble when you're ready.");
+});
+
+test('the cross hindsight names the colour, not a face letter', () => {
+  const lenses = { crossHindsight: (n, opt, face) => ({ kind: 'long', text: `${face}|${n}|${opt}` }), faceColors: { B: 'blue' }, f2lNextPairHint: () => null };
+  const live = { phase: 'solving', crossFace: 'B', crossMoveCount: 8, progress: { crossDone: false } };
+  const lines = coachLines({ live, state: {}, toggles: { crossSuggest: true, crossHindsight: true }, optimalCross: { face: 'B', length: 6 } }, lenses);
+  assert.deepEqual(lines.map(l => l.text), ['Best cross: blue, 6 moves', 'blue|8|6']);
 });

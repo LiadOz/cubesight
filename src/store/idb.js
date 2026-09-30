@@ -6,11 +6,13 @@
 // Database "cubesight-history":
 //   solves  keyPath "at"   one object per solve record
 //   meta    keyPath "key"  { key, value } (schema version, migration marker)
-// The database version (DB_VERSION) only describes these object stores. The
-// SCHEMA version of the records lives in meta and is migrated by history.js.
+//   pins    keyPath "id"   pinned review moments (src/store/pins.js); added in DB version 2
+// The database version (DB_VERSION) only describes these object stores (an upgrade from 1 just
+// adds `pins`; nothing is rewritten). The SCHEMA version of the records lives in meta and is
+// migrated by history.js.
 
 export const DB_NAME = 'cubesight-history';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 const request = req => new Promise((resolve, reject) => {
   req.onsuccess = () => resolve(req.result);
@@ -33,6 +35,7 @@ export function openIdbBackend({ factory = globalThis.indexedDB, name = DB_NAME 
       const db = opened.result;
       if (!db.objectStoreNames.contains('solves')) db.createObjectStore('solves', { keyPath: 'at' });
       if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+      if (!db.objectStoreNames.contains('pins')) db.createObjectStore('pins', { keyPath: 'id' });
     };
     opened.onblocked = () => reject(new Error('IndexedDB is blocked by another tab'));
     opened.onerror = () => reject(opened.error ?? new Error('Could not open IndexedDB'));
@@ -57,6 +60,19 @@ export function openIdbBackend({ factory = globalThis.indexedDB, name = DB_NAME 
           for (const r of batch.put ?? []) solves.put(r);
           for (const at of batch.remove ?? []) solves.delete(at);
           for (const [key, value] of Object.entries(batch.meta ?? {})) meta.put({ key, value });
+          await done(tx);
+        },
+        async getPins() {
+          const all = await request(db.transaction('pins').objectStore('pins').getAll());
+          return all.sort((a, b) => a.createdAt - b.createdAt);
+        },
+        /** One atomic write of pins: { clear?, put?: pin[], remove?: id[] }. */
+        async applyPins(batch = {}) {
+          const tx = db.transaction(['pins'], 'readwrite');
+          const pins = tx.objectStore('pins');
+          if (batch.clear) pins.clear();
+          for (const pin of batch.put ?? []) pins.put(pin);
+          for (const id of batch.remove ?? []) pins.delete(id);
           await done(tx);
         },
         async close() { db.close(); },

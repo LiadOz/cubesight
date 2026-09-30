@@ -5,25 +5,30 @@
 import '../css/charts.css';
 import { reconcileChildren } from '../dom.js';
 
-export function createSplitBars(host, { layout = 'rows' } = {}) {
+export function createSplitBars(host, { layout = 'rows', onSelect = null } = {}) {
   const root = document.createElement('div');
   root.className = `b-ch-splits is-${layout}`;
   root.setAttribute('role', 'table');
   root.setAttribute('aria-label', 'Split times per step');
   host.append(root);
+  // A row (a stage) opens its detail: click anywhere on it, or Enter on its label.
+  root.addEventListener('click', event => {
+    const row = /** @type {HTMLElement} */ (event.target).closest('.b-ch-split');
+    if (row && root.contains(row) && onSelect) onSelect(row.dataset.key);
+  });
 
   return {
     /** @param {import('../types.js').SplitRow[]} rows */
     update(rows = []) {
       const items = rows.map(r => ({ key: r.key, text: '', className: `b-ch-split is-${r.skipped ? 'skip' : r.tone}${r.pseudo ? ' is-pseudo' : ''}${r.merged ? ' is-merged' : ''}` }));
       reconcileChildren(root, items, 'div');
-      rows.forEach((r, i) => fillRow(root.children[i], r, layout));
+      rows.forEach((r, i) => fillRow(root.children[i], r, layout, Boolean(onSelect)));
     },
     destroy() { root.remove(); },
   };
 }
 
-function fillRow(el, r, layout) {
+function fillRow(el, r, layout, linked) {
   // Rebuilt per results change only (once per solve), never per move.
   el.setAttribute('role', 'row');
   const pct = v => `${Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0)) * 100}%`;
@@ -45,13 +50,22 @@ function fillRow(el, r, layout) {
     bar.append(spark);
   }
   const cell = (cls, text) => { const s = document.createElement('span'); s.className = cls; s.textContent = text; s.setAttribute('role', 'cell'); return s; };
+  // The label is a real button when rows open a detail (keyboard and screen readers).
+  const labelCell = text => {
+    if (!linked) return cell('b-ch-split-label', text);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'b-ch-split-label is-link'; b.textContent = text;
+    b.setAttribute('aria-label', `${r.label} detail`);
+    return b;
+  };
+  if (linked) el.classList.add('is-link');
   if (layout === 'columns') {
     const meta = cell('b-ch-split-meta', '');
     const delta = cell(`b-ch-split-delta is-${r.tone}`, r.skipped ? (r.avgMs != null ? `avg ${(r.avgMs / 1000).toFixed(2)}` : '') : r.deltaText);
     const moves = cell('b-ch-split-moves', r.moves != null && !r.skipped ? `${r.moves} mv` : '');
     meta.append(delta, moves);
-    el.replaceChildren(cell('b-ch-split-label', label), cell('b-ch-split-value', r.skipped ? '✦ skip' : value), meta, bar);
+    el.replaceChildren(labelCell(label), cell('b-ch-split-value', r.skipped ? '✦ skip' : value), meta, bar);
   } else {
-    el.replaceChildren(cell('b-ch-split-label', label), bar, cell('b-ch-split-value', value), cell(`b-ch-split-delta is-${r.tone}`, r.deltaText));
+    el.replaceChildren(labelCell(label), bar, cell('b-ch-split-value', value), cell(`b-ch-split-delta is-${r.tone}`, r.deltaText));
   }
 }

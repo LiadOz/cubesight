@@ -39,7 +39,7 @@ export const xcrossLabel = n => (n > 0 ? `${'x'.repeat(Math.min(4, n))}-cross` :
  * A stored split of a pair that was built together with the cross: it took no
  * time and no moves but is not a skip. (Skips are stored with skipped: true.)
  */
-export const isMergedSplit = s => Boolean(s) && /^pair\d$/.test(s.key) && !s.skipped && s.ms === 0 && s.moves === 0;
+export const isMergedSplit = s => Boolean(s) && /^pair\d$/.test(s.key) && !s.skipped && (s.merged === true || (s.ms === 0 && s.moves === 0));
 
 export const planKey = plan => plan.map(s => s.key).join(',');
 

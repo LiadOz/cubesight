@@ -5,6 +5,7 @@
 //   variant 'mono':  line only, stepped average per step, step names below.
 import '../css/charts.css';
 import { svg } from '../dom.js';
+import { fitBandLabels } from './band-labels.js';
 
 const BASE_W = 560, BASE_H = 250;
 const PAD = { l: 30, r: 8, t: 26, b: 26 };
@@ -23,7 +24,7 @@ export function smoothPath(pts, yMin, yMax) {
   return d;
 }
 
-export function createTpsLine(host, { variant = 'orbit' } = {}) {
+export function createTpsLine(host, { variant = 'orbit', onSelect = null } = {}) {
   // Mono gives the chart a full-width slot (A-08); Orbit a middle column (C-08).
   const W = variant === 'mono' ? 860 : BASE_W, H = variant === 'mono' ? 290 : BASE_H;
   const root = svg('svg', { class: `b-ch-tps is-${variant}`, viewBox: `0 0 ${W} ${H}`, role: 'img' });
@@ -31,7 +32,7 @@ export function createTpsLine(host, { variant = 'orbit' } = {}) {
 
   return {
     /** @param {import('../types.js').TpsSeries} series */
-    update(series, { drawIn = false } = {}) {
+    update(series, { drawIn = false, markers = [] } = {}) {
       root.replaceChildren();
       if (!series || !series.durationMs) return;
       const plotW = W - PAD.l - PAD.r, plotH = H - PAD.t - PAD.b;
@@ -42,10 +43,18 @@ export function createTpsLine(host, { variant = 'orbit' } = {}) {
       root.setAttribute('aria-label', label);
 
       const bands = svg('g', { class: 'b-ch-bands' });
-      (series.bands || []).forEach((b, i) => {
-        bands.append(svg('rect', { class: `b-ch-band${i % 2 ? ' is-alt' : ''}`, x: x(b.fromMs), y: PAD.t, width: Math.max(0, x(b.toMs) - x(b.fromMs)), height: plotH }));
+      const bandList = series.bands || [];
+      const names = fitBandLabels(bandList.map(b => ({ label: b.label, short: b.short, from: x(b.fromMs), to: x(b.toMs) })));
+      bandList.forEach((b, i) => {
+        const rect = svg('rect', { class: `b-ch-band${i % 2 ? ' is-alt' : ''}`, x: x(b.fromMs), y: PAD.t, width: Math.max(0, x(b.toMs) - x(b.fromMs)), height: plotH, 'data-key': b.key });
+        const title = svg('title');
+        title.textContent = b.label;
+        rect.append(title);
+        if (onSelect) { rect.classList.add('is-link'); rect.addEventListener('click', () => onSelect('stage', b.key)); }
+        bands.append(rect);
+        if (!names[i]) return;
         const t = svg('text', { class: 'b-ch-band-label', x: (x(b.fromMs) + x(b.toMs)) / 2, y: variant === 'orbit' ? PAD.t - 9 : H - 7, 'text-anchor': 'middle' });
-        t.textContent = b.label;
+        t.textContent = names[i];
         bands.append(t);
       });
       root.append(bands);
@@ -86,7 +95,8 @@ export function createTpsLine(host, { variant = 'orbit' } = {}) {
       }
       if (line) root.append(svg('path', { class: `b-ch-line${drawIn ? ' is-drawing' : ''}`, d: line, pathLength: 1 }));
 
-      for (const m of series.marks || []) {
+      const useMarkers = markers.length > 0;
+      for (const m of useMarkers ? [] : series.marks || []) {
         const g = svg('g', { class: `b-ch-mark is-${m.kind}` });
         if (m.kind === 'pause') {
           const p = nearest(series.points, m.tMs);
@@ -100,6 +110,19 @@ export function createTpsLine(host, { variant = 'orbit' } = {}) {
         }
         root.append(g);
       }
+      // Coach markers (the review): a dot on the line at the moment, big when it matters, small otherwise.
+      const layer = svg('g', { class: 'b-ch-markers' });
+      for (const m of markers.slice().sort((a, b) => Number(a.prominent) - Number(b.prominent) || Number(a.selected) - Number(b.selected))) {
+        const p = nearest(series.points, m.tMs);
+        const g = svg('g', { class: `b-mk is-${m.tone} ${m.prominent ? 'is-prominent' : 'is-small'}${m.selected ? ' is-selected' : ''}`, transform: `translate(${x(m.tMs)} ${p ? y(p.tps) : y(0)})`, role: 'button', tabindex: 0, 'aria-label': `${m.label}, ${m.stageLabel}`, 'data-marker': m.id });
+        const title = svg('title');
+        title.textContent = `${m.label} · ${m.stageLabel} · ${m.costText}`;
+        g.append(title, svg('circle', { class: 'b-mk-hit', r: 11 }), svg('circle', { class: 'b-mk-dot', r: m.prominent ? 6 : 3.8 }));
+        g.addEventListener('click', () => onSelect?.('marker', m.id));
+        g.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.('marker', m.id); } });
+        layer.append(g);
+      }
+      root.append(layer);
     },
     destroy() { root.remove(); },
   };

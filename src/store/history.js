@@ -22,6 +22,7 @@ import { cleanRecord, readStoredBlob } from '../solve-store.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { DEFAULT_SESSION_GAP_MIN, nextSessionId, deriveSessionIds, normalizeGapMin } from './sessions.js';
 import { normalizeFocus } from './focus.js';
+import { createPinStore } from './pins.js';
 import { openIdbBackend } from './idb.js';
 import { createMemoryBackend } from './memory-backend.js';
 
@@ -58,6 +59,8 @@ export function createHistoryStore({
   let ephemeralSnapshot = null;
 
   const warn = text => { if (!warnings.includes(text)) warnings = [...warnings, text]; };
+  // Pinned review moments live in the same database (src/store/pins.js); a replay never writes them.
+  const pins = createPinStore({ backend: backend.getPins ? backend : { getPins: async () => [], applyPins: async () => {} }, readOnly: () => readOnly || Boolean(ephemeralSnapshot), onError: warn });
 
   // Serialise writes; a failed write is reported, never thrown into the UI.
   function persist(batch) {
@@ -147,8 +150,12 @@ export function createHistoryStore({
         readOnly = true;
         warn(`Your history could not be read (${error?.message || error}).`);
       }
+      await pins.load();
       return store;
     },
+
+    /** Pinned moments from the solve review (see src/store/pins.js). */
+    pins,
 
     get records() { return cache; },
     get readOnly() { return readOnly; },

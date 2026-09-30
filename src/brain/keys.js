@@ -9,6 +9,7 @@
 //   tab ,  settings (tab only while focus is on the page, so keyboard
 //          navigation of controls still works)
 //   `      debug drawer (connection log, recordings, coach switches, data)
+//   [ ]    previous / next moment on the results timeline (opens its detail; esc closes it)
 //   r      retry this scramble (results)
 //   2 / d  toggle +2 / DNF on the finished solve (results)
 //   del    delete this solve (results) · u undo the last delete
@@ -46,6 +47,8 @@ export function resolveKey(event, screen) {
   }
   const lower = key.length === 1 ? key.toLowerCase() : key;
   if (screen === 'results') {
+    if (key === '[') return { type: 'stepMarker', delta: -1 };
+    if (key === ']') return { type: 'stepMarker', delta: 1 };
     if (lower === 'r') return { type: 'retry' };
     if (lower === '2') return { type: 'togglePenalty', penalty: '+2' };
     if (lower === 'd') return { type: 'togglePenalty', penalty: 'DNF' };
@@ -72,6 +75,7 @@ export function keyHints(screen, { timerHidden = false, coach = 'live' } = {}) {
     ];
     case 'results': return [
       { key: 'space', label: 'next scramble', action: 'next' },
+      { key: '[ ]', label: 'moments', action: 'stepMarker' },
       { key: 'r', label: 'retry this scramble', action: 'retry' },
       { key: '2', label: '+2', action: 'togglePenalty', penalty: '+2' },
       { key: 'd', label: 'dnf', action: 'togglePenalty', penalty: 'DNF' },
