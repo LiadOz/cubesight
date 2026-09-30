@@ -28,7 +28,9 @@ function selectorFor(el) {
   return el.id ? `#${el.id}` : null;
 }
 
-export function attachBrainRecording({ root, live, cubeSession, getContext = () => ({}), onSolvesRestored = () => {} }) {
+// `dispatch` (Brain v2) re-applies recorded actions through the controller
+// instead of clicking DOM controls; recordings made before v2 still replay.
+export function attachBrainRecording({ root, live, cubeSession, getContext = () => ({}), onSolvesRestored = () => {}, dispatch = null }) {
   const $ = selector => root.querySelector(selector);
   const status = text => { const el = $('#brain-recording-status'); if (el) el.textContent = text; };
   let abort = null;
@@ -66,6 +68,7 @@ export function attachBrainRecording({ root, live, cubeSession, getContext = () 
 
   // Re-apply one recorded user action through the Brain's own controls.
   function applyAction(action) {
+    if (dispatch && applyWithDispatch(action)) return;
     const click = selector => { const el = selector && $(selector); if (el) el.click(); return el; };
     const setChecked = (selector, value) => {
       const el = $(selector);
@@ -95,6 +98,28 @@ export function attachBrainRecording({ root, live, cubeSession, getContext = () 
       if (action.type === 'click') click(action.selector);
       else if (action.type === 'toggle') setChecked(action.selector, action.checked);
     }
+  }
+
+  // The v2 path: the same actions the controls dispatch. Returns false for
+  // DOM-only entries (v1 clicks/toggles), which the selector path replays.
+  function applyWithDispatch(action) {
+    if (action.kind === 'live.call') {
+      const [arg] = action.args || [];
+      if (action.method === 'startGuided') {
+        dispatch({ type: 'setSetting', path: 'scramble', value: 'guided' });
+        dispatch({ type: 'setScrambleText', text: arg });
+        dispatch({ type: 'start' });
+      } else if (action.method === 'startFree') {
+        dispatch({ type: 'setSetting', path: 'scramble', value: 'free' });
+        dispatch({ type: 'start' });
+      } else if (action.method === 'cancel') dispatch({ type: live.getSnapshot().phase === 'done' ? 'dismissResults' : 'cancel' });
+      else if (action.method === 'setPseudo') dispatch({ type: 'setSetting', path: 'f2l', value: arg ? 'pseudo' : 'standard' });
+      else if (action.method === 'setInspection') dispatch({ type: 'setSetting', path: 'inspection', value: arg });
+      else return false;
+      return true;
+    }
+    if (action.kind === 'ui' && action.type === 'action' && action.action) { dispatch(action.action); return true; }
+    return false;
   }
 
   // A banner in the connection chip says the cube view is a replay, and after
