@@ -24,6 +24,9 @@ import { resolveKey } from './keys.js';
 import { readStickerPalette, themedRender } from './cube-theme.js';
 import { fmtSeconds } from './format.js';
 
+// Dev-server-only features (Send to dev) are compiled out of production builds.
+const DEV = Boolean(import.meta.env?.DEV);
+
 const LENSES = { crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore, faceColors: FACE_COLORS };
 const TIMING_SCREENS = new Set(['inspection', 'ready', 'solving']);
 const FORM_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
@@ -485,6 +488,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   window.addEventListener('unhandledrejection', onUnhandledRejection);
 
   async function sendLog() {
+    if (!DEV) return;   // /__devlog only exists on the dev server
     setStatusText('#brain-send-status', 'Sending…');
     const log = getConnectionLog();
     const redact = text => String(text || '').replace(/([\da-f]{2}:){5}[\da-f]{2}/gi, 'XX:XX:XX:XX:XX:XX');

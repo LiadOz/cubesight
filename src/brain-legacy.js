@@ -700,7 +700,10 @@ function mountBrain(root, cubeSession, rebuild) {
   $('.brain-diagnostics')?.addEventListener('toggle', () => { pendingLog ??= getConnectionLog(); paintConnectionLog(); });
   const unsubConnectionLog = subscribeConnection(renderConnectionLog);
   $('#brain-clear-log').addEventListener('click', () => { clearConnectionLog(); });
+  // Send to dev posts to the dev server's /__devlog sink, which production lacks.
+  if (!import.meta.env?.DEV) $('#brain-send-log').hidden = true;
   $('#brain-send-log').addEventListener('click', async () => {
+    if (!import.meta.env?.DEV) return;
     const status = $('#brain-send-status');
     status.textContent = 'Sending…';
     const log = getConnectionLog();

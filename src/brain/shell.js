@@ -11,6 +11,9 @@
 import './css/base.css';
 import { reconcileChildren, setAttr, setText, toggleClass } from './dom.js';
 
+// The dev server's log sink (/__devlog) doesn't exist in production builds.
+const DEV = Boolean(import.meta.env?.DEV);
+
 /** @typedef {import('./types.js').BrainVM} BrainVM */
 /** @typedef {import('./types.js').BrainAction} BrainAction */
 /** @typedef {import('./types.js').StyleModule} StyleModule */
@@ -185,6 +188,11 @@ export function createShell(root, { dispatch }) {
   brain.innerHTML = TEMPLATE;   // one-time mount; updates below are in place
   root.append(brain);
   const $ = selector => brain.querySelector(selector);
+  if (!DEV) {
+    $('#brain-send-log')?.remove();
+    const hint = $('.brain-diagnostics > summary small');
+    if (hint) hint.textContent = 'what the attach is doing · save a recording';
+  }
 
   const parts = {
     configBar: brain.querySelector(':scope > .b-configbar'),
