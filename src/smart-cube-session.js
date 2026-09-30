@@ -24,15 +24,30 @@ export function createSmartCubeSession(connectDevice) {
     phase: 'disconnected', detail: 'Connect a smart cube to mirror its turns.',
     deviceName: '', protocol: '', battery: null, facelets: null, gyro: null,
     state: solvedState(), moves: [], lastMove: null,
+    // Every applied cube turn bumps moveEvent.seq. Consumers must key on seq,
+    // not on moves.length: the history empties whenever the cube is solved, and
+    // a coalesced double replaces the previous quarter (replaces: true) instead
+    // of appending. `turn` is the physical turn just applied (the second quarter
+    // of a double), for animating the mirror.
+    moveEvent: null,
   };
+  let moveSeq = 0;
 
   function publish(changes) {
     snapshot = { ...snapshot, ...changes };
     if (typeof document !== 'undefined') document.documentElement.dataset.cubePhase = snapshot.phase;
-    for (const listener of listeners) listener(snapshot);
+    for (const listener of listeners) {
+      // A failing consumer (UI mirror, live tracker) must not be mistaken for a
+      // bad cube move: the cube state above is already correct. Report it loudly.
+      try { listener(snapshot); } catch (error) {
+        logConnection({ kind: 'error', label: `[session] listener threw during phase=${snapshot.phase} lastMove=${snapshot.lastMove}: ${error?.stack || error}` });
+        if (typeof console !== 'undefined') console.error('[session] listener threw', error);
+      }
+    }
   }
 
   function establishSolvedBaseline() {
+    lastCoalesce = null;
     publish({ phase: 'tracking', detail: 'Solved baseline synced. Turn the cube, then Analyze.', state: solvedState(), moves: [], lastMove: null });
   }
 
@@ -74,36 +89,40 @@ export function createSmartCubeSession(connectDevice) {
         else publish({ detail: 'Cube connected. Solve it, then tap Sync solved cube.' });
       }
     } else if (event.type === 'MOVE' && snapshot.phase === 'tracking') {
+      logConnection({ kind: 'debug', label: `[session] MOVE event.move=${JSON.stringify(event.move)} phase=${snapshot.phase} moves.len=${snapshot.moves.length}` });
+      // Only parsing and applying the move can desync; listener failures are
+      // handled (and reported) by publish().
+      let move, state;
       try {
-        // Accept wide/slice moves (Uw, M, ...) as single moves instead of desyncing — the
-        // cube model supports them and the user wants them tracked.
-        logConnection({ kind: 'debug', label: `[session] MOVE event.move=${JSON.stringify(event.move)} phase=${snapshot.phase} moves.len=${snapshot.moves.length}` });
-        const moves = parseScramble(event.move, { allowWide: true });
-        if (moves.length !== 1) throw new Error('Invalid move');
-        const [move] = moves;
-        const face = move[0];
-        const prime = move.includes("'");
-        const cubeTs = Number.isFinite(event.cubeTimestamp) ? event.cubeTimestamp : null;
-        // Double-turn coalescing: the GAN protocol emits a double (U2) as two
-        // quarter-turn MOVE events with a tiny cube-tick gap. Merge the second quarter into the
-        // first as a "U2" so it counts as one move, TPS isn't inflated,
-        // and a guided scramble's plan-matching doesn't briefly go off-plan.
-        if (lastCoalesce && lastCoalesce.face === face && lastCoalesce.prime === prime
-            && cubeTs !== null && lastCoalesce.cubeTs !== null
-            && (cubeTs - lastCoalesce.cubeTs) <= DOUBLE_TURN_WINDOW) {
-          const double = `${face}2${prime ? "'" : ''}`;
-          const state = applyMoves(snapshot.state, [move]);
-          const base = isSolvedState(state) ? [] : snapshot.moves.slice(0, -1);
-          publish({ state, moves: base.concat(double), lastMove: double, detail: 'Live cube updated.' });
-          lastCoalesce = null;
-        } else {
-          const state = applyMoves(snapshot.state, [move]);
-          publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, detail: 'Live cube updated. Analyze when ready.' });
-          lastCoalesce = { face, prime, cubeTs };
-        }
+        // Accept wide/slice moves (Uw, M, ...) as single moves instead of desyncing.
+        const parsed = parseScramble(event.move, { allowWide: true });
+        if (parsed.length !== 1) throw new Error('Invalid move');
+        [move] = parsed;
+        state = applyMoves(snapshot.state, [move]);
       } catch (error) {
         logConnection({ kind: 'error', label: `[session] MOVE DESYNC move=${JSON.stringify(event.move)} phase=${snapshot.phase} error=${error.message}` });
         publish({ phase: 'desynced', detail: `Unsupported move from cube: ${String(event.move).slice(0, 20)}. Solve it and sync again.` });
+        return;
+      }
+      const face = move.replace(/'|2$/g, '');
+      const prime = move.endsWith("'");
+      const quarterTurn = !move.endsWith('2');
+      const cubeTs = Number.isFinite(event.cubeTimestamp) ? event.cubeTimestamp : null;
+      // Double-turn coalescing: the GAN protocol emits a double (U2) as two
+      // quarter-turn MOVE events with a tiny cube-tick gap. Merge the second
+      // quarter into the first as one "U2" so it counts as one move, TPS isn't
+      // inflated, and a guided scramble doesn't briefly go off-plan.
+      // U' U' is also a U2 (there is no "U2'" in the notation).
+      const last = snapshot.moves[snapshot.moves.length - 1];
+      if (quarterTurn && lastCoalesce && lastCoalesce.face === face && lastCoalesce.prime === prime
+          && last === move && cubeTs !== null && lastCoalesce.cubeTs !== null
+          && cubeTs >= lastCoalesce.cubeTs && cubeTs - lastCoalesce.cubeTs <= DOUBLE_TURN_WINDOW) {
+        const double = `${face}2`;
+        lastCoalesce = null;
+        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves.slice(0, -1), double], lastMove: double, moveEvent: { seq: ++moveSeq, move: double, turn: move, replaces: true }, detail: 'Live cube updated.' });
+      } else {
+        lastCoalesce = quarterTurn ? { face, prime, cubeTs } : null;
+        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, moveEvent: { seq: ++moveSeq, move, turn: move, replaces: false }, detail: 'Live cube updated. Analyze when ready.' });
       }
     } else if (event.type === 'BATTERY') {
       publish({ battery: event.batteryLevel });

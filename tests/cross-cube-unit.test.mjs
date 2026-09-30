@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseScramble, createSolvedState, applyMoves, stateFromScramble, toRenderData, validateSolution, classifyOpportunity, frontFacesFor, inspectionOrientation, suggestInspectionFront, movesForInspection } from '../src/cross-cube.js';
-import { planPieceIds } from '../src/cross-cube.js';
+import { planPieceIds, reorientState } from '../src/cross-cube.js';
 
 const pos = (s, id) => s.cubies.find(p => p.id === id)?.position;
 
@@ -149,3 +149,60 @@ test('canonicalizeForRecognition recovers a PLL case from a colour-neutral cross
   assert.equal(identifyPllCase(view)?.name, 'T');
 });
 
+
+// Whole-cube rotation for tests: `turns` clockwise quarters about a face's outward normal,
+// i.e. x = rotateWhole(s,'R',1), y = rotateWhole(s,'U',1), z = rotateWhole(s,'F',1).
+const NORMALS = { U:[0,1,0], D:[0,-1,0], F:[0,0,1], B:[0,0,-1], R:[1,0,0], L:[-1,0,0] };
+function rotateWhole(state, face, turns) {
+  const n = NORMALS[face];
+  const cw = v => { // -90 degrees about n: v' = n(n.v) - n x v
+    const d = n[0]*v[0] + n[1]*v[1] + n[2]*v[2];
+    const c = [n[1]*v[2]-n[2]*v[1], n[2]*v[0]-n[0]*v[2], n[0]*v[1]-n[1]*v[0]];
+    return v.map((_, i) => (n[i]*d - c[i]) || 0);
+  };
+  const faceOf = v => Object.keys(NORMALS).find(f => NORMALS[f].every((x, i) => x === v[i]));
+  let cubies = state.cubies;
+  for (let t = 0; t < turns; t++) cubies = cubies.map(c => ({ id: c.id, position: cw(c.position),
+    stickers: Object.fromEntries(Object.entries(c.stickers).map(([f, col]) => [faceOf(cw(NORMALS[f])), col])) }));
+  return { cubies };
+}
+
+test('slice moves M/E/S parse only with allowWide and follow WCA directions', () => {
+  assert.deepEqual(parseScramble("M E' S2", { allowWide: true }), ['M', "E'", 'S2']);
+  assert.throws(() => parseScramble('M'), /Unsupported move/);
+  assert.throws(() => parseScramble('Mw', { allowWide: true }), /Unsupported move/);
+  // M follows L: the U centre goes to F, the UF edge to DF.
+  const m = stateFromScramble('');
+  const afterM = applyMoves(m, 'M');
+  assert.deepEqual(pos(afterM, 'U'), [0, 0, 1]);
+  assert.equal(afterM.cubies.find(c => c.id === 'U').stickers.F, 'white');
+  assert.deepEqual(pos(afterM, 'UF'), [0, -1, 1]);
+  assert.deepEqual(pos(afterM, 'UFR'), [1, 1, 1], 'M leaves the outer layers alone');
+  // E follows D: the F centre goes to R.
+  assert.deepEqual(pos(applyMoves(m, 'E'), 'F'), [1, 0, 0]);
+  // S follows F: the U centre goes to R.
+  assert.deepEqual(pos(applyMoves(m, 'S'), 'U'), [1, 0, 0]);
+});
+
+test('slice moves are consistent with face turns, wide turns and rotations', () => {
+  const solved = createSolvedState();
+  const scrambled = stateFromScramble("R U F' L2 D B' U2");
+  for (const start of [solved, scrambled]) {
+    for (const s of ['M', 'E', 'S']) {
+      assert.deepEqual(applyMoves(start, [s, `${s}'`]), start, `${s} ${s}' = identity`);
+      assert.deepEqual(applyMoves(start, [s, s, s, s]), start, `${s}4 = identity`);
+      assert.deepEqual(applyMoves(start, `${s}2`), applyMoves(start, [s, s]), `${s}2 = ${s} ${s}`);
+      assert.notDeepEqual(applyMoves(start, s), start);
+    }
+    // Wide = face + slice (WCA): Rw = R M', Lw = L M, Uw = U E', Dw = D E, Fw = F S, Bw = B S'.
+    for (const [wide, parts] of [['Rw', "R M'"], ['Lw', 'L M'], ['Uw', "U E'"], ['Dw', 'D E'], ['Fw', 'F S'], ['Bw', "B S'"]]) {
+      assert.deepEqual(applyMoves(start, wide), applyMoves(start, parts), `${wide} = ${parts}`);
+    }
+    // Slice = two outer turns + a whole-cube rotation: M = L' R x', E = U D' y', S = F' B z.
+    assert.deepEqual(applyMoves(start, 'M'), rotateWhole(applyMoves(start, "L' R"), 'R', 3), "M = L' R x'");
+    assert.deepEqual(applyMoves(start, 'E'), rotateWhole(applyMoves(start, "U D'"), 'U', 3), "E = U D' y'");
+    assert.deepEqual(applyMoves(start, 'S'), rotateWhole(applyMoves(start, "F' B"), 'F', 1), "S = F' B z");
+  }
+  // Independent check of the rotation helper: x' brings F to the bottom, which is reorientState(_, 'F').
+  assert.deepEqual(applyMoves(solved, 'M'), reorientState(applyMoves(solved, "L' R"), 'F'));
+});

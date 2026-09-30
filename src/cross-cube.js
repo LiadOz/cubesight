@@ -73,7 +73,9 @@ export function parseScramble(input='', { allowWide = false } = {}) {
   if (typeof input !== 'string') throw new TypeError('Enter a scramble as move notation.');
   const tokens = input.trim().replace(/[′’]/g,"'").split(/\s+/).filter(Boolean);
   if (tokens.length > 200) throw new Error('Use at most 200 moves.');
-  for (const token of tokens) if (!(allowWide ? /^[URFDLB]w?(?:2|')?$/ : /^[URFDLB](?:2|')?$/).test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B${allowWide ? ', or a wide move such as Rw,' : ''} with 2 or a prime.`);
+  // allowWide also admits slice moves (M, E, S): smart cubes and the move model
+  // treat both as ordinary single moves, but manual scramble entry stays strict.
+  for (const token of tokens) if (!(allowWide ? /^(?:[URFDLB]w?|[MES])(?:2|')?$/ : /^[URFDLB](?:2|')?$/).test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B${allowWide ? ', a wide move such as Rw, or a slice move (M, E, S),' : ''} with 2 or a prime.`);
   return tokens;
 }
 
@@ -98,14 +100,21 @@ function quarter(v, n) {
   return v.map((_,i)=>n[i]*projection-cross[i] || 0);
 }
 
+// Slice moves turn the middle layer in the direction of a reference face (WCA):
+// M follows L, E follows D, S follows F. Like wide moves, they carry centres.
+const SLICE_FACE = Object.freeze({ M:'L', E:'D', S:'F' });
+
 export function applyMoves(state, input) {
   const moves = parseScramble(typeof input === 'string' ? input : input.join(' '), { allowWide: true });
   let cubies = state.cubies.map(c=>({id:c.id,position:[...c.position],stickers:{...c.stickers}}));
   for (const move of moves) {
-    const normal = NORMAL[move[0]];
+    const slice = move[0] in SLICE_FACE;
+    const normal = NORMAL[slice ? SLICE_FACE[move[0]] : move[0]];
     const wide = move[1] === 'w';
+    // Layer depth along the turning face's normal: 1 = face, 0 = middle, -1 = opposite face.
+    const turnsLayer = depth => slice ? depth === 0 : wide ? depth >= 0 : depth === 1;
     const turns = move.endsWith('2') ? 2 : move.endsWith("'") ? 3 : 1;
-    for (let turn=0;turn<turns;turn++) cubies = cubies.map(c=>(wide ? dot(c.position,normal)<0 : dot(c.position,normal)!==1) ? c : {
+    for (let turn=0;turn<turns;turn++) cubies = cubies.map(c=>!turnsLayer(dot(c.position,normal)) ? c : {
       id:c.id, position:quarter(c.position,normal),
       stickers:Object.fromEntries(Object.entries(c.stickers).map(([f,color])=>[FACE_BY_NORMAL[quarter(NORMAL[f],normal).join(',')],color])),
     });
