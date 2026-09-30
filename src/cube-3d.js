@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { isMove, toPhysicalTurn } from './moves/notation.js';
 
 const FACE_NORMALS = {
   U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1],
@@ -507,6 +508,7 @@ export function createCube3D(container, options = {}) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const clock = new THREE.Clock();
   let moveAnimation = null;
+  let ghost = null;   // the move-guide preview: { move, held, loop, spec, group, materials, startedAt }
   let liveMoveQueue = [];
   let liveMoveRunning = false;
   let applyingAnimationUpdate = false;
@@ -534,6 +536,7 @@ export function createCube3D(container, options = {}) {
       scoutCageMaterial.opacity = .68 + pulse * .27;
       if (!moveAnimation) scoutCages.forEach(cage => cage.scale.setScalar(1 + pulse * .025));
     }
+    if (ghost) tickGhost(performance.now());
     renderer.render(scene, camera);
   }
   frame();
@@ -632,6 +635,8 @@ export function createCube3D(container, options = {}) {
       : interactionMode === 'scout'
         ? `Interactive Cross Scout cube showing all stickers. ${bottomFace} is held on the bottom and ${frontFace} in front.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
       : `Three-dimensional corner-recognition cube in a locked ${lockedViewOffset.label} solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
+    // A ghost copies sticker colours: rebuild it on the new state (same move, same phase).
+    if (ghost) { const { move, held, loop, startedAt, id } = ghost; disposeGhost(); buildGhost(move, held, loop, startedAt); ghost.id = id; }
     // Present the new case immediately rather than waiting for the next loop.
     renderer.render(scene, camera);
   }
@@ -639,28 +644,27 @@ export function createCube3D(container, options = {}) {
   // Animate a layer turn for scout playback. The caller supplies the state
   // that should be displayed after the move; geometry is always restored
   // before applying it so repeated updates cannot accumulate transforms.
+  // Any move in notation (faces, wide, slices, whole-cube rotations) turns the
+  // matching cubies about the physical axis. A rotation turns every cubie and
+  // snaps back at the end: the cube's real orientation belongs to the gyro.
+  const cubieMembers = spec => cubeGroup.children.filter((child) => {
+    const position = child.userData.cubiePosition;
+    return position && spec.layers.includes(position[0] * spec.axis[0] + position[1] * spec.axis[1] + position[2] * spec.axis[2]);
+  });
   function animateMove(move, nextData, durationMs=260) {
     cancelMoveAnimation();
     const notation = String(move || '').trim();
-    const face = notation[0];
-    if (!FACE_NORMALS[face]) {
+    if (!isMove(notation)) {
       if (nextData) update(nextData);
       return Promise.resolve();
     }
-    const turns = notation.includes('2') ? 2 : 1;
-    const direction = notation.includes("'") ? -1 : 1;
-    const axis = new THREE.Vector3(...FACE_NORMALS[face]);
-    const angle = -direction * turns * Math.PI / 2;
-    renderer.domElement.dataset.turningFace = face;
+    const spec = toPhysicalTurn(notation);
+    const axis = new THREE.Vector3(...spec.axis);
+    const angle = spec.angle * Math.PI / 180;
+    renderer.domElement.dataset.turningFace = spec.kind === 'face' || spec.kind === 'wide' ? notation[0].toUpperCase() : notation[0];
     const layer = new THREE.Group();
     cubeGroup.add(layer);
-    const wide = notation[1] === 'w';
-    const members = cubeGroup.children.filter((child) => {
-      const position = child.userData.cubiePosition;
-      return position && (wide
-        ? position[axis.x ? 0 : axis.y ? 1 : 2] * (axis.x || axis.y || axis.z) >= 0
-        : position[axis.x ? 0 : axis.y ? 1 : 2] === (axis.x || axis.y || axis.z));
-    });
+    const members = cubieMembers(spec);
     const snapshots = members.map((object) => ({ object, position: object.position.clone(), quaternion: object.quaternion.clone(), scale: object.scale.clone() }));
     members.forEach((object) => layer.attach(object));
     controls.enabled = false;
@@ -732,9 +736,82 @@ export function createCube3D(container, options = {}) {
     })();
   }
 
+  // --- Ghost preview ------------------------------------------------------------------
+  // showGhost(move, { loop, held }) lifts a translucent copy of the layer the move
+  // turns and plays the turn on top of the real cube, in the physical frame, so it
+  // is right however the cube is held (the gyro turns the whole group). `move` is
+  // written for the hold in `held` (default: what getHeldFaces reports now). With
+  // reduced motion (or loop:false) the copy is frozen mid-turn instead of looping.
+  const GHOST_PERIOD_MS = 2100;
+  function disposeGhost() {
+    if (!ghost) return;
+    cubeGroup.remove(ghost.group);
+    ghost.materials.forEach((material) => material.dispose());
+    ghost = null;
+    delete renderer.domElement.dataset.ghost;
+    delete renderer.domElement.dataset.ghostLayers;
+    delete renderer.domElement.dataset.ghostLoop;
+  }
+  function buildGhost(move, held, loop, startedAt = performance.now()) {
+    const spec = toPhysicalTurn(move, held);
+    const group = new THREE.Group();
+    const materials = [];
+    const bodyMaterial = new THREE.MeshBasicMaterial({ color: '#dff8f3', transparent: true, opacity: .07, depthWrite: false, toneMapped: false });
+    materials.push(bodyMaterial);
+    let count = 0;
+    for (const source of cubieMembers(spec).filter((child) => child.isMesh)) {
+      const material = source.material === cubieMaterial ? bodyMaterial
+        : new THREE.MeshBasicMaterial({ color: source.material.color, transparent: true, opacity: .62, depthWrite: false, toneMapped: false });
+      if (material !== bodyMaterial) materials.push(material);
+      const copy = new THREE.Mesh(source.geometry, material);
+      copy.position.copy(source.position); copy.quaternion.copy(source.quaternion); copy.scale.copy(source.scale);
+      copy.renderOrder = 20;
+      group.add(copy);
+      if (source.userData.kind === undefined) count++;
+    }
+    cubeGroup.add(group);
+    ghost = { move, held, loop, spec, group, materials, startedAt, axis: new THREE.Vector3(...spec.axis) };
+    // A face layer lifts away from the cube; slices and rotations cannot, so they swell slightly.
+    const mean = spec.layers.reduce((sum, layer) => sum + layer, 0) / spec.layers.length;
+    ghost.lift = spec.kind === 'face' || spec.kind === 'wide' ? Math.sign(mean) * .3 : 0;
+    ghost.swell = spec.kind === 'slice' ? 1.06 : spec.kind === 'rot' ? 1.12 : 1;
+    renderer.domElement.dataset.ghost = spec.move;
+    renderer.domElement.dataset.ghostLayers = String(count);
+    renderer.domElement.dataset.ghostLoop = String(loop);
+    tickGhost(startedAt);
+  }
+  function tickGhost(now) {
+    if (!ghost) return;
+    let turn = .5, lift = 1, fade = 1;
+    if (ghost.loop && !reducedMotion.matches) {
+      const phase = ((now - ghost.startedAt) % GHOST_PERIOD_MS) / GHOST_PERIOD_MS;
+      // lift, turn (eased), hold, fade and start over
+      const t = Math.min(Math.max((phase - .14) / .46, 0), 1);
+      turn = t * t * t * (t * (t * 6 - 15) + 10);
+      lift = Math.min(phase / .12, 1);
+      fade = phase > .86 ? Math.max(1 - (phase - .86) / .12, 0) : 1;
+    }
+    ghost.group.position.copy(ghost.axis).multiplyScalar(ghost.lift * lift);
+    ghost.group.quaternion.setFromAxisAngle(ghost.axis, ghost.spec.angle * Math.PI / 180 * turn);
+    ghost.group.scale.setScalar(1 + (ghost.swell - 1) * lift);
+    ghost.materials.forEach((material, index) => { material.opacity = (index === 0 ? .07 : .62) * fade; });
+  }
+  // Returns an id: two guides can share the cube, and each clears only its own ghost.
+  let ghostSequence = 0;
+  function showGhost(move, { loop = true, held } = {}) {
+    disposeGhost();
+    if (!isMove(String(move || ''))) return 0;
+    buildGhost(String(move).trim(), held ?? getHeldFaces(), Boolean(loop));
+    ghost.id = ++ghostSequence;
+    return ghost.id;
+  }
+  function clearGhost(id) { if (id === undefined || ghost?.id === id) disposeGhost(); }
+
   return {
     update,
     animateMove,
+    showGhost,
+    clearGhost,
     setTurnHint,
     queueLiveMove,
     setMode,
@@ -751,6 +828,7 @@ export function createCube3D(container, options = {}) {
     destroy() {
       liveMoveQueue = [];
       cancelMoveAnimation();
+      disposeGhost();
       setTurnHint(null);
       stopped = true;
       cancelAnimationFrame(animationFrame);

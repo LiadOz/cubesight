@@ -1,3 +1,4 @@
+import { describeMove, isMove } from './moves/notation.js';
 import { FACE_COLORS, OPPOSITE_FACE, inspectionOrientation, parseScramble, sameCubeState } from './cross-cube.js';
 
 const FACE_POSITION = { U: 'top', D: 'bottom', R: 'right', L: 'left', F: 'front', B: 'back' };
@@ -55,6 +56,13 @@ export function appendDetour(detour, move) {
 }
 
 export function describeTurn(move, bottom='D', front='F') {
+  if (typeof move === 'string') move = move.replace(/[′’]/g, "'");   // accept the display and phone primes
+  // Slices (M E S), rotations (x y z) and lowercase wide (r) are described by the
+  // notation core; faces and Rw keep the wording below.
+  if (move && !FACE_POSITION[move[0]] && isMove(move)) {
+    const { symbol, text } = describeMove(move, { bottom, front });
+    return { symbol, text };
+  }
   const position = FACE_POSITION[move?.[0]];
   if (!position) return null;
   const held = inspectionOrientation(bottom, front);
