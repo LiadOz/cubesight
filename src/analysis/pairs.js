@@ -20,7 +20,15 @@ export function pairTargets(segmentation, { maxPairs = 4 } = {}) {
     const n = Number(match[1]);
     if (n > maxPairs || stage.skipped || stage.fromIdx === null || stage.moves === 0) continue;
     const startFrame = stage.fromIdx === 0 ? segmentation.initial?.k : segmentation.frames[stage.fromIdx - 1]?.k;
-    out.push({ n, stage: stage.name, from: stage.fromIdx, to: stage.toIdx, frame: startFrame ?? 0 });
+    const recordedPair = segmentation.pairs.find(pair => pair.n === n);
+    out.push({
+      n, stage: stage.name, from: stage.fromIdx, to: stage.toIdx, frame: startFrame ?? 0,
+      // Which physical slot this solve actually completed at the milestone.
+      // Keep normalized and original-frame forms so review scoring can compare
+      // the right target while the UI shows the user's face labels.
+      chosenSlot: recordedPair?.slot ?? null,
+      chosenSlotOriginal: recordedPair?.slotOriginal ?? null,
+    });
   }
   return out;
 }
@@ -72,7 +80,16 @@ function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, sl
   }
   const options = [...byAlg.values()].sort((a, b) => a.stm - b.stm || a.ergonomicScore - b.ergonomicScore || a.plannerWeight - b.plannerWeight || a.generators.localeCompare(b.generators));
   const best = options[0] ?? null;
+  const chosenCandidate = target.chosenSlot
+    ? found.candidates.find(candidate => candidate.slots.includes(target.chosenSlot)) ?? null
+    : null;
   const shortestWithFrame = Math.min(...found.candidates.map(candidate => candidate.shortest < 0 ? Infinity : candidate.shortest));
+  const globallyShortest = found.candidates
+    .filter(candidate => candidate.shortest >= 0)
+    .sort((a, b) => a.shortest - b.shortest)[0] ?? null;
+  const chosenShortest = chosenCandidate?.shortest >= 0 ? chosenCandidate.shortest : null;
+  const chosenProven = Boolean(chosenCandidate && chosenShortest !== null && !chosenCandidate.timedOut
+    && chosenCandidate.searchedGoalShifts.length === 4);
   const betterCandidate = best && (best.stm < yours.length || (best.stm === yours.length && best.ergonomicScore < ergoScore(yours))) ? best : null;
   const yoursWeight = plannerWeight(yours);
   return {
@@ -85,14 +102,21 @@ function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, sl
       stm: betterCandidate.stm, etm: betterCandidate.etm, generators: betterCandidate.generators, ergonomicScore: betterCandidate.ergonomicScore,
       goalShift: betterCandidate.goalShift,
     } : null,
-    shortest: best?.source === 'recorded-fallback' ? null : best?.stm ?? null,
+    chosenSlot: target.chosenSlotOriginal ?? (target.chosenSlot ? originalSlot(target.chosenSlot, crossFace) : null),
+    chosenSlots: target.chosenSlotOriginal ? [target.chosenSlotOriginal]
+      : target.chosenSlot ? [originalSlot(target.chosenSlot, crossFace)] : [],
+    chosenShortest,
+    chosenProven,
+    bestSlot: globallyShortest ? originalSlot(globallyShortest.slots[0], crossFace) : null,
+    shortest: globallyShortest?.shortest ?? null,
     proofScope: target.frame === 0 ? 'cross-and-pair-up-to-D-offset' : 'D-offset-start-and-cross-up-to-D-offset-end',
     options: options.slice(0, 20).map(option => ({
       ...option,
       moves: unrelabelMoves(option.moves, crossFace),
     })),
     complete: found.candidates.every(candidate => !candidate.timedOut && candidate.searchedGoalShifts.length === 4),
-    proven: Boolean(best && best.stm === shortestWithFrame && found.candidates.every(candidate => !candidate.timedOut && candidate.searchedGoalShifts.length === 4)),
+    proven: Boolean(globallyShortest && globallyShortest.shortest === shortestWithFrame
+      && found.candidates.every(candidate => !candidate.timedOut && candidate.searchedGoalShifts.length === 4)),
     searchDepth: maxDepth,
     ms: Math.round(found.searchMs * 100) / 100,
     coldMs: Math.round(found.coldMs * 100) / 100,

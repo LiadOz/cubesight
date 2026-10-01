@@ -68,6 +68,9 @@ export function cleanAnalysis(a) {
         ...(a.v >= 2 ? {
           frame: int(p.frame, 0, 3) ?? 0,
           proofScope: ['cross-and-pair-up-to-D-offset', 'D-offset-start-and-cross-up-to-D-offset-end'].includes(p.proofScope) ? p.proofScope : 'cross-and-pair-up-to-D-offset',
+          chosenSlot: ['FR', 'BR', 'BL', 'FL'].includes(p.chosenSlot) ? p.chosenSlot : null,
+          chosenSlots: slots(p.chosenSlots), chosenShortest: int(p.chosenShortest, 0, 60), chosenProven: Boolean(p.chosenProven),
+          bestSlot: ['FR', 'BR', 'BL', 'FL'].includes(p.bestSlot) ? p.bestSlot : null,
           options: list(p.options, 8, option), ms: Number.isFinite(p.ms) ? p.ms : null, complete: Boolean(p.complete),
         } : {}),
         better: better ? (a.v >= 2 ? better : { slot: better.slot, moves: better.moves, w: better.w }) : null,

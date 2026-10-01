@@ -59,6 +59,10 @@ test('a pair that took longer than the planner finds gets a better-pair marker (
   const pair = record.analysis.pairs.find(p => p.n === 1);
   assert.equal(pair.yours, "U U' R U R'");
   assert.equal(pair.better.moves, "R U R'");
+  assert.equal(pair.chosenSlot, 'FR');
+  assert.deepEqual(pair.chosenSlots, ['FR']);
+  assert.equal(pair.chosenShortest, 3);
+  assert.ok(pair.bestSlot);
   assert.equal(pair.shortest, 3);
   const rows = [{ key: 'cross', moves: 8, ms: 2000, skipped: false, merged: false }, { key: 'pair1', moves: 5, ms: 1400, skipped: false, merged: false }];
   const { markers } = buildMarkers({ record, stages: rows, plan: PLAN, faceColors: FACE_COLORS });

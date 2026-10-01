@@ -31,10 +31,17 @@ test('all four pair stages return ranked, replayable completions on a warm engin
   const moves = fixture.moves.split(' ');
   const segmentation = segmentSolve({ scramble: fixture.scramble, moves, crossFace: 'D' });
   assert.deepEqual(pairTargets(segmentation).map(target => target.n), [1, 2, 3, 4]);
+  assert.deepEqual(pairTargets(segmentation).map(target => target.chosenSlotOriginal), segmentation.pairs.map(pair => pair.slotOriginal));
   const result = evaluatePairs(segmentation, null, { maxDepth: 12, slack: 0, timeBudgetMs: 120 });
   assert.equal(result.length, 4);
   assert.ok(Number.isFinite(result[0].coldMs) && result[0].coldMs >= 0, 'cold table cost is recorded separately from the search budget');
   for (const pair of result) {
+    assert.ok(['FR', 'BR', 'BL', 'FL'].includes(pair.chosenSlot), `pair ${pair.n} records the slot actually completed`);
+    assert.deepEqual(pair.chosenSlots, [pair.chosenSlot]);
+    assert.ok(pair.chosenShortest === null || Number.isInteger(pair.chosenShortest));
+    assert.equal(typeof pair.chosenProven, 'boolean');
+    assert.ok(pair.bestSlot === null || ['FR', 'BR', 'BL', 'FL'].includes(pair.bestSlot));
+    assert.ok(pair.shortest === null || Number.isInteger(pair.shortest), 'global shortest is reported separately from ergonomic ranking');
     assert.ok(pair.options.length, `pair ${pair.n} should have at least one completion`);
     assert.ok(pair.options.every((option, i) => i === 0 || pair.options[i - 1].stm <= option.stm), 'options are ranked by STM');
     assert.ok(pair.options.every(option => Number.isInteger(option.stm) && Number.isInteger(option.etm) && option.generators && Number.isFinite(option.ergonomicScore)));

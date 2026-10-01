@@ -60,6 +60,9 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
     out.pairs.push({
       n: pair.n, from: pair.from, to: pair.to, yours: text(pair.yours), w: pair.yoursWeight, yoursErgonomicScore: pair.yoursErgonomicScore,
       frame: pair.frame, proofScope: pair.proofScope,
+      chosenSlot: pair.chosenSlot ?? null, chosenSlots: pair.chosenSlots ?? [],
+      chosenShortest: pair.chosenShortest ?? null, chosenProven: pair.chosenProven === true,
+      bestSlot: pair.bestSlot ?? null,
       better: pair.better ? {
         slot: pair.better.slot, slots: pair.better.slots, moves: text(pair.better.moves), w: pair.better.weight,
         stm: pair.better.stm, etm: pair.better.etm, generators: pair.better.generators, ergonomicScore: pair.better.ergonomicScore,
