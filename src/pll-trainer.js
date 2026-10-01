@@ -5,6 +5,7 @@ import { renderCube } from './cube-renderer.js';
 import { toRenderData } from './cross-cube.js';
 import { PLL_CASES, createPLLTrial } from './pll-logic.js';
 import { KEYS, fmt } from './copy/terms.js';
+import { resolvePLLStart } from './drills/pll-start.js';
 
 /*
  * PLL trainer UI contract
@@ -112,6 +113,7 @@ export function createPLLTrainer(root) {
   let active = true;
   let trial = null;
   let trialToken = 0;
+  let startHash = null, linkedStart = null, startPromise = null;
   let startedAt = 0;
   let timerFrame = null;
   let idleTimer = null;
@@ -246,11 +248,29 @@ export function createPLLTrainer(root) {
     if (dueRetries.some((item) => item.id === id)) dueRetries = dueRetries.filter((item) => item.id !== id);
     dueRetries.push({ id, due: completed + 3 });
   }
+  async function readLinkedStart() {
+    const hash = globalThis.location?.hash ?? '';
+    if (hash !== startHash) {
+      startHash = hash; linkedStart = null;
+      startPromise = resolvePLLStart(hash).catch(() => ({ error: 'This position could not be loaded. Check the link and try again.' }));
+    }
+    const value = await startPromise;
+    if (hash !== startHash) return null;
+    linkedStart = value;
+    if (value.state || value.allowed) { family = 'all'; $('#pll-family').value = 'all'; }
+    let back = root.querySelector('.pll-review-back');
+    const from = /^review:(\d+):(\d+)$/.exec(value.start?.from ?? '');
+    if (from) {
+      if (!back) { back = document.createElement('a'); back.className = 'pll-review-back'; $('.pll-intro').append(back); }
+      back.href = `#/review/${from[1]}?move=${from[2]}`; back.textContent = 'back to review ›';
+    } else back?.remove();
+    return value;
+  }
   function chooseCase() {
-    const due = dueRetries.find((item) => item.due <= completed);
+    const due = dueRetries.find((item) => item.due <= completed && (!linkedStart?.allowed || linkedStart.allowed.includes(item.id)));
     if (due) { dueRetries = dueRetries.filter((item) => item !== due); return cases.find((item) => sameId(item.id, due.id)) || { id: due.id, caseId: due.id }; }
     const deferred = new Set(dueRetries.filter((item) => item.due > completed).map((item) => item.id));
-    const selectedFamily = cases.filter((item) => family === 'all' || item.family === family);
+    const selectedFamily = cases.filter((item) => (family === 'all' || item.family === family) && (!linkedStart?.allowed || linkedStart.allowed.includes(item.id)));
     const eligible = selectedFamily.filter((item) => !deferred.has(item.id));
     if (!eligible.length) return selectedFamily[Math.floor(Math.random() * selectedFamily.length)] || cases[0];
     // In Learn, give new cases a chance first; in Mix/Transfer, weak cases
@@ -267,10 +287,25 @@ export function createPLLTrainer(root) {
   }
   async function newTrial() {
     if (roundPanel.complete) return;
-    const token = ++trialToken; stopClock(); locked = false; paused = false; elapsed = 0; $('#pll-pause').hidden = true; $('#pll-cube').classList.remove('is-paused'); $('#pll-next').hidden = true; setTimerText(0); setGlance(true); setMessage('Choose the case you see.');
-    const selected = chooseCase();
+    const token = ++trialToken; stopClock(); trial = null; locked = false; paused = false; elapsed = 0; $('#pll-pause').hidden = true; $('#pll-cube').classList.remove('is-paused'); $('#pll-next').hidden = true; setTimerText(0); setGlance(true); setMessage('Choose the case you see.');
+    const start = await readLinkedStart();
+    if (token !== trialToken || !active) return;
+    if (!start || start.error) {
+      trial = null; locked = true; delete root.dataset.pllCase;
+      $('#pll-answers').replaceChildren(); $('#pll-cube').hidden = true;
+      setMessage(start?.error ?? 'This position could not be loaded.', 'error');
+      return;
+    }
+    $('#pll-cube').hidden = false;
+    const selected = start.recognized ? getCase(start.recognized.name) : chooseCase();
     let generated;
-    try { generated = await Promise.resolve(createPLLTrial({ mode, family, caseId: selected?.id || selected?.caseId })); } catch { setMessage('Couldn’t load PLL cases. Reload and try again.', 'error'); return; }
+    try {
+      generated = await Promise.resolve(createPLLTrial({ mode, family, caseId: selected?.id || selected?.caseId }));
+      if (start.state) {
+        const state = start.state;
+        generated = {...generated, state, renderData: toRenderData(state)};
+      }
+    } catch { setMessage('Couldn’t load PLL cases. Reload and try again.', 'error'); return; }
     if (token !== trialToken || !active) return;
     trial = { ...generated, caseId: generated?.caseId || generated?.id || selected?.id, name: generated?.name || generated?.label || selected?.name || selected?.id, family: generated?.family || selected?.family || family };
     root.dataset.pllCase = trial.caseId;
