@@ -140,7 +140,8 @@ function isSolvedCubie(cubie, solvedById) {
   const solved = solvedById.get(cubie.id);
   return Boolean(solved)
     && JSON.stringify(cubie.position) === JSON.stringify(solved.position)
-    && JSON.stringify(cubie.stickers) === JSON.stringify(solved.stickers);
+    && Object.keys(cubie.stickers).length === Object.keys(solved.stickers).length
+    && Object.entries(cubie.stickers).every(([face, color]) => solved.stickers[face] === color);
 }
 
 /** Return true only for a physically valid, OLL-complete PLL-shaped state. */
@@ -170,10 +171,36 @@ function getSignatureIndex() {
   return signatureIndex;
 }
 
+let detailIndex;
+function getPllDetailIndex() {
+  if (!detailIndex) {
+    detailIndex = new Map();
+    for (const entry of PLL_CASES) {
+      const base = applyPllMoves(createSolvedState(), invertMoves(entry.moves));
+      for (const auf of ['', 'U', 'U2', "U'"]) {
+        const state = auf ? applyMoves(base, [auf]) : base;
+        const key = topSignature(state);
+        detailIndex.set(key, [...(detailIndex.get(key) ?? []), { entry, auf }]);
+      }
+    }
+  }
+  return detailIndex;
+}
+
 /** Identify a case, ignoring the U-face adjustment; returns null if invalid. */
 export function identifyPllCase(state) {
   if (!isPllState(state)) return null;
   return getSignatureIndex().get(canonicalPllSignature(state)) ?? null;
+}
+
+/** Identify the exact visible AUF when the PLL pattern makes it unambiguous. */
+export function identifyPllCaseDetails(state) {
+  if (!isPllState(state)) return null;
+  const matches = getPllDetailIndex().get(topSignature(state)) ?? [];
+  if (!matches.length) return null;
+  const entry = matches[0].entry;
+  const aufs = [...new Set(matches.filter(match => match.entry.name === entry.name).map(match => match.auf))];
+  return { case: entry, auf: aufs.length === 1 ? aufs[0] : null, aufOptions: aufs };
 }
 
 function randomAuf() {

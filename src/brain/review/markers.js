@@ -9,7 +9,7 @@
 //              position on the cube (for "before this move", at === idx)
 //   cost       loss units (about one move each); for good markers, the moves saved (positive numbers)
 //   score      cost weighted by the session focus; ranks the markers (highest first)
-//   better     { from, yours[], moves[] }: the shorter way from that position, when the engine has one
+//   better     { from, yours[], moves[] }: a verified shorter/easier way from that position
 //   trainer    where a pin of this moment belongs: cross | f2l | oll | pll | lookahead
 
 import { fmtMoves } from '../format.js';

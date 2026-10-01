@@ -332,7 +332,13 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     void import('../analysis/client.js').then(({ analysisClient }) => analysisClient().analyze(entry)).catch(() => null).then(summary => {
       if (detached) return;
       analysisState.set(at, summary ? 'done' : 'none');
-      if (summary) withHistory(store => { store.update(at, { analysis: summary }); });
+      if (summary) withHistory(store => {
+        store.update(at, {
+          analysis: summary,
+          ollCase: summary.ollCase?.id ?? null,
+          pllCase: summary.pllCase?.id ?? null,
+        });
+      });
       if (active) render();
     });
   }
@@ -598,6 +604,12 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         if (!compare || compare.status === 'pending') break;
         const moves = action.variant === 'better' ? compare.better : compare.yours;
         if (moves.length) return playMoves(compare.from, moves, action.variant);
+        break;
+      }
+      case 'playOption': {
+        const compare = vm?.results?.review?.detail?.compare;
+        const option = compare?.options?.[action.option];
+        if (compare && option?.moves?.length) return playMoves(compare.from, option.moves, 'better');
         break;
       }
       case 'stepMarker': {

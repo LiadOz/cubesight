@@ -57,11 +57,11 @@ test('finish a solve: markers appear, a marker opens the detail with the cube th
   await expect(detail.locator('.b-rev-variant[data-variant="better"]')).toHaveClass(/is-active/);
   await expect(detail.locator('.b-rev-alg-better code')).toContainText("R D′ F");
 
-  // A stage opens too: its stats, and for pair 3 an honest "no suggestion yet".
+  // A stage opens too: its stats and the pair 3 completion suggestion.
   await brain.locator('.b-ch-split-label', { hasText: 'pair 3' }).click();
   await expect(detail.locator('.b-rev-dtitle')).toHaveText('pair 3');
-  await expect(detail.locator('.b-rev-dcmp-text')).toHaveText('no suggestion yet');
-  await expect(detail.locator('.b-rev-variant[data-variant="better"]')).toBeHidden();
+  await expect(detail.locator('.b-rev-dcmp-text')).toContainText('better');
+  await expect(detail.locator('.b-rev-variant[data-variant="better"]')).toBeVisible();
   await brain.locator('.b-ch-split-label', { hasText: /^cross$/ }).click();
   await expect(detail.locator('.b-rev-dcmp-text')).toContainText('yours 8 · better 6');
 

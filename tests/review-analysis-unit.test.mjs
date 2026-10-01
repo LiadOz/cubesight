@@ -17,12 +17,16 @@ test('the stored summary is small, survives the store whitelist unchanged, and r
   const base = await replayRecord();
   const record = await analysed({ ...base, moveTimes: timesFor(base.solveMoves.length, { pauses: { 20: 1800 } }) });
   const size = JSON.stringify(record.analysis).length;
-  assert.ok(size < 2000, `summary is ${size} bytes`);
+  assert.ok(size < 6000, `summary is ${size} bytes`);
   assert.deepEqual(cleanAnalysis(record.analysis), record.analysis, 'idempotent');
   assert.deepEqual(cleanRecord(JSON.parse(JSON.stringify(record))).analysis, record.analysis, 'survives a JSON round trip through cleanRecord');
+  const withCases = cleanRecord({ ...record, ollCase: record.analysis.ollCase?.id ?? null, pllCase: record.analysis.pllCase?.id ?? null });
+  assert.equal(withCases.ollCase, record.analysis.ollCase?.id ?? null, 'the canonical OLL case index survives storage');
+  assert.equal(withCases.pllCase, record.analysis.pllCase?.id ?? null, 'the canonical PLL case index survives storage');
   assert.equal(record.rotationMarks.length, base.rotations);
   assert.deepEqual(Object.keys(record.rotationMarks[0]).sort(), ['from', 'idx', 'tMs', 'to']);
-  assert.equal(cleanAnalysis({ v: 2 }), null);
+  assert.equal(cleanAnalysis({ v: 3 }), null);
+  assert.equal(cleanAnalysis({ v: 1, pairs: [] }).v, 1, 'older stored summaries remain readable');
   assert.equal(cleanAnalysis('x'), null);
   const hostile = cleanAnalysis({ ...record.analysis, cross: { ...record.analysis.cross, best: 'rm -rf', losses: [{ i: 1, loss: 9 }] }, pairs: [{ n: 1, from: 0, to: 1, yours: '<b>', better: { moves: 'R x', slot: 'FR' } }] });
   assert.equal(hostile.cross.best, '');
@@ -33,8 +37,8 @@ test('the stored summary is small, survives the store whitelist unchanged, and r
 test('records that cannot be analysed say why', () => {
   const ok = { scramble: "R U", solveMoves: ['R'], moveCount: 1, solved: true, crossFace: 'D', moveTimes: [100] };
   assert.deepEqual(analysisInputFromRecord(ok).input, { scramble: 'R U', moves: ['R'], moveTimes: [100], crossFace: 'D' });
-  assert.equal(analysisInputFromRecord({ ...ok, solved: false }).skip, 'not-solved');
-  assert.equal(analysisInputFromRecord({ ...ok, penalty: 'DNF' }).skip, 'not-solved');
+  assert.ok(analysisInputFromRecord({ ...ok, solved: false }).input, 'partial move history can capture reached cases');
+  assert.ok(analysisInputFromRecord({ ...ok, penalty: 'DNF' }).input, 'a DNF can still have reached cases');
   assert.equal(analysisInputFromRecord({ ...ok, scramble: '' }).skip, 'no-scramble');
   assert.equal(analysisInputFromRecord({ ...ok, solveMoves: [], moveCount: 0 }).skip, 'no-moves');
   assert.equal(analysisInputFromRecord({ ...ok, moveCount: 250 }).skip, 'moves-truncated', 'the store keeps 200 moves; a longer solve is not half-analysed');
@@ -68,13 +72,17 @@ test('a pair that took longer than the planner finds gets a better-pair marker (
   assert.equal(better.trainer, 'f2l');
 });
 
-test('an optimal pair has no better-pair marker; pairs 3 and 4 have no engine yet', async () => {
+test('all four pair stages are analysed and one-move pair savings stay below the coach threshold', async () => {
   const g = GOLD.normal;
   const moves = g.moves.split(' ').slice(0, 23);   // the cross and four pairs
   const record = await analysed({ at: 6, scramble: g.scramble, solveMoves: moves, moveCount: moves.length, solved: true, crossFace: 'D', moveTimes: timesFor(moves.length) });
-  assert.equal(record.analysis.pairs.length, 2, 'only pairs 1 and 2 are searched');
-  assert.ok(record.analysis.pairs.every(p => p.better === null && p.shortest === p.yours.split(' ').length));
-  assert.equal(buildMarkers({ record, stages: [], plan: PLAN }).markers.some(m => m.kind === 'better-pair'), false);
+  assert.equal(record.analysis.pairs.length, 4, 'all four pair stages are searched');
+  assert.ok(record.analysis.pairs.every(p => p.options.length), 'each pair has a ranked completion');
+  assert.equal(record.analysis.pairs[0].better, null);
+  assert.equal(record.analysis.pairs[1].better, null);
+  assert.equal(record.analysis.pairs[2].better.moves, "R' U2 R");
+  const markers = buildMarkers({ record, stages: [], plan: PLAN }).markers.filter(m => m.kind === 'better-pair');
+  assert.deepEqual(markers, [], 'the coach reserves markers for savings of at least two moves');
 });
 
 test('the worker handler answers with the compact summary and a fresh memo per request', async () => {
@@ -86,7 +94,7 @@ test('the worker handler answers with the compact summary and a fresh memo per r
   await handle({ type: 'analyze', id: 7, input, options: { pairs: true }, summary: true });
   assert.equal(posted[0].type, 'result');
   assert.equal(posted[0].id, 7);
-  assert.equal(posted[0].result.v, 1);
+  assert.equal(posted[0].result.v, 2);
   assert.equal(posted[0].result.face, 'D');
   assert.equal(posted[0].result.cross.done, true);
   await handle({ type: 'analyze', id: 8, input: { scramble: 'R', moves: ['Q'] }, summary: true });
@@ -118,9 +126,9 @@ test('the analysis client loads the worker lazily, runs one at a time, caches pe
   assert.deepEqual(worker.posted[0].options, { pairs: true });
   assert.equal((await client.analyze(a)).marker, 'R U');
   assert.equal(worker.posted.length, 2, 'cached per record `at`');
-  assert.equal(await client.analyze({ ...a, at: 3, solved: false }), null, 'not analysable');
+  assert.equal(await client.analyze({ ...a, at: 3, solveMoves: [], moveCount: 0 }), null, 'not analysable');
   assert.equal(worker.posted.length, 2);
-  const stored = { v: 1, stored: true };
+  const stored = { v: 2, stored: true };
   assert.equal(await client.analyze({ ...a, at: 4, analysis: stored }), stored, 'a stored summary is used as is');
   await new Promise(resolve => setTimeout(resolve, 60));
   assert.equal(worker.terminated, true, 'the idle worker is dropped');

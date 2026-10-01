@@ -8,7 +8,8 @@ const FACES = new Set(['U', 'D', 'F', 'B', 'R', 'L']);
 /** @returns {{input:Object}|{skip:string}} */
 export function analysisInputFromRecord(record) {
   if (!record || typeof record !== 'object') return { skip: 'no-record' };
-  if (!record.solved || record.penalty === 'DNF') return { skip: 'not-solved' };
+  // Partial solves and solved DNFs can still contain useful F2L/last-layer
+  // captures. Segmentation marks unreached cases as null and keeps reached ones.
   if (typeof record.scramble !== 'string' || !record.scramble.trim()) return { skip: 'no-scramble' };
   const moves = Array.isArray(record.solveMoves) ? record.solveMoves : [];
   if (!moves.length) return { skip: 'no-moves' };

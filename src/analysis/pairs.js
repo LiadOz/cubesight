@@ -1,102 +1,115 @@
-// F2L pair alternatives for pairs 1 and 2 (SPEC 4.2, v2 subset): at the position where a pair
-// stage starts, search every slot's cross + pair completion with the existing xcross solver,
-// verify and rank them with the f2l-planner (plannerChoices), and compare the cheapest with the
-// moves the user actually played. Pairs 3 and 4 have no engine yet: the result says so.
-//
-// Everything runs in the cross-on-D frame (segmentation.normalized) and the suggestion is mapped
-// back to the solve's own frame. Written like cross-eval: one generator of solver questions,
-// answered synchronously (node tests) or awaited (Web Worker).
+// Best verified F2L completion from each recorded pair boundary. The search is
+// pure and local; worker.js calls it on the analysis worker, never the UI thread.
+import { bestCompletions, crossSolved, ergoScore, plannerWeight, SLOTS, solvedSlots, trackedFrom } from './pair-completion.js';
+import { FACE_TO_D, unrelabelMoves } from './normalize.js';
 
-import { stateFromScramble, validateSolution } from '../cross-cube.js';
-import { plannerChoices, weightedMoveCount } from '../f2l-planner.js';
-import { unrelabelMoves } from './normalize.js';
+const generatorSet = moves => [...new Set(moves.map(move => move[0]))].sort().join('');
+const originalSlot = (slot, crossFace) => {
+  const normalizedToOriginal = Object.fromEntries(Object.entries(FACE_TO_D[crossFace]).map(([from, to]) => [to, from]));
+  return [...slot].map(face => normalizedToOriginal[face]).sort().join('');
+};
 
-const SINGLE_MASKS = [1, 2, 4, 8];
-const PAIR_MASKS = [3, 5, 9, 6, 10, 12];   // existing slot + one more (xx-cross style goals)
-export const PAIR_ENGINE_PAIRS = 2;        // pairs with a suggestion engine; 3 and 4 say "no suggestion yet"
-
-function* pairSteps({ scramble, moves, crossFace, stage, n, from, to, timeoutMs }) {
-  // Position where this pair stage starts: the scramble plus the moves before `from` (cross on D).
-  const prefix = moves.slice(0, from);
-  const start = [scramble, ...prefix].filter(Boolean).join(' ');
-  const state = stateFromScramble(start);
-  const setup = { state, solvedPairs: validateSolution(state, [], 'D').pairs };
-  const masks = setup.solvedPairs.length ? PAIR_MASKS : SINGLE_MASKS;
-  const results = [];
-  let complete = true;
-  for (const mask of masks) {
-    const reply = yield { scramble: start, face: 'D', mask, maxDepth: 10, maxResults: 8, timeoutMs };
-    if (reply?.status !== 0) complete = false;
-    for (const found of reply?.results || []) results.push(found);
-  }
-  const choices = plannerChoices(setup, results);
-  const yours = moves.slice(from, to + 1);
-  const yoursWeight = weightedMoveCount(yours);
-  const best = choices.slice().sort((a, b) => a.moves.length - b.moves.length || a.weight - b.weight)[0] ?? null;
-  const better = best && best.moves.length < yours.length ? best : null;
-  return {
-    n, stage, from, to, at: from, complete,
-    yours: unrelabelMoves(yours, crossFace), yoursWeight,
-    // The cheapest verified completion of any slot, in the solve's own frame; null when yours was already the shortest.
-    better: better ? { slot: better.slot, moves: unrelabelMoves(better.moves, crossFace), weight: better.weight } : null,
-    // Shortest found even when it is not better (shows "yours is the shortest").
-    shortest: best ? best.moves.length : null,
-    options: choices.length,
-  };
-}
-
-// Which pair stages can be compared, and where they start (segmentation stage intervals, cross-on-D).
-export function pairTargets(segmentation, { maxPairs = PAIR_ENGINE_PAIRS } = {}) {
+// Stage positions are in the normalized cross-on-D frame. A nonzero k means
+// the pair boundary has a D-layer offset; search from that actual frame and
+// compare all four possible ending frames without adding a forced D turn.
+export function pairTargets(segmentation, { maxPairs = 4 } = {}) {
   const out = [];
   for (const stage of segmentation.stages) {
-    const match = /^pair(\d)$/.exec(stage.name);
+    const match = /^pair([1-4])$/.exec(stage.name);
     if (!match) continue;
     const n = Number(match[1]);
-    if (n > maxPairs) continue;
-    if (stage.skipped || stage.fromIdx === null || stage.moves === 0) continue;
-    const record = segmentation.pairs.find(pair => pair.n === n);
-    // Pseudo frames (a D offset at the start of the stage or on the pair) need the pseudo planner.
+    if (n > maxPairs || stage.skipped || stage.fromIdx === null || stage.moves === 0) continue;
     const startFrame = stage.fromIdx === 0 ? segmentation.initial?.k : segmentation.frames[stage.fromIdx - 1]?.k;
-    if (record?.pseudo || startFrame) { out.push({ n, stage: stage.name, unsupported: 'pseudo' }); continue; }
-    out.push({ n, stage: stage.name, from: stage.fromIdx, to: stage.toIdx });
+    out.push({ n, stage: stage.name, from: stage.fromIdx, to: stage.toIdx, frame: startFrame ?? 0 });
   }
   return out;
 }
 
-function prepare(segmentation, options) {
+function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, slack = 1 } = {}) {
+  const { normalized, crossFace } = segmentation;
+  const prefixMoves = normalized.moves.slice(0, target.from);
+  const setup = [normalized.scramble, ...prefixMoves].filter(Boolean).join(' ');
+  const yours = normalized.moves.slice(target.from, target.to + 1);
+  const found = bestCompletions(setup, { maxDepth, maxSolutions: 32, slack, timeBudgetMs, startShift: target.frame });
+  const byAlg = new Map();
+  for (const candidate of found.candidates) for (const option of candidate.options) {
+    const moves = [...option.tokens];
+    const key = moves.join(' ');
+    const slotNames = (option.slots.length ? option.slots : candidate.slots).map(slot => originalSlot(slot, crossFace));
+    const current = byAlg.get(key);
+    const row = {
+      slots: slotNames,
+      moves,
+      goalShift: option.goalShift ?? 0,
+      stm: moves.length,
+      etm: moves.length,
+      generators: generatorSet(unrelabelMoves(moves, crossFace)),
+      ergonomicScore: ergoScore(moves),
+      plannerWeight: plannerWeight(moves),
+    };
+    if (!current || row.ergonomicScore < current.ergonomicScore) byAlg.set(key, row);
+  }
+  // If the bounded search found nothing for a slot, the recorded segment is a
+  // safe upper bound only when replay confirms the cross in an end frame, that slot, and
+  // every already-completed pair. It is never described as an optimal result.
+  const startCodes = trackedFrom(setup);
+  const startSlots = solvedSlots(startCodes, target.frame);
+  const recorded = normalized.moves.slice(target.from, target.to + 1);
+  const recordedCodes = trackedFrom(`${setup} ${recorded.join(' ')}`);
+  for (const candidate of found.candidates) {
+    const slotIndex = SLOTS.findIndex(slot => slot.name === candidate.slots[0]);
+    const endingShift = [0, 1, 2, 3].find(shift => crossSolved(recordedCodes, shift)
+      && startSlots.every(slot => solvedSlots(recordedCodes, shift).includes(slot))
+      && solvedSlots(recordedCodes, shift).includes(slotIndex));
+    if (candidate.options.length || slotIndex < 0 || endingShift == null) continue;
+    const moves = [...recorded];
+    const row = {
+      slots: [candidate.slots[0]], moves, goalShift: endingShift, stm: moves.length, etm: moves.length,
+      generators: generatorSet(unrelabelMoves(moves, crossFace)), ergonomicScore: ergoScore(moves),
+      plannerWeight: plannerWeight(moves), source: 'recorded-fallback', proven: false,
+    };
+    byAlg.set(moves.join(' '), row);
+  }
+  const options = [...byAlg.values()].sort((a, b) => a.stm - b.stm || a.ergonomicScore - b.ergonomicScore || a.plannerWeight - b.plannerWeight || a.generators.localeCompare(b.generators));
+  const best = options[0] ?? null;
+  const shortestWithFrame = Math.min(...found.candidates.map(candidate => candidate.shortest < 0 ? Infinity : candidate.shortest));
+  const betterCandidate = best && (best.stm < yours.length || (best.stm === yours.length && best.ergonomicScore < ergoScore(yours))) ? best : null;
+  const yoursWeight = plannerWeight(yours);
   return {
-    scramble: segmentation.normalized.scramble, moves: segmentation.normalized.moves, crossFace: segmentation.crossFace,
-    timeoutMs: options.timeoutMs ?? 500,
+    n: target.n, stage: target.stage, from: target.from, to: target.to, at: target.from,
+    frame: target.frame, frameTurn: null,
+    yours: unrelabelMoves(yours, crossFace), yoursWeight, yoursErgonomicScore: ergoScore(yours),
+    better: betterCandidate ? {
+      slot: betterCandidate.slots[0] ?? 'multiple', slots: betterCandidate.slots,
+      moves: unrelabelMoves(betterCandidate.moves, crossFace), weight: betterCandidate.plannerWeight,
+      stm: betterCandidate.stm, etm: betterCandidate.etm, generators: betterCandidate.generators, ergonomicScore: betterCandidate.ergonomicScore,
+      goalShift: betterCandidate.goalShift,
+    } : null,
+    shortest: best?.source === 'recorded-fallback' ? null : best?.stm ?? null,
+    proofScope: target.frame === 0 ? 'cross-and-pair-up-to-D-offset' : 'D-offset-start-and-cross-up-to-D-offset-end',
+    options: options.slice(0, 20).map(option => ({
+      ...option,
+      moves: unrelabelMoves(option.moves, crossFace),
+    })),
+    complete: found.candidates.every(candidate => !candidate.timedOut && candidate.searchedGoalShifts.length === 4),
+    proven: Boolean(best && best.stm === shortestWithFrame && found.candidates.every(candidate => !candidate.timedOut && candidate.searchedGoalShifts.length === 4)),
+    searchDepth: maxDepth,
+    ms: Math.round(found.searchMs * 100) / 100,
+    coldMs: Math.round(found.coldMs * 100) / 100,
   };
 }
 
-function unsupported(target) {
-  return { n: target.n, stage: target.stage, unsupported: target.unsupported };
+export function evaluatePairs(segmentation, _solver, options = {}) {
+  return pairTargets(segmentation, options).map(target => pairSteps(segmentation, target, options));
 }
 
-export function evaluatePairs(segmentation, solver, options = {}) {
-  const base = prepare(segmentation, options);
-  return pairTargets(segmentation, options).map(target => {
-    if (target.unsupported) return unsupported(target);
-    const steps = pairSteps({ ...base, ...target });
-    let step = steps.next();
-    while (!step.done) step = steps.next(solver.search(step.value));
-    return step.value;
-  });
-}
-
-export async function evaluatePairsAsync(segmentation, solver, { signal, ...options } = {}) {
-  const base = prepare(segmentation, options);
+export async function evaluatePairsAsync(segmentation, _solver, { signal, ...options } = {}) {
   const out = [];
   for (const target of pairTargets(segmentation, options)) {
-    if (target.unsupported) { out.push(unsupported(target)); continue; }
-    const steps = pairSteps({ ...base, ...target });
-    let step = steps.next();
-    while (!step.done) {
-      if (signal?.aborted) { const error = new Error('Analysis cancelled'); error.name = 'AbortError'; throw error; }
-      step = steps.next(await solver.search(step.value));
-    }
-    out.push(step.value);
+    if (signal?.aborted) { const error = new Error('Analysis cancelled'); error.name = 'AbortError'; throw error; }
+    out.push(pairSteps(segmentation, target, options));
+    // Give the worker event loop a chance to process cancellation between stages.
+    await Promise.resolve();
   }
   return out;
 }

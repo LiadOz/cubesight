@@ -1,6 +1,6 @@
 // The compact analysis summary stored on a solve record (record.analysis): only what the review
-// needs to draw markers and compare "yours vs better", small enough to keep on every solve
-// (about 0.5 to 1.5 KB of JSON). Everything else is cheap to derive again from the record itself
+// needs to draw markers and compare "yours vs better", bounded below 6 KB of JSON per solve.
+// Everything else is cheap to derive again from the record itself
 // (scramble, solveMoves, moveTimes, splits, rotationMarks).
 //
 // Moves are stored in the solve's own frame (the frame of record.solveMoves), as strings, so the
@@ -9,7 +9,7 @@
 
 import { ENGINE_VERSION } from './segment.js';
 
-export const SUMMARY_VERSION = 1;
+export const SUMMARY_VERSION = 2;
 const MAX_LOSSES = 8;
 const MAX_PAUSES = 8;
 const MAX_CANCELS = 8;
@@ -41,6 +41,8 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
       .map(run => ({ from: run.from, to: run.to, waste: run.waste })).sort((a, b) => a.from - b.from),
     cross: null,
     pairs: [],
+    ollCase: seg.cases?.oll ? { id: seg.cases.oll.id, recognitionMs: seg.cases.oll.recognitionMs, executionMs: seg.cases.oll.executionMs } : null,
+    pllCase: seg.cases?.pll ? { id: seg.cases.pll.id, auf: seg.cases.pll.auf ?? null, recognitionMs: seg.cases.pll.recognitionMs, executionMs: seg.cases.pll.executionMs } : null,
   };
   if (cross) {
     const lossy = cross.positions.filter(row => row.loss > 0);
@@ -56,9 +58,19 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
   for (const pair of pairs ?? []) {
     if (pair.unsupported) { out.pairs.push({ n: pair.n, unsupported: pair.unsupported }); continue; }
     out.pairs.push({
-      n: pair.n, from: pair.from, to: pair.to, yours: text(pair.yours), w: pair.yoursWeight,
-      better: pair.better ? { slot: pair.better.slot, moves: text(pair.better.moves), w: pair.better.weight } : null,
-      shortest: pair.shortest, proven: pair.complete,
+      n: pair.n, from: pair.from, to: pair.to, yours: text(pair.yours), w: pair.yoursWeight, yoursErgonomicScore: pair.yoursErgonomicScore,
+      frame: pair.frame, proofScope: pair.proofScope,
+      better: pair.better ? {
+        slot: pair.better.slot, slots: pair.better.slots, moves: text(pair.better.moves), w: pair.better.weight,
+        stm: pair.better.stm, etm: pair.better.etm, generators: pair.better.generators, ergonomicScore: pair.better.ergonomicScore,
+        goalShift: pair.better.goalShift,
+      } : null,
+      options: (pair.options ?? []).slice(0, 8).map(option => ({
+        slots: option.slots, moves: text(option.moves), stm: option.stm, etm: option.etm,
+        generators: option.generators, ergonomicScore: option.ergonomicScore, plannerWeight: option.plannerWeight,
+        ...(option.source ? { source: option.source } : {}), proven: option.proven !== false, goalShift: option.goalShift ?? 0,
+      })),
+      shortest: pair.shortest, proven: pair.proven === true, complete: pair.complete === true, ms: pair.ms,
     });
   }
   return out;
