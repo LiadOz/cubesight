@@ -187,7 +187,7 @@ export function resetRecording() { header = []; clearRecording(); }
 
 /** A JSON-serializable copy of the recording (plus a final snapshot for divergence checks). */
 export function getRecording(extra = {}) {
-  return {
+  return anonymizeRecording({
     format: RECORDING_FORMAT,
     version: RECORDING_VERSION,
     createdAt: new Date().toISOString(),
@@ -198,10 +198,61 @@ export function getRecording(extra = {}) {
     final: checkpoint(),
     ...extra,
     events: events.map(e => ({ ...e })),
-  };
+  });
 }
 
 export function serializeRecording(extra) { return JSON.stringify(getRecording(extra)); }
+
+// --- Privacy -------------------------------------------------------------
+// Recordings get shared to reproduce bugs, so they must not identify the
+// user or their device. Every saved recording passes through this: the cube's
+// Bluetooth name becomes a stable generic alias (so replays still line up),
+// MAC addresses and Web Bluetooth device ids are masked, and the browser is
+// reduced to its family/major version.
+const MAC_RE = /\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\b/gi;
+const DEVICE_ID_RE = /\b(id\s*[:=]?\s*)[A-Za-z0-9+/_-]{8,}={0,2}/g;
+
+function coarseUserAgent(ua) {
+  if (typeof ua !== 'string') return ua;
+  const browser = ua.match(/\b(Edg|Chrome|Firefox|Version)\/(\d+)/);
+  const os = /Android/.test(ua) ? 'Android' : /iPhone|iPad|iOS/.test(ua) ? 'iOS' : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : 'other';
+  return `${browser ? `${browser[1] === 'Version' ? 'Safari' : browser[1]}/${browser[2]}` : 'browser'} · ${os}`;
+}
+
+function deviceNames(rec) {
+  const names = new Set();
+  const visit = v => {
+    if (!v || typeof v !== 'object') return;
+    if (Array.isArray(v)) { v.forEach(visit); return; }
+    for (const [k, x] of Object.entries(v)) {
+      if (k === 'deviceName' && typeof x === 'string' && x) names.add(x);
+      else visit(x);
+    }
+  };
+  visit(rec);
+  return [...names].filter(n => !/^GAN cube|^smart cube|^cube( \d+)?$/i.test(n));
+}
+
+/** Return a copy of a recording with identifying details removed. */
+export function anonymizeRecording(rec) {
+  const names = deviceNames(rec).sort((a, b) => b.length - a.length);
+  const alias = new Map(names.map((n, i) => [n, `${/^GAN/i.test(n) ? 'GAN' : 'smart'} cube${names.length > 1 ? ` ${i + 1}` : ''}`]));
+  const scrub = str => {
+    let out = str;
+    for (const [real, fake] of alias) out = out.split(real).join(fake);
+    return out.replace(MAC_RE, 'XX:XX:XX:XX:XX:XX').replace(DEVICE_ID_RE, '$1[redacted]');
+  };
+  const walk = v => {
+    if (typeof v === 'string') return scrub(v);
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  const copy = walk(rec);
+  if (copy.env?.userAgent) copy.env = { ...copy.env, userAgent: coarseUserAgent(rec.env.userAgent) };
+  copy.privacy = { anonymized: true, devices: alias.size };
+  return copy;
+}
 
 export function parseRecording(text) {
   const data = typeof text === 'string' ? JSON.parse(text) : text;
