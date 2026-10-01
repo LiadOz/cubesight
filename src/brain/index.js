@@ -70,7 +70,14 @@ export function mountBrainGallery(root) {
     const [createShell, fixtureMod, viewModel] = await Promise.all([loadShell(), import('./fixtures.js'), import('./view-model.js')]);
     root.innerHTML = '<div class="brain-gallery-bar" style="display:flex;gap:.5rem;padding:.5rem;font:12px monospace"><select data-g="fixture"></select><select data-g="style"></select><select data-g="theme"><option>dark</option><option>light</option></select></div><div class="brain-gallery-stage"></div>';
     const stage = root.querySelector('.brain-gallery-stage');
-    shell = createShell(stage, { dispatch: action => console.info('[gallery] action', action) });
+    shell = createShell(stage, { dispatch: action => {
+      console.info('[gallery] action', action);
+      if (action.type === 'toggleSettings' && vm) {
+        const next = { ...vm, settings: { ...vm.settings, open: !vm.settings.open } };
+        shell.update(next, vm);
+        vm = next;
+      }
+    } });
     const select = key => root.querySelector(`[data-g="${key}"]`);
     select('fixture').innerHTML = fixtureMod.FIXTURE_NAMES.map(n => `<option${n === name ? ' selected' : ''}>${n}</option>`).join('');
     select('style').innerHTML = BRAIN_STYLES.map(s => `<option${s === styleId ? ' selected' : ''}>${s}</option>`).join('');

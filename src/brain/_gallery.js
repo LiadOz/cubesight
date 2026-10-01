@@ -23,9 +23,18 @@ document.documentElement.dataset.theme = theme;
 document.documentElement.style.colorScheme = theme;
 
 const actions = [];
-const shell = createShell(document.querySelector('#app'), { dispatch: action => { actions.push(action); console.log('[gallery] action', action); } });
+let vm = brainFixtures({ style: styleId, theme })[fx];
+const shell = createShell(document.querySelector('#app'), { dispatch: action => {
+  actions.push(action);
+  console.log('[gallery] action', action);
+  if (action.type === 'toggleSettings') {
+    const next = { ...vm, settings: { ...vm.settings, open: !vm.settings.open } };
+    shell.update(next, vm);
+    vm = next;
+    if (window.gallery) window.gallery.vm = vm;
+  }
+} });
 shell.setStyle(styleId === 'mono' ? monoStyle : orbitStyle);
-const vm = brainFixtures({ style: styleId, theme })[fx];
 shell.update(vm, null);
 // The fixture's frozen instant: the clock or the inspection at its own elapsed time.
 const at = vm.clock.startedAt != null ? vm.clock.startedAt + (vm.clock.ms ?? 0)
