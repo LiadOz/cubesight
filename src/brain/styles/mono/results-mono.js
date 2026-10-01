@@ -29,6 +29,7 @@ const TEMPLATE = `
         <div><dt>inspection</dt><dd class="m-res-insp"></dd></div>
         <div><dt>method</dt><dd class="m-res-method"></dd></div>
       </dl>
+      <a class="m-res-full-review" hidden>Review solve →</a>
     </div>
     <figure class="m-res-chart">
       <figcaption><span class="b-label">tps</span><span class="m-legend"><i class="m-legend-this"></i>this solve<i class="m-legend-avg"></i>your avg</span></figcaption>
@@ -75,6 +76,9 @@ export function createMonoResults(host, ctx = {}) {
     setText($('.m-res-tps'), results.tps);
     setText($('.m-res-insp'), results.inspection);
     setText($('.m-res-method'), results.method);
+    const fullReview = $('.m-res-full-review');
+    fullReview.hidden = !Array.isArray(results.record?.solveMoves) || !results.record.solveMoves.length;
+    fullReview.href = `#/review/${encodeURIComponent(results.record?.at ?? '')}`;
     if (fresh || results.tpsSeries !== shown?.tpsSeries || results.review !== shown?.review) tps.update(results.tpsSeries, { drawIn: fresh, markers: results.review.markers });
     if (fresh || results.splits !== shown?.splits) { cols.update(results.splits); rows.update(results.splits); }
     if (fresh || results.spark !== shown?.spark) spark.update(results.spark);

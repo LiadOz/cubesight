@@ -161,3 +161,5 @@
 .m-mk.is-good { border-color: var(--b-good); background: var(--b-good); }
 .m-mk.is-selected, .m-mk:hover, .m-mk:focus-visible { border-color: var(--b-ink); outline: none; }
 .m-res-review { margin-top: 6px; }
+.m-res-full-review { display: inline-flex; margin-top: 10px; padding: 7px 12px; border: 1px dashed var(--b-accent); border-radius: var(--b-radius-control); color: var(--b-accent-text); font: 12px var(--b-font-mono); text-decoration: none; }
+.m-res-full-review[hidden] { display: none; }

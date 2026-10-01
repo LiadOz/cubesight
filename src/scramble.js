@@ -15,7 +15,14 @@
 let scramblePromise = null;
 
 function loadScrambler() {
-  if (!scramblePromise) scramblePromise = import('cubing/scramble');
+  if (!scramblePromise) scramblePromise = (async () => {
+    // Vite emits cubing.js worker entries under hashed URLs. Prefer its
+    // bundled-import workaround so offline installs avoid the unbundled
+    // `search-worker-entry.js` path.
+    const { setSearchDebug } = await import('cubing/search');
+    setSearchDebug({ prioritizeEsbuildWorkaroundForWorkerInstantiation: true });
+    return import('cubing/scramble');
+  })();
   return scramblePromise;
 }
 

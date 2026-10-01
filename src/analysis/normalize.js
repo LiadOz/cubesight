@@ -6,8 +6,9 @@
 // fixed centres the relabelled scramble + moves replayed from a solved cube is
 // the same cube, seen from a different side, so "D" helpers work for any cross.
 
-import { applyMoves, createSolvedState, parseScramble } from '../cross-cube.js';
+import { applyMoves, createSolvedState } from '../cross-cube.js';
 import { currentDShift, solvedPairsPseudo } from '../solve-tracker.js';
+import { analysisStateFromScramble } from './long-replay.js';
 
 export const FACES = ['D', 'U', 'F', 'B', 'R', 'L'];
 
@@ -74,7 +75,7 @@ function orientationReader(orient) {
 // completes (ties: more pairs in place, then D U F B R L) wins.
 export function inferCrossFace({ scramble, moves, orient }) {
   const reader = orientationReader(orient);
-  let state = applyMoves(createSolvedState(), parseScramble(scramble));
+  let state = analysisStateFromScramble(scramble);
   let previous = new Set();
   for (let position = 0; position <= moves.length; position++) {
     if (position > 0) state = applyMoves(state, [moves[position - 1]]);

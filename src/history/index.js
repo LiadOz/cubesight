@@ -3,7 +3,8 @@ import { openHistory } from '../store/history.js';
 import { loadSettings, saveSettings, setSetting } from '../brain/settings.js';
 import { listSessions } from '../store/sessions.js';
 import { createCube3D } from '../cube-3d.js';
-import { stateFromScramble, applyMoves, toRenderData } from '../cross-cube.js';
+import { toRenderData } from '../cross-cube.js';
+import { stateAfter } from '../review/replay.js';
 import { parseCsTimer, exportCsTimer, filterHistory } from './cstimer.js';
 import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
@@ -82,7 +83,7 @@ export function initHistory(host) {
   function showPosition() {
     if (!selected?.solveMoves?.length) return;
     try {
-      const state = applyMoves(stateFromScramble(selected.scramble || selected.scrambleTurns.join(' ')), selected.solveMoves.slice(0, move));
+      const state = stateAfter({ ...selected, scramble: selected.scramble || selected.scrambleTurns.join(' ') }, move);
       cube?.update(themedRender(toRenderData(state), readStickerPalette(root)));
       detail.querySelector('[data-move]').textContent = `move ${move} of ${selected.solveMoves.length}${move ? ` · ${selected.solveMoves[move - 1].replaceAll("'", '′')}` : ''}`;
       detail.querySelector('input[type="range"]').value = move;

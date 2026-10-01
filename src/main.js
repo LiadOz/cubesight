@@ -2,9 +2,10 @@ import '@fontsource-variable/manrope';
 import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
 import './styles.css';
+import './pages/page.css';
 import { setupTheme } from './theme.js';
 import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
-import { TOOL_PATHS, resolveRoute, keyScope } from './routes.js';
+import { TOOL_PATHS, resolveRoute, keyScope, parseHash } from './routes.js';
 import { rememberDrill } from './drills/catalog.js';
 import { syncPageTokens } from './pages/tokens.js';
 import { renderCube } from './cube-renderer.js';
@@ -125,14 +126,18 @@ let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
 let progressPage = null;
 let historyPage = null;
+let historyPageLoad = null;
 let timerPage = null;
 let timerPageLoad = null;
+let reviewPage = null;
+let reviewPageLoad = null;
+let reviewRouteHash = '';
 let scout = null;
 let scoutLoad = null;
 let smart = null;
@@ -331,6 +336,7 @@ document.querySelector('#app').innerHTML = `
     <div id="progress-view" class="cs-host" hidden></div>
     <div id="history-view" class="cs-host" hidden></div>
     <div id="timer-view" class="cs-host" hidden></div>
+    <div id="review-view" class="cs-host" hidden></div>
     <div id="pll-view" hidden></div>
     <div id="scout-view" hidden></div>
     <div id="brain-view" hidden></div>
@@ -1430,12 +1436,16 @@ const cubeConnected = () => {
 function syncRoute(initial = false) {
   const { tool, hash } = resolveRoute(location.hash, { isPhone: isPhone(), cubeConnected: cubeConnected() });
   if (location.hash !== hash) history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
+  if (tool === 'review' && reviewRouteHash && reviewRouteHash !== hash) {
+    reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
+  }
+  reviewRouteHash = tool === 'review' ? hash : '';
   setTool(tool, initial);
   rememberDrill(localStorage, tool, hash);
 }
 
 function setTool(tool, initial = false) {
-  if (!Object.hasOwn(TOOL_PATHS, tool) || (tool === activeTool && !initial)) return;
+  if (!Object.hasOwn(TOOL_PATHS, tool) || (tool === activeTool && !initial && tool !== 'review')) return;
   document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
   scout?.setActive(false);
   smart?.setActive(false);
@@ -1444,6 +1454,10 @@ function setTool(tool, initial = false) {
   drillsHub?.setActive(false);
   historyPage?.setActive(false);
   timerPage?.setActive(false);
+  reviewPage?.setActive(false);
+  if (activeTool === 'review' && tool !== 'review') {
+    reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
+  }
   activeTool = tool;
   document.title = `${PAGE_TITLES[tool]} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
@@ -1475,7 +1489,7 @@ function setTool(tool, initial = false) {
         brainLoad = null;
       });
     } else brain?.setActive(true);
-  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer') {
+  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer' || tool === 'review') {
     state.locked = true;
     f2lState.locked = true;
     mountPage(tool);
@@ -1549,10 +1563,23 @@ function mountPage(tool) {
   }
   if (tool === 'history') {
     if (historyPage) { historyPage.setActive(true); return; }
-    import('./history/index.js').then(({ initHistory }) => {
-      historyPage = initHistory(root);
-      historyPage.setActive(activeTool === 'history');
-    }).catch(failed);
+    if (!historyPageLoad) {
+      const load = import('./history/index.js').then(({ initHistory }) => {
+        const page = initHistory(root);
+        if (activeTool !== 'history') {
+          page.detach?.();
+          if (historyPageLoad === load) historyPageLoad = null;
+          return null;
+        }
+        historyPage = page;
+        historyPage.setActive(true);
+        return historyPage.ready;
+      }).catch((error) => {
+        if (historyPageLoad === load) historyPageLoad = null;
+        failed(error);
+      });
+      historyPageLoad = load;
+    }
     return;
   }
   if (tool === 'timer') {
@@ -1564,6 +1591,34 @@ function mountPage(tool) {
         timerPage.setActive(activeTool === 'timer');
         return timerPage.ready;
       }).catch((error) => { timerPageLoad = null; failed(error); });
+    }
+    return;
+  }
+  if (tool === 'review') {
+    if (reviewPage) { reviewPage.setActive(true); return; }
+    if (!reviewPageLoad) {
+      const routeHash = location.hash;
+      const { path, query } = parseHash(location.hash);
+      const params = new URLSearchParams(query);
+      const segments = path.split('/').filter(Boolean);
+      const context = { path, query, params: { at: Number(segments[1]) || null, move: Number(params.get('move')) || 0 }, at: Number(segments[1]) || null, move: Number(params.get('move')) || 0 };
+      const load = import('./review/index.js').then(({ createSolveReview }) => {
+        const page = createSolveReview(document.querySelector('#review-view'), context);
+        if (routeHash !== reviewRouteHash || activeTool !== 'review') {
+          page.detach();
+          if (reviewPageLoad === load) reviewPageLoad = null;
+          if (activeTool === 'review') mountPage('review');
+          return null;
+        }
+        reviewPage = page;
+        reviewPage.setActive(activeTool === 'review');
+        syncPageTokens(document.querySelector('#review-view'));
+        return reviewPage.ready;
+      }).catch((error) => {
+        if (reviewPageLoad === load) reviewPageLoad = null;
+        if (routeHash === reviewRouteHash && activeTool === 'review') document.querySelector('#review-view').textContent = `Review could not load: ${error.message}`;
+      });
+      reviewPageLoad = load;
     }
     return;
   }

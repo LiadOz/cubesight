@@ -21,6 +21,17 @@ test('every golden solve replays to a solved cube on the real state model', () =
   }
 });
 
+test('imported setup and review replay can analyze over 200 moves without weakening public entry limits', () => {
+  const setup = Array(201).fill('R');
+  const solution = Array(201).fill("R'");
+  const result = segmentSolve({ scramble: setup, moves: solution });
+  assert.equal(result.solved, true);
+  assert.equal(result.frames.length, 201);
+  assert.equal(inferCrossFace({ scramble: setup, moves: solution }).source, 'inferred');
+  assert.throws(() => stateFromScramble(setup.join(' ')), /at most 200 moves/);
+  assert.throws(() => segmentSolve({ scramble: Array(10_001).fill('R'), moves: [] }), /10000 setup moves/);
+});
+
 test('normal CFOP solve: cross, four pairs, EO, CO, PLL boundaries and stages', () => {
   const r = seg(GOLD.normal);
   assert.equal(r.crossFace, 'D');
