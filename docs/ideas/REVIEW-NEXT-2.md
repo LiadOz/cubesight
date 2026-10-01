@@ -18,3 +18,12 @@ Lead review on 2026-10-01 of `docs/ideas/REVIEW-NEXT-IMPLEMENTATION.md`. Same gr
 6. Re-check the alg playback ring/lane in Mono for the same label issue as item 1.
 
 Acceptance: screenshots (Orbit/Mono × dark/light + 390 px) of the algs case page, the timer, the solve idle config bar and the not-found page, Read and reported; the full quality gate green.
+
+## Additional follow-ups (from the user, same day)
+7. **Highlight the relevant pieces on the cube.** Whenever a case or moment is shown, highlight the pieces being solved and dim the rest: F2L case → its corner + edge (and the target slot); cross → the 4 cross edges; X-cross → the cross edges + the pair. Apply it on algs case pages and drills (F2L/OLL/PLL as relevant), cross planning, lookahead, review moments/detail, pins and history detail. Implement it once in the shared cube (e.g. `setHighlight({pieces, slot, dimOthers})` in `src/cube-3d.js`, theme-aware via the `--b-*` tokens, a reduced-motion-safe static emphasis); reuse Cross Scout's existing highlight logic as the reference. Acceptance: screenshots of an F2L case, a cross plan and an X-cross moment in Orbit dark + Mono light.
+8. **BUG: X-cross graded against a plain cross.** When the user builds an X-cross, the review says "extra moves" by comparing their moves with the optimal *plain* cross. `evaluateCross` (src/analysis/cross-eval.js) only has the plain-cross target (noted as missing in the analysis hand-off). Fix:
+   - judge the first stage by what was actually built: cross / X-cross (cross + that pair) / XX-cross, and compare with the optimal solution for THAT target (the cube-xcross WASM supports cross + slot masks; reuse `crossSuggestion` / the solver with the matching mask);
+   - per-move loss and "best continuation" use the same target;
+   - an X-cross that is optimal (or near optimal) for its target is labelled positively, never "extra moves";
+   - a regression test with a real X-cross solve (hand-verified optimal X-cross length) that previously produced "extra moves".
+9. **Suggest the best start.** In inspection (when the cross hint is on) and in the review's cross stage, show the best cross AND any X-cross opportunity for the scramble, across all six faces for colour-neutral users (or the user's colour), e.g. "best cross: yellow, 6 moves · an X-cross with the green-red pair is possible in 8". In the review, compare the user's choice with these ("you built a white cross in 7; a yellow X-cross was available in 8"). Use the bounded search with the worker budget, and label unproven results as such.
