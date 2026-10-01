@@ -15,7 +15,7 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
     return fetch(manifestURL).then((response) => response.json());
   });
   expect(manifest).toMatchObject({
-    name: 'CubeSight — Recognition Training',
+    name: 'CubeSight',
     short_name: 'CubeSight',
     display: 'standalone',
     start_url: '/',
@@ -39,7 +39,7 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
       }, { once: true });
     });
   });
-  expect([...requestedOrigins]).toEqual(['http://127.0.0.1:4175']);
+  expect([...requestedOrigins]).toEqual([new URL(page.url()).origin]);
 
   const devtools = await context.newCDPSession(page);
   const manifestReport = await devtools.send('Page.getAppManifest');
@@ -51,9 +51,11 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
 
-  await page.getByRole('link', { name: 'F2L deduction', exact: true }).click();
+  await page.goto('/#/drills');
+  await page.locator('#drills-view a[href="#/drills/f2l"]').click();
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm');
-  await page.getByRole('link', { name: 'PLL recognition', exact: true }).click();
+  await page.goto('/#/drills');
+  await page.locator('#drills-view a[href="#/drills/pll"]').click();
   await expect(page.locator('#pll-view')).toBeVisible();
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
   await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
@@ -62,9 +64,10 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await page.locator(`[data-pll-answer="${pllCase}"]`).tap();
   await expect(page.locator('#pll-feedback')).toContainText('Correct');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-  await page.getByRole('link', { name: 'Cross Scout', exact: true }).click();
+  await page.goto('/#/drills');
+  await page.locator('#drills-view a[href="#/drills/scout"]').click();
   await expect(page.locator('#scout-highlight')).toBeVisible();
-  await page.getByRole('link', { name: 'Debug', exact: true }).click();
+  await page.goto('/#/dev/studio');
   await expect(page.locator('#studio-cube canvas')).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Inspect tracking' })).toHaveAttribute('aria-selected', 'true');
   expect(pageErrors).toEqual([]);
