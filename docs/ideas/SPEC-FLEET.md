@@ -13,7 +13,7 @@ The brief for the next fleet of builder agents, and the checklist the lead revie
 6. **Honesty:** only proven/verified results are presented as facts; partial searches are labelled; sample data only in dev fixtures.
 7. **Replayable:** smart-cube and user-action behaviour stays reproducible with `scripts/replay-recording.mjs`; real recordings live in `/home/loz/Downloads/cubesight-recording-*.json` (and `tests/fixtures/rotation-cross-recording.json`).
 8. **Process:** branch from the tip of `feature/smart-cube-guidance` in your own worktree; never push; never use port 5173; never bypass the pre-commit hook; tests never write into `docs/` or `src/`; descriptive commit messages only (no WIP auto-commits).
-9. **Quality gate for a merge request:** `npm run check` green (0 lint errors), the full `npx playwright test` green, `npx playwright test --config=playwright.pwa.config.js` green, and (once F8 lands) the **layout invariant suite** `npm run test:layout` green. Every new route/screen/state must be registered in the F8 matrix.
+9. **Quality gate for a merge request:** `npm run check` green (0 lint errors), the full `npx playwright test` green, `npx playwright test --config=playwright.pwa.config.js` green, and (once F8/F9 land) the **layout invariant suite** `npm run test:layout` and the **snapshot suite** `npm run test:snapshots` green, with any intended visual change shown in a `snapshots:compare` gallery. Every new route/screen/state must be registered in the F8 matrix.
 10. **Show your work:** screenshots of every changed screen in Orbit dark (+ Orbit light, + a 390 px phone); write a gallery `index.html` next to them (relative paths) and report its `file://` link. Read your screenshots and compare them with the orbit-v3 frames.
 11. **Report:** commits, files, test results, the gallery link, deviations, open questions.
 
@@ -96,10 +96,23 @@ Build a reusable Playwright layout-invariant suite (`tests/layout/**`, `npm run 
 - **A baseline run:** run it on the current app, fix every real failure found (or list them as tasks for F1/F2/F4/F5 if they're in their files), and keep the suite green afterwards. Runtime budget: < 6 min in parallel; a `--grep` per route for quick local runs.
 - **Docs:** a short `tests/layout/README.md`: how to add a route/state to the matrix and how to mark an intentional horizontal scroller.
 
+## F9: Snapshot testing: the whole site, simulated and compared (wave 1, with F8)
+The user: "we can fully simulate the cube, maybe the website itself, so we can have snapshots between two things and make sure things look exactly the same."
+Extend the existing screenshot tests (`tests/brain-visual*.spec.js`) into a complete, deterministic snapshot suite (`tests/snapshots/**`, `npm run test:snapshots`):
+- **Deterministic simulation:** drive every flow with the fake cube harness and with recordings (`src/recording-replay.js` / the fixtures, incl. `tests/fixtures/rotation-cross-recording.json`); freeze time (`page.clock`), seed scrambles/randomness, fix the fonts (bundled), disable animations (or capture at fixed animation phases), render WebGL with SwiftShader (`--use-gl=swiftshader`) for stable cube pixels, and set a fixed cube camera/gyro. Nothing may depend on wall time, the network or the GPU.
+- **Three kinds of snapshot per cell** (reuse F8's route × state × viewport × theme matrix, a lighter subset by default):
+  1. **Pixel snapshots** (`toHaveScreenshot`, a tight `maxDiffPixelRatio`, with the cube canvas INCLUDED, now that it's deterministic);
+  2. **Structure snapshots:** the accessibility tree / a trimmed DOM outline (`toMatchAriaSnapshot` or a serialized role/name/text tree), robust to pixel noise and catching missing or duplicated UI;
+  3. **State snapshots:** the view-model JSON for each state (`buildViewModel` output from fixtures) via `toMatchSnapshot`, so logic changes that alter what's shown are caught even before rendering.
+- **Comparing two versions** ("snapshots between two things"): a script `npm run snapshots:compare -- <base-ref> [<head-ref>]` that renders the suite on two git refs (worktrees, never touching 5173) and writes a side-by-side + diff-overlay gallery (`test-results/snapshot-compare/index.html`, reported as a `file://` link) listing every changed cell. The lead uses it to review each WP (base = the branch tip before merge).
+- **Updating baselines** only via an explicit command (`npm run snapshots:update`), and the diff gallery must be reviewed before baselines change in a commit; the commit message lists the intentionally changed cells.
+- Baselines are committed (PNG + JSON) under `tests/snapshots/__baselines__/` (Linux/Chromium only; CI pins the same).
+Acceptance: two consecutive runs on the same commit produce zero diffs (proves determinism, including the 3D cube); deliberately changing one colour token produces a diff gallery that flags exactly the affected cells; runtime budget < 8 min in parallel.
+
 ## Parallelism and ownership
 | Wave | WPs (parallel) | Owns |
 |---|---|---|
-| 1 | **F0** alone (+ F3, F6 and **F8** in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. F8: `tests/layout/**`, the package.json script, CI. |
+| 1 | **F0** alone (+ F3, F6, **F8** and **F9** in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. F8: `tests/layout/**`, the package.json script, CI. F9: `tests/snapshots/**`, `scripts/snapshots-compare.mjs`, the package.json scripts. |
 | 2 | **F1, F2, F4, F5** in parallel after F0 merges | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
 Shared files (`src/main.js` routes, `types.js`, `tokens-*.css`): additive edits only, coordinate via small commits; the lead resolves merges.
 
