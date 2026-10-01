@@ -57,7 +57,7 @@ export function readProgress(storage, { records = null, algorithms = [], source 
   const due = { corners: dueLearning('corner'), f2l: dueLearning('f2l'), pll: pllItems.filter(item => item.attempts > 0 && item.nextReviewAt > 0 && item.nextReviewAt <= now).length, oll: dueLearning('oll'), lookahead: dueLearning('lookahead'), cross: 0, algs: algorithms.filter(item => item.attempts > 0 && item.due > 0).length };
   const drills = DRILLS.map(([id, title, href]) => {
     const selected = rounds.filter(r => drillId(r.drill) === id).sort((a, b) => a.at - b.at);
-    const n = selected.reduce((sum, r) => sum + count(r.n), 0), correct = selected.reduce((sum, r) => sum + Math.min(count(r.n), count(r.correct)), 0);
+    const n = selected.reduce((sum, r) => sum + count(r.n ?? r.total), 0), correct = selected.reduce((sum, r) => sum + Math.min(count(r.n ?? r.total), count(r.correct)), 0);
     const recent = selected.slice(-5).map(r => r.medianMs).filter(positive), older = selected.slice(-10, -5).map(r => r.medianMs).filter(positive);
     return { id, title, href, rounds: selected.length, cases: n, accuracy: n ? correct / n : null, medianMs: median(selected.map(r => r.medianMs)), medianKind: 'round medians', trendMs: recent.length && older.length ? median(recent) - median(older) : null, due: due[id], lifetime: lifetime[id] };
   });
@@ -76,7 +76,7 @@ export function readProgress(storage, { records = null, algorithms = [], source 
     const id = drillId(r.drill);
     // These two legacy stores already contain dated case observations.
     if ((id === 'corners' && cornerHistory.length) || (id === 'cross' && scout.length) || (id === 'algs' && algorithms.some(item => array(item.activity).length))) continue;
-    add(r.at, 'cases', count(r.n));
+    add(r.at, 'cases', count(r.n ?? r.total));
   }
   const phases = phaseSplits(solves.filter(r => r.source !== 'manual' && r.source !== 'import'));
   const phaseDrills = [['cross', 'crossMs', '#/drills/scout'], ['F2L', 'f2lMs', '#/drills/f2l'], ['OLL', 'ollMs', '#/drills/oll'], ['PLL', 'pllMs', '#/drills/pll']];

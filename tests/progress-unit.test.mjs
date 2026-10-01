@@ -24,7 +24,7 @@ test('rounds use period and aliases, dated legacy cases are not double counted',
   const data = readProgress(store({
     'cubesight-progress-v2':{history:[{at:now-100,correct:true,ms:700}]},
     'cubesight-scout-practice-v1':[{at:new Date(now-200).toISOString(),durationMs:2000}],
-    'cubesight-rounds-v1':[{at:now-100,drill:'corner',n:1,correct:1,medianMs:700},{at:now-200,drill:'scout',n:1,correct:1,medianMs:2000},{at:now-300,drill:'oll-recognition',n:20,correct:18,medianMs:1000},{at:now-40*86400000,drill:'oll',n:20,correct:20,medianMs:500}],
+    'cubesight-rounds-v1':[{at:now-100,drill:'corner',n:1,correct:1,medianMs:700},{at:now-200,drill:'scout',n:1,correct:1,medianMs:2000},{at:now-300,drill:'oll-recognition',total:20,correct:18,medianMs:1000},{at:now-40*86400000,drill:'oll',n:20,correct:20,medianMs:500}],
   }),{records:[],now});
   const oll=data.drills.find(d=>d.id==='oll');
   assert.equal(oll.rounds,1);assert.equal(oll.accuracy,.9);assert.equal(data.activity[0].cases,22);

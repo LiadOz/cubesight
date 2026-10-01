@@ -9,7 +9,7 @@ test('Cross Scout explains how to find a GAN MAC in Chrome', async ({ page }) =>
   await page.locator('#scout-mac-help summary').click();
   await expect(page.locator('#scout-mac-help')).toContainText('chrome://bluetooth-internals/#devices');
   await expect(page.locator('#scout-mac-help')).toContainText('start scan');
-  await expect(page.locator('#scout-mac-help')).toContainText('Address');
+  await expect(page.locator('#scout-mac-help')).toContainText('address');
   await page.locator('#scout-mac-copy').click();
   await expect.poll(() => page.evaluate(() => window.copiedMacHelpAddress)).toBe('chrome://bluetooth-internals/#devices');
   await expect(page.locator('#scout-mac-copy-status')).toContainText('Copied');

@@ -1,7 +1,7 @@
 .progress-page { gap: 22px; }
 .progress-filters { display: flex; flex-wrap: wrap; gap: 12px; }
 .progress-page label { display: grid; gap: 6px; color: var(--b-muted); font-size: 13px; }
-.progress-page select { min-height: 42px; padding: 8px 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); background: var(--b-surface); color: var(--b-ink); font: inherit; }
+.progress-page select { min-height: 44px; padding: 8px 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); background: var(--b-surface); color: var(--b-ink); font: inherit; }
 .progress-card { padding: 22px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); }
 .progress-card h2 { margin: 0 0 12px; font-size: 18px; font-weight: 500; }
 .progress-stats, .progress-splits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
