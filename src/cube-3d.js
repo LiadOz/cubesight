@@ -560,6 +560,7 @@ export function createCube3D(container, options = {}) {
     const matchedPieces = new Set(data.matchedPieces || []);
     const showAllCorners = Boolean(data.showAllCorners);
     const highlightedPieces = new Set(data.highlightedPieces || []);
+    const dimOthers = Boolean(data.dimOthers);
     onPieceClick = data.onPieceClick || onPieceClick;
     selectablePieces = new Set(data.selectablePieces || []);
     if (data.mode && data.mode !== interactionMode) setMode(data.mode);
@@ -596,6 +597,7 @@ export function createCube3D(container, options = {}) {
       answerBadge.sprite.visible = false;
     }
 
+    let dimmedStickerCount = 0, highlightedStickerCount = 0;
     stickerMeshes.forEach((sticker) => {
       const { face, piece, kind } = sticker.userData;
       const targetIndex = kind === 'corner' ? targets.findIndex((target) => samePiece(target.targetCorner, piece)) : -1;
@@ -620,12 +622,15 @@ export function createCube3D(container, options = {}) {
       sticker.material.color.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
       const dimmedTarget = Boolean(target && !active && !showAllCorners);
       const matched = interactionMode === 'f2l' && matchedPieces.has(piece);
-      sticker.material.transparent = dimmedTarget || matched;
-      sticker.material.opacity = dimmedTarget ? .2 : matched ? .38 : 1;
-      sticker.material.depthWrite = !(dimmedTarget || matched);
+      const scoutHighlight = interactionMode === 'scout' && [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
+      const dimmed = interactionMode === 'scout' && dimOthers && !scoutHighlight;
+      if (dimmed) dimmedStickerCount++;
+      if (scoutHighlight) highlightedStickerCount++;
+      sticker.material.transparent = dimmedTarget || matched || dimmed;
+      sticker.material.opacity = dimmedTarget ? .2 : matched ? .38 : dimmed ? .16 : 1;
+      sticker.material.depthWrite = !(dimmedTarget || matched || dimmed);
       const f2lEmphasis = interactionMode === 'f2l' && (piece === f2lSelected || piece === f2lFeedback?.piece);
       const correction = interactionMode === 'f2l' && f2lFeedback?.correctPieces?.includes(piece);
-      const scoutHighlight = interactionMode === 'scout' && [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
       sticker.userData.border.visible = interactionMode === 'f2l' ? Boolean(f2lEmphasis || correction) : interactionMode === 'scout' ? scoutHighlight : Boolean(active && (isKnown || isHiddenTarget));
       sticker.userData.borderInk.material.color.set(scoutHighlight ? '#65e8ff' : correction ? '#55d88b'
         : f2lFeedback && piece === f2lFeedback.piece ? (f2lFeedback.status === 'correct' ? '#55d88b' : '#ff625a')
@@ -633,6 +638,8 @@ export function createCube3D(container, options = {}) {
       sticker.scale.setScalar(interactionMode === 'scout' && scoutHighlight ? 1.045 : active && (isKnown || isHiddenTarget) ? 1.045 : f2lEmphasis ? 1.055 : 1);
       sticker.renderOrder = active ? 2 : 0;
     });
+    renderer.domElement.dataset.dimmedStickers = String(dimmedStickerCount);
+    renderer.domElement.dataset.highlightedStickers = String(highlightedStickerCount);
     renderer.domElement.setAttribute('aria-label', interactionMode === 'f2l'
       ? `Interactive F2L cube with a limited left-right inspection arc.${f2lSelected ? ` Selected ${f2lSelected}.` : ''}${f2lFeedback ? ` Pair result: ${f2lFeedback.status}.` : ''}`
       : interactionMode === 'scout'

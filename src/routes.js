@@ -22,6 +22,7 @@ export const TOOL_PATHS = Object.freeze({
   timer: '/timer',
   review: '/review',
   smart: '/dev/studio',
+  recording: '/recording',
 });
 
 /** Old paths that still work. */

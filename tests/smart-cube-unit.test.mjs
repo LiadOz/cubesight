@@ -37,11 +37,16 @@ test('smart cube tracks canonical moves only after a solved baseline', async () 
   await session.connect();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(session.getSnapshot().phase, 'awaiting-solved');
+  assert.equal(session.getSnapshot().canSync, true);
+  assert.equal(session.getSnapshot().canDisconnect, true);
   device.emit({ type: 'MOVE', move: 'R' });
   assert.deepEqual(session.getSnapshot().moves, []);
   device.setFacelets(SOLVED);
   await session.syncSolved();
   assert.equal(session.getSnapshot().phase, 'tracking');
+  assert.doesNotMatch(session.getSnapshot().detail, /plans|cross|scout/i);
+  assert.equal(session.getSnapshot().canSync, true);
+  assert.equal(session.getSnapshot().canDisconnect, true);
   device.emit({ type: 'MOVE', move: 'R', face: 1, direction: 0, serial: 1, cubeTimestamp: 1, localTimestamp: 1 });
   assert.deepEqual(session.getSnapshot().moves, ['R']);
   assert.ok(sameCubeState(session.getSnapshot().state, stateFromScramble('R')));
@@ -50,6 +55,8 @@ test('smart cube tracks canonical moves only after a solved baseline', async () 
   assert.ok(sameCubeState(session.getSnapshot().state, stateFromScramble('')));
   await session.disconnect();
   assert.equal(session.getSnapshot().phase, 'disconnected');
+  assert.equal(session.getSnapshot().canSync, false);
+  assert.equal(session.getSnapshot().canDisconnect, false);
   assert.ok(device.wasDisconnected());
 });
 
@@ -62,6 +69,40 @@ test('a still-scrambled cube cannot be used as a solved baseline', async () => {
   await assert.rejects(session.syncSolved(), /Solve the cube, then sync\./i);
   assert.equal(session.getSnapshot().phase, 'awaiting-solved');
   await session.disconnect();
+});
+
+test('shared session exposes recovery actions while connecting, syncing and desynced', async () => {
+  const device = fakeCube();
+  let resolveConnection;
+  const session = createSmartCubeSession(() => new Promise(resolve => { resolveConnection = resolve; }));
+  const connecting = session.connect();
+  assert.equal(session.getSnapshot().phase, 'connecting');
+  assert.equal(session.getSnapshot().canSync, false);
+  assert.equal(session.getSnapshot().canDisconnect, true);
+  await session.disconnect();
+  resolveConnection(device.connection);
+  await connecting;
+  assert.equal(session.getSnapshot().phase, 'disconnected');
+  assert.ok(device.wasDisconnected());
+
+  const attached = createSmartCubeSession(device.connect);
+  let faceletRequests = 0;
+  device.connection.sendCommand = async (command) => {
+    if (command.type === 'REQUEST_FACELETS' && ++faceletRequests > 1) {
+      queueMicrotask(() => device.emit({ type: 'FACELETS', facelets: SOLVED }));
+    }
+  };
+  await attached.connect();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(attached.getSnapshot().phase, 'awaiting-solved');
+  assert.equal(attached.getSnapshot().canSync, true);
+  assert.equal(attached.getSnapshot().canDisconnect, true);
+  await attached.syncSolved();
+  device.emit({ type: 'MOVE', move: 'R U' });
+  assert.equal(attached.getSnapshot().phase, 'desynced');
+  assert.equal(attached.getSnapshot().canSync, true);
+  assert.equal(attached.getSnapshot().canDisconnect, true);
+  await attached.disconnect();
 });
 
 test('wide/slice moves are tracked (not desynced)', async () => {

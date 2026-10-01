@@ -1,0 +1,33 @@
+.orbit { position: relative; display: grid; place-items: center; color: var(--orbit-ink, #eeeae1); }
+.orbit__svg { overflow: visible; max-width: 100%; }
+.orbit__track { fill: none; stroke: var(--orbit-track, #373a36); stroke-width: 3; stroke-linecap: round; }
+.orbit__segment-track { fill: none; stroke: var(--orbit-track, #373a36); stroke-width: 4; stroke-linecap: round; }
+.orbit__segment-fill { fill: none; stroke-width: 8; stroke-linecap: round; }
+.orbit__segment.is-current .orbit__segment-track { stroke: var(--orbit-accent, #52e0ca); stroke-width: 8; }
+.orbit__segment.is-done .orbit__segment-track { stroke: var(--orbit-ink, #eeeae1); stroke-width: 6; }
+.orbit__segment.is-skipped .orbit__segment-track { stroke: var(--orbit-muted, #a7c7b9); stroke-width: 5; stroke-dasharray: 3 3; }
+.orbit__segment.is-wrong .orbit__segment-track, .orbit__segment.is-bad .orbit__segment-track { stroke: #ed8c70; stroke-width: 7; }
+.orbit__segment.is-good .orbit__segment-track { stroke: #52e0ca; stroke-width: 7; }
+.orbit__hit { fill: none; stroke: transparent; stroke-width: 26; cursor: pointer; pointer-events: stroke; outline: none; }
+.orbit__hit:focus-visible { stroke: currentColor; stroke-opacity: .38; }
+.orbit__current-dot { stroke: var(--orbit-bg, #141512); stroke-width: 3; }
+.orbit__label { fill: currentColor; font: 500 15px/1.1 'DM Mono', monospace; pointer-events: none; }
+.orbit__label-name { fill: var(--orbit-muted, #aaa99f); font-size: 12px; }
+.orbit__label-value { fill: var(--orbit-ink, #eeeae1); font-size: 15px; }
+.orbit__label-delta { fill: var(--orbit-muted, #aaa99f); font-size: 12px; }
+.orbit__caret { stroke: var(--orbit-ink, #eeeae1); stroke-width: 2; }
+.orbit__marker-cluster, .orbit__marker-expanded { cursor: pointer; outline: none; }
+.orbit__marker-ring { stroke: var(--orbit-bg, #141512); stroke-width: 3; }
+.orbit__marker-mark, .orbit__marker-count, .orbit__marker-expanded text { fill: #141512; font: 800 13px 'DM Mono', monospace; text-anchor: middle; }
+.orbit__marker-cluster:focus-visible .orbit__marker-ring, .orbit__marker-expanded:focus-visible circle { stroke: currentColor; stroke-width: 3; }
+.orbit__marker-expanded circle { fill: var(--orbit-ink, #eeeae1); stroke: var(--orbit-bg, #141512); stroke-width: 3; }
+.orbit__section-dot { fill: currentColor; }
+.orbit__section-label { fill: var(--orbit-muted, #aaa99f); font: 500 10px 'DM Mono', monospace; text-anchor: middle; }
+.orbit__svg--mini { max-width: 100%; max-height: 100%; }
+.orbit__svg--mini .orbit__track { stroke-width: 8; }
+.orbit__svg--mini .orbit__segment-track { stroke-width: 9; }
+.orbit__svg--mini .orbit__hit, .orbit__svg--mini .orbit__marker-cluster { display: none; }
+.orbit.is-morphing .orbit__svg { will-change: transform; }
+@media (prefers-reduced-motion: no-preference) {
+  .orbit__marker-cluster { transition: transform 120ms ease-out; }
+}
