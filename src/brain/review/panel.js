@@ -23,7 +23,7 @@ const TEMPLATE = `
   <header class="b-rev-head">
     <span class="b-rev-eyebrow">coach</span>
     <span class="b-rev-hint"></span>
-    <span class="b-rev-pins" title="Pinned moments open in their trainer later">pinned · <b class="b-rev-pin-count">0</b></span>
+    <span class="b-rev-pins" title="Pinned moments open in their drill later">pinned · <b class="b-rev-pin-count">0</b></span>
   </header>
   <div class="b-rev-card" data-tone="info">
     <div class="b-rev-tagrow"><span class="b-rev-tag"></span><span class="b-rev-compare"></span></div>
@@ -152,7 +152,7 @@ export function createReviewPanel(host, { dispatch }) {
     update(review) {
       if (!review || review === shown) return;
       shown = review;
-      setText($('.b-rev-hint'), review.status === 'pending' ? 'reviewing this solve…' : '');
+      setText($('.b-rev-hint'), review.status === 'pending' ? 'reviewing solve…' : '');
       setText($('.b-rev-pin-count'), String(review.pin.count));
       const card = $('.b-rev-card');
       card.dataset.tone = review.coach.tone;
@@ -165,7 +165,7 @@ export function createReviewPanel(host, { dispatch }) {
         node.hidden = !review.pin.available || (node.classList.contains('b-rev-pin-detail') ? !review.detail : Boolean(review.detail));
         setText(node, review.pin.pinned ? 'pinned · unpin' : 'pin');
         setAttr(node, 'aria-pressed', String(review.pin.pinned));
-        setAttr(node, 'title', review.pin.pinned ? 'Unpin this moment' : review.pin.trainer ? `Pin this moment; it opens in the ${review.pin.trainer} trainer` : 'Pin this moment');
+        setAttr(node, 'title', review.pin.pinned ? 'unpin this moment' : review.pin.trainer ? `pin this moment; it opens in the ${review.pin.trainer} drill` : 'pin this moment');
       }
       renderChips(review);
       renderDetail(review.detail);

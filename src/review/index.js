@@ -130,7 +130,7 @@ export function createSolveReview(host, routeContext = {}) {
           <svg class="sr-graph" viewBox="0 0 640 180" role="img" aria-label="Moves versus efficiency loss graph"><line x1="8" y1="90" x2="632" y2="90" class="sr-par"></line><path class="sr-graph-line"></path><circle class="sr-cursor" r="6"></circle></svg>
           <div class="sr-scores">${stageAccuracyMarkup()}</div><section class="sr-moments"><h2>Key moments</h2><div class="sr-moment-list"></div></section>
           <label class="sr-toggle"><input type="checkbox" data-toggle="inferred"> show inferred labels</label>
-          <div class="sr-continuation"><h2>Best continuation</h2><p class="sr-best"></p><button data-action="play-best">show on cube</button></div></section>
+          <div class="sr-continuation"><h2>Suggested continuation</h2><p class="sr-best"></p><button data-action="play-best">show on cube</button></div></section>
         <section class="sr-moves"><h2>Moves <small>([ and ] key moments · arrow keys step)</small></h2><ol>${record.solveMoves.map((move, i) => `<li><button data-move="${i}" title="Move ${i + 1}">${moveText(move)}</button></li>`).join('')}</ol></section>`;
       root.append(layout);
       try { cube = createCube3D(layout.querySelector('.sr-cube'), { mode: 'scout' }); }
@@ -226,7 +226,7 @@ export function createSolveReview(host, routeContext = {}) {
       retry.querySelector('.sr-grade').textContent = `${retryResult.label} · ${retryResult.moves} moves · ${retryResult.efficiency}% efficiency`;
       const generation = ++gradingGeneration;
       if (!retryResult.exact) { retry.querySelector('.sr-regrade').textContent = ''; return; }
-      status.textContent = 'The target position is back. Regrading this continuation with the solve analysis engine.';
+      status.textContent = 'The target position is back. Regrading this continuation with the solve review engine.';
       const candidate = retryRegradeRecord(record, plan, moves);
       if (!candidate) return;
       try {
@@ -236,7 +236,7 @@ export function createSolveReview(host, routeContext = {}) {
         const key = currentStage === 'cross' ? 'cross' : currentStage.startsWith('pair') ? 'f2l' : 'll';
         const score = stageScores(candidate).find(item => item.key === key);
         retry.querySelector('.sr-regrade').textContent = score ? `Shared engine regrade · ${currentStage} · ${score.text}` : 'Shared engine regrade complete.';
-      } catch { if (generation === gradingGeneration && active && !detached) retry.querySelector('.sr-regrade').textContent = 'The shared analysis engine could not regrade this continuation.'; }
+      } catch { if (generation === gradingGeneration && active && !detached) retry.querySelector('.sr-regrade').textContent = 'The shared review engine could not regrade this continuation.'; }
     };
     const updateCube = snap => { if (active && !detached && snap.state) showCubeState(snap.state); };
     const onCube = snap => {

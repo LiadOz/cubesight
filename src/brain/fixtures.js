@@ -130,7 +130,7 @@ function liveInspection(config, elapsedMs) {
   return { mode: config.mode, overtime: config.overtime, enabled: true, limitMs: st.layout.limitMs, elapsedMs, remainingMs: st.remainingMs, overtimeMs: st.overtimeMs, penalty: st.penalty, callout: st.callout };
 }
 
-const COACH_SOLVING = [{ key: 'hint', tone: 'info', text: 'The blue-orange pair is already connected — insert it next.' }];
+const COACH_SOLVING = [{ key: 'hint', tone: 'info', text: 'The blue-orange pair is already connected. Insert it next.' }];
 
 /**
  * Every fixture as a BrainVM, keyed by name. Inspection variants are keyed
@@ -146,7 +146,7 @@ export function brainFixtures({ style = 'orbit', theme = 'dark' } = {}) {
   out.connecting = vm({ session: { ...SESSION, phase: 'connecting', detail: 'Select your cube…', deviceName: '' }, live: idleLive });
   out.idle = vm({ live: idleLive, scrambleText: EXAMPLE_SCRAMBLE, coach: [{ key: 'empty', tone: 'muted', text: 'Coach insights appear here as you solve.' }] });
   const applying = { ...idleLive, mode: 'guided', phase: 'applying', scrambleStr: EXAMPLE_SCRAMBLE, applyStep: 5, applyTotal: 13, applyDetour: [] };
-  const applyCoach = [{ key: 'info:apply', tone: 'info', text: 'Perform the scramble shown in the cue. A wrong turn shows the return path without discarding the attempt.' }];
+  const applyCoach = [{ key: 'info:apply', tone: 'info', text: 'Follow the scramble. A wrong move shows the way back.' }];
   out.scramble = vm({ live: applying, coach: applyCoach });
   out.scrambleRecovery = vm({ live: { ...applying, applyDetour: ['L'] }, coach: applyCoach });
   const inspecting = (config, elapsedMs) => ({ ...idleLive, mode: 'guided', phase: config.mode === 'off' ? 'ready' : 'inspecting', scrambleStr: EXAMPLE_SCRAMBLE, applyStep: 13, applyTotal: 13, applyDetour: [], inspection: config.mode === 'off' ? null : liveInspection(config, elapsedMs), inspectionConfig: config });
@@ -171,7 +171,7 @@ export function brainFixtures({ style = 'orbit', theme = 'dark' } = {}) {
   const beforeSkip = vm({ live: liveSolving(9570, 41, { phase: 'f2l-3', crossDone: true, pairsSolved: 3, f2lDone: false, eoDone: false, coDone: false, ollDone: false, solved: false, skip: null }), track: exampleTrack(4).track, now: T0 + 9270 });
   const eo = exampleTrack(6);
   out.skip = vm({
-    live: liveSolving(9900, 41, { phase: 'co-pending', crossDone: true, pairsSolved: 4, f2lDone: true, eoDone: true, coDone: false, ollDone: false, solved: false, skip: { kind: 'eo', label: 'EO skipped — edges oriented while solving F2L!' } }),
+    live: liveSolving(9900, 41, { phase: 'co-pending', crossDone: true, pairsSolved: 4, f2lDone: true, eoDone: true, coDone: false, ollDone: false, solved: false, skip: { kind: 'eo', label: 'EO skip!' } }),
     track: eo.track, now: T0 + 9900, toast: { text: '✦ eo skip', tone: 'info' },
   }, beforeSkip);
   // Results: the example solve as the latest record.

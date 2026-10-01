@@ -10,12 +10,14 @@ import { exportAll, serializeExport, parseImport, importAll, historyFromImport, 
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { readStickerPalette, themedRender } from '../brain/cube-theme.js';
 import { syncPageTokens } from '../pages/tokens.js';
+import { fmt } from '../copy/terms.js';
 
 export const historyTime = record => {
-  if (!Number.isFinite(record.solveMs)) return '—';
-  const raw = (Math.floor(record.solveMs / 10) / 100).toFixed(2);
-  if (record.penalty === 'DNF') return `DNF(${raw})`;
-  return record.penalty === '+2' ? `${(Math.floor((record.solveMs + 2000) / 10) / 100).toFixed(2)}+` : raw;
+  return fmt.penalty(record);
+};
+const historyDate = at => {
+  const date = new Date(at);
+  return `${fmt.date(at)} · ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 };
 const make = (tag, text, className) => {
   const element = document.createElement(tag);
@@ -63,7 +65,7 @@ export function initHistory(host) {
     root.querySelector('.history-count').textContent = `${list.length} solves · ${store.pins.count} pins`;
     const rows = list.map(record => {
       const row = make('li');
-      const button = make('button', `${historyTime(record)} · ${new Date(record.at).toLocaleString()} · ${record.focus} · ${record.source === 'manual' ? 'manual' : record.source === 'import' ? 'import' : 'cube'}`);
+      const button = make('button', `${historyTime(record)} · ${historyDate(record.at)} · ${record.focus} · ${record.source === 'manual' ? 'manual' : record.source === 'import' ? 'import' : 'cube'}`);
       button.type = 'button'; button.dataset.at = String(record.at);
       button.setAttribute('aria-pressed', String(record.at === selected?.at));
       row.append(button); return row;
@@ -75,7 +77,7 @@ export function initHistory(host) {
     const old = select.value;
     const all = make('option', 'all sessions'); all.value = 'all';
     select.replaceChildren(all, ...listSessions(store.records).reverse().map(session => {
-      const option = make('option', `${new Date(session.firstAt).toLocaleString()} · ${session.count} solves · ${session.focus}`);
+      const option = make('option', `${historyDate(session.firstAt)} · ${fmt.count(session.count, 'solve')} · ${session.focus}`);
       option.value = session.id; return option;
     }));
     if ([...select.options].some(option => option.value === old)) select.value = old;
@@ -85,15 +87,15 @@ export function initHistory(host) {
     try {
       const state = stateAfter({ ...selected, scramble: selected.scramble || selected.scrambleTurns.join(' ') }, move);
       cube?.update(themedRender(toRenderData(state), readStickerPalette(root)));
-      detail.querySelector('[data-move]').textContent = `move ${move} of ${selected.solveMoves.length}${move ? ` · ${selected.solveMoves[move - 1].replaceAll("'", '′')}` : ''}`;
+      detail.querySelector('[data-move]').textContent = `move ${move} of ${selected.solveMoves.length}${move ? ` · ${fmt.move(selected.solveMoves[move - 1])}` : ''}`;
       detail.querySelector('input[type="range"]').value = move;
     } catch { stopPlayback(); report('This solve uses notation the replay cannot read yet.'); }
   }
   function showRecord(record) {
     stopPlayback(); cube?.destroy(); cube = null; selected = record; move = 0;
     const title = make('h2', historyTime(record));
-    const metadata = make('p', `${new Date(record.at).toLocaleString()} · ${record.focus}`);
-    const scramble = make('p', record.scramble.replaceAll("'", '′') || 'No scramble recorded.', 'history-scramble');
+    const metadata = make('p', `${historyDate(record.at)} · ${record.focus}`);
+    const scramble = make('p', fmt.moves(record.scramble) || 'No scramble recorded.', 'history-scramble');
     detail.replaceChildren(title, metadata, scramble);
     if (record.solveMoves.length) {
       const mount = make('div', undefined, 'history-cube');
@@ -105,7 +107,7 @@ export function initHistory(host) {
       }
       detail.append(mount, label, range, controls);
       try { cube = createCube3D(mount, { mode: 'scout' }); } catch { report('3D replay is unavailable in this browser. The move list is still here.'); }
-      detail.append(make('p', record.solveMoves.join(' ').replaceAll("'", '′'), 'history-scramble'));
+      detail.append(make('p', fmt.moves(record.solveMoves.join(' ')), 'history-scramble'));
       showPosition();
     } else detail.append(make('p', 'This solve has a time only. No moves were recorded.'));
     const pins = store.pins.forRecord(record.at);

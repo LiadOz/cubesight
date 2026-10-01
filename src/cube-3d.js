@@ -91,7 +91,7 @@ function makeAnswerBadge() {
 
     context.fillStyle = '#171815';
     context.font = '700 22px DM Mono, monospace';
-    context.fillText(status === 'correct' ? 'CORRECT' : 'CORRECT COLOR', 171, 57);
+    context.fillText(status === 'correct' ? 'correct' : 'correct color', 171, 57);
     context.font = '800 42px Manrope, sans-serif';
     context.fillText(String(colorName).toUpperCase(), 171, 110);
     texture.needsUpdate = true;

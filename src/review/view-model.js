@@ -19,10 +19,11 @@ export function labelsFor(record, { inferred = false } = {}) {
   const losses = a.cross?.losses ?? [];
   const allCrossLosses = a.cross?.proven === true && a.cross?.done === true && Number.isFinite(a.cross.total)
     && losses.reduce((sum, row) => sum + row.loss, 0) === a.cross.total;
-  for (const row of losses) if (row.loss > 0) push(row.i, row.loss >= 2 ? 'Detour' : 'Extra move', 'warn', `Cross distance ${row.d} → ${row.after}; best from here: ${row.best || 'no suggestion yet'}.`, row.loss);
+  for (const row of losses) if (row.loss > 0) push(row.i, row.loss >= 2 ? 'Detour' : 'Extra move', 'warn', `Cross distance ${row.d} → ${row.after}; suggested continuation: ${row.best || 'no suggestion yet'}.`, row.loss);
   if (allCrossLosses) for (let i = 0; i <= a.marks?.cross && i < count; i++) if (!labels[i].length) push(i, 'Optimal', 'good', 'This move stays on a shortest path to the cross.');
   for (const cancel of a.cancels ?? []) {
     if (!(cancel.waste > 0)) continue;
+    // copy-ok: Cancel is the SPEC-NEXT move-review label, not a button action.
     for (let i = Math.max(0, cancel.from); i <= cancel.to && i < count; i++) push(i, 'Cancel', 'warn', `Moves ${cancel.from + 1}–${cancel.to + 1} waste ${cancel.waste} move${cancel.waste === 1 ? '' : 's'}.`);
   }
   if (hasTimes(record)) {

@@ -135,10 +135,11 @@ export function evaluatePairs(segmentation, _solver, options = {}) {
 export async function evaluatePairsAsync(segmentation, _solver, { signal, ...options } = {}) {
   const out = [];
   for (const target of pairTargets(segmentation, options)) {
-    if (signal?.aborted) { const error = new Error('Analysis cancelled'); error.name = 'AbortError'; throw error; }
+    if (signal?.aborted) { const error = new Error(/* copy-ok: AbortError is an internal worker contract */ 'Analysis cancelled'); error.name = 'AbortError'; throw error; }
     out.push(pairSteps(segmentation, target, options));
     // Give the worker event loop a chance to process cancellation between stages.
     await Promise.resolve();
+
   }
   return out;
 }

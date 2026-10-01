@@ -43,31 +43,31 @@ export function screenFor(session, live) {
   return { applying: 'scramble', inspecting: 'inspection', ready: 'ready', solving: 'solving' }[lp] ?? 'idle';
 }
 
-const SOLVING_LABEL = { 'pre-cross': 'Building the cross', cross: 'F2L', 'f2l-0': 'F2L', 'f2l-1': 'F2L', 'f2l-2': 'F2L', 'f2l-3': 'F2L', 'f2l-4': 'F2L', eo: 'OLL · orient edges', co: 'OLL · orient edges', 'co-pending': 'OLL · orient corners', pll: 'PLL', solved: 'Solved' };
+const SOLVING_LABEL = { 'pre-cross': 'cross', cross: 'F2L', 'f2l-0': 'F2L', 'f2l-1': 'F2L', 'f2l-2': 'F2L', 'f2l-3': 'F2L', 'f2l-4': 'F2L', eo: 'EO', co: 'CO', 'co-pending': 'CO', pll: 'PLL', solved: 'solved' };
 
 /** The v1 #brain-phase-label / #brain-phase-detail strings, byte for byte. */
 export function phaseText(live) {
   const snap = live || {};
   const p = snap.progress || {};
-  let label = 'Connect and start a solve';
-  if (snap.phase === 'applying') label = 'Perform the scramble';
-  else if (snap.phase === 'inspecting') label = 'Inspection';
-  else if (snap.phase === 'ready') label = 'Start solving — the clock starts on your first turn';
-  else if (snap.phase === 'solving') label = p.phase ? (SOLVING_LABEL[p.phase] || 'F2L') : 'Solving';
-  else if (snap.phase === 'done') label = 'Solved';
+  let label = 'connect cube';
+  if (snap.phase === 'applying') label = 'apply scramble';
+  else if (snap.phase === 'inspecting') label = 'inspection';
+  else if (snap.phase === 'ready') label = 'start';
+  else if (snap.phase === 'solving') label = p.phase ? (SOLVING_LABEL[p.phase] || 'F2L') : 'solving';
+  else if (snap.phase === 'done') label = 'solved';
   let detail;
   if (snap.phase === 'inspecting' && snap.inspection) {
     const remaining = snap.inspection.remainingMs;
-    detail = remaining != null ? `Inspect — ${(remaining / 1000).toFixed(1)}s left (clock starts on your first move)` : 'Inspect — start solving on your first move';
+    detail = remaining != null ? `Inspection · ${(remaining / 1000).toFixed(1)} s left. Clock starts on your first move.` : 'Inspection. Clock starts on your first move.';
   } else {
     const moves = snap.phase === 'done' && snap.record ? snap.record.moveCount : (snap.solveMoveCount ?? 0);
     const msElapsed = (snap.phase === 'done' ? snap.record?.solveMs : snap.elapsedMs) ?? 0;
     const tps = msElapsed > 0 ? (moves / (msElapsed / 1000)).toFixed(2) : '0.00';
     const pairs = p.f2lDone ? '4/4' : p.crossDone ? `${p.pairsSolved ?? 0}/4 pairs` : '';
     detail = (snap.phase === 'solving' || snap.phase === 'done')
-      ? `${moves} turn${moves === 1 ? '' : 's'} · ${tps} TPS · ${(msElapsed / 1000).toFixed(2)}s${pairs ? ' · ' + pairs : ''}`
-      : snap.phase === 'applying' ? `Scramble turn ${Math.min(snap.applyStep + 1, snap.applyTotal)} of ${snap.applyTotal}.`
-        : 'Cross is detected from the first face you solve.';
+      ? `${moves} ${moves === 1 ? 'move' : 'moves'} · ${tps} TPS · ${fmtSeconds(msElapsed)}${pairs ? ' · ' + pairs : ''}`
+      : snap.phase === 'applying' ? `Scramble move ${Math.min(snap.applyStep + 1, snap.applyTotal)} of ${snap.applyTotal}.`
+        : 'Cross follows the first face you solve.';
   }
   return { label, detail };
 }
@@ -595,7 +595,7 @@ export function buildViewModel(input, prev = null) {
     keys,
     toast: input.toast ?? null,
     status: input.status ?? (live?.phase === 'interrupted'
-      ? `Connection lost — your ${live.interrupted.from === 'solving' ? 'solve' : 'attempt'} is paused. ${live.interrupted.canResume ? 'The cube is back: resume.' : device.detail}`
+      ? `Connection lost. Your solve is paused. ${live.interrupted.canResume ? 'The cube is back. Resume.' : device.detail}`
       : live?.notice && screen === 'disconnected' ? live.notice : device.detail),
     error: input.error ?? '',
     chromeDimmed: ['scramble', 'inspection', 'ready', 'solving'].includes(screen),

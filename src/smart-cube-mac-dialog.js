@@ -25,7 +25,7 @@ function ensureDialog() {
     <form method="dialog">
       <p class="eyebrow">One-time setup</p>
       <h2>Enter the cube’s Bluetooth address</h2>
-      <p class="smart-mac-why">Web Bluetooth hides the cube’s address for privacy, so it’s normally read automatically from the cube’s BLE advertising. Your browser or cube didn’t expose it this time, so enter the address once — CubeSight will remember it in this browser and you won’t be asked again.</p>
+      <p class="smart-mac-why">Web Bluetooth hides the cube’s address for privacy, so it’s normally read automatically from the cube’s BLE advertising. Your browser or cube didn’t expose it this time. Enter the address once and CubeSight will remember it in this browser.</p>
       <ol class="smart-mac-steps">
         <li>Open regular Chrome (not the installed app) and paste <code>chrome://bluetooth-internals/#devices</code> into the address bar. <button type="button" class="smart-mac-copy">Copy address</button><span class="smart-mac-copy-status" role="status"></span></li>
         <li>Turn the cube on, tap <strong>Start Scan</strong>, and find your cube in the device list.</li>
@@ -37,14 +37,14 @@ function ensureDialog() {
       </label>
       <p class="smart-mac-error" role="alert" hidden></p>
       <div class="smart-mac-actions">
-        <button type="button" class="smart-mac-cancel">Cancel</button>
+      <button type="button" class="smart-mac-cancel">stop</button>
         <button type="submit" class="primary-button smart-mac-submit">Connect</button>
       </div>
     </form>`;
   document.body.append(dialogEl);
   const $ = sel => dialogEl.querySelector(sel);
   $('.smart-mac-copy').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText('chrome://bluetooth-internals/#devices'); $('.smart-mac-copy-status').textContent = 'Copied — paste into Chrome’s address bar.'; }
+    try { await navigator.clipboard.writeText('chrome://bluetooth-internals/#devices'); $('.smart-mac-copy-status').textContent = 'Copied. Paste into Chrome’s address bar.'; }
     catch { $('.smart-mac-copy-status').textContent = 'Copy this: chrome://bluetooth-internals/#devices'; }
   });
   return dialogEl;

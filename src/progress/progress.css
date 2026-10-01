@@ -1,0 +1,36 @@
+.progress-page { gap: 22px; }
+.progress-filters { display: flex; flex-wrap: wrap; gap: 12px; }
+.progress-page label { display: grid; gap: 6px; color: var(--b-muted); font-size: 13px; }
+.progress-page select { min-height: 42px; padding: 8px 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); background: var(--b-surface); color: var(--b-ink); font: inherit; }
+.progress-card { padding: 22px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); }
+.progress-card h2 { margin: 0 0 12px; font-size: 18px; font-weight: 500; }
+.progress-stats, .progress-splits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.progress-stats div { display: grid; gap: 6px; }
+.progress-stats span { color: var(--b-muted); font-size: 12px; }
+.progress-stats strong { font: 400 32px var(--b-font-num); font-variant-numeric: tabular-nums; }
+.progress-link, .progress-drill-name, .progress-due { color: var(--b-accent-text) !important; }
+.progress-trend { display: block; width: 100%; max-height: 180px; margin-top: 18px; overflow: visible; }
+.progress-trend path { fill: none; stroke: var(--b-accent); stroke-width: 2; }
+.progress-trend circle { fill: var(--b-accent); }
+.progress-caption, .progress-empty { margin: 12px 0 !important; color: var(--b-muted); font-size: 13px; line-height: 1.6; }
+.progress-splits a { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); }
+.progress-splits strong { font: 400 24px var(--b-font-num); }
+.progress-splits small { color: var(--b-muted); }
+.progress-splits .is-largest { border-color: var(--b-accent); background: var(--b-accent-soft); }
+.progress-section-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; }
+.progress-drills { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.progress-drills article { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); }
+.progress-drills article p, .progress-drills article small, .progress-drills article span { color: var(--b-muted); font-size: 12px; }
+.progress-drills article div { display: flex; flex-wrap: wrap; gap: 12px; }
+.progress-due { margin-top: auto; font-size: 13px; }
+.progress-activity { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-height: 280px; overflow: auto; list-style: none; }
+.progress-activity li { position: relative; display: grid; gap: 6px; padding: 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); }
+.progress-activity time { font: 12px var(--b-font-mono); color: var(--b-muted); }
+.progress-activity strong { font-size: 12px; font-weight: 400; }
+.progress-day { height: 4px; background: var(--b-accent); opacity: calc(.2 + var(--activity-strength) * .8); }
+@media (width <= 700px) {
+  .progress-card { padding: 16px; }
+  .progress-stats, .progress-splits, .progress-activity { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .progress-drills { grid-template-columns: minmax(0, 1fr); }
+  .progress-filters label { flex: 1; min-width: 100px; }
+}

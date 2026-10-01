@@ -66,10 +66,10 @@ export function keyHints(screen, { timerHidden = false, coach = 'live' } = {}) {
   switch (screen) {
     case 'disconnected': return [{ key: 'space', label: 'connect', action: 'connect' }, { key: 'tab', label: 'settings', action: 'toggleSettings' }];
     case 'idle': return [{ key: 'space', label: 'start', action: 'start' }, { key: 'tab', label: 'settings', action: 'toggleSettings' }, { key: 'esc', label: 'command', action: 'command' }];
-    case 'scramble': return [{ key: 'esc', label: 'abort', action: 'cancel' }];
-    case 'inspection': case 'ready': return [{ key: 'turn', label: 'start solve', action: 'start' }, { key: 'esc', label: 'abort', action: 'cancel' }];
+    case 'scramble': return [{ key: 'esc', label: 'stop', action: 'cancel' }];
+    case 'inspection': case 'ready': return [{ key: 'turn', label: 'start solve', action: 'start' }, { key: 'esc', label: 'stop', action: 'cancel' }];
     case 'solving': return [
-      { key: 'esc', label: 'abort', action: 'cancel' },
+      { key: 'esc', label: 'stop', action: 'cancel' },
       { key: 't', label: timerHidden ? 'show timer' : 'hide timer', action: 'toggleTimer' },
       { key: 'c', label: coachLabel, action: 'cycleCoach' },
     ];

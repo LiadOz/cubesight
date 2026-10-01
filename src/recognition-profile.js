@@ -1,8 +1,9 @@
 /* Recognition timing profile. Deliberately independent of the trainer UI. */
+import { fmt } from './copy/terms.js';
 const validTiming = (item) => item && item.correct === true && !item.skipped && Number.isFinite(Number(item.ms)) && Number(item.ms) > 0 && Number(item.ms) < 10000;
 const TARGET_NAMES = { UFL: 'Left corner (UFL)', UBR: 'Top-right corner (UBR)', DFR: 'Bottom-right corner (DFR)' };
 const label = (value) => String(value || '').split(/[-_,]/).filter(Boolean).map((part) => part[0]?.toUpperCase() + part.slice(1)).join(' · ');
-const ms = (value) => `${Math.round(Number(value))}ms`;
+const ms = (value) => fmt.time(Number(value), { unit: true });
 const percentile = (values, p) => {
   if (!values.length) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -62,31 +63,33 @@ export function timingCeiling(values) {
   const reference = sorted.length < 4 ? sorted.at(-1) : sorted[Math.floor((sorted.length - 1) * .9)];
   return Math.ceil(Math.max(100, reference * 1.15) / 100) * 100;
 }
-const trendDate = (time, grouping) => new Date(time).toLocaleString(undefined, {
-  month: 'short', day: 'numeric', ...(grouping === 'session' ? { hour: 'numeric', minute: '2-digit' } : {}),
-});
+const trendDate = (time, grouping) => {
+  const date = new Date(time);
+  const day = fmt.date(time);
+  return grouping === 'session' ? `${day} · ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}` : day;
+};
 
 export function createRecognitionProfile(container) {
   if (!container) throw new TypeError('createRecognitionProfile requires a container');
-  container.innerHTML = `<section class="recognition-profile" aria-label="Recognition timing profile">
-    <div class="rp-head"><div><p class="eyebrow">Recognition profile</p><h2>Timing by piece</h2></div>
-      <div class="rp-controls"><label>Piece <select class="rp-family" aria-label="Filter by corner piece"></select></label>
-      <label>Drill <select class="rp-mode" aria-label="Filter by drill mode"><option value="all">All drills</option><option value="single">Single corner</option><option value="triple">Three corners</option><option value="recall">Recall · one glance, three answers</option></select></label>
-      <label>View <select class="rp-view" aria-label="Filter by viewing mode"><option value="all">All views</option><option value="open">Open view</option><option value="glance">Glance</option></select></label></div></div>
-    <div class="rp-summary" aria-live="polite"><div><span>Median</span><strong class="rp-median">—</strong></div><div><span>90th percentile</span><strong class="rp-p90">—</strong></div><div><span>Correct samples</span><strong class="rp-count">0</strong></div></div>
-    <section class="rp-trend" aria-label="Recognition time trend">
-      <div class="rp-trend-head"><p class="rp-muted">Response time (Y) · attempt number (X). Includes key / click input.</p>
-        <div class="rp-trend-controls"><label>Period <select class="rp-period" aria-label="Filter trend period"><option value="all">All history</option><option value="today">Today</option><option value="7days">Last 7 days</option><option value="30days">Last 30 days</option></select></label>
-          <label>X-axis <select class="rp-group" aria-label="Group trend by"><option value="attempt">Attempt</option><option value="day">Day</option><option value="session">Session</option></select></label>
-          <button type="button" class="rp-entry-toggle" aria-pressed="false">Show entries</button>
+  container.innerHTML = `<section class="recognition-profile" aria-label="recog profile">
+    <div class="rp-head"><div><p class="eyebrow">progress / corner recognition</p><h2>recog by piece</h2></div>
+      <div class="rp-controls"><label>piece <select class="rp-family" aria-label="filter by corner piece"></select></label>
+      <label>drill <select class="rp-mode" aria-label="filter by drill mode"><option value="all">all drills</option><option value="single">single corner</option><option value="triple">three corners</option><option value="recall">recall · one glance, three answers</option></select></label>
+      <label>view <select class="rp-view" aria-label="filter by viewing mode"><option value="all">all views</option><option value="open">open view</option><option value="glance">glance</option></select></label></div></div>
+    <div class="rp-summary" aria-live="polite"><div><span>median recog</span><strong class="rp-median">—</strong></div><div><span>p90 recog</span><strong class="rp-p90">—</strong></div><div><span>timed answers</span><strong class="rp-count">0</strong></div></div>
+    <section class="rp-trend" aria-label="recog trend">
+      <div class="rp-trend-head"><p class="rp-muted">recog (Y) · answer number (X). Includes key or tap input.</p>
+        <div class="rp-trend-controls"><label>period <select class="rp-period" aria-label="filter trend period"><option value="all">all history</option><option value="today">today</option><option value="7days">last 7 days</option><option value="30days">last 30 days</option></select></label>
+          <label>X-axis <select class="rp-group" aria-label="group trend by"><option value="attempt">answer</option><option value="day">day</option><option value="session">session</option></select></label>
+          <button type="button" class="rp-entry-toggle" aria-pressed="false">show entries</button>
         </div>
       </div>
       <div class="rp-trend-chart-wrap"><svg class="rp-trend-chart" role="img" aria-label="Recognition timing trend by piece" viewBox="0 0 760 250"></svg><p class="rp-trend-empty" hidden></p></div>
-      <p class="rp-trend-readout" aria-live="polite">Select a point to inspect its timing.</p>
+      <p class="rp-trend-readout" aria-live="polite">Select a point to see its recog.</p>
       <p class="rp-trend-note"></p>
-      <details class="rp-time-breakdown"><summary>Timing details</summary><div class="rp-trend-rows"></div></details>
+      <details class="rp-time-breakdown"><summary>recog details</summary><div class="rp-trend-rows"></div></details>
     </section>
-    <div class="rp-details"><div class="rp-problems"><h3>Problem breakdown</h3><p class="rp-note"></p><div class="rp-rows"></div></div><div class="rp-profile"><h3>Timing profile</h3><p class="rp-muted">Correct answers per time range</p><div class="rp-bars"></div></div></div>
+    <div class="rp-details"><div class="rp-problems"><h3>case details</h3><p class="rp-note"></p><div class="rp-rows"></div></div><div class="rp-profile"><h3>recog profile</h3><p class="rp-muted">correct answers by time</p><div class="rp-bars"></div></div></div>
   </section>`;
   const familySelect = container.querySelector('.rp-family');
   const modeSelect = container.querySelector('.rp-mode');
@@ -122,21 +125,21 @@ export function createRecognitionProfile(container) {
     const dated = scoped.filter((item) => timingTimestamp(item) !== null), filtered = trendPeriod(grouping === 'attempt' ? scoped : dated, period);
     const groups = trendGroups(filtered, grouping), values = groups.flatMap((g) => g.values), missing = scoped.length - dated.length;
     const note = container.querySelector('.rp-trend-note');
-    const groupName = grouping === 'attempt' ? 'attempt' : grouping === 'day' ? 'day' : 'session';
-    const groupLabel = (group, index) => grouping === 'attempt' ? `Attempt ${index + 1}` : trendDate(group.firstTime, grouping);
+    const groupName = grouping === 'attempt' ? 'answer' : grouping === 'day' ? 'day' : 'session';
+    const groupLabel = (group, index) => grouping === 'attempt' ? `answer ${index + 1}` : trendDate(group.firstTime, grouping);
     const axisLabel = (group, index) => grouping === 'attempt' ? String(index + 1) : trendDate(group.firstTime, grouping);
     container.querySelector('.rp-trend-head > .rp-muted').textContent = grouping === 'attempt'
-      ? `Response time (Y) · attempt number (X). Gold is the rolling 5-result trend${showEntries ? '; dots are exact entries' : ''}.`
-      : `Median response time (Y) · ${groupName} (X).${showEntries ? ' Dots include exact entries.' : ''}`;
-    note.textContent = `${groups.length} ${groupName}${groups.length === 1 ? '' : 's'} · Timing excludes wrong, skipped, and ≥10s responses.${missing ? ` ${missing} record${missing === 1 ? '' : 's'} lack a usable date${grouping === 'attempt' ? '' : ' and cannot appear here'}.` : ''}`;
-    if (grouping === 'attempt') note.textContent += ' Attempts are numbered within your selected filters; errors keep their attempt number but have no timing point.';
-    note.textContent += ' Lower is faster. Based on retained history, not your entire training history.';
-    if (grouping === 'session') note.textContent += ' Sessions are inferred from gaps over 30 minutes between matching attempts.';
+      ? `recog (Y) · answer number (X). Gold is the rolling 5-answer trend${showEntries ? '; dots are exact answers' : ''}.`
+      : `median recog (Y) · ${groupName} (X).${showEntries ? ' Dots include exact answers.' : ''}`;
+    note.textContent = `${groups.length} ${groupName}${groups.length === 1 ? '' : 's'} · Timing excludes misses, skips, and answers over 10 s.${missing ? ` ${missing} record${missing === 1 ? '' : 's'} lack a usable date${grouping === 'attempt' ? '' : ' and cannot appear here'}.` : ''}`;
+    if (grouping === 'attempt') note.textContent += ' Answers are numbered within your selected filters. Misses have no timing point.';
+    note.textContent += ' Lower is faster. Includes retained answers only.';
+    if (grouping === 'session') note.textContent += ' Sessions are inferred from gaps over 30 min between matching answers.';
     container.querySelector('.rp-trend-readout').textContent = showEntries
       ? 'Hover, tap or focus an entry for its exact timing.'
-      : 'Trend only. Use “Show entries” to inspect individual results.';
+      : 'Trend only. Select show entries to see individual results.';
     container.querySelector('.rp-trend-empty').hidden = groups.length > 0;
-    if (!groups.length) { trendChart.innerHTML = ''; container.querySelector('.rp-trend-empty').textContent = 'No attempts for this selection.'; }
+    if (!groups.length) { trendChart.innerHTML = ''; container.querySelector('.rp-trend-empty').textContent = 'No answers for this selection.'; }
     else {
       const max = timingCeiling(values);
       const width = Math.max(280, trendChart.clientWidth || 760), height = 250, pad = { l: 58, r: 14, t: 18, b: 42 }, plotW = width - pad.l - pad.r, plotH = height - pad.t - pad.b;
@@ -168,7 +171,7 @@ export function createRecognitionProfile(container) {
       if (rolling.length > 1) {
         const change = Math.round(Math.abs(rolling.at(-1).value - rolling[0].value));
         note.textContent += ` Rolling trend ends roughly ${change} ms ${rolling.at(-1).value <= rolling[0].value ? 'faster' : 'slower'} than it starts.`;
-      } else note.textContent += ' Complete at least two timed attempts to draw a trend line.';
+      } else note.textContent += ' Complete at least two timed answers to draw a trend line.';
       trendChart.querySelectorAll('.rp-axis-label').forEach((text) => {
         if (+text.getAttribute('x') > width - 80) text.setAttribute('text-anchor', 'end');
         else if (+text.getAttribute('x') < pad.l + 40) text.setAttribute('text-anchor', 'start');
@@ -207,22 +210,22 @@ export function createRecognitionProfile(container) {
     note.textContent = `${correct}/${scoped.length || 0} correct${skipped ? ` · ${skipped} skipped` : ''}${withMeta.length < scoped.length ? ` · ${scoped.length - withMeta.length} older record${scoped.length - withMeta.length === 1 ? '' : 's'} lack piece detail` : ''}${samples.length < 10 ? ' · Small sample' : ''}. Retained history only (last 1000).${mode === 'triple' ? ' Three-corner timing includes feedback-to-next-corner time.' : ''}`;
     if (mode === 'all' && scoped.some((item) => item.mode === 'triple')) note.textContent += ' Mixed drills: later three-corner times include feedback after the previous answer. Filter drills for a fair comparison.';
     if (mode === 'recall') note.textContent += ' Recall: the first answer includes the initial glance; later answers use input-to-input timing.';
-    if (viewSelect.value === 'glance') note.textContent += ' Glance durations may differ between trials.';
+    if (viewSelect.value === 'glance') note.textContent += ' Glance time may differ between cases.';
     const groups = new Map();
     withMeta.forEach((item) => { const key = `${item.target || 'unknown'}|${(item.visible || []).join(',')}|${item.missing || ''}`; const g = groups.get(key) || { item, total: 0, correct: 0, times: [], wrong: {} }; g.total++; if (item.correct === true) g.correct++; if (validTiming(item)) g.times.push(Number(item.ms)); if (item.selected && item.selected !== item.missing) g.wrong[item.selected] = (g.wrong[item.selected] || 0) + 1; groups.set(key, g); });
     const ranked = [...groups.values()].sort((a, b) => (a.correct / a.total - b.correct / b.total) || ((percentile(b.times, .5) || 0) - (percentile(a.times, .5) || 0))).slice(0, 8);
     container.querySelector('.rp-rows').innerHTML = ranked.length ? ranked.map((g) => `
       <div class="rp-row">
-        <div><strong>${esc(TARGET_NAMES[g.item.target] || g.item.target || 'Unlabelled target')}</strong>
-          <small>${g.item.visible?.length ? `Saw ${esc(g.item.visible.join(' · '))}` : 'Visible colors not recorded'}${g.item.missing ? ` · Missing ${esc(g.item.missing)}` : ''}</small>
+        <div><strong>${esc(TARGET_NAMES[g.item.target] || g.item.target || 'Unlabeled target')}</strong>
+          <small>${g.item.visible?.length ? `saw ${esc(g.item.visible.join(' · '))}` : 'visible colors not saved'}${g.item.missing ? ` · missing ${esc(g.item.missing)}` : ''}</small>
         </div>
         <span>${Math.round(g.correct / g.total * 100)}% · ${g.times.length ? `median ${ms(percentile(g.times, .5))}` : 'no timing'}</span>
-        <small>${Object.keys(g.wrong).length ? `Confusions: ${Object.entries(g.wrong).map(([k, v]) => `${esc(k)} (${v})`).join(', ')} · ` : ''}${g.total} attempt${g.total === 1 ? '' : 's'}${g.total < 10 ? ' · Small sample' : ''}</small>
-      </div>`).join('') : '<p class="rp-muted">Detailed piece problems appear after you complete new trials.</p>';
+        <small>${Object.keys(g.wrong).length ? `Confused with: ${Object.entries(g.wrong).map(([k, v]) => `${esc(k)} (${v})`).join(', ')} · ` : ''}${g.total} ${g.total === 1 ? 'answer' : 'answers'}${g.total < 10 ? ' · small sample' : ''}</small>
+      </div>`).join('') : '<p class="rp-muted">Piece details appear after you complete more cases.</p>';
     if (groups.size > 8) note.textContent += ` Showing 8 of ${groups.size} patterns, lowest accuracy then slowest median first.`;
     const vals = samples.map((x) => Number(x.ms));
     const bucketMax = Math.max(...vals, 1), bucketSize = Math.max(100, Math.ceil(bucketMax / 5 / 100) * 100), buckets = Array.from({ length: 5 }, (_, i) => vals.filter((v) => v >= i * bucketSize && (i === 4 ? v <= (i + 1) * bucketSize : v < (i + 1) * bucketSize)).length), tallest = Math.max(...buckets, 1);
-    const bars = samples.length ? buckets.map((count, i) => `<div class="rp-bar"><span>${i * bucketSize}–${(i + 1) * bucketSize}ms</span><i><b style="width:${Math.max(count ? 4 : 0, count / tallest * 100)}%"></b></i><strong>${count}</strong></div>`).join('') : '<p class="rp-muted">Timing distribution will appear here.</p>';
+    const bars = samples.length ? buckets.map((count, i) => `<div class="rp-bar"><span>${(i * bucketSize / 1000).toFixed(2)}–${((i + 1) * bucketSize / 1000).toFixed(2)} s</span><i><b style="width:${Math.max(count ? 4 : 0, count / tallest * 100)}%"></b></i><strong>${count}</strong></div>`).join('') : '<p class="rp-muted">recog distribution appears after timed answers.</p>';
     container.querySelector('.rp-bars').innerHTML = bars;
   }
   familySelect.addEventListener('change', () => { selectedFamily = familySelect.value; render(); });
@@ -232,7 +235,7 @@ export function createRecognitionProfile(container) {
   container.querySelector('.rp-entry-toggle').addEventListener('click', (event) => {
     showEntries = !showEntries;
     event.currentTarget.setAttribute('aria-pressed', String(showEntries));
-    event.currentTarget.textContent = showEntries ? 'Hide entries' : 'Show entries';
+    event.currentTarget.textContent = showEntries ? 'hide entries' : 'show entries';
     render();
   });
   const resizeObserver = new ResizeObserver(() => renderTrend(trendSamples));

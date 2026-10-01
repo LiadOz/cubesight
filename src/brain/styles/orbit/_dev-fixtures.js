@@ -93,7 +93,7 @@ export function inspection({ mode = 'wca', overtime = 'wca', limitMs = 15000, el
   return {
     mode, overtime, limitMs: limit, elapsedMs, remainingMs: remaining, overtimeMs: over, penalty, callout,
     scaleMs: limit ? limit + 2000 : 60000, zones, ticks, bigText, tone,
-    consequence: over > 0 && overtime === 'wca' ? 'past 15 s — start now and it counts as +2.' : 'the solve clock starts on your first turn.',
+    consequence: over > 0 && overtime === 'wca' ? 'Past 15 s. Start now and it counts as +2.' : 'The solve clock starts on your first move.',
     autostartHandoff: overtime === 'autostart' && remaining === 0, startedAt: 0,
   };
 }
@@ -104,7 +104,7 @@ const configBar = {
     { id: 'f2l', options: [{ value: 'pseudo', label: 'pseudo pairs', active: true }] },
     { id: 'oll', options: [{ value: '2look', label: 'oll 2-look', active: true }] },
     { id: 'pll', options: [{ value: '2look', label: 'pll 2-look', active: true }] },
-    { id: 'inspection', options: [{ value: 'wca', label: 'insp 15s', active: true }] },
+    { id: 'inspection', options: [{ value: 'wca', label: 'insp 15 s', active: true }] },
     { id: 'penalties', options: [{ value: 'wca', label: 'wca penalties', active: true }] },
   ],
 };
@@ -143,9 +143,9 @@ function results() {
     spark: { points: spark, min: 12000, max: 18400 },
     recent: recent.map((text, i) => ({ key: `r${i}`, text, penaltyTag: text === '14.97' ? '+' : '', current: i === 0 })),
     coach: [
-      { key: 'c1', tag: 'cross', text: 'Cross took 8 moves — optimal was 6:', alg: "F' R D2 L' B2 D", tone: 'info' },
-      { key: 'c2', tag: 'pair 4', text: 'Pair 4 was 0.27 s over your average — 0.9 s pause finding it.', tone: 'warn' },
-      { key: 'c3', tag: 'pseudo', text: 'Pair 3 went in pseudo (D-shift) — saved ~3 moves.', tone: 'good' },
+      { key: 'c1', tag: 'cross', text: 'Cross took 8 moves, optimal was 6.', alg: "F' R D2 L' B2 D", tone: 'info' },
+      { key: 'c2', tag: 'pair 4', text: 'Pair 4 was 0.27 s over your average. A 0.9 s pause finding it.', tone: 'warn' },
+      { key: 'c3', tag: 'pseudo', text: 'Pair 3 used a pseudo pair with a D offset. Saved ~3 moves.', tone: 'good' },
       { key: 'c4', tag: 'eo skip', text: 'EO skip. Your 3rd this session (1 in 8 odds).', tone: 'good' },
     ],
   };

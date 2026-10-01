@@ -44,7 +44,7 @@ export function createBrain(root, cubeSession = smartCube) {
   };
   const ready = loadShell().then(fn => { createShell = fn; if (!detached) mount(); }, error => {
     console.error('[brain] shell failed to load', error);
-    root.textContent = `The Brain failed to load: ${error.message}`;
+    root.textContent = 'Couldn’t load solve. Reload and try again.';
   });
   return {
     ready,

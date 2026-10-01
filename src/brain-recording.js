@@ -169,7 +169,7 @@ export function attachBrainRecording({ root, live, cubeSession, getContext = () 
     document.documentElement.dataset.replay = 'running';
     const moves = parsed.events.filter(e => e.kind === 'cube-event' && e.data?.event?.type === 'MOVE').length;
     status(`Replaying ${parsed.events.length} events (${moves} moves) at ${speed ? `${speed}×` : 'full speed'}…`);
-    banner(`Replaying a recording (${moves} moves) — this is not your cube.`, { stoppable: true });
+    banner(`Replaying a recording (${moves} moves). This is not your cube.`, { stoppable: true });
     const started = performance.now();
     try {
       const result = await replayIntoSession(parsed, {
@@ -177,13 +177,13 @@ export function attachBrainRecording({ root, live, cubeSession, getContext = () 
       });
       const issues = result.divergences.length + result.actionErrors.length;
       const final = result.recording.final;
-      status(`Replay ${signal.aborted ? 'stopped' : 'finished'} in ${((performance.now() - started) / 1000).toFixed(1)} s${final ? `; the recording ended with the session ${final.phase}, ${final.moves?.length ?? 0} tracked moves` : ''}${issues ? `; ${issues} divergence(s) — see console` : ''}.`);
+      status(`Replay ${signal.aborted ? 'stopped' : 'finished'} in ${((performance.now() - started) / 1000).toFixed(1)} s${final ? `. The recording ended in ${final.phase} with ${final.moves?.length ?? 0} tracked moves` : ''}${issues ? `. ${issues} replay issues. See the dev log` : ''}.`);
       if (issues) console.warn('[replay] divergences', result.divergences, result.actionErrors);
-      banner(`Replay ${signal.aborted ? 'stopped' : 'finished'} · Connect your cube to continue.`);
+      banner(`Replay ${signal.aborted ? 'stopped' : 'finished'}. Connect your cube to start.`);
       document.documentElement.dataset.replay = signal.aborted ? 'stopped' : 'done';
-    } catch (error) {
-      status(`Replay failed: ${error.message}`);
-      banner(`Replay failed · Connect your cube to continue.`);
+    } catch {
+      status('Couldn’t replay this recording. Check the file and try again.');
+      banner('Replay failed. Connect your cube to start.');
       document.documentElement.dataset.replay = 'error';
     } finally {
       try { if (savedSolves == null) localStorage.removeItem(SOLVE_STORE_KEY); else localStorage.setItem(SOLVE_STORE_KEY, savedSolves); } catch { /* ignore */ }

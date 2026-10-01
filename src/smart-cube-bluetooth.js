@@ -45,7 +45,7 @@ function logConnectionEnvironment() {
     navigator.bluetooth.getDevices()
       .then(devices => logConnection({ kind: 'env', label: `Devices already permitted for this origin: ${devices.length ? devices.map(d => `"${d.name ?? '?'}" (id ${d.id})`).join(', ') : 'none'}` }))
       .catch(error => logConnection({ kind: 'env', label: `getDevices failed: ${error?.message || error}` }));
-  } else logConnection({ kind: 'env', label: 'navigator.bluetooth.getDevices unavailable (enable chrome://flags/#enable-web-bluetooth-new-permissions-backend) — the address cannot be re-derived from a remembered device.' });
+  } else logConnection({ kind: 'env', label: /* copy-ok: browser diagnostic shown in developer log */ 'navigator.bluetooth.getDevices unavailable (enable chrome://flags/#enable-web-bluetooth-new-permissions-backend) — the address cannot be re-derived from a remembered device.' });
 }
 
 // The cube that last connected, so a dropped link can be re-established.
@@ -122,11 +122,11 @@ async function connectBluetooth(options) {
         let libraryCached = false;
         try { libraryCached = Boolean(globalThis.localStorage?.getItem(`smartcube-ble-mac:${device?.id}`)); } catch { /* storage unavailable */ }
         logConnection({ kind: 'env', label: `Library address cache for device id ${device?.id ?? '?'}: ${libraryCached ? 'present' : 'missing'} · remembered by name: ${getRememberedMac(device?.name) ? 'present' : 'missing'}` });
-        logConnection({ label: `MAC provider called (attempt ${finalAttempt ? 'final' : '1'}, device "${device?.name ?? '?'}", id ${device?.id ?? '?'}).`, kind: 'provider' });
+        logConnection({ label: `Address lookup ${finalAttempt ? 'final' : '1'}, device "${device?.name ?? '?'}", id ${device?.id ?? '?'}).`, kind: 'provider' });
         // Returning null on the non-final attempt lets the library run its own
         // second advertisement watch (up to 5 s more) before we fall back to a
         // previously verified address, and only then to a one-time manual entry.
-        if (!finalAttempt) { logConnection({ label: 'Returning null — letting the library watch advertisements again.', kind: 'provider' }); return null; }
+        if (!finalAttempt) { logConnection({ label: 'No address yet. Checking the cube advertisement again.', kind: 'provider' }); return null; }
         const remembered = getRememberedMac(device.name);
         if (remembered) {
           usedRememberedMac = true;
@@ -135,7 +135,7 @@ async function connectBluetooth(options) {
         }
         // Advertising did not expose the address (Web Bluetooth hides it). Show a
         // self-contained one-time entry dialog — never send the user to another view.
-        logConnection({ label: 'Advertising did not expose the address — asking for one-time manual entry.', kind: 'fallback' });
+        logConnection({ label: 'The cube did not share its address. Asking for one-time entry.', kind: 'fallback' });
         const entered = await promptMacAddress(device);
         logConnection({ label: entered ? `Manual address entered: ${entered}` : 'Manual entry cancelled.', kind: entered ? 'manual' : 'cancel' });
         return entered;

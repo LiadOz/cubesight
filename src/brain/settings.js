@@ -160,10 +160,10 @@ const LABELS = {
   crossHint: { tab: 'on tab', always: 'always', off: 'off' },
   timer: { visible: 'visible', hide: 'hide while solving' },
   timeline: { on: 'on', off: 'off' },
-  compare: { avg: 'vs average', pb: 'vs pb', raw: 'raw' },
-  'inspection.mode': { wca: 'wca 15 s', custom: 'custom', unlimited: 'unlimited', off: 'off' },
-  'inspection.overtime': { wca: 'wca +2 / dnf', count: 'count only', grace: 'grace', autostart: 'auto-start' },
-  'inspection.gracePenalty': { plus2: '+2', dnf: 'dnf', none: 'none' },
+  compare: { avg: 'vs avg', pb: 'vs PB', raw: 'raw' },
+  'inspection.mode': { wca: 'WCA 15 s', custom: 'custom', unlimited: 'unlimited', off: 'off' },
+  'inspection.overtime': { wca: 'WCA +2 / DNF', count: 'count only', grace: 'grace', autostart: 'auto-start' },
+  'inspection.gracePenalty': { plus2: '+2', dnf: 'DNF', none: 'none' },
   'stats.source': { smart: 'smart cube', manual: 'manual timer', all: 'all' },
   'inspection.callouts': { true: '8 s + 12 s', false: 'off' },
   voice: { true: 'on', false: 'off' },
@@ -172,10 +172,10 @@ const LABELS = {
 const FOCUS_LABELS = { speed: 'speed', flow: 'flow', learning: 'learning' };
 
 const HELP = {
-  style: 'Orbit: ring timeline around the cube. Mono: monkeytype-style lanes.',
+  style: 'Orbit: ring timeline around the cube. Mono: compact lanes.',
   theme: 'Light or dark for the whole site. System follows your device.',
   method: 'The timeline stages follow the method.',
-  f2l: 'Pseudo pairs count pairs solved with the D layer offset.',
+  f2l: 'Pseudo pairs count pairs solved with a D offset.',
   oll: '2-look splits OLL into edges (EO) then corners (CO).',
   pll: '2-look splits PLL into corners (CP) then edges (EP).',
   'inspection.mode': 'WCA gives 15 s. Off starts the clock on your first turn.',
@@ -187,16 +187,16 @@ const HELP = {
   'inspection.callouts': 'Judge calls at 8 s and 12 s.',
   voice: 'Speak the callouts.',
   penalties: 'Count +2 and DNF in averages.',
-  scramble: 'Guided cues each move; paste uses your scramble; free starts from your scramble.',
+  scramble: 'Guided cues each move. Paste uses your scramble. Free starts from your scramble.',
   coach: 'When coach insights appear.',
-  crossHint: 'Show the optimal cross during inspection.',
+  crossHint: 'Show the PB cross during inspection.',
   timer: 'Hide the running clock to focus on the cube.',
   timeline: 'Show the stage timeline.',
   compare: 'What split deltas compare against.',
 };
 
 const ROW_LABELS = {
-  style: 'style', theme: 'mode', method: 'method', f2l: 'f2l pairs', oll: 'oll', pll: 'pll',
+  style: 'style', theme: 'mode', method: 'method', f2l: 'F2L pairs', oll: 'OLL', pll: 'PLL',
   'inspection.mode': 'inspection', 'inspection.seconds': 'seconds', 'inspection.overtime': 'overtime',
   'inspection.graceSeconds': 'grace', 'inspection.gracePenalty': 'then', 'inspection.callouts': 'callouts', voice: 'voice',
   penalties: 'penalties', scramble: 'scramble', coach: 'coach', crossHint: 'cross hint', timer: 'timer',
@@ -207,7 +207,7 @@ const SECTIONS = [
   { id: 'look', label: 'look', rows: ['style', 'theme'] },
   { id: 'method', label: 'method', rows: ['method', 'f2l', 'oll', 'pll'] },
   { id: 'inspection', label: 'inspection', rows: ['inspection.mode', 'inspection.seconds', 'inspection.overtime', 'inspection.graceSeconds', 'inspection.gracePenalty', 'inspection.callouts', 'voice', 'penalties'] },
-  { id: 'training', label: 'training', rows: ['scramble', 'coach', 'crossHint', 'timer', 'timeline', 'compare'] },
+  { id: 'solve', label: 'solve', rows: ['scramble', 'coach', 'crossHint', 'timer', 'timeline', 'compare'] },
   { id: 'stats', label: 'stats', rows: ['stats.source'] },
 ];
 

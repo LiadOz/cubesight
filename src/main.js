@@ -5,6 +5,7 @@ import './styles.css';
 import './pages/page.css';
 import { setupTheme } from './theme.js';
 import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
+import { T, MSG, fmt, KEYS } from './copy/terms.js';
 import { TOOL_PATHS, resolveRoute, keyScope, parseHash } from './routes.js';
 import { rememberDrill } from './drills/catalog.js';
 import { syncPageTokens } from './pages/tokens.js';
@@ -131,6 +132,7 @@ let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
 let progressPage = null;
+let progressPageLoad = null;
 let historyPage = null;
 let historyPageLoad = null;
 let timerPage = null;
@@ -180,12 +182,12 @@ document.querySelector('#app').innerHTML = `
       ${NAV_ITEMS.map(item => `<a class="nav-link" href="${item.href}" data-nav="${item.id}">${item.label}</a>`).join('\n      ')}
     </nav>
     <div class="header-actions">
-      <button id="theme-toggle" class="header-button theme-button" aria-label="Switch to dark mode">
+      <button id="theme-toggle" class="header-button theme-button" aria-label="theme">
         <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></svg>
         <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
         <span class="theme-label" aria-hidden="true">light</span>
       </button>
-      <button class="header-button help-button" data-action="open-help" aria-label="How to play">?</button>
+      <button class="header-button help-button" data-action="open-help" aria-label="help">?</button>
     </div>
   </header>
 
@@ -193,38 +195,38 @@ document.querySelector('#app').innerHTML = `
     <div id="corner-view">
     <section class="intro-row">
       <div>
-        <p class="eyebrow">Practice / Corners</p>
+        <p class="eyebrow">drills / corner recognition</p>
         <h1>Corner recognition</h1>
       </div>
-      <p class="intro-copy">See the pattern.<br>Build the instinct.</p>
+        <p class="intro-copy">Find the hidden color.</p>
     </section>
 
     <details class="training-settings" open>
-    <summary><span>Training settings</span><small>Drill, session & viewing time</small><i aria-hidden="true"></i></summary>
-    <section class="mode-bar" aria-label="Training settings">
+    <summary><span>settings</span><small>drill, round & glance</small><i aria-hidden="true"></i></summary>
+    <section class="mode-bar" aria-label="settings">
       <div class="mode-group">
-        <span class="control-label">Drill</span>
-        <div class="segmented" role="group" aria-label="Corner drill">
-          <button class="segment active" data-mode="single">Single corner</button>
-          <button class="segment" data-mode="triple">Three corners</button>
-          <button class="segment" data-mode="recall">One-glance recall</button>
+        <span class="control-label">${T.drill}</span>
+        <div class="segmented" role="group" aria-label="corner drill">
+          <button class="segment active" data-mode="single">single corner</button>
+          <button class="segment" data-mode="triple">three corners</button>
+          <button class="segment" data-mode="recall">one-glance recall</button>
         </div>
       </div>
-      <div class="mode-group">
-        <span class="control-label">Session</span>
+        <div class="mode-group">
+        <span class="control-label">session</span>
         <div class="segmented" role="group" aria-label="Session type">
-          <button class="segment active" data-session="practice">Open practice</button>
-          <button class="segment" data-session="sprint">10-answer sprint</button>
+          <button class="segment active" data-session="practice">endless</button>
+          <button class="segment" data-session="sprint">10-case round</button>
         </div>
       </div>
-      <div class="sprint-progress" aria-label="Sprint progress" hidden>
+      <div class="sprint-progress" aria-label="round progress" hidden>
         <span id="sprint-count">0 / 10</span>
         <div class="progress-track"><i id="progress-fill"></i></div>
       </div>
       <div class="learning-controls" aria-label="Recognition pacing">
-        <label class="learning-toggle"><input id="glance-toggle" type="checkbox"><span>Glance mode</span></label>
-        <label class="exposure-picker" for="exposure-mode">Pace <select id="exposure-mode" aria-label="Glance pacing" title="Adaptive: every 10 eligible outcomes, 90%+ accuracy shortens the glance, down to 25 ms; 70% or lower adds 100 ms. Recall counts a complete three-answer sequence as one outcome."><option value="adaptive" selected>Adaptive</option><option value="fixed">Fixed</option></select></label>
-        <label class="exposure-picker" for="exposure-select">View <select id="exposure-select" aria-label="Glance exposure"><option value="25">25 ms</option><option value="50">50 ms</option><option value="75">75 ms</option><option value="100">100 ms</option><option value="150">150 ms</option><option value="200">200 ms</option><option value="300">300 ms</option><option value="450">450 ms</option><option value="600" selected>600 ms</option><option value="800">800 ms</option><option value="1000">1 s</option><option value="1500">1.5 s</option></select></label>
+        <label class="learning-toggle"><input id="glance-toggle" type="checkbox"><span>glance</span></label>
+        <label class="exposure-picker" for="exposure-mode">mode <select id="exposure-mode" aria-label="glance mode" title="Adaptive glance changes after every 10 eligible answers based on accuracy. It ranges from 25 ms to 1,500 ms. A recall sequence counts as one answer."><option value="adaptive" selected>adaptive glance</option><option value="fixed">fixed</option></select></label>
+        <label class="exposure-picker" for="exposure-select">glance time <select id="exposure-select" aria-label="glance time"><option value="25">25 ms</option><option value="50">50 ms</option><option value="75">75 ms</option><option value="100">100 ms</option><option value="150">150 ms</option><option value="200">200 ms</option><option value="300">300 ms</option><option value="450">450 ms</option><option value="600" selected>600 ms</option><option value="800">800 ms</option><option value="1000">1 s</option><option value="1500">1.5 s</option></select></label>
       </div>
     </section>
     </details>
@@ -232,8 +234,8 @@ document.querySelector('#app').innerHTML = `
     <section class="trainer-shell">
       <div class="cube-stage">
         <div class="stage-topline">
-          <span class="status-dot"><i></i> Find the hidden color</span>
-          <span class="view-lock">Locked · varied angle</span>
+          <span class="status-dot"><i></i> find the hidden color</span>
+          <span class="view-lock">locked · varied angle</span>
         </div>
         <div id="cube" class="cube-mount"></div>
         <div id="glance-overlay" class="glance-overlay" hidden aria-live="polite">Look</div>
@@ -246,13 +248,13 @@ document.querySelector('#app').innerHTML = `
 
       <div class="answer-stage">
         <div class="case-meta">
-          <span id="case-number">CASE 001</span>
-          <span id="case-mode">SINGLE CORNER</span>
+          <span id="case-number">case 1</span>
+          <span id="case-mode">single corner</span>
         </div>
         <div class="timer-wrap">
-          <span class="timer-label">Response time · includes key / click</span>
-          <div id="timer" class="timer" aria-live="off">0.00<span>s</span></div>
-          <small id="exposure-note" class="timing-note">Adaptive practice · accuracy before speed</small>
+          <span class="timer-label">recog · includes key</span>
+          <div id="timer" class="timer" aria-live="off">0.00<span> s</span></div>
+          <small id="exposure-note" class="timing-note">adaptive glance · accuracy before speed</small>
         </div>
         <div class="prompt-block">
           <p id="prompt-text">Which color completes <br>this corner?</p>
@@ -260,9 +262,9 @@ document.querySelector('#app').innerHTML = `
         </div>
         <div id="answers" class="answer-grid" role="group" aria-label="Choose the hidden color"></div>
         <div class="feedback-line">
-          <p id="feedback" role="status" aria-live="polite">Click a color or type its first letter</p>
-          <button class="skip-button" data-action="skip">Skip <kbd>S</kbd></button>
-          <button class="skip-button" data-action="next-recall" hidden>Next cube →</button>
+          <p id="feedback" role="status" aria-live="polite">Tap or press a color key.</p>
+          <button class="skip-button" data-action="skip">skip <kbd>s</kbd></button>
+          <button class="skip-button" data-action="next-recall" hidden>next case</button>
         </div>
       </div>
     </section>
@@ -273,16 +275,16 @@ document.querySelector('#app').innerHTML = `
         <button class="text-button danger" data-action="clear">Clear history</button>
       </div>
       <div class="stats-grid">
-        <article class="metric-card"><span>Average</span><strong id="avg-stat">—</strong><small id="avg-note">No cases yet</small></article>
-        <article class="metric-card"><span>Accuracy</span><strong id="accuracy-stat">—</strong><small id="accuracy-note">Start training</small></article>
-        <article class="metric-card"><span>Current streak</span><strong id="streak-stat">0</strong><small id="streak-note">Best: 0</small></article>
+        <article class="metric-card"><span>mean recog</span><strong id="avg-stat">—</strong><small id="avg-note">No cases yet</small></article>
+        <article class="metric-card"><span>accuracy</span><strong id="accuracy-stat">—</strong><small id="accuracy-note">Start a round</small></article>
+        <article class="metric-card"><span>combo</span><strong id="streak-stat">0</strong><small id="streak-note">best combo: 0</small></article>
         <article class="trend-card">
           <div class="trend-head"><div><span>Recent pace</span><small>Last 12 correct answers</small></div><strong id="trend-value">—</strong></div>
           <div id="trend-chart" class="trend-chart" aria-label="Recent recognition times"></div>
         </article>
       </div>
       <div class="case-table-card">
-        <div class="case-table-head"><div><span>Corner families</span><small>Needs attention first</small></div><span class="engine-badge" id="engine-badge">JS ENGINE</span></div>
+        <div class="case-table-head"><div><span>Corner families</span><small>Needs attention first</small></div><span class="engine-badge" id="engine-badge">js engine</span></div>
         <div id="case-list" class="case-list"></div>
       </div>
       <div id="recognition-profile"></div>
@@ -291,18 +293,18 @@ document.querySelector('#app').innerHTML = `
 
     <div id="f2l-view" hidden>
       <section class="intro-row f2l-intro">
-        <div><p class="eyebrow">Practice / F2L</p><h1>F2L deduction</h1></div>
-        <p class="intro-copy">Find your next pair.<br>Before your next turn.</p>
+        <div><p class="eyebrow">drills / F2L</p><h1>F2L deduction</h1></div>
+        <p class="intro-copy">Find your next pair.</p>
       </section>
       <details class="training-settings" open>
-      <summary><span>Training settings</span><small>Color neutral · choose a drill</small><i aria-hidden="true"></i></summary>
+      <summary><span>settings</span><small>color neutral · choose a drill</small><i aria-hidden="true"></i></summary>
       <section class="mode-bar f2l-controls" aria-label="F2L settings">
-        <div class="mode-group f2l-drill-picker"><span class="control-label">Drill</span><div class="segmented" aria-label="F2L drill"><button class="segment active" data-f2l-drill="deduction">Pair deduction</button><button class="segment" data-f2l-drill="scan">Timed scan</button><button class="segment" data-f2l-drill="planner">Best next pair</button></div></div>
-        <label class="scan-duration" id="scan-duration-wrap" hidden><span class="control-label">Round</span><select id="f2l-scan-duration"><option value="15">15 seconds</option><option value="30" selected>30 seconds</option><option value="45">45 seconds</option></select></label>
-        <label class="planner-shift" id="scan-pseudo-wrap" hidden><input id="f2l-scan-pseudo" type="checkbox"> Pseudo pairs · shift D</label>
-        <button class="new-case-button" id="f2l-scan-start" data-action="start-scan" hidden>Start scan</button>
-        <label class="planner-shift" id="planner-shift-wrap" hidden><input id="planner-shift-d" type="checkbox"> Shift D layer</label>
-        <button class="new-case-button" data-action="new-f2l">New cube <span>↗</span></button>
+        <div class="mode-group f2l-drill-picker"><span class="control-label">drill</span><div class="segmented" aria-label="F2L drill"><button class="segment active" data-f2l-drill="deduction">pair deduction</button><button class="segment" data-f2l-drill="scan">timed scan</button><button class="segment" data-f2l-drill="planner">best next pair</button></div></div>
+        <label class="scan-duration" id="scan-duration-wrap" hidden><span class="control-label">round</span><select id="f2l-scan-duration"><option value="15">15 s</option><option value="30" selected>30 s</option><option value="45">45 s</option></select></label>
+        <label class="planner-shift" id="scan-pseudo-wrap" hidden><input id="f2l-scan-pseudo" type="checkbox"> pseudo pairs · D offset</label>
+        <button class="new-case-button" id="f2l-scan-start" data-action="start-scan" hidden>start scan</button>
+        <label class="planner-shift" id="planner-shift-wrap" hidden><input id="planner-shift-d" type="checkbox"> D offset</label>
+        <button class="new-case-button" data-action="new-f2l">next case</button>
       </section>
       </details>
       <section class="trainer-shell f2l-shell">
@@ -312,7 +314,7 @@ document.querySelector('#app').innerHTML = `
           <div class="cube-caption"><span id="f2l-orientation">White bottom · Green front</span><span>Drag left / right · click pieces to pair</span></div>
         </div>
         <div class="answer-stage f2l-answer-stage">
-          <div class="case-meta"><span id="f2l-case-number">CASE 001</span><span id="f2l-cross-label">WHITE BOTTOM</span></div>
+          <div class="case-meta"><span id="f2l-case-number">case 1</span><span id="f2l-cross-label">white bottom</span></div>
           <div class="f2l-score"><span>Deducible pairs</span><strong><b id="f2l-found">0</b><i>/</i><b id="f2l-total">0</b></strong></div>
           <div class="f2l-instructions">
             <p id="f2l-status" role="status" aria-live="polite">Select a corner or edge to begin.</p>
@@ -322,12 +324,12 @@ document.querySelector('#app').innerHTML = `
           <div class="f2l-timings" id="f2l-timings">Find a pair to see search and matching times.</div>
           <div class="f2l-progress" id="f2l-progress"></div>
           <div id="f2l-planner-choices" class="f2l-planner-choices" hidden></div>
-          <div class="f2l-footer-actions"><span>Back and bottom faces are locked</span><button id="f2l-continue" class="skip-button" data-action="new-f2l">Skip case <kbd>N</kbd></button></div>
+          <div class="f2l-footer-actions"><span>back and bottom faces are locked</span><button id="f2l-continue" class="skip-button" data-action="new-f2l">skip <kbd>s</kbd></button></div>
         </div>
       </section>
       <section class="f2l-info-grid">
         <article><p class="eyebrow">01 / inspect</p><h3>Limited view</h3><p>Scan the top, front, left, and right faces. The camera stops before the back becomes visible.</p></article>
-        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards corner–edge recognition across fresh cubes, with optional D-shift pseudo pairs.</p></article>
+        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards corner–edge recognition across fresh cases, with optional D-offset pseudo pairs.</p></article>
         <article><p class="eyebrow">03 / plan</p><h3>Choose efficiently</h3><p>The planner compares verified next-pair solutions with ergonomic weights, not raw move count alone.</p></article>
       </section>
     </div>
@@ -341,29 +343,29 @@ document.querySelector('#app').innerHTML = `
     <div id="scout-view" hidden></div>
     <div id="brain-view" hidden></div>
     <div id="smart-view" hidden></div>
-    <section class="retention-panel" aria-label="Adaptive practice progress"><div><span>Ready to review</span><strong id="review-due">0 cases</strong></div><p id="review-summary">Complete cases to build your review queue</p><small>Ready means its spacing interval has elapsed. Missed and slow patterns return sooner; fluent patterns return later.<br>Practice accuracy is separate from delayed retention.</small></section>
+    <section class="retention-panel" aria-label="drill progress"><div><span>due</span><strong id="review-due">0 cases</strong></div><p id="review-summary">No cases yet. Start a round.</p><small>Misses and slow recog return sooner. Accuracy and delayed recall are separate.</small></section>
   </main>
 
-  <footer><span>Cubesight <span class="footer-dot">·</span> A little practice. A quicker instinct. <button class="build-badge" data-action="check-update">Build <b>${BUILD_LABEL}</b></button></span><span>Your progress stays on this device.</span></footer>
+  <footer><span>Cubesight <span class="footer-dot">·</span> solve · see the pattern <button class="build-badge" data-action="check-update">Build <b>${BUILD_LABEL}</b></button></span><span>${MSG.stays}</span></footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="pause-overlay" class="pause-overlay" hidden role="region" aria-label="Training paused" aria-live="polite"><div><p class="eyebrow">Take your time</p><h2>Practice paused</h2><p>Your interrupted trial will not be scored.</p><button class="primary-button" data-action="resume">Resume with a fresh case</button></div></div>
+  <div id="pause-overlay" class="pause-overlay" hidden role="region" aria-label="paused" aria-live="polite"><div><p class="eyebrow">Taking a break?</p><h2>paused</h2><p>This case won't count.</p><button class="primary-button" data-action="resume">resume</button></div></div>
   <dialog id="summary-dialog" class="summary-dialog">
     <button class="dialog-close" data-action="close-summary" aria-label="Close">×</button>
-    <p class="eyebrow">Sprint complete</p>
-    <h2>That was sharp.</h2>
+    <p class="eyebrow">round done</p>
+    <h2>Clean round.</h2>
     <div class="summary-metrics" id="summary-metrics"></div>
-    <button class="primary-button" data-action="restart-sprint">Run it again</button>
-    <button class="text-button" data-action="practice-mode">Return to open practice</button>
+    <button class="primary-button" data-action="restart-sprint">one more round</button>
+    <button class="text-button" data-action="practice-mode">endless</button>
   </dialog>
   <dialog id="help-dialog" class="help-dialog">
     <button class="dialog-close" data-action="close-help" aria-label="Close">×</button>
-    <p class="eyebrow">How it works</p>
-    <h2 id="help-title">Recognize, don’t calculate.</h2>
+    <p class="eyebrow">help</p>
+    <h2 id="help-title">Recognize the pattern.</h2>
     <p id="help-copy">Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.</p>
-    <ol id="help-steps"><li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type its first letter.</li><li>In Three corners, answer the highlighted targets from left to right.</li></ol>
+    <ol id="help-steps"><li>The cube stays locked during each case, but cases vary slightly left, right, up, and down.</li><li>Use the centers and edges to read the cube, then tap or press a color key.</li><li>In three corners, answer the highlighted corners from left to right.</li></ol>
     <div class="build-info"><span>Installed build</span><code id="app-build">${BUILD_LABEL}</code><button class="text-button" data-action="check-update">Check for update</button><small id="update-status">The build number identifies exactly which CubeSight release is open.</small></div>
-    <button class="primary-button" data-action="close-help">Start training</button>
+    <button class="primary-button" data-action="close-help">start</button>
   </dialog>
 `;
 
@@ -554,11 +556,11 @@ function renderCurrentCase() {
     document.querySelector('#cube').replaceChildren(fallback);
   }
   document.querySelector('#orientation-caption').textContent = `${COLORS[current.orientation.U].label} top · ${COLORS[current.orientation.F].label} front`;
-  document.querySelector('#case-number').textContent = `CASE ${String(stats.attempts + 1).padStart(3, '0')}`;
-  document.querySelector('#case-mode').textContent = multiCorner() ? `${state.mode === 'recall' ? 'ONE GLANCE' : 'THREE CORNERS'} · ${current.activeIndex + 1}/3` : 'SINGLE CORNER';
+  document.querySelector('#case-number').textContent = `case ${stats.attempts + 1}`;
+  document.querySelector('#case-mode').textContent = multiCorner() ? `${state.mode === 'recall' ? 'one-glance recall' : 'three corners'} · ${current.activeIndex + 1}/3` : 'single corner';
   document.querySelector('#case-mode').dataset.targetCorner = active.target.corner;
   document.querySelector('#prompt-text').innerHTML = multiCorner()
-    ? `Corner ${current.activeIndex + 1} of 3 — which color <br>completes it?`
+    ? `Case ${current.activeIndex + 1} of 3. Which color <br>completes it?`
     : 'Which color completes <br>this corner?';
   renderSequence();
 }
@@ -588,8 +590,8 @@ function showCornerResult(isCorrect, correctColor, skipped) {
   result.className = `corner-result ${isCorrect ? 'is-correct' : 'is-wrong'}`;
   result.setAttribute('aria-hidden', 'true');
   result.textContent = isCorrect
-    ? `✓ Correct · ${COLORS[correctColor].label}`
-    : `${skipped ? '↷ Skipped' : '× Not quite'} · ${COLORS[correctColor].label} was correct`;
+    ? `Nice · ${COLORS[correctColor].label.toLowerCase()}`
+    : skipped ? `Skipped, it was ${COLORS[correctColor].label.toLowerCase()}.` : `Not quite, it was ${COLORS[correctColor].label.toLowerCase()}.`;
   result.addEventListener('animationend', () => result.remove(), { once: true });
   document.querySelector('#corner-view .cube-stage').append(result);
 }
@@ -643,8 +645,8 @@ function presentRecall() {
   document.querySelector('#feedback').className = '';
   document.querySelector('#feedback').textContent = 'One look. Then answer left, top right, bottom right.';
   document.querySelector('#prompt-text').textContent = 'Remember all three missing colors.';
-  document.querySelector('#exposure-note').textContent = `One ${state.current.exposureMs} ms glance · ${glancePacing.progress}/10 complete sequences toward adjustment · display refresh limits very short flashes`;
-  document.querySelector('.timer-label').textContent = 'First answer · from cube reveal';
+  document.querySelector('#exposure-note').textContent = `glance ${state.current.exposureMs} ms · ${glancePacing.progress}/10 answers toward adjustment`;
+  document.querySelector('.timer-label').textContent = 'recog · from cube reveal';
   document.querySelectorAll('.answer-button').forEach((button) => { button.disabled = true; });
   state.onsetFrame = requestAnimationFrame(() => {
     if (generation !== state.generation || activeTool !== 'corner' || paused) return;
@@ -657,7 +659,7 @@ function presentRecall() {
       if (generation !== state.generation || activeTool !== 'corner' || paused) return;
       coverRecall();
       state.locked = false;
-      document.querySelector('#prompt-text').textContent = 'Corner 1 of 3 — which color was missing?';
+      document.querySelector('#prompt-text').textContent = 'Case 1 of 3. Which color was missing?';
       document.querySelectorAll('.answer-button').forEach((button) => { button.disabled = false; });
     }, state.current.exposureMs);
   });
@@ -673,9 +675,9 @@ function answerRecall(color, skipped, answeredAt) {
     armTrialTimeout(answeredAt);
     renderCurrentCase();
     coverRecall();
-    document.querySelector('#prompt-text').textContent = `Corner ${current.activeIndex + 1} of 3 — which color was missing?`;
-    document.querySelector('#feedback').textContent = `${current.activeIndex} entered · keep going from memory`;
-    document.querySelector('.timer-label').textContent = 'Response time · from your last answer';
+    document.querySelector('#prompt-text').textContent = `Case ${current.activeIndex + 1} of 3. Which color was missing?`;
+    document.querySelector('#feedback').textContent = `${current.activeIndex} answered · keep going from memory`;
+    document.querySelector('.timer-label').textContent = 'recog · from your last answer';
     return;
   }
   state.locked = true;
@@ -698,9 +700,9 @@ function answerRecall(color, skipped, answeredAt) {
   document.querySelector('#feedback').className = allCorrect ? 'is-correct' : 'is-wrong';
   document.querySelector('#feedback').textContent = outcomes.map((outcome, index) =>
     `${positions[index]}: ${outcome.isCorrect ? '✓' : '✗'} ${COLORS[outcome.correctColor].label}${outcome.isCorrect ? '' : ` (you: ${current.recallAnswers[index].color || 'skip'})`}`).join(' · ');
-  document.querySelector('#prompt-text').textContent = `${outcomes.filter((outcome) => outcome.isCorrect).length}/3 correct · inspect, then continue`;
-  document.querySelector('#timer').innerHTML = `${(current.recallAnswers.reduce((sum, response) => sum + response.ms, 0) / 1000).toFixed(2)}<span>s</span>`;
-  document.querySelector('.timer-label').textContent = 'Complete sequence · from cube reveal';
+  document.querySelector('#prompt-text').textContent = `${outcomes.filter((outcome) => outcome.isCorrect).length} of 3 correct · inspect, then next`;
+  document.querySelector('#timer').textContent = formatMs(current.recallAnswers.reduce((sum, response) => sum + response.ms, 0));
+  document.querySelector('.timer-label').textContent = 'recog · full sequence';
   document.querySelectorAll('.answer-button').forEach((button) => { button.disabled = true; });
   document.querySelector('[data-action="skip"]').hidden = true;
   document.querySelector('[data-action="next-recall"]').hidden = false;
@@ -716,14 +718,14 @@ function presentCorner(previousInputAt = null, successNotice = null) {
   const mount = document.querySelector('#cube');
   mount.classList.add('glance-mask');
   mount.dataset.learningState = 'preparing';
-  document.querySelector('#feedback').textContent = successNotice || 'Click a color or type its first letter';
+  document.querySelector('#feedback').textContent = successNotice || 'Tap or press a color key.';
   document.querySelector('#feedback').className = successNotice ? 'is-correct' : '';
-  document.querySelector('#timer').innerHTML = `${previousInputAt === null ? '0.00' : ((performance.now() - previousInputAt) / 1000).toFixed(2)}<span>s</span>`;
+  document.querySelector('#timer').textContent = previousInputAt === null ? '0.00' : formatMs(performance.now() - previousInputAt);
   document.querySelector('.timer-label').textContent = previousInputAt === null
-    ? 'Response time · includes key / click' : 'Response time · from your last answer';
+    ? 'recog · includes key' : 'recog · from your last answer';
   document.querySelector('#exposure-note').textContent = state.glance
-    ? `${state.exposureMode === 'adaptive' ? `Adaptive · ${state.exposureMs} ms · ${glancePacing.progress}/10 toward adjustment` : `${state.exposureMs} ms view · fixed pace`}${state.mode === 'triple' ? ' · first corner sets pace' : ''}`
-    : `Adaptive practice · accuracy before speed${state.mode === 'triple' ? ' · later corners have preview' : ''}`;
+    ? `${state.exposureMode === 'adaptive' ? `adaptive glance · ${state.exposureMs} ms · ${glancePacing.progress}/10 toward adjustment` : `glance ${state.exposureMs} ms · fixed`}${state.mode === 'triple' ? ' · first corner sets pace' : ''}`
+    : `Accuracy before speed${state.mode === 'triple' ? ' · later corners have preview' : ''}`;
   renderAnswers();
   renderCurrentCase();
   state.onsetFrame = requestAnimationFrame(() => {
@@ -824,7 +826,7 @@ function answer(color, skipped = false) {
       else button.classList.add('muted');
     });
     feedback.className = 'is-wrong';
-    feedback.textContent = `${skipped ? 'Skipped' : 'Not quite'} — it was ${COLORS[correctColor].label}`;
+    feedback.textContent = skipped ? `Skipped, it was ${COLORS[correctColor].label.toLowerCase()}.` : `Not quite, it was ${COLORS[correctColor].label.toLowerCase()}.`;
     state.current.feedback = {
       status: 'wrong',
       correctColor: COLORS[correctColor].hex,
@@ -843,9 +845,9 @@ function answer(color, skipped = false) {
     if (moreCorners) {
       state.current.activeIndex++;
       state.current.feedback = null;
-      return presentCorner(answeredAt, `Correct — ${formatMs(elapsed)}`);
+      return presentCorner(answeredAt, `Nice · ${fmt.time(elapsed, { unit: true })}`);
     }
-    return startCase(`Correct — ${formatMs(elapsed)}`);
+    return startCase(`Nice · ${fmt.time(elapsed, { unit: true })}`);
   }
   if (moreCorners && !sprintDone) {
     // Later corners remain visible during feedback: that inspection time is
@@ -867,19 +869,19 @@ function answer(color, skipped = false) {
 }
 
 function formatMs(ms) {
-  return `${(ms / 1000).toFixed(2)}s`;
+  return fmt.time(ms, { unit: true });
 }
 
 function updateStatsUI() {
   recognitionProfile.update(stats);
   const avg = stats.correct ? stats.totalMs / stats.correct : null;
   document.querySelector('#avg-stat').textContent = avg ? formatMs(avg) : '—';
-  document.querySelector('#avg-note').textContent = stats.bestMs ? `Best ${formatMs(stats.bestMs)}` : 'No cases yet';
+  document.querySelector('#avg-note').textContent = stats.bestMs ? `PB ${fmt.time(stats.bestMs, { unit: true })}` : 'No cases yet';
   const accuracy = stats.attempts ? Math.round(stats.correct / stats.attempts * 100) : null;
   document.querySelector('#accuracy-stat').textContent = accuracy === null ? '—' : `${accuracy}%`;
-  document.querySelector('#accuracy-note').textContent = stats.attempts ? `${stats.correct} of ${stats.attempts} correct` : 'Start training';
+  document.querySelector('#accuracy-note').textContent = stats.attempts ? `${stats.correct} of ${stats.attempts} correct` : 'Start a round';
   document.querySelector('#streak-stat').textContent = stats.streak;
-  document.querySelector('#streak-note').textContent = `Best: ${stats.bestStreak}`;
+  document.querySelector('#streak-note').textContent = `best combo: ${stats.bestStreak}`;
 
   const recent = stats.history.filter((item) => item.correct).slice(-12);
   document.querySelector('#trend-value').textContent = recent.length ? formatMs(recent.reduce((sum, item) => sum + item.ms, 0) / recent.length) : '—';
@@ -904,11 +906,11 @@ function updateLearningUI() {
   const summary = sessionSummary({ ...learning, items });
   const due = document.querySelector('#review-due');
   const note = document.querySelector('#review-summary');
-  if (due) due.textContent = `${summary.due} case${summary.due === 1 ? '' : 's'}`;
+  if (due) due.textContent = `${summary.due} due`;
   if (note) note.textContent = summary.attempts
-    ? `${activeTool === 'corner' ? 'Corners' : 'F2L'} · ${Math.round(summary.accuracy * 100)}% practice accuracy · median correct response ${summary.medianMs !== null ? formatMs(summary.medianMs) : '—'}`
-    : 'Complete cases to build your review queue';
-  if (note && summary.delayedAttempts) note.textContent += ` · After 24h+: ${summary.delayedCorrect}/${summary.delayedAttempts} correct`;
+    ? `${activeTool === 'corner' ? 'corners' : 'F2L'} · ${Math.round(summary.accuracy * 100)}% accuracy · median recog ${summary.medianMs !== null ? fmt.time(summary.medianMs, { unit: true }) : '—'}`
+    : 'No cases due. Do a round to build your queue.';
+  if (note && summary.delayedAttempts) note.textContent += ` · 24 h+: ${summary.delayedCorrect} of ${summary.delayedAttempts} correct`;
 }
 
 function caseScore(item) {
@@ -939,7 +941,7 @@ function setMode(mode) {
   glanceToggle.disabled = mode === 'recall';
   const sprintLength = mode === 'recall' ? 12 : 10;
   if (sprintLength !== state.sprintLength) { state.sprintLength = sprintLength; resetSession(); }
-  document.querySelector('[data-session="sprint"]').textContent = `${sprintLength}-answer sprint`;
+  document.querySelector('[data-session="sprint"]').textContent = `${sprintLength}-case round`;
   glancePacing.reset();
   document.querySelectorAll('[data-mode]').forEach((button) => button.classList.toggle('active', button.dataset.mode === mode));
   updateHelp();
@@ -959,7 +961,7 @@ function showSummary() {
   document.querySelector('#summary-metrics').innerHTML = `
     <div><span>Accuracy</span><strong>${Math.round(session.correct / session.attempts * 100)}%</strong></div>
     <div><span>Average</span><strong>${avg ? formatMs(avg) : '—'}</strong></div>
-    <div><span>Best</span><strong>${best ? formatMs(best) : '—'}</strong></div>`;
+    <div><span>best of round</span><strong>${best ? fmt.time(best, { unit: true }) : '—'}</strong></div>`;
   document.querySelector('#summary-dialog').showModal();
 }
 
@@ -1031,7 +1033,7 @@ function renderF2LControls() {
   document.querySelector('#f2l-scan-pseudo').disabled = f2lState.scanRunning;
   const scanStart = document.querySelector('#f2l-scan-start');
   scanStart.hidden = f2lState.drill !== 'scan' || f2lState.scanRunning;
-  scanStart.textContent = `Start ${f2lState.scanDuration}s scan`;
+  scanStart.textContent = `start ${f2lState.scanDuration} s scan`;
   document.querySelector('.f2l-controls > [data-action="new-f2l"]').hidden = f2lState.drill === 'scan';
   document.querySelector('#planner-shift-wrap').hidden = f2lState.drill !== 'planner';
   document.querySelector('#planner-shift-d').checked = f2lState.plannerShiftD;
@@ -1062,23 +1064,23 @@ function renderF2LPlanner() {
   const planner = f2lState.planner;
   const status = document.querySelector('#f2l-status');
   const choices = document.querySelector('#f2l-planner-choices');
-  document.querySelector('.f2l-score > span').textContent = f2lState.plannerShiftD ? 'Pairs solved before D shift' : 'Pairs already solved';
+  document.querySelector('.f2l-score > span').textContent = f2lState.plannerShiftD ? 'pairs solved before D offset' : 'pairs already solved';
   document.querySelector('#f2l-found').textContent = planner?.setup.solvedCount ?? '—';
   document.querySelector('#f2l-total').textContent = '4';
-  document.querySelector('#f2l-case-number').textContent = `CASE ${String(f2lState.caseNumber).padStart(3, '0')}`;
-  document.querySelector('#f2l-cross-label').textContent = planner ? `${COLORS[planner.orientation.D].label.toUpperCase()} BOTTOM` : 'CN';
+  document.querySelector('#f2l-case-number').textContent = `case ${f2lState.caseNumber}`;
+  document.querySelector('#f2l-cross-label').textContent = planner ? `${COLORS[planner.orientation.D].label.toLowerCase()} bottom` : 'CN';
   document.querySelector('#f2l-orientation').textContent = planner
     ? `${COLORS[planner.orientation.D].label} bottom · ${COLORS[planner.orientation.F].label} front`
     : 'Preparing a verified case…';
   document.querySelector('#f2l-timings').textContent = 'U/R/L/D/Uw = 1 · F/B = 5 · rotations = 2';
   const button = document.querySelector('#f2l-continue');
   button.dataset.action = 'new-f2l';
-  button.innerHTML = `New case <kbd>N</kbd>`;
-  button.setAttribute('aria-label', 'New best-pair case');
+  button.innerHTML = `next case <kbd>space</kbd>`;
+  button.setAttribute('aria-label', 'next case');
   if (!planner) {
     status.className = '';
     status.textContent = f2lState.message || 'Searching for verified choices…';
-    choices.innerHTML = '<div class="planner-loading">Finding optimal next-pair plans locally…</div>';
+    choices.innerHTML = '<div class="planner-loading">finding verified next-pair plans…</div>';
     return;
   }
   f2lCube3D?.update(recolorPlannerData(planner.setup.state, planner.orientation));
@@ -1090,10 +1092,10 @@ function renderF2LPlanner() {
   status.textContent = planner.answer == null
     ? `Which pair has the cheapest verified insertion? ${f2lState.plannerShiftD ? 'The D layer starts shifted.' : 'The D layer starts aligned.'}`
     : answerIsBest
-      ? `Correct. ${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} is cheapest at ${formatWeight(planner.choices[planner.answer].weight)}.`
-      : `${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} costs ${formatWeight(planner.choices[planner.answer].weight)}. The best is ${plannerPairLabel(planner.choices[0], planner.orientation)} at ${formatWeight(planner.choices[0].weight)}.`;
+      ? `Nice. ${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} costs ${formatWeight(planner.choices[planner.answer].weight)}.`
+      : `${plannerPairLabel(planner.choices[planner.answer], planner.orientation)} costs ${formatWeight(planner.choices[planner.answer].weight)}. Try ${plannerPairLabel(planner.choices[0], planner.orientation)} at ${formatWeight(planner.choices[0].weight)} next time.`;
   choices.innerHTML = planner.choices.map((choice, index) => {
-    const reveal = planner.answer == null ? '' : `<small>${choice.moves.join(' ')} · weighted ${formatWeight(choice.weight)}${choice.pseudo ? ' · D restores the shifted cross/pair' : ''}</small>`;
+    const reveal = planner.answer == null ? '' : `<small>${fmt.moves(choice.moves.join(' '))} · weighted ${formatWeight(choice.weight)}${choice.pseudo ? ' · D fix restores the cross and pair' : ''}</small>`;
     const stateClass = planner.answer == null ? '' : choice.weight === planner.choices[0].weight ? 'best' : index === planner.answer ? 'picked-wrong' : '';
     return `<button class="planner-choice ${stateClass}" data-planner-choice="${index}" ${planner.answer == null ? '' : 'disabled'}><strong>${plannerPairLabel(choice, planner.orientation)}</strong><span>${choice.slot} slot</span>${reveal}</button>`;
   }).join('');
@@ -1131,7 +1133,7 @@ async function newF2LPlannerCase() {
     return;
   }
   if (generation !== f2lState.plannerGeneration) return;
-  f2lState.message = 'No sufficiently varied verified case was found. Try New cube.';
+  f2lState.message = 'No verified case found. Select next case to try again.';
   renderF2LPlanner();
 }
 
@@ -1144,7 +1146,7 @@ function stopF2LScan() {
 function updateF2LScanClock() {
   if (!f2lState.scanRunning || f2lState.drill !== 'scan' || activeTool !== 'f2l') return;
   const remaining = Math.max(0, f2lState.scanEndsAt - performance.now());
-  document.querySelector('#f2l-timings').textContent = `${(remaining / 1000).toFixed(1)}s left · ${f2lState.scanScore} pairs · ${f2lState.scanMisses} misses`;
+  document.querySelector('#f2l-timings').textContent = `${(remaining / 1000).toFixed(1)} s · ${f2lState.scanScore} pairs · ${f2lState.scanMisses} miss`;
   if (remaining <= 0) {
     stopF2LScan();
     f2lState.locked = true;
@@ -1208,9 +1210,9 @@ function renderF2L() {
   view.dataset.preference = 'neutral';
   view.dataset.bottomColor = current.bottomColor;
   view.dataset.caseSource = current.source;
-  document.querySelector('#f2l-orientation').textContent = `${bottom.label} bottom · ${front.label} front${current.dShift ? ` · ${current.dShift} offset` : ''}`;
-  document.querySelector('#f2l-cross-label').textContent = current.dShift ? `${current.dShift} OFFSET` : `${bottom.label.toUpperCase()} BOTTOM`;
-  document.querySelector('#f2l-case-number').textContent = `CASE ${String(f2lState.caseNumber).padStart(3, '0')}`;
+  document.querySelector('#f2l-orientation').textContent = `${bottom.label.toLowerCase()} bottom · ${front.label.toLowerCase()} front${current.dShift ? ` · ${current.dShift} offset` : ''}`;
+  document.querySelector('#f2l-cross-label').textContent = current.dShift ? `${current.dShift} offset` : `${bottom.label.toLowerCase()} bottom`;
+  document.querySelector('#f2l-case-number').textContent = `case ${f2lState.caseNumber}`;
   document.querySelector('.f2l-score > span').textContent = f2lState.drill === 'scan' ? (f2lState.scanPseudo ? 'Pseudo pairs this round' : 'Pairs this round') : 'Deducible pairs';
   document.querySelector('#f2l-found').textContent = f2lState.drill === 'scan' ? f2lState.scanScore : f2lState.matchedPairIds.length;
   document.querySelector('#f2l-total').textContent = f2lState.drill === 'scan' ? '∞' : current.targetPairIds.length;
@@ -1231,9 +1233,9 @@ function renderF2L() {
   if (continueButton) {
     const waitingScan = f2lState.drill === 'scan' && !f2lState.scanRunning;
     continueButton.dataset.action = waitingScan ? 'start-scan' : 'new-f2l';
-    continueButton.innerHTML = `${waitingScan ? `Start ${f2lState.scanDuration}s` : f2lState.correction ? 'Continue' : 'New case'} <kbd>${waitingScan ? 'S' : 'N'}</kbd>`;
+    continueButton.innerHTML = `${waitingScan ? `start ${f2lState.scanDuration} s` : f2lState.correction ? 'next case' : 'skip'} <kbd>${waitingScan ? 'space' : 's'}</kbd>`;
     continueButton.classList.toggle('correction-button', Boolean(f2lState.correction));
-    continueButton.setAttribute('aria-label', waitingScan ? `Start ${f2lState.scanDuration}-second scan` : f2lState.correction ? 'Continue to the next F2L case' : 'Skip F2L case');
+    continueButton.setAttribute('aria-label', waitingScan ? `start ${f2lState.scanDuration} s scan` : f2lState.correction ? 'next case' : 'skip');
   }
 }
 
@@ -1276,7 +1278,7 @@ function newF2LCase() {
     message: f2lState.drill === 'scan'
       ? (f2lState.scanRunning
         ? (f2lState.scanPseudo ? `Tap a corner, then the edge of its ${generated.dShift}-shifted slot.` : 'Tap a visible corner, then its matching edge. Keep finding pairs.')
-        : `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its ${f2lState.scanPseudo ? 'D-shift pseudo partner' : 'matching edge'}.`)
+        : `Tap start ${f2lState.scanDuration} s scan above the cube, then tap a corner and its ${f2lState.scanPseudo ? 'D offset pair' : 'matching edge'}.`)
       : 'Select a corner or edge to begin.',
     startedAt: 0,
     firstSelectedAt: 0,
@@ -1325,7 +1327,7 @@ function handleF2LPiece({ piece }) {
   if (sameTruePair && !correct && !pseudoScan) {
     f2lState.selected = null;
     f2lState.firstSelectedAt = 0;
-    f2lState.message = 'Those pieces match. This case is outside the trainer’s deduction targets; unscored.';
+    f2lState.message = 'Those match, but they are outside this case’s pairs. This one won’t count.';
     renderF2L();
     return;
   }
@@ -1375,7 +1377,7 @@ function handleF2LPiece({ piece }) {
         f2lState.feedback = null;
         f2lState.firstSelectedAt = 0;
         f2lState.locked = false;
-        f2lState.message = 'Correct. Find another deducible pair.';
+        f2lState.message = 'Nice. Find another pair.';
         renderF2L();
         f2lState.startedAt = performance.now();
       }
@@ -1396,34 +1398,34 @@ function updateHelp() {
   if (activeTool === 'corner' && state.mode === 'recall') {
     document.querySelector('#help-title').textContent = 'One glance. Three answers.';
     document.querySelector('#help-copy').textContent = 'Remember the missing colors at left, top right, and bottom right. The cube is shown only once per sequence.';
-    document.querySelector('#help-steps').innerHTML = '<li>Inspect all three corners during the selected glance. Answers unlock when the cube is hidden.</li><li>Type or click the three missing colors in order, without waiting. No feedback appears until all three are entered.</li><li>Inspect the result, then press Next cube or N. An interrupted sequence is discarded. Adaptive pacing counts all three correct as one successful outcome; very short flashes are limited by your display refresh.</li>';
+    document.querySelector('#help-steps').innerHTML = '<li>Look at all three corners during the glance. Answers unlock when the cube is hidden.</li><li>Type or tap the three missing colors in order. Feedback appears after all three answers.</li><li>Check the result, then press space or enter for next case. A paused sequence won’t count. Adaptive glance counts three correct answers as one.</li>';
     return;
   }
   if (activeTool === 'scout') {
     document.querySelector('#help-title').textContent = 'Inspect your possibilities.';
-    document.querySelector('#help-copy').textContent = 'Cross Scout compares cross and extended-cross plans for the colors you select. Recognition labels are explanatory heuristics, not a guarantee that a plan will feel easy.';
-    document.querySelector('#help-steps').innerHTML = '<li>Paste a scramble, or connect a smart cube. For live tracking, start with a solved cube and sync it; each physical turn then updates the preview. Disconnect to edit the scramble manually.</li><li>Select allowed cross colors, or CN for all six, then Analyze. Choose a plan to put its cross on the bottom; the suggested front explains which cross and plan pieces it exposes.</li><li>Step through the plan on screen or on your cube. Physical turns that follow the selected plan advance its step; a different turn switches back to the current live cube. The displayed move letters follow the selected bottom/front view.</li>';
+    document.querySelector('#help-copy').textContent = 'Cross Scout compares cross, x-cross, and xx-cross plans for the colors you select. Cue labels help you spot useful patterns.';
+    document.querySelector('#help-steps').innerHTML = '<li>Paste a scramble or connect a smart cube. For live tracking, start with a solved cube and sync it. Disconnect to edit the scramble.</li><li>Select cross colors or color neutral (CN) for all six, then find plans. Choose a plan to put its cross on the bottom.</li><li>Step through the plan on screen or on your cube. Moves that follow the plan advance it. A different move returns to the live cube.</li>';
     return;
   }
   if (activeTool === 'pll') {
     document.querySelector('#help-title').textContent = 'See the pattern, then name it.';
     document.querySelector('#help-copy').textContent = 'Recognize all 21 PLL cases from the two adjacent sides available in a normal solve view—without rotating the cube.';
-    document.querySelector('#help-steps').innerHTML = '<li>Start with a small PLL family in Learn, then interleave it with other families in Mix.</li><li>Answer before the cue appears. After an error, the case returns only after intervening cases.</li><li>Adaptive glance shortens only after high accuracy. Use Transfer to test new AUFs, and treat 24-hour returns separately from same-session practice.</li>';
+    document.querySelector('#help-steps').innerHTML = '<li>Start with a small PLL family in learn, then mix it with other families.</li><li>Answer before the cue appears. A missed case returns after other cases.</li><li>Adaptive glance shortens after high accuracy. Use random AUF to test new AUFs. Cases due after 24 h return separately.</li>';
     return;
   }
   const f2l = activeTool === 'f2l';
   const f2lHelp = f2lState.drill === 'scan'
-    ? ['Scan before you solve.', 'Identify as many corner–edge partners as possible before the clock expires.', '<li>Choose a round length and tap Start scan above the cube.</li><li>Enable Pseudo pairs to offset the D layer. In that mode, match each corner to the edge of its shifted D slot, then restore D later.</li><li>Drag only left and right; the back and bottom remain hidden.</li><li>Tap a corner and its partner. Finished cubes advance automatically while the same clock keeps running.</li>']
+    ? ['scan before you solve', 'Find as many corner–edge pairs as you can before time runs out.', '<li>Choose a round length and tap start scan above the cube.</li><li>Enable pseudo pairs to use a D offset. Match each corner to the edge in its offset slot, then make a D fix.</li><li>Drag left or right. The back and bottom stay hidden.</li><li>Tap a corner and its pair. Finished cubes advance automatically.</li>']
     : f2lState.drill === 'planner'
-      ? ['Choose the efficient pair.', 'Compare verified next-pair plans with a strong penalty for F and B turns.', '<li>Enable Shift D layer to practice an offset bottom layer and pseudo-slotting routes.</li><li>U, R, L, D, and wide U count one each; F and B cost five each.</li><li>After answering, inspect every verified algorithm. Existing solved pairs are preserved.</li>']
-      : ['Inspect, deduce, match.', 'Find every corner–edge pair that can be identified from the allowed inspection arc.', '<li>Drag only left and right; the camera cannot reveal the back or bottom.</li><li>Select a corner or edge, then select its matching piece. Other pieces also accept clicks.</li><li>After a mistake, inspect the green outlines. Press N or Continue when ready.</li>'];
+      ? ['choose the efficient pair', 'Compare verified next-pair algs with a strong penalty for F and B moves.', '<li>Enable D offset to use pseudo pairs.</li><li>U, R, L, D, and wide U count one move each; F and B cost five.</li><li>After answering, check every verified alg. Existing pairs stay solved.</li>']
+      : ['inspect, deduce, match', 'Find every corner–edge pair visible from the allowed inspection arc.', '<li>Drag left or right. The back and bottom stay hidden.</li><li>Select a corner or edge, then its matching piece. Other pieces also accept taps.</li><li>After a miss, check the green outlines. Press space or enter for next case.</li>'];
   document.querySelector('#help-title').textContent = f2l ? f2lHelp[0] : 'Recognize, don’t calculate.';
   document.querySelector('#help-copy').textContent = f2l
     ? f2lHelp[1]
     : 'Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.';
   document.querySelector('#help-steps').innerHTML = f2l
     ? f2lHelp[2]
-    : '<li>The cube stays locked during each case, but new cases vary slightly left, right, up, and down. Hidden faces never enter view.</li><li>Use the centers and edges to ground the cube orientation, then click a color or type W, Y, G, B, R, or O.</li><li>Correct answers advance as soon as the next view is ready; mistakes pause so you can inspect the revealed color.</li><li>In Three corners, answer the highlighted targets from left to right; all three share one stable angle.</li>';
+    : '<li>The cube stays still during each case, but new cases vary slightly left, right, up, and down. Hidden faces stay hidden.</li><li>Use centers and edges to read the cube, then tap or press W, Y, G, B, R, or O.</li><li>Correct answers advance when the next view is ready. After a miss, check the revealed color.</li><li>In three corners, answer the highlighted targets from left to right.</li>';
 }
 
 // Hash routes work on static hosts too, without a server-side SPA rewrite.
@@ -1480,12 +1482,12 @@ function setTool(tool, initial = false) {
     state.locked = true;
     f2lState.locked = true;
     if (!brainLoad) {
-      document.querySelector('#brain-view').textContent = 'Loading Brain…';
+      document.querySelector('#brain-view').textContent = 'loading solve…';
       brainLoad = import('./brain.js').then(({ createBrain }) => {
         brain = createBrain(document.querySelector('#brain-view'));
         brain.setActive(activeTool === 'brain');
       }).catch((error) => {
-        document.querySelector('#brain-view').textContent = `Brain could not load: ${error.message}`;
+        document.querySelector('#brain-view').textContent = MSG.loadFailed('solve');
         brainLoad = null;
       });
     } else brain?.setActive(true);
@@ -1622,6 +1624,17 @@ function mountPage(tool) {
     }
     return;
   }
+  if (tool === 'progress') {
+    if (progressPage) { progressPage.setActive(true); return; }
+    if (!progressPageLoad) {
+      progressPageLoad = import('./progress/index.js').then(({ createProgressPage }) => {
+        progressPage = createProgressPage(root);
+        progressPage.setActive(activeTool === 'progress');
+        return progressPage.ready;
+      }).catch(error => { progressPageLoad = null; failed(error); });
+    }
+    return;
+  }
   const held = tool === 'algs' ? algsPage : progressPage;
   if (held) { held.setActive(true); return; }
   import('./pages/placeholder.js').then(({ createPlaceholderPage }) => {
@@ -1661,10 +1674,10 @@ function pausePractice(reason = 'interrupted') {
   stopF2LScan();
   f2lState.plannerGeneration += 1;
   f2lState.locked = true;
-  document.querySelector('#pause-overlay h2').textContent = reason === 'timeout' ? 'Taking a break?' : 'Practice paused';
+  document.querySelector('#pause-overlay h2').textContent = 'Taking a break?';
   document.querySelector('#pause-overlay p:not(.eyebrow)').textContent = reason === 'timeout'
-    ? '10 seconds elapsed. This trial was not recorded—your times, accuracy, and adaptive pace are unchanged. Resume with a fresh case when you’re ready.'
-    : 'Your interrupted trial will not be scored.';
+    ? '10 s elapsed. This one won’t count. Resume for a fresh case.'
+    : MSG.unscored;
   placePausePrompt();
   document.querySelector('#pause-overlay').hidden = false;
 }
@@ -1721,7 +1734,7 @@ document.addEventListener('click', (event) => {
   if (action === 'start-scan' && activeTool === 'f2l') startF2LScan();
   if (action === 'reset-view') cube3D?.resetView();
   if (action === 'check-update') return checkForUpdate();
-  if (action === 'clear' && confirm('Clear all Cubesight training history?')) {
+  if (action === 'clear' && confirm('Clear all drill history?')) {
     stats = initialStats(); learning = loadLearning(null); saveLearningState(); saveStats(); updateStatsUI(); startCase();
   }
   if (action === 'open-help') { pausePractice(); updateHelp(); document.querySelector('#help-dialog').showModal(); }
@@ -1757,7 +1770,7 @@ document.querySelector('#exposure-select').addEventListener('change', (event) =>
 document.querySelector('#f2l-scan-duration').addEventListener('change', (event) => {
   f2lState.scanDuration = [15, 30, 45].includes(Number(event.target.value)) ? Number(event.target.value) : 30;
   try { localStorage.setItem('cubesight-f2l-scan-seconds', String(f2lState.scanDuration)); } catch { /* Keep it in memory. */ }
-  if (!f2lState.scanRunning) f2lState.message = `Tap Start ${f2lState.scanDuration}s scan above the cube, then tap a corner and its ${f2lState.scanPseudo ? 'D-shift pseudo partner' : 'matching edge'}.`;
+  if (!f2lState.scanRunning) f2lState.message = `Tap start ${f2lState.scanDuration} s scan above the cube, then tap a corner and its ${f2lState.scanPseudo ? 'D offset pair' : 'matching edge'}.`;
   renderF2L();
 });
 document.querySelector('#f2l-scan-pseudo').addEventListener('change', (event) => {
@@ -1780,15 +1793,16 @@ document.addEventListener('keydown', (event) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
   if (scope === 'f2l') {
-    if (f2lState.drill === 'scan' && !f2lState.scanRunning && event.key.toLowerCase() === 's') return startF2LScan();
-    if (event.key.toLowerCase() === 'n') newF2LCase();
+    if (f2lState.drill === 'scan' && !f2lState.scanRunning && (event.key === ' ' || event.key === 'Enter')) return startF2LScan();
+    if ((event.key === ' ' || event.key === 'Enter') && f2lState.correction) newF2LCase();
+    else if (event.key.toLowerCase() === KEYS.case.s) newF2LCase();
     return;
   }
-  if (state.mode === 'recall' && state.locked && !document.querySelector('[data-action="next-recall"]').hidden && event.key.toLowerCase() === 'n') return startCase();
+  if (state.mode === 'recall' && state.locked && !document.querySelector('[data-action="next-recall"]').hidden && [KEYS.global.space, 'enter'].includes(event.key === ' ' ? KEYS.global.space : event.key.toLowerCase())) return startCase();
   const colorKey = Object.keys(COLORS).find((color) => color[0] === event.key.toLowerCase());
   if (colorKey && state.answerChoices.includes(colorKey)) return answer(colorKey);
   if (/^[1-6]$/.test(event.key)) answer(state.answerChoices[Number(event.key) - 1]);
-  if (event.key.toLowerCase() === 's') answer(null, true);
+  if (event.key.toLowerCase() === KEYS.case.s) answer(null, true);
 });
 
 try {
@@ -1800,7 +1814,7 @@ try {
   f2lCube3D = createCube3D(document.querySelector('#f2l-cube'), { mode: 'f2l', onPieceClick: handleF2LPiece });
 } catch (error) {
   console.warn('WebGL F2L cube unavailable.', error);
-  document.querySelector('#f2l-cube').textContent = 'The F2L trainer needs WebGL. Enable hardware acceleration or try another browser.';
+  document.querySelector('#f2l-cube').textContent = 'F2L drills need WebGL. Enable hardware acceleration or try another browser.';
 }
 updateStatsUI();
 updateSprintUI();

@@ -23,26 +23,26 @@ const DEV = Boolean(import.meta.env?.DEV);
 
 const TEMPLATE = `
   <header class="b-top">
-    <nav class="b-tabs" aria-label="Brain views">
-      <button class="b-tab b-tab-brain" type="button" data-tab="brain" aria-current="page">brain</button>
+    <nav class="b-tabs" aria-label="solve views">
+      <button class="b-tab b-tab-brain" type="button" data-tab="brain" aria-current="page">solve</button>
       <details class="brain-pill-setup b-settings">
         <summary class="b-tab"><span>settings</span></summary>
-        <div class="b-settings-body" role="region" aria-label="Settings">
-          <div class="b-panel-head"><h2>settings</h2><button class="b-textbtn b-close" type="button" data-action="toggleSettings" aria-label="Close settings"><span>close</span><kbd>esc</kbd></button></div>
+        <div class="b-settings-body" role="region" aria-label="settings">
+          <div class="b-panel-head"><h2>settings</h2><button class="b-textbtn b-close" type="button" data-action="toggleSettings" aria-label="close settings"><span>close</span><kbd>tab</kbd></button></div>
           <nav class="b-configbar b-configbar-copy" aria-label="Quick settings"></nav>
-          <p class="b-settings-caption">quick settings above · everything else lives here · defaults follow wca regulations</p>
+          <p class="b-settings-caption">quick settings above · defaults follow WCA rules</p>
           <div class="b-settings-sections"></div>
           <section class="b-settings-section b-quick" aria-label="Quick toggles">
             <h3><span>quick</span></h3>
-            <label class="b-check"><input type="checkbox" id="brain-pseudo"><span>pseudo f2l · d-shift</span></label>
+            <label class="b-check"><input type="checkbox" id="brain-pseudo"><span>pseudo pairs · D offset</span></label>
             <label class="b-check"><input type="checkbox" id="brain-inspection" checked><span>inspection countdown</span></label>
             <details class="brain-advanced-scramble">
               <summary><span>use a specific scramble</span></summary>
               <div class="brain-scramble-wrap" id="brain-guided-wrap">
                 <textarea id="brain-scramble" rows="2" spellcheck="false" autocomplete="off" placeholder="paste a scramble, or generate one…"></textarea>
                 <div class="brain-scramble-actions">
-                  <button class="b-btn" id="brain-generate" type="button">new wca scramble</button>
-                  <button class="b-btn" id="brain-start-custom" type="button">start with this scramble</button>
+                  <button class="b-btn" id="brain-generate" type="button">new scramble</button>
+                  <button class="b-btn" id="brain-start-custom" type="button">start</button>
                 </div>
               </div>
             </details>
@@ -60,13 +60,13 @@ const TEMPLATE = `
       </button>
       <button class="b-textbtn b-connect" id="brain-connect" type="button" hidden>connect</button>
       <div class="b-device-menu" id="b-device-menu" hidden>
-        <strong id="brain-device">No cube connected</strong>
-        <p id="brain-status" role="status" aria-live="polite">Connect a smart cube to start.</p>
+        <strong id="brain-device">No cube</strong>
+        <p id="brain-status" role="status" aria-live="polite">No cube. Connect to start.</p>
         <div class="brain-controls">
           <button class="b-btn" id="brain-sync" type="button" hidden>sync solved</button>
           <button class="b-btn" id="brain-recenter" type="button" hidden>recenter</button>
           <button class="b-btn" id="brain-disconnect" type="button" hidden>disconnect</button>
-          <button class="b-btn" id="brain-clear-cube" type="button" hidden>clear saved</button>
+          <button class="b-btn" id="brain-clear-cube" type="button" hidden>forget this cube</button>
         </div>
       </div>
     </div>
@@ -104,29 +104,29 @@ const TEMPLATE = `
         <p class="b-idle-status" aria-live="polite"></p>
         <div class="b-progress" aria-hidden="true"><i></i></div>
         <div class="b-primary">
-          <button class="b-start" id="brain-start" type="button"><span>start scramble</span><kbd>space</kbd></button>
+          <button class="b-start" id="brain-start" type="button"><span>start</span><kbd>space</kbd></button>
           <button class="b-start b-start-alt" type="button" data-primary="connect" hidden><span>connect cube</span></button>
-          <button class="b-textbtn" id="brain-stop" type="button" hidden>cancel</button>
+          <button class="b-textbtn" id="brain-stop" type="button" hidden>stop</button>
         </div>
         <dl class="b-stats"></dl>
       </div>
     </div>
     <section class="brain-review b-slot-results" id="brain-review" hidden aria-live="polite">
       <div class="b-slot b-results-host" data-slot="results"></div>
-      <div class="b-results-actions"><button class="b-textbtn" id="brain-review-close" type="button">continue</button></div>
+      <div class="b-results-actions"><button class="b-textbtn" id="brain-review-close" type="button">next</button></div>
     </section>
   </main>
   <div class="b-foot">
     <div class="b-keys"></div>
     <p id="brain-error" class="brain-error" role="alert" hidden></p>
-    <div class="b-sr" aria-live="polite"><h2 id="brain-phase-label">Connect and start a solve</h2><p id="brain-phase-detail" class="brain-phase-detail"></p></div>
+    <div class="b-sr" aria-live="polite"><h2 id="brain-phase-label">connect cube</h2><p id="brain-phase-detail" class="brain-phase-detail"></p></div>
     <div class="b-foot-tools">
       <button class="b-textbtn" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">rebuild view</button>
-      <button class="b-textbtn" id="brain-debug-toggle" type="button" aria-expanded="false" aria-controls="brain-debug" title="Connection log, recordings, coach switches and your data"><span>debug</span><kbd>\`</kbd></button>
+      <button class="b-textbtn" id="brain-debug-toggle" type="button" aria-expanded="false" aria-controls="brain-debug" title="Connection log and settings"><span>dev</span><kbd>\`</kbd></button>
     </div>
   </div>
-  <aside class="b-debug" id="brain-debug" role="dialog" aria-label="Debug" hidden>
-    <div class="b-panel-head"><h2>debug</h2><button class="b-textbtn b-close" type="button" data-action="toggleDebug" aria-label="Close debug"><span>close</span><kbd>esc</kbd></button></div>
+  <aside class="b-debug" id="brain-debug" role="dialog" aria-label="dev" hidden>
+    <div class="b-panel-head"><h2>dev</h2><button class="b-textbtn b-close" type="button" data-action="toggleDebug" aria-label="close dev"><span>close</span><kbd>esc</kbd></button></div>
     <p class="b-label brain-studio-link"><a href="#/dev/studio" data-testid="open-studio">open studio</a> · raw cube events, gyro and scramble rehearsal</p>
     <section class="brain-diagnostics b-debug-section" aria-label="Connection diagnostics">
       <h3><span>connection</span></h3>
@@ -135,15 +135,15 @@ const TEMPLATE = `
     </section>
     <section class="brain-recording b-debug-section" aria-label="Recordings">
       <h3><span>recordings</span></h3>
-      <p class="b-label">everything the cube and you sent is recorded continuously; save it to reproduce a problem</p>
-      <div class="brain-log-actions brain-recording-actions"><button class="b-btn" id="brain-save-recording" type="button" title="Everything the cube and you sent is recorded continuously. Save it to reproduce a problem.">save recording</button><button class="b-btn" id="brain-clear-recording" type="button">start fresh recording</button><button class="b-btn" id="brain-load-recording" type="button" title="Replay a saved recording into this view">load recording…</button><select id="brain-replay-speed" aria-label="Replay speed"><option value="1">1×</option><option value="4">4×</option><option value="0">instant</option></select><button class="b-btn" id="brain-replay-stop" type="button" hidden>stop replay</button><input type="file" id="brain-load-recording-file" accept="application/json,.json" hidden></div>
+      <p class="b-label">save a recording to share a cube issue with the dev team</p>
+      <div class="brain-log-actions brain-recording-actions"><button class="b-btn" id="brain-save-recording" type="button" title="export recording">export recording</button><button class="b-btn" id="brain-clear-recording" type="button">start fresh recording</button><button class="b-btn" id="brain-load-recording" type="button" title="import recording">import recording…</button><select id="brain-replay-speed" aria-label="replay speed"><option value="1">1×</option><option value="4">4×</option><option value="0">instant</option></select><button class="b-btn" id="brain-replay-stop" type="button" hidden>stop replay</button><input type="file" id="brain-load-recording-file" accept="application/json,.json" hidden></div>
       <p id="brain-recording-status" role="status" aria-live="polite"></p>
     </section>
     <section class="brain-coach-settings b-debug-section" aria-label="Coach and data">
       <h3><span>coach &amp; data</span></h3>
       <p class="b-label">choose which insights appear</p>
       <div id="brain-toggles" class="brain-toggles"></div>
-      <div class="brain-data-port"><span>your data stays on this device.</span><button class="b-btn" id="brain-export" type="button">export data</button><button class="b-btn" id="brain-import" type="button">import data</button><input type="file" id="brain-import-file" accept="application/json,.json" hidden><p id="brain-port-status" role="status" aria-live="polite"></p></div>
+      <div class="brain-data-port"><span>Everything stays on this device.</span><button class="b-btn" id="brain-export" type="button">export data</button><button class="b-btn" id="brain-import" type="button">import data</button><input type="file" id="brain-import-file" accept="application/json,.json" hidden><p id="brain-port-status" role="status" aria-live="polite"></p></div>
     </section>
   </aside>`;
 

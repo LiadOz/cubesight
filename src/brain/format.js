@@ -1,36 +1,28 @@
 // Number and result formatting for the Brain. Pure; shared by the view-model,
 // the fixtures and the tests so every screen formats times the same way.
 
-import { PLUS_TWO_MS } from '../solve-metrics.js';
+import { fmt } from '../copy/terms.js';
 
 /** 14.07, 1:02.34; '—' for no time, 'DNF' for a DNF (Infinity). */
 export function fmtTime(ms, digits = 2) {
   if (ms == null || Number.isNaN(ms)) return '—';
   if (!Number.isFinite(ms)) return 'DNF';
-  const sign = ms < 0 ? '-' : '';
-  const abs = Math.abs(ms) / 1000;
-  const factor = 10 ** digits;
-  const rounded = Math.floor(abs * factor + 1e-6) / factor;   // a running clock never shows a time it hasn't reached
-  if (rounded < 60) return `${sign}${rounded.toFixed(digits)}`;
-  const minutes = Math.floor(rounded / 60);
-  const seconds = (rounded - minutes * 60).toFixed(digits).padStart(digits ? digits + 3 : 2, '0');
-  return `${sign}${minutes}:${seconds}`;
+  if (digits !== 2) return `${(Math.max(0, ms) / 1000).toFixed(digits)}`;
+  // The live clock truncates to hundredths so it never displays time ahead of the cube.
+  return fmt.time(Math.floor(ms / 10) * 10);
 }
 
-/** The legacy Brain seconds format ('14.07s'), kept for the compat phase strings. */
+/** A time in prose or a label, with the unit separated by one space. */
 export function fmtSeconds(ms) {
   if (ms == null) return '—';
   if (!Number.isFinite(ms)) return 'DNF';
-  return `${(ms / 1000).toFixed(2)}s`;
+  return fmt.time(ms, { unit: true });
 }
 
 /** Split delta vs a reference: '-0.33' / '+0.04' / '±0.00'. */
 export function fmtDelta(ms) {
   if (ms == null || !Number.isFinite(ms)) return '';
-  const value = Math.abs(ms) / 1000;
-  const text = value.toFixed(2);
-  if (text === '0.00') return '±0.00';
-  return `${ms < 0 ? '-' : '+'}${text}`;
+  return fmt.delta(ms);
 }
 
 /** 'faster' | 'slower' | 'even' for a delta in ms (±20 ms counts as even). */
@@ -53,8 +45,8 @@ export function fmtTps(tps) {
 export function fmtResult(record, style = 'short') {
   if (!record) return '—';
   const raw = record.solveMs;
-  if (record.penalty === 'DNF') return `DNF(${fmtTime(raw)})`;
-  if (record.penalty === '+2') return style === 'long' ? `${fmtTime(raw)} +2` : `${fmtTime(raw + PLUS_TWO_MS)}+`;
+  if (record.penalty === 'DNF') return fmt.penalty(record);
+  if (record.penalty === '+2') return style === 'long' ? `${fmtTime(raw)} +2` : fmt.penalty(record);
   return fmtTime(raw);
 }
 
@@ -63,7 +55,7 @@ export function penaltyTag(record) {
   return record?.penalty === '+2' ? '+2' : record?.penalty === 'DNF' ? 'dnf' : '';
 }
 
-export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+export const plural = (n, word) => fmt.count(n, word);
 
 /** Moves for display: `R U R'` -> `R U R′` (docs/design/VOICE.md 4.4). Storage stays ASCII. */
-export const fmtMoves = text => String(text ?? '').replace(/'/g, '′');
+export const fmtMoves = text => fmt.moves(text);

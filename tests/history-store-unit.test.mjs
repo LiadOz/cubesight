@@ -350,11 +350,11 @@ test('the stats view-model has all-time and per-session blocks; results use the 
   const vm = buildViewModel({ session: tracking, live: { phase: 'done', progress: { f2lDone: true }, record: last }, records: store.records, settings: normalizeSettings(), now: 0 });
   assert.equal(vm.stats.allTime.solves, '11');
   assert.equal(vm.stats.session.solves, '5');
-  assert.equal(vm.stats.session.best, '10.00s');
-  assert.equal(vm.stats.session.worst, '10.40s');
-  assert.equal(vm.stats.session.ao5, '10.20s');
+  assert.equal(vm.stats.session.best, '10.00 s');
+  assert.equal(vm.stats.session.worst, '10.40 s');
+  assert.equal(vm.stats.session.ao5, '10.20 s');
   assert.equal(vm.stats.ao50, '—');
-  assert.equal(vm.stats.pb.ao5, '10.20s');
+  assert.equal(vm.stats.pb.ao5, '10.20 s');
   assert.equal(vm.results.session.count, 5);
   assert.equal(vm.results.session.ao5, '10.20');
   assert.equal(vm.results.session.worst, '10.40');
@@ -414,23 +414,23 @@ test('stats never mix foci: averages, PB, best and worst are per focus; "all" is
   const speed = build('speed').stats;
   assert.equal(speed.focus, 'speed');
   assert.equal(speed.allTime.solves, '5');
-  assert.equal(speed.ao5, '10.20s');
-  assert.equal(speed.allTime.best, '10.00s');
-  assert.equal(speed.allTime.worst, '10.40s', 'the 30 s learning solves are not in speed stats');
-  assert.equal(speed.pb.ao5, '10.20s');
+  assert.equal(speed.ao5, '10.20 s');
+  assert.equal(speed.allTime.best, '10.00 s');
+  assert.equal(speed.allTime.worst, '10.40 s', 'the 30 s learning solves are not in speed stats');
+  assert.equal(speed.pb.ao5, '10.20 s');
   const learning = build('learning').stats;
-  assert.equal(learning.ao5, '30.00s');
-  assert.equal(learning.allTime.best, '30.00s');
+  assert.equal(learning.ao5, '30.00 s');
+  assert.equal(learning.allTime.best, '30.00 s');
   assert.equal(learning.session.solves, '5');
   assert.equal(learning.learning === undefined, true);
   assert.equal(learning.allTime.learning.medianMoves, '72');
   assert.equal(learning.allTime.learning.reviewAccuracy, '—', 'the hook waits for the review');
-  assert.equal(learning.byFocus.speed.allTime.best, '10.00s');
+  assert.equal(learning.byFocus.speed.allTime.best, '10.00 s');
   assert.equal(learning.byFocus.flow.allTime.solves, '0');
   assert.equal(learning.mixed.mixed, true);
   assert.equal(learning.mixed.solves, '10');
-  assert.equal(learning.mixed.worst, '30.00s');
-  assert.equal(speed.mixed.best, '10.00s');
+  assert.equal(learning.mixed.worst, '30.00 s');
+  assert.equal(speed.mixed.best, '10.00 s');
 });
 
 test('comparisons on the results screen stay within the solve\'s focus', async () => {
@@ -445,7 +445,7 @@ test('comparisons on the results screen stay within the solve\'s focus', async (
   const vm = buildViewModel({ session: tracking, live: { phase: 'done', progress: { f2lDone: true }, record: last }, records: store.records, settings: normalizeSettings(), now: 0 });
   assert.equal(vm.results.session.ao12, '10.00');
   assert.equal(vm.results.session.count, 13);
-  assert.equal(vm.results.vsAo12.text, '±0.00', 'vs avg compares with speed solves only');
+  assert.equal(vm.results.vsAo12.text, '0.00', 'vs avg compares with speed solves only');
   assert.equal(vm.results.recent.length, 7);
   assert.ok(vm.results.recent.every(r => r.text === '10.00'));
 });
