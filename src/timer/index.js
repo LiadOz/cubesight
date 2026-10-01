@@ -420,6 +420,12 @@ export function createTimer(root, {
 
   // --- input --------------------------------------------------------------------------------
   const editable_ = target => target instanceof Element && (target.closest('input, textarea, select, [contenteditable="true"]') != null);
+  const eventTime = event => {
+    const stamp = Number(event.timeStamp);
+    if (!Number.isFinite(stamp) || stamp < 0) return now();
+    if (stamp <= 1e12) return stamp;
+    return Number.isFinite(performance.timeOrigin) ? stamp - performance.timeOrigin : now();
+  };
 
   function onKeyDown(event) {
     if (!active || refreshingHistory || event.ctrlKey || event.metaKey || event.altKey || editable_(event.target)
@@ -432,14 +438,14 @@ export function createTimer(root, {
     }
     if (snap.phase === 'running') {   // any key stops
       event.preventDefault();
-      if (!event.repeat) { machine.down(); if (key !== ' ') machine.up(); }
+      if (!event.repeat) { machine.down(eventTime(event)); if (key !== ' ') machine.up(eventTime(event)); }
       return;
     }
     if (key === ' ') {
       if (snap.phase === 'done') { event.preventDefault(); if (!event.repeat) newScramble(); return; }
       if (snap.phase === 'idle' && scrambleState !== 'ready') return;
       event.preventDefault();
-      if (!event.repeat && !keyHeld) { keyHeld = true; machine.down(); }
+      if (!event.repeat && !keyHeld) { keyHeld = true; machine.down(eventTime(event)); }
       return;
     }
     if (event.repeat || snap.hold || snap.phase === 'inspecting') return;
@@ -457,7 +463,7 @@ export function createTimer(root, {
     const key = event.key === 'Spacebar' ? ' ' : event.key;
     if (key !== ' ') return;
     event.preventDefault();
-    if (keyHeld) { keyHeld = false; machine.up(); }
+    if (keyHeld) { keyHeld = false; machine.up(eventTime(event)); }
   }
   function onBlur() { keyHeld = false; machine.abortHold(); }
 
@@ -470,12 +476,12 @@ export function createTimer(root, {
     event.preventDefault();
     activePointer = event.pointerId;
     try { root.setPointerCapture(event.pointerId); } catch { /* synthetic pointers */ }
-    machine.down();
+    machine.down(eventTime(event));
   }
   function onPointerUp(event) {
     if (event.pointerId !== activePointer) return;
     activePointer = null;
-    if (event.type === 'pointercancel') machine.abortHold(); else machine.up();
+    if (event.type === 'pointercancel') machine.abortHold(); else machine.up(eventTime(event));
   }
   const stop = event => event.preventDefault();
   function onVisibility() { if (document.hidden) { keyHeld = false; machine.abortHold(); } else if (machine.snapshot().phase === 'running' || machine.snapshot().phase === 'inspecting') wake(true); }

@@ -239,7 +239,7 @@ test.describe('phone', () => {
     await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.locator('button[data-action="hold"]').click();
-    await expect(page.locator('button[data-action="hold"]')).toHaveText('hold 550');
+    await expect(page.locator('button[data-action="hold"]')).toHaveText('hold 550 ms');
     const finger = await touch(page);
 
     // A quick tap does not start.

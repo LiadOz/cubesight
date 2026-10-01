@@ -49,6 +49,27 @@ test('hold to start is configurable: 0, 300, 550', () => {
   assert.equal(normalizeHoldMs('550'), 550);
 });
 
+test('input event timestamps keep a delayed release from extending a short hold', () => {
+  const quickTap = rig({ holdMs: 550 });
+  quickTap.machine.down(1000);
+  quickTap.advance(800); // the event loop is busy before the release handler runs
+  quickTap.machine.up(1080); // the actual input edges were only 80 ms apart
+  assert.equal(quickTap.machine.snapshot().phase, 'idle');
+
+  const held = rig({ holdMs: 550 });
+  held.machine.down(1000);
+  held.advance(800);
+  held.machine.up(1600); // the physical hold lasted 600 ms, despite late delivery
+  assert.equal(held.machine.snapshot().phase, 'inspecting');
+
+  const delayedStop = rig({ holdMs: 0, inspection: insp({ mode: 'off' }) });
+  delayedStop.machine.down(1000);
+  delayedStop.machine.up(1000);
+  delayedStop.advance(900);
+  delayedStop.machine.down(1200); // the stop event was delivered 700 ms late
+  assert.equal(delayedStop.finished[0].solveMs, 200);
+});
+
 test('inspection then solve: hold and release starts the clock, any down stops it', () => {
   const r = rig();
   press(r, 300);                      // start inspection

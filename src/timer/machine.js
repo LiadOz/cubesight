@@ -50,19 +50,19 @@ export function createTimerMachine({ now = () => performance.now(), inspection =
   }
 
   // Time-driven transition: autostart starts the solve clock by itself at the limit.
-  function tick() {
+  function tick(at = now()) {
     if (phase === 'inspecting' && config.overtime === 'autostart') {
       const limit = inspectionLimitMs(config);
-      if (limit != null && now() - inspectStartAt >= limit) { startRunning(inspectStartAt + limit, limit, null); change(); }
+      if (limit != null && at - inspectStartAt >= limit) { startRunning(inspectStartAt + limit, limit, null); change(); }
     }
   }
 
   const machine = {
     /** Key or finger went down. */
-    down() {
-      tick();
+    down(at = now()) {
+      tick(at);
       if (phase === 'running') {
-        const elapsed = now() - startAt;
+        const elapsed = at - startAt;
         phase = 'done';
         swallowUp = true;
         result = { solveMs: truncateMs(elapsed), penalty, inspectionMs, inspectionMode: config.mode };
@@ -71,15 +71,14 @@ export function createTimerMachine({ now = () => performance.now(), inspection =
         return;
       }
       if (swallowUp || holding) return;
-      holding = { since: now() };
+      holding = { since: at };
       change();
     },
     /** Key or finger came up. */
-    up() {
-      tick();
+    up(at = now()) {
+      tick(at);
       if (swallowUp) { swallowUp = false; return; }
       if (!holding) return;
-      const at = now();
       const ready = at - holding.since >= hold;
       holding = null;
       if (ready) {
@@ -100,7 +99,7 @@ export function createTimerMachine({ now = () => performance.now(), inspection =
     /** The key or finger vanished (window blur, pointercancel): drop the hold, change nothing else. */
     abortHold() { if (holding) { holding = null; change(); } },
     /** Advance time-driven state; call often (every frame) while not idle. */
-    tick() { tick(); },
+    tick(at = now()) { tick(at); },
     /** Forget a finished attempt (a new scramble was asked for). */
     reset() { if (phase === 'done') { phase = 'idle'; result = null; change(); } },
     setInspection(next) { config = { ...next }; change(); },
