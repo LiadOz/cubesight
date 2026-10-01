@@ -1,6 +1,6 @@
 .sequence-player { display: grid; gap: 12px; min-width: 0; }
 .sequence-progress { max-width: 240px; width: 100%; margin-inline: auto; }
-.has-sequence-ring > canvas { position: relative; z-index: 1; }
+.has-sequence-ring > canvas { position: relative; z-index: 1; transform: scale(.68); transform-origin: center; }
 .has-sequence-ring > .sequence-progress {
   z-index: 0;
   position: absolute;

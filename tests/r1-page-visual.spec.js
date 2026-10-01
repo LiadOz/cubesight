@@ -26,11 +26,21 @@ for (const style of ['orbit', 'mono']) for (const theme of ['dark', 'light']) fo
       ['lookahead', '/drills/lookahead?cases=17', '#lookahead-view'],
     ]) {
       await page.goto(`/#${route}`);
+      if (name === 'lookahead') {
+        // Capture the answered state before screenshot assertions consume the three-second window.
+        await page.waitForFunction(() => {
+          const answer = document.querySelector('.lookahead-choice');
+          if (!answer || answer.disabled) return false;
+          answer.click();
+          return true;
+        });
+      }
       const root = page.locator(selector);
       await expect(root).toBeVisible();
       const styledPage = ['pll', 'timer'].includes(name) ? root : root.locator('.cs-page');
       await expect(styledPage).toHaveAttribute('data-brain-style', style);
       await expect(root.locator('canvas')).toHaveCount(1);
+      if (name === 'timer') await expect.poll(async () => Number(await root.locator('.tm-preview-tools').getAttribute('data-sequence-index'))).toBeGreaterThan(0);
       if (name === 'algs') {
         await root.locator('[data-sequence-speed]').selectOption('4');
         await root.locator('[data-sequence="play"]').click();
@@ -48,8 +58,6 @@ for (const style of ['orbit', 'mono']) for (const theme of ['dark', 'light']) fo
         await expect(root.locator('#cp-playback')).toHaveAttribute('data-sequence-playing', 'false', { timeout: 15000 });
       }
       if (name === 'lookahead') {
-        await expect(root.locator('.lookahead-choice').first()).toBeEnabled({ timeout: 20000 });
-        await root.locator('.lookahead-choice').first().click();
         await expect(root.locator('#la-playback')).toBeVisible();
         await expect(root.locator('#la-playback')).toHaveAttribute('data-sequence-playing', 'false', { timeout: 15000 });
       }

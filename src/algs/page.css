@@ -71,8 +71,8 @@
   .alg-case-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .alg-case-card { min-height: 100px; padding: 11px; }
   .alg-case-card__name { font-size: 13px; }
-  .alg-cube-card { grid-template-columns: minmax(105px, 38%) 1fr; gap: 10px; padding: 10px; }
-  .alg-cube { min-height: 140px; }
+  .alg-cube-card { grid-template-columns: 1fr; gap: 10px; padding: 14px; }
+  .alg-cube { width: min(100%, 280px); min-height: 220px; justify-self: center; }
   .alg-cube-actions { align-items: stretch; flex-direction: column; }
   .alg-metric-stats { grid-template-columns: repeat(2, 1fr); }
 }
