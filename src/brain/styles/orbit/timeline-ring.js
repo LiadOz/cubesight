@@ -16,7 +16,9 @@ const TICK = 14;
 
 /** @type {import('../../types.js').ComponentFactory} */
 export function createRingTimeline(host, ctx = {}) {
+  const sequenceMode = ctx.mode === 'sequence';
   const root = svg('svg', { class: 'b-oring', viewBox: VIEWBOX, 'aria-hidden': 'true', focusable: 'false', preserveAspectRatio: 'xMidYMid meet' });
+  toggleClass(root, 'is-sequence', sequenceMode);
   const floor = buildFloor();
   const arcsLayer = svg('g', { class: 'b-oring-arcs' });
   const labelsLayer = svg('g', { class: 'b-oring-labels' });
@@ -133,6 +135,26 @@ export function createRingTimeline(host, ctx = {}) {
   // first one's label; the others hide (see end-labels.js). Runs after the segments are painted.
   function placeAllLabels(timeline) {
     const font = labelFontUnits();
+    if (sequenceMode) {
+      const anchors = [];
+      for (const seg of timeline.segments) {
+        const part = parts.get(seg.key);
+        if (!part) continue;
+        const name = seg.label || seg.short || '';
+        setText(part.name, name);
+        setText(part.valueText, '');
+        setText(part.delta, '');
+        anchors.push({ key: seg.key, angle: (part.layout.a0 + part.layout.a1) / 2, height: font * 1.3 });
+      }
+      const placed = placeLabels(anchors, { cx: CX, cy: CY, r: R, offset: 14 + font, minGap: font * 1.35, top: font * 1.4, bottom: VB_H - font * 1.2 });
+      for (const p of placed) {
+        const part = parts.get(p.key);
+        part.label.setAttribute('x', p.x); part.label.setAttribute('y', p.y); part.label.setAttribute('text-anchor', p.anchor);
+        part.name.setAttribute('x', p.x);
+      }
+      lastFont = font;
+      return;
+    }
     const groups = groupEndLabels(timeline.segments, ringName);
     const anchors = [];
     for (const group of groups) {
@@ -164,8 +186,11 @@ export function createRingTimeline(host, ctx = {}) {
     toggleClass(part.label, 'is-skipped', state === 'skipped');
     toggleClass(part.label, 'is-future', state === 'future');
     const pseudoTag = seg.tags?.includes('pseudo') ? ' · pseudo' : '';
-    setText(part.name, state === 'skipped' ? `${ringName(seg)} skip` : seg.xcross ? seg.xcross : `${ringName(seg)}${pseudoTag}`);
-    if (state === 'future') {
+    setText(part.name, sequenceMode ? (seg.label || seg.short || '') : state === 'skipped' ? `${ringName(seg)} skip` : seg.xcross ? seg.xcross : `${ringName(seg)}${pseudoTag}`);
+    if (sequenceMode) {
+      setText(part.valueText, '');
+      setText(part.delta, '');
+    } else if (state === 'future') {
       setText(part.valueText, `~${secs(seg.avgMs)}`);
       setText(part.delta, '');
     } else if (state === 'skipped') {
@@ -249,7 +274,7 @@ export function createRingTimeline(host, ctx = {}) {
       renderAside(timeline);
     },
     frame(f) {
-      if (!current || !f) return;
+      if (sequenceMode || !current || !f) return;
       setLive(current.part, f.currentFill);
       if (f.currentSplitText) {
         setText(current.part.valueText, f.currentSplitText);

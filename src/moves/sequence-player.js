@@ -40,12 +40,12 @@ export function createSequencePlayer(host, options = {}) {
       cube3d?.host?.classList.toggle('has-sequence-ring', style === 'orbit');
       if (style === 'orbit' && cube3d?.host) cube3d.host.append(progressHost);
       else host.prepend(progressHost);
-      timeline = style === 'mono' ? createLinearTimeline(progressHost) : createRingTimeline(progressHost);
+      timeline = style === 'mono' ? createLinearTimeline(progressHost, { mode: 'sequence' }) : createRingTimeline(progressHost, { mode: 'sequence' });
     }
     const chunks = Math.min(4, moves.length);
     const segments = Array.from({ length: chunks }, (_, i) => {
       const from = Math.floor(i * moves.length / chunks), to = Math.floor((i + 1) * moves.length / chunks);
-      return { key: `moves-${i}`, label: `${from + 1}–${to}`, short: `${from + 1}–${to}`, weight: (to - from) / moves.length,
+      return { key: `moves-${i}`, label: `group ${i + 1}`, short: `group ${i + 1}`, weight: (to - from) / moves.length,
         state: index >= to ? 'done' : index >= from ? 'current' : 'future', fill: Math.max(0, Math.min(1, (index - from) / (to - from))),
         tags: [], splitText: '', splitMs: null, avgMs: 0, delta: null };
     });

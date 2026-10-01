@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { mkdir } from 'node:fs/promises';
 
 test('curated OLL case page shows verified sources, setup repaint, picked alg and no-cube drill', async ({ page }) => {
   await page.goto('/#/algs/oll');
@@ -96,9 +97,10 @@ test('all standard F2L cases, back-slot variants and staged two-look routes are 
   await expect(page.locator('.alg-detail__head')).toContainText('All four last-layer edges oriented');
 });
 
-test('algorithm case screens render across Orbit/Mono and light/dark at mobile width', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  for (const style of ['orbit', 'mono']) for (const theme of ['light', 'dark']) {
+test('algorithm case screens render across Orbit/Mono and light/dark at desktop and mobile widths', async ({ page }) => {
+  await mkdir('test-results/review-next-2-player', { recursive: true });
+  for (const width of [1280, 390]) for (const style of ['orbit', 'mono']) for (const theme of ['light', 'dark']) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
     await page.goto('/');
     await page.evaluate(([style, theme]) => {
       localStorage.setItem('cubesight-theme', theme);
@@ -111,9 +113,16 @@ test('algorithm case screens render across Orbit/Mono and light/dark at mobile w
     await expect(page.locator('#algs-view .alg-page')).toHaveAttribute('data-brain-style', style);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await expect(page.locator('.alg-cube-card')).toBeVisible();
+    await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
+    const cubeWidth = await page.locator('[data-alg-cube] canvas').evaluate(node => node.getBoundingClientRect().width);
+    expect(cubeWidth).toBeGreaterThanOrEqual(width === 390 ? 190 : 240);
+    const playbackText = await page.locator('.alg-cube-card .sequence-progress').textContent();
+    expect(playbackText).toContain('group');
+    expect(playbackText).not.toMatch(/[−-]0\.00/);
+    expect(playbackText).not.toMatch(/\d+–\d+\s*[−-]/);
     await expect(page.locator('.alg-entry-grid .alg-entry')).toHaveCount(2);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-    await page.screenshot({ path: `/tmp/cubesight-algs-${style}-${theme}-390.png`, fullPage: true });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await page.screenshot({ path: `test-results/review-next-2-player/algs-case-${style}-${theme}-${width}.png`, fullPage: true });
   }
 });
 

@@ -10,12 +10,22 @@
 }
 .has-sequence-ring > .sequence-progress .b-oring { height: 100%; }
 .sequence-progress .b-oring { width: 100%; position: static; animation: none; }
+.sequence-progress .b-oring.is-sequence .b-oring-value,
+.sequence-progress .b-oring.is-sequence .b-oring-delta { display: none; }
 .sequence-progress .b-oring-dot-halo { animation: none; }
 .sequence-progress .b-oring * { animation: none; }
 .has-sequence-ring .sequence-progress .b-oring .b-oring-track,
 .has-sequence-ring .sequence-progress .b-oring .b-oring-done,
 .has-sequence-ring .sequence-progress .b-oring .b-oring-connect-sweep { animation: none; }
 .sequence-progress .m-tl { min-height: 0; }
+.sequence-progress .m-tl-sequence .m-tl-list,
+.sequence-progress .m-tl-sequence .m-tl-foot,
+.sequence-progress .m-tl-sequence .m-tl-review-hint,
+.sequence-progress .m-tl-sequence .m-col-head,
+.sequence-progress .m-tl-sequence .m-seg-tags,
+.sequence-progress .m-tl-sequence .m-seg-split,
+.sequence-progress .m-tl-sequence .m-seg-delta { display: none; }
+.sequence-progress .m-tl-sequence .m-seg-label { margin: 0 0 5px; }
 .sequence-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .sequence-controls button, .sequence-controls select {
   min-height: 44px;

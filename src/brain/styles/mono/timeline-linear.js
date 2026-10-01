@@ -37,7 +37,9 @@ function buildRow(seg) {
 
 /** @type {import('../../types.js').ComponentFactory} */
 export function createLinearTimeline(host, ctx = {}) {
+  const sequenceMode = ctx.mode === 'sequence';
   const root = el('div', 'm-tl');
+  if (sequenceMode) root.classList.add('m-tl-sequence');
   const insp = el('p', 'm-tl-insp');
   const cols = el('div', 'm-tl-cols');
   const list = el('ol', 'm-tl-list');
