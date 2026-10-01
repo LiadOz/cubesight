@@ -41,7 +41,7 @@ test('device view: actions, gyro and unsupported browsers', () => {
   assert.equal(d.phase, 'tracking');
   assert.equal(d.gyro, true);
   assert.deepEqual(d.actions, { connect: false, sync: true, recenter: true, disconnect: true, clearSaved: false, reconnect: false, resume: false });
-  assert.match(d.detail, /Recenter motion/);
+  assert.match(d.detail, /tap recenter/);
   const off = deviceFor({ phase: 'disconnected', detail: 'x' }, false);
   assert.equal(off.actions.connect, true, 'connect stays offered; trying it explains what is missing');
   assert.equal(off.supported, false);
@@ -219,7 +219,7 @@ test('coach lines port the v1 texts and keys', () => {
   ]);
   assert.deepEqual(lines.slice(-2).map(l => l.key), ['rotations', 'efficiency']);
   assert.equal(lines[1].tone, 'warn');
-  assert.equal(coachLines({ live: { phase: 'applying' }, toggles }, lenses)[0].tone, 'info');
+  assert.equal(coachLines({ live: { phase: 'applying' }, toggles }, lenses)[0].text, 'Follow the scramble. A wrong turn shows the way back.');
   assert.deepEqual(coachLines({ live: { phase: 'idle' }, toggles }, lenses), [{ key: 'empty', tone: 'muted', text: 'Coach insights appear here as you solve.' }]);
   assert.deepEqual(coachLines({ live, state: {}, toggles, coach: 'off' }, lenses).map(l => l.key), ['off']);
   assert.equal(coachLines({ live, state: {}, toggles, coach: 'after' }, lenses)[0].key, 'empty', 'after-solve coach stays quiet while solving');
@@ -252,7 +252,7 @@ test('connecting: the device status is the latest step; a failure keeps its reas
   const connecting = { phase: 'connecting', detail: 'Select your cube…' };
   assert.deepEqual([deviceFor(connecting, false).detail, deviceFor(connecting, false).busy], ['Select your cube…', true], 'even without Web Bluetooth: the attach is under way');
   assert.equal(deviceFor(connecting, true, 'MAC provider called (attempt 1).').detail, 'MAC provider called (attempt 1).');
-  assert.equal(deviceFor({ phase: 'awaiting-solved', detail: 'Connected. Checking whether the cube is solved…' }, true).busy, true);
+  assert.equal(deviceFor({ phase: 'awaiting-solved', detail: 'connected · checking whether the cube is solved…' }, true).busy, true);
   const failed = deviceFor({ phase: 'disconnected', detail: 'Connection failed: GATT server busy' }, false);
   assert.deepEqual([failed.failed, failed.busy, failed.detail, failed.actions.connect], [true, false, 'Connection failed: GATT server busy', true]);
   assert.equal(deviceFor({ phase: 'disconnected', detail: 'Cube disconnected. The last mirrored position is kept.' }, true).failed, false);

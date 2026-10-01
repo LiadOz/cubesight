@@ -309,7 +309,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
       complete: () => onEvent({ type: 'DISCONNECT' }),
     });
     publish({
-      phase: 'awaiting-solved', detail: resume ? 'Reconnected. Checking the cube…' : 'Connected. Checking whether the cube is solved…',
+      phase: 'awaiting-solved', detail: resume ? 'reconnected · checking the cube…' : 'connected · checking whether the cube is solved…',
       deviceName: connected.deviceName || 'Smart cube',
       protocol: connected.protocol?.name || '', battery: null, facelets: null, gyro: null,
       link: { status: 'up' }, sync: { status: 'unchecked', gaps: 0, checkedAt: null },

@@ -96,7 +96,7 @@ export function deviceFor(session, supported = true, connectStep = '', live = nu
   const failed = s.phase === 'disconnected' && /^(Connection failed|No cube selected)/.test(s.detail ?? '');
   const detail = connecting ? (connectStep || s.detail || 'Select your cube…')
     : failed ? s.detail
-      : supported || connected ? `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap Recenter motion to align.' : ''}`
+      : supported || connected ? `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap recenter to align.' : ''}`
         : 'Web Bluetooth needs Chrome or Edge on Android/desktop over HTTPS.';
   return {
     phase,

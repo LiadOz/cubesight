@@ -24,7 +24,7 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
   const showLive = coach === 'live' || (coach === 'after' && snap?.phase === 'done');
   if (coach === 'off') return [{ key: 'off', tone: 'muted', text: 'Coach is off.' }];
   if (snap?.phase === 'applying') {
-    lines.push({ tone: 'info', text: 'Follow the scramble. A wrong move shows the way back.' });
+    lines.push({ tone: 'info', text: 'Follow the scramble. A wrong turn shows the way back.' });
   } else if ((snap?.phase === 'solving' || snap?.phase === 'done') && crossFace && state && showLive) {
     if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross.startsWith('xx') ? 'xx-cross' : 'x-cross'}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'}. The scramble allowed it and you took it.` });
     if (toggles.crossSuggest && optimalCross) {

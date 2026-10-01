@@ -63,7 +63,7 @@ const TEMPLATE = `
         <strong id="brain-device">No cube</strong>
         <p id="brain-status" role="status" aria-live="polite">No cube. Connect to start.</p>
         <div class="brain-controls">
-          <button class="b-btn" id="brain-sync" type="button" hidden>sync solved</button>
+          <button class="b-btn" id="brain-sync" type="button" hidden>sync</button>
           <button class="b-btn" id="brain-recenter" type="button" hidden>recenter</button>
           <button class="b-btn" id="brain-disconnect" type="button" hidden>disconnect</button>
           <button class="b-btn" id="brain-clear-cube" type="button" hidden>forget this cube</button>
@@ -560,7 +560,7 @@ export function createShell(root, { dispatch }) {
       ? (vm.device.actions.resume ? { action: 'resume', label: 'resume solve' }
         : vm.device.actions.reconnect ? { action: 'reconnect', label: 'reconnect cube' }
           : { action: 'connect', label: busy ? 'connecting…' : vm.device.failed ? 'retry connection' : 'connect cube' })
-      : screen === 'desynced' ? { action: 'sync', label: 'sync solved cube' } : null;
+      : screen === 'desynced' ? { action: 'sync', label: 'sync' } : null;
     parts.primaryAlt.hidden = !alt;
     if (alt) {
       parts.primaryAlt.dataset.primary = alt.action;

@@ -53,7 +53,7 @@ export function compareFor({ row, marker = null, record, pending = false }) {
     generators: option.generators, ergonomicScore: option.ergonomicScore, source: option.source, proven: option.proven, goalShift: option.goalShift,
   }));
   if (pair && !pair.unsupported) {
-    const frameNote = `${pair.frame ? ` · starts in D-offset frame ${pair.frame}` : ''}${pair.better?.goalShift ? ' · D-offset finish' : ''}`;
+    const frameNote = `${pair.frame ? ` · starts in D offset frame ${pair.frame}` : ''}${pair.better?.goalShift ? ' · D offset finish' : ''}`;
     if (pair.better) {
       const better = words(pair.better.moves);
       const comparison = better.length < yours.length ? `yours ${yours.length} · better ${better.length}` : `same length · easier turns`;

@@ -137,7 +137,7 @@ export function createReviewPanel(host, { dispatch }) {
     setText($('.b-rev-alg-better code'), cmp.betterText);
     const options = (cmp.options ?? []).slice(0, 8).map((option, index) => {
       const li = el('li');
-      const label = `${option.slots?.length > 1 ? option.slots.join('+') : option.slots?.[0] ?? 'pair'} · ${option.stm} moves${option.goalShift ? ' · D-offset finish' : ''}${option.source === 'recorded-fallback' ? ' · recorded' : ''}`;
+      const label = `${option.slots?.length > 1 ? option.slots.join('+') : option.slots?.[0] ?? 'pair'} · ${option.stm} moves${option.goalShift ? ' · D offset finish' : ''}${option.source === 'recorded-fallback' ? ' · recorded' : ''}`;
       const pick = button('b-rev-option', label, { option: index });
       pick.append(el('code', null, option.moves.join(' ')));
       li.append(pick);

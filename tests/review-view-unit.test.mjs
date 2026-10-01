@@ -79,6 +79,11 @@ test('detail view: stage stats, yours vs better, honest "no suggestion yet", and
   assert.equal(compareFor({ row: { key: 'cross', from: 0, to: 8 }, record, pending: true }).status, 'pending');
   const bounded = { ...record, analysis: { ...record.analysis, cross: { ...record.analysis.cross, extra: 0, proven: false } } };
   assert.match(compareFor({ row: { key: 'cross', from: 0, to: 8 }, record: bounded }).text, /no shorter completion found in this search/);
+  const framed = compareFor({
+    row: { key: 'pair1', from: 0, to: 1 },
+    record: { solveMoves: ['U'], analysis: { pairs: [{ n: 1, frame: 2, better: { moves: 'R U', goalShift: 1 }, options: [] }] } },
+  });
+  assert.equal(framed.text, 'same length · easier turns · starts in D offset frame 2 · D offset finish');
   assert.equal(buildDetail({ kind: 'stage', key: 'zzz', record, markers, rows, plan: PLAN }), null);
   assert.deepEqual(positionedRows(rows, PLAN).map(r => [r.key, r.from, r.to]), [['cross', 0, 8], ['pair3', 8, 8]]);
 });
