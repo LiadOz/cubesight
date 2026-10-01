@@ -324,3 +324,5 @@
 .b-oring-markers .b-mk.is-small .b-mk-dot { stroke-width: 2; }
 .b-oring-markers .b-mk:focus { outline: none; }
 .b-oring-markers .b-mk:focus-visible .b-mk-dot { stroke: var(--b-ink); }
+.b-ores-full-review { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 7px 12px; border: 1px solid var(--b-accent); border-radius: var(--b-radius-control); color: var(--b-accent-text); font: 12px var(--b-font-mono); text-decoration: none; }
+.b-ores-full-review[hidden] { display: none; }

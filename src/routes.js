@@ -16,6 +16,7 @@ export const TOOL_PATHS = Object.freeze({
   progress: '/progress',
   history: '/history',
   timer: '/timer',
+  review: '/review',
   smart: '/dev/studio',
 });
 
@@ -39,6 +40,13 @@ const KEY_SCOPES = Object.freeze({ corner: 'corner', f2l: 'f2l' });
 export const keyScope = tool => KEY_SCOPES[tool] ?? null;
 
 const PATH_TOOLS = Object.fromEntries(Object.entries(TOOL_PATHS).map(([tool, path]) => [path, tool]));
+// Feature-owned route families retain their full path/query as they evolve.
+// Keep this list declarative so adding an alg page/drill does not alter the
+// base hash parser or collapse the selected case back to its section root.
+const DYNAMIC_ROUTES = [
+  { tool: 'review', match: path => path === '/review/import' || /^\/review\/\d+(?:\/retry)?$/.test(path) },
+  { tool: 'algs', match: path => /^\/algs\/(?:pll|oll|f2l)\/[a-z0-9-]+(?:\/drill)?$/i.test(path) },
+];
 
 /** '#/drills/pll?cases=Aa' -> { path: '/drills/pll', query: '?cases=Aa' } (trailing slash dropped). */
 export function parseHash(hash = '') {
@@ -66,8 +74,10 @@ export function chooseHome({ isPhone = false, cubeConnected = false } = {}) {
 export function resolveRoute(hash, context = {}) {
   const { path, query } = parseHash(hash);
   let tool = PATH_TOOLS[path];
+  if (!tool) tool = DYNAMIC_ROUTES.find(route => route.match(path))?.tool;
   if (!tool && Object.hasOwn(REDIRECTS, path)) tool = PATH_TOOLS[REDIRECTS[path]];
   // Home and unknown hashes resolve by context; a stray query is kept.
   if (!tool) tool = PATH_TOOLS[chooseHome(context)];
-  return { tool, hash: `#${TOOL_PATHS[tool]}${query}` };
+  const keepDynamicPath = DYNAMIC_ROUTES.some(route => route.tool === tool && route.match(path));
+  return { tool, hash: `#${keepDynamicPath ? path : TOOL_PATHS[tool]}${query}` };
 }

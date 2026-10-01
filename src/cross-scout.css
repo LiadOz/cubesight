@@ -1,4 +1,5 @@
 .scout-input { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); margin-bottom: 16px; }
+.scout-review-back { align-self: center; color: var(--accent); font-size: 11px; font-weight: 700; text-decoration: underline dotted; text-underline-offset: 4px; }
 .scout-input label, .scout-label { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 700; color: var(--muted); }
 .scout-scramble-row { display: flex; gap: 10px; align-items: stretch; }
 .scout-scramble-row textarea { flex: 1; min-width: 0; resize: vertical; min-height: 64px; max-height: 180px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--paper); font: 13px/1.7 var(--mono); }

@@ -12,10 +12,11 @@
 // move. eo and co may complete in either order. "cp" is corners permuted up to
 // a U turn after OLL, "ep" is the solved cube.
 
-import { applyMoves, createSolvedState, parseScramble, sameCubeState } from '../cross-cube.js';
+import { applyMoves, createSolvedState, sameCubeState } from '../cross-cube.js';
 import { crossFrame, solvedPairs, eoSolved, coSolved, cpSolved } from '../solve-tracker.js';
 import { FACE_TO_D, inferCrossFace, relabelMoves, toMoveList } from './normalize.js';
 import { captureLastLayer } from './last-layer.js';
+import { applyAnalysisMoves, parseAnalysisMoves } from './long-replay.js';
 
 export const STAGES = Object.freeze(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
 export const STAGE_GROUP = Object.freeze({
@@ -86,7 +87,7 @@ function pauseBoundary(previousStage, stage) {
 }
 
 export function segmentSolve({ scramble, moves, moveTimes, orient, crossFace: forcedFace } = {}) {
-  const scrambleMoves = parseScramble(typeof scramble === 'string' ? scramble : (scramble || []).join(' '));
+  const scrambleMoves = parseAnalysisMoves(scramble);
   const original = toMoveList(moves);
   const warnings = [];
   let times = null;
@@ -121,7 +122,7 @@ export function segmentSolve({ scramble, moves, moveTimes, orient, crossFace: fo
   let initial = null;
   // Probe every position first: the cross rule below looks one move ahead.
   const probes = [];
-  let probeState = applyMoves(SOLVED, normScramble);
+  let probeState = applyAnalysisMoves(SOLVED, normScramble);
   const states = [probeState];
   for (let s = 0; s <= n; s++) {
     if (s > 0) { probeState = applyMoves(probeState, [norm[s - 1]]); states.push(probeState); }

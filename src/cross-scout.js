@@ -25,6 +25,11 @@ const practiceSummary = value => value ? `${(value / 1000).toFixed(1)} s` : '—
 export function createCrossScout(root, cubeSession = smartCube) {
   let allowed=['U'];
   try { const saved=JSON.parse(localStorage.getItem('cubesight-scout-colors')); if(Array.isArray(saved) && saved.length && saved.every(f=>Object.hasOwn(FACE_COLORS,f))) allowed=[...new Set(saved)]; } catch { /* Use white initially. */ }
+  const routeQuery = new URLSearchParams((globalThis.location?.hash ?? '').split('?')[1] ?? '');
+  const reviewFrom = /^review:(\d+):(\d+)$/.exec(routeQuery.get('from') ?? '');
+  const linkedScramble = routeQuery.get('scramble')?.replaceAll('_', ' ').replaceAll('-', "'").replace(/[′’]/g, "'").trim() ?? '';
+  const linkedFace = routeQuery.get('face');
+  if (reviewFrom && linkedFace && Object.hasOwn(FACE_COLORS, linkedFace)) allowed = [linkedFace];
   let source=stateFromScramble(''), results=[], selected=null, step=0, states=[], active=true, playing=false, playbackGeneration=0;
   let controller=null, requestGeneration=0, currentScramble='', busy=false;
   let highlightsOn=false;
@@ -59,6 +64,13 @@ export function createCrossScout(root, cubeSession = smartCube) {
     </section>
     <section class="scout-results"><div class="scout-results-head"><h2>Plans found</h2><select id="scout-sort" aria-label="Sort plans"><option value="cue">Recognizable cues first</option><option value="moves">Fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose your colors and analyze to find candidate plans.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). Random scrambles here are random-move practice scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search powered by the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, running locally in WebAssembly. Smart-cube moves stay on your device; the server only serves the app. Bluetooth requires a compatible cube, HTTPS, and a Web Bluetooth browser.</p></section>`;
   const $=selector=>root.querySelector(selector);
+  if (reviewFrom) {
+    const back = document.createElement('a');
+    back.className = 'scout-review-back';
+    back.href = `#/review/${reviewFrom[1]}?move=${reviewFrom[2]}`;
+    back.textContent = `← review · solve · move ${Number(reviewFrom[2]) + 1}`;
+    $('.intro-row').append(back);
+  }
   const turnGuide=createSmartCubeTurnGuide($('#scout-turn-guide'),{
     onPrevious:()=>{scrambleGuideIndex=Math.max(0,scrambleGuideIndex-1);renderTurnGuide();},
     onNext:()=>{scrambleGuideIndex++;renderTurnGuide();},
@@ -368,7 +380,14 @@ export function createCrossScout(root, cubeSession = smartCube) {
     cube.update(planData(states[step]));
     if(resume)play();
   });
-  renderColors();$('#scout-scramble').value=randomScramble();loadScramble();
+  renderColors();
+  try {
+    $('#scout-scramble').value = linkedScramble ? parseScramble(linkedScramble).join(' ') : randomScramble();
+    loadScramble();
+  } catch {
+    $('#scout-scramble').value = randomScramble(); loadScramble();
+    if (reviewFrom) message('This review link has no usable scramble. Paste a scramble to start a Cross Scout search.');
+  }
   cubeSession.subscribe(onSmartCube);
   return {setActive(value){active=value;if(!value){stopPlayback();if(selected)cube.update(planData(states[step]));if(busy){cancelSearch();message('Search stopped while away. Existing results are kept.');}}}};
 }

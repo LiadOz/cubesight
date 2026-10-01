@@ -120,6 +120,18 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // cubing.js starts a module worker from its WCA random-state
+          // scrambler. Keep package modules in a browser-safe chunk so the
+          // worker entry does not import the app entry.
+          if (id.includes('/node_modules/cubing/dist/lib/cubing/')) return 'cubing-core';
+        },
+      },
+    },
+  },
   server: { hmr: false, host: true, allowedHost: true, watch: { ignored: [/[\\/]\.claude[\\/]/, /[\\/]test-results[\\/]/] } },
   // Only crawl the app's own entry for dependency pre-bundling; agent worktrees
   // under .claude/ contain their own index.html and build output.

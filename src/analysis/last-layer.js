@@ -2,8 +2,9 @@
 // The IDs are stable generic IDs (OLL pattern 01..57); this intentionally avoids
 // inventing the conventional 1..57 names where no source-to-pattern mapping is
 // present in the repository.
+import { analysisStateFromScramble } from './long-replay.js';
 import { stateOf } from './cube-model.js';
-import { canonicalizeForRecognition, FACE_COLORS, stateFromScramble } from '../cross-cube.js';
+import { canonicalizeForRecognition, FACE_COLORS } from '../cross-cube.js';
 import { identifyPllCaseDetails } from '../pll-logic.js';
 
 const rotate = pattern => [pattern[3], pattern[0], pattern[1], pattern[2], pattern[7], pattern[4], pattern[5], pattern[6]];
@@ -104,7 +105,7 @@ export function captureLastLayer(segmentation) {
   }
   let pll = null;
   if (ollIdx != null) {
-    const original = stateFromScramble(join(segmentation.scramble, segmentation.moves.slice(0, ollIdx + 1)));
+    const original = analysisStateFromScramble(join(segmentation.scramble, segmentation.moves.slice(0, ollIdx + 1)));
     const state = standardRecognitionIds(canonicalizeForRecognition(original, segmentation.crossFace));
     const detail = identifyPllCaseDetails(state);
     const id = segmentation.marks.solvedIdx === ollIdx ? 'skip' : detail?.case.name ?? null;

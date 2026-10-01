@@ -21,6 +21,7 @@ const TEMPLATE = `
         <div class="b-ores-vs-wrap"><dt>vs ao12</dt><dd class="b-ores-vs"></dd></div>
       </dl>
       <p class="b-ores-method"></p>
+      <a class="b-ores-full-review" hidden>Review solve <span aria-hidden="true">→</span></a>
     </div>
     <div class="b-ores-chart">
       <p class="b-ores-chart-head"><span class="b-ores-eyebrow">turns per second</span><span class="b-ores-legend"><i aria-hidden="true"></i><span class="b-ores-avg-label"></span></span></p>
@@ -82,6 +83,9 @@ export function createOrbitResults(host, ctx = {}) {
       setText($('.b-ores-vs'), r.vsAo12?.text ?? '—');
       $('.b-ores-vs').className = `b-ores-vs is-${r.vsAo12?.tone || 'none'}`;
       setText($('.b-ores-method'), r.method);
+      const fullReview = $('.b-ores-full-review');
+      fullReview.hidden = !Array.isArray(r.record?.solveMoves) || !r.record.solveMoves.length;
+      fullReview.href = `#/review/${encodeURIComponent(r.record?.at ?? '')}`;
       const avg = r.tpsSeries?.avgFlat;
       setText($('.b-ores-avg-label'), avg != null ? `your avg ${avg.toFixed(2)}` : '');
       tps.update(r.tpsSeries, { drawIn: fresh, markers: r.review.markers });

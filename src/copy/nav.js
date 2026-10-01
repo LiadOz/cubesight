@@ -20,6 +20,7 @@ export const NAV_FOR_TOOL = Object.freeze({
   progress: 'progress',
   history: null,
   timer: null,
+  review: 'solve',
   smart: null,
 });
 
@@ -27,5 +28,5 @@ export const NAV_FOR_TOOL = Object.freeze({
 export const PAGE_TITLES = Object.freeze({
   brain: 'solve', drills: 'drills', algs: 'algs', progress: 'progress', history: 'history', timer: 'timer',
   corner: 'corner recognition', f2l: 'F2L deduction', pll: 'PLL recognition', scout: 'Cross Scout',
-  smart: 'studio',
+  smart: 'studio', review: 'solve review',
 });

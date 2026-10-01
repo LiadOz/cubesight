@@ -6,7 +6,8 @@
 // Behaviour is ported from the v1 src/brain.js; the DOM lives in shell.js.
 
 import { createCube3D } from '../cube-3d.js';
-import { FACE_COLORS, toRenderData, stateFromScramble, applyMoves } from '../cross-cube.js';
+import { FACE_COLORS, toRenderData, applyMoves } from '../cross-cube.js';
+import { stateAfter } from '../review/replay.js';
 import { analysisInputFromRecord } from '../analysis/record.js';
 import { createSolveLive } from '../solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from '../solve-coach.js';
@@ -309,7 +310,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         ...snap.record,
         focus: settings.session.focus,   // a focus change starts a new session (store/sessions.js)
         splits: splitsFromTrack(track, plan),
-        moveTimes: track.moveTimes.slice(-200),
+        moveTimes: [...track.moveTimes],
         config: { method: settings.method, f2l: settings.f2l, oll: settings.oll, pll: settings.pll, inspectionMode: snap.record.inspectionMode ?? settings.inspection.mode },
       };
       const replaying = isReplaying();   // replayed solves stay out of the stored history
@@ -346,7 +347,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   const reviewRecord = () => records.find(r => r.at === currentAt()) ?? live.getSnapshot().record ?? null;
   const replayable = rec => Boolean(rec?.scramble) && Array.isArray(rec.solveMoves) && rec.solveMoves.length === rec.moveCount;
-  const positionState = (rec, n) => stateFromScramble([rec.scramble, ...rec.solveMoves.slice(0, Math.max(0, n))].join(' '));
+  const positionState = (rec, n) => stateAfter(rec, n);
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   /** Show the cube after `n` solve moves (0 = scrambled). The real cube's mirror waits until the review closes. */

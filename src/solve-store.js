@@ -38,9 +38,10 @@ export function cleanRecord(raw) {
     crossColor: typeof r.crossColor === 'string' ? r.crossColor : null,
     solveMs: finite(r.solveMs),
     moveCount: Number.isFinite(r.moveCount) ? Math.max(0, Math.floor(r.moveCount)) : 0,
-    solveMoves: Array.isArray(r.solveMoves) ? r.solveMoves.filter(m => typeof m === 'string').slice(-200) : [],
+    // Keep the complete reconstruction. Review/replay applies long lists in safe chunks.
+    solveMoves: Array.isArray(r.solveMoves) ? r.solveMoves.filter(m => typeof m === 'string') : [],
     tps: finite(r.tps),
-    scrambleTurns: Array.isArray(r.scrambleTurns) ? r.scrambleTurns.filter(m => typeof m === 'string').slice(-200) : [],
+    scrambleTurns: Array.isArray(r.scrambleTurns) ? r.scrambleTurns.filter(m => typeof m === 'string') : [],
     phases: r.phases && typeof r.phases === 'object' ? {
       crossMs: finite(r.phases.crossMs),
       f2lMs: finite(r.phases.f2lMs),
@@ -71,7 +72,7 @@ export function cleanRecord(raw) {
       pseudo: Boolean(s.pseudo),
       ...(s.merged ? { merged: true } : {}),   // built together with the cross (an x-cross pair), not a skip
     })) : null,
-    moveTimes: Array.isArray(r.moveTimes) ? r.moveTimes.filter(Number.isFinite).slice(-200) : null,
+    moveTimes: Array.isArray(r.moveTimes) ? r.moveTimes.filter(Number.isFinite) : null,
     // Solve review (src/analysis): where the cube was turned in the hands, the pseudo D-fix tail, and the
     // compact analysis summary the analysis worker computes once the solve is finished (null until then).
     rotationMarks: cleanRotationMarks(r.rotationMarks),

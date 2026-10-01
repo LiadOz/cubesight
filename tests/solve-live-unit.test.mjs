@@ -77,6 +77,18 @@ test('guided solve records the real move count, moves and TPS (history clears on
   } finally { restore(); }
 });
 
+test('guided setup safely retains and steps through more than 200 replay moves', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    const scramble = Array.from({ length: 225 }, (_, i) => ['R', 'U', "R'", "U'"][i % 4]).join(' ');
+    h.live.startGuided(scramble);
+    assert.equal(h.s().phase, 'applying');
+    assert.equal(h.s().applyTotal, 225);
+    assert.equal(h.s().record, null);
+  } finally { restore(); }
+});
+
 test('live move count and cross move count follow the solve (doubles counted once)', async () => {
   const restore = quiet();
   try {

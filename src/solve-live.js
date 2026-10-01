@@ -16,7 +16,7 @@
 // state and solve-tracker.js for phase analysis — so it can be driven by a fake
 // session in tests.
 
-import { applyMoves, sameCubeState, stateFromScramble, createSolvedState, OPPOSITE_FACE } from './cross-cube.js';
+import { applyMoves, sameCubeState, createSolvedState, OPPOSITE_FACE, parseScramble } from './cross-cube.js';
 import { analyze, extendedCross, solvedPairsPseudo, f2lDonePseudo, crossFrame, currentDShift } from './solve-tracker.js';
 import { createRotationTracker } from './rotation-tracker.js';
 import { followPlanTurn } from './smart-cube-guidance.js';
@@ -230,8 +230,13 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     }
     // Validate everything before touching any state.
     const text = String(scramble ?? '').trim();
-    const target = stateFromScramble(text);   // throws on an invalid scramble
-    const planMoves = text.split(/\s+/).filter(Boolean);
+    const rawMoves = text.replace(/[′’]/g, "'").split(/\s+/).filter(Boolean);
+    if (rawMoves.length > 10_000) throw new Error('A guided setup can contain at most 10,000 moves.');
+    const planMoves = [];
+    for (let at = 0; at < rawMoves.length; at += 200) planMoves.push(...parseScramble(rawMoves.slice(at, at + 200).join(' ')));
+    let target = SOLVED;
+    const states = [SOLVED];
+    for (const move of planMoves) { target = applyMoves(target, [move]); states.push(target); }
     const snap = session.getSnapshot();
     // The plan starts from solved; on a scrambled cube the cues would be wrong.
     if (!isSolved(snap.state)) throw new Error('Solve the cube (or sync) before starting a guided scramble.');
@@ -240,7 +245,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     mode = 'guided';
     scrambleStr = text;
     scrambleMoves = planMoves;
-    planStates = [SOLVED, ...planMoves.map((_, i) => applyMoves(SOLVED, planMoves.slice(0, i + 1)))];
+    planStates = states;
     scrambledState = target;
     applyStep = 0; applyDetour = []; applyBefore = null; scrambleTurns = [];
     syncSeq(snap);
@@ -345,7 +350,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     record = {
       at: Date.now(),
       scramble: scrambleStr || '',
-      scrambleTurns: [...scrambleTurns].slice(-200),
+      scrambleTurns: [...scrambleTurns],
       free: mode === 'free',
       crossFace, crossColor,
       solveMs,                 // official: cube hardware time when available, else host time
@@ -355,7 +360,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       inspectionMs,
       inspectionMode: inspection.mode,
       moveCount: moves.length,
-      solveMoves: moves.slice(-200),
+      solveMoves: moves,
       tps: solveMs != null && solveMs > 0 ? moves.length / (solveMs / 1000) : null,
       phases,
       xcross: phases ? (mark.xcross || (crossFace ? extendedCross(state, crossFace).kind : null)) : null,
