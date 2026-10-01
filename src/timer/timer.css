@@ -53,6 +53,29 @@
 }
 .tm-scramble[data-state="loading"], .tm-scramble[data-state="failed"] { color: var(--b-muted); font-size: 15px; letter-spacing: 0; word-spacing: 0; }
 
+/* One persistent cube and the shared move player. */
+.tm-preview {
+  box-sizing: border-box; overflow: hidden; display: grid; grid-template-columns: 176px minmax(0, 1fr); align-items: center; gap: 14px;
+  width: min(680px, 100%); min-height: 150px; margin: 10px auto 0; padding: 8px 14px;
+  border: 1px solid var(--b-hairline); border-radius: var(--b-radius-panel, 14px); background: var(--b-panel);
+  transition: opacity .18s ease, filter .18s ease;
+}
+.tm-preview-cube { width: 156px; max-width: 100%; justify-self: center; }
+.tm-preview-tools { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
+.tm-preview-tools.sequence-player { gap: 6px; }
+.tm-preview-tools .mg-guide { min-width: 0; max-width: 100%; overflow: hidden; }
+.tm-preview-tools .mg-strip { box-sizing: border-box; max-width: 100%; gap: 4px; padding-block: 2px; }
+.tm-preview-tools .sequence-progress { width: min(180px, 100%); margin-inline: 0; }
+.tm-preview-tools .sequence-controls { gap: 6px; }
+.tm-preview-tools .sequence-controls button, .tm-preview-tools .sequence-controls select {
+  min-height: 40px; padding: 6px 9px; font-size: var(--b-fs-label); cursor: pointer;
+}
+.tm-preview-tools .sequence-controls label { color: var(--b-muted); font-size: var(--b-fs-label); }
+.tm-preview-tools .mg-strip i { min-width: 34px; padding: 6px 8px; font-size: 15px; }
+.tm-preview-tools .mg-strip i.current { min-width: 42px; padding: 7px 10px; font-size: 20px; }
+.tm.is-busy .tm-preview { opacity: .14; filter: saturate(.35); pointer-events: none; }
+.tm[data-phase="running"] .tm-preview { opacity: .08; }
+
 /* The timer area: everything between the scramble and the stats. Touch and hold here. */
 .tm-pad {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
@@ -110,10 +133,19 @@
   .tm-controls kbd { display: none; }
   .tm-opt, .tm-textbtn { min-height: 44px; padding: 8px 16px; font-size: 14px; }
   .tm-source { min-height: 40px; }
-  .tm-pad { min-height: 46vh; }
+  .tm-pad { min-height: 32vh; }
 }
 @media (max-width: 720px) {
   .brain.tm { width: calc(100% - 24px); }
+  .tm-preview { grid-template-columns: 104px minmax(0, 1fr); gap: 8px; min-height: 106px; margin-top: 4px; padding: 4px 6px; }
+  .tm-preview-cube { width: 100px; }
+  .tm-preview-tools.sequence-player { gap: 3px; }
+  .tm-preview-tools .sequence-controls { gap: 4px; }
+  .tm-preview-tools .sequence-controls button, .tm-preview-tools .sequence-controls select { min-height: 44px; padding: 6px; }
+  .tm-preview-tools .sequence-controls kbd { display: none; }
+  .tm-preview-tools .sequence-controls label { gap: 3px; }
+  .tm-preview-tools .mg-strip i { min-width: 32px; font-size: 14px; }
+  .tm-preview-tools .sequence-progress { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tm * { transition: none !important; animation: none !important; }

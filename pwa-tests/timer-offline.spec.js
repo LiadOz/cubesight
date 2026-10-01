@@ -22,6 +22,17 @@ test('manual timer route and history work offline after install', async ({ page,
   const timer = page.locator('.tm');
   await expect(timer).toHaveAttribute('data-phase', 'idle');
   await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('.tm-preview canvas')).toHaveCount(1, { timeout: 30_000 });
+  const preview = page.locator('.tm-preview-tools');
+  await expect(preview.locator('[data-sequence-speed]')).toBeVisible();
+  await expect(page.locator('.tm-preview')).toHaveAttribute('data-index', /\d+/);
+  await preview.locator('[data-sequence="play"]').click();
+  await expect(preview).toHaveAttribute('data-sequence-playing', 'true');
+  await page.waitForTimeout(400);
+  await preview.locator('[data-sequence="play"]').click();
+  await expect(preview).toHaveAttribute('data-sequence-playing', 'false');
+  await expect(timer).toHaveAttribute('data-phase', 'idle');
+  await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.down(' ');
   await page.waitForTimeout(350);
   await page.keyboard.up(' ');
@@ -29,6 +40,7 @@ test('manual timer route and history work offline after install', async ({ page,
   await page.waitForTimeout(350);
   await page.keyboard.press('x');
   await expect(timer).toHaveAttribute('data-phase', 'done');
+  await expect(page.locator('.tm-preview canvas')).toHaveCount(1);
   await expect(page.getByTestId('stats')).toContainText('1 solve');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('.tm')).toBeVisible();

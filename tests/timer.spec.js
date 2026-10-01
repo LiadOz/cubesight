@@ -2,9 +2,12 @@
 // edits, persistence across a reload (IndexedDB) and working offline.
 // TIMER_SHOTS=1 also writes the visual matrix under test-results/timer-screenshots/.
 import { test, expect } from 'playwright/test';
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const PAGE = '/src/timer/_dev.html';
-const SHOTS = process.env.TIMER_SHOTS ? 'test-results/timer-screenshots' : null;
+const SHOTS = process.env.TIMER_SHOTS ? resolve(process.cwd(), 'test-results/timer-screenshots') : null;
+if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const INSPECTION_OFF = { version: 2, inspection: { mode: 'off' } };
 
 async function open(page, query = '', { settings } = {}) {
@@ -60,6 +63,15 @@ test('keyboard: hold space, inspect, hold again to start, any key stops', async 
   await expect(page.getByTestId('stats')).toContainText('1 solve');
   // The scramble moved on to the next one.
   await expect(page.getByTestId('scramble')).not.toHaveText(scramble);
+  await page.keyboard.press('r');
+  await expect(root(page)).toHaveAttribute('data-phase', 'idle');
+  const retryState = await page.evaluate(() => window.timerDev.timer.getPreviewSnapshot());
+  const retryMatches = await page.evaluate(async ({ state, text }) => {
+    const { stateFromScramble, sameCubeState } = await import('/src/cross-cube.js');
+    return sameCubeState(state, stateFromScramble(text));
+  }, { state: retryState.state, text: saved[0].scramble });
+  expect(retryMatches).toBe(true);
+  await expect(page.locator('.tm-preview canvas')).toHaveCount(1);
   await page.keyboard.press('Space');
   await expect(root(page)).toHaveAttribute('data-phase', 'idle');
   await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready');
@@ -133,6 +145,12 @@ test('inspection modes and overtime penalties stay shared and configurable', asy
 test('hold to start is configurable and stats come from the focus history', async ({ page }) => {
   await open(page, 'seed=30');
   await expect(page.getByTestId('stats')).toContainText('30 solves');
+  const statsSource = page.locator('button[data-action="stats-source"]');
+  await expect(statsSource).toHaveText('stats · manual solves');
+  await statsSource.click();
+  await expect(statsSource).toHaveText('stats · all solves');
+  await statsSource.click();
+  await expect(statsSource).toHaveText('stats · manual solves');
   for (const key of ['ao5', 'ao12', 'mo3', 'pb']) await expect(page.locator(`[data-stat="${key}"]`)).toBeVisible();
   await expect(page.locator('[data-stat="ao50"]')).toHaveCount(0);
   await page.getByRole('button', { name: /hold 300/ }).click();
@@ -141,6 +159,40 @@ test('hold to start is configurable and stats come from the focus history', asyn
   await expect(root(page)).toHaveAttribute('data-phase', 'idle');
   await holdSpace(page, 620);
   await expect(root(page)).toHaveAttribute('data-phase', 'inspecting');
+});
+
+test('scramble preview matches the WCA state, keeps one canvas, and owns its keyboard controls', async ({ page }) => {
+  await open(page);
+  const canvas = page.locator('.tm-preview canvas');
+  await expect(canvas).toHaveCount(1);
+  expect(await page.locator('.tm-preview').evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+  const snapshot = await page.evaluate(() => window.timerDev.timer.getPreviewSnapshot());
+  expect(snapshot).toMatchObject({ index: snapshot.moves.length, playing: false });
+  const matches = await page.evaluate(async ({ state, text }) => {
+    const { stateFromScramble, sameCubeState } = await import('/src/cross-cube.js');
+    return sameCubeState(state, stateFromScramble(text.replace(/′/g, "'")));
+  }, { state: snapshot.state, text: await page.getByTestId('scramble').textContent() });
+  expect(matches).toBe(true);
+
+  const player = page.locator('.tm-preview-tools');
+  const play = player.locator('[data-sequence="play"]');
+  await play.focus();
+  await page.keyboard.press('Space');
+  await expect(root(page)).toHaveAttribute('data-phase', 'idle');
+  await expect(root(page)).toHaveAttribute('data-hold', '');
+  await page.waitForTimeout(80);
+  await expect(canvas).toHaveCount(1);
+  await expect(page.locator('.tm-preview-tools')).toHaveAttribute('data-sequence-playing', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.tm-preview-tools')).toHaveAttribute('data-sequence-playing', 'false');
+
+  await page.evaluate(() => document.activeElement?.blur());
+  await holdSpace(page);
+  await expect(root(page)).toHaveAttribute('data-phase', 'inspecting');
+  await expect(canvas).toHaveCount(1);
+  await holdSpace(page);
+  await expect(root(page)).toHaveAttribute('data-phase', 'running');
+  await expect(canvas).toHaveCount(1);
 });
 
 test.describe('works offline', () => {
@@ -174,6 +226,18 @@ test.describe('phone', () => {
 
   test('touch and hold to start, touch anywhere to stop; no accidental start, no scroll', async ({ page }) => {
     await open(page, 'seed=12', { settings: INSPECTION_OFF });
+    const playerPlay = page.locator('.tm-preview-tools [data-sequence="play"]');
+    await playerPlay.tap();
+    await expect(root(page)).toHaveAttribute('data-phase', 'idle');
+    await expect(page.locator('.tm-preview-tools')).toHaveAttribute('data-sequence-playing', 'true');
+    await playerPlay.tap();
+    await expect(page.locator('.tm-preview-tools')).toHaveAttribute('data-sequence-playing', 'false');
+    await page.reload();
+    await page.waitForSelector('html[data-timer-ready]');
+    await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.locator('button[data-action="hold"]').click();
+    await expect(page.locator('button[data-action="hold"]')).toHaveText('hold 550');
     const finger = await touch(page);
 
     // A quick tap does not start.
@@ -187,7 +251,7 @@ test.describe('phone', () => {
     // Hold: ready after 300 ms, release starts the solve.
     await finger.start();
     await expect(root(page)).toHaveAttribute('data-hold', 'ready', { timeout: 1500 });
-    await expect(page.getByRole('button', { name: 'stats manual' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'stats · manual solves' })).toBeHidden();
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/phone-orbit-dark-ready.png` });
     await finger.end();
     await expect(root(page)).toHaveAttribute('data-phase', 'running');
@@ -230,4 +294,16 @@ test.describe('screenshots', () => {
       await page.screenshot({ path: `${SHOTS}/${style}-${theme}-done.png` });
     });
   }
+});
+
+test.describe('phone screenshot matrix', () => {
+  test.skip(!SHOTS, 'set TIMER_SHOTS=1');
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+  test('Orbit and Mono in dark and light', async ({ page }) => {
+    for (const [style, theme] of [['orbit', 'dark'], ['orbit', 'light'], ['mono', 'dark'], ['mono', 'light']]) {
+      await open(page, `style=${style}&theme=${theme}&seed=30`);
+      await expect(page.locator('.tm-preview canvas')).toHaveCount(1);
+      await page.screenshot({ path: `${SHOTS}/${style}-${theme}-phone-idle.png` });
+    }
+  });
 });

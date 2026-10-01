@@ -29,6 +29,7 @@ import { loadTimerPrefs, saveTimerPrefs } from './prefs.js';
 import { generateWcaScramble } from '../scramble.js';
 import { openHistory } from '../store/history.js';
 import { syncPageTokens } from '../pages/tokens.js';
+import { createSolvedState } from '../cross-cube.js';
 
 const STYLES = {
   orbit: () => import('../brain/styles/orbit/index.js'),
@@ -76,6 +77,10 @@ export function createTimer(root, {
   let styleModule = null;
   let inspectionView = null;
   let inspectionShown = false;
+  let cubeView = null;
+  let sequencePlayer = null;
+  let previewLoadToken = 0;
+  let previousBusy = false;
 
   const machine = createTimerMachine({
     now, inspection: settings.inspection, holdMs: prefs.holdMs,
@@ -101,6 +106,16 @@ export function createTimer(root, {
   scrambleText.dataset.testid = 'scramble';
   const nextBtn = el('button', 'tm-textbtn', 'new scramble'); nextBtn.type = 'button'; nextBtn.dataset.action = 'new-scramble';
   scrambleRow.append(scrambleText, nextBtn);
+
+  // The preview owns one cube for the lifetime of this page. Timer renders only
+  // update its visibility; the shared sequence player owns the cue, chips and controls.
+  const preview = el('section', 'tm-preview');
+  preview.dataset.testid = 'scramble-preview';
+  preview.setAttribute('aria-label', '3D cube scramble preview');
+  const previewCube = el('div', 'tm-preview-cube');
+  previewCube.dataset.testid = 'timer-cube';
+  const previewTools = el('div', 'tm-preview-tools');
+  preview.append(previewCube, previewTools);
 
   const pad = el('div', 'tm-pad');
   pad.setAttribute('role', 'button');
@@ -132,21 +147,60 @@ export function createTimer(root, {
   controls.append(plus2Btn, dnfBtn, delBtn, undoBtn);
   const keys = el('div', 'tm-keys');
   const status = el('p', 'tm-sr'); status.setAttribute('aria-live', 'polite');
-  root.append(top, scrambleRow, pad, stats, sourceBtn, controls, keys, status);
+  root.append(top, scrambleRow, preview, pad, stats, sourceBtn, controls, keys, status);
 
   // --- scramble -----------------------------------------------------------------------------
   function loadScramble() {
     const token = ++scrambleToken;
     scrambleState = 'loading';
     currentScramble = null;
+    sequencePlayer?.load({ startState: createSolvedState(), moves: [], index: 0 });
+    preview.dataset.state = 'loading';
     Promise.resolve().then(scramble).then(text => {
       if (token !== scrambleToken || detached) return;
-      currentScramble = String(text); scrambleState = 'ready'; render();
+      currentScramble = String(text); scrambleState = 'ready'; preview.dataset.state = 'ready';
+      void loadPreviewSequence(currentScramble);
+      render();
     }, () => {
       if (token !== scrambleToken || detached) return;
-      currentScramble = ''; scrambleState = 'failed'; render();
+      currentScramble = ''; scrambleState = 'failed'; preview.dataset.state = 'failed'; render();
     });
     render();
+  }
+
+  function previewMoves(text) { return String(text || '').trim().split(/\s+/).filter(Boolean); }
+
+  function paintPreview(snapshot = sequencePlayer?.getSnapshot?.()) {
+    preview.dataset.playing = String(Boolean(snapshot?.playing));
+    preview.dataset.index = String(snapshot?.index ?? 0);
+    preview.dataset.moves = String(snapshot?.moves?.length ?? 0);
+  }
+
+  async function loadPreviewSequence(text) {
+    const token = ++previewLoadToken;
+    if (!sequencePlayer || detached || !text) { paintPreview(); return; }
+    try {
+      await sequencePlayer.load({ startState: createSolvedState(), moves: previewMoves(text), index: previewMoves(text).length });
+      if (token === previewLoadToken && !detached) paintPreview();
+    } catch {
+      if (token === previewLoadToken) preview.dataset.state = 'unavailable';
+    }
+  }
+
+  async function mountPreview() {
+    const [cubeModule, playerModule] = await Promise.all([
+      import('../pages/cube-view.js'), import('../moves/sequence-player.js'),
+    ]);
+    if (detached) return;
+    cubeView = await cubeModule.createPageCube(previewCube, { state: createSolvedState(), mode: 'corner' });
+    if (detached) { cubeView?.destroy?.(); cubeView = null; return; }
+    sequencePlayer = playerModule.createSequencePlayer(previewTools, {
+      cube3d: cubeView, startState: createSolvedState(), moves: [], label: 'scramble',
+      onChange: snapshot => paintPreview(snapshot),
+    });
+    sequencePlayer.setActive(active && !machine.snapshot().hold && machine.snapshot().phase === 'idle');
+    if (scrambleState === 'ready') await loadPreviewSequence(currentScramble);
+    else paintPreview();
   }
 
   // --- saving and editing ---------------------------------------------------------------------
@@ -211,6 +265,8 @@ export function createTimer(root, {
     machine.reset();
     currentScramble = lastScramble;
     scrambleState = 'ready';
+    preview.dataset.state = 'ready';
+    void loadPreviewSequence(currentScramble);
     render();
   }
 
@@ -244,6 +300,14 @@ export function createTimer(root, {
     root.dataset.phase = snap.phase;
     root.dataset.hold = snap.hold ?? '';
     root.classList.toggle('is-busy', Boolean(busy));
+    preview.dataset.phase = snap.phase;
+    preview.setAttribute('aria-hidden', String(Boolean(busy)));
+    previewTools.hidden = Boolean(busy);
+    if (sequencePlayer && busy !== previousBusy) {
+      if (busy) sequencePlayer.pause();
+      sequencePlayer.setActive(active && !busy);
+    }
+    previousBusy = Boolean(busy);
 
     // The big time.
     const record = lastRecord();
@@ -310,11 +374,11 @@ export function createTimer(root, {
     setText(inspBtn, `insp ${inspectionName(machine.inspection)}`);
     setText(secondsBtn, `length ${machine.inspection.seconds} s`);
     setText(overBtn, `overtime ${overtimeName(machine.inspection)}`);
-    setText(sourceBtn, `stats ${prefs.statsSource}`);
+    setText(sourceBtn, prefs.statsSource === 'manual' ? 'stats · manual solves' : 'stats · all solves');
     holdBtn.title = 'how long to hold before the timer is ready (ms)';
     inspBtn.title = 'inspection mode and length (shared with solve)';
     overBtn.title = 'inspection overtime rule (shared with solve)';
-    sourceBtn.title = 'choose whether stats include manual solves or all solves';
+    sourceBtn.title = 'choose which solves appear in stats';
     let hints;
     if (snap.phase === 'running') hints = keycap('any key', 'stop') + keycap('esc', 'stop');
     else if (snap.phase === 'inspecting') hints = keycap('space', 'hold, release to start') + keycap('esc', 'stop');
@@ -356,7 +420,8 @@ export function createTimer(root, {
   const editable_ = target => target instanceof Element && (target.closest('input, textarea, select, [contenteditable="true"]') != null);
 
   function onKeyDown(event) {
-    if (!active || refreshingHistory || event.ctrlKey || event.metaKey || event.altKey || editable_(event.target)) return;
+    if (!active || refreshingHistory || event.ctrlKey || event.metaKey || event.altKey || editable_(event.target)
+      || (event.target instanceof Element && event.target.closest('.tm-preview-tools'))) return;
     const key = event.key === 'Spacebar' ? ' ' : event.key;
     const snap = machine.snapshot();
     if (key === 'Escape') {
@@ -386,7 +451,7 @@ export function createTimer(root, {
     event.preventDefault();
   }
   function onKeyUp(event) {
-    if (!active || editable_(event.target)) return;
+    if (!active || editable_(event.target) || (event.target instanceof Element && event.target.closest('.tm-preview-tools'))) return;
     const key = event.key === 'Spacebar' ? ' ' : event.key;
     if (key !== ' ') return;
     event.preventDefault();
@@ -452,7 +517,7 @@ export function createTimer(root, {
       }
       case 'stats-source': {
         prefs = { ...prefs, statsSource: prefs.statsSource === 'manual' ? 'all' : 'manual' };
-        saveTimerPrefs(storage, prefs); break;
+        saveTimerPrefs(storage, prefs); render(); break;
       }
       default: return;
     }
@@ -491,15 +556,16 @@ export function createTimer(root, {
     render();
   }
   loadScramble();
-  const ready = mountStyle();
+  const ready = Promise.all([mountStyle(), mountPreview()]);
   render();
 
   return {
     ready,
     machine,
+    getPreviewSnapshot: () => sequencePlayer?.getSnapshot?.() ?? null,
     async setActive(next) {
       active = Boolean(next);
-      if (!active) { refreshingHistory = false; machine.cancel(); keyHeld = false; activePointer = null; wake(false); }
+      if (!active) { refreshingHistory = false; machine.cancel(); keyHeld = false; activePointer = null; sequencePlayer?.setActive(false); wake(false); }
       else {
         refreshingHistory = true;
         render();
@@ -508,6 +574,7 @@ export function createTimer(root, {
         refreshingHistory = false;
         settings = loadSettings(storage);
         machine.setInspection(settings.inspection);
+        sequencePlayer?.setActive(machine.snapshot().phase === 'idle' && !machine.snapshot().hold);
         const nextStyle = BRAIN_STYLES.includes(styleOption) ? styleOption : settings.style;
         if (nextStyle !== styleId) { styleId = nextStyle; void mountStyle(); }
         render();
@@ -516,8 +583,13 @@ export function createTimer(root, {
     detach() {
       detached = true;
       active = false;
+      previewLoadToken++;
       if (raf) cancelAnimationFrame(raf);
       wake(false);
+      sequencePlayer?.destroy();
+      sequencePlayer = null;
+      cubeView?.destroy?.();
+      cubeView = null;
       document.removeEventListener('keydown', onKeyDown, true);
       document.removeEventListener('keyup', onKeyUp, true);
       window.removeEventListener('blur', onBlur);
