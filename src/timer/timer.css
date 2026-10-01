@@ -28,7 +28,6 @@
 .tm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Chrome (top bar, scramble, stats, keys) steps back while an attempt is under way. */
-.tm-top, .tm-scramble-row, .tm-stats, .tm-controls, .tm-keys { transition: opacity .4s var(--b-ease); }
 .tm.is-busy .tm-top, .tm.is-busy .tm-stats, .tm.is-busy .tm-controls { opacity: 0; pointer-events: none; }
 .tm[data-phase="running"] .tm-scramble-row, .tm[data-phase="running"] .tm-keys { opacity: .18; }
 
@@ -62,7 +61,7 @@
 }
 .tm-time {
   font: var(--b-weight-clock) clamp(76px, 22vw, var(--b-fs-clock))/1 var(--b-font-num); letter-spacing: -.02em;
-  color: var(--b-ink); transition: color .12s linear;
+  color: var(--b-ink);
 }
 .tm-time[data-tone="holding"] { color: var(--b-warn); }
 .tm-time[data-tone="ready"] { color: var(--b-good); }

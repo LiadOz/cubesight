@@ -27,6 +27,7 @@ import { buildInspectionVM, inspectionFrame } from './inspection-vm.js';
 import { loadTimerPrefs, saveTimerPrefs } from './prefs.js';
 import { generateWcaScramble } from '../scramble.js';
 import { openHistory } from '../store/history.js';
+import { syncPageTokens } from '../pages/tokens.js';
 
 const STYLES = {
   orbit: () => import('../brain/styles/orbit/index.js'),
@@ -235,7 +236,9 @@ export function createTimer(root, {
     if (detached) return;
     const snap = machine.snapshot();
     const busy = snap.hold || snap.phase === 'inspecting' || snap.phase === 'running';
+    const styleChanged = root.dataset.brainStyle !== styleId;
     root.dataset.brainStyle = styleId;
+    if (styleChanged) syncPageTokens(root);
     root.dataset.phase = snap.phase;
     root.dataset.hold = snap.hold ?? '';
     root.classList.toggle('is-busy', Boolean(busy));
@@ -470,6 +473,7 @@ export function createTimer(root, {
   // --- lifecycle ----------------------------------------------------------------------------
   if (store.sessionGapMin !== settings.session?.gapMin && settings.session?.gapMin) store.setSessionGapMin(settings.session.gapMin);
   root.dataset.brainStyle = styleId;
+  syncPageTokens(root);
 
   async function mountStyle() {
     styleModule = await loadStyle(styleId);
