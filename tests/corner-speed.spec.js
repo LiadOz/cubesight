@@ -3,7 +3,7 @@ import { test, expect } from 'playwright/test';
 test('a correct single-corner answer makes the next case ready without a feedback pause', async ({ page }) => {
   await page.clock.install();
   await page.addInitScript(() => { Math.random = () => 0; });
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await page.keyboard.press('g');
   await expect(page.locator('.corner-result')).toContainText('Correct');
@@ -28,7 +28,7 @@ test('a correct single-corner answer makes the next case ready without a feedbac
 test('correct three-corner answers accept the next input within one frame', async ({ page }) => {
   await page.clock.install();
   await page.addInitScript(() => { Math.random = () => 0; });
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'Three corners', exact: true }).click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await page.clock.pauseAt(await page.evaluate(() => new Date(Date.now() + 1000).toISOString()));

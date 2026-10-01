@@ -11,7 +11,7 @@ const SEGMENTS = '#brain-timeline :is(.m-seg, .b-oring-seg)';
 const SCRAMBLE = "B2 F2 R' F2 R B2 R' B'";
 
 async function mountTestBrain(page, style) {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.evaluate(async style => {
     localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, cross: 'xxcross' }));   // an old stored target is ignored

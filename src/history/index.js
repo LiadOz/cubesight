@@ -7,6 +7,7 @@ import { stateFromScramble, applyMoves, toRenderData } from '../cross-cube.js';
 import { parseCsTimer, exportCsTimer, filterHistory } from './cstimer.js';
 import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
+import { syncPageTokens } from '../pages/tokens.js';
 
 export const historyTime = record => {
   if (!Number.isFinite(record.solveMs)) return '—';
@@ -47,6 +48,7 @@ export function initHistory(host) {
     <section class="history-detail" aria-label="Solve detail"><p>Select a solve to see its scramble and replay.</p></section></div>
   </section>`;
   const root = host.firstElementChild;
+  syncPageTokens(root);
   const form = root.querySelector('form');
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
@@ -162,5 +164,5 @@ export function initHistory(host) {
   });
   form.addEventListener('submit', event => event.preventDefault());
   const ready = openHistory({ sessionGapMin: settings.session.gapMin }).then(value => { store = value; refreshSessions(); renderList(); report(store.warning); });
-  return { ready, async setActive(value) { active = Boolean(value); if (!active) { stopPlayback(); return; } await ready; root.dataset.brainStyle = loadSettings(globalThis.localStorage).style; await store.reload(); refreshSessions(); renderList(); }, detach() { active = false; stopPlayback(); cube?.destroy(); host.replaceChildren(); } };
+  return { ready, async setActive(value) { active = Boolean(value); if (!active) { stopPlayback(); return; } await ready; root.dataset.brainStyle = loadSettings(globalThis.localStorage).style; syncPageTokens(root); await store.reload(); refreshSessions(); renderList(); }, detach() { active = false; stopPlayback(); cube?.destroy(); host.replaceChildren(); } };
 }

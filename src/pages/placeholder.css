@@ -1,0 +1,5 @@
+.cs-soon-note {
+  align-self: flex-start; padding: 6px 14px; border-radius: var(--b-radius-control);
+  background: var(--b-accent-soft); color: var(--b-accent-text); font: 500 13px var(--b-font-mono);
+}
+.cs-soon-link { align-self: flex-start; color: var(--b-accent-text); font-size: 15px; border-bottom: 1px solid currentColor; }

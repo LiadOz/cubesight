@@ -100,7 +100,6 @@
 @media (max-width:700px) { .scout-guide dl { grid-template-columns: 1fr; gap: 4px; } .scout-guide dd { margin-bottom: 12px; } }
 @media (max-width:1000px) { .scout-result-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width:700px) {
-  .main-nav .nav-link { font-size: 10px; padding: 11px 5px; }
   .scout-input { padding: 14px; } .scout-scramble-row { flex-wrap: wrap; } .scout-scramble-row textarea { flex-basis: 100%; font-size: 16px; min-height: 94px; } .scout-scramble-row .scout-button { width: 100%; }
   .scout-smart-actions { width: 100%; } .scout-smart-actions .scout-button { flex: 1; }
   .scout-options { margin-top: 16px; gap: 14px; } .scout-colors { gap: 5px; } .scout-colors button { min-height: 44px; padding: 7px 8px; font-size: 10px; } .scout-options-actions { width: 100%; } .scout-options-actions > button { flex: 1; }

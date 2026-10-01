@@ -3,7 +3,7 @@ import { test, expect } from 'playwright/test';
 test('loads the 3D trainer and Rust engine', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
 
   await expect(page.locator('#cube canvas')).toBeVisible();
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
@@ -17,7 +17,7 @@ test('loads the 3D trainer and Rust engine', async ({ page }) => {
 
 test('accepts color initials and advances all three corners', async ({ page }) => {
   await page.addInitScript(() => { Math.random = () => 0; });
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'Three corners' }).click();
   await expect(page.locator('#corner-sequence span')).toHaveCount(3);
   await expect(page.locator('#case-mode')).toContainText('1/3');
@@ -33,9 +33,9 @@ test('accepts color initials and advances all three corners', async ({ page }) =
 test('F2L is always color neutral with a limited camera and three drills', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
-  await page.getByRole('link', { name: 'F2L deduction' }).click();
+  await page.goto('/#/drills/f2l');
 
   await expect(page.locator('#f2l-view')).toBeVisible();
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm');
@@ -54,7 +54,7 @@ test('F2L is always color neutral with a limited camera and three drills', async
 });
 
 test('corner cube ignores drag gestures', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   const cube = page.locator('#cube canvas');
   await expect(cube).toHaveAttribute('data-rotation', 'locked');
   const before = await cube.getAttribute('data-camera-pose');
@@ -68,7 +68,7 @@ test('corner cube ignores drag gestures', async ({ page }) => {
 });
 
 test('corner cases use stable, bounded viewing angles that vary between cases', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   const cube = page.locator('#cube canvas');
   const firstPose = await cube.getAttribute('data-view-pose');
   const firstCamera = await cube.getAttribute('data-camera-pose');
@@ -87,7 +87,7 @@ test('corner cases use stable, bounded viewing angles that vary between cases', 
 test('a vertical touch that begins on a cube scrolls the page', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 600 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
-  await page.goto('/#/pll-recognition');
+  await page.goto('/#/drills/pll');
   const cube = page.locator('#pll-cube canvas');
   await expect(cube).toBeVisible();
   await expect(cube).toHaveCSS('touch-action', 'pan-y');

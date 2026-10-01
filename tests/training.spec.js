@@ -27,9 +27,9 @@ async function prepareF2L(page, selectedFixture = fixture) {
   await page.addInitScript(({ seed }) => {
     crypto.getRandomValues = (array) => { array.fill(seed); return array; };
   }, selectedFixture);
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
-  await page.getByRole('link', { name: 'F2L deduction' }).click();
+  await page.goto('/#/drills/f2l');
   await expect(page.locator('#f2l-cube canvas')).toBeVisible();
 }
 
@@ -56,7 +56,7 @@ async function clickPiece(page, piece) {
 
 test('glance shows the cube first, covers it, and times from reveal', async ({ page }) => {
   await page.clock.install();
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.locator('#exposure-select').selectOption('1500');
   await page.locator('#glance-toggle').check();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
@@ -72,13 +72,13 @@ test('glance shows the cube first, covers it, and times from reveal', async ({ p
 });
 
 test('switching trainers during feedback cancels the old corner transition', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.locator('[data-action="skip"]').click();
-  await page.getByRole('link', { name: 'F2L deduction' }).click();
+  await page.goto('/#/drills/f2l');
   const timer = await page.locator('#timer').textContent();
   await page.waitForTimeout(1300);
   expect(await page.locator('#timer').textContent()).toBe(timer);
-  await page.getByRole('link', { name: 'Corner recognition', exact: true }).click();
+  await page.goto('/#/drills/corners');
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
 });
 
@@ -204,7 +204,7 @@ test('best-next-pair drill shows locally verified weighted choices', async ({ pa
 });
 
 test('opening help pauses the trial until explicit resume', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'How to play' }).click();
   await page.getByRole('button', { name: 'Start training' }).click();
   await expect(page.locator('#pause-overlay')).toBeVisible();
@@ -235,7 +235,7 @@ test.describe('phone touch layout', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
   test('starts compact and keeps all six touch answers within the first screen', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/#/drills/corners');
     await expect(page.locator('#corner-view .training-settings')).not.toHaveAttribute('open', '');
     await expect(page.locator('#cube canvas')).toBeVisible();
     const answers = await page.locator('#answers').boundingBox();
