@@ -1,5 +1,12 @@
 /* Drills hub (T-01 on desktop, T-07 on a phone). Reads only the --b-* tokens. */
 
+.hub-hero { display: grid; grid-template-columns: minmax(0, 1fr) 220px; align-items: center; gap: 28px; }
+.hub-hero-copy { min-width: 0; }
+.hub-hero-stage { display: grid; place-items: center; min-width: 0; height: 220px; overflow: hidden; border-radius: var(--b-radius-bar); background: var(--b-surface); }
+.hub-cube-mount { width: 100%; height: 100%; }
+.hub-cube-mount canvas { display: block; width: 100%; height: 100%; }
+.hub-content { display: flex; flex-direction: column; gap: 20px; min-width: 0; flex: 1; }
+
 .hub-continue {
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   padding: 18px 22px; border-radius: var(--b-radius-bar); background: var(--b-accent-soft); color: var(--b-ink);
@@ -47,6 +54,9 @@
 
 /* Phone and touch: no key column, no modes; the cube marker sits under the name, a chevron ends the row. */
 @media (max-width: 700px) {
+  .hub-hero { grid-template-columns: minmax(0, 1fr) 112px; gap: 10px; }
+  .hub-hero-stage { height: 112px; border-radius: var(--b-radius-key); }
+  .hub-content { gap: 16px; }
   .hub-continue { flex-direction: column; align-items: stretch; padding: 18px; gap: 16px; }
   .hub-play { justify-content: center; padding: 14px 18px; font-size: 16px; }
   .hub-play kbd, .hub-keys, .hub-list-head, .hub-link .hub-key, .hub-modes { display: none; }

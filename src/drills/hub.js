@@ -8,6 +8,7 @@
 import '../pages/page.css';
 import './hub.css';
 import { loadSettings } from '../brain/settings.js';
+import { createSolvedState } from '../cross-cube.js';
 import { CUBE_LABELS, DRILLS, agoLabel, drillSettings, lastDrill } from './catalog.js';
 import { dayStreak, loadShell } from './rounds.js';
 import { syncPageTokens } from '../pages/tokens.js';
@@ -26,21 +27,48 @@ function cubeMarker(drill) {
 }
 
 export function createDrillsHub(root, storage = globalThis.localStorage) {
-  let active = false;
+  let active = false, detached = false, cube = null, cubeLoad = null;
+  const page = el('section', 'brain cs-page drills-hub');
+  const hero = el('section', 'hub-hero');
+  const intro = el('div', 'hub-hero-copy');
+  const head = el('header', 'cs-head');
+  const h1 = el('h1', null, 'drills');
+  const sub = el('p', 'cs-sub', 'short rounds, one key to start. no cube needed unless marked.');
+  head.append(h1, sub);
+  intro.append(head);
+  const stage = el('div', 'hub-hero-stage');
+  stage.setAttribute('aria-label', '3D cube preview');
+  const cubeMount = el('div', 'hub-cube-mount');
+  cubeMount.setAttribute('aria-label', '3D cube');
+  stage.append(cubeMount);
+  hero.append(intro, stage);
+  const content = el('div', 'hub-content');
+  page.append(hero, content);
+  root.replaceChildren(page);
+
+  function mountCube() {
+    if (cubeLoad || cube || detached) return;
+    cubeLoad = import('../pages/cube-view.js').then(async ({ createPageCube }) => {
+      if (detached || !cubeMount.isConnected) return null;
+      const instance = await createPageCube(cubeMount, { state: createSolvedState(), mode: 'corner' });
+      if (detached || !cubeMount.isConnected) { instance?.destroy?.(); return null; }
+      cube = instance;
+      return instance;
+    }).catch(() => {
+      if (!detached && cubeMount.isConnected) cubeMount.textContent = '3D cube preview unavailable.';
+      return null;
+    });
+  }
 
   function render() {
-    const page = el('section', 'brain cs-page drills-hub');
     page.dataset.brainStyle = loadSettings(storage).style;
-
-    const head = el('header', 'cs-head');
-    head.append(el('h1', null, 'drills'), el('p', 'cs-sub', 'short rounds, one key to start. no cube needed unless marked.'));
-    page.append(head);
+    content.replaceChildren();
     const rounds = loadShell(storage);
     const streak = dayStreak(rounds.days);
     if (streak) {
       const note = el('p', 'hub-streak', `${streak} day${streak === 1 ? '' : 's'} active`);
       note.setAttribute('aria-label', `${streak} day streak`);
-      page.append(note);
+      content.append(note);
     }
 
     const last = lastDrill(storage);
@@ -57,7 +85,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     const play = el('span', 'hub-play', last ? 'continue' : 'start');
     play.append(el('kbd', null, 'enter'));
     goOn.append(copy, play);
-    page.append(goOn);
+    content.append(goOn);
 
     const list = el('ul', 'hub-list');
     list.setAttribute('aria-label', 'drills');
@@ -76,7 +104,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
       row.append(link);
       list.append(row);
     }
-    page.append(list);
+    content.append(list);
 
     const pageLinks = el('nav', 'hub-page-links');
     pageLinks.setAttribute('aria-label', 'More pages');
@@ -85,14 +113,12 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     const historyLink = el('a', null, 'history');
     historyLink.href = '#/history';
     pageLinks.append(timerLink, historyLink);
-    page.append(pageLinks);
+    content.append(pageLinks);
 
     const hints = el('p', 'hub-keys');
     hints.setAttribute('aria-hidden', 'true');
     hints.innerHTML = `<span><kbd>${DRILLS.map(drill => drill.key).join(' ')}</kbd> open drill</span><span><kbd>enter</kbd> next</span>`;
-    page.append(hints);
-
-    root.replaceChildren(page);
+    content.append(hints);
     syncPageTokens(page);
   }
 
@@ -110,15 +136,25 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     const drill = DRILLS.find(item => item.key === key);
     if (drill) location.hash = drill.href;
   }
+  const onTheme = () => { if (active && !detached) render(); };
+  document.addEventListener('cubesight-theme', onTheme);
   document.addEventListener('keydown', onKey);
   render();
 
   return {
+    get ready() { return cubeLoad ?? Promise.resolve(null); },
     setActive(value) {
       const wasActive = active;
       active = value;
       if (value && !wasActive) render();   // pick up a new "continue" and the current style
+      if (value) mountCube();
     },
-    detach() { active = false; document.removeEventListener('keydown', onKey); root.replaceChildren(); },
+    detach() {
+      detached = true; active = false;
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('cubesight-theme', onTheme);
+      cube?.destroy?.(); cube = null;
+      if (page.parentNode === root) page.remove();
+    },
   };
 }
