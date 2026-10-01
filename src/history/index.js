@@ -157,7 +157,7 @@ export function initHistory(host) {
       const backup = action === 'backup' ? serializeExport(exportAll(globalThis.localStorage, store.records, store.pins.list, await algDatabase.exportPersonalData())) : exportCsTimer(store.records);
       download(backup, action === 'backup' ? 'cubesight-backup.json' : 'cstimer.json'); return;
     }
-    if (action === 'undo' && deleted) { store.restore(deleted); deleted = null; button.remove(); refreshSessions(); renderList(); report('Solve restored.'); return; }
+    if (action === 'undo' && deleted) { store.restore(deleted); await store.flush(); deleted = null; button.remove(); refreshSessions(); renderList(); report('Solve restored.'); return; }
     if (!selected) return;
     if (['previous', 'next', 'play'].includes(action)) {
       if (action === 'play') player?.play();
@@ -165,11 +165,12 @@ export function initHistory(host) {
     } else if (action === 'delete') {
       deleted = store.remove(selected.at);
       if (!deleted) { report(store.warning || 'This history is read-only. Update the app and reload.'); return; }
+      await store.flush();
       destroyReplay(); selected = null;
       detail.replaceChildren(make('p', 'Solve deleted.'));
       const undo = make('button', 'undo'); undo.type = 'button'; undo.dataset.action = 'undo'; detail.append(undo); refreshSessions(); renderList();
     } else if (['none', 'plus2', 'dnf'].includes(action)) {
-      const record = store.setPenalty(selected.at, action === 'none' ? null : action === 'plus2' ? '+2' : 'DNF'); if (record) showRecord(record);
+      const record = store.setPenalty(selected.at, action === 'none' ? null : action === 'plus2' ? '+2' : 'DNF'); await store.flush(); if (record) showRecord(record);
     }
   }
   async function onChange(event) {

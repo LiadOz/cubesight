@@ -13,7 +13,7 @@ test('progress scopes solve statistics and preserves legacy drill totals across 
   });
   await page.goto('/#/progress');
   await expect(page.locator('.progress-stats')).toContainText('12.00');
-  await expect(page.locator('.progress-drills')).toContainText('20 cases all time');
+  await expect(page.locator('.progress-drills')).toContainText('20 answers all time');
   await page.getByLabel('solve source',{exact:true}).selectOption('manual');
   await expect(page.locator('.progress-stats')).toContainText('8.00');
   await page.reload();
@@ -35,10 +35,10 @@ test('progress reads recorded algorithm practice and its due schedule after relo
   });
   await page.goto('/#/progress');
   const row=page.locator('.progress-drills article').filter({has:page.getByRole('link',{name:'alg drills ›',exact:true})});
-  await expect(row).toContainText('1 case all time');
+  await expect(row).toContainText('1 answer all time');
   await expect(row).toContainText('1.23 s median');
   await expect(row).toContainText('1 case due');
   await page.reload();
-  await expect(row).toContainText('1 case all time');
+  await expect(row).toContainText('1 answer all time');
   await expect(row).toContainText('1 case due');
 });
