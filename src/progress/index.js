@@ -4,6 +4,8 @@ import { loadSettings } from '../brain/settings.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { openHistory } from '../store/history.js';
 import { readProgress } from './adapter.js';
+import { algDatabase } from '../algs/runtime.js';
+import { loadLearning } from '../learning.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const seconds = ms => ms === Infinity ? 'DNF' : Number.isFinite(ms) ? (Math.floor(ms / 10) / 100).toFixed(2) : '—';
@@ -24,14 +26,22 @@ export function trendMarkup(points) {
 
 export function createProgressPage(host, { storage = globalThis.localStorage } = {}) {
   const page = document.createElement('section'); page.className = 'brain cs-page progress-page';
-  let active = false, detached = false, history = null;
+  let active = false, detached = false, history = null, algorithms = [], refreshId = 0;
   const filters = { source: 'smart', focus: 'speed', days: '30' };
   host.replaceChildren(page);
-  const ready = openHistory().then(store => { history = store; if (!detached) render(); }).catch(() => { if (!detached) render(); });
+  const historyReady = openHistory().then(store => { history = store; }).catch(() => {});
+  async function refresh() {
+    const id = ++refreshId;
+    const result = await algDatabase.progressFor(null, { learningData: loadLearning(storage, 'cubesight-alg-learning-v1') }).catch(() => null);
+    if (detached || id !== refreshId) return;
+    algorithms = result?.items ?? [];
+    render();
+  }
+  const ready = historyReady.then(refresh);
   function render() {
     if (detached) return;
     page.dataset.brainStyle = loadSettings(storage).style;
-    const data = readProgress(storage, { ...filters, ...(history ? { records: history.records } : {}) });
+    const data = readProgress(storage, { ...filters, algorithms, ...(history ? { records: history.records } : {}) });
     page.innerHTML = `<header class="cs-head"><h1>progress</h1><p class="cs-sub">Solves, drills, and what’s ready for another look.</p></header>
       <form class="progress-filters" aria-label="Progress filters"><label>solve source<select name="source" aria-label="solve source"><option value="smart">cube</option><option value="manual">manual</option><option value="all">all solves</option></select></label><label>focus<select name="focus" aria-label="focus"><option value="speed">speed</option><option value="flow">flow</option><option value="learning">learning</option><option value="all">all focuses</option></select></label><label>period<select name="days" aria-label="period"><option value="7">7 days</option><option value="30">30 days</option><option value="all">all time</option></select></label></form>
       <section class="progress-card" aria-label="Solve progress"><div class="progress-stats"><div><span>timed solves</span><strong>${data.stats.timedCount}</strong></div><div><span>PB</span><strong>${seconds(data.stats.best)}</strong></div><div><span>ao5</span><strong>${seconds(data.stats.ao5)}</strong></div><div><span>ao12</span><strong>${seconds(data.stats.ao12)}</strong></div></div>${trendMarkup(data.trend)}<a class="progress-link" href="#/history">see solve history ›</a></section>
@@ -51,7 +61,7 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   render();
   return {
     ready,
-    setActive(value) { active = Boolean(value); if (active) { render(); if (history) void history.reload().then(() => { if (active) render(); }).catch(() => { if (active) render(); }); } },
+    setActive(value) { active = Boolean(value); if (active) { render(); void (history ? history.reload().catch(() => {}) : historyReady).then(() => { if (active && !detached) return refresh(); }); } },
     detach() { detached = true; active = false; document.removeEventListener('cubesight-theme', onTheme); page.remove(); },
   };
 }

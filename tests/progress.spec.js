@@ -22,3 +22,23 @@ test('progress scopes solve statistics and preserves legacy drill totals across 
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
 });
+
+
+test('progress reads recorded algorithm practice and its due schedule after reload', async ({ page }) => {
+  await page.goto('/#/algs/pll/T');
+  await expect(page.locator('.alg-detail h1')).toContainText('T');
+  await page.evaluate(async () => {
+    const { algDatabase } = await import('/src/algs/runtime.js');
+    const alg = (await algDatabase.listAlgs('pll/T'))[0];
+    await algDatabase.recordAttempt({caseId:'pll/T',algId:alg.id,clean:true,executionMs:1230});
+    localStorage.setItem('cubesight-alg-learning-v1',JSON.stringify({version:1,trial:1,items:{[`alg|${alg.id}`]:{attempts:1,correct:1,due:Date.now()-1,dueTrial:0}}}));
+  });
+  await page.goto('/#/progress');
+  const row=page.locator('.progress-drills article').filter({has:page.getByRole('link',{name:'alg drills ›',exact:true})});
+  await expect(row).toContainText('1 case all time');
+  await expect(row).toContainText('1.23 s median');
+  await expect(row).toContainText('1 case due');
+  await page.reload();
+  await expect(row).toContainText('1 case all time');
+  await expect(row).toContainText('1 case due');
+});
