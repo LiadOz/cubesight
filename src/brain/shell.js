@@ -368,7 +368,7 @@ export function createShell(root, { dispatch }) {
     const brainChip = $('.b-device');
     brainChip.dataset.phase = device.phase;
     setText($('#brain-device-inline'), connected ? device.name || 'smart cube' : device.phase === 'connecting' ? 'connecting…' : 'no cube · connect');
-    setText($('#brain-device'), connected ? [device.name, device.protocol].filter(Boolean).join(' · ') : 'No cube connected');
+    setText($('#brain-device'), connected ? [device.name, device.protocol].filter(Boolean).join(' · ') : 'No cube');
     setText($('#brain-status'), device.detail);
     const battery = device.battery;
     $('.b-battery').hidden = battery == null;

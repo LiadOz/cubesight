@@ -5,7 +5,7 @@ async function startRecall(page) {
   await page.goto('/#/drills/corners');
   await page.clock.pauseAt(await page.evaluate(() => new Date(Date.now() + 1000).toISOString()));
   await page.locator('.training-settings').first().evaluate(el => { el.open = true; });
-  await page.getByRole('button', { name: 'One-glance recall', exact: true }).click();
+  await page.getByRole('button', { name: 'one-glance recall', exact: true }).click();
   await page.clock.runFor(20);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
 }
@@ -25,7 +25,7 @@ test('one glimpse, three immediate inputs, no interim reveal or feedback', async
   await expect(page.locator('#case-mode')).toContainText('2/3');
   await expect(page.locator('#cube canvas')).toBeHidden();
   expect(await history(page)).toHaveLength(0);
-  await expect(page.locator('#feedback')).not.toContainText(/Correct|Not quite/);
+  await expect(page.locator('#feedback')).not.toContainText(/Nice|Not quite/);
   await page.clock.runFor(150);
   await page.keyboard.press('g');
   await expect(page.locator('#case-mode')).toContainText('3/3');
@@ -42,7 +42,7 @@ test('one glimpse, three immediate inputs, no interim reveal or feedback', async
   expect(results.every(x => x.glance && x.exposureMs === 600)).toBe(true);
   await expect(page.locator('#cube canvas')).toBeVisible();
   await expect(page.locator('#feedback')).toContainText('Bottom right:');
-  await expect(page.getByRole('button', { name: 'Next cube' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'next case' })).toBeVisible();
   await page.clock.fastForward(15000);
   await expect(page.locator('#pause-overlay')).toBeHidden();
 });
@@ -54,7 +54,7 @@ test('timeout discards a partial recall sequence and resume starts fresh', async
   await page.clock.fastForward(10001);
   await expect(page.locator('#pause-overlay')).toBeVisible();
   expect(await history(page)).toHaveLength(0);
-  await page.getByRole('button', { name: 'Resume with a fresh case' }).click();
+  await page.getByRole('button', { name: 'resume' }).click();
   await expect(page.locator('#case-mode')).toContainText('1/3');
 });
 
@@ -62,7 +62,7 @@ test('switching drill during recall cancels its cover timer; controls fit mobile
   await page.setViewportSize({ width: 360, height: 800 });
   await startRecall(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-  await page.getByRole('button', { name: 'Single corner', exact: true }).click();
+  await page.getByRole('button', { name: 'single corner', exact: true }).click();
   await page.clock.runFor(1000);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('#glance-toggle')).toBeEnabled();

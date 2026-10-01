@@ -4,7 +4,7 @@ test('three-corner clock includes feedback between answers in displayed and logg
   await page.clock.install();
   await page.addInitScript(() => { Math.random = () => 0; });
   await page.goto('/#/drills/corners');
-  await page.getByRole('button',{name:'Three corners',exact:true}).click();
+  await page.getByRole('button',{name:'three corners',exact:true}).click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state','visible');
   // Freeze at the currently running fake clock so exact answer-to-answer
   // intervals can be checked without wall-clock/CDP latency.
@@ -31,7 +31,7 @@ test('three-corner clock includes feedback between answers in displayed and logg
 
 test('timeout for the next corner is measured from the previous input',async({page})=>{
   await page.clock.install();await page.goto('/#/drills/corners');
-  await page.getByRole('button',{name:'Three corners',exact:true}).click();
+  await page.getByRole('button',{name:'three corners',exact:true}).click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state','visible');
   await page.clock.pauseAt(await page.evaluate(()=>new Date(Date.now()+1000).toISOString()));
   await page.keyboard.press('w');

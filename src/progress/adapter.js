@@ -54,7 +54,7 @@ export function readProgress(storage, { records = null, algorithms = [], source 
     cross: { attempts: scout.length, correct: scout.filter(r => /^(found|good|correct|easy)$/.test(r.rating)).length, accuracy: null, medianMs: median(scout.map(r => r.durationMs)) },
     oll: summary(learned('oll')), lookahead: summary(learned('lookahead')), algs: summary(algorithms),
   };
-  const due = { corners: dueLearning('corner'), f2l: dueLearning('f2l'), pll: pllItems.filter(item => item.attempts > 0 && item.nextReviewAt > 0 && item.nextReviewAt <= now).length, oll: dueLearning('oll'), lookahead: dueLearning('lookahead'), cross: 0, algs: algorithms.filter(item => item.attempts > 0 && item.due > 0 && item.due <= now).length };
+  const due = { corners: dueLearning('corner'), f2l: dueLearning('f2l'), pll: pllItems.filter(item => item.attempts > 0 && item.nextReviewAt > 0 && item.nextReviewAt <= now).length, oll: dueLearning('oll'), lookahead: dueLearning('lookahead'), cross: 0, algs: algorithms.filter(item => item.attempts > 0 && item.due > 0).length };
   const drills = DRILLS.map(([id, title, href]) => {
     const selected = rounds.filter(r => drillId(r.drill) === id).sort((a, b) => a.at - b.at);
     const n = selected.reduce((sum, r) => sum + count(r.n), 0), correct = selected.reduce((sum, r) => sum + Math.min(count(r.n), count(r.correct)), 0);
@@ -71,10 +71,11 @@ export function readProgress(storage, { records = null, algorithms = [], source 
   const cornerHistory = dated(corner.history).filter(r => Number.isFinite(r.at));
   for (const r of cornerHistory) if (!r.skipped) add(r.at, 'cases');
   for (const r of scout) add(r.at, 'cases');
+  for (const item of algorithms) for (const at of array(item.activity)) add(timestamp(at), 'cases');
   for (const r of rounds) {
     const id = drillId(r.drill);
     // These two legacy stores already contain dated case observations.
-    if ((id === 'corners' && cornerHistory.length) || (id === 'cross' && scout.length)) continue;
+    if ((id === 'corners' && cornerHistory.length) || (id === 'cross' && scout.length) || (id === 'algs' && algorithms.some(item => array(item.activity).length))) continue;
     add(r.at, 'cases', count(r.n));
   }
   const phases = phaseSplits(solves.filter(r => r.source !== 'manual' && r.source !== 'import'));

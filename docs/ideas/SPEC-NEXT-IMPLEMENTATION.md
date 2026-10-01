@@ -7,12 +7,12 @@ Started 2026-10-01 from `feature/smart-cube-guidance` (`eea1766`). Scope: all ei
 | Package | Branch | Status |
 |---|---|---|
 | WP1 · site structure | `implement/spec-next-site` | Integrated; route/browser/offline checks pass |
-| WP2 · manual timer | `implement/spec-next-timer` | Integrated; keyboard/touch/persistence pass; offline scramble fix in progress |
+| WP2 · manual timer | `implement/spec-next-timer` | Integrated; keyboard/touch/persistence and offline WCA scrambles pass |
 | WP3 · suggestion engine | `implement/spec-next-engine` | Pair engine integrated; canonical last-layer data/suggestions in progress |
-| WP4 · full solve review | `implement/spec-next-review` | Implementation in progress |
-| WP5 · algorithm browser/drills | after WP3 | Pending |
-| WP6 · drills/progress | after WP1 | Pending |
-| WP7 · vocabulary | `implement/spec-next-copy` | Implementation and 92-row audit in progress |
+| WP4 · full solve review | `implement/spec-next-review` | Integrated; acceptance audit and label-to-drill links in progress |
+| WP5 · algorithm browser/drills | `implement/spec-next-engine` | Curated bundle independently verified; database and UI in progress |
+| WP6 · drills/progress | `implement/spec-next-copy` + lead | Progress integrated; quick rounds and new drills in progress |
+| WP7 · vocabulary | `implement/spec-next-copy` | Integrated; copy ratchet baseline empty; legacy browser assertions updated |
 | WP8 · history/data | `implement/spec-next` | Integrated; unit/browser/offline checks pass; screenshots inspected |
 
 ## Baseline and environment
@@ -38,7 +38,7 @@ The four new data tests verify raw time and penalty round-trips, independent ses
 
 WP1 commit `fa238c0` merged via `a20fd5d`; WP2 commit `2e65f76` merged via `c362dec`. Combined focused browser checks: 47 passed, 4 optional screenshot tests skipped; the separate timer agent screenshot run passed all 11. Actual routed timer and history checks: 3 passed. WP1 focused navigation/routes: 38 passed.
 
-Installed-app checks currently pass Brain/style modes, all WP1 routes, history/replay, and legacy trainers (4 test cases). The manual timer offline test exposed a cubing.js worker-entry loading failure; it remains an active fix, not a passing gate.
+Installed-app checks currently pass Brain/style modes, all WP1 routes, history/replay, and legacy trainers (4 test cases). The cubing.js worker-entry loading failure is fixed by isolating the core worker dependency chunk and choosing its compatible worker-instantiation path. Offline WCA scrambles now pass without substituting random moves.
 
 WP1 screenshots: `/home/loz/projects/cubesight-wp1/test-results/wp1-ui/`. WP2 screenshots: `/home/loz/projects/cubesight-wp2/test-results/timer-screenshots/`. Each contains desktop style/mode coverage and 390 px phone states, inspected by its builder and sampled by the lead.
 
@@ -64,3 +64,11 @@ The canonical curated algorithm bundle and full last-layer suggestions remain ac
 ## Final review
 
 Pending: combined lint/unit/build, full browser suite, offline PWA suite, screenshots inspected in both styles/themes and on 390 px phones, recording replay, acceptance item audit, redirect table, final commit/file list and documented deviations.
+
+## Review, vocabulary and progress integration
+
+WP4 snapshots `72f01c2` and `947c956` merged through `cfd592b`. Review includes real cube replay, time/move graph, stage efficiency, golden label/score tests, locally parsed imports (300 physical round-trips), guided retry/regrade, and long reconstruction replay. Integration caught the last-layer capture's 200-move public-parser limit; it now uses the bounded analysis replay helper. Offline timer and review tests pass. Builder screenshots: `/home/loz/projects/cubesight-wp2/test-results/solve-review/`; the lead inspected the desktop review. More taxonomy/deep-link acceptance work remains active.
+
+WP7 snapshot `0bd58fa` merged through `b5c4035`, with terms/formats/key mappings and an AST-based vocabulary ratchet whose baseline is empty. Integration updated new review copy and added an explicit exception for the specified Cancel move label. Legacy browser assertions are being aligned to the new visible copy without weakening their behavior checks.
+
+Progress (`src/progress/`) reads existing learning/recognition/round keys and IndexedDB history, separates source and focus, applies +2/DNF statistics, shows an ao12 trend, dated activity, real phase-to-drill links, and explicitly labeled all-time aggregates. Five adapter tests pass; actual-route filtering/reload/legacy preservation browser test passes. All eight Orbit/Mono × dark/light × 1280/390 screenshots in `test-results/progress-ui/` were inspected. Inspection found and fixed phone Mono select overlap. Algorithm progress remains dependent on WP5's shared database integration. Latest combined check: lint zero errors, 419 unit tests passed, production build passed.

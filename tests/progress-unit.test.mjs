@@ -42,3 +42,9 @@ test('phase drill links use only actual solved cube stages', () => {
   const data=readProgress(store({}),{records,source:'all',now});
   assert.equal(data.splits[1].ms,6000);assert.equal(data.splits[1].largest,true);assert.equal(data.splits[1].samples,1);assert.equal(data.splits[1].href,'#/drills/f2l');
 });
+
+test('algorithm case summaries contribute real activity and ready case counts', () => {
+ const algorithms=[{caseId:'pll/T',attempts:3,correct:2,times:[1000,1200],due:2,activity:[now-5,now-4,now-3]}];
+ const data=readProgress(store({}),{records:[],algorithms,now});
+ const alg=data.drills.find(d=>d.id==='algs');assert.equal(alg.due,1);assert.equal(alg.lifetime.attempts,3);assert.equal(alg.lifetime.medianMs,1100);assert.equal(data.activity[0].cases,3);
+});

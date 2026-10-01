@@ -2,6 +2,7 @@
 // the live tracker (tests/fixtures/rotation-cross-recording.json, 95 moves, several rotations) and
 // the golden solves of tests/analysis-golden.mjs, each analysed with the real WASM solver in node.
 import fs from 'node:fs';
+import assert from 'node:assert/strict';
 import { createSolveLive } from '../../src/solve-live.js';
 import { createSmartCubeSession, APP_SESSION_OPTIONS } from '../../src/smart-cube-session.js';
 import { createReplayDriver } from '../../src/recording-replay.js';
@@ -11,6 +12,10 @@ import { loadNodeSolver } from '../../src/analysis/node-solver.js';
 import { cachedSolver } from '../../src/analysis/wasm-solver.js';
 import { cleanRecord } from '../../src/solve-store.js';
 import { buildStagePlan } from '../../src/brain/stage-plan.js';
+
+const nodeSolver = await loadNodeSolver();
+// Separate expensive cold table construction from bounded warm query assertions.
+assert.equal(nodeSolver.search({ scramble: 'R U F', face: 'D', timeoutMs: 15_000 }).status, 0);
 
 const quiet = () => { const log = console.log; console.log = () => {}; return () => { console.log = log; }; };
 
@@ -41,7 +46,7 @@ export function timesFor(count, { step = 280, pauses = {} } = {}) {
 
 /** Analyse a record with the real solver and store the summary on it (what the worker does in the app). */
 export async function analysed(record, { pairs = true } = {}) {
-  const solver = cachedSolver(await loadNodeSolver());
+  const solver = cachedSolver(nodeSolver);
   const input = { scramble: record.scramble, moves: record.solveMoves, moveTimes: record.moveTimes ?? undefined, crossFace: record.crossFace ?? undefined };
   const result = analyzeSolve(input, solver, { pairs });
   return cleanRecord({ ...record, analysis: summarizeAnalysis(result) });

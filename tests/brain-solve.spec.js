@@ -75,7 +75,7 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   await page.evaluate(() => window.testBrain.emitTurns("R U' F2 R' D2 L"));
   expect(await page.evaluate(() => window.testBrain.session.getSnapshot().phase)).toBe('tracking');
   await expect(brain.locator('#brain-timeline')).toBeVisible();
-  await expect(brain.locator('#brain-phase-detail')).toContainText('6 turns');
+  await expect(brain.locator('#brain-phase-detail')).toContainText('6 moves');
 
   // Undo those and then the scramble: the cube returns to solved and the solve is logged.
   const inverse = moves => moves.split(' ').reverse().map(m => m.endsWith('2') ? m : m.endsWith("'") ? m[0] : `${m}'`).join(' ');
@@ -209,7 +209,7 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
   await shot('1-inspection');
 
   await page.evaluate(() => window.testBrain.emitTurns("R'"));
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Building the cross');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('cross');
   await expect.poll(current).toBe('cross');
   await shot('2-pre-cross');
 

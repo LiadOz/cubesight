@@ -21,8 +21,8 @@ test('piece and drill filters show correct-only times and specific color confusi
   await page.getByRole('combobox', { name: 'Filter by corner piece' }).selectOption('green-red-white');
   await page.getByRole('combobox', { name: 'Filter by drill mode' }).selectOption('single');
   await expect(page.locator('.rp-count')).toHaveText('3');
-  await expect(page.locator('.rp-median')).toHaveText('200ms');
-  await expect(page.locator('.rp-p90')).toHaveText('300ms');
+  await expect(page.locator('.rp-median')).toHaveText('0.20 s');
+  await expect(page.locator('.rp-p90')).toHaveText('0.30 s');
   await page.getByRole('button', { name: 'Show entries' }).click();
   await expect(page.locator('.rp-trend-point')).toHaveCount(3);
   await expect(page.locator('.rp-rows')).toContainText('UFL');

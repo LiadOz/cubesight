@@ -141,7 +141,7 @@ test('F2L distractors accept clicks, and mobile layout stays within the screen',
   await clickPiece(page, distractor);
   await expect(page.locator('#f2l-selection')).toContainText(distractor);
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByRole('link', { name: 'F2L deduction' })).toBeVisible();
+  await expect(page.locator('#f2l-view')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
@@ -150,11 +150,11 @@ test('timed F2L scan scores matching pieces and keeps the limited camera', async
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-f2l-drill="scan"]').click();
   await page.locator('#f2l-scan-duration').selectOption('15');
-  await expect(page.locator('#f2l-status')).toContainText('Tap Start 15s scan above the cube');
+  await expect(page.locator('#f2l-status')).toContainText('Tap start 15 s scan above the cube');
   await page.locator('#f2l-scan-start').click();
   for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
   await expect(page.locator('#f2l-found')).toHaveText('1');
-  await expect(page.locator('#f2l-timings')).toContainText('left');
+  await expect(page.locator('#f2l-timings')).toHaveText(/\d+\.\d s ·/);
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
 });
 
@@ -205,7 +205,7 @@ test('best-next-pair drill shows locally verified weighted choices', async ({ pa
 
 test('opening help pauses the trial until explicit resume', async ({ page }) => {
   await page.goto('/#/drills/corners');
-  await page.getByRole('button', { name: 'How to play' }).click();
+  await page.getByRole('button', { name: 'help' }).click();
   await page.getByRole('button', { name: 'Start training' }).click();
   await expect(page.locator('#pause-overlay')).toBeVisible();
   await page.getByRole('button', { name: 'Resume with a fresh case' }).click();
@@ -245,7 +245,7 @@ test.describe('phone touch layout', () => {
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
     await page.locator('[data-color="white"]').tap();
-    await expect(page.locator('#case-number')).toHaveText('CASE 002');
+    await expect(page.locator('#case-number')).toHaveText('case 2');
     await page.locator('#corner-view .training-settings > summary').tap();
     await page.locator('[data-mode="triple"]').tap();
     await expect(page.locator('#corner-sequence')).toBeVisible();
