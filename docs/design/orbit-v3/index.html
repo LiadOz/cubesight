@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Orbit v3</title>
+<style>
+body{margin:0;background:#0d0c0b;color:#ece6d8;font:15px/1.5 system-ui,sans-serif}
+main{max-width:1500px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:34px;margin:0 0 6px}h2{font-size:24px;margin:56px 0 4px;border-top:1px solid #34312b;padding-top:28px}
+p{color:#9a9486;margin:0 0 16px;max-width:900px}a{color:#3dbfad}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:20px}
+figure{margin:0}figure img{width:100%;display:block;border:1px solid #34312b;border-radius:10px;background:#141311}
+figcaption{font:12px ui-monospace,monospace;color:#9a9486;padding:6px 2px}
+nav a{margin-right:18px}
+</style><main>
+<h1>Orbit v3</h1>
+<p>The orbit around the cube is the whole site. Three directions, the same two components. Each image links to its SVG. Read <a href="README.md">README.md</a> for the idea, what was removed, interaction, motion and the recommendation.</p>
+<nav><a href="#sys">design system</a><a href="#A">A · one orbit</a><a href="#B">B · orbit + rail</a><a href="#C">C · orbit as navigation</a></nav>
+<h2 id="sys">Design system and flow</h2>
+<p>Two components (cube, orbit), five pieces (header, key bar, coach line, actions, chip), every flow mapped to the ring, and one storyboard from solve to results to history to a drill and back.</p>
+<div class="grid">
+<figure><a href="00-system-components.svg"><img src="00-system-components.png" loading="lazy" alt="components: cube sizes and states, orbit API"></a><figcaption>components: cube sizes and states, orbit API</figcaption></figure>
+<figure><a href="00-system-pieces.svg"><img src="00-system-pieces.png" loading="lazy" alt="the five shared pieces"></a><figcaption>the five shared pieces</figcaption></figure>
+<figure><a href="00-system-flows.svg"><img src="00-system-flows.png" loading="lazy" alt="every flow is the same ring, and what it replaces"></a><figcaption>every flow is the same ring, and what it replaces</figcaption></figure>
+<figure><a href="00-flow-storyboard.svg"><img src="00-flow-storyboard.png" loading="lazy" alt="flow storyboard: solve, results, history, a drill, back"></a><figcaption>flow storyboard: solve, results, history, a drill, back</figcaption></figure>
+</div>
+<h2 id="A">A · One orbit</h2><p>One giant cube in one open dial; the gap at the bottom is the one slot for the number that matters. History: timeline by session with mini orbits.</p><div class="grid">
+<figure><a href="A-01-idle.svg"><img src="A-01-idle.png" loading="lazy" alt="01 solve idle"></a><figcaption>01 solve idle</figcaption></figure>
+<figure><a href="A-02-scramble.svg"><img src="A-02-scramble.png" loading="lazy" alt="02 guided scramble (progress on the ring)"></a><figcaption>02 guided scramble (progress on the ring)</figcaption></figure>
+<figure><a href="A-02b-wrong-turn.svg"><img src="A-02b-wrong-turn.png" loading="lazy" alt="02b wrong turn and recovery"></a><figcaption>02b wrong turn and recovery</figcaption></figure>
+<figure><a href="A-03-inspection.svg"><img src="A-03-inspection.png" loading="lazy" alt="03 inspection"></a><figcaption>03 inspection</figcaption></figure>
+<figure><a href="A-04-solving.svg"><img src="A-04-solving.png" loading="lazy" alt="04 solving"></a><figcaption>04 solving</figcaption></figure>
+<figure><a href="A-05-results.svg"><img src="A-05-results.png" loading="lazy" alt="05 finish / results"></a><figcaption>05 finish / results</figcaption></figure>
+<figure><a href="A-06-review.svg"><img src="A-06-review.png" loading="lazy" alt="06 review a moment"></a><figcaption>06 review a moment</figcaption></figure>
+<figure><a href="A-07-history.svg"><img src="A-07-history.png" loading="lazy" alt="07 history"></a><figcaption>07 history</figcaption></figure>
+<figure><a href="A-08-drill.svg"><img src="A-08-drill.png" loading="lazy" alt="08 drill (OLL recognition)"></a><figcaption>08 drill (OLL recognition)</figcaption></figure>
+<figure><a href="A-09-phone.svg"><img src="A-09-phone.png" loading="lazy" alt="09 phone: solve and results"></a><figcaption>09 phone: solve and results</figcaption></figure>
+<figure><a href="A-10-past-solve.svg"><img src="A-10-past-solve.png" loading="lazy" alt="10 a past solve (results re-opened)"></a><figcaption>10 a past solve (results re-opened)</figcaption></figure>
+<figure><a href="A-11-replay.svg"><img src="A-11-replay.png" loading="lazy" alt="11 replay"></a><figcaption>11 replay</figcaption></figure>
+<figure><a href="A-12-phone-past.svg"><img src="A-12-phone-past.png" loading="lazy" alt="12 phone: past solve and replay"></a><figcaption>12 phone: past solve and replay</figcaption></figure>
+</div>
+<h2 id="B">B · Orbit + rail</h2><p>A full ring plus one thin borderless rail for the words. History: calendar where every day is a ring.</p><div class="grid">
+<figure><a href="B-01-idle.svg"><img src="B-01-idle.png" loading="lazy" alt="01 solve idle"></a><figcaption>01 solve idle</figcaption></figure>
+<figure><a href="B-02-scramble.svg"><img src="B-02-scramble.png" loading="lazy" alt="02 guided scramble (progress on the ring)"></a><figcaption>02 guided scramble (progress on the ring)</figcaption></figure>
+<figure><a href="B-02b-wrong-turn.svg"><img src="B-02b-wrong-turn.png" loading="lazy" alt="02b wrong turn and recovery"></a><figcaption>02b wrong turn and recovery</figcaption></figure>
+<figure><a href="B-03-inspection.svg"><img src="B-03-inspection.png" loading="lazy" alt="03 inspection"></a><figcaption>03 inspection</figcaption></figure>
+<figure><a href="B-04-solving.svg"><img src="B-04-solving.png" loading="lazy" alt="04 solving"></a><figcaption>04 solving</figcaption></figure>
+<figure><a href="B-05-results.svg"><img src="B-05-results.png" loading="lazy" alt="05 finish / results"></a><figcaption>05 finish / results</figcaption></figure>
+<figure><a href="B-06-review.svg"><img src="B-06-review.png" loading="lazy" alt="06 review a moment"></a><figcaption>06 review a moment</figcaption></figure>
+<figure><a href="B-07-history.svg"><img src="B-07-history.png" loading="lazy" alt="07 history"></a><figcaption>07 history</figcaption></figure>
+<figure><a href="B-08-drill.svg"><img src="B-08-drill.png" loading="lazy" alt="08 drill (OLL recognition)"></a><figcaption>08 drill (OLL recognition)</figcaption></figure>
+<figure><a href="B-09-phone.svg"><img src="B-09-phone.png" loading="lazy" alt="09 phone: solve and results"></a><figcaption>09 phone: solve and results</figcaption></figure>
+<figure><a href="B-10-past-solve.svg"><img src="B-10-past-solve.png" loading="lazy" alt="10 a past solve (results re-opened)"></a><figcaption>10 a past solve (results re-opened)</figcaption></figure>
+<figure><a href="B-11-replay.svg"><img src="B-11-replay.png" loading="lazy" alt="11 replay"></a><figcaption>11 replay</figcaption></figure>
+<figure><a href="B-12-phone-past.svg"><img src="B-12-phone-past.png" loading="lazy" alt="12 phone: past solve and replay"></a><figcaption>12 phone: past solve and replay</figcaption></figure>
+</div>
+<h2 id="C">C · Orbit as navigation</h2><p>Inner ring = stages (tap to open); outer ring = sections, actions, answers, transport. History: grid of orbit cards.</p><div class="grid">
+<figure><a href="C-01-idle.svg"><img src="C-01-idle.png" loading="lazy" alt="01 solve idle"></a><figcaption>01 solve idle</figcaption></figure>
+<figure><a href="C-02-scramble.svg"><img src="C-02-scramble.png" loading="lazy" alt="02 guided scramble (progress on the ring)"></a><figcaption>02 guided scramble (progress on the ring)</figcaption></figure>
+<figure><a href="C-02b-wrong-turn.svg"><img src="C-02b-wrong-turn.png" loading="lazy" alt="02b wrong turn and recovery"></a><figcaption>02b wrong turn and recovery</figcaption></figure>
+<figure><a href="C-03-inspection.svg"><img src="C-03-inspection.png" loading="lazy" alt="03 inspection"></a><figcaption>03 inspection</figcaption></figure>
+<figure><a href="C-04-solving.svg"><img src="C-04-solving.png" loading="lazy" alt="04 solving"></a><figcaption>04 solving</figcaption></figure>
+<figure><a href="C-05-results.svg"><img src="C-05-results.png" loading="lazy" alt="05 finish / results"></a><figcaption>05 finish / results</figcaption></figure>
+<figure><a href="C-06-review.svg"><img src="C-06-review.png" loading="lazy" alt="06 review a moment"></a><figcaption>06 review a moment</figcaption></figure>
+<figure><a href="C-07-history.svg"><img src="C-07-history.png" loading="lazy" alt="07 history"></a><figcaption>07 history</figcaption></figure>
+<figure><a href="C-08-drill.svg"><img src="C-08-drill.png" loading="lazy" alt="08 drill (OLL recognition)"></a><figcaption>08 drill (OLL recognition)</figcaption></figure>
+<figure><a href="C-09-phone.svg"><img src="C-09-phone.png" loading="lazy" alt="09 phone: solve and results"></a><figcaption>09 phone: solve and results</figcaption></figure>
+<figure><a href="C-10-past-solve.svg"><img src="C-10-past-solve.png" loading="lazy" alt="10 a past solve (results re-opened)"></a><figcaption>10 a past solve (results re-opened)</figcaption></figure>
+<figure><a href="C-11-replay.svg"><img src="C-11-replay.png" loading="lazy" alt="11 replay"></a><figcaption>11 replay</figcaption></figure>
+<figure><a href="C-12-phone-past.svg"><img src="C-12-phone-past.png" loading="lazy" alt="12 phone: past solve and replay"></a><figcaption>12 phone: past solve and replay</figcaption></figure>
+</div>
+</main></html>
