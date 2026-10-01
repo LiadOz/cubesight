@@ -3,7 +3,7 @@
 // a cube); they are never shipped as "the" algorithm. OLL cases are defined
 // by a well-known short alg, checked to be F2L-preserving at load time.
 import { PLL_CASES } from '../../../src/pll-logic.js';
-import { stateOf, compose, invert, hash, IDENTITY, mirrorAlg, invertAlg } from './cube.mjs';
+import { stateOf, compose, hash, IDENTITY, mirrorAlg, invertAlg } from './cube.mjs';
 
 export const pllCases = PLL_CASES.map(c => ({ id: c.name, kind: 'pll', ref: c.algorithm }));
 // [name, ref alg] -- numbering follows the common OLL 1-57 convention; the

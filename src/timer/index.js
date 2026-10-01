@@ -38,6 +38,7 @@ const STYLES = {
 const INSPECTION_CYCLE = ['wca', 'custom', 'unlimited', 'off'];
 const OVERTIME_CYCLE = ['wca', 'count', 'grace', 'autostart'];
 const inspectionName = insp => (insp.mode === 'off' ? 'off' : insp.mode === 'unlimited' ? '∞' : `${insp.mode === 'custom' ? `custom ${insp.seconds}` : 'WCA 15'} s`);
+const inspectionControlName = insp => insp.mode === 'wca' ? 'WCA 15 s' : inspectionName(insp);
 const overtimeName = insp => insp.overtime === 'wca' ? 'WCA +2 / DNF' : insp.overtime === 'autostart' ? 'auto-start' : insp.overtime === 'grace' ? `grace ${insp.graceSeconds} s · ${insp.gracePenalty === 'none' ? 'none' : insp.gracePenalty === 'dnf' ? 'DNF' : '+2'}` : insp.overtime;
 
 const el = (tag, className, text) => {
@@ -370,13 +371,14 @@ export function createTimer(root, {
     options.hidden = busy;
     sourceBtn.hidden = Boolean(busy);
     secondsBtn.hidden = machine.inspection.mode !== 'custom';
-    setText(holdBtn, `hold ${prefs.holdMs}`);
-    setText(inspBtn, `insp ${inspectionName(machine.inspection)}`);
+    setText(holdBtn, `hold ${prefs.holdMs} ms`);
+    setText(inspBtn, inspectionControlName(machine.inspection));
     setText(secondsBtn, `length ${machine.inspection.seconds} s`);
     setText(overBtn, `overtime ${overtimeName(machine.inspection)}`);
     setText(sourceBtn, prefs.statsSource === 'manual' ? 'stats · manual solves' : 'stats · all solves');
     holdBtn.title = 'how long to hold before the timer is ready (ms)';
     inspBtn.title = 'inspection mode and length (shared with solve)';
+    inspBtn.setAttribute('aria-label', `inspection ${inspectionName(machine.inspection)}`);
     overBtn.title = 'inspection overtime rule (shared with solve)';
     sourceBtn.title = 'choose which solves appear in stats';
     let hints;

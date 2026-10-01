@@ -125,13 +125,15 @@ test('inspection modes and overtime penalties stay shared and configurable', asy
   const insp = page.locator('button[data-action="inspection"]');
   const length = page.locator('button[data-action="inspection-seconds"]');
   const overtime = page.locator('button[data-action="overtime"]');
-  await expect(insp).toHaveText('insp off');
-  await insp.click(); await expect(insp).toHaveText('insp WCA 15 s');
-  await insp.click(); await expect(insp).toHaveText('insp custom 15 s');
+  await expect(insp).toHaveText('off');
+  await expect(insp).toHaveAttribute('aria-label', 'inspection off');
+  await insp.click(); await expect(insp).toHaveText('WCA 15 s');
+  await expect(insp).toHaveAttribute('aria-label', 'inspection WCA 15 s');
+  await insp.click(); await expect(insp).toHaveText('custom 15 s');
   await expect(length).toHaveText('length 15 s');
   await length.click(); await expect(length).toHaveText('length 20 s');
-  await insp.click(); await expect(insp).toHaveText('insp ∞');
-  await insp.click(); await expect(insp).toHaveText('insp off');
+  await insp.click(); await expect(insp).toHaveText('∞');
+  await insp.click(); await expect(insp).toHaveText('off');
 
   await overtime.click(); await expect(overtime).toHaveText('overtime count');
   await overtime.click(); await expect(overtime).toHaveText('overtime grace 2 s · +2');

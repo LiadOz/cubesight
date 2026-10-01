@@ -1,6 +1,6 @@
 // Drawing layer for the move-guide mockups: themes (tokens.md), shaded 3D cube, arrows, net, OLL view, chips.
-import { AX, add, sub, mul, dot, cross, norm, rot, parseMove, inv, solved, apply, turn, heldMap, makeCam, camFor, faceArc, beltLine, rotArc, CAM_URF, CAM_DLB } from './geom.mjs';
-import { t, esc } from '../../_src/lib.mjs';
+import { add, sub, mul, dot, norm, rot, parseMove, solved, heldMap, makeCam, camFor, faceArc, beltLine, rotArc } from './geom.mjs';
+import { t } from '../../_src/lib.mjs';
 
 export const MONO = "'DM Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace";
 export const SANS = "'Manrope', 'Manrope Variable', system-ui, -apple-system, 'Segoe UI', sans-serif";
@@ -234,7 +234,7 @@ export function netSVG(x0, y0, u, th, cubies, moveStr, o = {}) {
         const inFace = mv.layers.includes(d > 0 ? 1 : -1);
         if (!inFace && mv.kind !== 'rot') continue;
         // arc in the face plane, drawn so it reads clockwise seen from outside when (angle*d)<0
-        const [eu, ev] = NET_BASIS[face];
+        const [, ev] = NET_BASIS[face];
         const pts = []; const total = mv.double ? 200 : 105; const N = 28;
         // start at the on-screen top of the face (-ev direction)
         const m = mul(ev, -1);
@@ -260,7 +260,6 @@ export function ollSVG(cx, cy, u, th, cubies, moveStr, o = {}) {
   let s = '';
   const half = 1.5 * u;
   s += `<rect x="${cx - half - strip - 4}" y="${cy - half - strip - 4}" width="${3 * u + 2 * strip + 8}" height="${3 * u + 2 * strip + 8}" rx="${u * 0.35}" fill="${th.body}"/>`;
-  const dim = c => mv && mv.kind !== 'rot' ? c : c; // the side strips stay full colour (they are the recognition cues)
   for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
     let c = col([i, 1, j], [0, 1, 0]);
     const inL = mv && mv.layers.includes(mv.ax === 0 ? i : mv.ax === 1 ? 1 : j);

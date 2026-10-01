@@ -11,8 +11,6 @@
 // catastrophic pop or a single lucky skip — the same reason they are the
 // standard competition statistic (WCA Regulations §9f).
 
-const DAY = 24 * 60 * 60 * 1000;
-
 export const SOLVE_STORE_KEY = 'cubesight-solves-v1';
 // Cap of the legacy localStorage store only; the IndexedDB history (src/store)
 // has no cap.

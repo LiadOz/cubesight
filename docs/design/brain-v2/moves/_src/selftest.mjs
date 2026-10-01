@@ -1,8 +1,7 @@
 // Verifies the move semantics independently of the drawings. Run: node selftest.mjs
-import { parseMove, solved, apply, isSolved, turn, makeCam, camFor, faceArc, beltLine, screenSense, rot, inv, heldMap } from './geom.mjs';
+import { parseMove, solved, apply, isSolved, makeCam, camFor, faceArc, beltLine, screenSense, rot, inv, heldMap } from './geom.mjs';
 let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log('FAIL', m); } };
 // 1. sticker flow: where does a sticker on the named face/position end up after ONE plain turn?
-const moveOf = (mv, p, n) => { const m = parseMove(mv); const q = turn(solved(), m).find(() => false); return null; };
 function flow(mv, p0) { // returns new position of the cubie that started at p0
   const m = parseMove(mv); return rot(p0, m.ax, m.angle);
 }
@@ -30,7 +29,6 @@ for (const m of ['R', 'L', 'U', 'D', 'F', 'B', 'M', 'E', 'S', 'x', 'y', 'z', 'Rw
   ok(isSolved(apply(solved(), [m + '2', m + '2'])), m + '2 x2');
 }
 // r = R M'   (wide follows its face)   ;  x = R M' L'
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const cmp = (A, B) => { const k = c => c.map(q => q.p.join() + ':' + q.st.map(s => s.n.join() + s.c).sort().join('|')).sort().join(';'); return k(A) === k(B); };
 ok(cmp(apply(solved(), ['r']), apply(solved(), ['R', "M'"])), "r == R M'");
 ok(cmp(apply(solved(), ['x']), apply(solved(), ['R', "M'", "L'"])), "x == R M' L'");
@@ -40,7 +38,6 @@ const T = "R U R' U' R' F R2 U' R' U' R U R' F'".split(' ');
 const t1 = apply(solved(), T);
 ok(!isSolved(t1), 'T-perm changes the cube');
 ok(t1.every(q => q.p[1] < 1 ? q.st.every(s => Math.abs(s.n[1]) > 0 ? true : true) : true), 'noop');
-const bottom = t1.filter(q => q.p[1] <= 0 && (q.p[1] === 0 || true));
 // every cubie that started at y<=0 must be back home with its stickers
 const home = solved();
 const at = (c, p) => c.find(q => q.p.join() === p.join());
@@ -48,7 +45,6 @@ let f2lOk = true; for (const q of home) if (q.p[1] <= 0) { const r = at(t1, q.p)
 ok(f2lOk, 'T-perm leaves the bottom two layers solved');
 ok(isSolved(apply(solved(), [...T, ...T])), 'T-perm twice = identity');
 // the actual T-perm swaps UFR<->UBR corners and UL<->UR edges
-const pos = (c, p0, col) => c.find(q => q.st.some(s => s.c === col) && JSON.stringify(q.st.map(s => s.c).sort()) === JSON.stringify(col)) ;
 const cornerAt = (c, p) => at(c, p).st.map(s => s.c).sort().join('');
 ok(cornerAt(t1, [1, 1, 1]) === ['R', 'U', 'B'].sort().join(''), 'T-perm: UBR piece now at UFR');
 const edgeAt = (c, p) => at(c, p).st.map(s => s.c).sort().join('');

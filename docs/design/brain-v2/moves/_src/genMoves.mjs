@@ -2,8 +2,8 @@
 //   node _src/genMoves.mjs && node _src/render.mjs
 import fs from 'fs';
 import { svg, t, esc } from '../../_src/lib.mjs';
-import { THEMES, MONO, SANS, guidedCube, cubeSVG, moveArrows, arrow, netSVG, netSize, ollSVG, chip, describeMove, pill, pillW, mix, f1, FINGER, pathD, centerColors } from './draw.mjs';
-import { parseMove, inv, solved, apply, makeCam, camFor, heldMap, add, mul, dot } from './geom.mjs';
+import { THEMES, MONO, SANS, guidedCube, cubeSVG, moveArrows, netSVG, netSize, ollSVG, chip, describeMove, pill, f1, FINGER, pathD, centerColors } from './draw.mjs';
+import { parseMove, inv, solved, apply, makeCam, camFor, heldMap } from './geom.mjs';
 
 const OUT = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 const write = (name, th, w, h, body) => { fs.writeFileSync(`${OUT}/${name}.svg`, svg(w, h, body, { bg: th.bg, fonts: th.fonts })); console.log('wrote', name); };
@@ -177,7 +177,6 @@ function frameC(th, name) {
     // the window for the scramble shifts group indices; scramble has no groups
     s += strip.svg;
     // right-hand text for the current chip
-    const tb = Math.max(strip.end + 30, 1000);
     const f = FINGER[e.move];
     const lines = wrap(e.d.text, 40);
     const tx0 = 1040;
@@ -247,7 +246,6 @@ function frameOrient(th, name) {
     s += tx(cx, 160, `hold ${i + 1}`, { size: 12, fill: th.accText, anchor: 'middle' });
     s += t(cx, 190, hd.label, { size: 16, fill: th.ink, family: th.font, weight: th.style === 'orbit' ? 600 : 400, anchor: 'middle' });
     s += tx(cx, 212, `bottom ${hd.held.bottom} · front ${hd.held.front}`, { size: 11, fill: th.muted, anchor: 'middle' });
-    const st = apply(solved(), ['F', 'R', "U'"]).map(q => q);
     s += guidedCube(cx, 350, 44, th, solved(), redLetter, { held: hd.held });
     s += tx(cx, 530, redLetter, { size: 64, fill: th.ink, anchor: 'middle', weight: 300 });
     const d = describeMove(redLetter, hd.held);
@@ -299,7 +297,7 @@ function combined(th, name, e, opt = {}) {
   const W = 1440, H = 900;
   const orbit = th.style === 'orbit';
   let s = '';
-  const held = e.held, hm = heldMap(held.bottom, held.front);
+  const held = e.held;
   const mv = e.d.mv;
   s += t(48, 48, 'cubesight', { size: 20, fill: th.ink, family: th.font, weight: orbit ? 700 : 500 });
   s += tx(200, 48, 'brain', { size: 14, fill: th.ink, weight: 500 }) + tx(262, 48, 'history', { size: 14, fill: th.muted }) + tx(340, 48, 'trainers', { size: 14, fill: th.muted });
@@ -325,7 +323,6 @@ function combined(th, name, e, opt = {}) {
   const f = FINGER[e.move]; if (f) { s += tx(rx, y, 'fingers', { size: 12, fill: th.muted }); s += tx(rx + 70, y, f, { size: 13, fill: th.accText }); y += 30; }
   const cc = centerColors(e.state, held);
   s += tx(rx, y, 'you hold', { size: 12, fill: th.muted }); s += tx(rx + 70, y, `${cc.U} on top · ${cc.F} in front`, { size: 13, fill: th.ink });
-  const dot = (x, c) => `<circle cx="${x}" cy="${y - 4}" r="5" fill="${th.pal[c]}" stroke="${th.body}" stroke-width="1"/>`;
   y += 26;
   s += tx(rx, y, 'turn', { size: 12, fill: th.muted }); s += tx(rx + 70, y, `the ${cc[mv.kind === 'rot' || mv.kind === 'slice' ? { x: 'R', y: 'U', z: 'F', M: 'L', E: 'D', S: 'F' }[mv.letter] : mv.letter].toLowerCase()}-centre side`, { size: 13, fill: th.ink });
   // chips strip
@@ -393,7 +390,6 @@ function frameContexts(th, name) {
     let cxp = x; const mid = y + 190; let out = '';
     const seq = ["D'", "B'", 'L', 'L2', "L'", 'U', "F'"];
     const stat = ['done', 'done', 'wrong', 'cur', 'next', 'next', 'next'];
-    const labels = { 0: null };
     seq.forEach((m, i) => {
       if (stat[i] === 'cur') { const c = chip(cxp, mid - 75, m, th, { status: 'current' }); out += c.svg.split(th.acc).join(th.warn); cxp += c.w + 6; }
       else { const c = chip(cxp, mid - 41, m, th, { status: stat[i] }); out += c.svg; if (stat[i] === 'wrong') out += `<line x1="${cxp + 9}" y1="${mid + 33}" x2="${cxp + c.w - 9}" y2="${mid - 33}" stroke="${th.warn}" stroke-width="2"/>`; cxp += c.w + 6; }

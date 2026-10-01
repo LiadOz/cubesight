@@ -307,7 +307,6 @@ function moveList(T, x, y, rowH, o = {}) {
   let s = '', pos = null; const tags = {};
   ROWS.forEach((r, ri) => {
     const cy = y + ri * rowH;
-    const tone = STAGE_TONE[ri];
     s += tm(x, cy + 4, r.label, { size: 12, fill: T.muted });
     let cx = x + 72;
     if (r.skip) {

@@ -2,7 +2,7 @@
 // 12-piece tracked model (4 cross edges + 4 slot edges + 4 slot corners), with
 // max-of pruning tables. Every solution is verified by cubing.js KPuzzle in
 // bench-pairs.mjs. Piece codes: edges slot*2+ori (0..23), corners slot*3+ori.
-import { stateOf, compose, IDENTITY, tokens } from './cube.mjs';
+import { stateOf, tokens } from './cube.mjs';
 
 export const FACES = ['U', 'D', 'R', 'L', 'F', 'B'];
 const SUF = ['', "'", '2'];
@@ -83,7 +83,6 @@ export function findCompletions(codes0, { newSlots, preserve = solvedSlots(codes
   const pieces = [0, 1, 2, 3, ...goalSlots.flatMap(i => [4 + i, 8 + i])];
   const ceTables = useCrossEdge ? goalSlots.map(i => [i, crossEdgeTable(i)]) : [];
   const n = pieces.length;
-  const homes = pieces.map(homeCode);
   const start = Uint8Array.from(pieces, t => codes0[t]);
   const t0 = performance.now(); let nodes = 0, timedOut = false;
   const solutions = []; const path = [];

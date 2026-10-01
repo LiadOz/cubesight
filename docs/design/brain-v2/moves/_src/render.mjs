@@ -23,7 +23,6 @@ for (const f of files) {
     const boxes = [...document.querySelectorAll('text')].filter(e => e.textContent.trim()).map(e => {
       const r = e.getBoundingClientRect();
       const g = e.closest('[data-clip]');
-      const op = e.closest('[opacity]');
       // shrink the line box to the glyph band so stacked rows are not false positives
       const padY = r.height * 0.22;
       return { s: e.textContent, x0: r.left, x1: r.right, y0: r.top + padY, y1: r.bottom - padY, clip: g?.dataset.clip };

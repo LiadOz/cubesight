@@ -454,7 +454,7 @@ function results() {
   });
   // sparkline
   const px0 = sx, px1 = sx + 300, py0 = sy + 68, py1 = sy + 132;
-  const vals = HISTORY.map(histValue), vmin = 12, vmx = 20;
+  const vmin = 12, vmx = 20;
   const Xs = i => px0 + (px1 - px0) * i / (HISTORY.length - 1), Ys = v => py1 - (py1 - py0) * (v - vmin) / (vmx - vmin);
   let sd = ''; let pen = '';
   HISTORY.forEach((h, i) => {

@@ -5,7 +5,7 @@
 import fs from 'fs';
 import createXCross from '../../../../../src/xcross-wasm/xcross.js';
 import { stateFromScramble, applyMoves, validateSolution, createSolvedState, sameCubeState } from '../../../../../src/cross-cube.js';
-import { currentDShift, solvedPairsPseudo, solvedPairs, crossSolved, analyze, eoSolved } from '../../../../../src/solve-tracker.js';
+import { currentDShift, solvedPairsPseudo, solvedPairs, analyze, eoSolved } from '../../../../../src/solve-tracker.js';
 import { plannerChoices } from '../../../../../src/f2l-planner.js';
 import { generatePllCase, PLL_CASES, applyPllMoves, identifyPllCase } from '../../../../../src/pll-logic.js';
 

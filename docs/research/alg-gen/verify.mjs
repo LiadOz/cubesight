@@ -9,7 +9,6 @@ const file = process.argv[2];
 const data = JSON.parse(fs.readFileSync(new URL(file, import.meta.url)));
 const defs = Object.fromEntries([...pllCases, ...ollCases].map(c => [c.id, c]));
 const AUF = ['', 'U', 'U2', "U'"];
-const T = a => kp.algToTransformation(a).transformationData;
 function solvedIgnoringCenterOri(t, kind) {
   const d = t.transformationData;
   const idOri = o => o.every(x => x === 0);

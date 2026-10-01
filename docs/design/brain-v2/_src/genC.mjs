@@ -1,5 +1,5 @@
 // Direction C — "Orbit": light, editorial, circular timeline ring around the cube.
-import { cube, t, svg, write, MONO, SANS, SOLVE, SCRAMBLE, SCR_DONE, STATES, HISTORY, histLabel, histValue, cumulative, fmt, monoW, esc } from './lib.mjs';
+import { cube, t, svg, write, MONO, SANS, SOLVE, SCRAMBLE, SCR_DONE, STATES, HISTORY, histLabel, histValue, cumulative, fmt, monoW } from './lib.mjs';
 
 // Theme: ORBIT_THEME=dark → C-dark-* frames. Every colour in this file is a token below.
 const DARK = process.env.ORBIT_THEME === 'dark';
@@ -161,7 +161,7 @@ function stepRing({ cx, cy, r }, o) {
 
 // ============ 01 idle ============
 function idle() {
-  const { cx, cy, r } = RING;
+  const { cx, cy } = RING;
   let b = topbar() + configBar(104);
   // ghost ring = your pace map, drawn faint
   b += `<g opacity="0.9">` + stepRing(RING, { state: () => 'future' }) + `</g>`;
@@ -259,7 +259,7 @@ function overtimeZones({ cx, cy, r }, o = {}) {
 
 // ============ 03 inspection ============
 function inspection() {
-  const { cx, cy, r } = RING;
+  const { cx, cy } = RING;
   const elapsed = 9.0;
   let b = topbar() + configBar(104, W / 2, true);
   b += inspectionRing(RING, elapsed);
@@ -349,7 +349,7 @@ function variants() {
 
 // ============ 06 solving ============
 function solving() {
-  const { cx, cy, r } = RING;
+  const { cx, cy } = RING;
   const into = 0.94, elapsed = 2.08 + 1.71 + 1.96 + into;
   let b = topbar() + configBar(104, W / 2, true);
   b += stepRing(RING, { state: i => (i < 3 ? 'done' : i === 3 ? 'current' : 'future'), frac: into / STEPS[3].avg, curText: `${fmt(into)}` });
@@ -380,7 +380,7 @@ function solving() {
 
 // ============ 07 skip ============
 function skip() {
-  const { cx, cy, r } = RING;
+  const { cx, cy } = RING;
   const into = 0.61, elapsed = 11.22 + into;
   let b = topbar() + configBar(104, W / 2, true);
   b += stepRing(RING, { state: i => (i === 5 ? 'skip' : i < 7 ? 'done' : i === 7 ? 'current' : 'future'), frac: into / STEPS[7].avg, curText: fmt(into) });

@@ -2,7 +2,7 @@
 // groups, comments) into CANONICAL fixed-centre face turns + a per-move orientation track, and verify it
 // against an independent physical model (applyMoves with Rw/Uw/Fw/M/E/S moving the centres).
 // Run: node docs/design/brain-v2/review/_src/proto-import.mjs
-import { applyMoves, createSolvedState, sameCubeState, stateFromScramble } from '../../../../../src/cross-cube.js';
+import { applyMoves, createSolvedState, sameCubeState } from '../../../../../src/cross-cube.js';
 
 const OPP = { U: 'D', D: 'U', F: 'B', B: 'F', R: 'L', L: 'R' };
 // view-label -> physical face, after a whole-cube rotation (derived by hand, verified below)
@@ -81,7 +81,7 @@ function physicalTokens(tokens) {
   return out;
 }
 function standardize(state) {           // physically rotate until every centre is home
-  const seqs = [[]]; const seen = new Set(); const found = [];
+  const seen = new Set(); const found = []
   let frontier = [[]];
   for (let depth = 0; depth < 6 && frontier.length; depth++) {
     const next = [];
@@ -97,7 +97,6 @@ function standardize(state) {           // physically rotate until every centre 
   if (ok(state)) return state;
   return found.find(([, st]) => ok(st))?.[1] ?? null;
 }
-const centreColour = (st, face) => st.cubies.find(c => c.id.length === 1 && c.stickers[face] !== undefined).stickers[face];
 function selfTest(n = 300) {
   const faces = 'URFDLB', tail = ['', "'", '2'], extra = ['x', 'y', 'z', 'M', 'E', 'S'];
   let seed = 12345; const rnd = k => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % k; };

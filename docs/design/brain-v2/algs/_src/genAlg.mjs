@@ -35,14 +35,12 @@ const rect = (x, y, w, h, fill, rx = 0, extra = '') => `<rect x="${f1(x)}" y="${
 const hline = (x0, x1, y, col = P.line, w = 1, extra = '') => `<line x1="${f1(x0)}" y1="${f1(y)}" x2="${f1(x1)}" y2="${f1(y)}" stroke="${col}" stroke-width="${w}" ${extra}/>`;
 const vline = (x, y0, y1, col = P.line, w = 1, extra = '') => `<line x1="${f1(x)}" y1="${f1(y0)}" x2="${f1(x)}" y2="${f1(y1)}" stroke="${col}" stroke-width="${w}" ${extra}/>`;
 const circle = (cx, cy, r, fill, extra = '') => `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${r}" fill="${fill}" ${extra}/>`;
-const ring = (cx, cy, r, stroke, w, extra = '') => `<circle cx="${f1(cx)}" cy="${f1(cy)}" r="${r}" fill="none" stroke="${stroke}" stroke-width="${w}" ${extra}/>`;
 const DEFS = P.glow ? `<defs><radialGradient id="cubeGlow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${P.glow}" stop-opacity="0.22"/><stop offset="0.55" stop-color="${P.glow}" stop-opacity="0.07"/><stop offset="1" stop-color="${P.glow}" stop-opacity="0"/></radialGradient></defs>` : '';
 const page = (w, h, body) => svg(w, h, DEFS + body, { fonts: FONTS, bg: P.bg });
 function write(name, content) { fs.writeFileSync(`${OUT}/${P.pfx}${name}.svg`, content); console.log('wrote', `${P.pfx}${name}.svg`); }
 
 // ---------- real case data ----------
 const CMAP = { white: 'y', yellow: 'w', green: 'g', blue: 'b', red: 'o', orange: 'r' }; // yellow-top colour scheme (z2 relabel)
-const pos = c => c.position;
 function stickerAt(state, x, y, z, face) {
   const c = state.cubies.find(q => q.position[0] === x && q.position[1] === y && q.position[2] === z);
   return c ? CMAP[c.stickers[face]] || '.' : '.';
@@ -78,7 +76,6 @@ function cubeAt(cx, cy, s, faces, extra = {}) {
   return g + cube(cx, cy + s * 0.5, s, faces, { palette: PAL, body: P.cubeBody, ...CUBE_O, ...extra });
 }
 // solved F2L on the sides: fix F/R side rows below the top row so the lower two rows read solved
-const solvedSide = (face, top3) => top3 + (face === 'F' ? 'gggggg' : 'rrrrrr');
 function dispFaces(name, auf = '') { const f = caseFaces(name, auf); return { U: f.U, F: f.F, R: f.R }; }
 
 // ---------- chrome ----------
@@ -134,7 +131,6 @@ const DT = [0, 92, 84, 190, 104, 96, 88, 101, 112, 98, 210, 118, 106];   // this
 const PBDT = [0, 86, 80, 120, 98, 90, 84, 96, 104, 92, 150, 108, 98];    // PB run
 const cum = a => a.reduce((r, v, i) => (r.push((r[i - 1] || 0) + v), r), []);
 const sec = ms => (ms / 1000).toFixed(2);
-const EXEC = cum(DT).at(-1), PB = cum(PBDT).at(-1);
 const HOT = new Set([3, 10]);
 
 // move-guide token row. done: count done; hot: set

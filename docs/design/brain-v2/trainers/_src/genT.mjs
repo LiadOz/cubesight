@@ -8,7 +8,7 @@
 //   T_THEME=mono-dark   node _src/genT.mjs   → T-mono-*.svg
 //   node _src/render.mjs [prefix]            → .png + overlap / clipping check
 import fs from 'fs';
-import { cube, t, svg, MONO, SANS, SOLVE, STATES, HISTORY, histLabel, histValue, cumulative, fmt, CUBE_STD } from '../../_src/lib.mjs';
+import { cube, t, svg, MONO, SANS, SOLVE, HISTORY, histValue, cumulative, fmt, CUBE_STD } from '../../_src/lib.mjs';
 
 const OUT = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 
@@ -109,11 +109,6 @@ function battery(x, y, pct, col) {
   return `<rect x="${x}" y="${y}" width="22" height="11" rx="2.5" fill="none" stroke="${col}" stroke-width="1.2"/><rect x="${x + 22.5}" y="${y + 3.5}" width="2" height="4" rx="1" fill="${col}"/><rect x="${x + 2}" y="${y + 2}" width="${(18 * pct) / 100}" height="7" rx="1.2" fill="${col}"/>`;
 }
 function gridIcon(x, y, col = P.sub) { let s = ''; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) s += rect(x + c * 6, y + r * 6, 4, 4, col, 0.8); return s; }
-function gear(cx, cy, col) {
-  let s = `<circle cx="${cx}" cy="${cy}" r="4.2" fill="none" stroke="${col}" stroke-width="1.6"/>`;
-  for (let i = 0; i < 8; i++) s += tick(cx, cy, 5.2, 7.4, i * 45, col, 2);
-  return s;
-}
 // device need glyph: none (hollow) / optional (half) / required (solid)
 function devGlyph(x, y, kind, r = 4.5) {
   if (kind === 'required') return circle(x, y, r, P.acc);

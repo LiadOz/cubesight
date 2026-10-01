@@ -158,12 +158,6 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     if (result.complete) return;
     else $('#oll-next').hidden = false;
   }
-  function finish(summary) {
-    $('#oll-result').hidden = false;
-    $('#oll-result').innerHTML = `<p class="cs-eyebrow">round complete</p><h2>${summary.correct} of ${summary.total} cases correct</h2><p>Best combo: ${summary.bestCombo}. ${Math.round((summary.accuracy ?? 0) * 100)}% accuracy.</p><button id="oll-again" type="button">one more round</button>`;
-    $('#oll-again').addEventListener('click', () => startRound(false));
-    $('#oll-round-state').textContent = 'round complete';
-  }
   function startRound(resume = true) {
     if (start.invalid) { $('#oll-feedback').textContent = 'This setup is not valid move notation. Check the link and try again.'; return; }
     round = rounds.startRound({ drill: 'oll', preset: QUICK_ROUNDS.oll, from: start.from, resume });

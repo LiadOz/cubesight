@@ -1,6 +1,6 @@
 // usage: node run.mjs pll|oll [--sets RU,RUF,...] [--cases T,Aa] [--budget ms]
 import fs from 'node:fs';
-import { stateOf, ergo, genSet, invertAlg, stm, compose } from './cube.mjs';
+import { ergo, genSet } from './cube.mjs';
 import { search, goals } from './search.mjs';
 const AX = { U: 0, D: 0, R: 1, L: 1, r: 1, M: 1, F: 2, B: 2 }, RK = { U: 1, D: 0, L: 0, M: 1, R: 2, r: 3, F: 0, B: 1 };
 // strip leading/trailing U (AUFs) and put commuting same-axis moves in canonical order

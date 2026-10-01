@@ -45,7 +45,6 @@ export function hash(s) {
 }
 
 // ---- move sets ----------------------------------------------------------
-const faceOf = m => m[0];
 const SUFFIX = ['', "'", '2'];
 const AXIS = { U: 0, D: 0, R: 1, L: 1, r: 1, M: 1, F: 2, B: 2 };
 const RANK = { U: 1, D: 0, L: 0, M: 1, R: 2, r: 3, F: 0, B: 1 };

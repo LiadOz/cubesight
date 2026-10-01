@@ -1,7 +1,7 @@
 // Enumerates the last-layer group (F2L solved) and counts case classes, to show
 // that OLL/PLL case identification needs no external data: cases are derived
 // from cube state, and only the *numbering* is a naming convention.
-import { stateOf, compose, hash, N, IDENTITY } from './cube.mjs';
+import { stateOf, compose, hash, IDENTITY } from './cube.mjs';
 const gens = ['U', "R U R' U R U2 R'", "F R U R' U' F'", "R U R' U' R' F R2 U' R' U' R U R' F'", "R U' R U R U R U' R' U' R2"].map(stateOf);
 const key = s => hash(s);
 const seen = new Map([[key(IDENTITY), IDENTITY]]); let frontier = [IDENTITY];

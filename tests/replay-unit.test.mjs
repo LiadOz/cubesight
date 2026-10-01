@@ -36,7 +36,7 @@ test('replay: two U quarter events coalesce into U2 and the mirror fires U2', as
   const mirror = trackMirror(session);
   await session.connect();
   await session.syncSolved();
-  for (const m of script.scrambleMoves) session.step();
+  for (let i = 0; i < script.scrambleMoves.length; i++) session.step();
   session.step(1000); // first U quarter
   const firstUSnap = session.getSnapshot();
   session.step(1010); // second U quarter, 10 ticks later → coalesces to "U2"
@@ -56,7 +56,7 @@ test('replay: repeated distinct moves both mirror (no coalesce)', async () => {
   const mirror = trackMirror(session);
   await session.connect();
   await session.syncSolved();
-  for (const m of script.scrambleMoves) session.step();
+  for (let i = 0; i < script.scrambleMoves.length; i++) session.step();
   session.step(1000); // first R after the scramble
   const afterFirstR = mirror.at(-1);
   assert.equal(afterFirstR.move, 'R', 'first R mirrored');

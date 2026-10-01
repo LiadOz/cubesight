@@ -1,5 +1,5 @@
 // Direction A — "Mono": pure monkeytype-dark minimal.
-import { cube, t, svg, write, MONO, SOLVE, SCRAMBLE, SCR_DONE, STATES, HISTORY, histLabel, histValue, cumulative, fmt, monoW, esc } from './lib.mjs';
+import { cube, t, svg, write, MONO, SOLVE, SCRAMBLE, SCR_DONE, STATES, HISTORY, histValue, cumulative, fmt, monoW } from './lib.mjs';
 
 // Theme: MONO_THEME=light → A-light-* frames.
 const LIGHT = process.env.MONO_THEME === 'light';
@@ -499,7 +499,6 @@ frames['A-08-results'] = () => {
   avs.forEach(([k, v], i) => { const x = X0 + i * 120; b += m(x, ay, k, { size: 13 }); b += m(x, ay + 34, v, { size: 26, fill: i === 0 ? C.acc : C.text, weight: 300 }); });
   // sparkline of history
   const sx0 = X0, sw = 440, sy0 = 668, sh = 64;
-  const vals = HISTORY.map(histValue).filter(v => v != null);
   const lo = 12, hi = 20;
   const hx = i => sx0 + i * (sw / (HISTORY.length - 1));
   const hy = v => sy0 + sh - (v - lo) / (hi - lo) * sh;

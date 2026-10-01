@@ -235,12 +235,6 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     if (result.complete) return;
     else $('#la-next').hidden = false;
   }
-  function finishRound(summary) {
-    $('#la-result').hidden = false;
-    $('#la-result').innerHTML = `<p class="cs-eyebrow">round complete</p><h2>${summary.correct} of ${summary.total} choices were the shortest</h2><p>Best combo: ${summary.bestCombo}. ${summary.accuracy == null ? '' : `${Math.round(summary.accuracy * 100)}% accuracy.`}</p><button id="la-again" type="button">one more round</button>`;
-    $('#la-again').addEventListener('click', () => startRound(false));
-    $('#la-round-label').textContent = 'round complete';
-  }
   function startRound(resume = true) {
     if (!caseFilter.valid) {
       $('#la-feedback').textContent = `Unknown lookahead case${caseFilter.invalid.length > 1 ? 's' : ''}: ${caseFilter.invalid.join(', ')}. Use a seed 1–48 or pair slot FR, BR, BL, or FL.`;

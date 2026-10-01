@@ -48,7 +48,6 @@ export function parseMove(str) {
   const [axn, layers, sign] = base;
   const double = suf === '2', prime = suf === "'";
   const angle = sign * 90 * (prime ? -1 : 1) * (double ? 2 : 1);
-  const wideName = str.includes('w') ? str : (kind === 'wide' ? str : null);
   return { str, kind, letter, ax: AX[axn], layers, sign, double, prime, angle, dir: Math.sign(angle) };
 }
 export const inv = str => str.endsWith('2') ? str : str.endsWith("'") ? str.slice(0, -1) : str + "'";

@@ -1,7 +1,6 @@
 // Benchmark of the "best pair completion" engine over random solves.
 // usage: node bench-pairs.mjs [positions=30] [wasmPositions=8] [slack=1] [multi=1]
-import { findCompletions, bestCompletions, trackedFrom, solvedSlots, crossSolved, SLOTS, buildTables, crossEdgeTable, plannerWeight, ergoScore } from './pairbest.mjs';
-import { tokens } from './cube.mjs';
+import { findCompletions, bestCompletions, trackedFrom, SLOTS, buildTables, crossEdgeTable } from './pairbest.mjs';
 import { cube3x3x3 } from '../../../node_modules/cubing/dist/lib/cubing/puzzles/index.js';
 import { loadNodeSolver } from '../../../src/analysis/node-solver.js';
 const kp = await cube3x3x3.kpuzzle();
@@ -48,13 +47,13 @@ for (let p = 0; p < NPOS; p++) {
     if (MULTI && stage <= 3) {
       const open = SLOTS.map((_, i) => i).filter(i => !solved.includes(i)); const codes = trackedFrom(sc);
       const pairs = []; for (let a = 0; a < open.length; a++) for (let b = a + 1; b < open.length; b++) pairs.push([open[a], open[b]]);
-      const tm = performance.now(); let any = 0;
-      for (const pr of pairs) { const m = findCompletions(codes, { newSlots: pr, preserve: solved, maxDepth: 12, maxSolutions: 5, slack: 0, timeBudgetMs: 10000 }); if (m.solutions.length) any++; if (m.timedOut) timeouts++;
+      const tm = performance.now();
+      for (const pr of pairs) { const m = findCompletions(codes, { newSlots: pr, preserve: solved, maxDepth: 12, maxSolutions: 5, slack: 0, timeBudgetMs: 10000 }); if (m.timedOut) timeouts++;
         if (m.solutions.length && !verify(`${sc} ${m.solutions[0]}`, [...solved, ...pr])) { bad++; console.log('VERIFY FAIL multi'); } }
       stats['multi' + (stage + 1)]?.push(performance.now() - tm);
     }
     if (wasm && p < NWASM && stage <= 3) { // per-slot comparison with the WASM engine (mask = solved slots + this slot)
-      if (!slotOfBit) { slotOfBit = []; const base = sc.split(' ').slice(0, 22).join(' ');
+      if (!slotOfBit) { slotOfBit = [];
         // learn the WASM bit -> slot mapping on a position with the cross solved and nothing else (stage-1 position of this solve)
       }
       for (const c of bc.candidates) {
