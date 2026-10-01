@@ -2,11 +2,13 @@
 //
 // Canonical routes: #/solve  #/drills  #/drills/{corners,pll,f2l,scout}  #/algs
 // #/progress  #/dev/studio. Old hashes redirect, keeping their query string;
-// an unknown or empty hash resolves to the home route (chooseHome).
+// an empty hash resolves to the home route (chooseHome); unknown routes have
+// an explicit not-found destination so they never masquerade as a solve.
 
 /** tool id -> canonical path. The tool ids are the internal module names used by main.js. */
 export const TOOL_PATHS = Object.freeze({
   brain: '/solve',
+  notfound: '/not-found',
   drills: '/drills',
   corner: '/drills/corners',
   pll: '/drills/pll',
@@ -80,8 +82,10 @@ export function resolveRoute(hash, context = {}) {
   let tool = PATH_TOOLS[path];
   if (!tool) tool = DYNAMIC_ROUTES.find(route => route.match(path))?.tool;
   if (!tool && Object.hasOwn(REDIRECTS, path)) tool = PATH_TOOLS[REDIRECTS[path]];
-  // Home and unknown hashes resolve by context; a stray query is kept.
-  if (!tool) tool = PATH_TOOLS[chooseHome(context)];
+  // Only the empty home hash is context-sensitive. Preserve unknown route and
+  // query text so a not-found view does not hide the address the user entered.
+  if (!tool && (path === '' || path === '/')) tool = PATH_TOOLS[chooseHome(context)];
+  if (!tool) return { tool: 'notfound', hash: `#${path}${query}` };
   const keepDynamicPath = DYNAMIC_ROUTES.some(route => route.tool === tool && route.match(path));
   return { tool, hash: `#${keepDynamicPath ? path : TOOL_PATHS[tool]}${query}` };
 }

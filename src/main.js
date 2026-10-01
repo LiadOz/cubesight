@@ -6,6 +6,7 @@ import './pages/page.css';
 import './brain/css/tokens-orbit.css';
 import './brain/css/tokens-mono.css';
 import './legacy-reskin.css';
+import './not-found.css';
 import { setupTheme } from './theme.js';
 import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
 import { T, MSG, fmt, KEYS } from './copy/terms.js';
@@ -207,7 +208,7 @@ let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', notfound: 'not-found-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
@@ -425,6 +426,15 @@ document.querySelector('#app').innerHTML = `
     <div id="history-view" class="cs-host" hidden></div>
     <div id="timer-view" class="cs-host" hidden></div>
     <div id="review-view" class="cs-host" hidden></div>
+    <section id="not-found-view" class="brain not-found-page" data-brain-style="orbit" hidden aria-labelledby="not-found-title">
+      <p class="not-found-kicker">route unavailable</p>
+      <h1 id="not-found-title">not found</h1>
+      <p class="not-found-copy">The address may have changed, or the page may have been removed.</p>
+      <nav class="not-found-links" aria-label="Choose a page">
+        <a id="not-found-drills" href="#/drills">go to drills</a>
+        <a id="not-found-solve" href="#/solve">go to solve</a>
+      </nav>
+    </section>
     <div id="oll-view" class="cs-host" hidden></div>
     <div id="lookahead-view" class="cs-host" hidden></div>
     <div id="pll-view" hidden></div>
@@ -1744,6 +1754,14 @@ function setTool(tool, initial = false) {
     f2lState.plannerGeneration += 1;
   }
   cancelCornerTimers();
+  if (tool === 'notfound') {
+    state.locked = true;
+    f2lState.locked = true;
+    const page = document.querySelector('#not-found-view');
+    page.dataset.brainStyle = loadSettings(globalThis.localStorage).style;
+    syncPageTokens(page);
+    return;
+  }
   legacyRounds[tool]?.setActive(true);
   if (tool === 'brain') {
     state.locked = true;
@@ -2145,6 +2163,9 @@ updateStatsUI();
 updateSprintUI();
 updateLearningUI();
 window.addEventListener('hashchange', () => syncRoute());
+document.addEventListener('cubesight-theme', () => {
+  if (activeTool === 'notfound') syncPageTokens(document.querySelector('#not-found-view'));
+});
 syncRoute(true);
 
 // The Rust core is compiled with wasm-bindgen and runs alongside the visual trainer.

@@ -1,0 +1,51 @@
+.not-found-page {
+  width: min(760px, 100% - 48px);
+  min-height: min(68vh, 640px);
+  justify-content: center;
+  gap: 16px;
+  margin: 0 auto;
+  padding: clamp(36px, 8vw, 96px) 0;
+  border-top: 1px solid var(--b-hairline);
+}
+
+.not-found-kicker {
+  color: var(--b-accent-text);
+  font: 500 12px/1.4 var(--b-font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.not-found-page h1 {
+  max-width: 12ch;
+  color: var(--b-ink);
+  font-size: clamp(34px, 7vw, 64px);
+  font-weight: 400;
+  letter-spacing: -.055em;
+  line-height: 1.02;
+}
+
+.not-found-copy { max-width: 44ch; color: var(--b-muted); line-height: 1.6; }
+.not-found-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.not-found-links a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 18px;
+  border: 1px solid var(--b-hairline);
+  border-radius: var(--b-radius-bar);
+  color: var(--b-ink);
+  text-decoration: none;
+}
+.not-found-links a:first-child { border-color: var(--b-accent); color: var(--b-accent-text); }
+.not-found-links a:hover { background: var(--b-surface); }
+
+:root:has(#not-found-view:not([hidden])) body,
+:root:has(#not-found-view:not([hidden])) .site-header {
+  background: var(--cs-page);
+  border-color: var(--cs-page-line);
+}
+
+@media (max-width: 600px) {
+  .not-found-page { width: calc(100% - 32px); min-height: 62vh; }
+  .not-found-page h1 { max-width: 10ch; }
+}

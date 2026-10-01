@@ -112,6 +112,11 @@ const TEMPLATE = `
       </div>
     </div>
     <section class="brain-review b-slot-results" id="brain-review" hidden aria-live="polite">
+      <label class="b-results-source">solve source
+        <select id="brain-results-source" aria-label="Solve source">
+          <option value="smart">smart cube</option><option value="manual">manual timer</option><option value="all">all</option>
+        </select>
+      </label>
       <div class="b-slot b-results-host" data-slot="results"></div>
       <div class="b-results-actions"><button class="b-textbtn" id="brain-review-close" type="button">next</button></div>
     </section>
@@ -324,6 +329,7 @@ export function createShell(root, { dispatch }) {
     const target = /** @type {HTMLInputElement} */ (event.target);
     if (target.id === 'brain-pseudo') dispatch({ type: 'setSetting', path: 'f2l', value: target.checked ? 'pseudo' : 'standard' });
     else if (target.id === 'brain-inspection') dispatch({ type: 'setSetting', path: 'inspection', value: { enabled: target.checked } });
+    else if (target.id === 'brain-results-source') dispatch({ type: 'setSetting', path: 'stats.source', value: target.value });
     else if (target.id === 'brain-import-file' && target.files?.[0]) { dispatch({ type: 'import', file: target.files[0] }); target.value = ''; }
     else if (target.dataset.settingNumber) dispatch({ type: 'setSetting', path: target.dataset.settingNumber, value: Number(target.value) });
   });
@@ -590,6 +596,8 @@ export function createShell(root, { dispatch }) {
     updateDevice(vm.device, p?.device);
     updateConfigBar(vm.configBar, p?.configBar);
     updateSettings(vm.settings, p?.settings);
+    const statsSource = vm.settings.sections.flatMap(section => section.rows).find(row => row.id === 'stats.source')?.options.find(option => option.active)?.value;
+    if (statsSource) $('#brain-results-source').value = statsSource;
     updateScramble(vm.scramble, p?.scramble);
     updateClock(vm.clock, p?.clock);
     updateCoach(vm.coach, p?.coach);

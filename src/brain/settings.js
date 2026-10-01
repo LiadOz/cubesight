@@ -290,7 +290,6 @@ export function buildConfigBar(settings) {
   items.push(seg('inspection.mode', ['wca', 'custom', 'unlimited', 'off'], insp.mode, { wca: '15s', custom: `${insp.seconds}s`, unlimited: '∞', off: 'off' }, 'insp'));
   items.push({ id: 'penalties', options: [{ value: settings.penalties === 'apply' ? 'ignore' : 'apply', label: 'wca penalties', active: settings.penalties === 'apply' }] });
   items.push(seg('session.focus', FOCI, settings.session.focus, FOCUS_LABELS, 'focus'));
-  items.push(seg('stats.source', STATS_SOURCES, settings.stats.source, LABELS['stats.source'], 'stats'));
   return { items };
 }
 

@@ -23,6 +23,7 @@ test('parseHash splits path and query and drops a trailing slash', () => {
 test('resolveRoute: canonical hashes stay, old hashes redirect and keep their query', () => {
   const cases = [
     ['#/solve', 'brain', '#/solve'],
+    ['#/not-found', 'notfound', '#/not-found'],
     ['#/drills', 'drills', '#/drills'],
     ['#/drills/corners?mode=three', 'corner', '#/drills/corners?mode=three'],
     ['#/algs', 'algs', '#/algs'],
@@ -54,13 +55,17 @@ test('resolveRoute: canonical hashes stay, old hashes redirect and keep their qu
   for (const [hash, tool, expected] of cases) assert.deepEqual(resolveRoute(hash), { tool, hash: expected }, hash);
 });
 
-test('resolveRoute: empty and unknown hashes resolve to home for the context', () => {
-  for (const hash of ['', '#', '#/', '#/nope', '#/drills/nope']) {
+test('resolveRoute: only the empty home hash is context-sensitive; unknown paths use not found', () => {
+  for (const hash of ['', '#', '#/']) {
     assert.equal(resolveRoute(hash, { isPhone: false, cubeConnected: false }).hash, '#/solve', hash);
     assert.equal(resolveRoute(hash, { isPhone: true, cubeConnected: false }).hash, '#/drills', hash);
     assert.equal(resolveRoute(hash, { isPhone: true, cubeConnected: true }).hash, '#/solve', hash);
   }
-  assert.equal(resolveRoute('#/nope?x=1', { isPhone: true }).hash, '#/drills?x=1');
+  for (const hash of ['#/nope', '#/drills/nope', '#/drills/cross']) {
+    const route = resolveRoute(hash, { isPhone: true });
+    assert.deepEqual(route, { tool: 'notfound', hash });
+  }
+  assert.deepEqual(resolveRoute('#/nope?x=1', { isPhone: true }), { tool: 'notfound', hash: '#/nope?x=1' });
 });
 
 test('keyScope: only the corner and F2L drills own the global drill keys', () => {

@@ -159,6 +159,8 @@
 .b-slot-timeline[hidden] { display: none; }
 .b-slot-results { order: 70; align-self: stretch; text-align: left; }
 .b-slot-results[hidden] { display: none; }
+.b-results-source { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; color: var(--b-muted); font-size: var(--b-fs-label); }
+.b-results-source select { max-width: 100%; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); padding: 5px 9px; background: var(--b-surface); color: var(--b-ink); font: inherit; }
 .b-results-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 
 /* Scramble line: the move guide's chip strip (src/moves/move-guide.css), the current
@@ -214,9 +216,10 @@
 .brain[data-layout="orbit"] .b-stat dt { font: 12px var(--b-font-mono); }
 .brain[data-layout="orbit"] .b-stat dd { font: 600 24px var(--b-font-sans); }
 .brain[data-layout="orbit"]:not([data-screen="solving"]) [data-slot="timeline-aside"] { display: none; }
-.brain[data-layout="orbit"] > .b-configbar { background: none; padding: 0; margin-top: 30px; gap: 4px 14px; font: 500 14px var(--b-font-mono); }
+.brain[data-layout="orbit"] > .b-configbar { background: none; padding: 0; margin-top: 30px; gap: 4px 8px; font: 500 13px var(--b-font-mono); }
 .brain[data-layout="orbit"] .b-configbar-copy { background: none; font: 500 14px var(--b-font-mono); }
 .brain[data-layout="orbit"] .b-sep { color: var(--b-hairline); }
+.brain[data-layout="column"] > .b-configbar { gap: 4px 8px; font-size: 13px; }
 @media (max-width: 720px) {
   .brain[data-layout="orbit"] .brain-hero { max-width: none; }
   .brain[data-layout="orbit"] .b-clock { margin: 8px 0; }
