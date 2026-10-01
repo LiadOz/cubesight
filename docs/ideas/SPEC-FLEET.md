@@ -146,11 +146,16 @@ Build a dev-area **design lab** at `#/dev/lab` (reached from the debug drawer; o
 - **Agent workflow (documented in `docs/design/LAB.md`):** for design questions after the redesign, agents add a proposal to the lab instead of (or in addition to) static SVGs, and report the link `http://localhost:5173/#/dev/lab/<proposal-id>`.
 Acceptance: a sample proposal with 3 variants of the results actions area and 2 of the history list renders live with the fake cube; side-by-side works on desktop; feedback round-trips to a JSON file; the lab code is tree-shaken out of production builds (or gated so it never appears there); the layout (F8) and snapshot (F9) suites ignore lab routes except a smoke test.
 
-## F15: Trainers redesigned in direction A (design first, then build; wave 2, after F0)
-The user: the trainers (corner recognition, PLL recognition, OLL recognition, F2L deduction, cross planning / Cross Scout, lookahead, alg drills) still look like the old design and are inconsistent with orbit-v3. They were only wrapped in the new header; their own screens weren't redesigned.
-1. **Design** (a design agent, Orbit dark, direction A, numbered frames + a lightbox gallery, per the ground rules): for EACH trainer, its idle/start, mid-round, answer feedback (right/wrong), round results and phone frames, using only the Cube + Orbit + shared pieces (the round's cases as Orbit segments; the case on the Cube with piece highlighting; one-sentence feedback with the coach↔marker connector; ≤ 3 actions; no scrolling). Keep each trainer's proven mechanics (glance timing, adaptive pacing, spaced repetition) and just give them the new form. Where a trainer needs a 2D view (e.g. PLL "from two sides"), design it as a Cube mode, not a separate component.
-2. **The user approves the frames** (in the gallery, or later in the design lab F10).
-3. **Build** them on the shared components; the old per-trainer CSS/markup is deleted, not kept alongside. F8/F9 matrices cover every trainer state.
+## F15: Trainers rebuilt in direction A (no separate design phase; wave 2, after F0)
+The user: the trainers (corner recognition, PLL recognition, OLL recognition, F2L deduction, cross planning / Cross Scout, lookahead, alg drills) still look like the old design and are inconsistent with orbit-v3. **No separate design round:** build them directly by applying the core principles; the user will review the result and adjustments come later (via the screenshot gallery or the design lab F10).
+Core principles to apply to every trainer screen (idle/start, mid-round, right/wrong feedback, round results, phone):
+- the **Cube** is the centrepiece (the case shown on it, with piece highlighting; the colour-neutral case display per item 18);
+- the **Orbit** carries progress: the round's cases as segments (right/wrong/current), open dial with the slot for the one number that matters (time/combo), full ring only where the rules say so;
+- **one-sentence feedback** with the coach↔marker connector; **≤ 3 actions**; the shared header/key bar; **no scrolling**; one animation at a time; full-turn demonstrations;
+- keep each trainer's proven mechanics (glance timing, adaptive pacing, spaced repetition, existing stats/storage keys); only the form changes;
+- a needed 2D view (e.g. PLL "from two sides") becomes a Cube mode, not a separate component;
+- delete the old per-trainer CSS/markup rather than keeping it alongside; the F8/F9 matrices cover every trainer state.
+Deliver a numbered screenshot gallery (lightbox) of every trainer state for the user's review.
 
 ## F14: Help page and footer removal (wave 2, small; owns `src/main.js` footer/help markup + a new `src/help/**`)
 - Remove the footer site-wide (all routes) and reclaim its vertical space.
@@ -166,7 +171,7 @@ The user: the trainers (corner recognition, PLL recognition, OLL recognition, F2
 | Wave | WPs (parallel) | Owns |
 |---|---|---|
 | 1 | **F0** alone (+ F3, F6, **F8** and **F9** in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. F8: `tests/layout/**`, the package.json script, CI. F9: `tests/snapshots/**`, `scripts/snapshots-compare.mjs`, the package.json scripts. |
-| 2 | **F1, F2, F4, F5** in parallel after F0 merges; **F10** any time after F0 (doesn't block F1); **F14** any time; **F15** (design → approve → build) | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
+| 2 | **F1, F2, F4, F5** in parallel after F0 merges; **F10** any time after F0 (doesn't block F1); **F14** any time; **F15** (build directly on the core principles) | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
 Shared files (`src/main.js` routes, `types.js`, `tokens-*.css`): additive edits only, coordinate via small commits; the lead resolves merges.
 
 ## How the lead reviews each WP
