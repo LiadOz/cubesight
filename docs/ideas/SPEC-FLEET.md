@@ -2,7 +2,18 @@
 
 The brief for the next fleet of builder agents, and the checklist the lead reviews against. It consolidates every open item from `ROADMAP.md`, `REVIEW-NEXT-2.md`, `REVIEW-NEXT-3.md`, `FEATURES.md` and the Orbit v3 designs. Where this file and an older doc disagree, **this file wins**.
 
-**Design reference:** `docs/design/orbit-v3/` (gallery: `file:///home/loz/projects/cubesight/docs/design/orbit-v3/index.html`). **Direction: B "orbit + rail" as the shell, plus C's tap-an-arc-to-drill and history orbit-card grid, plus A's clock-under-the-cube while solving and on phones.** (This is the lead's recommendation; if the user picks another direction, F1/F2 follow that instead.)
+**Design reference:** `docs/design/orbit-v3/` (gallery: `file:///home/loz/projects/cubesight/docs/design/orbit-v3/index.html`). **Direction (chosen by the user): A "one orbit": the cube is the centrepiece.** Key frames the user loved: **A-05** (results: the dotted connector line between the coach line and the selected marker, with a fade in/out) and **A-10** (past solve: the cube highlighted). History follows **A-07** (a timeline by session), with C-07's orbit-card grid only as a possible alternative view later. B and C are reference only. See "User feedback on orbit-v3" below; it overrides the frames where they differ.
+
+## User feedback on orbit-v3 (binding)
+1. **Progress is only ever shown with the ring.** No vertical/horizontal progress bars or lines anywhere (e.g. the replay frame's vertical progress line must go). Anything "in the middle of a process" uses the ring.
+2. **Two ring sizes, two label styles:** the **focus ring** (around the big cube, labels/tooltips placed around the ring) when the cube is the focus; the **mini ring** (labels to the SIDE of it, less crowded) when browsing (history, algs lists, drills lists).
+3. **The ring can grow:** segment count is dynamic (e.g. a 20-move scramble gains segments when the user makes a wrong turn and the undo moves are inserted); animate the growth calmly.
+4. **Scramble lookahead:** cubers read ahead, so show MANY moves at once: the whole scramble visible on/around the ring (done dimmed, current emphasized, upcoming readable), or a rolling window that still shows a generous number of upcoming moves. Never only the current move.
+5. **Sections in the ring API:** segments can be grouped into sections (e.g. an algorithm's triggers such as the "sexy move" (R U R′ U′), written with parentheses in notation), shown as a small gap/bracket with an optional section label. Alg playback uses this.
+6. **Direction:** the ring API supports clockwise and counter-clockwise filling.
+7. **A ring inside a ring is for comparison only** (e.g. comparing two algorithms, or yours vs better as in A/B review frame 6). It's NOT approved for the manual timer or progress. Those use a single ring. The user wants to see before/after demos of nested rings in the design lab (F10) later before approving any other use.
+8. **A crowded ring** (not the happy path): a solve can produce many markers/tooltips, some very close together. The design must handle it gracefully: cluster nearby markers into one badge with a count, expand on hover/tap, keep labels from overlapping (collision layout), rank by importance, and never hide the time/key info. The F8 layout suite must include a "many markers" fixture (≥ 12 markers, several within 5°).
+9. **Coach ↔ marker connector (A-05):** the dotted line connecting the coach sentence to its marker, with a fade in/out, is a core pattern; reuse it wherever text explains a ring point.
 
 ## Ground rules (every work package)
 1. **Offline-first PWA:** no backend and no runtime calls to other origins; new assets precached; airplane mode works.
@@ -14,8 +25,9 @@ The brief for the next fleet of builder agents, and the checklist the lead revie
 7. **Replayable:** smart-cube and user-action behaviour stays reproducible with `scripts/replay-recording.mjs`; real recordings live in `/home/loz/Downloads/cubesight-recording-*.json` (and `tests/fixtures/rotation-cross-recording.json`).
 8. **Process:** branch from the tip of `feature/smart-cube-guidance` in your own worktree; never push; never use port 5173; never bypass the pre-commit hook; tests never write into `docs/` or `src/`; descriptive commit messages only (no WIP auto-commits).
 9. **Quality gate for a merge request:** `npm run check` green (0 lint errors), the full `npx playwright test` green, `npx playwright test --config=playwright.pwa.config.js` green, and (once F8/F9 land) the **layout invariant suite** `npm run test:layout` and the **snapshot suite** `npm run test:snapshots` green, with any intended visual change shown in a `snapshots:compare` gallery. Every new route/screen/state must be registered in the F8 matrix.
-10. **Show your work:** screenshots of every changed screen in Orbit dark (+ Orbit light, + a 390 px phone); write a gallery `index.html` next to them (relative paths) that includes the shared lightbox (`docs/design/_gallery/lightbox.js` + `.css`: click to zoom/loupe, ←/→ to browse) and report its `file://` link. Read your screenshots and compare them with the orbit-v3 frames.
-11. **Report:** commits, files, test results, the gallery link, deviations, open questions.
+10. **Number everything for discussion.** Every design frame/screenshot has a visible ID (e.g. `A-05`), and anything the user should look at within a frame is marked with a numbered callout (①②③…) explained in the gallery caption. Galleries list frames in numeric order.
+11. **Show your work:** screenshots of every changed screen in Orbit dark (+ Orbit light, + a 390 px phone); write a gallery `index.html` next to them (relative paths) that includes the shared lightbox (`docs/design/_gallery/lightbox.js` + `.css`: click to zoom/loupe, ←/→ to browse) and report its `file://` link. Read your screenshots and compare them with the orbit-v3 frames.
+12. **Report:** commits, files, test results, the gallery link, deviations, open questions.
 
 ---
 
@@ -119,6 +131,11 @@ Build a dev-area **design lab** at `#/dev/lab` (reached from the debug drawer; o
 - **Promotion:** once a variant is picked, the agent promotes it to the default and deletes the losing variants (the registry keeps the decision log in `docs/design/lab-decisions.md`).
 - **Agent workflow (documented in `docs/design/LAB.md`):** for design questions after the redesign, agents add a proposal to the lab instead of (or in addition to) static SVGs, and report the link `http://localhost:5173/#/dev/lab/<proposal-id>`.
 Acceptance: a sample proposal with 3 variants of the results actions area and 2 of the history list renders live with the fake cube; side-by-side works on desktop; feedback round-trips to a JSON file; the lab code is tree-shaken out of production builds (or gated so it never appears there); the layout (F8) and snapshot (F9) suites ignore lab routes except a smoke test.
+
+## Future tasks (after the waves above; not blocking)
+- **F11 Performance audit:** an agent measures and improves performance everywhere (startup, the three.js/worker cold start, the pair search, rendering FPS on the ring + cube, memory, the bundle size, phone performance), with a benchmark report and regressions guarded in CI.
+- **F12 Cube skins (maybe):** user-customisable cube appearance (sticker colours/shapes, the plastic body, stickerless styles). The user isn't sure yet; first prototype it in the design lab (F10).
+- **F13 Nested-ring demos:** before/after demos in the design lab showing where a ring-inside-a-ring helps (comparisons) vs a single ring, for the user to decide.
 
 ## Parallelism and ownership
 | Wave | WPs (parallel) | Owns |
