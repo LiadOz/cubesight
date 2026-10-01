@@ -43,7 +43,8 @@ export function compareFor({ row, marker = null, record, pending = false }) {
   if (row.key === 'cross' && a.cross?.done) {
     const better = words(a.cross.best);
     if (a.cross.extra > 0 && better.length && better.length < yours.length) return { status: 'better', from: 0, yours, better, text: `yours ${yours.length} · better ${better.length}` };
-    return { status: 'shortest', from: 0, yours, better: [], text: `yours ${yours.length} · the shortest on this face` };
+    const conclusion = a.cross.proven ? 'the shortest on this face' : 'no shorter completion found in this search';
+    return { status: 'shortest', from: 0, yours, better: [], text: `yours ${yours.length} · ${conclusion}` };
   }
   const pair = /^pair(\d)$/.test(row.key) ? a.pairs.find(p => p.n === Number(row.key[4])) : null;
   if (pair?.unsupported) return { ...none('pseudo', 'no suggestion for pseudo pairs yet'), yours };
