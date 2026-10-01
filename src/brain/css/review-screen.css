@@ -79,3 +79,8 @@
 @media (prefers-reduced-motion: reduce) {
   .solve-review-page *, .solve-review-page *::before, .solve-review-page *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+@media (max-width: 640px) {
+  .solve-review-page button, .sr-label, .sr-back { min-height: 44px; }
+  .sr-label, .sr-back { display: inline-flex; align-items: center; }
+}

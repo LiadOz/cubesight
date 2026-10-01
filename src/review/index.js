@@ -176,7 +176,7 @@ export function createSolveReview(host, routeContext = {}) {
       root.append(layout);
       try { cube = createCube3D(layout.querySelector('.sr-cube'), { mode: 'scout' }); }
       catch { layout.querySelector('.sr-cube').textContent = '3D cube needs WebGL.'; }
-      layout.querySelector('.sr-scramble').textContent = `scramble · ${record.scramble}`;
+      layout.querySelector('.sr-scramble').textContent = `scramble · ${moveText(record.scramble)}`;
       layout.querySelector('.sr-moment-list').replaceChildren(...moments.map(moment => {
         const button = el('button', 'sr-moment', `move ${moment.i + 1} · ${moment.label}`); button.dataset.jump = String(moment.i); button.title = moment.detail; return button;
       }));
@@ -254,7 +254,7 @@ export function createSolveReview(host, routeContext = {}) {
     const plan = retryPlan(record, route.move);
     header(`Retry this moment · move ${plan.from + 1}`, `#/review/${record.at}?move=${plan.from}`);
     const retry = el('section', 'sr-retry');
-    retry.innerHTML = `<div class="sr-retry-cube"></div><div><p>Start from the solve position after ${plan.from} moves, then repeat this stage to move ${plan.to - plan.from}.</p><p class="sr-setup">Setup · ${escapeHtml(plan.setup.join(' '))}</p><p class="sr-retry-status" role="status">Use a connected cube for guided setup, or try the segment with the virtual move pad.</p><div class="sr-retry-actions"><button data-action="connect">connect cube</button><button data-action="setup" disabled>guide setup</button><button data-action="reset">reset retry</button></div><div class="sr-virtual"><strong>Virtual retry</strong><div class="sr-virtual-pad">${['U','D','R','L','F','B'].flatMap(face => [face, `${face}'`, `${face}2`]).map(move => `<button data-virtual="${move}">${moveText(move)}</button>`).join('')}</div></div><p class="sr-grade" aria-live="polite"></p><p class="sr-regrade" aria-live="polite"></p></div>`;
+    retry.innerHTML = `<div class="sr-retry-cube"></div><div><p>Start from the solve position after ${plan.from} moves, then repeat this stage to move ${plan.to - plan.from}.</p><p class="sr-setup">Setup · ${escapeHtml(moveText(plan.setup.join(' ')))}</p><p class="sr-retry-status" role="status">Use a connected cube for guided setup, or try the segment with the virtual move pad.</p><div class="sr-retry-actions"><button data-action="connect">connect cube</button><button data-action="setup" disabled>guide setup</button><button data-action="reset">reset retry</button></div><div class="sr-virtual"><strong>Virtual retry</strong><div class="sr-virtual-pad">${['U','D','R','L','F','B'].flatMap(face => [face, `${face}'`, `${face}2`]).map(move => `<button data-virtual="${move}">${moveText(move)}</button>`).join('')}</div></div><p class="sr-grade" aria-live="polite"></p><p class="sr-regrade" aria-live="polite"></p></div>`;
     root.append(retry);
     try { cube = createCube3D(retry.querySelector('.sr-retry-cube'), { mode: 'scout' }); cube.update(toRenderData(plan.startState)); } catch { retry.querySelector('.sr-retry-cube').textContent = '3D cube needs WebGL.'; }
     const status = retry.querySelector('.sr-retry-status');
