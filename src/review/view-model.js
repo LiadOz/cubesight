@@ -72,7 +72,7 @@ export function labelsFor(record, { inferred = false } = {}) {
     const score = scoreByKey.get(key);
     if (!score) return;
     if (actual > reference && actual <= reference + 1) push(end, 'Efficient', 'good', `${stage} finished within one move of its verified reference.`, 0, { stage: key });
-    if (score.loss === 0 && hasTimes(record)) push(end, 'Clean', 'good', `${stage} had no counted move waste, pause, cancel, or measured rotation.`, 0, { stage: key });
+    if (score.loss === 0 && hasTimes(record)) push(end, 'Clean', 'good', `${stage} had no counted move waste, pause, inverse turn pair, or measured rotation.`, 0, { stage: key });
     else if (score.loss > 0 && score.loss <= 1) push(end, 'OK', 'neutral', `${stage} lost ${score.loss.toFixed(1)} efficiency point${score.loss === 1 ? '' : 's'}.`, 0, { stage: key });
   };
   if (verifiedCross) addStageQuality('cross', 'Cross', a.marks.cross, true, a.marks.cross + 1, a.cross.d0);

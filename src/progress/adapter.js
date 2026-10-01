@@ -44,8 +44,15 @@ export function readProgress(storage, { records = null, algorithms = [], source 
   const scout = dated(read(storage, 'cubesight-scout-practice-v1', []));
   const savedRounds = read(storage, 'cubesight-rounds-v1', []);
   const rounds = dated(Array.isArray(savedRounds) ? savedRounds : savedRounds?.rounds).filter(r => Number.isFinite(r.at) && r.at >= since && r.at <= now);
-  const learned = kind => Object.entries(learning.items).filter(([key]) => key.startsWith(`${kind}|`)).map(([, item]) => item);
-  const isDue = item => item.attempts > 0 && (!item.due || item.due <= now || learning.trial >= item.dueTrial);
+  const drillLearning = {oll:loadLearning(storage,'cubesight-oll-learning-v1'),lookahead:loadLearning(storage,'cubesight-lookahead-learning-v1')};
+  const learned = kind => {
+    const items = new Map();
+    for(const state of [learning,drillLearning[kind]].filter(Boolean)) {
+      for(const [key,item] of Object.entries(state.items)) if(key.startsWith(`${kind}|`)) items.set(key,{...item,learningTrial:state.trial});
+    }
+    return [...items.values()];
+  };
+  const isDue = item => item.attempts > 0 && (!item.due || item.due <= now || item.learningTrial >= item.dueTrial);
   const dueLearning = kind => learned(kind).filter(isDue).length;
   const pllItems = Object.values(pll && typeof pll === 'object' ? pll : {}).filter(item => item && typeof item === 'object');
   const lifetime = {

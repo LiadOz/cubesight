@@ -12,6 +12,7 @@ import { analysisInputFromRecord } from '../analysis/record.js';
 import { createSolveLive } from '../solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from '../solve-coach.js';
 import { openHistory } from '../store/history.js';
+import { createRoundStore } from '../drills/rounds.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
 import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnection } from '../smart-cube-diag.js';
@@ -316,6 +317,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       };
       const replaying = isReplaying();   // replayed solves stay out of the stored history
       withHistory(store => { if (replaying) store.beginEphemeral(); store.append(entry); });
+      if (!replaying) createRoundStore().markActiveDay(entry.at);
       startAnalysis(entry);
       statusOverride = `Solve logged · ${fmtSeconds(snap.record.solveMs)} · ${snap.record.moveCount} moves.`;
     }

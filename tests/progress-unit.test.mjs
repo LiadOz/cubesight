@@ -48,3 +48,13 @@ test('algorithm case summaries contribute real activity and ready case counts', 
  const data=readProgress(store({}),{records:[],algorithms,now});
  const alg=data.drills.find(d=>d.id==='algs');assert.equal(alg.due,1);assert.equal(alg.lifetime.attempts,3);assert.equal(alg.lifetime.medianMs,1100);assert.equal(data.activity[0].cases,3);
 });
+test('OLL and lookahead read their own schedules without using another drill trial clock',()=>{
+  const data=readProgress(store({
+    'cubesight-learning-v1':{version:1,trial:100,items:{}},
+    'cubesight-oll-learning-v1':{version:1,trial:0,items:{'oll|oll/1':{attempts:3,correct:2,due:now+100000,dueTrial:5,times:[800]}}},
+    'cubesight-lookahead-learning-v1':{version:1,trial:6,items:{'lookahead|FR':{attempts:2,correct:1,due:now+100000,dueTrial:5,times:[1200]}}},
+  }),{records:[],now});
+  const oll=data.drills.find(row=>row.id==='oll'),lookahead=data.drills.find(row=>row.id==='lookahead');
+  assert.equal(oll.lifetime.attempts,3);assert.equal(oll.due,0);
+  assert.equal(lookahead.lifetime.attempts,2);assert.equal(lookahead.due,1);
+});

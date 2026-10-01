@@ -20,6 +20,7 @@ import '../brain/css/tokens-mono.css';
 import './timer.css';
 import { fmtResult, fmtMoves, fmtTime } from '../brain/format.js';
 import { loadSettings, saveSettings, setSetting } from '../brain/settings.js';
+import { createRoundStore } from '../drills/rounds.js';
 import { BRAIN_STYLES, DEFAULT_BRAIN_STYLE } from '../brain/types.js';
 import { createTimerMachine, HOLD_OPTIONS } from './machine.js';
 import { buildManualRecord, statsRow } from './record.js';
@@ -159,6 +160,7 @@ export function createTimer(root, {
     const record = store.append(buildManualRecord(result, { at, scramble: scrambleOfSolve, focus: focus() }));
     attemptScramble = undefined;
     if (record) {
+      createRoundStore(storage).markActiveDay(record.at);
       lastAt = record.at;
       deleted = null;
       notice = '';
