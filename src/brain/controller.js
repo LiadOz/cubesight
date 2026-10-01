@@ -338,13 +338,15 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     void import('../analysis/client.js').then(({ analysisClient }) => analysisClient().analyze(entry)).catch(() => null).then(summary => {
       if (detached) return;
       analysisState.set(at, summary ? 'done' : 'none');
-      if (summary) withHistory(store => {
-        store.update(at, {
-          analysis: summary,
-          ollCase: summary.ollCase?.id ?? null,
-          pllCase: summary.pllCase?.id ?? null,
-        });
-      });
+      if (summary) withHistory(store => { store.update(at, {
+        analysis: summary,
+        ollCase: summary.lastLayer?.oll?.caseId ?? summary.ollCase?.id ?? entry.ollCase ?? null,
+        pllCase: summary.lastLayer?.pll?.caseId ?? summary.pllCase?.id ?? entry.pllCase ?? null,
+        ollRecognitionMs: summary.lastLayer?.oll?.recognitionMs ?? entry.ollRecognitionMs ?? null,
+        ollExecutionMs: summary.lastLayer?.oll?.executionMs ?? entry.ollExecutionMs ?? null,
+        pllRecognitionMs: summary.lastLayer?.pll?.recognitionMs ?? entry.pllRecognitionMs ?? null,
+        pllExecutionMs: summary.lastLayer?.pll?.executionMs ?? entry.pllExecutionMs ?? null,
+      }); });
       if (active) render();
     });
   }

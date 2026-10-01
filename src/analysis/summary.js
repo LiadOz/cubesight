@@ -8,6 +8,8 @@
 // means that many solve moves have been applied.
 
 import { ENGINE_VERSION } from './segment.js';
+import { canonicalizeReconstruction, tokenizeReconstruction } from '../review/import-parser.js';
+import { unrelabelMoves } from './normalize.js';
 
 export const SUMMARY_VERSION = 2;
 const MAX_LOSSES = 8;
@@ -20,7 +22,7 @@ const text = moves => (moves ?? []).join(' ');
  * @param {{segmentation:Object, cross?:Object|null, pairs?:Object[]|null}} analysis  analyzeSolve* result
  * @returns {import('./summary.js').AnalysisSummary}
  */
-export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = null }) {
+export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = null, lastLayer = null }) {
   const marks = seg.marks;
   const out = {
     v: SUMMARY_VERSION,
@@ -43,8 +45,14 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
       .map(run => ({ from: run.from, to: run.to, waste: run.waste })).sort((a, b) => a.from - b.from),
     cross: null,
     pairs: [],
-    ollCase: seg.cases?.oll ? { id: seg.cases.oll.id, recognitionMs: seg.cases.oll.recognitionMs, executionMs: seg.cases.oll.executionMs } : null,
-    pllCase: seg.cases?.pll ? { id: seg.cases.pll.id, auf: seg.cases.pll.auf ?? null, recognitionMs: seg.cases.pll.recognitionMs, executionMs: seg.cases.pll.executionMs } : null,
+    ollCase: lastLayer?.oll ? { id: lastLayer.oll.caseId, recognitionMs: lastLayer.oll.recognitionMs, executionMs: lastLayer.oll.executionMs } : seg.cases?.oll ? { id: seg.cases.oll.id, recognitionMs: seg.cases.oll.recognitionMs, executionMs: seg.cases.oll.executionMs } : null,
+    pllCase: lastLayer?.pll ? { id: lastLayer.pll.caseId, auf: lastLayer.pll.used?.auf ?? null, recognitionMs: lastLayer.pll.recognitionMs, executionMs: lastLayer.pll.executionMs } : seg.cases?.pll ? { id: seg.cases.pll.id, auf: seg.cases.pll.auf ?? null, recognitionMs: seg.cases.pll.recognitionMs, executionMs: seg.cases.pll.executionMs } : null,
+    lastLayer: lastLayer ? {
+      oll: compactLastLayerStage(lastLayer.oll, seg.crossFace),
+      pll: compactLastLayerStage(lastLayer.pll, seg.crossFace),
+      reference: Number.isFinite(lastLayer.lastLayerReference) ? lastLayer.lastLayerReference : null,
+    } : null,
+    lastLayerReference: Number.isFinite(lastLayer?.lastLayerReference) ? lastLayer.lastLayerReference : null,
   };
   if (cross) {
     const lossy = cross.positions.filter(row => row.loss > 0);
@@ -82,6 +90,25 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
     });
   }
   return out;
+}
+
+function playableMoves(text, face) {
+  if (!text) return '';
+  const tokens = tokenizeReconstruction(text).tokens;
+  const canonical = canonicalizeReconstruction(tokens).moves.map(entry => entry.move);
+  return unrelabelMoves(canonical, face).join(' ');
+}
+
+function compactLastLayerStage(stage, face) {
+  if (!stage) return null;
+  const compactAlg = alg => alg ? { id: alg.id ?? null, moves: playableMoves(alg.moves ?? '', face), notation: alg.notation ?? alg.moves ?? '', sourceNotation: alg.sourceNotation ?? alg.notation ?? alg.moves ?? '', stm: alg.stm ?? 0, etm: alg.etm ?? 0, rank: alg.rank ?? null, credit: alg.credit ?? '', source: alg.source ?? '', sourceUrl: alg.sourceUrl ?? '' } : null;
+  return {
+    caseId: stage.caseId, name: stage.name, number: stage.number ?? null, from: stage.from, to: stage.to,
+    used: stage.used ? { moves: playableMoves(stage.used.moves ?? '', face), core: playableMoves(stage.used.core ?? '', face), stm: stage.used.stm ?? 0, coreStm: stage.used.coreStm ?? 0, auf: playableMoves(stage.used.auf ?? '', face), aufStm: stage.used.aufStm ?? 0 } : null,
+    best: compactAlg(stage.best), better: stage.better ? { stm: stage.better.stm, loss: stage.better.loss, best: playableMoves(stage.better.best, face) } : null,
+    extraAuf: stage.extraAuf ? { loss: stage.extraAuf.loss, indices: stage.extraAuf.indices, used: playableMoves(stage.extraAuf.used, face), best: playableMoves(stage.extraAuf.best, face) } : null,
+    recognitionMs: stage.recognitionMs, executionMs: stage.executionMs,
+  };
 }
 
 /** @typedef {ReturnType<typeof summarizeAnalysis>} AnalysisSummary */

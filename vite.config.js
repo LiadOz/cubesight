@@ -120,6 +120,7 @@ export default defineConfig({
       },
     }),
   ],
+  worker: { format: 'es' },
   build: {
     rollupOptions: {
       output: {

@@ -5,7 +5,7 @@
 const int = (v, min = 0, max = 100000) => (Number.isInteger(v) && v >= min && v <= max ? v : null);
 const str = (v, max = 400) => (typeof v === 'string' ? v.slice(0, max) : null);
 const list = (v, n, map) => (Array.isArray(v) ? v.slice(0, n).map(map).filter(Boolean) : []);
-const moveString = v => (typeof v === 'string' && /^[URFDLB]['2]?( [URFDLB]['2]?)*$/.test(v.trim()) ? v.trim().slice(0, 240) : '');
+const moveString = v => (typeof v === 'string' && /^(?:[URFDLBMESxyz](?:w)?|[urfdlb])(?:2|')?(?: (?:[URFDLBMESxyz](?:w)?|[urfdlb])(?:2|')?)*$/.test(v.trim()) ? v.trim().slice(0, 600) : '');
 
 export function cleanRotationMarks(marks) {
   if (!Array.isArray(marks)) return null;
@@ -80,6 +80,8 @@ export function cleanAnalysis(a) {
         shortest: int(p.shortest), proven: Boolean(p.proven),
       };
     }),
+    lastLayerReference: Number.isFinite(a.lastLayerReference) ? Math.max(0, a.lastLayerReference) : null,
+    lastLayer: null,
   };
   for (const field of (a.v >= 2 ? ['ollCase', 'pllCase'] : [])) {
     const item = a[field];
@@ -102,5 +104,33 @@ export function cleanAnalysis(a) {
         ? { i: l.i, move: moveString(l.move), loss: l.loss, d: int(l.d) ?? 0, best: moveString(l.best), after: int(l.after) ?? 0 } : null)),
     };
   }
+  const cleanAlg = value => value && typeof value === 'object' ? {
+    id: str(value.id, 100), moves: moveString(value.moves), notation: str(value.notation, 600) ?? '', sourceNotation: str(value.sourceNotation, 600) ?? '', stm: int(value.stm, 0, 300) ?? 0,
+    etm: int(value.etm, 0, 600) ?? 0, rank: int(value.rank, 0, 1000), credit: str(value.credit, 100) ?? '',
+    source: str(value.source, 120) ?? '', sourceUrl: str(value.sourceUrl, 400) ?? '',
+  } : null;
+  const cleanStage = stage => {
+    if (!stage || typeof stage !== 'object' || typeof stage.caseId !== 'string' || !Number.isInteger(stage.from) || !Number.isInteger(stage.to)) return null;
+    const better = stage.better && Number.isFinite(stage.better.loss) && moveString(stage.better.best)
+      ? { stm: int(stage.better.stm, 0, 300) ?? 0, loss: int(stage.better.loss, 0, 300) ?? 0, best: moveString(stage.better.best) } : null;
+    const extraAuf = stage.extraAuf && Number.isFinite(stage.extraAuf.loss) ? {
+      loss: int(stage.extraAuf.loss, 0, 20) ?? 0, indices: list(stage.extraAuf.indices, 8, int).filter(Number.isInteger),
+      used: moveString(stage.extraAuf.used), best: moveString(stage.extraAuf.best),
+    } : null;
+    const used = stage.used && typeof stage.used === 'object' ? {
+      moves: moveString(stage.used.moves), core: moveString(stage.used.core), stm: int(stage.used.stm, 0, 300) ?? 0,
+      coreStm: int(stage.used.coreStm, 0, 300) ?? 0, auf: moveString(stage.used.auf), aufStm: int(stage.used.aufStm, 0, 20) ?? 0,
+    } : null;
+    return {
+      caseId: str(stage.caseId, 24), name: str(stage.name, 80) ?? '', number: int(stage.number, 1, 100), from: stage.from, to: stage.to,
+      used, best: cleanAlg(stage.best), better, extraAuf,
+      recognitionMs: Number.isFinite(stage.recognitionMs) ? Math.max(0, Math.round(stage.recognitionMs)) : null,
+      executionMs: Number.isFinite(stage.executionMs) ? Math.max(0, Math.round(stage.executionMs)) : null,
+    };
+  };
+  if (a.lastLayer && typeof a.lastLayer === 'object') out.lastLayer = {
+    oll: cleanStage(a.lastLayer.oll), pll: cleanStage(a.lastLayer.pll),
+    reference: Number.isFinite(a.lastLayer.reference) ? Math.max(0, a.lastLayer.reference) : null,
+  };
   return out;
 }

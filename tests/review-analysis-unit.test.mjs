@@ -28,7 +28,7 @@ test('the stored summary is small, survives the store whitelist unchanged, and r
   assert.equal(cleanAnalysis({ v: 3 }), null);
   assert.equal(cleanAnalysis({ v: 1, pairs: [] }).v, 1, 'older stored summaries remain readable');
   assert.equal(cleanAnalysis('x'), null);
-  const hostile = cleanAnalysis({ ...record.analysis, cross: { ...record.analysis.cross, best: 'rm -rf', losses: [{ i: 1, loss: 9 }] }, pairs: [{ n: 1, from: 0, to: 1, yours: '<b>', better: { moves: 'R x', slot: 'FR' } }] });
+  const hostile = cleanAnalysis({ ...record.analysis, cross: { ...record.analysis.cross, best: 'rm -rf', losses: [{ i: 1, loss: 9 }] }, pairs: [{ n: 1, from: 0, to: 1, yours: '<b>', better: { moves: 'R <script>', slot: 'FR' } }] });
   assert.equal(hostile.cross.best, '');
   assert.deepEqual(hostile.cross.losses, []);
   assert.equal(hostile.pairs[0].better, null);
@@ -41,7 +41,7 @@ test('records that cannot be analysed say why', () => {
   assert.ok(analysisInputFromRecord({ ...ok, penalty: 'DNF' }).input, 'a DNF can still have reached cases');
   assert.equal(analysisInputFromRecord({ ...ok, scramble: '' }).skip, 'no-scramble');
   assert.equal(analysisInputFromRecord({ ...ok, solveMoves: [], moveCount: 0 }).skip, 'no-moves');
-  assert.equal(analysisInputFromRecord({ ...ok, moveCount: 250 }).skip, 'moves-truncated', 'the store keeps 200 moves; a longer solve is not half-analysed');
+  assert.equal(analysisInputFromRecord({ ...ok, solveMoves: Array(250).fill('R'), moveCount: 250 }).input.moves.length, 250, 'long records are analysed whole');
   assert.equal(analysisInputFromRecord({ ...ok, moveTimes: [1, 2] }).input.moveTimes, undefined, 'times of another length are ignored');
 });
 

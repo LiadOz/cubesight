@@ -56,6 +56,13 @@ export function labelsFor(record, { inferred = false } = {}) {
     if (pair.better && (saved >= REVIEW_THRESHOLDS.betterPairMinimumMoves || (saved >= 1 && pair.w - pair.better.w >= 6))) push(pair.from, 'Better pair', 'warn', `A verified continuation saves ${saved} move${saved === 1 ? '' : 's'}: ${pair.better.moves}.`, Math.min(3, Math.max(0, saved - 1)));
     if (pair.frame && pair.pseudoSaving >= 1) push(pair.to, 'Pseudo pair', 'good', 'The D offset saved moves for this pair.');
   }
+  for (const [key, stage] of [['oll', a.lastLayer?.oll], ['pll', a.lastLayer?.pll]]) {
+    if (!stage || !valid(stage.from, count)) continue;
+    const label = key === 'oll' ? `OLL ${stage.number ?? stage.name}` : `PLL ${stage.name}`;
+    push(stage.from, label, 'neutral', `${stage.caseId} recognized from the recorded cube state.`, 0, { stage: key, caseId: stage.caseId });
+    if (stage.better && stage.better.loss > 0) push(stage.from, `Better ${key.toUpperCase()} alg`, 'warn', `A verified ${key.toUpperCase()} algorithm saves ${stage.better.loss} move${stage.better.loss === 1 ? '' : 's'}: ${stage.better.best}.`, stage.better.loss, { stage: key, caseId: stage.caseId });
+    if (stage.extraAuf?.loss > 0) for (const index of stage.extraAuf.indices ?? []) push(index, 'Extra AUF', 'warn', `The verified continuation needs fewer U turns: ${stage.extraAuf.best || 'no U adjustment'}.`, 1, { stage: key, caseId: stage.caseId });
+  }
   for (const fix of a.dFixes ?? []) push(typeof fix === 'number' ? fix : fix.i, 'D fix', 'neutral', 'This move resolves a D offset used by a pair.');
   for (const offset of a.offsets ?? []) {
     if (offset.stray) push(offset.at, 'Stray offset', 'warn', 'The D layer was turned, but no pair used that frame. One spare move.', 1);
@@ -139,6 +146,10 @@ function lossLedger(record) {
   for (const pair of a.pairs ?? []) if (pair.better && provenChosen(pair) && valid(pair.from, n)) {
     const saving = pair.chosenShortest - bestLength(pair);
     if (saving >= 2) choice[pair.from] += Math.min(3, Math.max(0, saving - 1));
+  }
+  for (const stage of [a.lastLayer?.oll, a.lastLayer?.pll]) {
+    if (stage?.better?.loss > 0 && valid(stage.from, n)) choice[stage.from] += stage.better.loss;
+    if (stage?.extraAuf?.loss > 0) for (const index of stage.extraAuf.indices ?? []) if (valid(index, n)) choice[index] += 1;
   }
   const chosenCrossLength = a.cross?.faces?.[a.face] ?? a.cross?.d0;
   if (a.crossSource === 'inferred' && a.cross?.startProven === true && a.cross?.faceProven?.[a.face] === true && a.cross?.done === true && valid(0, n)) {

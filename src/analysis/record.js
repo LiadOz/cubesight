@@ -1,7 +1,7 @@
 // Turn a stored solve record into the input of the analysis (segmentSolve), or explain why it
 // cannot be analysed. Pure. A record qualifies when it has a scramble to replay from solved, the
-// whole list of its solve moves (the store keeps the last 200; a longer solve is left alone) and
-// was solved. Times are used only when there is one per move.
+// whole list of recorded moves and a scramble. Incomplete and DNF attempts can still contain
+// useful stage evidence. Times are used only when there is one per move.
 
 const FACES = new Set(['U', 'D', 'F', 'B', 'R', 'L']);
 

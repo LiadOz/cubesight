@@ -5,11 +5,13 @@ import { segmentSolve } from './segment.js';
 import { evaluateCross, evaluateCrossAsync } from './cross-eval.js';
 import { evaluatePairs, evaluatePairsAsync } from './pairs.js';
 import { summarizeAnalysis } from './summary.js';
+import { evaluateLastLayer } from './last-layer.js';
 
 export { segmentSolve, STAGES, STAGE_GROUP, PAUSE_ALLOW_MS, findCancellations, ENGINE_VERSION } from './segment.js';
 export { evaluateCross, evaluateCrossAsync } from './cross-eval.js';
 export { createWasmSolver, cachedSolver } from './wasm-solver.js';
 export { evaluatePairs, evaluatePairsAsync } from './pairs.js';
+export { evaluateLastLayer } from './last-layer.js';
 export { summarizeAnalysis, SUMMARY_VERSION } from './summary.js';
 export { analysisInputFromRecord } from './record.js';
 export { inferCrossFace, relabelMoves, unrelabelMoves, FACE_TO_D } from './normalize.js';
@@ -26,7 +28,10 @@ export async function analyzeSolveAsync(input, solver, { signal, pairs: withPair
   const segmentation = segmentSolve(input);
   const cross = solver ? await evaluateCrossAsync({ segmentation, ...options }, solver, { signal }) : null;
   const pairs = withPairs && solver ? await evaluatePairsAsync(segmentation, solver, { signal }) : null;
-  return { segmentation, cross, ...(pairs ? { pairs } : {}) };
+  let lastLayer = null;
+  try { lastLayer = await evaluateLastLayer(segmentation); }
+  catch (error) { if (signal?.aborted) throw error; }
+  return { segmentation, cross, ...(pairs ? { pairs } : {}), ...(lastLayer ? { lastLayer } : {}) };
 }
 
 // Message handler for a Web Worker: post { type: 'analyze', id, input, options } and receive

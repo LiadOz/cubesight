@@ -8,7 +8,7 @@ import { openHistory } from '../store/history.js';
 import { smartCube } from '../smart-cube-bluetooth.js';
 import { createSolveLive } from '../solve-live.js';
 import { analysisClient } from '../analysis/client.js';
-import { buildImportedReconstruction, parseAlgCubingUrl } from './import-parser.js';
+import { buildImportedReconstruction, parseAlgCubingUrl, physicalModelTokens, tokenizeReconstruction } from './import-parser.js';
 import { applyMovesInChunks, gradeRetry, retryPlan, retryRegradeRecord, stateAfter } from './replay.js';
 import { graphPath, keyMoments, labelsFor, stageOf, stageScores } from './view-model.js';
 
@@ -55,7 +55,11 @@ export function createSolveReview(host, routeContext = {}) {
       if (route.imported) renderImport();
       else if (!record) renderError('This solve is no longer in your local history.');
       else {
-        if (!record.analysis) record = { ...record, analysis: await analysisClient().analyze(record) };
+        if (!record.analysis) {
+          const analysis = await analysisClient().analyze(record);
+          if (detached) return;
+          if (analysis) record = saveAnalysis(record, analysis);
+        }
         if (detached) return;
         labels = labelsFor(record, { inferred: inferredVisible ? inferLabels(record) : [] });
         moments = keyMoments(record);
@@ -102,10 +106,24 @@ export function createSolveReview(host, routeContext = {}) {
         routeContext.onNavigate?.({ path: `/review/${imported.at}`, at: imported.at });
         record = { ...imported, analysis: await analysisClient().analyze(imported) };
         if (detached) return;
+        if (record.analysis) record = saveAnalysis(record, record.analysis);
         labels = labelsFor(record); moments = keyMoments(record); scores = stageScores(record);
         currentMove = 0; route.retry = false; renderReview();
       } catch (cause) { error.hidden = false; error.textContent = cause.message ?? 'The reconstruction could not be checked.'; }
     });
+  }
+
+  function saveAnalysis(rec, analysis) {
+    const patch = {
+      analysis,
+      ollCase: analysis.lastLayer?.oll?.caseId ?? rec.ollCase ?? null,
+      pllCase: analysis.lastLayer?.pll?.caseId ?? rec.pllCase ?? null,
+      ollRecognitionMs: analysis.lastLayer?.oll?.recognitionMs ?? rec.ollRecognitionMs ?? null,
+      ollExecutionMs: analysis.lastLayer?.oll?.executionMs ?? rec.ollExecutionMs ?? null,
+      pllRecognitionMs: analysis.lastLayer?.pll?.recognitionMs ?? rec.pllRecognitionMs ?? null,
+      pllExecutionMs: analysis.lastLayer?.pll?.executionMs ?? rec.pllExecutionMs ?? null,
+    };
+    return history?.update(rec.at, patch) ?? { ...rec, ...patch };
   }
 
   function stageAccuracyMarkup() {
@@ -207,6 +225,9 @@ export function createSolveReview(host, routeContext = {}) {
 
   function bestContinuation(move) {
     const index = Math.max(0, move - 1);
+    for (const stage of [record.analysis?.lastLayer?.oll, record.analysis?.lastLayer?.pll]) {
+      if (stage?.from === move && stage.best?.moves) return stage.best.moves;
+    }
     if (move === 0 && record.analysis?.cross?.best) return record.analysis.cross.best;
     const crossLoss = record.analysis?.cross?.losses?.find(item => item.i === index && item.best);
     if (crossLoss) return crossLoss.best;
@@ -216,7 +237,7 @@ export function createSolveReview(host, routeContext = {}) {
 
   async function playBest() {
     if (!cube || !active) return;
-    const best = (bestContinuation(currentMove) ?? '').split(' ').filter(Boolean);
+    const best = physicalModelTokens(tokenizeReconstruction(bestContinuation(currentMove) ?? '', { allowEmpty: true }).tokens);
     let state = stateAfter(record, currentMove);
     for (const move of best) { if (!active || detached) break; state = applyMoves(state, [move]); await cube.animateMove(move, toRenderData(state), 260); }
   }

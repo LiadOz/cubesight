@@ -55,6 +55,10 @@ export function cleanRecord(raw) {
     mistakes: Number.isFinite(r.mistakes) ? Math.max(0, Math.floor(r.mistakes)) : 0,
     pllCase: typeof r.pllCase === 'string' ? r.pllCase : null,
     ollCase: typeof r.ollCase === 'string' ? r.ollCase : null,
+    ollRecognitionMs: finite(r.ollRecognitionMs),
+    ollExecutionMs: finite(r.ollExecutionMs),
+    pllRecognitionMs: finite(r.pllRecognitionMs),
+    pllExecutionMs: finite(r.pllExecutionMs),
     solved: Boolean(r.solved),
     // Hook for the solve review (src/analysis): its accuracy score, 0..100. The learning
     // focus averages it (solve-metrics learningStats); null until the review writes it.

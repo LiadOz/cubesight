@@ -5,7 +5,7 @@ import { GOLD } from './analysis-golden.mjs';
 import { applyMoves, stateFromScramble } from '../src/cross-cube.js';
 import { segmentSolve } from '../src/analysis/segment.js';
 import { evaluatePairs, pairTargets } from '../src/analysis/pairs.js';
-import { OLL_PATTERN_COUNT, OLL_PATTERNS } from '../src/analysis/last-layer.js';
+import { OLL_PATTERN_COUNT, OLL_PATTERNS } from '../src/analysis/last-layer-patterns.js';
 import { unrelabelMoves } from '../src/analysis/normalize.js';
 import { crossSolved, findCompletions, solvedSlots, SLOTS, trackedFrom } from '../src/analysis/pair-completion.js';
 import { stateOf } from '../src/analysis/cube-model.js';

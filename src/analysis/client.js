@@ -60,7 +60,7 @@ export function createAnalysisClient({
   return {
     /**
      * The compact summary (summary.js) for a record, or null when the record cannot be analysed
-     * (free solve, DNF, truncated move list) or the analysis failed. Never rejects.
+     * (free solve, missing scramble/moves, inconsistent move count) or the analysis failed. Never rejects.
      */
     analyze(record) {
       const stored = record?.analysis;
