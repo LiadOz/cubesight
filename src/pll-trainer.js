@@ -3,6 +3,7 @@ import { createCube3D } from './cube-3d.js';
 import { renderCube } from './cube-renderer.js';
 import { toRenderData } from './cross-cube.js';
 import { PLL_CASES, createPLLTrial } from './pll-logic.js';
+import { KEYS, fmt } from './copy/terms.js';
 
 /*
  * PLL trainer UI contract
@@ -22,9 +23,9 @@ const GLANCE_MAX = 1500;
 const ANSWER_KEYS = '1234567890qwertyuiopasdfghjklzxcvbnm';
 const GLANCE_STEPS = [25, 50, 75, 100, 150, 200, 300, 450, 600, 800, 1000, 1500];
 const MODES = [
-  { id: 'learn', label: 'Learn', note: 'Build a reliable cue before speed.' },
-  { id: 'mix', label: 'Mix', note: 'Interleave cases and practise retrieval.' },
-  { id: 'transfer', label: 'Transfer', note: 'Random-AUF check; 24-hour returns count separately.' },
+  { id: 'learn', label: 'learn', note: 'Build a reliable cue before speed.' },
+  { id: 'mix', label: 'mix', note: 'Mix cases to sharpen recog.' },
+  { id: 'transfer', label: 'random AUF', note: 'New AUFs check your recog. Cases due after 24 h count separately.' },
 ];
 
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -127,19 +128,19 @@ export function createPLLTrainer(root) {
   let paceWindow = [];
 
   root.innerHTML = `
-    <section class="pll-intro"><div><p class="eyebrow">Practice / PLL recognition</p><h1>PLL recognition</h1></div><p class="intro-copy">See the permutation.<br>Call it instantly.</p></section>
-    <details class="pll-settings" open><summary><span>Training settings</span><small>Retrieval, pacing & case families</small><i aria-hidden="true"></i></summary>
+    <section class="pll-intro"><div><p class="eyebrow">drills / PLL recognition</p><h1>PLL recognition</h1></div><p class="intro-copy">Recognize the case.</p></section>
+    <details class="pll-settings" open><summary><span>settings</span><small>glance · case family</small><i aria-hidden="true"></i></summary>
       <div class="pll-controls">
-        <div class="pll-control-group"><span class="pll-label">Practice mode</span><div class="pll-segmented" role="group" aria-label="PLL practice mode">${MODES.map((item) => `<button type="button" class="pll-segment${item.id === mode ? ' active' : ''}" data-pll-mode="${item.id}">${item.label}</button>`).join('')}</div><small id="pll-mode-note">${MODES[0].note}</small></div>
-        <label class="pll-control-group"><span class="pll-label">Case family</span><select id="pll-family" aria-label="PLL case family"><option value="all">All PLL cases · mixed</option>${families.map((item) => `<option value="${esc(item)}"${item === family ? ' selected' : ''}>${esc(pretty(item))} family · learn block</option>`).join('')}</select></label>
-        <div class="pll-control-group pll-pacing"><span class="pll-label">Glance window</span><label class="pll-check"><input id="pll-glance" type="checkbox" ${glanceEnabled ? 'checked' : ''}> <span>Hide after exposure</span></label><label class="pll-select-label" for="pll-glance-ms"><span id="pll-glance-caption">Adaptive · ${glanceMs} ms</span><select id="pll-glance-ms" aria-label="Glance exposure"><option value="25">25 ms</option><option value="50">50 ms</option><option value="75">75 ms</option><option value="100">100 ms</option><option value="150">150 ms</option><option value="200">200 ms</option><option value="300">300 ms</option><option value="450">450 ms</option><option value="600">600 ms</option><option value="800">800 ms</option><option value="1000">1 s</option><option value="1500">1.5 s</option></select></label></div>
+        <div class="pll-control-group"><span class="pll-label">mode</span><div class="pll-segmented" role="group" aria-label="PLL mode">${MODES.map((item) => `<button type="button" class="pll-segment${item.id === mode ? ' active' : ''}" data-pll-mode="${item.id}">${item.label}</button>`).join('')}</div><small id="pll-mode-note">${MODES[0].note}</small></div>
+        <label class="pll-control-group"><span class="pll-label">case family</span><select id="pll-family" aria-label="PLL case family"><option value="all">all PLL cases · mixed</option>${families.map((item) => `<option value="${esc(item)}"${item === family ? ' selected' : ''}>${esc(pretty(item))} family · learn</option>`).join('')}</select></label>
+        <div class="pll-control-group pll-pacing"><span class="pll-label">glance</span><label class="pll-check"><input id="pll-glance" type="checkbox" ${glanceEnabled ? 'checked' : ''}> <span>hide after glance</span></label><label class="pll-select-label" for="pll-glance-ms"><span id="pll-glance-caption">adaptive glance · ${glanceMs} ms</span><select id="pll-glance-ms" aria-label="glance time"><option value="25">25 ms</option><option value="50">50 ms</option><option value="75">75 ms</option><option value="100">100 ms</option><option value="150">150 ms</option><option value="200">200 ms</option><option value="300">300 ms</option><option value="450">450 ms</option><option value="600">600 ms</option><option value="800">800 ms</option><option value="1000">1 s</option><option value="1500">1.5 s</option></select></label></div>
       </div>
     </details>
     <section class="pll-trainer-shell">
-      <div class="pll-cube-stage"><div class="pll-stage-topline"><span class="status-dot"><i></i> Identify the PLL</span><span class="view-lock">Fixed two-sided view</span></div><div id="pll-cube" class="pll-cube-mount"></div><div id="pll-glance-overlay" class="pll-glance-overlay" hidden>Answer now</div><div id="pll-pause" class="pll-pause" hidden><strong>Paused locally</strong><span>This attempt passed 10 seconds without an answer, so it is not recorded.</span><button type="button" id="pll-resume">Resume with fresh case</button></div><div class="pll-cube-caption"><span>U top · F/R sides · AUF varies</span><span>Rotation locked to protect recognition</span></div></div>
-      <div class="pll-answer-stage"><div class="pll-case-meta"><span id="pll-case-number">CASE 001</span><span id="pll-case-mode">LEARN · ALL CASES</span></div><div class="pll-timer-wrap"><span class="pll-timer-label">Recognition time</span><div id="pll-timer" class="pll-timer">0.00<span>s</span></div><small id="pll-timing-note">Accuracy first; speed follows stable retrieval.</small></div><div class="pll-prompt"><p>Which PLL case is this?</p><small>Use a button or its keyboard shortcut. Reveal the cue only after retrieval.</small></div><div id="pll-answers" class="pll-answer-grid" role="group" aria-label="Choose the PLL case"></div><div class="pll-feedback-row"><p id="pll-feedback" role="status" aria-live="polite">Choose the case you see.</p><button type="button" class="pll-skip" id="pll-skip">Skip <kbd>S</kbd></button></div><button type="button" class="pll-next" id="pll-next" hidden>Next case <span>→</span></button></div>
+      <div class="pll-cube-stage"><div class="pll-stage-topline"><span class="status-dot"><i></i> identify the PLL</span><span class="view-lock">fixed two-sided view</span></div><div id="pll-cube" class="pll-cube-mount"></div><div id="pll-glance-overlay" class="pll-glance-overlay" hidden>answer now</div><div id="pll-pause" class="pll-pause" hidden><strong>Taking a break?</strong><span>This one won’t count. Resume for a fresh case.</span><button type="button" id="pll-resume">resume</button></div><div class="pll-cube-caption"><span>U top · F/R sides · AUF varies</span><span>Rotation locked to protect recog.</span></div></div>
+      <div class="pll-answer-stage"><div class="pll-case-meta"><span id="pll-case-number">case 1</span><span id="pll-case-mode">learn · all cases</span></div><div class="pll-timer-wrap"><span class="pll-timer-label">recog</span><div id="pll-timer" class="pll-timer">0.00<span> s</span></div><small id="pll-timing-note">Accuracy first. Speed follows stable cues.</small></div><div class="pll-prompt"><p>Which PLL case is this?</p><small>Answer before you reveal the cue.</small></div><div id="pll-answers" class="pll-answer-grid" role="group" aria-label="Choose the PLL case"></div><div class="pll-feedback-row"><p id="pll-feedback" role="status" aria-live="polite">Choose the case you see.</p><button type="button" class="pll-skip" id="pll-skip">skip <kbd>s</kbd></button></div><button type="button" class="pll-next" id="pll-next" hidden>next case</button></div>
     </section>
-    <section class="pll-progress"><div class="pll-section-heading"><div><p class="eyebrow">Progress</p><h2>Recognition profile</h2></div><button type="button" class="pll-text-button danger" id="pll-clear">Clear PLL history</button></div><div class="pll-metric-grid"><article><span>Practice accuracy</span><strong id="pll-accuracy">—</strong><small id="pll-accuracy-note">No recorded answers</small></article><article><span>Transfer accuracy</span><strong id="pll-transfer">—</strong><small id="pll-transfer-note">No transfer probes</small></article><article><span>Median recognition</span><strong id="pll-median">—</strong><small>Correct responses only</small></article><article><span>Reviews ready</span><strong id="pll-due">0</strong><small id="pll-due-note">Spaced + corrective returns</small></article><article><span>24h retention</span><strong id="pll-retention">—</strong><small>Delayed transfer probes only</small></article></div><div class="pll-case-card"><div class="pll-case-head"><div><span>By case</span><small>Weak and slow cases surface first</small></div><button type="button" class="pll-text-button" id="pll-retention-help">Why 24h probes?</button></div><div id="pll-case-list"></div></div></section>`;
+    <section class="pll-progress"><div class="pll-section-heading"><div><p class="eyebrow">progress</p><h2>PLL recognition</h2></div><button type="button" class="pll-text-button danger" id="pll-clear">clear PLL history</button></div><div class="pll-metric-grid"><article><span>accuracy</span><strong id="pll-accuracy">—</strong><small id="pll-accuracy-note">No answers yet</small></article><article><span>random AUF accuracy</span><strong id="pll-transfer">—</strong><small id="pll-transfer-note">No random AUF answers</small></article><article><span>median recog</span><strong id="pll-median">—</strong><small>correct answers only</small></article><article><span>due</span><strong id="pll-due">0</strong><small id="pll-due-note">due · retry</small></article><article><span>24 h retention</span><strong id="pll-retention">—</strong><small>delayed random AUF answers</small></article></div><div class="pll-case-card"><div class="pll-case-head"><div><span>by case</span><small>misses and slow recog first</small></div><button type="button" class="pll-text-button" id="pll-retention-help">why 24 h returns?</button></div><div id="pll-case-list"></div></div></section>`;
 
   const $ = (selector) => root.querySelector(selector);
   if (window.matchMedia('(max-width: 700px)').matches) $('.pll-settings').open = false;
@@ -156,11 +157,11 @@ export function createPLLTrainer(root) {
       destroy(){mount.replaceChildren();},
     };
   }
-  const setTimerText = (milliseconds) => { $('#pll-timer').innerHTML = `${(milliseconds / 1000).toFixed(2)}<span>s</span>`; };
+  const setTimerText = (milliseconds) => { $('#pll-timer').innerHTML = `${(milliseconds / 1000).toFixed(2)}<span> s</span>`; };
   const totalAttempts = () => Object.values(stats).reduce((sum, item) => sum + (item.attempts || 0), 0);
   const totalCorrect = () => Object.values(stats).reduce((sum, item) => sum + (item.correct || 0), 0);
   const allTimes = () => Object.values(stats).flatMap((item) => [...item.times, ...(item.transfer?.times || [])]);
-  const currentFamilyLabel = () => family === 'all' ? 'ALL CASES' : `${pretty(family)} FAMILY`;
+  const currentFamilyLabel = () => family === 'all' ? 'all cases' : `${pretty(family)} family`;
 
   function getCase(item) { return cases.find((candidate) => sameId(candidate.id, item)) || { id: item, caseId: item, name: item, family: 'Other', key: '' }; }
   function caseStats(id) { return stats[id] || (stats[id] = blankStats()); }
@@ -173,13 +174,13 @@ export function createPLLTrainer(root) {
     const retentionCorrect = Object.values(stats).reduce((sum, item) => sum + (item.delayed?.correct || 0), 0);
     const spacedDue = Object.values(stats).filter((item) => item.nextReviewAt > 0 && item.nextReviewAt <= Date.now()).length;
     $('#pll-accuracy').textContent = attempts ? `${Math.round(correct / attempts * 100)}%` : '—';
-    $('#pll-accuracy-note').textContent = attempts ? `${correct} of ${attempts} valid answers` : 'No recorded answers';
+    $('#pll-accuracy-note').textContent = attempts ? `${correct} of ${attempts} answers` : 'No answers yet';
     $('#pll-transfer').textContent = transferAttempts ? `${Math.round(transferCorrect / transferAttempts * 100)}%` : '—';
-    $('#pll-transfer-note').textContent = transferAttempts ? `${transferCorrect} of ${transferAttempts} transfer probes` : 'No transfer probes';
+    $('#pll-transfer-note').textContent = transferAttempts ? `${transferCorrect} of ${transferAttempts} random AUF answers` : 'No random AUF answers';
     const middle = median(allTimes());
-    $('#pll-median').textContent = middle == null ? '—' : `${(middle / 1000).toFixed(2)}s`;
+    $('#pll-median').textContent = middle == null ? '—' : fmt.time(middle, { unit: true });
     $('#pll-due').textContent = String(spacedDue + dueRetries.length);
-    $('#pll-due-note').textContent = `${spacedDue} spaced · ${dueRetries.length} corrective`;
+    $('#pll-due-note').textContent = `${spacedDue} due · ${dueRetries.length} retry`;
     $('#pll-retention').textContent = retentionAttempts ? `${Math.round(retentionCorrect / retentionAttempts * 100)}%` : '—';
     const rows = cases.map((item) => {
       const itemStats = caseStats(item.id);
@@ -190,7 +191,7 @@ export function createPLLTrainer(root) {
       const confused = Object.entries(itemStats.confusion || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
       return { item, accuracy, med, delay, confused };
     }).filter((row) => family === 'all' || row.item.family === family).sort((a, b) => (a.accuracy ?? 101) - (b.accuracy ?? 101) || (b.med ?? -1) - (a.med ?? -1));
-    $('#pll-case-list').innerHTML = rows.map(({ item, accuracy, med, delay, confused }) => `<div class="pll-case-row"><span class="pll-case-name"><b>${esc(item.name)}</b><small>${esc(pretty(item.family))}${confused ? ` · confused with ${esc(getCase(confused).name)}` : ''}</small></span><span>${accuracy == null ? '—' : `${accuracy}%`}<small>accuracy</small></span><span>${med == null ? '—' : `${(med / 1000).toFixed(2)}s`}<small>correct median</small></span><span>${delay == null ? '—' : `${delay}%`}<small>24h retention</small></span><i class="pll-mini-track"><em style="width:${accuracy == null ? 0 : accuracy}%"></em></i></div>`).join('') || '<p class="pll-empty">No cases in this family yet.</p>';
+    $('#pll-case-list').innerHTML = rows.map(({ item, accuracy, med, delay, confused }) => `<div class="pll-case-row"><span class="pll-case-name"><b>${esc(item.name)}</b><small>${esc(pretty(item.family))}${confused ? ` · confused with ${esc(getCase(confused).name)}` : ''}</small></span><span>${accuracy == null ? '—' : `${accuracy}%`}<small>accuracy</small></span><span>${med == null ? '—' : `${(med / 1000).toFixed(2)} s`}<small>median recog</small></span><span>${delay == null ? '—' : `${delay}%`}<small>24 h retention</small></span><i class="pll-mini-track"><em style="width:${accuracy == null ? 0 : accuracy}%"></em></i></div>`).join('') || '<p class="pll-empty">No cases in this family yet.</p>';
   }
 
   function setMessage(message, kind = '') {
@@ -216,7 +217,7 @@ export function createPLLTrainer(root) {
       // Stop measuring after ten seconds, but do not make a learner restart
       // just as they are working the pattern out. They can still answer and
       // reveal the cue; the slow attempt simply stays out of their statistics.
-      trial = { ...trial, invalidated: true }; stopClock(); setTimerText(IDLE_LIMIT); setMessage('Take your time · this answer will be practice only and will not be logged.', 'info');
+      trial = { ...trial, invalidated: true }; stopClock(); setTimerText(IDLE_LIMIT); setMessage('Taking a break? This one won’t count.', 'info');
     }, IDLE_LIMIT);
   }
   function setGlance(value) {
@@ -227,7 +228,7 @@ export function createPLLTrainer(root) {
     if (skipped) return;
     paceWindow.push(Boolean(correct));
     if (paceWindow.length < 10) {
-      $('#pll-glance-caption').textContent = `Adaptive · ${glanceMs} ms · ${paceWindow.length}/10`;
+      $('#pll-glance-caption').textContent = `adaptive glance · ${glanceMs} ms · ${paceWindow.length}/10`;
       return;
     }
     // A faster window is earned only by 90%+ accuracy across ten valid
@@ -267,24 +268,24 @@ export function createPLLTrainer(root) {
     const token = ++trialToken; stopClock(); locked = false; paused = false; elapsed = 0; $('#pll-pause').hidden = true; $('#pll-cube').classList.remove('is-paused'); $('#pll-next').hidden = true; setTimerText(0); setGlance(true); setMessage('Choose the case you see.');
     const selected = chooseCase();
     let generated;
-    try { generated = await Promise.resolve(createPLLTrial({ mode, family, caseId: selected?.id || selected?.caseId })); } catch (error) { setMessage(`Could not generate a PLL case: ${error.message}`, 'error'); return; }
+    try { generated = await Promise.resolve(createPLLTrial({ mode, family, caseId: selected?.id || selected?.caseId })); } catch { setMessage('Couldn’t load PLL cases. Reload and try again.', 'error'); return; }
     if (token !== trialToken || !active) return;
     trial = { ...generated, caseId: generated?.caseId || generated?.id || selected?.id, name: generated?.name || generated?.label || selected?.name || selected?.id, family: generated?.family || selected?.family || family };
     root.dataset.pllCase = trial.caseId;
     const seenStats = caseStats(trial.caseId);
-    trial.delayedEligible = mode === 'transfer' && isDelayedRetentionEligible(seenStats.lastSeen);
+      trial.delayedEligible = mode === 'transfer' && isDelayedRetentionEligible(seenStats.lastSeen);
     const data = renderDataFor(trial); cube.update(data);
-    $('#pll-case-number').textContent = `TRIAL ${String(completed + 1).padStart(3, '0')}`; $('#pll-case-mode').textContent = `${mode.toUpperCase()} · ${currentFamilyLabel()}`;
+    $('#pll-case-number').textContent = `case ${completed + 1}`; $('#pll-case-mode').textContent = `${MODES.find(item => item.id === mode)?.label || 'learn'} · ${currentFamilyLabel()}`;
     $('#pll-timing-note').textContent = mode === 'transfer'
-      ? 'Transfer probe · no cue until retrieval.'
-      : glanceEnabled ? `Adaptive glance · ${glanceMs} ms · accuracy first.` : 'Full view · enable glance after the cues feel reliable.';
+      ? 'random AUF · no cue until reveal.'
+      : glanceEnabled ? `adaptive glance · ${glanceMs} ms · accuracy first.` : 'full view · enable glance when the cues feel reliable.';
     renderAnswers(); refreshStats();
     startedAt = performance.now(); runClock(token);
     if (glanceEnabled) window.setTimeout(() => { if (token === trialToken && !locked && !paused) setGlance(false); }, glanceMs);
   }
   function renderAnswers() {
     const options = cases.filter((item) => family === 'all' || item.family === family);
-    $('#pll-answers').innerHTML = options.map((item) => `<button type="button" class="pll-answer" data-pll-answer="${esc(item.id)}"><span>${esc(item.name)}</span><kbd>${esc(item.key.toUpperCase())}</kbd></button>`).join('');
+    $('#pll-answers').innerHTML = options.map((item) => `<button type="button" class="pll-answer" data-pll-answer="${esc(item.id)}"><span>${esc(item.name)}</span><kbd>${esc(item.key.toLowerCase())}</kbd></button>`).join('');
   }
   function feedbackCue() {
     const cue = trial?.cue || trial?.recognitionCue || trial?.hint;
@@ -330,28 +331,28 @@ export function createPLLTrainer(root) {
       completed++; saveStats(stats); refreshStats();
     }
     const expected = getCase(trial.caseId); const cue = feedbackCue();
-    const result = skipped ? `Skipped · correct case: ${expected.name}` : correct ? `Correct · ${expected.name}` : `Not quite · correct case: ${expected.name}`;
-    setMessage(`${result}${recordable?'':' · practice only'}`, correct ? 'correct' : 'wrong');
+    const result = skipped ? `Skipped, it was ${expected.name}.` : correct ? `Nice · ${expected.name}` : `Not quite, it was ${expected.name}.`;
+    setMessage(`${result}${recordable ? '' : ' · this one won’t count.'}`, correct ? 'correct' : 'wrong');
     $('#pll-next').hidden = false; $('#pll-next').focus({ preventScroll: true });
-    const note = $('#pll-timing-note'); note.textContent = cue ? `${cue}${expected.algorithm ? ` · ${expected.algorithm}` : ''}` : (expected.algorithm ? `Algorithm: ${expected.algorithm}` : 'Corrective retrieval is scheduled after a short interleaved delay.');
+    const note = $('#pll-timing-note'); note.textContent = cue ? `${cue}${expected.algorithm ? ` · ${expected.algorithm}` : ''}` : (expected.algorithm ? `alg: ${expected.algorithm}` : 'This case is due again soon.');
     $('#pll-answers').querySelectorAll('.pll-answer').forEach((button) => { const id = button.dataset.pllAnswer; button.disabled = true; button.classList.toggle('correct', sameId(id, trial.caseId)); button.classList.toggle('wrong', !skipped && sameId(id, value) && !correct); });
   }
-  function clearHistory() { Object.keys(stats).forEach((id) => { stats[id] = blankStats(); }); dueRetries = []; completed = 0; paceWindow = []; saveStats(stats); refreshStats(); setMessage('PLL history cleared.'); }
+  function clearHistory() { Object.keys(stats).forEach((id) => { stats[id] = blankStats(); }); dueRetries = []; completed = 0; paceWindow = []; saveStats(stats); refreshStats(); setMessage('History cleared.'); }
   function onKey(event) {
     if (!active || event.metaKey || event.ctrlKey || event.altKey) return;
-    if (event.key.toLowerCase() === 's' && !locked && !paused) { event.preventDefault(); answer('', true); return; }
-    if (event.key === 'Enter' && locked) { event.preventDefault(); newTrial(); return; }
+    if (event.key.toLowerCase() === KEYS.case.s && !locked && !paused) { event.preventDefault(); answer('', true); return; }
+    if ((event.key === 'Enter' || event.key === ' ') && locked) { event.preventDefault(); newTrial(); return; }
     if (locked || paused) return;
     const key = event.key.toLowerCase(); const option = cases.find((item) => (family === 'all' || item.family === family) && item.key === key);
     if (option) { event.preventDefault(); answer(option.id); }
   }
   function onClick(event) { const button = event.target.closest('[data-pll-answer]'); if (button) answer(button.dataset.pllAnswer); }
-  $('#pll-answers').addEventListener('click', onClick); $('#pll-next').addEventListener('click', newTrial); $('#pll-skip').addEventListener('click', () => answer('', true)); $('#pll-resume').addEventListener('click', newTrial); $('#pll-clear').addEventListener('click', () => { if (confirm('Clear all PLL recognition history?')) clearHistory(); });
+  $('#pll-answers').addEventListener('click', onClick); $('#pll-next').addEventListener('click', newTrial); $('#pll-skip').addEventListener('click', () => answer('', true)); $('#pll-resume').addEventListener('click', newTrial); $('#pll-clear').addEventListener('click', () => { if (confirm('Clear PLL history?')) clearHistory(); });
   $('#pll-family').value = family;
   $('#pll-mode-note').textContent = MODES.find((item) => item.id === mode).note;
   $('#pll-family').addEventListener('change', (event) => { family = event.target.value; localStorage.setItem('cubesight-pll-family', family); renderAnswers(); newTrial(); });
   $('#pll-glance').addEventListener('change', (event) => { glanceEnabled = event.target.checked; localStorage.setItem('cubesight-pll-glance-enabled', String(glanceEnabled)); newTrial(); });
-  $('#pll-glance-ms').value = String(glanceMs); $('#pll-glance-ms').addEventListener('change', (event) => { glanceMs = Math.max(GLANCE_MIN, Math.min(GLANCE_MAX, Number(event.target.value) || 600)); localStorage.setItem('cubesight-pll-glance-ms', String(glanceMs)); $('#pll-glance-caption').textContent = `Adaptive · ${glanceMs} ms`; if (glanceEnabled) newTrial(); });
+  $('#pll-glance-ms').value = String(glanceMs); $('#pll-glance-ms').addEventListener('change', (event) => { glanceMs = Math.max(GLANCE_MIN, Math.min(GLANCE_MAX, Number(event.target.value) || 600)); localStorage.setItem('cubesight-pll-glance-ms', String(glanceMs)); $('#pll-glance-caption').textContent = `adaptive glance · ${glanceMs} ms`; if (glanceEnabled) newTrial(); });
   root.querySelectorAll('[data-pll-mode]').forEach((button) => button.addEventListener('click', () => {
     mode = button.dataset.pllMode;
     // Learn deliberately blocks a small family; Mix and Transfer begin with
@@ -364,7 +365,7 @@ export function createPLLTrainer(root) {
     $('#pll-mode-note').textContent = MODES.find((item) => item.id === mode).note;
     newTrial();
   }));
-  $('#pll-retention-help').addEventListener('click', () => setMessage('Transfer probes return after practice so we can check durable retrieval, not just a warmed-up run.', 'info'));
+  $('#pll-retention-help').addEventListener('click', () => setMessage('Random AUF cases return after 24 h to check your recog.', 'info'));
   window.addEventListener('keydown', onKey);
   refreshStats(); renderAnswers(); newTrial();
 

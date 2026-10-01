@@ -4,6 +4,7 @@ import { applyMoves, createSolvedState, parseScramble, randomScramble, sameCubeS
 import { followPlanTurn, inverseMove } from './smart-cube-guidance.js';
 import { smartCube } from './smart-cube-bluetooth.js';
 import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
+import { fmt } from './copy/terms.js';
 
 const MAX_EVENTS = 100;
 const solved = createSolvedState();
@@ -12,10 +13,10 @@ const solved = createSolvedState();
 // consume the shared device-neutral session, never a simulated move button.
 export function createSmartCubeStudio(root, cubeSession = smartCube) {
   root.innerHTML = `
-    <section class="intro-row"><div><p class="eyebrow">Practice / Smart cube</p><h1>Smart Cube Studio</h1></div><p class="intro-copy">Connect. Turn.<br>See what happened.</p></section>
+    <section class="intro-row"><div><p class="eyebrow">solve / dev</p><h1>studio</h1></div><p class="intro-copy">Connect. Turn. See what the cube reports.</p></section>
     <section class="studio-connection" aria-label="Smart cube connection">
-      <div><strong id="studio-device">No cube connected</strong><p id="studio-status" role="status">Connect a smart cube to inspect its events.</p></div>
-      <div class="studio-controls"><button id="studio-connect" type="button">Connect cube</button><button id="studio-sync" type="button">Sync solved cube</button><button id="studio-disconnect" type="button">Disconnect</button></div>
+      <div><strong id="studio-device">No cube</strong><p id="studio-status" role="status">No cube. Connect to start.</p></div>
+      <div class="studio-controls"><button id="studio-connect" type="button">connect cube</button><button id="studio-sync" type="button">sync</button><button id="studio-disconnect" type="button">disconnect</button></div>
     </section>
     <div class="studio-tabs" role="tablist" aria-label="Smart cube debug modes">
       <button id="studio-inspect-tab" role="tab" aria-controls="studio-inspect" aria-selected="true" type="button">Inspect tracking</button>
@@ -24,7 +25,7 @@ export function createSmartCubeStudio(root, cubeSession = smartCube) {
     <div class="studio-layout">
       <section class="studio-stage" aria-label="Live smart cube">
         <div id="studio-cube" class="studio-cube"></div>
-        <div class="studio-stage-footer"><span>Live cube · white top / green front at reset</span><button id="studio-reset-view" type="button">Reset view</button></div>
+        <div class="studio-stage-footer"><span>live cube · white top / green front at reset</span><button id="studio-reset-view" type="button">reset view</button></div>
         <div id="studio-turn-guide" hidden></div>
       </section>
       <section id="studio-inspect" class="studio-panel" role="tabpanel" aria-labelledby="studio-inspect-tab">
@@ -42,18 +43,18 @@ export function createSmartCubeStudio(root, cubeSession = smartCube) {
       </section>
       <section id="studio-scramble" class="studio-panel" role="tabpanel" aria-labelledby="studio-scramble-tab" hidden>
         <p class="eyebrow">02 / experiment</p><h2>Scramble rehearsal</h2>
-        <p>Start with a physically solved, synced cube. The next turn advances only when the tracked cube reaches the expected state; a wrong turn shows a return path.</p>
-        <label for="studio-scramble-input">Scramble to try</label>
+        <p>Start with a solved, synced cube. The next move advances when the cube reaches the expected state. A wrong move shows the way back.</p>
+        <label for="studio-scramble-input">scramble</label>
         <textarea id="studio-scramble-input" rows="3" spellcheck="false"></textarea>
-        <div class="studio-controls"><button id="studio-generate" type="button">Generate 12 moves</button><button id="studio-start" type="button">Start on real cube</button></div>
+        <div class="studio-controls"><button id="studio-generate" type="button">generate 12 moves</button><button id="studio-start" type="button">start</button></div>
         <p id="studio-scramble-error" class="studio-error" role="alert" hidden></p>
         <p id="studio-scramble-status" class="studio-scramble-status" role="status"></p>
-        <div id="studio-scramble-moves" class="studio-moves" aria-label="Scramble turns"></div>
+        <div id="studio-scramble-moves" class="studio-moves" aria-label="scramble moves"></div>
         <p class="studio-caveat">This rehearses the face-turn stream the cube actually reports. It does not silently treat a physical wide or M turn as a verified single move.</p>
       </section>
     </div>
-    <section class="studio-events" aria-label="Decoded device events">
-      <div class="studio-events-head"><div><p class="eyebrow">Event stream</p><h2>What arrived</h2></div><div class="studio-controls"><button id="studio-copy" type="button">Copy diagnostic</button><button id="studio-clear" type="button">Clear log</button></div></div>
+    <section class="studio-events" aria-label="decoded cube events">
+      <div class="studio-events-head"><div><p class="eyebrow">event stream</p><h2>cube events</h2></div><div class="studio-controls"><button id="studio-copy" type="button">copy log</button><button id="studio-clear" type="button">clear log</button></div></div>
       <p>Every move is logged. Gyro samples are shown every 20 packets so they don’t bury turns; the gyro counter includes all packets. Times are relative to this capture.</p>
       <p id="studio-copy-status" role="status"></p>
       <ol id="studio-event-log" class="studio-event-log"><li>No device events captured yet.</li></ol>
@@ -89,12 +90,12 @@ export function createSmartCubeStudio(root, cubeSession = smartCube) {
     if (key === lastScrambleRenderKey) return;
     lastScrambleRenderKey = key;
     $('#studio-start').disabled = !ready;
-    $('#studio-scramble-status').textContent = run?.complete ? `Scramble complete · ${run.moves.length} turns matched on the real cube.`
-      : run?.detour.length ? `Off route after ${snapshot.lastMove || 'a turn'}. Return with ${run.detour.slice().reverse().map(inverseMove).join(' ')}; the scramble stays active.`
-        : run ? `Matched ${run.step} of ${run.moves.length}. Turn ${run.moves[run.step]} on your real cube.`
+    $('#studio-scramble-status').textContent = run?.complete ? `Scramble complete · ${run.moves.length} moves matched.`
+      : run?.detour.length ? `Off plan after ${snapshot.lastMove || 'a move'}. Return with ${fmt.moves(run.detour.slice().reverse().map(inverseMove).join(' '))}. The scramble stays active.`
+        : run ? `Matched ${run.step} of ${run.moves.length}. Turn ${fmt.move(run.moves[run.step])} on your cube.`
           : ready ? 'Cube is solved and synced. Start to track this scramble.'
-            : snapshot.phase === 'tracking' ? 'Solve the physical cube, then start the scramble.'
-              : 'Connect and sync a solved cube before starting.';
+            : snapshot.phase === 'tracking' ? 'Solve the cube, then start the scramble.'
+              : 'Solve the cube, then sync.';
     const move = mode === 'scramble' && run && !run.complete ? expectedMove() : null;
     cube.setTurnHint(active ? move : null);
     turnGuide.render({ mode: move ? run?.detour.length ? 'recovery' : 'scramble-live' : null, move, index: run?.step || 0, total: run?.moves.length || 0,

@@ -31,7 +31,7 @@ export function toMoveList(input = []) {
   const list = typeof input === 'string' ? input.trim().replace(/[′’]/g, "'").split(/\s+/).filter(Boolean) : [...input];
   for (const move of list) {
     if (typeof move !== 'string' || !OUTER_MOVE.test(move)) {
-      throw new Error(`Solve analysis needs outer-face turns (U D R L F B), got “${String(move).slice(0, 20)}”.`);
+      throw new Error(/* copy-ok: validation detail is caught by UI and not rendered as copy */ `Solve analysis needs outer-face turns (U D R L F B), got “${String(move).slice(0, 20)}”.`);
     }
   }
   return list;

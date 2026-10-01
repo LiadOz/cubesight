@@ -23,17 +23,17 @@ test('screens for every session and live phase', () => {
   assert.equal(screenFor(tracking, { phase: 'desynced' }), 'desynced');
 });
 
-test('phase text reproduces the v1 label and detail strings exactly', () => {
-  assert.deepEqual(phaseText({ phase: 'idle' }), { label: 'Connect and start a solve', detail: 'Cross is detected from the first face you solve.' });
-  assert.deepEqual(phaseText({ phase: 'applying', applyStep: 2, applyTotal: 13 }), { label: 'Perform the scramble', detail: 'Scramble turn 3 of 13.' });
-  assert.deepEqual(phaseText({ phase: 'inspecting', inspection: { remainingMs: 6340 } }), { label: 'Inspection', detail: 'Inspect — 6.3s left (clock starts on your first move)' });
-  assert.equal(phaseText({ phase: 'inspecting', inspection: { remainingMs: null } }).detail, 'Inspect — start solving on your first move');
-  assert.equal(phaseText({ phase: 'ready' }).label, 'Start solving — the clock starts on your first turn');
+test('phase text follows the shared stage words and time format', () => {
+  assert.deepEqual(phaseText({ phase: 'idle' }), { label: 'connect cube', detail: 'Cross follows the first face you solve.' });
+  assert.deepEqual(phaseText({ phase: 'applying', applyStep: 2, applyTotal: 13 }), { label: 'apply scramble', detail: 'Scramble move 3 of 13.' });
+  assert.deepEqual(phaseText({ phase: 'inspecting', inspection: { remainingMs: 6340 } }), { label: 'inspection', detail: 'Inspection · 6.3 s left. Clock starts on your first move.' });
+  assert.equal(phaseText({ phase: 'inspecting', inspection: { remainingMs: null } }).detail, 'Inspection. Clock starts on your first move.');
+  assert.equal(phaseText({ phase: 'ready' }).label, 'start');
   assert.deepEqual(phaseText({ phase: 'solving', solveMoveCount: 6, elapsedMs: 2000, progress: { phase: 'cross', crossDone: true, pairsSolved: 0 } }),
-    { label: 'F2L', detail: '6 turns · 3.00 TPS · 2.00s · 0/4 pairs' });
-  assert.equal(phaseText({ phase: 'solving', solveMoveCount: 1, elapsedMs: 0, progress: { phase: 'pre-cross' } }).detail, '1 turn · 0.00 TPS · 0.00s');
-  assert.equal(phaseText({ phase: 'solving', progress: { phase: 'co-pending', f2lDone: true } }).label, 'OLL · orient corners');
-  assert.deepEqual(phaseText({ phase: 'done', record: { moveCount: 40, solveMs: 10000 }, progress: { f2lDone: true } }), { label: 'Solved', detail: '40 turns · 4.00 TPS · 10.00s · 4/4' });
+    { label: 'F2L', detail: '6 moves · 3.00 TPS · 2.00 s · 0/4 pairs' });
+  assert.equal(phaseText({ phase: 'solving', solveMoveCount: 1, elapsedMs: 0, progress: { phase: 'pre-cross' } }).detail, '1 move · 0.00 TPS · 0.00 s');
+  assert.equal(phaseText({ phase: 'solving', progress: { phase: 'co-pending', f2lDone: true } }).label, 'CO');
+  assert.deepEqual(phaseText({ phase: 'done', record: { moveCount: 40, solveMs: 10000 }, progress: { f2lDone: true } }), { label: 'solved', detail: '40 moves · 4.00 TPS · 10.00 s · 4/4' });
 });
 
 test('device view: actions, gyro and unsupported browsers', () => {
@@ -214,8 +214,8 @@ test('coach lines port the v1 texts and keys', () => {
   const live = { phase: 'solving', crossFace: 'D', crossMoveCount: 8, rotations: 3, progress: { crossDone: true, f2lDone: false } };
   const lines = coachLines({ live, state: {}, toggles, optimalCross: { face: 'D', length: 6 } }, lenses);
   assert.deepEqual(lines.map(l => l.text), [
-    'Best cross: yellow, 6 moves', 'cross 8 vs 6', 'hint',
-    '3 rotations this solve. Fewer often saves time.', 'Solve efficiency so far: 88/100.',
+    'PB cross: yellow, 6 moves', 'cross 8 vs 6', 'hint',
+    '3 rotations this solve. Fewer often saves time.', 'Efficiency 88/100.',
   ]);
   assert.deepEqual(lines.slice(-2).map(l => l.key), ['rotations', 'efficiency']);
   assert.equal(lines[1].tone, 'warn');
@@ -245,7 +245,7 @@ test('an x-cross is a tag on the cross segment and the merged pairs are done at 
   const coach = coachLines({ live: snap, state: {}, toggles: { rotationFlag: false }, xcross: 'x-cross' }, { faceColors: {} });
   assert.equal(coach[0].key, 'xcross');
   assert.equal(coach[0].tone, 'good');
-  assert.match(coach[0].text, /^X-cross!/);
+  assert.match(coach[0].text, /^x-cross!/);
 });
 
 test('connecting: the device status is the latest step; a failure keeps its reason and offers a retry', () => {
@@ -270,5 +270,5 @@ test('the cross hindsight names the colour, not a face letter', () => {
   const lenses = { crossHindsight: (n, opt, face) => ({ kind: 'long', text: `${face}|${n}|${opt}` }), faceColors: { B: 'blue' }, f2lNextPairHint: () => null };
   const live = { phase: 'solving', crossFace: 'B', crossMoveCount: 8, progress: { crossDone: false } };
   const lines = coachLines({ live, state: {}, toggles: { crossSuggest: true, crossHindsight: true }, optimalCross: { face: 'B', length: 6 } }, lenses);
-  assert.deepEqual(lines.map(l => l.text), ['Best cross: blue, 6 moves', 'blue|8|6']);
+  assert.deepEqual(lines.map(l => l.text), ['PB cross: blue, 6 moves', 'blue|8|6']);
 });

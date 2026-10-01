@@ -107,7 +107,7 @@ export async function evaluateCrossAsync(request, solver, { signal } = {}) {
   const steps = evaluationSteps(base);
   let step = steps.next();
   while (!step.done) {
-    if (signal?.aborted) { const error = new Error('Analysis cancelled'); error.name = 'AbortError'; throw error; }
+    if (signal?.aborted) { const error = new Error(/* copy-ok: AbortError is an internal worker contract */ 'Analysis cancelled'); error.name = 'AbortError'; throw error; }
     step = steps.next(await solver.search(step.value));
   }
   return summarize(base, step.value, base.frames);

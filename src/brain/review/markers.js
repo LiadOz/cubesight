@@ -138,7 +138,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
         push({
           id: 'better-cross', kind: 'better-cross', tone: 'warn', stage: 'cross', idx: 0, at: 0, tMs: 0, cost: Math.min(3, cross.d0 - best[1] - 1) * weights.better, rawCost: Math.min(3, cross.d0 - best[1] - 1),
           label: 'better cross',
-          note: `Best cross: ${colorOf(best[0])}, ${plural(best[1], 'move')}. Your ${colorOf(a.face)} cross took ${cross.moves} (best there ${cross.d0}). Worth a look during inspection.`,
+          note: `PB cross: ${colorOf(best[0])}, ${plural(best[1], 'move')}. Your ${colorOf(a.face)} cross took ${cross.moves} moves. Worth a look during inspection.`,
         });
       }
     }
@@ -166,7 +166,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       const tMs = times ? (start + times[pause.i]) / 2 : start;
       const beforeAlg = /oll|pll/.test(pause.boundary);
       const tip = /^(cross-f2l|f2l-f2l)$/.test(pause.boundary) ? 'Try looking at the next pair while you insert this one.'
-        : beforeAlg ? 'Worth a look: recognise the case before the last turn of the step.' : 'A stop in the middle of a step.';
+        : beforeAlg ? 'Worth a look: recognize the case before the last move of the stage.' : 'A stop in the middle of a stage.';
       push({
         id: `pause-${pause.i}`, kind: 'pause', tone: 'warn', stage: stageOfMove(pause.i), idx: pause.i, at: pause.i, tMs,
         cost: Math.min(6, (excess / 1000) * tps) * weights.pause, rawCost: Math.min(6, (excess / 1000) * tps), label: `pause ${secs(pause.ms)}`,

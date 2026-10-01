@@ -54,7 +54,7 @@ export function crossHindsight(userCrossMoveCount, optimalMoveCount, crossFace) 
   const extra = userCrossMoveCount - optimalMoveCount;
   return {
     kind: 'suboptimal',
-    text: `Your ${crossFace} cross took ${userCrossMoveCount} move${userCrossMoveCount === 1 ? '' : 's'}. Best cross: ${optimalMoveCount}, so ${extra} extra move${extra === 1 ? '' : 's'}.`,
+    text: `Cross took ${userCrossMoveCount} moves, optimal on ${crossFace}. ${extra} extra moves.`,
   };
 }
 
@@ -75,7 +75,7 @@ export function f2lNextPairHint(state, crossFace) {
     pair: top.pair,
     ready: top.readiness.connected,
     text: top.readiness.connected
-      ? `The ${top.pair.slot} pair is already connected — insert it.`
+      ? `The ${top.pair.slot} pair is already connected. Insert it.`
       : `Several pairs are scattered. Track the ${top.pair.slot} corner and edge before inserting.`,
   };
 }
@@ -91,7 +91,7 @@ export function betterInsertionHindsight(stateBeforeInsertion, insertedPair, cro
   return {
     kind: 'better-pair-available',
     pair: alreadyConnected,
-    text: `You inserted the ${insertedPair.slot} pair, but the ${alreadyConnected.slot} pair was already connected here (see the state before) — inserting it first would have saved a step.`,
+    text: `The ${alreadyConnected.slot} pair was already connected before this insertion. It would have saved a move.`,
   };
 }
 

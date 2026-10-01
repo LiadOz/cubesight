@@ -37,7 +37,7 @@ export const METHODS = [
   {
     id: 'roux',
     label: 'Roux',
-    description: 'First Block → Second Block → CMLL → L6E. (Stage detection is CFOP-based for now — Roux milestones are a TODO.)',
+    description: 'First block, second block, CMLL, then L6E. Stage tracking currently follows CFOP milestones.',
     stages: ['First Block', 'SB', 'CMLL', 'L6E', FINISH_STAGE],
     // TODO: detect Roux milestones (first block, second block, CMLL, L6E) in the live tracker.
     // Until then the CFOP milestones stand in: cross ≈ first block, F2L ≈ second block,

@@ -81,7 +81,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
 
     const hints = el('p', 'hub-keys');
     hints.setAttribute('aria-hidden', 'true');
-    hints.innerHTML = `<span><kbd>${DRILLS.map(drill => drill.key).join(' ')}</kbd> open drill</span><span><kbd>enter</kbd> continue</span>`;
+    hints.innerHTML = `<span><kbd>${DRILLS.map(drill => drill.key).join(' ')}</kbd> open drill</span><span><kbd>enter</kbd> next</span>`;
     page.append(hints);
 
     root.replaceChildren(page);

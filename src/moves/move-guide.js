@@ -15,7 +15,7 @@ import { setAttr, setText, toggleClass } from '../brain/dom.js';
 import { describeMove, displayMove, heldAfter, isMove, normalizeMove } from './notation.js';
 import { readGuidePrefs } from './prefs.js';
 
-const STATUS_WORD = { wrong: 'Played by mistake.' };
+const STATUS_WORD = { wrong: 'Unintended move.' };
 
 function el(tag, className, text) {
   const node = document.createElement(tag);

@@ -11,17 +11,17 @@ export const DRILLS = Object.freeze([
   {
     id: 'pll', tool: 'pll', key: 'p', href: '#/drills/pll',
     title: 'PLL recognition', blurb: 'call the PLL from two sides',
-    modes: ['learn', 'mix', 'transfer', 'glance'], cube: 'none',
+    modes: ['learn', 'mix', 'random AUF', 'glance'], cube: 'none',
   },
   {
     id: 'f2l', tool: 'f2l', key: 'f', href: '#/drills/f2l',
     title: 'F2L deduction', blurb: 'spot pairs, then pick the best next one',
-    modes: ['deduction', 'timed scan', 'best pair'], cube: 'none',
+    modes: ['deduction', 'timed scan', 'best next pair'], cube: 'none',
   },
   {
     id: 'scout', tool: 'scout', key: 'x', href: '#/drills/scout',
-    title: 'Cross Scout', blurb: 'plan cross and x-cross from a scramble',
-    modes: ['explore', 'retrieval practice'], cube: 'optional',
+    title: 'cross scout', blurb: 'plan cross and x-cross from a scramble',
+    modes: ['explore', 'recall'], cube: 'optional',
   },
 ]);
 
@@ -62,7 +62,7 @@ export function drillSettings(storage, drill) {
     const pace = read('cubesight-corner-exposure-mode') || 'adaptive';
     const exposure = read('cubesight-corner-exposure-ms') || '600';
     const labels = { single: 'single corner', triple: 'three corners', recall: 'one-glance recall' };
-    return [labels[mode] || labels.single, glance || mode === 'recall' ? `${pace} glance · ${exposure} ms` : null].filter(Boolean).join(' · ');
+  return [labels[mode] || labels.single, glance || mode === 'recall' ? `${pace === 'adaptive' ? 'adaptive' : 'fixed'} glance · ${exposure} ms` : null].filter(Boolean).join(' · ');
   }
   if (drill.id === 'pll') {
     const mode = read('cubesight-pll-mode') || 'learn';

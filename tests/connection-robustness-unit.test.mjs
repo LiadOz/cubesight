@@ -311,7 +311,7 @@ test('reconnect with different facelets discards the attempt by default, never c
     assert.equal(after.reconnectEvent.match, false);
     assert.ok(sameCubeState(after.state, cube.physical), 're-baselined from the cube\'s facelets');
     assert.equal(live.getSnapshot().phase, 'idle');
-    assert.match(live.getSnapshot().notice, /discarded/i);
+    assert.match(live.getSnapshot().notice, /solve stopped/i);
     assert.equal(live.getSnapshot().record, null);
   } finally { restore(); }
 });

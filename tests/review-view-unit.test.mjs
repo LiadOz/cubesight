@@ -56,7 +56,7 @@ test('detail view: stage stats, yours vs better, honest "no suggestion yet", and
   assert.equal(stage.start, 0);
   assert.equal(stage.moves.length, 8);
   assert.equal(stage.stats.time, '3.70');
-  assert.equal(stage.stats.delta, '-0.30');
+  assert.equal(stage.stats.delta, '−0.30');
   assert.equal(stage.stats.avgMoves, '12.0');
   assert.match(stage.stats.pauses, /^1 pause/);
   assert.equal(stage.compare.status, 'better');

@@ -17,6 +17,7 @@ import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnectio
 import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
 import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
 import { attachBrainRecording } from '../brain-recording.js';
+import { MSG } from '../copy/terms.js';
 import { loadSettings, saveSettings, setSetting, parseCommand } from './settings.js';
 import { buildStagePlan, xcrossLabel } from './stage-plan.js';
 import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './milestones.js';
@@ -103,7 +104,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   let cube = null;
   try { cube = createCube3D(shell.slots.cube, { mode: 'scout' }); }
-  catch { shell.slots.cube.textContent = 'The Brain needs WebGL. Enable hardware acceleration or try another browser.'; }
+  catch { shell.slots.cube.textContent = 'Solve needs WebGL. Enable hardware acceleration or try another browser.'; }
   shell.setCube?.(cube);   // the move guide plays its ghost on this cube
 
   // Recorded seam: start/cancel/settings calls (with the exact scramble), the
@@ -462,7 +463,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   async function start() {
     error = '';
-    if (cubeSession.getSnapshot().phase !== 'tracking') { showError('Connect and sync a solved cube first.'); return; }
+    if (cubeSession.getSnapshot().phase !== 'tracking') { showError(MSG.syncFirst); return; }
     if (settings.scramble === 'free') {
       try { live.startFree(); } catch (err) { showError(err.message); return; }
       settingsOpen = false;
@@ -475,21 +476,21 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       if (!scramble && settings.scramble === 'paste') { showError('Paste a scramble first.'); return; }
       if (!scramble) {
         if (generating) return;
-        generating = true; message('Generating a scramble…');
+        generating = true; message('generating scramble…');
         try { scramble = await generateScramble(); scrambleText = scramble; }
-        catch (err) { generating = false; showError(`Could not generate a scramble: ${err.message}`); return; }
+        catch { generating = false; showError('Couldn’t load a scramble. Reload and try again.'); return; }
         generating = false;
         if (detached) return;
       }
       if (!startGuidedWith(scramble)) return;
     }
-    message('Scramble ready — inspect, then start solving on your first move. The clock starts when you turn.');
+    message('Scramble ready. The clock starts on your first move.');
   }
 
   function startCustom() {
     const scramble = scrambleText.trim();
     if (!scramble) { showError('Paste a scramble first.'); return; }
-    if (cubeSession.getSnapshot().phase !== 'tracking') { showError('Connect and sync a solved cube first.'); return; }
+    if (cubeSession.getSnapshot().phase !== 'tracking') { showError(MSG.syncFirst); return; }
     error = '';
     if (startGuidedWith(scramble)) render();
   }
@@ -656,8 +657,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       a.href = url; a.download = `cubesight-backup-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      setStatusText('#brain-port-status', 'Exported a backup of your local data.');
-    } catch (err) { setStatusText('#brain-port-status', `Export failed: ${err.message}`); }
+    setStatusText('#brain-port-status', 'Backup exported.');
+    } catch { setStatusText('#brain-port-status', 'Couldn’t export data. Try again.'); }
   }
   async function importData(file) {
     if (!file) return;
@@ -671,9 +672,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       history?.pins.importPins(pinsFromImport(parsed));
       records = history?.records ?? [];
       applySettings(loadSettings(globalThis.localStorage));
-      setStatusText('#brain-port-status', 'Imported. Metrics refreshed. Reload to update all trainers.');
+      setStatusText('#brain-port-status', 'Data imported. Reload to update drills.');
       render();
-    } catch (err) { setStatusText('#brain-port-status', `Import failed: ${err.message}`); }
+    } catch { setStatusText('#brain-port-status', 'Couldn’t import data. Check the file and try again.'); }
   }
 
   // --- Diagnostics -------------------------------------------------------------------------------
@@ -687,7 +688,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   async function sendLog() {
     if (!DEV) return;   // /__devlog only exists on the dev server
-    setStatusText('#brain-send-status', 'Sending…');
+    setStatusText('#brain-send-status', 'sending…');
     const log = getConnectionLog();
     const redact = text => String(text || '').replace(/([\da-f]{2}:){5}[\da-f]{2}/gi, 'XX:XX:XX:XX:XX:XX');
     const snap = cubeSession.getSnapshot();
@@ -703,8 +704,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     });
     try {
       const res = await fetch('/__devlog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
-      setStatusText('#brain-send-status', res.ok ? 'Sent — the agent can read the log now.' : `Send failed: HTTP ${res.status}`);
-    } catch (err) { setStatusText('#brain-send-status', `Send failed: ${err.message}`); }
+      setStatusText('#brain-send-status', res.ok ? 'Sent. The dev team can read the log.' : 'Couldn’t send the log. Try again.');
+    } catch { setStatusText('#brain-send-status', 'Couldn’t send the log. Try again.'); }
   }
 
   // The log holds up to 2000 lines and grows on every cube event: rebuild it at
@@ -717,7 +718,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     const list = $('#brain-connection-log');
     if (detached || !entries || !list || !debugOpen) return;
     pendingLog = null;
-    list.innerHTML = entries.length ? entries.map(e => `<li class="brain-log-item brain-log-${e.kind || 'info'}"><span class="brain-log-time">${new Date(e.at).toLocaleTimeString()}</span><span>${escape(e.label)}</span></li>`).join('') : '<li class="brain-log-muted">No connection attempts yet in this session.</li>';
+    list.innerHTML = entries.length ? entries.map(e => `<li class="brain-log-item brain-log-${e.kind || 'info'}"><span class="brain-log-time">${new Date(e.at).toLocaleTimeString('en-US', { hour12: false })}</span><span>${escape(e.label)}</span></li>`).join('') : '<li class="brain-log-muted">No connection events in this session.</li>';
   }
   // The adapter logs steps the session never sees (the address lookup, the manual-address
   // prompt): while connecting, the newest of them is the status line too.

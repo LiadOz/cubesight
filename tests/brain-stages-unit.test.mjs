@@ -153,7 +153,7 @@ test('split rows, donut arcs and the history sparkline', () => {
   const stages = [{ key: 'cross', ms: 2000, moves: 8 }, { key: 'eo', ms: 0, moves: 0, skipped: true }, { key: 'co', ms: 1000, moves: 5 }];
   const averages = { byKey: { cross: { avgMs: 2500 }, eo: { avgMs: 900 }, co: { avgMs: 800 } } };
   const rows = splitRows(stages, plan, averages);
-  assert.deepEqual(rows.map(r => [r.text, r.deltaText, r.tone]), [['2.00', '-0.50', 'faster'], ['skip', '', 'none'], ['1.00', '+0.20', 'slower']]);
+  assert.deepEqual(rows.map(r => [r.text, r.deltaText, r.tone]), [['2.00', '−0.50', 'faster'], ['skip', '', 'none'], ['1.00', '+0.20', 'slower']]);
   assert.equal(rows[0].avgRatio, 1);
   assert.equal(rows[0].ratio, 0.8);
   const pb = splitRows(stages, plan, averages, { compare: 'pb', pbs: { cross: 1900 } });
@@ -176,10 +176,10 @@ test('formatting: times, deltas, results with penalties', () => {
   assert.equal(fmtTime(9999), '9.99', 'a running clock never rounds up');
   assert.equal(fmtTime(null), '—');
   assert.equal(fmtTime(Infinity), 'DNF');
-  assert.equal(fmtSeconds(14070), '14.07s');
-  assert.equal(fmtDelta(-330), '-0.33');
+  assert.equal(fmtSeconds(14070), '14.07 s');
+  assert.equal(fmtDelta(-330), '−0.33');
   assert.equal(fmtDelta(40), '+0.04');
-  assert.equal(fmtDelta(2), '±0.00');
+  assert.equal(fmtDelta(2), '0.00');
   assert.equal(deltaTone(-330), 'faster');
   assert.equal(deltaTone(10), 'even');
   assert.equal(deltaTone(null), 'none');

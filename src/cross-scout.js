@@ -5,10 +5,11 @@ import { solveCross, terminateCrossSolver } from './cross-solver.js';
 import { smartCube } from './smart-cube-bluetooth.js';
 import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
 import { followPlanTurn, recoveryMoves } from './smart-cube-guidance.js';
+import { fmt } from './copy/terms.js';
 
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const title = value => value[0].toUpperCase()+value.slice(1);
-const stageName = count => count===0?'Cross':count===1?'X-cross':count===2?'Double X-cross':`${count}-pair X-cross`;
+const stageName = count => count===0?'cross':count===1?'x-cross':count===2?'xx-cross':`${count}-pair x-cross`;
 const CLUES = {
   'Cross fundamentals': ['Cross edges only', 'Follow the four cross edges; this plan does not finish an F2L pair.'],
   'Preserve a pair': ['Pieces already paired', 'The corner and edge start together and stay together.'],
@@ -20,7 +21,7 @@ const CLUES = {
 };
 const clue = result => CLUES[result.cue.label] || [result.cue.label,result.cue.description];
 const PRACTICE_STORE = 'cubesight-scout-practice-v1';
-const practiceSummary = value => value ? `${(value / 1000).toFixed(1)} s` : '—';
+const practiceSummary = value => value ? fmt.time(value, { unit: true }) : '—';
 
 export function createCrossScout(root, cubeSession = smartCube) {
   let allowed=['U'];
@@ -36,28 +37,28 @@ export function createCrossScout(root, cubeSession = smartCube) {
   let offPlanMoves=[];
   let lastGyro=null,lastSmartStatus='';
   root.innerHTML=`
-    <section class="intro-row"><div><p class="eyebrow">Explore / Cross planning</p><h1>Cross Scout</h1></div><p class="intro-copy">Find the opportunity.<br>Understand what to look for.</p></section>
+    <section class="intro-row"><div><p class="eyebrow">drills / cross scout</p><h1>cross scout</h1></div><p class="intro-copy">Find a cross plan.<br>See what to look for.</p></section>
     <section class="scout-input" aria-label="Cross calculator input">
-      <label for="scout-scramble">Your scramble</label>
+      <label for="scout-scramble">your scramble</label>
       <div class="scout-scramble-row"><textarea id="scout-scramble" rows="2" spellcheck="false" autocomplete="off" autocapitalize="characters" placeholder="Paste a scramble, or generate one…"></textarea><button class="scout-button" id="scout-random">New scramble</button></div>
-      <small>Enter the scramble from solved with white on top and green in front. After you select a plan, its solution notation changes to match the cross-bottom inspection view shown below. Standard face turns only: U D R L F B, with 2 or ′.</small>
+      <small>Enter the scramble from solved with white on top and green in front. After you select a plan, its move notation follows the held view below. Face turns only: U D R L F B, with 2 or ′.</small>
       <div class="scout-smart-cube" aria-label="Smart cube connection">
-        <div><strong id="scout-smart-title">Smart cube · disconnected</strong><p id="scout-smart-status" role="status" aria-live="polite">Connect a cube to mirror its turns from a solved position.</p></div>
-        <div class="scout-smart-actions"><button class="scout-button" id="scout-smart-connect">Connect cube</button><button class="scout-button" id="scout-smart-sync" hidden>Sync solved cube</button><button class="scout-button" id="scout-smart-recenter" hidden>Recenter motion</button><button class="scout-button" id="scout-smart-disconnect" hidden>Disconnect</button></div>
+        <div><strong id="scout-smart-title">cube · disconnected</strong><p id="scout-smart-status" role="status" aria-live="polite">Connect to mirror turns from a solved position.</p></div>
+        <div class="scout-smart-actions"><button class="scout-button" id="scout-smart-connect">connect cube</button><button class="scout-button" id="scout-smart-sync" hidden>sync</button><button class="scout-button" id="scout-smart-recenter" hidden>recenter</button><button class="scout-button" id="scout-smart-disconnect" hidden>disconnect</button></div>
         <details class="scout-mac-help" id="scout-mac-help"><summary>Asked for a cube MAC address? Find it in Chrome</summary>
-          <ol><li>Open regular Chrome on Android, Windows, or Linux. If CubeSight is installed as an app, switch to Chrome so you have an address bar.</li><li>Paste <code>chrome://bluetooth-internals/#devices</code> into Chrome’s address bar and open it. <button type="button" class="scout-mac-copy" id="scout-mac-copy">Copy address</button><span class="scout-mac-copy-status" id="scout-mac-copy-status" role="status" aria-live="polite"></span></li><li>Turn on your GAN cube, tap <strong>Start Scan</strong>, and find its Bluetooth name in the device list. Copy the value in the <strong>Address</strong> column (six pairs of hex digits).</li><li>Return to CubeSight, connect the cube, and enter that address if prompted. After a verified connection, this browser remembers it.</li></ol>
+          <ol><li>Open Chrome on Android, Windows, or Linux. If CubeSight is installed as an app, switch to Chrome so you have an address bar.</li><li>Paste <code>chrome://bluetooth-internals/#devices</code> into Chrome’s address bar and open it. <button type="button" class="scout-mac-copy" id="scout-mac-copy">copy address</button><span class="scout-mac-copy-status" id="scout-mac-copy-status" role="status" aria-live="polite"></span></li><li>Turn on your GAN cube, tap <strong>start scan</strong>, and find its Bluetooth name in the device list. Copy the value in the <strong>address</strong> column (six pairs of hex digits).</li><li>Return to CubeSight, connect the cube, and enter that address if prompted. After a verified connection, this browser remembers it.</li></ol>
           <p>Chrome on macOS can show a substitute address, so use Android, Windows, or Linux to find the real one. If Chrome does not show it on Android, a Bluetooth scanner such as <a href="https://github.com/NordicSemiconductor/Android-nRF-Connect" target="_blank" rel="noopener noreferrer">nRF Connect</a> can show nearby device addresses.</p>
         </details>
       </div>
-      <div class="scout-options"><div><span class="scout-label">Allowed cross colors · choose a subset or CN</span><div class="scout-colors" id="scout-colors" role="group" aria-label="Allowed cross colors"></div></div><div class="scout-options-actions"><button class="new-case-button" id="scout-analyze">Analyze</button><button class="scout-button" id="scout-stop" hidden>Stop search</button></div></div>
+      <div class="scout-options"><div><span class="scout-label">cross colors · choose a subset or color neutral (CN)</span><div class="scout-colors" id="scout-colors" role="group" aria-label="cross colors"></div></div><div class="scout-options-actions"><button class="new-case-button" id="scout-analyze">find plans</button><button class="scout-button" id="scout-stop" hidden>stop search</button></div></div>
       <div class="scout-orientation"><div><span class="scout-label">Inspection orientation</span><strong id="scout-bottom-label"></strong><small id="scout-front-reason"></small></div><label for="scout-front"><span>Front face</span><select id="scout-front" aria-label="Front face for inspection"></select></label></div>
-      <p class="scout-message" id="scout-message" role="status" aria-live="polite">Apply the scramble to your cube, then compare plans. No timer, no score.</p>
+      <p class="scout-message" id="scout-message" role="status" aria-live="polite">Apply the scramble to your cube, then compare plans. No timer or score.</p>
     </section>
     <section class="trainer-shell scout-shell">
-      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> Inspect every face</span><span class="view-lock">Free tumble</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span id="scout-view-caption">White top · Green front · Red right</span><div class="scout-view-actions"><button class="text-button" id="scout-touch-mode" aria-pressed="false">Touch: scroll + rotate</button><button class="text-button" id="scout-reset-view">Reset view</button></div></div><div id="scout-turn-guide" hidden></div></div>
-      <div class="scout-plan"><p class="eyebrow">Your plan</p><span id="scout-family" class="scout-family">Start with the cross</span><h2 id="scout-plan-title">What can you spot?</h2><p id="scout-explanation">Analyze the scramble to compare cross, X-cross, and double X-cross candidates. Select a plan to see which pieces matter.</p><p class="scout-pieces" id="scout-pieces"></p><div id="scout-moves" class="scout-moves" aria-label="Solution moves"></div><div class="scout-playback"><button class="scout-button" id="scout-start" disabled>Reset</button><button class="scout-button" id="scout-prev" disabled aria-label="Previous move">←</button><button class="scout-button" id="scout-play" disabled>Play</button><button class="scout-button" id="scout-next" disabled aria-label="Next move">→</button></div><span class="scout-step-note" id="scout-step">Scrambled state</span><button class="scout-practice-launch" id="scout-practice" disabled>Practice this plan</button><section class="scout-practice-panel" id="scout-practice-panel" hidden aria-live="polite"><span class="scout-practice-kicker">Retrieval practice</span><h3 id="scout-practice-title">Find the pieces before you reveal the plan</h3><p id="scout-practice-copy">On the unassisted cube, identify the four cross edges and the highlighted-plan pair pieces. Commit to what you would inspect first, then reveal.</p><div class="scout-practice-actions"><button class="scout-button scout-practice-reveal" id="scout-practice-reveal">I found it — reveal plan</button><button class="scout-button" id="scout-practice-exit">Exit practice</button></div><div class="scout-practice-result" id="scout-practice-result" hidden><p id="scout-practice-time"></p><p id="scout-practice-cue"></p><div class="scout-practice-rating"><span>How did the retrieval feel?</span><button class="scout-button" data-practice-rating="found">Found it</button><button class="scout-button" data-practice-rating="missed">Missed it</button></div><p class="scout-practice-history" id="scout-practice-history"></p></div></section></div>
+      <div class="cube-stage"><div class="stage-topline"><span class="status-dot"><i></i> inspect every face</span><span class="view-lock">free tumble</span></div><div id="scout-cube" class="cube-mount"></div><div class="cube-caption"><span id="scout-view-caption">white top · green front · red right</span><div class="scout-view-actions"><button class="text-button" id="scout-touch-mode" aria-pressed="false">touch: scroll + rotate</button><button class="text-button" id="scout-reset-view">reset view</button></div></div><div id="scout-turn-guide" hidden></div></div>
+      <div class="scout-plan"><p class="eyebrow">your plan</p><span id="scout-family" class="scout-family">start with the cross</span><h2 id="scout-plan-title">What can you spot?</h2><p id="scout-explanation">Find plans for cross, x-cross, and xx-cross. Select one to see which pieces matter.</p><p class="scout-pieces" id="scout-pieces"></p><div id="scout-moves" class="scout-moves" aria-label="solution moves"></div><div class="scout-playback"><button class="scout-button" id="scout-start" disabled>restart</button><button class="scout-button" id="scout-prev" disabled aria-label="previous move">←</button><button class="scout-button" id="scout-play" disabled>play</button><button class="scout-button" id="scout-next" disabled aria-label="next move">→</button></div><span class="scout-step-note" id="scout-step">scrambled state</span><button class="scout-practice-launch" id="scout-practice" disabled>drill this plan</button><section class="scout-practice-panel" id="scout-practice-panel" hidden aria-live="polite"><span class="scout-practice-kicker">recall</span><h3 id="scout-practice-title">Find the pieces before you reveal the plan</h3><p id="scout-practice-copy">On the unassisted cube, identify the four cross edges and highlighted pair pieces. Choose what you would inspect first, then reveal.</p><div class="scout-practice-actions"><button class="scout-button scout-practice-reveal" id="scout-practice-reveal">reveal plan</button><button class="scout-button" id="scout-practice-exit">stop</button></div><div class="scout-practice-result" id="scout-practice-result" hidden><p id="scout-practice-time"></p><p id="scout-practice-cue"></p><div class="scout-practice-rating"><span>Did you spot it?</span><button class="scout-button" data-practice-rating="found">found</button><button class="scout-button" data-practice-rating="missed">missed</button></div><p class="scout-practice-history" id="scout-practice-history"></p></div></section></div>
     </section>
-    <section class="scout-results"><div class="scout-results-head"><h2>Plans found</h2><select id="scout-sort" aria-label="Sort plans"><option value="cue">Recognizable cues first</option><option value="moves">Fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose your colors and analyze to find candidate plans.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). Random scrambles here are random-move practice scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search powered by the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, running locally in WebAssembly. Smart-cube moves stay on your device; the server only serves the app. Bluetooth requires a compatible cube, HTTPS, and a Web Bluetooth browser.</p></section>`;
+    <section class="scout-results"><div class="scout-results-head"><h2>plans found</h2><select id="scout-sort" aria-label="sort plans"><option value="cue">easiest cues first</option><option value="moves">fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose cross colors and find plans for candidates.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). These are random-move scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search uses the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, which runs locally. Smart-cube moves stay on your device. Bluetooth needs a compatible cube and a supported browser on a secure page.</p></section>`;
   const $=selector=>root.querySelector(selector);
   const turnGuide=createSmartCubeTurnGuide($('#scout-turn-guide'),{
     onPrevious:()=>{scrambleGuideIndex=Math.max(0,scrambleGuideIndex-1);renderTurnGuide();},
@@ -65,11 +66,11 @@ export function createCrossScout(root, cubeSession = smartCube) {
   });
   const guide=document.createElement('details');
   guide.className='scout-guide';
-  guide.innerHTML=`<summary>What do the solution classes mean?</summary>
-    <div><h3>What gets solved</h3><p><strong>Cross:</strong> the four cross edges. <strong>X-cross:</strong> cross + one F2L pair. <strong>Double X-cross:</strong> cross + two F2L pairs.</p>
+  guide.innerHTML=`<summary>What do the plan labels mean?</summary>
+    <div><h3>What gets solved</h3><p><strong>cross:</strong> the four cross edges. <strong>x-cross:</strong> cross + one F2L pair. <strong>xx-cross:</strong> cross + two F2L pairs.</p>
     <h3>What to look for</h3><p>These are recognition clues, not different solving methods or guaranteed difficulty ratings. A plan can have several clues; we show the first matching one.</p>
     <dl>${Object.entries(CLUES).filter(([key])=>key!=='Preserve connected pairs'&&key!=='Cross fundamentals').map(([,value])=>`<dt>${value[0]}</dt><dd>${value[1]}</dd>`).join('')}</dl>
-    <p class="scout-check-note">Every displayed plan is simulated from your scramble to check that its cross and listed pairs finish solved. That checks correctness—it does not mean the plan is easy to spot or the best choice for you.</p></div>`;
+    <p class="scout-check-note">Every plan is simulated from your scramble to check that its cross and listed pairs finish solved. This confirms the moves. It does not mean the plan is easy to spot or ideal for you.</p></div>`;
   $('.scout-results-head').after(guide);
   const highlightButton=document.createElement('button');
   highlightButton.id='scout-highlight';highlightButton.className='scout-highlight';
@@ -116,7 +117,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
     $('#scout-view-caption').textContent=`${title(FACE_COLORS[held.top])} top · ${title(FACE_COLORS[held.front])} front · ${title(FACE_COLORS[held.right])} right · ${title(FACE_COLORS[held.bottom])} bottom`;
   }
   function renderColors(){
-    $('#scout-colors').innerHTML=`<button data-scout-color="CN" aria-pressed="${allowed.length===6}">CN · all six</button>`+Object.entries(FACE_COLORS).map(([face,color])=>`<button data-scout-color="${face}" aria-pressed="${allowed.includes(face)}"><i style="--color:${COLOR_HEX[color]}" aria-hidden="true"></i>${title(color)}</button>`).join('');
+    $('#scout-colors').innerHTML=`<button data-scout-color="CN" aria-pressed="${allowed.length===6}">color neutral · all six</button>`+Object.entries(FACE_COLORS).map(([face,color])=>`<button data-scout-color="${face}" aria-pressed="${allowed.includes(face)}"><i style="--color:${COLOR_HEX[color]}" aria-hidden="true"></i>${title(color)}</button>`).join('');
   }
   function stopPlayback(){playing=false;playbackGeneration++;renderPlayback();}
   function cancelSearch(){ requestGeneration++; controller?.abort();controller=null;terminateCrossSolver();busy=false;$('#scout-stop').hidden=true;$('#scout-analyze').disabled=false; }
@@ -128,7 +129,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
     const history=[...readPracticeHistory(),attempt].slice(-60);
     try{localStorage.setItem(PRACTICE_STORE,JSON.stringify(history));}catch{/* Keep the session usable if storage is unavailable. */}
     practice.rated=rating;
-    $('#scout-practice-history').textContent=`${history.length} plan retrieval${history.length===1?'':'s'} logged · ${history.filter(item=>item.rating==='found').length} found.`;
+    $('#scout-practice-history').textContent=`${history.length} recall rounds · ${history.filter(item=>item.rating==='found').length} found.`;
   }
   function renderPractice(){
     const panel=$('#scout-practice-panel');
@@ -143,7 +144,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
     if(!practice)return;
     const revealed=Boolean(practice.revealedAt);
     if(attempting){
-      $('#scout-family').textContent='Retrieval prompt';
+      $('#scout-family').textContent='recall';
       $('#scout-plan-title').textContent='What would you spot first?';
       $('#scout-explanation').textContent='Identify the cross edges and the plan pieces from the unassisted cube, then commit before revealing.';
       $('#scout-pieces').textContent='';
@@ -152,13 +153,13 @@ export function createCrossScout(root, cubeSession = smartCube) {
     }
     panel.classList.toggle('is-revealed',revealed);
     $('#scout-practice-title').textContent=revealed?'Plan revealed':'Find the pieces before you reveal the plan';
-    $('#scout-practice-copy').textContent=revealed?'The selected, verified plan is now visible. Follow the cyan piece frames, then rate whether you retrieved the structure before the reveal.':'On the unassisted cube, identify the four cross edges and the plan’s pair pieces. Commit to what you would inspect first, then reveal. This is a retrieval commitment, not a click-accuracy test.';
+      $('#scout-practice-copy').textContent=revealed?'The selected, verified plan is visible. Follow the cyan piece frames, then rate whether you spotted the structure before the reveal.':'On the unassisted cube, identify the four cross edges and the plan’s pair pieces. Choose what you would inspect first, then reveal.';
     $('#scout-practice-reveal').hidden=revealed;
     $('#scout-practice-result').hidden=!revealed;
     $('#scout-practice-time').textContent=revealed?`Commitment time: ${practiceSummary(practice.revealedAt-practice.startedAt)}`:'';
     $('#scout-practice-cue').textContent=revealed?`${clue(selected)[0]} · ${selected.cue.description}`:'';
     if(revealed){
-      const history=readPracticeHistory();$('#scout-practice-history').textContent=history.length?`${history.length} plan retrieval${history.length===1?'':'s'} logged · ${history.filter(item=>item.rating==='found').length} found.`:'';
+      const history=readPracticeHistory();$('#scout-practice-history').textContent=history.length?`${history.length} recall rounds · ${history.filter(item=>item.rating==='found').length} found`:'';
       root.querySelectorAll('[data-practice-rating]').forEach(button=>{button.disabled=Boolean(practice.rated);});
     }
   }
@@ -172,8 +173,8 @@ export function createCrossScout(root, cubeSession = smartCube) {
     const connected=snapshot.phase!=='disconnected'&&snapshot.phase!=='connecting';
     const gyroLive=connected&&snapshot.protocol.startsWith('GAN')&&Boolean(snapshot.gyro);
     const supported=Boolean(window.isSecureContext&&navigator.bluetooth?.requestDevice);
-    $('#scout-smart-title').textContent=connected?`${snapshot.deviceName}${snapshot.protocol?` · ${snapshot.protocol}`:''}`:snapshot.phase==='connecting'?'Smart cube · connecting':'Smart cube · disconnected';
-    $('#scout-smart-status').textContent=supported?`${snapshot.detail}${gyroLive?' Motion follows the cube; hold it as shown and tap Recenter motion to align.':''}`:'Web Bluetooth is unavailable here. Use Chrome or Edge on Android/desktop over HTTPS; manual scrambles still work.';
+    $('#scout-smart-title').textContent=connected?`${snapshot.deviceName}${snapshot.protocol?` · ${snapshot.protocol}`:''}`:snapshot.phase==='connecting'?'cube · connecting':'cube · disconnected';
+    $('#scout-smart-status').textContent=supported?`${snapshot.detail}${gyroLive?' Motion follows the cube; hold it as shown and tap recenter.':''}`:'Bluetooth is unavailable here. Use Chrome or Edge on Android, Windows, or Linux; manual scrambles still work.';
     $('#scout-smart-connect').hidden=snapshot.phase!=='disconnected';
     $('#scout-smart-connect').disabled=!supported;
     $('#scout-smart-sync').hidden=!connected;
@@ -199,13 +200,13 @@ export function createCrossScout(root, cubeSession = smartCube) {
       }
       const data=planData(snapshot.state);if(snapshot.lastMove)cube.queueLiveMove(snapshot.lastMove,data);else cube.update(data);
       renderPlayback();
-      message(`Off plan. Follow the return-to-plan turns below, or Analyze current cube for a new plan.`);
+      message('Off plan. Follow the return moves below, or find plans for this cube.');
       return;
     }
     cancelSearch();
     source=snapshot.state;currentScramble=scramble;
     clearPlans();const data=toRenderData(source);if(snapshot.lastMove)cube.queueLiveMove(snapshot.lastMove,data);else cube.update(data);
-    message(snapshot.moves.length>200?'Smart cube tracked over 200 moves. Return to solved and sync to start a new Cross Scout case.':'Smart cube mirrored. Select Analyze to find plans for its current state.');
+    message(snapshot.moves.length>200?'Cube tracked over 200 moves. Return to solved and sync to start a new case.':'Cube mirrored. Find plans for its current state.');
   }
   function onSmartCube(snapshot){
     const gyro=snapshot.protocol.startsWith('GAN')?snapshot.gyro:null;
@@ -224,7 +225,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
     $('#scout-step').textContent=offPlanMoves.length?`Off plan · return to move ${step}`:selected?`Move ${step} of ${selected.moves.length}${step===selected.moves.length?' · plan complete':''}`:'Scrambled state';
     const displayed=selected?movesForInspection(selected.moves,viewBottom,viewFront):[];
     $('#scout-moves').innerHTML=selected?displayed.map((move,index)=>`<button class="scout-move ${index<step?'done':''} ${index===step-1?'current':''}" data-scout-step="${index+1}" aria-label="Show state after move ${index+1}: ${escape(move)}"${offPlanMoves.length?' disabled':''}>${escape(move)}</button>`).join(''):'';
-    $('#scout-analyze').textContent=offPlanMoves.length?'Analyze current cube':'Analyze';
+    $('#scout-analyze').textContent=offPlanMoves.length?'find plans for this cube':'find plans';
     renderTurnGuide();
   }
   function renderTurnGuide(){
@@ -248,7 +249,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
     highlightButton.title=selected?`Highlight 4 cross edges and ${selected.pairs.length*2} F2L pieces`:'Select a plan first';
     $('#scout-family').textContent=selected?`Look for: ${clue(selected)[0]}`:'Start with the cross';
     $('#scout-plan-title').textContent=selected?`${title(FACE_COLORS[selected.face])} · ${stageName(selected.pairs.length)}`:'What can you spot?';
-    $('#scout-explanation').textContent=selected?selected.cue.description:'Analyze the scramble to compare cross, X-cross, and double X-cross candidates. Select a plan to see which pieces matter.';
+    $('#scout-explanation').textContent=selected?selected.cue.description:'Find plans for cross, x-cross, and xx-cross. Select one to see which pieces matter.';
     $('#scout-pieces').textContent=selected?.pairs.length?selected.pairs.map(pair=>`${[...pair.cornerId].map(f=>title(FACE_COLORS[f])).join('–')} corner + ${[...pair.edgeId].map(f=>title(FACE_COLORS[f])).join('–')} edge`).join(' · '):'';
     renderPlayback();
     renderPractice();
@@ -260,7 +261,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
     viewBottom=selected.face;updateOrientation(true);
     cube.update(planData(source));renderPlan();renderResults();
     const held=inspectionOrientation(viewBottom,viewFront);
-    message(`Hold the physical cube with ${FACE_COLORS[held.top]} on top and ${FACE_COLORS[held.front]} in front, then tap Reset view to align its motion. Follow the center color named in each turn cue.`);
+    message(`Hold the cube with ${FACE_COLORS[held.top]} on top and ${FACE_COLORS[held.front]} in front, then tap recenter. Follow the center color named in each turn cue.`);
   }
   function renderResults(){
     const ranks={easy:0,medium:1,hard:2};
@@ -293,7 +294,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
       // independently simulated, including its cross and actual solved pairs.
       for(const kind of ['cross','xcross','xxcross']) for(const face of allowed){
         if(generation!==requestGeneration)return;
-        message(`Analyzing ${title(FACE_COLORS[face])} ${kind==='xxcross'?'double X-cross':kind} · ${attempted}/${total} searches. You can stop and keep results.`);
+        message(`finding ${title(FACE_COLORS[face])} ${kind==='xxcross'?'xx-cross':kind} plans · ${attempted}/${total}. Stop to keep these results.`);
         const reply=await solveCross({scramble:currentScramble,face,kind,maxResults:3,timeLimitMs:2500},{signal:controller.signal});
         if(generation!==requestGeneration)return;
         attempted++;if(!reply.complete)incomplete++;
@@ -308,7 +309,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
         }
         renderResults();
       }
-      message(`${results.length} plans found.${incomplete?' Some searches reached their limit; more plans may exist.':''}${rejected?' Unverifiable engine results were excluded.':''} Compare what gets solved, move counts, and recognition clues.`);
+      message(`${results.length} plans found.${incomplete?' Some searches reached their limit; more plans may exist.':''}${rejected?' Unverified plans were excluded.':''} Compare stages, move counts, and clues.`);
       if(!results.length)$('#scout-empty').textContent='No plan found within these search limits. Try fewer colors or a shorter scramble.';
     } catch(error){if(generation===requestGeneration)message(error.name==='AbortError'?'Search stopped.':'Search could not finish: '+error.message);}
     finally{if(generation===requestGeneration){busy=false;controller=null;$('#scout-analyze').disabled=false;$('#scout-stop').hidden=true;}}
@@ -320,14 +321,14 @@ export function createCrossScout(root, cubeSession = smartCube) {
     catch { $('#scout-mac-copy-status').textContent='Select and copy the address above, then paste it into Chrome.'; }
   });
   $('#scout-smart-sync').addEventListener('click',()=>{void cubeSession.syncSolved().catch(()=>{});});
-  $('#scout-smart-recenter').addEventListener('click',()=>{cube.recenterGyro();message('Cube motion recentered to the current inspection view.');});
+  $('#scout-smart-recenter').addEventListener('click',()=>{cube.recenterGyro();message('Cube motion recentered to the current view.');});
   $('#scout-smart-disconnect').addEventListener('click',()=>{void cubeSession.disconnect();});
   $('#scout-stop').addEventListener('click',()=>{cancelSearch();message(`Search stopped. ${results.length} plans kept; search is incomplete.`);});
-  $('#scout-random').addEventListener('click',()=>{cancelSearch();manualScrambleGuide=true;scrambleGuideIndex=0;$('#scout-scramble').value=randomScramble();loadScramble();message('New scramble ready. Apply it to a solved cube, then Analyze.');});
+  $('#scout-random').addEventListener('click',()=>{cancelSearch();manualScrambleGuide=true;scrambleGuideIndex=0;$('#scout-scramble').value=randomScramble();loadScramble();message('New scramble ready. Apply it to a solved cube, then find plans.');});
   $('#scout-scramble').addEventListener('input',()=>{
     manualScrambleGuide=true;scrambleGuideIndex=0;
     cancelSearch();clearPlans();
-    try{loadScramble();$('#scout-cube').style.visibility='';message('Cube updated. Select Analyze to find plans.');}
+    try{loadScramble();$('#scout-cube').style.visibility='';message('Cube updated. Find plans to see options.');}
     catch(error){$('#scout-cube').style.visibility='hidden';message(error.message);}
   });
   $('#scout-colors').addEventListener('click',event=>{
@@ -352,13 +353,13 @@ export function createCrossScout(root, cubeSession = smartCube) {
   $('#scout-practice').addEventListener('click',()=>{
     if(!selected)return;
     stopPlayback();highlightsOn=false;step=0;practice={startedAt:performance.now(),revealedAt:null,rated:null};
-    cube.update(toRenderData(source));renderPlan();message('Practice started. Identify the cross and plan pieces before revealing the verified solution.');
+    cube.update(toRenderData(source));renderPlan();message('Recall started. Identify the cross and pair pieces before you reveal the verified plan.');
   });
   $('#scout-practice-reveal').addEventListener('click',()=>{
     if(!practice||!selected||practice.revealedAt)return;
     practice.revealedAt=performance.now();highlightsOn=true;cube.update(planData(source));renderPlan();message('Plan revealed. The cyan frames show the cross and selected pair pieces.');
   });
-  $('#scout-practice-exit').addEventListener('click',()=>{practice=null;highlightsOn=false;cube.update(planData(source));renderPlan();message('Practice ended. Select the plan again when you are ready to retrieve it.');});
+  $('#scout-practice-exit').addEventListener('click',()=>{practice=null;highlightsOn=false;cube.update(planData(source));renderPlan();message('Recall stopped. Select the plan when you are ready to try again.');});
   $('#scout-practice-panel').addEventListener('click',event=>{const rating=event.target.closest('[data-practice-rating]')?.dataset.practiceRating;if(!rating||practice?.rated)return;savePracticeAttempt(rating);const group=event.target.closest('.scout-practice-rating');group.classList.add('is-rated');group.querySelectorAll('button').forEach(button=>{button.disabled=true;});});
   highlightButton.addEventListener('click',()=>{
     if(!selected)return;

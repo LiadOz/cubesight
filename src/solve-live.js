@@ -482,12 +482,12 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (lockedNow && count > 1) skip = null;
     else if (on(mark.ollIdx) && llSolved) {
       skip = on(mark.f2lIdx)
-        ? { kind: 'pll', label: 'Last layer skipped — solved straight out of F2L!' }
-        : { kind: 'pll', label: 'PLL skipped — solved straight after OLL!' };
-    } else if (on(mark.ollIdx) && on(mark.f2lIdx)) skip = { kind: 'oll', label: 'OLL skipped — last layer oriented while solving F2L!' };
-    else if (on(mark.eoIdx) && on(mark.f2lIdx)) skip = { kind: 'eo', label: 'EO skipped — edges oriented while solving F2L!' };
-    else if (on(mark.coIdx) && on(mark.eoIdx) && !on(mark.f2lIdx)) skip = { kind: 'co', label: 'CO skipped — corners oriented along with the edges!' };
-    else if (crossAchieved && mark.crossIdx < count && maxPairs >= pairsBeforeMove + 2) skip = { kind: 'f2l', label: `${maxPairs - pairsBeforeMove} F2L pairs solved at once!` };
+        ? { kind: 'pll', label: 'LL skip!' }
+        : { kind: 'pll', label: 'PLL skip!' };
+    } else if (on(mark.ollIdx) && on(mark.f2lIdx)) skip = { kind: 'oll', label: 'OLL skip!' };
+    else if (on(mark.eoIdx) && on(mark.f2lIdx)) skip = { kind: 'eo', label: 'EO skip!' };
+    else if (on(mark.coIdx) && on(mark.eoIdx) && !on(mark.f2lIdx)) skip = { kind: 'co', label: 'CO skip!' };
+    else if (crossAchieved && mark.crossIdx < count && maxPairs >= pairsBeforeMove + 2) skip = { kind: 'f2l', label: `${maxPairs - pairsBeforeMove} pairs at once!` };
     let label;
     if (next.solved) label = 'solved';
     else if (eoAchieved && coAchieved) label = 'pll';
@@ -528,7 +528,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     };
     phase = 'interrupted';
     stopInspectionTimer();
-    logConnection({ kind: 'warn', label: `[live] INTERRUPTED from ${interrupted.from}: connection lost` });
+    logConnection({ kind: 'warn', label: /* copy-ok: protocol diagnostic shown in developer log */ `[live] INTERRUPTED from ${interrupted.from}: connection lost` });
     emit();
   }
 
@@ -545,7 +545,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       finishSolve(snap.state, { endAt: interrupted.at, dnf: 'disconnect' });
       return;
     }
-    cancel('Attempt discarded: the cube changed while it was disconnected.');
+    cancel('Solve stopped. The cube changed while disconnected.');
   }
 
   function resume() {
@@ -571,9 +571,9 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       else emit();
     } else if (phase === 'inspecting' || phase === 'ready') {
       scrambledState = snap.state;
-      if (isSolved(snap.state)) cancel('Attempt cancelled: the cube is solved.'); else emit();
+      if (isSolved(snap.state)) cancel('Solve stopped because the cube is solved.'); else emit();
     } else if (phase === 'applying') {
-      cancel('Scramble cancelled: the cube state changed unexpectedly.');
+      cancel('Scramble stopped because the cube state changed.');
     }
   }
 
@@ -581,7 +581,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     if (snap.phase === 'desynced') {
       if (phase !== 'idle' && phase !== 'done' && phase !== 'desynced') {
         phase = 'desynced'; stopInspectionTimer(); interrupted = null;
-        logConnection({ kind: 'error', label: '[live] onSnapshot DESYNC phase=desynced' });
+        logConnection({ kind: 'error', label: /* copy-ok: protocol diagnostic shown in developer log */ '[live] onSnapshot DESYNC phase=desynced' });
         emit();
       }
       return;

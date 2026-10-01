@@ -151,12 +151,12 @@ function mountScreen() {
   const inspAside = h('div'); inspAside.dataset.slot = 'inspection-aside';
   const tlAside = h('div'); tlAside.dataset.slot = 'timeline-aside';
   if (vm.screen === 'idle') {
-    hero.append(h('p', 'h-step', 'ready'), h('p', 'h-ready', 'cube connected, solved and centred.'), h('p', 'h-clock is-idle', '0.00'));
+    hero.append(h('p', 'h-step', 'ready'), h('p', 'h-ready', 'Cube connected, solved and centered.'), h('p', 'h-clock is-idle', '0.00'));
     const btn = h('p', 'h-btn', 'Scramble'); btn.append(h('kbd', '', 'space')); hero.append(btn);
     const stats = h('div', 'h-stats');
     for (const k of ['ao5', 'ao12', 'pb', 'today']) stats.append(h('span', '', k));
     for (const v of [vm.stats.ao5, vm.stats.ao12, vm.stats.best, String(vm.stats.solves)]) stats.append(h('b', '', v));
-    hero.append(stats, h('p', 'h-sub', 'the ring is your pace map — each arc is your average for that step.'));
+    hero.append(stats, h('p', 'h-sub', 'The ring maps your pace. Each arc shows the average for that stage.'));
   } else if (vm.screen === 'solving') {
     hero.append(h('p', 'h-step', vm.clock.stepLine.map(s => s.text).join(' · ')), h('p', 'h-clock', vm.clock.text));
     const title = h('p', 'h-title', vm.clock.stepTitle);
