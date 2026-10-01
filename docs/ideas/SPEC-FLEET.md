@@ -1,5 +1,7 @@
 # Fleet spec: everything still to build
 
+> **Handing this out:** give each agent this file plus its work-package ID, e.g. "Implement **F0** from `docs/ideas/SPEC-FLEET.md`". Every agent must read: this file in full (the user feedback and ground rules apply to all), `docs/design/orbit-v3/README.md` + the gallery, `docs/design/VOICE.md`, and `docs/ideas/FEATURES.md` for background. **Wave 1:** F0, F3, F6, F8, F9 (in parallel). **Wave 2, after F0 is merged:** F1, F2, F4, F5, F10, F14. The lead reviews and merges every WP.
+
 The brief for the next fleet of builder agents, and the checklist the lead reviews against. It consolidates every open item from `ROADMAP.md`, `REVIEW-NEXT-2.md`, `REVIEW-NEXT-3.md`, `FEATURES.md` and the Orbit v3 designs. Where this file and an older doc disagree, **this file wins**.
 
 **Design reference:** `docs/design/orbit-v3/` (gallery: `file:///home/loz/projects/cubesight/docs/design/orbit-v3/index.html`). **Direction (chosen by the user): A "one orbit": the cube is the centrepiece.** Key frames the user loved: **A-05** (results: the dotted connector line between the coach line and the selected marker, with a fade in/out) and **A-10** (past solve: the cube highlighted). History follows **A-07** (a timeline by session), with C-07's orbit-card grid only as a possible alternative view later. B and C are reference only. See "User feedback on orbit-v3" below; it overrides the frames where they differ.
@@ -14,6 +16,10 @@ The brief for the next fleet of builder agents, and the checklist the lead revie
 7. **A ring inside a ring is for comparison only** (e.g. comparing two algorithms, or yours vs better as in A/B review frame 6). It's NOT approved for the manual timer or progress. Those use a single ring. The user wants to see before/after demos of nested rings in the design lab (F10) later before approving any other use.
 8. **A crowded ring** (not the happy path): a solve can produce many markers/tooltips, some very close together. The design must handle it gracefully: cluster nearby markers into one badge with a count, expand on hover/tap, keep labels from overlapping (collision layout), rank by importance, and never hide the time/key info. The F8 layout suite must include a "many markers" fixture (≥ 12 markers, several within 5°).
 9. **Coach ↔ marker connector (A-05):** the dotted line connecting the coach sentence to its marker, with a fade in/out, is a core pattern; reuse it wherever text explains a ring point.
+
+10. **Naming:** the ring component is called **the Orbit** everywhere (code: `Orbit`; copy: "orbit"). There is no longer a separate "Orbit style": the Orbit look IS the site's look (Mono remains only as a legacy skin; light mode stays supported).
+11. **No scrolling on the main pages:** **solve** (every phase), **drills** (the hub and drill screens) and the **algorithm library** (the browser and case pages) must fit the viewport without vertical scrolling at 1280×720 and above in their default states. Design for one screen; put rarely-needed content behind "more…", the help (?) page, or a drawer. Results, history and progress may scroll, but keep the cube/orbit in view. The F8 layout suite asserts `scrollHeight <= innerHeight` (+2 px) for these pages at 1280×720, 1440×900 and 1920×1080.
+12. **No footer.** Remove the site footer everywhere. Its content (the build/version badge, "everything stays on this device", links) moves into the **help (?) page**, which is redesigned (see F14).
 
 ## Ground rules (every work package)
 1. **Offline-first PWA:** no backend and no runtime calls to other origins; new assets precached; airplane mode works.
@@ -132,6 +138,11 @@ Build a dev-area **design lab** at `#/dev/lab` (reached from the debug drawer; o
 - **Agent workflow (documented in `docs/design/LAB.md`):** for design questions after the redesign, agents add a proposal to the lab instead of (or in addition to) static SVGs, and report the link `http://localhost:5173/#/dev/lab/<proposal-id>`.
 Acceptance: a sample proposal with 3 variants of the results actions area and 2 of the history list renders live with the fake cube; side-by-side works on desktop; feedback round-trips to a JSON file; the lab code is tree-shaken out of production builds (or gated so it never appears there); the layout (F8) and snapshot (F9) suites ignore lab routes except a smoke test.
 
+## F14: Help page and footer removal (wave 2, small; owns `src/main.js` footer/help markup + a new `src/help/**`)
+- Remove the footer site-wide (all routes) and reclaim its vertical space.
+- A redesigned **help (?) page** (the header's "?" opens it as a page or a large sheet, in the orbit language): a short "how CubeSight works" (solve with a smart cube, drills on the phone, algs, progress), the keyboard shortcuts (generated from the shared key map, per page), the smart-cube connection/troubleshooting tips (including the MAC/Bluetooth notes), offline/privacy ("everything stays on this device"), data backup/export/import, the version/build badge + "check for updates", and credits (algorithm sources per FEATURES #25, the cube-xcross engine licence, fonts).
+- Acceptance: no footer on any route (F8 asserts it); the help page fits one screen per section on desktop, works offline, and screenshots are in the gallery.
+
 ## Future tasks (after the waves above; not blocking)
 - **F11 Performance audit:** an agent measures and improves performance everywhere (startup, the three.js/worker cold start, the pair search, rendering FPS on the ring + cube, memory, the bundle size, phone performance), with a benchmark report and regressions guarded in CI.
 - **F12 Cube skins (maybe):** user-customisable cube appearance (sticker colours/shapes, the plastic body, stickerless styles). The user isn't sure yet; first prototype it in the design lab (F10).
@@ -141,7 +152,7 @@ Acceptance: a sample proposal with 3 variants of the results actions area and 2 
 | Wave | WPs (parallel) | Owns |
 |---|---|---|
 | 1 | **F0** alone (+ F3, F6, **F8** and **F9** in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. F8: `tests/layout/**`, the package.json script, CI. F9: `tests/snapshots/**`, `scripts/snapshots-compare.mjs`, the package.json scripts. |
-| 2 | **F1, F2, F4, F5** in parallel after F0 merges; **F10** any time after F0 (doesn't block F1) | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
+| 2 | **F1, F2, F4, F5** in parallel after F0 merges; **F10** any time after F0 (doesn't block F1); **F14** any time | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
 Shared files (`src/main.js` routes, `types.js`, `tokens-*.css`): additive edits only, coordinate via small commits; the lead resolves merges.
 
 ## How the lead reviews each WP
