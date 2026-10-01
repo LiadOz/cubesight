@@ -693,3 +693,16 @@ first. **P2** inconsistent wording. **P3** polish.
 * `Connect` / `Disconnect` for the cube.
 * `ao5`, `ao12`, `TPS`, `PLL`, `OLL` spellings in the solve screen.
 * Color names spelled American (`color`, `center`) in all `src/` strings except the two British slips above.
+
+## Decisions confirmed by the user (2026-09-30)
+1. Prime: display `R′` (U+2032); accept `'` `′` `’` `‘` as input; store/copy ASCII `'`.
+2. Spelling: American (color, recognize, practice).
+3. Casing: PLL, OLL, PB, DNF, TPS, AUF in capitals; ao5, ao12, ao50, ao100, mo3 lowercase.
+4. Keys (every page): space = start/next, esc = stop/close, tab = settings, b = back, r = retry.
+5. combo = correct answers in a row; streak = days in a row.
+6. The action is "drill" (not practice/train/sprint); one attempt = a "case".
+7. Review labels: the cubing set (scheme A: Optimal, Clean, Skip, Pseudo pair, Extra move, Detour, Pause, …).
+8. The review score is "efficiency" (0–100); "accuracy" stays for drills.
+9. Inferred labels (regrip, lockup) are hidden by default.
+10. The smart-cube screen is "solve"; nav `solve · drills · algs · progress`.
+Site name: undecided.
