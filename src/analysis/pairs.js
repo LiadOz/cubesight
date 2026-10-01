@@ -54,6 +54,11 @@ function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, sl
       generators: generatorSet(unrelabelMoves(moves, crossFace)),
       ergonomicScore: ergoScore(moves),
       plannerWeight: plannerWeight(moves),
+      // A verified replay is not necessarily a proven shortest completion.
+      // Only the candidate's exact minimum can carry proof status, and only
+      // when every end-frame search completed.
+      proven: option.source === 'recorded-fallback' ? false : Boolean(candidate.shortest === moves.length
+        && !candidate.timedOut && candidate.searchedGoalShifts.length === 4),
     };
     if (!current || row.ergonomicScore < current.ergonomicScore) byAlg.set(key, row);
   }
