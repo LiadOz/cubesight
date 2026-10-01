@@ -16,7 +16,7 @@ import { currentDShift } from '../solve-tracker.js';
 import { inspectionLimitMs, inspectionPenalty } from '../solve-live.js';
 import { summarize, ao5, ao12, scopeStats, flowStats, learningStats, resultMs, PLUS_TWO_MS } from '../solve-metrics.js';
 import { sessionRecords, currentSessionId } from '../store/sessions.js';
-import { FOCI, focusOf, inFocus, normalizeFocus } from '../store/focus.js';
+import { FOCI, focusOf, inFocus, inStatsSource, normalizeFocus } from '../store/focus.js';
 import { buildStagePlan, planKey as planKeyOf, planGroups, stageAverages, pbSplits, xcrossLabel, isMergedSplit } from './stage-plan.js';
 import { stageProgress, createTrack } from './milestones.js';
 import { tpsSeries, splitRows, donutArcs, sparkline } from './series.js';
@@ -554,7 +554,8 @@ export function buildViewModel(input, prev = null) {
   const screen = screenFor(session, live);
   const plan = cached('plan', [settings.method, settings.oll, settings.pll], () => buildStagePlan(settings));
   const activeFocus = normalizeFocus(settings.session?.focus);
-  const focusRecords = cached('focusRecords', [records, activeFocus], () => inFocus(records, activeFocus));
+  const sourceRecords = cached('sourceRecords', [records, settings.stats?.source], () => inStatsSource(records, settings.stats?.source));
+  const focusRecords = cached('focusRecords', [sourceRecords, activeFocus], () => inFocus(sourceRecords, activeFocus));
   // On the results the pace map and the deltas compare this solve with the others, not with itself.
   const reviewedAt = screen === 'results' ? live?.record?.at ?? null : null;
   const paceRecords = cached('paceRecords', [focusRecords, reviewedAt], () => (reviewedAt == null ? focusRecords : focusRecords.filter(r => r.at !== reviewedAt)));
@@ -564,13 +565,13 @@ export function buildViewModel(input, prev = null) {
     : (screen === 'solving' && settings.f2l === 'pseudo' && session?.state && live?.crossFace ? currentDShift(session.state, live.crossFace) : null);
   const timeline = timelineVM({ screen, settings, plan, averages, pbs, track, live, now, prevTimeline: prev?.timeline, dShift });
   const result = screen === 'results'
-    ? cached('results', [live?.record, records, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross, input.reviewUi, input.pins, input.analysisStatus], () => resultsVM({ live, records, settings, plan, track, optimalCross, reviewUi: input.reviewUi, pins: input.pins ?? [], analysisStatus: input.analysisStatus ?? 'none' }))
+    ? cached('results', [live?.record, sourceRecords, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross, input.reviewUi, input.pins, input.analysisStatus], () => resultsVM({ live, records: sourceRecords, settings, plan, track, optimalCross, reviewUi: input.reviewUi, pins: input.pins ?? [], analysisStatus: input.analysisStatus ?? 'none' }))
     : null;
   const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, input.connectStep ?? '', session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, input.connectStep ?? '', live));
   const themePreference = input.themePreference ?? 'system';
   const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen), themePreference], () => buildSettingsPanel(settings, Boolean(input.settingsOpen), themePreference));
   const configBar = cached('configBar', [settings], () => buildConfigBar(settings));
-  const stats = cached('stats', [records, activeFocus], () => statsVM(records, activeFocus));
+  const stats = cached('stats', [sourceRecords, activeFocus], () => statsVM(sourceRecords, activeFocus));
   const keys = cached('keys', [screen, settings.timer, settings.coach], () => keyHints(screen, { timerHidden: settings.timer === 'hide', coach: settings.coach }));
   const coachIn = input.coach ?? [];
   const coach = prev && sameLines(prev.coach, coachIn) ? prev.coach : coachIn;

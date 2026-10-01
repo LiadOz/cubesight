@@ -1,10 +1,10 @@
 // The manual timer (src/timer) on its dev page: keyboard flow, touch flow on a phone, penalty
 // edits, persistence across a reload (IndexedDB) and working offline.
-// TIMER_SHOTS=1 also writes the screenshots in docs/design/brain-v2/review/timer/.
+// TIMER_SHOTS=1 also writes the visual matrix under test-results/timer-screenshots/.
 import { test, expect } from 'playwright/test';
 
 const PAGE = '/src/timer/_dev.html';
-const SHOTS = process.env.TIMER_SHOTS ? 'docs/design/brain-v2/review/timer' : null;
+const SHOTS = process.env.TIMER_SHOTS ? 'test-results/timer-screenshots' : null;
 const INSPECTION_OFF = { version: 2, inspection: { mode: 'off' } };
 
 async function open(page, query = '', { settings } = {}) {
@@ -60,6 +60,11 @@ test('keyboard: hold space, inspect, hold again to start, any key stops', async 
   await expect(page.getByTestId('stats')).toContainText('1 solve');
   // The scramble moved on to the next one.
   await expect(page.getByTestId('scramble')).not.toHaveText(scramble);
+  await page.keyboard.press('Space');
+  await expect(root(page)).toHaveAttribute('data-phase', 'idle');
+  await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready');
+  await holdSpace(page);
+  await expect(root(page)).toHaveAttribute('data-phase', 'inspecting');
 });
 
 test('penalty edit with 2 / d / delete / u, and it persists after a reload', async ({ page }) => {
@@ -79,7 +84,7 @@ test('penalty edit with 2 / d / delete / u, and it persists after a reload', asy
   await page.keyboard.press('d');
   await expect(time(page)).toHaveText(raw.toFixed(2));
   await page.keyboard.press('Delete');
-  await expect(page.getByTestId('stats')).toContainText('no speed solves yet');
+  await expect(page.getByTestId('stats')).toContainText('no manual speed solves yet');
   expect(await records(page)).toHaveLength(0);
   await page.keyboard.press('u');
   await expect(page.getByTestId('stats')).toContainText('1 solve');
@@ -101,6 +106,28 @@ test('esc abandons an attempt without saving', async ({ page }) => {
   await page.keyboard.press('Escape');
   await expect(root(page)).toHaveAttribute('data-phase', 'idle');
   expect(await records(page)).toHaveLength(0);
+});
+
+test('inspection modes and overtime penalties stay shared and configurable', async ({ page }) => {
+  await open(page, '', { settings: INSPECTION_OFF });
+  const insp = page.locator('button[data-action="inspection"]');
+  const length = page.locator('button[data-action="inspection-seconds"]');
+  const overtime = page.locator('button[data-action="overtime"]');
+  await expect(insp).toHaveText('insp off');
+  await insp.click(); await expect(insp).toHaveText('insp WCA 15 s');
+  await insp.click(); await expect(insp).toHaveText('insp custom 15 s');
+  await expect(length).toHaveText('length 15 s');
+  await length.click(); await expect(length).toHaveText('length 20 s');
+  await insp.click(); await expect(insp).toHaveText('insp ∞');
+  await insp.click(); await expect(insp).toHaveText('insp off');
+
+  await overtime.click(); await expect(overtime).toHaveText('overtime count');
+  await overtime.click(); await expect(overtime).toHaveText('overtime grace 2 s · +2');
+  await overtime.click(); await expect(overtime).toHaveText('overtime grace 2 s · DNF');
+  await overtime.click(); await expect(overtime).toHaveText('overtime grace 2 s · none');
+  await overtime.click(); await expect(overtime).toHaveText('overtime auto-start');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-brain-settings-v2')));
+  expect(stored.inspection).toMatchObject({ mode: 'off', overtime: 'autostart', gracePenalty: 'none' });
 });
 
 test('hold to start is configurable and stats come from the focus history', async ({ page }) => {
@@ -160,6 +187,7 @@ test.describe('phone', () => {
     // Hold: ready after 300 ms, release starts the solve.
     await finger.start();
     await expect(root(page)).toHaveAttribute('data-hold', 'ready', { timeout: 1500 });
+    await expect(page.getByRole('button', { name: 'stats manual' })).toBeHidden();
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/phone-orbit-dark-ready.png` });
     await finger.end();
     await expect(root(page)).toHaveAttribute('data-phase', 'running');

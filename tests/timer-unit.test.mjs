@@ -7,6 +7,8 @@ import { createHistoryStore } from '../src/store/history.js';
 import { createMemoryBackend } from '../src/store/memory-backend.js';
 import { analysisInputFromRecord } from '../src/analysis/record.js';
 import { resultMs } from '../src/solve-metrics.js';
+import { cleanRecord } from '../src/solve-store.js';
+import { inStatsSource } from '../src/store/focus.js';
 
 const rig = (options = {}) => {
   let t = 1000;
@@ -213,12 +215,36 @@ test('history keeps source, assigns the session, and the Brain analysis skips it
 test('stats row is within the focus and shows only the averages that exist', () => {
   const mk = (i, ms, focus = 'speed', penalty = null) => ({ at: i * 1000, solveMs: ms, penalty, focus, solved: true });
   const speed = [1, 2, 3, 4, 5].map(i => mk(i, 10_000 + i * 100));
-  const row = statsRow([...speed, mk(6, 1000, 'flow')], 'speed');
+  const row = statsRow([...speed, mk(6, 1000, 'flow')], 'speed', 'all');
   assert.equal(row.count, 5);
   assert.deepEqual(row.cells.map(c => c.key), ['ao5', 'mo3', 'pb']);
   assert.equal(row.cells.find(c => c.key === 'pb').text, '10.10');
   assert.equal(row.cells.find(c => c.key === 'ao5').text, '10.30');
-  assert.deepEqual(statsRow([], 'speed'), { count: 0, cells: [] });
-  const dnf = statsRow([...speed.slice(0, 4), mk(5, 9000, 'speed', 'DNF')], 'speed');
+  assert.deepEqual(statsRow([], 'speed', 'all'), { count: 0, cells: [] });
+  const dnf = statsRow([...speed.slice(0, 4), mk(5, 9000, 'speed', 'DNF')], 'speed', 'all');
   assert.equal(dnf.cells.find(c => c.key === 'pb').text, '10.10');
+});
+
+test('timer stats separate manual solves by default and mix sources only for all in the current session', () => {
+  const records = [
+    ...Array.from({ length: 5 }, (_, i) => ({ at: i + 1, solveMs: 10_000 + i * 100, focus: 'speed', sessionId: 's1' })),
+    ...Array.from({ length: 2 }, (_, i) => ({ at: i + 6, solveMs: 9_000 + i * 100, focus: 'speed', source: 'manual', sessionId: 's1' })),
+  ];
+  assert.equal(statsRow(records, 'speed').count, 2);
+  assert.equal(statsRow(records, 'speed', 'all').count, 7);
+  assert.equal(statsRow(records, 'flow').count, 0);
+});
+
+test('history retains import and manual source labels while legacy smart solves stay unlabeled', () => {
+  const record = source => cleanRecord({ at: 1, source, solved: true, solveMs: 12_000 });
+  assert.equal(record('manual').source, 'manual');
+  assert.equal(record('import').source, 'import');
+  assert.equal('source' in record('smart'), false);
+});
+
+test('smart stats exclude manual and imported records unless all is selected', () => {
+  const records = [{ at: 1 }, { at: 2, source: 'manual' }, { at: 3, source: 'import' }];
+  assert.deepEqual(inStatsSource(records).map(record => record.at), [1]);
+  assert.deepEqual(inStatsSource(records, 'manual').map(record => record.at), [2]);
+  assert.deepEqual(inStatsSource(records, 'all'), records);
 });

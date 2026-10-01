@@ -9,6 +9,8 @@
 
 export const FOCI = Object.freeze(['speed', 'flow', 'learning']);
 export const DEFAULT_FOCUS = 'speed';
+export const STATS_SOURCES = Object.freeze(['smart', 'manual', 'all']);
+export const DEFAULT_STATS_SOURCE = 'smart';
 
 export const normalizeFocus = value => (FOCI.includes(value) ? value : DEFAULT_FOCUS);
 
@@ -19,4 +21,11 @@ export const focusOf = record => normalizeFocus(record?.focus);
 export const inFocus = (records, focus) => {
   const wanted = normalizeFocus(focus);
   return records.filter(r => focusOf(r) === wanted);
+};
+
+/** Keep smart-cube and manual solves in separate stats unless the user chooses all. */
+export const inStatsSource = (records, source = DEFAULT_STATS_SOURCE) => {
+  if (source === 'all') return records;
+  if (source === 'manual') return records.filter(record => record.source === 'manual');
+  return records.filter(record => record.source !== 'manual' && record.source !== 'import');
 };

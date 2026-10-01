@@ -94,6 +94,7 @@
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; min-height: 28px;
   color: var(--b-muted); font-size: 14px;
 }
+.tm-source { align-self: center; min-height: 30px; margin: 2px auto; padding: 3px 10px; font-size: var(--b-fs-label); }
 .tm-stat { display: inline-flex; align-items: baseline; gap: 8px; }
 .tm-stat-value { color: var(--b-ink); font: 500 var(--b-fs-stat)/1.1 var(--b-font-num); }
 .tm-stat-count, .tm-stat-empty { color: var(--b-muted); font-size: var(--b-fs-label); }
@@ -109,6 +110,7 @@
   .tm-keys { display: none; }
   .tm-controls kbd { display: none; }
   .tm-opt, .tm-textbtn { min-height: 44px; padding: 8px 16px; font-size: 14px; }
+  .tm-source { min-height: 40px; }
   .tm-pad { min-height: 46vh; }
 }
 @media (max-width: 720px) {

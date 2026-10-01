@@ -26,13 +26,16 @@ import { buildManualRecord, statsRow } from './record.js';
 import { buildInspectionVM, inspectionFrame } from './inspection-vm.js';
 import { loadTimerPrefs, saveTimerPrefs } from './prefs.js';
 import { generateWcaScramble } from '../scramble.js';
+import { openHistory } from '../store/history.js';
 
 const STYLES = {
   orbit: () => import('../brain/styles/orbit/index.js'),
   mono: () => import('../brain/styles/mono/index.js'),
 };
-const INSPECTION_CYCLE = ['wca', 'unlimited', 'off'];
-const inspectionName = insp => (insp.mode === 'off' ? 'off' : insp.mode === 'unlimited' ? '∞' : `${insp.mode === 'custom' ? insp.seconds : 15} s`);
+const INSPECTION_CYCLE = ['wca', 'custom', 'unlimited', 'off'];
+const OVERTIME_CYCLE = ['wca', 'count', 'grace', 'autostart'];
+const inspectionName = insp => (insp.mode === 'off' ? 'off' : insp.mode === 'unlimited' ? '∞' : `${insp.mode === 'custom' ? `custom ${insp.seconds}` : 'WCA 15'} s`);
+const overtimeName = insp => insp.overtime === 'wca' ? 'WCA +2 / DNF' : insp.overtime === 'autostart' ? 'auto-start' : insp.overtime === 'grace' ? `grace ${insp.graceSeconds} s · ${insp.gracePenalty === 'none' ? 'none' : insp.gracePenalty === 'dnf' ? 'DNF' : '+2'}` : insp.overtime;
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -50,12 +53,14 @@ export function createTimer(root, {
   if (!store) throw new Error('createTimer needs a history store');
   let active = true;
   let detached = false;
+  let refreshingHistory = false;
   let settings = loadSettings(storage);
   let prefs = loadTimerPrefs(storage);
   let styleId = BRAIN_STYLES.includes(styleOption) ? styleOption : settings.style ?? DEFAULT_BRAIN_STYLE;
 
   // --- state --------------------------------------------------------------------------------
   let currentScramble = null;   // the scramble shown (null while it is generated)
+  let lastScramble = null;
   let scrambleState = 'loading';   // loading | ready | failed
   let scrambleToken = 0;
   let attemptScramble;          // the scramble of the attempt in progress (locked when it leaves idle)
@@ -84,7 +89,9 @@ export function createTimer(root, {
   const options = el('div', 'tm-options');
   const holdBtn = el('button', 'tm-opt'); holdBtn.type = 'button'; holdBtn.dataset.action = 'hold';
   const inspBtn = el('button', 'tm-opt'); inspBtn.type = 'button'; inspBtn.dataset.action = 'inspection';
-  options.append(inspBtn, holdBtn);
+  const secondsBtn = el('button', 'tm-opt'); secondsBtn.type = 'button'; secondsBtn.dataset.action = 'inspection-seconds';
+  const overBtn = el('button', 'tm-opt'); overBtn.type = 'button'; overBtn.dataset.action = 'overtime';
+  options.append(inspBtn, secondsBtn, overBtn, holdBtn);
   top.append(title, options);
 
   const scrambleRow = el('div', 'tm-scramble-row');
@@ -109,6 +116,7 @@ export function createTimer(root, {
   pad.append(inspHost, time, sub);
 
   const stats = el('div', 'tm-stats'); stats.dataset.testid = 'stats';
+  const sourceBtn = el('button', 'tm-opt tm-source'); sourceBtn.type = 'button'; sourceBtn.dataset.action = 'stats-source';
   const controls = el('div', 'tm-controls');
   const mkBtn = (action, label, keyLabel) => {
     const b = el('button', 'tm-textbtn'); b.type = 'button'; b.dataset.action = action;
@@ -122,7 +130,7 @@ export function createTimer(root, {
   controls.append(plus2Btn, dnfBtn, delBtn, undoBtn);
   const keys = el('div', 'tm-keys');
   const status = el('p', 'tm-sr'); status.setAttribute('aria-live', 'polite');
-  root.append(top, scrambleRow, pad, stats, controls, keys, status);
+  root.append(top, scrambleRow, pad, stats, sourceBtn, controls, keys, status);
 
   // --- scramble -----------------------------------------------------------------------------
   function loadScramble() {
@@ -146,6 +154,7 @@ export function createTimer(root, {
     const records = store.records;
     const at = Math.max(wall(), (records.length ? records[records.length - 1].at : 0) + 1);
     const scrambleOfSolve = attemptScramble ?? currentScramble ?? '';
+    lastScramble = scrambleOfSolve;
     const record = store.append(buildManualRecord(result, { at, scramble: scrambleOfSolve, focus: focus() }));
     attemptScramble = undefined;
     if (record) {
@@ -192,6 +201,14 @@ export function createTimer(root, {
     if (p.hold || p.phase === 'inspecting' || p.phase === 'running') return;
     machine.reset();
     loadScramble();
+  }
+
+  function retry() {
+    if (!lastScramble || !editable()) return;
+    machine.reset();
+    currentScramble = lastScramble;
+    scrambleState = 'ready';
+    render();
   }
 
   // --- render -------------------------------------------------------------------------------
@@ -244,7 +261,7 @@ export function createTimer(root, {
     else if (snap.hold === 'ready') line = snap.phase === 'inspecting' ? 'release to start the solve' : 'release to start';
     else if (snap.phase === 'running' || snap.phase === 'inspecting') line = '';
     else if (snap.phase === 'done' && record) line = [record.penalty === '+2' ? `${fmtTime(record.solveMs)} +2` : '', notice].filter(Boolean).join(' · ');
-    else line = notice || (store.readOnly ? 'history is read-only' : 'touch and hold, or hold space');
+    else line = refreshingHistory ? 'loading history…' : notice || (store.readOnly ? 'history is read-only' : 'touch and hold, or hold space');
     if (snap.phase === 'done' && !record && notice) line = notice;
     setText(sub, line);
 
@@ -252,18 +269,18 @@ export function createTimer(root, {
     if (busy && attemptScramble === undefined && snap.phase !== 'idle') attemptScramble = currentScramble;
     if (!busy && snap.phase === 'idle') attemptScramble = undefined;
     const shownScramble = snap.phase === 'inspecting' || snap.phase === 'running' ? attemptScramble ?? currentScramble : currentScramble;
-    const scrambleLine = scrambleState === 'failed' ? 'could not make a scramble, press n to try again'
+    const scrambleLine = scrambleState === 'failed' ? 'could not make a scramble. Choose new scramble.'
       : shownScramble == null ? 'generating scramble…' : fmtMoves(shownScramble);
     setText(scrambleText, scrambleLine);
     scrambleText.dataset.state = scrambleState;
 
     // Stats.
-    const row = statsRow(store.records, focus());
-    const statsKey = JSON.stringify([row.count, row.cells, focus()]);
+    const row = statsRow(store.records, focus(), prefs.statsSource);
+    const statsKey = JSON.stringify([row.count, row.cells, focus(), prefs.statsSource]);
     if (stats.dataset.key !== statsKey) {
       stats.dataset.key = statsKey;
       stats.replaceChildren();
-      if (!row.count) stats.append(el('span', 'tm-stat-empty', `no ${focus()} solves yet`));
+      if (!row.count) stats.append(el('span', 'tm-stat-empty', prefs.statsSource === 'all' ? `no ${focus()} solves yet` : `no manual ${focus()} solves yet`));
       else {
         for (const c of row.cells) {
           const cell = el('span', 'tm-stat'); cell.dataset.stat = c.key;
@@ -282,16 +299,24 @@ export function createTimer(root, {
     undoBtn.hidden = !(deleted && !busy);
     nextBtn.hidden = busy;
     options.hidden = busy;
+    sourceBtn.hidden = Boolean(busy);
+    secondsBtn.hidden = machine.inspection.mode !== 'custom';
     setText(holdBtn, `hold ${prefs.holdMs}`);
     setText(inspBtn, `insp ${inspectionName(machine.inspection)}`);
+    setText(secondsBtn, `length ${machine.inspection.seconds} s`);
+    setText(overBtn, `overtime ${overtimeName(machine.inspection)}`);
+    setText(sourceBtn, `stats ${prefs.statsSource}`);
     holdBtn.title = 'how long to hold before the timer is ready (ms)';
-    inspBtn.title = 'inspection: 15 s, unlimited or off (shared with solve)';
+    inspBtn.title = 'inspection mode and length (shared with solve)';
+    overBtn.title = 'inspection overtime rule (shared with solve)';
+    sourceBtn.title = 'choose whether stats include manual solves or all solves';
     let hints;
-    if (snap.phase === 'running') hints = keycap('any key', 'stop') + keycap('esc', 'abort');
-    else if (snap.phase === 'inspecting') hints = keycap('space', 'hold, release to start') + keycap('esc', 'abort');
-    else if (snap.hold) hints = keycap('esc', 'abort');
+    if (snap.phase === 'running') hints = keycap('any key', 'stop') + keycap('esc', 'stop');
+    else if (snap.phase === 'inspecting') hints = keycap('space', 'hold, release to start') + keycap('esc', 'stop');
+    else if (snap.hold) hints = keycap('esc', 'stop');
     else {
-      hints = keycap('space', 'hold to start') + keycap('n', 'new scramble');
+      hints = keycap('space', snap.phase === 'done' ? 'next scramble' : 'hold to start');
+      if (lastScramble) hints += keycap('r', 'retry');
       if (deleted) hints += keycap('u', 'undo');
     }
     if (keys.dataset.key !== hints) { keys.dataset.key = hints; keys.innerHTML = hints; }
@@ -326,7 +351,7 @@ export function createTimer(root, {
   const editable_ = target => target instanceof Element && (target.closest('input, textarea, select, [contenteditable="true"]') != null);
 
   function onKeyDown(event) {
-    if (!active || event.ctrlKey || event.metaKey || event.altKey || editable_(event.target)) return;
+    if (!active || refreshingHistory || event.ctrlKey || event.metaKey || event.altKey || editable_(event.target)) return;
     const key = event.key === 'Spacebar' ? ' ' : event.key;
     const snap = machine.snapshot();
     if (key === 'Escape') {
@@ -335,17 +360,19 @@ export function createTimer(root, {
     }
     if (snap.phase === 'running') {   // any key stops
       event.preventDefault();
-      if (!event.repeat) machine.down();
+      if (!event.repeat) { machine.down(); if (key !== ' ') machine.up(); }
       return;
     }
     if (key === ' ') {
+      if (snap.phase === 'done') { event.preventDefault(); if (!event.repeat) newScramble(); return; }
+      if (snap.phase === 'idle' && scrambleState !== 'ready') return;
       event.preventDefault();
       if (!event.repeat && !keyHeld) { keyHeld = true; machine.down(); }
       return;
     }
     if (event.repeat || snap.hold || snap.phase === 'inspecting') return;
     const lower = key.length === 1 ? key.toLowerCase() : key;
-    if (lower === 'n') newScramble();
+    if (lower === 'r') retry();
     else if (lower === '2') togglePenalty('+2');
     else if (lower === 'd') togglePenalty('DNF');
     else if (key === 'Delete' || key === 'Backspace') deleteLast();
@@ -363,10 +390,11 @@ export function createTimer(root, {
   function onBlur() { keyHeld = false; machine.abortHold(); }
 
   function onPointerDown(event) {
-    if (!active || activePointer != null || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    if (!active || refreshingHistory || activePointer != null || (event.pointerType === 'mouse' && event.button !== 0)) return;
     const snap = machine.snapshot();
     const onPad = event.target instanceof Element && pad.contains(event.target);
     if (snap.phase !== 'running' && !onPad) return;   // only the timer area starts; anything stops
+    if (snap.phase === 'idle' && scrambleState !== 'ready') return;
     event.preventDefault();
     activePointer = event.pointerId;
     try { root.setPointerCapture(event.pointerId); } catch { /* synthetic pointers */ }
@@ -398,6 +426,28 @@ export function createTimer(root, {
         settings = setSetting(settings, 'inspection.mode', next);
         saveSettings(storage, settings);
         machine.setInspection(settings.inspection); break;
+      }
+      case 'inspection-seconds': {
+        const lengths = [10, 15, 20, 30, 45, 60];
+        const nextSeconds = lengths[(lengths.indexOf(settings.inspection.seconds) + 1) % lengths.length];
+        settings = setSetting(settings, 'inspection.seconds', nextSeconds);
+        saveSettings(storage, settings);
+        machine.setInspection(settings.inspection); break;
+      }
+      case 'overtime': {
+        if (settings.inspection.overtime === 'grace' && settings.inspection.gracePenalty !== 'none') {
+          const penalties = ['plus2', 'dnf', 'none'];
+          settings = setSetting(settings, 'inspection.gracePenalty', penalties[(penalties.indexOf(settings.inspection.gracePenalty) + 1) % penalties.length]);
+        } else {
+          const next = OVERTIME_CYCLE[(OVERTIME_CYCLE.indexOf(settings.inspection.overtime) + 1) % OVERTIME_CYCLE.length];
+          settings = setSetting(settings, 'inspection.overtime', next);
+        }
+        saveSettings(storage, settings);
+        machine.setInspection(settings.inspection); break;
+      }
+      case 'stats-source': {
+        prefs = { ...prefs, statsSource: prefs.statsSource === 'manual' ? 'all' : 'manual' };
+        saveTimerPrefs(storage, prefs); break;
       }
       default: return;
     }
@@ -441,10 +491,15 @@ export function createTimer(root, {
   return {
     ready,
     machine,
-    setActive(next) {
+    async setActive(next) {
       active = Boolean(next);
-      if (!active) { machine.cancel(); keyHeld = false; activePointer = null; wake(false); }
+      if (!active) { refreshingHistory = false; machine.cancel(); keyHeld = false; activePointer = null; wake(false); }
       else {
+        refreshingHistory = true;
+        render();
+        await store.reload().catch(() => {});
+        if (!active || detached) return;
+        refreshingHistory = false;
         settings = loadSettings(storage);
         machine.setInspection(settings.inspection);
         const nextStyle = BRAIN_STYLES.includes(styleOption) ? styleOption : settings.style;
@@ -465,5 +520,23 @@ export function createTimer(root, {
       root.classList.remove('brain', 'tm');
       root.replaceChildren();
     },
+  };
+}
+
+/** Shell entry point: opens the shared IndexedDB history, then mounts the timer page. */
+export function createManualTimer(host, options = {}) {
+  let timer = null;
+  let active = true;
+  let detached = false;
+  const ready = openHistory(options.historyOptions).then(store => {
+    if (detached) return null;
+    timer = createTimer(host, { ...options, store });
+    if (!active) void timer.setActive(false);
+    return timer.ready;
+  });
+  return {
+    ready,
+    setActive(next) { active = Boolean(next); timer?.setActive(active); },
+    detach() { detached = true; timer?.detach(); },
   };
 }

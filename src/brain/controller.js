@@ -53,6 +53,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   const undoStack = [];         // solves deleted in this view, newest last (undoDelete)
   let active = true;
   let detached = false;
+  let refreshingHistory = false;
   let vm = null;
   let track = createTrack();
   let skips = [];               // { kind, label } hurrahs this solve (for the toast)
@@ -85,6 +86,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let snapshots = [];           // cube snapshots at stage transitions (end-of-solve review)
   let lastCapturedStage = -1;
   let raf = 0;
+  let activationToken = 0;
   let styleToken = 0;
   // Solve review: the selected marker, the open detail (a stage or a marker), the cube position it shows,
   // and whether the cube is held on a review position instead of mirroring the real cube.
@@ -547,7 +549,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // --- Actions ----------------------------------------------------------------------------------
 
   function dispatch(action) {
-    if (detached || !action) return;
+    if (detached || !action || refreshingHistory) return;
     // (The site mode is the page's, not the session's: a replay must not flip it.)
     if (RECORDED.has(action.type) && !(action.type === 'setSetting' && (LIVE_RECORDED_PATHS.test(action.path) || action.path === 'theme'))) record('ui', { type: 'action', action });
     switch (action.type) {
@@ -734,7 +736,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // --- Keyboard and theme -------------------------------------------------------------------------
 
   function onKeydown(event) {
-    if (!active || detached || !vm) return;
+    if (!active || detached || refreshingHistory || !vm) return;
     if (event.key === 'Escape' && reviewUi.detail && vm.screen === 'results' && !settingsOpen && !debugOpen) { event.preventDefault(); dispatch({ type: 'closeDetail' }); return; }
     const target = event.target;
     const focused = document.activeElement;
@@ -789,11 +791,26 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     dispatch,
     /** Resolves once the history is open and every queued write has reached IndexedDB (tests, export). */
     async flushHistory() { await historyReady; await history?.flush(); },
-    setActive(value) {
+    async setActive(value) {
       if (detached) return;
       active = value;
-      if (!value) { live.cancel(); cancelAnimationFrame(raf); raf = 0; }
-      else render();
+      const token = ++activationToken;
+      if (!value) { refreshingHistory = false; live.cancel(); cancelAnimationFrame(raf); raf = 0; return; }
+      refreshingHistory = true;
+      render();
+      await historyReady;
+      if (detached || !active || token !== activationToken) return;
+      // A replay owns an ephemeral history snapshot; reloading it would discard the
+      // replayed solve before onSolvesRestored puts the real history back.
+      if (!isReplaying() && !history?.ephemeral) {
+        await history?.reload().catch(() => {});
+        if (detached || !active || token !== activationToken) return;
+        records = history?.records ?? [];
+        const latest = loadSettings(globalThis.localStorage);
+        applySettings(latest);
+      }
+      refreshingHistory = false;
+      render();
     },
     detach() {
       if (detached) return;
