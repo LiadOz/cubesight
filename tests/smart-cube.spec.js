@@ -119,12 +119,12 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
   await page.evaluate(() => ['U', 'F'].forEach(move => window.testSmartCube.emit(move)));
   await expect(scout.locator('#scout-scramble')).toHaveValue('R U F');
   await expect(canvas).not.toHaveAttribute('data-turning-face', { timeout: 2000 });
-  await expect(scout.locator('#scout-message')).toContainText('Smart cube mirrored');
+  await expect(scout.locator('#scout-message')).toContainText('Cube mirrored');
 
   await scout.locator('#scout-analyze').click();
   await expect(scout.locator('#scout-message')).toContainText('plans found', { timeout: 30_000 });
   await scout.locator('.scout-result').filter({ hasText: /[1-9]\d* moves/ }).first().click();
-  await expect(scout.locator('#scout-turn-guide')).toContainText('Plan turn 1 of');
+  await expect(scout.locator('#scout-turn-guide')).toContainText('plan move 1 of');
   const detour = await page.evaluate(async () => {
     const { applyMoves, stateFromScramble, sameCubeState, movesForInspection } = await import('/src/cross-cube.js');
     const root = document.querySelector('#smart-scout-test');
@@ -139,19 +139,19 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
     return { undo, shownUndo };
   });
   await expect(scout.locator('#scout-step')).toContainText('Off plan');
-  await expect(scout.locator('#scout-turn-guide')).toContainText('Return to plan');
-  await expect(scout.locator('#scout-turn-guide .smart-turn-notation')).toHaveText(detour.shownUndo);
+  await expect(scout.locator('#scout-turn-guide')).toContainText('back on plan');
+  await expect(scout.locator('#scout-turn-guide .smart-turn-notation')).toHaveText(detour.shownUndo.replaceAll("'", "′"));
   await expect(scout.locator('.scout-result[aria-pressed="true"]')).toHaveCount(1);
-  await expect(scout.locator('#scout-analyze')).toHaveText('Analyze current cube');
+  await expect(scout.locator('#scout-analyze')).toHaveText('find plans for this cube');
   await page.evaluate(move => window.testSmartCube.emit(move), detour.undo);
-  await expect(scout.locator('#scout-turn-guide')).toContainText('Plan turn 1 of');
-  await expect(scout.locator('#scout-analyze')).toHaveText('Analyze');
+  await expect(scout.locator('#scout-turn-guide')).toContainText('plan move 1 of');
+  await expect(scout.locator('#scout-analyze')).toHaveText('find plans');
   await page.evaluate(() => {
     const move = document.querySelector('#smart-scout-test').dataset.scoutCanonicalMoves.split(' ')[0];
     window.testSmartCube.emit(move);
   });
   await expect(scout.locator('#scout-step')).toContainText('Move 1 of');
-  await expect(scout.locator('#scout-turn-guide')).toContainText(/Plan turn 2 of|Plan complete/);
+  await expect(scout.locator('#scout-turn-guide')).toContainText(/plan move 2 of|plan complete/);
   await expect(scout.locator('#scout-message')).toContainText('matched move 1');
   await scout.locator('#scout-smart-disconnect').click();
   await expect(scout.locator('#scout-scramble')).not.toHaveAttribute('readonly');

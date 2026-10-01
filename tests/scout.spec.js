@@ -89,9 +89,9 @@ test('selected plans support retrieval-first practice before revealing cues',asy
   await expect(page.locator('#scout-practice-time')).toContainText('Commitment time:');
   await expect(page.locator('#scout-practice-cue')).not.toBeEmpty();
   expect(Number(await page.locator('#scout-cube canvas').getAttribute('data-highlight-cages'))).toBeGreaterThanOrEqual(4);
-  await page.getByRole('button',{name:'found'}).click();
+  await page.getByRole('button',{name:'found',exact:true}).click();
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('cubesight-scout-practice-v1')).at(-1).rating)).toBe('found');
-  await expect(page.getByRole('button',{name:'found'})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'found',exact:true})).toBeDisabled();
   await page.locator('#scout-practice-exit').click();
   await expect(page.locator('#scout-practice-panel')).toBeHidden();
 });
