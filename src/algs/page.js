@@ -9,6 +9,7 @@ import { createVirtualRepaint } from './drill/repaint.js';
 import { loadSettings } from '../brain/settings.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
+import { algorithmMetrics } from './notation.js';
 import '../pages/page.css';
 import './page.css';
 
@@ -39,12 +40,15 @@ function caseCard(row) {
 }
 
 function caseDetail(row) {
-  const algorithms = row.algs.map((alg, index) => `<article class="alg-entry" data-alg-entry="${esc(alg.id)}">
-    <div class="alg-entry__top"><strong>Algorithm ${index + 1}</strong><span>${esc(alg.metrics?.stm ?? '')} turns</span></div>
+  const algorithms = row.algs.map((alg, index) => {
+    const moveCount = algorithmMetrics(alg.moves).stm;
+    return `<article class="alg-entry" data-alg-entry="${esc(alg.id)}">
+    <div class="alg-entry__top"><strong>Algorithm ${index + 1}</strong><span>${moveCount} ${moveCount === 1 ? 'move' : 'moves'}</span></div>
     <code>${esc(fmt.moves(alg.moves))}</code>
     <p>Credit: ${esc(alg.credit)} · ${safeHttpUrl(alg.source?.url) ? `<a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">Source (needs internet)</a>` : 'Source link unavailable'}</p>
     <div class="alg-entry__actions"><button type="button" data-pick="${esc(alg.id)}">Choose this alg</button><button type="button" data-drill-alg="${esc(alg.id)}">Drill</button></div>
-  </article>`).join('');
+  </article>`;
+  }).join('');
   return `<section class="cs-page brain alg-page" data-brain-style="orbit">
     <section class="alg-detail">
     <header class="alg-detail__head"><a href="#/algs/${esc(row.set)}">← ${esc(row.set.toUpperCase())} cases</a><p class="alg-eyebrow">${esc(row.set.toUpperCase())} ${esc(row.number ?? row.name)}</p><h1>${esc(row.name)}</h1><p>${row.set === 'oll' ? 'Standard OLL case. The setup below preserves the solved first two layers.' : row.set === 'oll2' ? `${esc(row.stage)} stage. Goal: ${esc(row.goal)}.` : row.set === 'f2l' ? `F2L pair insertion. The cross and three solved pairs are preserved; the ${esc(row.targetPair)} pair needs insertion.` : 'Standard PLL case. The setup below preserves the solved first two layers.'}</p><p class="alg-setup"><span>Case setup</span><code>${esc(fmt.moves(row.setup))}</code></p></header>
@@ -72,8 +76,10 @@ function drillMarkup(row, alg, mode = 'self') {
   const smart = mode !== 'self';
   const repaint = mode === 'repeat';
   const sourceUrl = safeHttpUrl(alg.source?.url);
+  const seedIndex = row.algs.findIndex(item => item.id === alg.id);
+  const label = seedIndex >= 0 ? `Algorithm ${seedIndex + 1}` : 'Your algorithm';
   // copy-ok: The no-cube label distinguishes the manual timer from smart-cube input.
-  return `<div class="alg-drill__top"><div><p class="alg-eyebrow">${smart ? 'smart-cube drill' : 'no-cube drill'}</p><h2>${esc(row.name)} · ${esc(alg.id)}</h2></div><button type="button" data-action="close-drill" aria-label="Close drill">×</button></div>
+  return `<div class="alg-drill__top"><div><p class="alg-eyebrow">${smart ? 'smart-cube drill' : 'no-cube drill'}</p><h2>${esc(row.name)} · ${label}</h2></div><button type="button" data-action="close-drill" aria-label="Close drill">×</button></div>
     <p>${smart ? repaint ? 'Follow the verified sequence in the virtual case. This last-layer case was repainted without resetting the physical cube.' : row.set === 'f2l' ? 'Follow the verified insertion on your cube. Set up the displayed F2L case again before each round.' : 'Follow the verified sequence in the virtual case. After a clean round, the next last-layer case can be repainted without resetting the physical cube.' : 'Remember the selected algorithm, then use Start and Done to record a self-timed round. This mode has no per-turn timing.'}</p>
     <div class="alg-drill__alg"><code>${esc(fmt.moves(alg.moves))}</code>${sourceUrl ? `<a href="${esc(sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(alg.credit)} · needs internet</a>` : '<span>Added on this device.</span>'}</div>
     ${smart ? '<p data-cube-match aria-live="polite">Turn through the algorithm on the cube.</p><div data-cube-metrics></div>' : '<div class="alg-drill__timer" data-timer>Ready</div><div class="alg-drill__actions"><button type="button" data-action="drill-start">Start</button><button type="button" data-action="drill-done" disabled>Done</button></div><p data-drill-result></p>'}

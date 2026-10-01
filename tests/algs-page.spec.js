@@ -36,6 +36,45 @@ test('changing to a different algorithm case resets scroll to the page top', asy
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 });
 
+test('algorithm drill labels, move counts, theme contrast, and touch targets stay readable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const style of ['orbit', 'mono']) for (const theme of ['light', 'dark']) {
+    await page.goto('/');
+    await page.evaluate(([style, theme]) => {
+      localStorage.setItem('cubesight-theme', theme);
+      localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
+    }, [style, theme]);
+    await page.reload();
+    await page.goto('/#/algs/oll');
+    const radius = await page.locator('.alg-case-card').first().evaluate(node => getComputedStyle(node).borderRadius);
+    expect(radius).toBe(style === 'mono' ? '8px' : '12px');
+    await page.locator('.alg-case-card').first().click();
+    const firstAlg = page.locator('.alg-entry').first();
+    await expect(firstAlg).toContainText('11 moves');
+    const sourceLink = page.locator('.alg-entry a').first();
+    expect(await sourceLink.evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+    await firstAlg.getByRole('button', { name: 'Drill' }).click();
+    const drill = page.locator('[data-drill]');
+    await expect(drill.getByRole('heading', { name: 'Runway, Blank · Algorithm 1' })).toBeVisible();
+    await expect(drill).not.toContainText('s.oll.1.1');
+    const start = drill.locator('[data-action="drill-start"]');
+    expect(await start.evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+    const colors = await start.evaluate(node => {
+      const style = getComputedStyle(node);
+      return [style.color, style.backgroundColor];
+    });
+    expect(colors[0]).not.toBe(colors[1]);
+    await page.goto('/#/algs/oll');
+    const tab = page.locator('.alg-set-tabs a.is-active');
+    expect(await tab.evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+  }
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/#/algs/oll');
+  const card = page.locator('.alg-case-card').first();
+  await card.hover();
+  expect(await card.evaluate(node => getComputedStyle(node).transform)).toBe('none');
+});
+
 test('six-case F2L subset and staged two-look OLL routes are functional', async ({ page }) => {
   await page.goto('/#/algs/f2l');
   await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(6);
