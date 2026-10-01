@@ -77,6 +77,8 @@ test('detail view: stage stats, yours vs better, honest "no suggestion yet", and
   assert.equal(marker.pin.payload.kind, 'detour');
   assert.equal(compareFor({ row: { key: 'eo', from: 9, to: 12 }, record }).text, 'no suggestion yet');
   assert.equal(compareFor({ row: { key: 'cross', from: 0, to: 8 }, record, pending: true }).status, 'pending');
+  const bounded = { ...record, analysis: { ...record.analysis, cross: { ...record.analysis.cross, extra: 0, proven: false } } };
+  assert.match(compareFor({ row: { key: 'cross', from: 0, to: 8 }, record: bounded }).text, /no shorter completion found in this search/);
   assert.equal(buildDetail({ kind: 'stage', key: 'zzz', record, markers, rows, plan: PLAN }), null);
   assert.deepEqual(positionedRows(rows, PLAN).map(r => [r.key, r.from, r.to]), [['cross', 0, 8], ['pair3', 8, 8]]);
 });
