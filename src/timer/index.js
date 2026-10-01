@@ -175,6 +175,12 @@ export function createTimer(root, {
     preview.dataset.playing = String(Boolean(snapshot?.playing));
     preview.dataset.index = String(snapshot?.index ?? 0);
     preview.dataset.moves = String(snapshot?.moves?.length ?? 0);
+    root.classList.toggle('has-ready-scramble', scrambleState === 'ready' && Boolean(snapshot?.moves?.length));
+    // A ready scramble is a reading strip, starting at its first move. During
+    // playback the shared guide instead follows the current move.
+    if (snapshot?.moves?.length && snapshot.index === snapshot.moves.length && !snapshot.playing) {
+      previewTools.querySelector('.mg-strip')?.scrollTo({ left: 0, behavior: 'instant' });
+    }
   }
 
   async function loadPreviewSequence(text) {
@@ -346,7 +352,7 @@ export function createTimer(root, {
     // The chips are the visible scramble when available. Keep the full notation
     // line in the accessibility tree (and as the loading/error message), without
     // asking sighted users to read the same scramble twice.
-    root.classList.toggle('has-ready-scramble', scrambleState === 'ready' && Boolean(shownScramble));
+    root.classList.toggle('has-ready-scramble', scrambleState === 'ready' && Boolean(shownScramble) && Boolean(sequencePlayer?.getSnapshot().moves.length));
 
     // Stats.
     const row = statsRow(store.records, focus(), prefs.statsSource);

@@ -16,5 +16,11 @@ test('drills and progress cold routes load their 3D cube while offline', async (
   await expect(page.locator('#progress-view .progress-cube-mount canvas')).toHaveCount(1, { timeout: 15_000 });
   await expect(page.locator('#progress-view h1')).toHaveText('progress');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.goto('/#/drills/cross?from=offline');
+  await expect(page.locator('#not-found-view')).toBeVisible();
+  await expect(page.locator('#brain-view')).toBeHidden();
+  await expect(page).toHaveURL(/#\/drills\/cross\?from=offline$/);
+  await page.locator('#not-found-drills').click();
+  await expect(page.locator('#drills-view .hub-cube-mount canvas')).toHaveCount(1);
   await context.close();
 });

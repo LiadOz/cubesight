@@ -77,6 +77,8 @@
 /* Timer playback uses the cube cue and move chips; the solve timeline's numeric ring/lane
    labels add density here without helping identify a move. */
 .tm-preview-tools .sequence-progress, .tm-preview-cube > .sequence-progress { display: none; }
+.tm-preview-tools .mg-guide.mg-finished .mg-strip { padding-inline: 8px; }
+.tm-preview-tools .mg-guide.mg-finished .mg-strip i.done { opacity: 1; }
 .tm-preview-tools .sequence-controls { gap: 6px; }
 .tm-preview-tools .sequence-controls button, .tm-preview-tools .sequence-controls select {
   min-height: 40px; padding: 6px 9px; font-size: var(--b-fs-label); cursor: pointer;
@@ -148,10 +150,10 @@
 }
 @media (max-width: 720px) {
   .brain.tm { width: calc(100% - 24px); }
-  .tm-preview { grid-template-columns: minmax(190px, 204px) minmax(0, 1fr); gap: 6px; min-height: 220px; margin-top: 4px; padding: 6px; }
+  .tm-preview { grid-template-columns: 1fr; gap: 8px; min-height: 0; margin-top: 4px; padding: 10px; }
   .tm-preview-cube { width: min(100%, 204px); }
   .tm-preview-tools.sequence-player { gap: 3px; }
-  .tm-preview-tools .sequence-controls { gap: 4px; }
+  .tm-preview-tools .sequence-controls { justify-content: center; gap: 6px; }
   .tm-preview-tools .sequence-controls button, .tm-preview-tools .sequence-controls select { min-height: 44px; padding: 6px; }
   .tm-preview-tools .sequence-controls kbd { display: none; }
   .tm-preview-tools .sequence-controls label { gap: 3px; }
