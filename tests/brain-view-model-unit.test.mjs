@@ -189,6 +189,18 @@ test('unchanged slices keep their identity between builds', () => {
   assert.equal(c.style, 'mono');
 });
 
+test('solve stats separate manual solves until stats source is set to all', () => {
+  const records = [
+    { at: 1, source: 'manual', focus: 'speed', solved: true, solveMs: 11_000, moveCount: 0, solveMoves: [] },
+    { at: 2, focus: 'speed', solved: true, solveMs: 12_000, moveCount: 50, solveMoves: ['R'] },
+  ];
+  const input = { session: tracking, live: { phase: 'idle', progress: null }, records, now: 0 };
+  const smart = buildViewModel({ ...input, settings: normalizeSettings() });
+  assert.equal(smart.stats.solves, '1');
+  const all = buildViewModel({ ...input, settings: normalizeSettings({ stats: { source: 'all' } }) });
+  assert.equal(all.stats.solves, '2');
+});
+
 test('coach lines port the v1 texts and keys', () => {
   const lenses = {
     crossHindsight: (n, opt) => ({ kind: n > opt ? 'long' : 'optimal', text: `cross ${n} vs ${opt}` }),

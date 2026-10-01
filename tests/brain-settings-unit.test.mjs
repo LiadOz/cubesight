@@ -65,6 +65,9 @@ test('setSetting: paths, inspection merge (including the legacy shape), toggles 
   assert.equal(s.inspection.mode, 'unlimited');
   s = setSetting(s, 'toggles.f2lHint', false);
   assert.equal(s.toggles.f2lHint, false);
+  s = setSetting(s, 'stats.source', 'all');
+  assert.equal(s.stats.source, 'all');
+  assert.equal(normalizeSettings({ stats: { source: 'bad' } }).stats.source, 'smart');
   s = setSetting(s, 'preset', 'drill');
   assert.equal(s.inspection.mode, 'off');
   s = setSetting(s, 'preset', 'wca');
@@ -120,8 +123,8 @@ test('the settings panel shows only rows that apply', () => {
 
 test('config bar and inspection labels', () => {
   const bar = buildConfigBar(normalizeSettings({ f2l: 'pseudo' }));
-  assert.deepEqual(bar.items.map(i => i.id), ['f2l', 'oll', 'pll', 'inspection.mode', 'penalties', 'session.focus']);
-  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', 'oll', 'pll', 'insp', '', 'focus']);
+  assert.deepEqual(bar.items.map(i => i.id), ['f2l', 'oll', 'pll', 'inspection.mode', 'penalties', 'session.focus', 'stats.source']);
+  assert.deepEqual(bar.items.map(i => i.label ?? ''), ['', 'oll', 'pll', 'insp', '', 'focus', 'stats']);
   const f2l = bar.items.find(i => i.id === 'f2l').options[0];
   assert.deepEqual([f2l.active, f2l.value], [true, 'standard'], 'a toggle carries the value it switches to');
   assert.deepEqual(bar.items.find(i => i.id === 'oll').options.map(o => [o.label, o.active]), [['1-look', false], ['2-look', true]]);

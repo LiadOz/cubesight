@@ -6,7 +6,7 @@
 import { DEFAULT_INSPECTION, normalizeInspection } from '../solve-live.js';
 import { BRAIN_STYLES, DEFAULT_BRAIN_STYLE } from './types.js';
 import { DEFAULT_SESSION_GAP_MIN, normalizeGapMin } from '../store/sessions.js';
-import { FOCI, DEFAULT_FOCUS, normalizeFocus } from '../store/focus.js';
+import { FOCI, DEFAULT_FOCUS, normalizeFocus, STATS_SOURCES, DEFAULT_STATS_SOURCE } from '../store/focus.js';
 
 export const SETTINGS_KEY = 'cubesight-brain-settings-v2';
 const LEGACY_KEYS = {
@@ -66,6 +66,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // Automatic sessions (src/store): what you are training (a change starts a new session)
   // and the idle minutes between solves that start one.
   session: { focus: DEFAULT_FOCUS, gapMin: DEFAULT_SESSION_GAP_MIN },
+  stats: { source: DEFAULT_STATS_SOURCE },
   toggles: { ...DEFAULT_TOGGLES },
 });
 
@@ -79,12 +80,13 @@ export const PRESETS = {
 /** Validate any (possibly partial or stale) settings object into a full one. */
 export function normalizeSettings(raw = {}) {
   const input = raw && typeof raw === 'object' ? raw : {};
-  const out = { ...DEFAULT_SETTINGS, toggles: { ...DEFAULT_TOGGLES }, inspection: { ...DEFAULT_INSPECTION }, session: { ...DEFAULT_SETTINGS.session } };
+  const out = { ...DEFAULT_SETTINGS, toggles: { ...DEFAULT_TOGGLES }, inspection: { ...DEFAULT_INSPECTION }, session: { ...DEFAULT_SETTINGS.session }, stats: { ...DEFAULT_SETTINGS.stats } };
   for (const [key, allowed] of Object.entries(ENUMS)) if (allowed.includes(input[key])) out[key] = input[key];
   if (typeof input.voice === 'boolean') out.voice = input.voice;
   if (input.session && typeof input.session === 'object') {
     out.session = { focus: normalizeFocus(input.session.focus), gapMin: normalizeGapMin(input.session.gapMin ?? DEFAULT_SESSION_GAP_MIN) };
   }
+  if (input.stats && typeof input.stats === 'object' && STATS_SOURCES.includes(input.stats.source)) out.stats = { source: input.stats.source };
   if (input.inspection && typeof input.inspection === 'object') out.inspection = normalizeInspection(input.inspection, DEFAULT_INSPECTION);
   if (input.toggles && typeof input.toggles === 'object') {
     for (const key of Object.keys(DEFAULT_TOGGLES)) if (typeof input.toggles[key] === 'boolean') out.toggles[key] = input.toggles[key];
@@ -133,6 +135,7 @@ export function setSetting(settings, path, value) {
   }
   if (head === 'toggles' && sub) return normalizeSettings({ ...settings, toggles: { ...settings.toggles, [sub]: Boolean(value) } });
   if (head === 'session' && sub) return normalizeSettings({ ...settings, session: { ...settings.session, [sub]: value } });
+  if (head === 'stats' && sub) return normalizeSettings({ ...settings, stats: { ...settings.stats, [sub]: value } });
   if (head === 'voice') return normalizeSettings({ ...settings, voice: Boolean(value) });
   return normalizeSettings({ ...settings, [head]: value });
 }
@@ -161,6 +164,7 @@ const LABELS = {
   'inspection.mode': { wca: 'wca 15 s', custom: 'custom', unlimited: 'unlimited', off: 'off' },
   'inspection.overtime': { wca: 'wca +2 / dnf', count: 'count only', grace: 'grace', autostart: 'auto-start' },
   'inspection.gracePenalty': { plus2: '+2', dnf: 'dnf', none: 'none' },
+  'stats.source': { smart: 'smart cube', manual: 'manual timer', all: 'all' },
   'inspection.callouts': { true: '8 s + 12 s', false: 'off' },
   voice: { true: 'on', false: 'off' },
 };
@@ -177,6 +181,7 @@ const HELP = {
   'inspection.mode': 'WCA gives 15 s. Off starts the clock on your first turn.',
   'inspection.seconds': 'Custom inspection length in seconds.',
   'inspection.overtime': 'What happens when inspection runs over.',
+  'stats.source': 'Choose which solve sources appear in comparisons and stats.',
   'inspection.graceSeconds': 'Extra seconds before the grace penalty applies.',
   'inspection.gracePenalty': 'Penalty after the grace period.',
   'inspection.callouts': 'Judge calls at 8 s and 12 s.',
@@ -195,7 +200,7 @@ const ROW_LABELS = {
   'inspection.mode': 'inspection', 'inspection.seconds': 'seconds', 'inspection.overtime': 'overtime',
   'inspection.graceSeconds': 'grace', 'inspection.gracePenalty': 'then', 'inspection.callouts': 'callouts', voice: 'voice',
   penalties: 'penalties', scramble: 'scramble', coach: 'coach', crossHint: 'cross hint', timer: 'timer',
-  timeline: 'timeline', compare: 'split compare',
+  timeline: 'timeline', compare: 'split compare', 'stats.source': 'stats source',
 };
 
 const SECTIONS = [
@@ -203,6 +208,7 @@ const SECTIONS = [
   { id: 'method', label: 'method', rows: ['method', 'f2l', 'oll', 'pll'] },
   { id: 'inspection', label: 'inspection', rows: ['inspection.mode', 'inspection.seconds', 'inspection.overtime', 'inspection.graceSeconds', 'inspection.gracePenalty', 'inspection.callouts', 'voice', 'penalties'] },
   { id: 'training', label: 'training', rows: ['scramble', 'coach', 'crossHint', 'timer', 'timeline', 'compare'] },
+  { id: 'stats', label: 'stats', rows: ['stats.source'] },
 ];
 
 // The site appearance lives in src/theme.js, not in the Brain settings; the panel shows it as one more row.
@@ -214,6 +220,7 @@ const valuesFor = path => {
   if (path === 'inspection.overtime') return ['wca', 'count', 'grace', 'autostart'];
   if (path === 'inspection.gracePenalty') return ['plus2', 'dnf', 'none'];
   if (path === 'inspection.callouts' || path === 'voice') return [true, false];
+  if (path === 'stats.source') return STATS_SOURCES;
   return [];
 };
 
@@ -283,6 +290,7 @@ export function buildConfigBar(settings) {
   items.push(seg('inspection.mode', ['wca', 'custom', 'unlimited', 'off'], insp.mode, { wca: '15s', custom: `${insp.seconds}s`, unlimited: '∞', off: 'off' }, 'insp'));
   items.push({ id: 'penalties', options: [{ value: settings.penalties === 'apply' ? 'ignore' : 'apply', label: 'wca penalties', active: settings.penalties === 'apply' }] });
   items.push(seg('session.focus', FOCI, settings.session.focus, FOCUS_LABELS, 'focus'));
+  items.push(seg('stats.source', STATS_SOURCES, settings.stats.source, LABELS['stats.source'], 'stats'));
   return { items };
 }
 
