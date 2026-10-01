@@ -60,17 +60,22 @@ function* evaluationSteps({ scramble, moves, face, upTo, frames, firstMoves, fac
   }
 
   let lengths = null;
+  let faceProven = null;
+  let faceComplete = true;
   if (faceLengths) {
     lengths = {};
+    faceProven = {};
     for (const other of FACES) {
       const reply = yield ask(scramble, other);
+      if (reply?.status !== 0) faceComplete = false;
       lengths[other] = reply?.results?.[0]?.moves.length ?? null;
+      faceProven[other] = reply?.status === 0 && Boolean(reply?.results?.[0]);
     }
   }
-  return { positions, complete, faceLengths: lengths };
+  return { positions, complete, faceLengths: lengths, faceProven, faceComplete };
 }
 
-function summarize(base, { positions, complete, faceLengths }, frames) {
+function summarize(base, { positions, complete, faceLengths, faceProven, faceComplete }, frames) {
   const d0 = positions[0].d;
   const last = positions[positions.length - 1];
   const totalLoss = positions.slice(1).reduce((sum, row) => sum + (row.loss ?? 0), 0);
@@ -78,6 +83,7 @@ function summarize(base, { positions, complete, faceLengths }, frames) {
     face: base.face, frames, shift: last.k, userMoves: base.upTo, d0,
     finished: last.d === 0, extraMoves: last.d === 0 ? base.upTo - d0 : null, totalLoss,
     bestContinuation: positions[0].best, positions, faceLengths, complete,
+    startProven: positions[0].proven, faceProven, faceComplete,
   };
 }
 

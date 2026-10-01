@@ -113,10 +113,24 @@ export function createSolveReview(host, routeContext = {}) {
   }
 
   function drillLinkMarkup(item) {
-    if (!item || !['Extra move', 'Detour', 'Better cross'].includes(item.text)) return `<span class="sr-label ${item?.kind ?? ''}" title="${escapeHtml(item?.detail ?? '')}">${escapeHtml(item?.text ?? 'Optimal')}</span>`;
-    const scramble = encodeURIComponent(record.scramble.replace(/[′’]/g, "'").replaceAll(' ', '_'));
-    const from = `review:${record.at}:${currentMove}`;
-    return `<a class="sr-label sr-drill" href="#/drills/scout?scramble=${scramble}&amp;face=${record.analysis?.face ?? 'D'}&amp;kind=cross&amp;from=${encodeURIComponent(from)}" title="${escapeHtml(item.detail)}">${escapeHtml(item.text)} · Cross Scout ›</a>`;
+    if (!item) return '<span class="sr-label neutral">Fine</span>';
+    const index = Math.max(0, currentMove - 1), from = `review:${record.at}:${index}`;
+    const stage = stageOf(record, index), params = new URLSearchParams({ setup: from, from });
+    let path, destination;
+    if (stage === 'cross') {
+      params.set('face', item.face ?? record.analysis?.face ?? 'D');
+      params.set('kind', item.text === 'X-cross' ? 'xcross' : 'cross');
+      path = `#/drills/scout?${params}`; destination = 'Cross Scout';
+    } else if (stage.startsWith('pair')) {
+      params.set('drill', ['Better pair', 'Pseudo pair'].includes(item.text) ? 'planner' : 'scan');
+      params.set('face', 'D');
+      if (item.text === 'Pseudo pair') params.set('pseudo', '1');
+      path = `#/drills/f2l?${params}`; destination = 'F2L drill';
+    } else {
+      params.set('stage', stage === 'last layer' ? 'pll' : stage);
+      path = `#/drills/pll?${params}`; destination = 'PLL drill';
+    }
+    return `<a class="sr-label sr-drill" href="${escapeHtml(path)}" title="${escapeHtml(item.detail ?? '')}">${escapeHtml(item.text ?? 'Fine')} · ${destination} ›</a>`;
   }
 
   function renderReview() {
@@ -130,8 +144,11 @@ export function createSolveReview(host, routeContext = {}) {
           <svg class="sr-graph" viewBox="0 0 640 180" role="img" aria-label="Moves versus efficiency loss graph"><line x1="8" y1="90" x2="632" y2="90" class="sr-par"></line><path class="sr-graph-line"></path><circle class="sr-cursor" r="6"></circle></svg>
           <div class="sr-scores">${stageAccuracyMarkup()}</div><section class="sr-moments"><h2>Key moments</h2><div class="sr-moment-list"></div></section>
           <label class="sr-toggle"><input type="checkbox" data-toggle="inferred"> show inferred labels</label>
-          <div class="sr-continuation"><h2>Best continuation</h2><p class="sr-best"></p><button data-action="play-best">show on cube</button></div></section>
-        <section class="sr-moves"><h2>Moves <small>([ and ] key moments · arrow keys step)</small></h2><ol>${record.solveMoves.map((move, i) => `<li><button data-move="${i}" title="Move ${i + 1}">${moveText(move)}</button></li>`).join('')}</ol></section>`;
+          <div class="sr-continuation"><h2>Suggested continuation</h2><p class="sr-best"></p><button data-action="play-best">show on cube</button></div></section>
+        <section class="sr-moves"><h2>Moves <small>([ and ] key moments · arrow keys step)</small></h2><ol>${record.solveMoves.map((move, i) => {
+          const details = labels[i]?.map(item => `${item.text}: ${item.detail}`).join(' · ') || `${stageOf(record, i)} · no verified move evaluation`;
+          return `<li><button data-move="${i}" title="${escapeHtml(details)}" aria-label="Move ${i + 1}, ${escapeHtml(moveText(move))}. ${escapeHtml(details)}">${moveText(move)}</button></li>`;
+        }).join('')}</ol></section>`;
       root.append(layout);
       try { cube = createCube3D(layout.querySelector('.sr-cube'), { mode: 'scout' }); }
       catch { layout.querySelector('.sr-cube').textContent = '3D cube needs WebGL.'; }
@@ -235,8 +252,8 @@ export function createSolveReview(host, routeContext = {}) {
         const currentStage = stageOf(record, Math.max(0, plan.from - 1));
         const key = currentStage === 'cross' ? 'cross' : currentStage.startsWith('pair') ? 'f2l' : 'll';
         const score = stageScores(candidate).find(item => item.key === key);
-        retry.querySelector('.sr-regrade').textContent = score ? `Shared engine regrade · ${currentStage} · ${score.text}` : 'Shared engine regrade complete.';
-      } catch { if (generation === gradingGeneration && active && !detached) retry.querySelector('.sr-regrade').textContent = 'The shared analysis engine could not regrade this continuation.'; }
+        retry.querySelector('.sr-regrade').textContent = score ? `Review engine regrade · ${currentStage} · ${score.text}` : 'Review engine regrade complete.';
+      } catch { if (generation === gradingGeneration && active && !detached) retry.querySelector('.sr-regrade').textContent = 'The review engine could not regrade this continuation.'; }
     };
     const updateCube = snap => { if (active && !detached && snap.state) showCubeState(snap.state); };
     const onCube = snap => {

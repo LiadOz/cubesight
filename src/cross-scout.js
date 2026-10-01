@@ -5,6 +5,7 @@ import { solveCross, terminateCrossSolver } from './cross-solver.js';
 import { smartCube } from './smart-cube-bluetooth.js';
 import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
 import { followPlanTurn, recoveryMoves } from './smart-cube-guidance.js';
+import { openHistory } from './store/history.js';
 
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const title = value => value[0].toUpperCase()+value.slice(1);
@@ -27,6 +28,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
   try { const saved=JSON.parse(localStorage.getItem('cubesight-scout-colors')); if(Array.isArray(saved) && saved.length && saved.every(f=>Object.hasOwn(FACE_COLORS,f))) allowed=[...new Set(saved)]; } catch { /* Use white initially. */ }
   const routeQuery = new URLSearchParams((globalThis.location?.hash ?? '').split('?')[1] ?? '');
   const reviewFrom = /^review:(\d+):(\d+)$/.exec(routeQuery.get('from') ?? '');
+  const reviewSetup = /^review:(\d+):(\d+)$/.exec(routeQuery.get('setup') ?? '');
   const linkedScramble = routeQuery.get('scramble')?.replaceAll('_', ' ').replaceAll('-', "'").replace(/[′’]/g, "'").trim() ?? '';
   const linkedFace = routeQuery.get('face');
   if (reviewFrom && linkedFace && Object.hasOwn(FACE_COLORS, linkedFace)) allowed = [linkedFace];
@@ -387,6 +389,23 @@ export function createCrossScout(root, cubeSession = smartCube) {
   } catch {
     $('#scout-scramble').value = randomScramble(); loadScramble();
     if (reviewFrom) message('This review link has no usable scramble. Paste a scramble to start a Cross Scout search.');
+  }
+  if (reviewSetup) {
+    const [, atText, moveText] = reviewSetup;
+    const setupGeneration = requestGeneration;
+    void openHistory().then(history => {
+      if (!active || setupGeneration !== requestGeneration) return;
+      const record = history.records.find(item => item.at === Number(atText));
+      if (!record) throw new Error('The linked solve is no longer in local history.');
+      const move = Math.min(record.solveMoves.length, Number(moveText));
+      const setup = [...parseScramble(record.scramble), ...record.solveMoves.slice(0, move)];
+      if (setup.length > 200) throw new Error('This position is over Cross Scout’s 200-move setup limit. Choose an earlier move.');
+      $('#scout-scramble').value = setup.join(' ');
+      loadScramble();
+      message(`Review position loaded · move ${move + 1}. Analyze to practice this ${routeQuery.get('kind') === 'xcross' ? 'X-cross' : 'cross'} opportunity.`);
+    }).catch(error => {
+      if (active) message(error.message || 'The linked review position could not be loaded.');
+    });
   }
   cubeSession.subscribe(onSmartCube);
   return {setActive(value){active=value;if(!value){stopPlayback();if(selected)cube.update(planData(states[step]));if(busy){cancelSearch();message('Search stopped while away. Existing results are kept.');}}}};

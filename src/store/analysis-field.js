@@ -22,6 +22,7 @@ export function cleanAnalysis(a) {
     v: 1,
     engine: int(a.engine) ?? 0,
     face: ['U', 'D', 'F', 'B', 'R', 'L'].includes(a.face) ? a.face : 'D',
+    crossSource: ['orient', 'inferred', 'default', 'given'].includes(a.crossSource) ? a.crossSource : 'default',
     solved: Boolean(a.solved),
     timed: Boolean(a.timed),
     marks: {
@@ -34,6 +35,8 @@ export function cleanAnalysis(a) {
     skips: list(a.skips, 12, s => (s && typeof s.kind === 'string' && Number.isInteger(s.idx)
       ? { kind: s.kind.slice(0, 8), idx: s.idx, ...(int(s.count) ? { count: int(s.count) } : {}), ...(s.pseudo ? { pseudo: true } : {}) } : null)),
     pseudo: list(a.pseudo, 4, n => int(n, 1, 4)),
+    offsets: list(a.offsets, 24, offset => (offset && Number.isInteger(offset.at)
+      ? { at: offset.at, resolvedAt: int(offset.resolvedAt), used: Boolean(offset.used), stray: Boolean(offset.stray) } : null)),
     pauses: list(a.pauses, 8, p => (p && Number.isInteger(p.i) && Number.isFinite(p.ms)
       ? { i: p.i, ms: Math.round(p.ms), allow: int(p.allow) ?? 0, stage: str(p.stage, 8) ?? '', boundary: str(p.boundary, 12) ?? '' } : null)),
     medianGapMs: Number.isFinite(a.medianGapMs) ? Math.round(a.medianGapMs) : null,
@@ -52,6 +55,9 @@ export function cleanAnalysis(a) {
       moves: int(cross.moves) ?? 0, d0: int(cross.d0) ?? 0, extra: int(cross.extra, 0, 60), total: int(cross.total) ?? 0, done: Boolean(cross.done), proven: Boolean(cross.proven),
       best: moveString(cross.best),
       faces: cross.faces && typeof cross.faces === 'object' ? Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].filter(f => int(cross.faces[f]) !== null).map(f => [f, cross.faces[f]])) : null,
+      faceProven: cross.faceProven && typeof cross.faceProven === 'object' ? Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].filter(f => cross.faceProven[f] === true).map(f => [f, true])) : null,
+      faceComplete: cross.faceComplete !== false,
+      startProven: cross.startProven === true,
       losses: list(cross.losses, 8, l => (l && Number.isInteger(l.i) && (l.loss === 1 || l.loss === 2)
         ? { i: l.i, move: moveString(l.move), loss: l.loss, d: int(l.d) ?? 0, best: moveString(l.best), after: int(l.after) ?? 0 } : null)),
     };

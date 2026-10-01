@@ -109,6 +109,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let crossFace = null;
   let crossColor = null;
   let rotations = 0;
+  let gyroAvailable = false;
   let pseudo = false;            // pseudo-F2L (D-shift) detection, opt-in
   let inspection = { ...DEFAULT_INSPECTION };
   let inspectionStartAt = null;  // when the scramble was done (inspection began)
@@ -203,6 +204,8 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
 
   function resetSolve() {
     crossFace = null; crossColor = null; rotations = 0; rotationTracker.reset(); crossSeen = new Set();
+    const cubeSnapshot = session?.getSnapshot?.();
+    gyroAvailable = Boolean(cubeSnapshot?.protocol?.startsWith('GAN') && cubeSnapshot.gyro);
     crossMoveCount = null;
     crossAchieved = false; f2lAchieved = false; ollAchieved = false; pllFrameAchieved = false; eoAchieved = false; coAchieved = false; maxPairs = 0; pairsBeforeMove = 0;
     prev = null; progress = null; mark = {}; solveMoves = []; record = null;
@@ -367,6 +370,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
       crossMoveCount,
       dFixMs: pllDone != null ? Math.max(0, solveMs - pllDone) : null,   // pseudo: time from PLL (in the offset frame) to the cube being solved
       rotations,
+      gyro: gyroAvailable || rotationTracker.marks.length > 0,
       rotationMarks: rotationTracker.marks,
       detours: 0,
       mistakes: 0,
@@ -583,6 +587,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   }
 
   function onSnapshot(snap) {
+    if (snap.protocol?.startsWith('GAN') && snap.gyro) gyroAvailable = true;
     if (snap.phase === 'desynced') {
       if (phase !== 'idle' && phase !== 'done' && phase !== 'desynced') {
         phase = 'desynced'; stopInspectionTimer(); interrupted = null;
