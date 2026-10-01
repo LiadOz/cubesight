@@ -23,6 +23,16 @@ export const DRILLS = Object.freeze([
     title: 'cross scout', blurb: 'plan cross and x-cross from a scramble',
     modes: ['explore', 'recall'], cube: 'optional',
   },
+  {
+    id: 'oll', tool: 'oll', key: 'o', href: '#/drills/oll',
+    title: 'OLL recognition', blurb: 'name the last-layer pattern before you turn',
+    modes: ['recognition', '20-case round', 'spaced repetition'], cube: 'none',
+  },
+  {
+    id: 'lookahead', tool: 'lookahead', key: 'l', href: '#/drills/lookahead',
+    title: 'lookahead', blurb: 'choose what to solve while tracking the next pair',
+    modes: ['next-pair choices', '3 s per case', 'lookahead pace'], cube: 'none',
+  },
 ]);
 
 export const CUBE_LABELS = Object.freeze({
@@ -87,6 +97,8 @@ export function drillSettings(storage, drill) {
     const label = mode === 'scan' ? `timed scan · ${seconds ?? 30} s` : mode === 'planner' ? 'best next pair' : 'pair deduction';
     return [label, mode === 'scan' && pseudo ? 'pseudo pairs' : null].filter(Boolean).join(' · ');
   }
+  if (drill.id === 'oll') return '20-case recognition round';
+  if (drill.id === 'lookahead') return 'next-pair recognition';
   return drill.modes.slice(0, 3).join(' · ');
 }
 

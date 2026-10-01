@@ -127,7 +127,7 @@ let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
@@ -140,6 +140,8 @@ let timerPageLoad = null;
 let reviewPage = null;
 let reviewPageLoad = null;
 let reviewRouteHash = '';
+const drillPages = Object.create(null);
+const drillPageLoads = Object.create(null);
 let scout = null;
 let scoutLoad = null;
 let smart = null;
@@ -339,6 +341,8 @@ document.querySelector('#app').innerHTML = `
     <div id="history-view" class="cs-host" hidden></div>
     <div id="timer-view" class="cs-host" hidden></div>
     <div id="review-view" class="cs-host" hidden></div>
+    <div id="oll-view" class="cs-host" hidden></div>
+    <div id="lookahead-view" class="cs-host" hidden></div>
     <div id="pll-view" hidden></div>
     <div id="scout-view" hidden></div>
     <div id="brain-view" hidden></div>
@@ -1457,6 +1461,7 @@ function setTool(tool, initial = false) {
   historyPage?.setActive(false);
   timerPage?.setActive(false);
   reviewPage?.setActive(false);
+  Object.values(drillPages).forEach(page => page?.setActive(false));
   if (activeTool === 'review' && tool !== 'review') {
     reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
   }
@@ -1491,7 +1496,7 @@ function setTool(tool, initial = false) {
         brainLoad = null;
       });
     } else brain?.setActive(true);
-  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer' || tool === 'review') {
+  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer' || tool === 'review' || tool === 'oll' || tool === 'lookahead') {
     state.locked = true;
     f2lState.locked = true;
     mountPage(tool);
@@ -1635,6 +1640,21 @@ function mountPage(tool) {
     }
     return;
   }
+  if (tool === 'oll' || tool === 'lookahead') {
+    const existing = drillPages[tool];
+    if (existing) { existing.setActive(true); return; }
+    if (!drillPageLoads[tool]) {
+      const load = tool === 'oll' ? import('./drills/oll.js') : import('./drills/lookahead.js');
+      drillPageLoads[tool] = load.then(module => {
+        const page = module.createDrillPage(root);
+        drillPages[tool] = page;
+        syncPageTokens(root);
+        page.setActive(activeTool === tool);
+        return page.ready;
+      }).catch(error => { delete drillPageLoads[tool]; failed(error); });
+    }
+    return;
+  }
   const held = tool === 'algs' ? algsPage : progressPage;
   if (held) { held.setActive(true); return; }
   import('./pages/placeholder.js').then(({ createPlaceholderPage }) => {
@@ -1690,11 +1710,12 @@ function resumePractice() {
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) pausePractice();
+  if (document.hidden) { pausePractice(); drillPages[activeTool]?.setActive(false); }
   else if (activeTool === 'scout') scout?.setActive(true);
   else if (activeTool === 'smart') smart?.setActive(true);
   else if (activeTool === 'brain') brain?.setActive(true);
   else if (activeTool === 'pll') pll?.setActive(true);
+  else if (activeTool === 'oll' || activeTool === 'lookahead') drillPages[activeTool]?.setActive(true);
 });
 document.querySelector('#help-dialog').addEventListener('close', () => {
   if (activeTool === 'scout' && !document.hidden) scout?.setActive(true);

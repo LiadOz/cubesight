@@ -9,6 +9,7 @@ import '../pages/page.css';
 import './hub.css';
 import { loadSettings } from '../brain/settings.js';
 import { CUBE_LABELS, DRILLS, agoLabel, drillSettings, lastDrill } from './catalog.js';
+import { dayStreak, loadShell } from './rounds.js';
 import { syncPageTokens } from '../pages/tokens.js';
 
 const el = (tag, className, text) => {
@@ -34,6 +35,13 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     const head = el('header', 'cs-head');
     head.append(el('h1', null, 'drills'), el('p', 'cs-sub', 'short rounds, one key to start. no cube needed unless marked.'));
     page.append(head);
+    const rounds = loadShell(storage);
+    const streak = dayStreak(rounds.days);
+    if (streak) {
+      const note = el('p', 'hub-streak', `${streak} day${streak === 1 ? '' : 's'} active`);
+      note.setAttribute('aria-label', `${streak} day streak`);
+      page.append(note);
+    }
 
     const last = lastDrill(storage);
     const pick = last?.drill ?? DRILLS[0];

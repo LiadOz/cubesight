@@ -31,7 +31,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
   const routeQuery = new URLSearchParams((globalThis.location?.hash ?? '').split('?')[1] ?? '');
   const reviewFrom = /^review:(\d+):(\d+)$/.exec(routeQuery.get('from') ?? '');
   const reviewSetup = /^review:(\d+):(\d+)$/.exec(routeQuery.get('setup') ?? '');
-  const linkedScramble = routeQuery.get('scramble')?.replaceAll('_', ' ').replaceAll('-', "'").replace(/[′’]/g, "'").trim() ?? '';
+  const linkedScramble = (routeQuery.get('scramble') ?? (reviewSetup ? '' : routeQuery.get('setup')))?.replaceAll('_', ' ').replaceAll('-', "'").replace(/[′’]/g, "'").trim() ?? '';
   const linkedFace = routeQuery.get('face');
   if (reviewFrom && linkedFace && Object.hasOwn(FACE_COLORS, linkedFace)) allowed = [linkedFace];
   let source=stateFromScramble(''), results=[], selected=null, step=0, states=[], active=true, playing=false, playbackGeneration=0;

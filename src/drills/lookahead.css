@@ -1,0 +1,27 @@
+.lookahead-page { gap: 22px; }
+.lookahead-page .cs-eyebrow { color: var(--b-accent-text); font: 500 12px var(--b-font-mono); }
+.lookahead-session { display: grid; gap: 18px; padding: 22px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-card); background: var(--b-bg); }
+.lookahead-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; color: var(--b-muted); font: 400 12px var(--b-font-mono); }
+.lookahead-layout { display: grid; grid-template-columns: minmax(220px, .85fr) minmax(280px, 1fr); gap: 24px; align-items: center; }
+.lookahead-cube { width: min(100%, 360px); min-height: 280px; aspect-ratio: 1; justify-self: center; }
+.lookahead-cube canvas { width: 100%; height: 100%; }
+.lookahead-prompt { font-size: 21px; font-weight: 650; }
+.lookahead-hint, #la-feedback { color: var(--b-muted); font-size: 14px; line-height: 1.5; }
+.lookahead-choices { display: grid; gap: 8px; margin: 18px 0; }
+.lookahead-choice { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; min-height: 54px; padding: 12px 14px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); background: var(--b-panel); color: var(--b-ink); text-align: left; cursor: pointer; }
+.lookahead-choice span { color: var(--b-muted); font: 400 12px var(--b-font-mono); }
+.lookahead-choice[data-best="true"] { border-color: var(--b-accent); background: var(--b-accent-soft); }
+.lookahead-choice[data-missed="true"] { border-color: var(--b-warn); }
+.lookahead-choice:disabled { cursor: default; }
+.lookahead-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.lookahead-actions button, .la-next, .lookahead-result button { min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--b-radius-control); background: var(--b-ink); color: var(--b-bg); font: 600 14px var(--b-font-sans); cursor: pointer; }
+.lookahead-actions a { color: var(--b-accent-text); text-underline-offset: 3px; }
+.lookahead-result { padding: 18px 22px; border-radius: var(--b-radius-card); background: var(--b-accent-soft); color: var(--b-ink); }
+.lookahead-result h2 { margin: 5px 0 8px; font-size: 22px; }
+.lookahead-result p { margin-bottom: 14px; color: var(--b-muted); }
+@media (max-width: 700px) {
+  .lookahead-session { padding: 16px; }
+  .lookahead-layout { grid-template-columns: 1fr; gap: 12px; }
+  .lookahead-cube { width: min(100%, 300px); min-height: 250px; }
+  .lookahead-choice { grid-template-columns: 1fr; gap: 4px; }
+}

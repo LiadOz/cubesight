@@ -4,6 +4,7 @@
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   padding: 18px 22px; border-radius: var(--b-radius-bar); background: var(--b-accent-soft); color: var(--b-ink);
 }
+.hub-streak { align-self: flex-start; color: var(--b-accent-text); font: 500 12px var(--b-font-mono); }
 .hub-continue-copy { display: grid; gap: 4px; min-width: 0; }
 .hub-eyebrow { color: var(--b-accent-text); font: 500 12px var(--b-font-mono); letter-spacing: .02em; }
 .hub-continue-title { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
