@@ -8,7 +8,7 @@ import { mountTestBrain, playSolve } from './helpers/fake-brain.js';
 // The solve is the golden "normal" solve with a 1.8 s stop before move 15 and a detour in the cross.
 const g = GOLD.normal;
 const BRAIN = '#brain-view';
-const SHOTS = 'docs/design/brain-v2/review/impl';
+const SHOTS = 'test-results/brain-review';   // never write into docs/ from a test run
 
 const pinsInDb = page => page.evaluate(async () => {
   const backend = await (await import('/src/store/idb.js')).openIdbBackend();
