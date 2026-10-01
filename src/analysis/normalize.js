@@ -6,7 +6,7 @@
 // fixed centres the relabelled scramble + moves replayed from a solved cube is
 // the same cube, seen from a different side, so "D" helpers work for any cross.
 
-import { applyMoves, createSolvedState } from '../cross-cube.js';
+import { applyMoves } from '../cross-cube.js';
 import { currentDShift, solvedPairsPseudo } from '../solve-tracker.js';
 import { analysisStateFromScramble } from './long-replay.js';
 
