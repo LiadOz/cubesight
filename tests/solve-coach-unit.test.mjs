@@ -59,3 +59,9 @@ test('efficiencyScore is bounded 0–100 and rewards solving with an optimal cro
   assert.ok(optimal <= 100 && optimal >= 0);
   assert.ok(bad >= 0);
 });
+
+test('efficiencyScore does not compare an X-cross count with a plain-cross minimum', () => {
+  const xcross = efficiencyScore({ userCrossMoves: 8, optimalCrossMoves: 6, crossTarget: 'xcross' });
+  const noComparison = efficiencyScore({ userCrossMoves: 8, optimalCrossMoves: null });
+  assert.equal(xcross, noComparison);
+});

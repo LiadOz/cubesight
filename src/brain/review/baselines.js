@@ -31,6 +31,16 @@ export function reviewBaselines(others = []) {
   const rotations = solved.filter(r => Number.isFinite(r.rotations)).map(r => r.rotations);
   const gaps = solved.map(r => medianGap(r.moveTimes)).filter(Number.isFinite);
   const onlyWith = pick => mean(analysed.map(pick).filter(Number.isFinite));
+  const caseTimes = new Map();
+  for (const record of analysed) for (const stage of ['oll', 'pll']) {
+    const row = record.analysis?.lastLayer?.[stage];
+    if (!row?.caseId || !Number.isFinite(row.recognitionMs)) continue;
+    const values = caseTimes.get(`${stage}/${row.caseId}`) ?? [];
+    values.push(row.recognitionMs);
+    caseTimes.set(`${stage}/${row.caseId}`, values);
+  }
+  const caseRecognitionMs = Object.fromEntries([...caseTimes].filter(([, values]) => values.length >= MIN_SOLVES)
+    .map(([key, values]) => [key, mean(values)]));
   return {
     solves: solved.length,
     reliable: solved.length >= MIN_SOLVES,
@@ -40,5 +50,6 @@ export function reviewBaselines(others = []) {
     crossExtra: analysed.length >= MIN_SOLVES ? onlyWith(r => r.analysis.cross?.extra) : null,
     cancelWaste: analysed.length >= MIN_SOLVES ? mean(analysed.map(r => r.analysis.cancels.reduce((sum, c) => sum + c.waste, 0))) : null,
     pauses: analysed.length >= MIN_SOLVES ? mean(analysed.map(r => r.analysis.pauses.length)) : null,
+    caseRecognitionMs,
   };
 }

@@ -275,7 +275,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     try {
       const result = await crossSuggestion(scramble, { extended: false, timeLimitMs: 1500 });
       if (pendingSuggestion !== scramble || detached) return;
-      optimalCross = result.best;
+      optimalCross = result.best ? { ...result.best, best: result.best, bestXcross: result.bestXcross } : null;
       render();
     } catch { optimalCross = null; }
   }

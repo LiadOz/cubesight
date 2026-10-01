@@ -28,20 +28,32 @@ import { FACE_COLORS } from './cross-cube.js';
 export async function crossSuggestion(scramble, { extended = false, timeLimitMs = 1500 } = {}) {
   const faces = Object.keys(FACE_COLORS);
   const results = [];
+  const opportunities = [];
+  const queryBudget = Math.max(100, Math.floor(timeLimitMs / (faces.length * 2)));
+  const xcrossBudget = Math.max(400, Math.floor(timeLimitMs / faces.length));
   for (const face of faces) {
     try {
       const reply = await solveCross({
         scramble, face,
-        kind: extended ? 'xcross' : 'cross',
-        maxResults: 4, maxDepth: 10, timeLimitMs,
+        kind: 'cross', maxResults: 1, maxDepth: 10, timeLimitMs: queryBudget,
       });
       const moves = reply.results?.[0]?.moves ?? null;
-      results.push({ face, moves, length: moves ? moves.length : null });
+      results.push({ face, moves, length: moves ? moves.length : null, proven: reply.complete === true });
     } catch { /* a single face timing out must not abort the rest */ }
+    try {
+      const reply = await solveCross({ scramble, face, kind: 'xcross', maxResults: 4, maxDepth: 10, timeLimitMs: xcrossBudget });
+      const candidate = reply.results?.filter(row => row.optimality === 'proven-for-target')
+        .sort((a, b) => a.moves.length - b.moves.length)[0];
+      opportunities.push({ face, moves: candidate?.moves ?? null, length: candidate?.moves?.length ?? null, proven: Boolean(candidate && reply.complete === true), complete: reply.complete === true });
+    } catch { opportunities.push({ face, moves: null, length: null, proven: false, complete: false }); }
   }
   const finite = results.filter(r => r.length != null);
-  const best = finite.length ? finite.reduce((a, b) => (a.length <= b.length ? a : b)) : null;
-  return { perFace: results, best, extended };
+  const bestCandidate = finite.length ? finite.reduce((a, b) => (a.length <= b.length ? a : b)) : null;
+  const best = bestCandidate ? { ...bestCandidate, proven: results.length === faces.length && results.every(row => row.proven) } : null;
+  const xcrosses = opportunities.filter(r => r.length != null);
+  const bestXcrossCandidate = xcrosses.length ? xcrosses.reduce((a, b) => (a.length <= b.length ? a : b)) : null;
+  const bestXcross = bestXcrossCandidate ? { ...bestXcrossCandidate, proven: opportunities.length === faces.length && opportunities.every(row => row.complete) && bestXcrossCandidate.proven } : null;
+  return { perFace: results, best, xcrossPerFace: opportunities, bestXcross, extended };
 }
 
 // Non-optimal-cross hindsight: compare the moves the user actually spent on the
@@ -128,13 +140,13 @@ export function pllLens(state, crossFace) {
 // A one-line solve-accuracy score analogue (chess.com accuracy %): a coarse
 // efficiency rating from 0–100 combining cross efficiency, rotation economy
 // and phase completion. Pure; the view composes it from a record + hints.
-export function efficiencyScore({ userCrossMoves = 0, optimalCrossMoves = null, rotations = 0, solved = false, f2lPairs = 0, ollDone = false } = {}) {
+export function efficiencyScore({ userCrossMoves = 0, optimalCrossMoves = null, crossTarget = 'cross', rotations = 0, solved = false, f2lPairs = 0, ollDone = false } = {}) {
   let score = 50;
   if (solved) score += 25;
   if (f2lPairs) score += Math.min(15, f2lPairs * 4);
   if (ollDone) score += 5;
-  if (optimalCrossMoves != null && userCrossMoves <= optimalCrossMoves) score += 10;
-  else if (optimalCrossMoves != null) score -= Math.min(15, (userCrossMoves - optimalCrossMoves) * 3);
+  if (crossTarget === 'cross' && optimalCrossMoves != null && userCrossMoves <= optimalCrossMoves) score += 10;
+  else if (crossTarget === 'cross' && optimalCrossMoves != null) score -= Math.min(15, (userCrossMoves - optimalCrossMoves) * 3);
   score -= Math.min(15, rotations * 2);
   return Math.max(0, Math.min(100, Math.round(score)));
 }

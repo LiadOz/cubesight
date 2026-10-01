@@ -26,7 +26,7 @@ test('the stored summary is small, survives the store whitelist unchanged, and r
   assert.equal(withCases.pllCase, record.analysis.pllCase?.id ?? null, 'the canonical PLL case index survives storage');
   assert.equal(record.rotationMarks.length, base.rotations);
   assert.deepEqual(Object.keys(record.rotationMarks[0]).sort(), ['from', 'idx', 'tMs', 'to']);
-  assert.equal(cleanAnalysis({ v: 3 }), null);
+  assert.equal(cleanAnalysis({ v: 4 }), null);
   assert.equal(cleanAnalysis({ v: 1, pairs: [] }).v, 1, 'older stored summaries remain readable');
   const partial = cleanAnalysis({ v: 2, engine: ENGINE_VERSION, pairs: [{ n: 1, from: 0, to: 1, yours: 'R', pendingUpgrade: true }] });
   assert.equal(partial.pairs[0].pendingUpgrade, true, 'a persisted first pass keeps its resumable status');
@@ -101,7 +101,7 @@ test('the worker handler answers with the compact summary and a fresh memo per r
   await handle({ type: 'analyze', id: 7, input, options: { pairs: true }, summary: true });
   assert.equal(posted[0].type, 'result');
   assert.equal(posted[0].id, 7);
-  assert.equal(posted[0].result.v, 2);
+  assert.equal(posted[0].result.v, 3);
   assert.equal(posted[0].result.face, 'D');
   assert.equal(posted[0].result.cross.done, true);
   await handle({ type: 'analyze', id: 8, input: { scramble: 'R', moves: ['Q'] }, summary: true });
@@ -148,14 +148,14 @@ test('the analysis client loads the worker lazily, runs one at a time, caches pe
   assert.equal(created, 1);
   assert.equal(worker.posted.length, 2);
   assert.equal(worker.posted[0].summary, true);
-  assert.deepEqual(worker.posted[0].options, { pairs: true });
+  assert.deepEqual(worker.posted[0].options, { pairs: true, startPlan: true });
   assert.equal((await client.analyze(a)).marker, 'R U');
   assert.equal(worker.posted.length, 2, 'cached per record `at`');
   assert.equal(await client.analyze({ ...a, at: 3, solveMoves: [], moveCount: 0 }), null, 'not analysable');
   assert.equal(worker.posted.length, 2);
-  const stored = { v: 2, engine: ENGINE_VERSION, stored: true };
+  const stored = { v: 3, engine: ENGINE_VERSION, stored: true };
   assert.equal(await client.analyze({ ...a, at: 4, analysis: stored }), stored, 'a stored summary is used as is');
-  const stale = { v: 2, engine: ENGINE_VERSION - 1, stale: true };
+  const stale = { v: 3, engine: ENGINE_VERSION - 1, stale: true };
   assert.equal((await client.analyze({ ...a, at: 5, analysis: stale })).marker, 'R U', 'a prior engine summary is recomputed');
   assert.equal(worker.posted.length, 3);
   await new Promise(resolve => setTimeout(resolve, 60));

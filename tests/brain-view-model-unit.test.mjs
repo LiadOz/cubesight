@@ -90,6 +90,17 @@ test('inspection state at the WCA boundaries', () => {
   assert.equal(inspectionState({ ...DEFAULT_INSPECTION, mode: 'custom', seconds: 10, overtime: 'grace', graceSeconds: 2, gracePenalty: 'none' }, 13000).penalty, null);
 });
 
+test('inspection shows the proven best cross and only a proven X-cross opportunity', () => {
+  const live = { phase: 'inspecting', inspection: { elapsedMs: 1000 }, inspectionConfig: { ...DEFAULT_INSPECTION } };
+  const base = { session: tracking, live, records: [], settings: normalizeSettings(), now: 1000 };
+  const proven = buildViewModel({ ...base, optimalCross: { face: 'D', length: 6, proven: true,
+    best: { face: 'D', length: 6, proven: true }, bestXcross: { face: 'F', length: 8, proven: true } } });
+  assert.equal(proven.inspection.bestStart, 'best cross: yellow, 6 · x-cross possible in 8');
+  const partial = buildViewModel({ ...base, optimalCross: { face: 'D', length: 6, proven: false,
+    best: { face: 'D', length: 6, proven: false }, bestXcross: { face: 'F', length: 8, proven: false } } });
+  assert.equal(partial.inspection.bestStart, 'cross found so far: yellow, 6');
+});
+
 test('every fixture builds, in both styles', () => {
   for (const style of ['orbit', 'mono']) {
     const fixtures = brainFixtures({ style, theme: 'light' });
@@ -224,7 +235,23 @@ test('coach lines port the v1 texts and keys', () => {
   assert.deepEqual(coachLines({ live, state: {}, toggles, coach: 'off' }, lenses).map(l => l.key), ['off']);
   assert.equal(coachLines({ live, state: {}, toggles, coach: 'after' }, lenses)[0].key, 'empty', 'after-solve coach stays quiet while solving');
   const results = resultsCoach({ record: { crossMoveCount: 8, rotations: 1, xcross: 'xcross' }, optimalCross: { face: 'D', length: 6 }, faceColors: { D: 'yellow' } });
-  assert.deepEqual(results.map(r => r.tag), ['cross', 'xcross']);
+  assert.deepEqual(results.map(r => r.tag), ['xcross'], 'X-cross solve is not compared with the plain-cross minimum');
+});
+
+test('live X-cross suppresses plain-cross hindsight and passes no mismatched efficiency target', () => {
+  const calls = [];
+  const lenses = {
+    crossHindsight: () => { throw new Error('plain cross hindsight must be suppressed'); },
+    f2lNextPairHint: () => null,
+    ollStage: () => ({ eoDone: false }),
+    pllLens: () => null,
+    efficiencyScore: input => { calls.push(input); return 80; },
+    faceColors: { D: 'yellow' },
+  };
+  const live = { phase: 'solving', crossFace: 'D', crossMoveCount: 8, rotations: 0, progress: {} };
+  const lines = coachLines({ live, state: {}, toggles: { crossSuggest: false, crossHindsight: true, efficiencyScore: true }, optimalCross: { face: 'D', length: 6 }, xcross: 'x-cross' }, lenses);
+  assert.deepEqual(lines.map(line => line.key), ['xcross', 'efficiency']);
+  assert.equal(calls[0].crossTarget, 'xcross');
 });
 
 test('an x-cross is a tag on the cross segment and the merged pairs are done at the same moment', async () => {

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F3 · cross coaching and review evidence</title>
+  <link rel="stylesheet" href="../_gallery/lightbox.css">
+  <style>
+    :root { color-scheme: dark; --bg: #101312; --panel: #191d1b; --ink: #f1eee6; --muted: #a9b1aa; --accent: #45c7b4; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 1400px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: clamp(1.6rem, 3vw, 2.4rem); }
+    .intro { max-width: 75ch; color: var(--muted); margin: 0 0 28px; }
+    .frames { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+    figure { margin: 0; padding: 12px; background: var(--panel); border: 1px solid #303734; border-radius: 14px; }
+    figure a { display: block; position: relative; overflow: hidden; border-radius: 8px; background: #252a27; }
+    figure img { display: block; width: 100%; height: auto; cursor: zoom-in; }
+    .callout { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid #fff; border-radius: 50%; color: #08100f; background: var(--accent); font-weight: 800; box-shadow: 0 1px 8px #000a; }
+    figcaption { padding: 12px 3px 2px; color: var(--muted); }
+    figcaption strong { display: block; color: var(--ink); font-size: 1rem; }
+    .legend { color: var(--ink); margin: 0 0 24px; padding: 14px 18px; background: var(--panel); border-left: 3px solid var(--accent); border-radius: 8px; }
+    @media (max-width: 600px) { body { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>F3 · cross coaching and review evidence</h1>
+    <p class="intro">Orbit v3 comparison gallery. Inspection shows a bounded colour-neutral start recommendation; review shows an X-cross evaluated against its own target and the solver proof beside the move count. Screenshot images open in the shared loupe viewer; use ← and → to browse.</p>
+    <p class="legend"><strong>①</strong> Marks the changed evidence in each frame. On inspection frames it marks the recommended cross and X-cross opportunity. On review frames it marks the proof line for the verified 8-move X-cross.</p>
+    <section class="frames" aria-label="F3 screenshot frames">
+      <figure><a href="01-inspection-dark.png" aria-label="Open F3-01 inspection Orbit dark"><img src="01-inspection-dark.png" alt="Orbit dark inspection with best cross and X-cross opportunity"><span class="callout" style="--x:61%;--y:16%">①</span></a><figcaption><strong>F3-01 · Inspection · Orbit dark</strong>Desktop, 1440 px. ① The recommended cross and proven X-cross opportunity during inspection.</figcaption></figure>
+      <figure><a href="02-inspection-light.png" aria-label="Open F3-02 inspection Orbit light"><img src="02-inspection-light.png" alt="Orbit light inspection with best cross and X-cross opportunity"><span class="callout" style="--x:61%;--y:16%">①</span></a><figcaption><strong>F3-02 · Inspection · Orbit light</strong>Desktop, 1440 px. ① The same start hint in the light theme.</figcaption></figure>
+      <figure><a href="03-inspection-phone.png" aria-label="Open F3-03 inspection phone"><img src="03-inspection-phone.png" alt="Orbit dark phone inspection with best cross and X-cross opportunity"><span class="callout" style="--x:8%;--y:42%">①</span></a><figcaption><strong>F3-03 · Inspection · phone</strong>390 × 844 px. ① The hint wraps within the phone layout.</figcaption></figure>
+      <figure><a href="04-review-dark.png" aria-label="Open F3-04 review Orbit dark"><img src="04-review-dark.png" alt="Orbit dark solve review with proven optimal X-cross evidence"><span class="callout" style="--x:53%;--y:37%">①</span></a><figcaption><strong>F3-04 · Review · Orbit dark</strong>Desktop, 1440 px. ① The selected X-cross marker states that 8 moves matched the proven target minimum.</figcaption></figure>
+      <figure><a href="05-review-light.png" aria-label="Open F3-05 review Orbit light"><img src="05-review-light.png" alt="Orbit light solve review with proven optimal X-cross evidence"><span class="callout" style="--x:53%;--y:37%">①</span></a><figcaption><strong>F3-05 · Review · Orbit light</strong>Desktop, 1440 px. ① The same target-specific proof in the light theme.</figcaption></figure>
+      <figure><a href="06-review-phone.png" aria-label="Open F3-06 review phone"><img src="06-review-phone.png" alt="Orbit dark phone solve review with proven optimal X-cross evidence"><span class="callout" style="--x:18%;--y:35%">①</span></a><figcaption><strong>F3-06 · Review · phone</strong>390 × 844 px. ① The X-cross evidence line remains readable above the move detail.</figcaption></figure>
+    </section>
+  </main>
+  <script src="../_gallery/lightbox.js"></script>
+</body>
+</html>
