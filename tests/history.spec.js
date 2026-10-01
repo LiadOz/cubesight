@@ -24,7 +24,7 @@ test('history filters, replays and edits records without affecting their source'
   await page.locator('select[name="source"]').selectOption('smart');
   await list.locator('button').click();
   await expect(page.locator('.history-cube canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'next move', exact: true }).click();
+  await page.getByRole('button', { name: 'Next move', exact: true }).click();
   await expect(page.locator('[data-move]')).toContainText('move 1 of 2');
   await page.getByRole('button', { name: '+2', exact: true }).click();
   await expect(page.locator('.history-detail h2')).toHaveText('14.34+');

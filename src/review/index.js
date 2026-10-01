@@ -1,8 +1,8 @@
 import '../brain/css/review-screen.css';
-import { createCube3D } from '../cube-3d.js';
+import { createPageCube } from '../pages/cube-view.js';
+import { createSequencePlayer } from '../moves/sequence-player.js';
 import { toRenderData, applyMoves } from '../cross-cube.js';
 import { loadSettings } from '../brain/settings.js';
-import { readStickerPalette, themedRender } from '../brain/cube-theme.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { openHistory } from '../store/history.js';
 import { smartCube } from '../smart-cube-bluetooth.js';
@@ -34,19 +34,41 @@ export function createSolveReview(host, routeContext = {}) {
   root.dataset.brainStyle = loadSettings(globalThis.localStorage).style;
   host.replaceChildren(root);
   syncPageTokens(root);
-  let active = true, detached = false, record = routeContext.record ?? null, history = null, cube = null, live = null;
+  let active = true, detached = false, record = routeContext.record ?? null, history = null, cube = null, cubeAbort = null, cubeGeneration = 0, sequencePlayer = null, live = null;
   let lastCubeState = null, graphView = 'auto';
   const cleanups = [];
   let currentMove = Math.max(0, route.move), labels = [], moments = [], scores = [], attemptMoves = [], retryResult = null;
   let inferredVisible = false;
   const showCubeState = state => {
     lastCubeState = state;
-    cube?.update(themedRender(toRenderData(state), readStickerPalette(root)));
+    cube?.update(toRenderData(state));
   };
+  function mountCube(host, state, onReady = () => {}) {
+    cubeAbort?.abort();
+    const abort = new AbortController(); cubeAbort = abort;
+    const generation = ++cubeGeneration;
+    lastCubeState = state;
+    createPageCube(host, { state, mode: 'scout', signal: abort.signal }).then(instance => {
+      if (abort.signal.aborted || generation !== cubeGeneration || detached || !host.isConnected) { instance.destroy(); return; }
+      cube = instance;
+      if (lastCubeState) showCubeState(lastCubeState);
+      onReady(instance);
+    }).catch(error => {
+      if (!abort.signal.aborted && generation === cubeGeneration && !detached) {
+        host.textContent = '3D cube needs WebGL.';
+        root.setAttribute('data-cube-error', error?.message ?? 'unavailable');
+      }
+    });
+  }
+  function destroyCube() {
+    cubeGeneration++;
+    cubeAbort?.abort(); cubeAbort = null;
+    sequencePlayer?.destroy(); sequencePlayer = null;
+    cube?.destroy?.(); cube = null;
+  }
   const themeChanged = () => {
     root.dataset.brainStyle = loadSettings(globalThis.localStorage).style;
     syncPageTokens(root);
-    if (lastCubeState) showCubeState(lastCubeState);
   };
   document.addEventListener('cubesight-theme', themeChanged);
   const ready = (async () => {
@@ -161,7 +183,7 @@ export function createSolveReview(host, routeContext = {}) {
     header(`Solve review · ${record.moveCount || record.solveMoves.length} moves`, back);
     if (!cube) {
       const layout = el('div', 'sr-layout');
-      layout.innerHTML = `<section class="sr-cube-area"><div class="sr-cube" aria-label="3D cube review"></div><div class="sr-step-controls"><button data-step="-1" aria-label="Previous move">←</button><span class="sr-step-count"></span><button data-step="1" aria-label="Next move">→</button><button data-action="retry">Retry this moment</button></div></section>
+      layout.innerHTML = `<section class="sr-cube-area"><div class="sr-cube" aria-label="3D cube review"></div><div class="sr-player"></div><div class="sr-step-controls"><span class="sr-step-count"></span><button data-action="retry">Retry this moment</button></div></section>
         <section class="sr-analysis"><p class="sr-scramble"></p><div class="sr-position-note" aria-live="polite"></div><div class="sr-labels"></div>
           ${hasRecordedTimes(record) ? '<label class="sr-graph-mode">Graph axis <select data-graph-view aria-label="Graph axis"><option value="auto">Time</option><option value="moves">Moves</option></select></label>' : ''}
           <svg class="sr-graph" viewBox="0 0 640 180" role="img" aria-label="Moves versus efficiency loss graph"><line x1="8" y1="90" x2="632" y2="90" class="sr-par"></line><path class="sr-graph-line"></path><circle class="sr-cursor" r="6"></circle></svg>
@@ -174,8 +196,13 @@ export function createSolveReview(host, routeContext = {}) {
         }).join('')}</ol></section>`;
 
       root.append(layout);
-      try { cube = createCube3D(layout.querySelector('.sr-cube'), { mode: 'scout' }); }
-      catch { layout.querySelector('.sr-cube').textContent = '3D cube needs WebGL.'; }
+      const startState = stateAfter(record, 0);
+      mountCube(layout.querySelector('.sr-cube'), startState, instance => {
+        sequencePlayer = createSequencePlayer(layout.querySelector('.sr-player'), {
+          cube3d: instance, startState, moves: record.solveMoves, index: currentMove,
+          onChange(snapshot) { if (!detached && active) { currentMove = snapshot.index; paintReview(layout); } },
+        });
+      });
       layout.querySelector('.sr-scramble').textContent = `scramble · ${moveText(record.scramble)}`;
       layout.querySelector('.sr-moment-list').replaceChildren(...moments.map(moment => {
         const button = el('button', 'sr-moment', `move ${moment.i + 1} · ${moment.label}`); button.dataset.jump = String(moment.i); button.title = moment.detail; return button;
@@ -239,6 +266,7 @@ export function createSolveReview(host, routeContext = {}) {
 
   async function playBest() {
     if (!cube || !active) return;
+    sequencePlayer?.pause();
     const best = physicalModelTokens(tokenizeReconstruction(bestContinuation(currentMove) ?? '', { allowEmpty: true }).tokens);
     let state = stateAfter(record, currentMove);
     for (const move of best) { if (!active || detached) break; state = applyMoves(state, [move]); await cube.animateMove(move, toRenderData(state), 260); }
@@ -256,7 +284,7 @@ export function createSolveReview(host, routeContext = {}) {
     const retry = el('section', 'sr-retry');
     retry.innerHTML = `<div class="sr-retry-cube"></div><div><p>Start from the solve position after ${plan.from} moves, then repeat this stage to move ${plan.to - plan.from}.</p><p class="sr-setup">Setup · ${escapeHtml(moveText(plan.setup.join(' ')))}</p><p class="sr-retry-status" role="status">Use a connected cube for guided setup, or try the segment with the virtual move pad.</p><div class="sr-retry-actions"><button data-action="connect">connect cube</button><button data-action="setup" disabled>guide setup</button><button data-action="reset">reset retry</button></div><div class="sr-virtual"><strong>Virtual retry</strong><div class="sr-virtual-pad">${['U','D','R','L','F','B'].flatMap(face => [face, `${face}'`, `${face}2`]).map(move => `<button data-virtual="${move}">${moveText(move)}</button>`).join('')}</div></div><p class="sr-grade" aria-live="polite"></p><p class="sr-regrade" aria-live="polite"></p></div>`;
     root.append(retry);
-    try { cube = createCube3D(retry.querySelector('.sr-retry-cube'), { mode: 'scout' }); cube.update(toRenderData(plan.startState)); } catch { retry.querySelector('.sr-retry-cube').textContent = '3D cube needs WebGL.'; }
+    mountCube(retry.querySelector('.sr-retry-cube'), plan.startState);
     const status = retry.querySelector('.sr-retry-status');
     const connect = retry.querySelector('[data-action="connect"]'), setup = retry.querySelector('[data-action="setup"]'), reset = retry.querySelector('[data-action="reset"]');
     const cubeSession = routeContext.smartCube ?? smartCube;
@@ -325,13 +353,17 @@ export function createSolveReview(host, routeContext = {}) {
     else if (event.key === ']') { event.preventDefault(); const next = moments.find(moment => moment.i >= currentMove); if (next) setMove(next.i + 1); }
     else if (event.key.toLowerCase() === 'r') setHash(`#/review/${record.at}/retry?move=${currentMove}`);
   }
-  function setMove(value) { currentMove = value; paintReview(root.querySelector('.sr-layout')); }
+  function setMove(value) {
+    currentMove = Math.max(0, Math.min(record.solveMoves.length, value));
+    if (sequencePlayer) sequencePlayer.load({ startState: stateAfter(record, 0), moves: record.solveMoves, index: currentMove });
+    else paintReview(root.querySelector('.sr-layout'));
+  }
   document.addEventListener('keydown', onKeyDown);
 
   return {
     ready,
-    setActive(value) { active = Boolean(value); if (!active) live?.cancel?.(); },
-    detach() { detached = true; active = false; document.removeEventListener('keydown', onKeyDown); document.removeEventListener('cubesight-theme', themeChanged); live?.cancel?.(); live?.detach?.(); for (const cleanup of cleanups.splice(0)) cleanup?.(); cube?.destroy?.(); root.replaceChildren(); },
+    setActive(value) { active = Boolean(value); sequencePlayer?.setActive(active); if (!active) live?.cancel?.(); },
+    detach() { detached = true; active = false; document.removeEventListener('keydown', onKeyDown); document.removeEventListener('cubesight-theme', themeChanged); live?.cancel?.(); live?.detach?.(); for (const cleanup of cleanups.splice(0)) cleanup?.(); destroyCube(); root.replaceChildren(); },
     reset() { return this; },
   };
 }

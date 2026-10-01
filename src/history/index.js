@@ -2,14 +2,13 @@ import './history.css';
 import { openHistory } from '../store/history.js';
 import { loadSettings, saveSettings, setSetting } from '../brain/settings.js';
 import { listSessions } from '../store/sessions.js';
-import { createCube3D } from '../cube-3d.js';
-import { toRenderData } from '../cross-cube.js';
+import { createPageCube } from '../pages/cube-view.js';
+import { createSequencePlayer } from '../moves/sequence-player.js';
 import { stateAfter } from '../review/replay.js';
 import { parseCsTimer, exportCsTimer, filterHistory } from './cstimer.js';
 import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport, algorithmsFromImport } from '../data-port.js';
 import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
-import { readStickerPalette, themedRender } from '../brain/cube-theme.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
 
@@ -33,7 +32,7 @@ const download = (text, name) => {
 };
 
 export function initHistory(host) {
-  let store, active = false, cube = null, selected = null, move = 0, playback = null;
+  let store, active = false, cube = null, player = null, cubeAbort = null, cubeGeneration = 0, selected = null, move = 0;
   const settings = loadSettings(globalThis.localStorage);
   host.innerHTML = `<section class="brain cs-page history-page" data-brain-style="${settings.style}">
     <header><h1>history</h1><p>Solves and saved moments on this device.</p><a href="#/solve">back to solve</a></header>
@@ -58,7 +57,37 @@ export function initHistory(host) {
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
   const report = text => { status.textContent = text; };
-  const stopPlayback = () => { clearInterval(playback); playback = null; };
+  const stopPlayback = () => player?.pause();
+  function destroyReplay() {
+    cubeGeneration++;
+    cubeAbort?.abort(); cubeAbort = null;
+    player?.destroy(); player = null;
+    cube?.destroy(); cube = null;
+  }
+  function mountReplay(record, mount, controls, moveLabel, range) {
+    cubeAbort?.abort();
+    const abort = new AbortController(); cubeAbort = abort;
+    const generation = ++cubeGeneration;
+    const startState = stateAfter({ ...record, scramble: record.scramble || record.scrambleTurns.join(' ') }, 0);
+    createPageCube(mount, { state: startState, mode: 'scout', signal: abort.signal }).then(instance => {
+      if (abort.signal.aborted || generation !== cubeGeneration || !active || !mount.isConnected) { instance.destroy(); return; }
+      cube = instance;
+      player = createSequencePlayer(controls, {
+        cube3d: cube, startState, moves: record.solveMoves, index: move,
+        onChange(snapshot) {
+          if (generation !== cubeGeneration || !active) return;
+          move = snapshot.index;
+          moveLabel.textContent = `move ${move} of ${record.solveMoves.length}${move ? ` · ${fmt.move(record.solveMoves[move - 1])}` : ''}`;
+          range.value = move;
+        },
+      });
+    }).catch(error => {
+      if (!abort.signal.aborted && generation === cubeGeneration && active) {
+        mount.textContent = '3D replay is unavailable in this browser.';
+        report(error?.message ?? 'The move list is still available.');
+      }
+    });
+  }
   function renderList() {
     if (!store) return;
     const filters = Object.fromEntries(new FormData(form));
@@ -86,14 +115,14 @@ export function initHistory(host) {
   function showPosition() {
     if (!selected?.solveMoves?.length) return;
     try {
-      const state = stateAfter({ ...selected, scramble: selected.scramble || selected.scrambleTurns.join(' ') }, move);
-      cube?.update(themedRender(toRenderData(state), readStickerPalette(root)));
+      const startState = stateAfter({ ...selected, scramble: selected.scramble || selected.scrambleTurns.join(' ') }, 0);
+      player?.load({ startState, moves: selected.solveMoves, index: move });
       detail.querySelector('[data-move]').textContent = `move ${move} of ${selected.solveMoves.length}${move ? ` · ${fmt.move(selected.solveMoves[move - 1])}` : ''}`;
       detail.querySelector('input[type="range"]').value = move;
     } catch { stopPlayback(); report('This solve uses notation the replay cannot read yet.'); }
   }
   function showRecord(record) {
-    stopPlayback(); cube?.destroy(); cube = null; selected = record; move = 0;
+    destroyReplay(); selected = record; move = 0;
     const title = make('h2', historyTime(record));
     const metadata = make('p', `${historyDate(record.at)} · ${record.focus}`);
     const scramble = make('p', fmt.moves(record.scramble) || 'No scramble recorded.', 'history-scramble');
@@ -102,14 +131,10 @@ export function initHistory(host) {
       const mount = make('div', undefined, 'history-cube');
       const label = make('p', '', 'history-move'); label.dataset.move = '';
       const range = make('input'); range.type = 'range'; range.min = '0'; range.max = String(record.solveMoves.length); range.value = '0'; range.setAttribute('aria-label', 'Replay move');
-      const controls = make('div', undefined, 'history-actions');
-      for (const [action, text] of [['previous', 'previous move'], ['play', 'play'], ['next', 'next move']]) {
-        const button = make('button', text); button.type = 'button'; button.dataset.action = action; controls.append(button);
-      }
+      const controls = make('div', undefined, 'history-playback');
       detail.append(mount, label, range, controls);
-      try { cube = createCube3D(mount, { mode: 'scout' }); } catch { report('3D replay is unavailable in this browser. The move list is still here.'); }
+      mountReplay(record, mount, controls, label, range);
       detail.append(make('p', fmt.moves(record.solveMoves.join(' ')), 'history-scramble'));
-      showPosition();
     } else detail.append(make('p', 'This solve has a time only. No moves were recorded.'));
     const pins = store.pins.forRecord(record.at);
     if (pins.length) detail.append(make('p', `${pins.length} saved moments`));
@@ -135,14 +160,12 @@ export function initHistory(host) {
     if (action === 'undo' && deleted) { store.restore(deleted); deleted = null; button.remove(); refreshSessions(); renderList(); report('Solve restored.'); return; }
     if (!selected) return;
     if (['previous', 'next', 'play'].includes(action)) {
-      if (action === 'play') {
-        if (playback) { stopPlayback(); button.textContent = 'play'; }
-        else { if (move === selected.solveMoves.length) move = 0; button.textContent = 'pause'; playback = setInterval(() => { move++; showPosition(); if (move >= selected.solveMoves.length) { stopPlayback(); button.textContent = 'play'; } }, 500); }
-      } else { stopPlayback(); move = Math.min(selected.solveMoves.length, Math.max(0, move + (action === 'next' ? 1 : -1))); showPosition(); }
+      if (action === 'play') player?.play();
+      else player?.step(action === 'next' ? 1 : -1);
     } else if (action === 'delete') {
       deleted = store.remove(selected.at);
       if (!deleted) { report(store.warning || 'This history is read-only. Update the app and reload.'); return; }
-      stopPlayback(); cube?.destroy(); cube = null; selected = null;
+      destroyReplay(); selected = null;
       detail.replaceChildren(make('p', 'Solve deleted.'));
       const undo = make('button', 'undo'); undo.type = 'button'; undo.dataset.action = 'undo'; detail.append(undo); refreshSessions(); renderList();
     } else if (['none', 'plus2', 'dnf'].includes(action)) {
@@ -176,18 +199,18 @@ export function initHistory(host) {
   root.addEventListener('click', onClick);
   root.addEventListener('change', onChange);
   root.addEventListener('input', event => {
-    if (event.target.type === 'range') { stopPlayback(); move = Number(event.target.value); showPosition(); }
+    if (event.target.type === 'range') { move = Number(event.target.value); showPosition(); }
     else if (event.target.name === 'query') renderList();
   });
   form.addEventListener('submit', event => event.preventDefault());
-  const retheme = () => { if (active) showPosition(); };
+  const retheme = () => { if (active) { root.dataset.brainStyle = loadSettings(globalThis.localStorage).style; syncPageTokens(root); } };
   document.addEventListener('cubesight-theme', retheme);
   const ready = openHistory({ sessionGapMin: settings.session.gapMin }).then(value => { store = value; refreshSessions(); renderList(); report(store.warning); });
   return {
     ready,
     async setActive(value) {
       active = Boolean(value);
-      if (!active) { stopPlayback(); cube?.destroy(); cube = null; return; }
+      if (!active) { stopPlayback(); return; }
       await ready;
       if (!active) return;
       root.dataset.brainStyle = loadSettings(globalThis.localStorage).style;
@@ -195,12 +218,11 @@ export function initHistory(host) {
       await store.reload();
       refreshSessions(); renderList();
       if (selected) {
-        const previousMove = move;
         const record = store.records.find(r => r.at === selected.at);
-        if (record) { showRecord(record); move = previousMove; showPosition(); }
+        if (record) { const previousMove = move; showRecord(record); move = previousMove; showPosition(); }
         else { selected = null; detail.replaceChildren(make('p', 'This solve was deleted. Select another solve.')); }
       }
     },
-    detach() { active = false; stopPlayback(); document.removeEventListener('cubesight-theme', retheme); cube?.destroy(); host.replaceChildren(); },
+    detach() { active = false; stopPlayback(); destroyReplay(); document.removeEventListener('cubesight-theme', retheme); host.replaceChildren(); },
   };
 }
