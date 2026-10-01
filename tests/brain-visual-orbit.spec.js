@@ -114,6 +114,7 @@ for (const theme of ['dark', 'light']) {
 
     test('every inspection variant renders', async ({ page }, testInfo) => {
       const errors = await open(page, 'variants', theme);
+      await expect(page.locator('.h-variants')).toBeVisible();
       await expect(page.locator('.h-variant')).toHaveCount(8);
       await expect(page.locator('.b-oinsp.is-unlimited')).toHaveCount(1);
       await expect(page.locator('.b-oinsp.is-off')).toHaveCount(1);
@@ -199,12 +200,12 @@ test('results layout matrix: cube stays below the header on desktop and stacks o
     if (size === 'phone') {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       expect(overflow, `${name} has no horizontal overflow`).toBeLessThanOrEqual(1);
-      const position = await page.locator(style === 'orbit' ? '.brain-stage' : '.b-cube-wrap').evaluate(el => getComputedStyle(el).position);
+      const position = await page.locator(style === 'orbit' ? '.brain-body' : '.b-cube-wrap').evaluate(el => getComputedStyle(el).position);
       expect(position, `${name} uses a non-sticky stacked cube`).not.toBe('sticky');
     } else {
       const stageSelector = style === 'orbit' ? '.brain-stage' : '.b-cube-wrap';
       const stage = page.locator(stageSelector);
-      await expect(stage).toHaveCSS('position', 'sticky');
+      await expect(page.locator(style === 'orbit' ? '.brain-body' : '.b-cube-wrap')).toHaveCSS('position', 'sticky');
       await page.evaluate(() => window.scrollTo(0, 280));
       const box = await stage.boundingBox();
       expect(box.y, `${name} stays below the page header`).toBeGreaterThanOrEqual(55);
@@ -219,5 +220,25 @@ test('results layout matrix: cube stays below the header on desktop and stacks o
     await page.screenshot({ path: screenshot, fullPage: true });
     await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
     expect(errors, `${name} browser errors`).toEqual([]);
+  }
+});
+
+// The split list shares the cube's sticky column: it must never slide behind it.
+test('Orbit results keep the cross and pair list below the cube throughout scrolling', async ({ page }) => {
+  for (const height of [900, 650]) {
+    await open(page, 'orbit:results', 'dark');
+    await page.setViewportSize({ width: 1280, height });
+    for (const scroll of [0, 280, 500, 800, 2000]) {
+      await page.evaluate(y => window.scrollTo(0, y), scroll);
+      const [cube, list] = await Promise.all([
+        page.locator('.brain-stage').boundingBox(),
+        page.locator('[data-slot="timeline-aside"]').boundingBox(),
+      ]);
+      expect(list.y - (cube.y + cube.height), `list follows cube at height ${height}, scroll ${scroll}`).toBeGreaterThanOrEqual(7);
+      expect(list.y - (cube.y + cube.height)).toBeLessThanOrEqual(9);
+    }
+    const list = await page.locator('[data-slot="timeline-aside"]').boundingBox();
+    expect(list.y + list.height, 'the last split remains reachable').toBeLessThanOrEqual(height);
+    await expect(page.locator('canvas')).toHaveCount(1);
   }
 });

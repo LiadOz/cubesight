@@ -54,7 +54,7 @@
 .brain[data-brain-style="orbit"] .brain-stage > [data-slot="inspection"] { z-index: 2; }
 
 /* Results: the stage (cube inside its finished ring) stays beside the stats and
-   follows them while they scroll; the hero column (clock, steps) steps aside.
+   follows them while they scroll, together with its split list.
    The shell's cube slot is the same element throughout: only the layout moves. */
 .brain[data-brain-style="orbit"][data-screen="results"] .b-stage {
   display: grid;
@@ -62,19 +62,27 @@
   column-gap: clamp(20px, 3vw, 48px);
   align-items: start;
 }
-.brain[data-brain-style="orbit"][data-screen="results"] .brain-body { display: contents; }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-column: 1;
+  grid-row: 1;
+  row-gap: 8px;
+  align-items: start;
+  position: sticky;
+  top: max(56px, calc((100vh - min(500px, calc(100vh - 230px)) + 56px) / 2));
+}
 .brain[data-brain-style="orbit"][data-screen="results"] .brain-hero { display: contents; }
 .brain[data-brain-style="orbit"][data-screen="results"] .brain-hero > * { display: none; }
 .brain[data-brain-style="orbit"][data-screen="results"] .brain-hero > [data-slot="timeline-aside"] {
-  display: block; grid-column: 1; grid-row: 2; margin-top: 8px;
+  display: block; grid-column: 1; grid-row: 2;
 }
 .brain[data-brain-style="orbit"][data-screen="results"] .brain-stage {
-  grid-column: 1; grid-row: 1; position: sticky;
-  top: max(56px, calc((100vh - min(500px, calc(100vh - 230px)) + 56px) / 2));
+  grid-column: 1; grid-row: 1;
   align-self: start;
 }
 .brain[data-brain-style="orbit"][data-screen="results"] [data-slot="timeline-aside"] { display: block; }
-.brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 2; grid-row: 1 / span 2; }
+.brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 2; grid-row: 1; }
 
 /* --- Ring overlays (shared) ---------------------------------------------- */
 .b-oring, .b-oinsp { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; font-family: var(--b-font-mono); }
@@ -303,6 +311,7 @@
 @media (max-width: 720px) {
   .brain[data-brain-style="orbit"] .brain-body { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
   .brain[data-brain-style="orbit"][data-screen="results"] .b-stage { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+  .brain[data-brain-style="orbit"][data-screen="results"] .brain-body { position: relative; top: auto; }
   .brain[data-brain-style="orbit"][data-screen="results"] .brain-stage { position: relative; top: auto; grid-column: 1; grid-row: 1; }
   .brain[data-brain-style="orbit"][data-screen="results"] .brain-hero > [data-slot="timeline-aside"] { display: none; }
   .brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 1; grid-row: 2; }
