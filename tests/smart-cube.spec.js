@@ -8,7 +8,7 @@ test('Cross Scout explains how to find a GAN MAC in Chrome', async ({ page }) =>
   await page.goto('/#/drills/scout');
   await page.locator('#scout-mac-help summary').click();
   await expect(page.locator('#scout-mac-help')).toContainText('chrome://bluetooth-internals/#devices');
-  await expect(page.locator('#scout-mac-help')).toContainText('Start Scan');
+  await expect(page.locator('#scout-mac-help')).toContainText('start scan');
   await expect(page.locator('#scout-mac-help')).toContainText('Address');
   await page.locator('#scout-mac-copy').click();
   await expect.poll(() => page.evaluate(() => window.copiedMacHelpAddress)).toBe('chrome://bluetooth-internals/#devices');
@@ -37,7 +37,7 @@ test('scramble turn guide names the next face and direction', async ({ page }) =
   await page.goto('/#/drills/scout');
   const scramble = page.locator('#scout-scramble');
   await scramble.fill("R U' F2");
-  await expect(page.locator('#scout-turn-guide')).toContainText('Scramble move 1 of 3');
+  await expect(page.locator('#scout-turn-guide')).toContainText('scramble move 1 of 3');
   await expect(page.locator('#scout-turn-guide')).toContainText('right face (red center) clockwise');
   await page.locator('#scout-turn-guide .smart-turn-next').click();
   await expect(page.locator('#scout-turn-guide')).toContainText('top face (white center) counterclockwise');
@@ -91,7 +91,7 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
   const scout = page.locator('#smart-scout-test');
   await scout.locator('#scout-smart-connect').click();
   await expect(scout.locator('#scout-smart-title')).toContainText('GAN test cube');
-  await expect(scout.locator('#scout-smart-status')).toContainText('Solved baseline synced');
+  await expect(scout.locator('#scout-smart-status')).toContainText('Cube synced');
   await expect(scout.locator('#scout-scramble')).toHaveAttribute('readonly', '');
   await page.evaluate(() => {
     window.testSmartCube.emitGyro({ x: 0, y: 0, z: 0, w: 1 });

@@ -28,7 +28,7 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
   } else if ((snap?.phase === 'solving' || snap?.phase === 'done') && crossFace && state && showLive) {
     if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross.startsWith('xx') ? 'xx-cross' : 'x-cross'}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'}. The scramble allowed it and you took it.` });
     if (toggles.crossSuggest && optimalCross) {
-      lines.push({ tone: 'info', text: `PB cross: ${colorOf(optimalCross.face)}, ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}` });
+      lines.push({ tone: 'info', text: `Suggested cross: ${colorOf(optimalCross.face)}, ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}` });
     }
     if (toggles.crossHindsight && snap.crossMoveCount != null && optimalCross) {
       const h = lenses.crossHindsight(snap.crossMoveCount, optimalCross.length, colorOf(crossFace));

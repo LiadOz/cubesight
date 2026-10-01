@@ -17,14 +17,14 @@ async function answerCurrent(page, correct = true) {
 test('PLL recognition uses a fixed full cube and beginner-sized learn block', async ({ page }) => {
   await openPLL(page);
   await expect(page.locator('#pll-cube canvas')).toHaveAttribute('data-rotation', 'locked');
-  await expect(page.locator('#pll-case-number')).toContainText('TRIAL');
+  await expect(page.locator('#pll-case-number')).toContainText('case');
   await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
   await page.waitForTimeout(700);
   await expect(page.locator('#pll-glance-overlay')).toBeHidden();
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
   await answerCurrent(page, true);
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
-  await expect(page.locator('#pll-feedback')).toContainText('Correct');
+  await expect(page.locator('#pll-feedback')).toContainText('Nice');
   await expect(page.locator('#pll-accuracy')).toHaveText('100%');
 });
 
@@ -56,10 +56,10 @@ test('PLL adaptive glance is accuracy-gated and slow attempts stay usable withou
   await page.locator('#pll-next').click();
   await page.clock.fastForward(10_050);
   await expect(page.locator('#pll-pause')).toBeHidden();
-  await expect(page.locator('#pll-feedback')).toContainText('practice only');
+  await expect(page.locator('#pll-feedback')).toContainText('won’t count');
   await expect(page.locator('[data-pll-answer]').first()).toBeEnabled();
   await answerCurrent(page, true);
-  await expect(page.locator('#pll-feedback')).toContainText('practice only');
+  await expect(page.locator('#pll-feedback')).toContainText('won’t count');
   const attemptsAfter = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('cubesight-pll-progress-v1'))).reduce((sum, item) => sum + item.attempts, 0));
   expect(attemptsAfter).toBe(attemptsBefore);
 });
@@ -107,5 +107,5 @@ test('PLL remains usable with the SVG compatibility view when WebGL is unavailab
   await expect(page.locator('#pll-cube [data-masked="true"]')).toHaveCount(0);
   await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
   await answerCurrent(page, true);
-  await expect(page.locator('#pll-feedback')).toContainText('Correct');
+  await expect(page.locator('#pll-feedback')).toContainText('Nice');
 });

@@ -337,6 +337,9 @@
   .brain[data-layout="column"][data-screen="results"] { --b-cube-size: 150px; }
   .brain[data-layout="column"][data-screen="results"] .b-cube-wrap { position: relative; top: auto; justify-self: center; }
   .brain[data-layout="column"][data-screen="results"] .b-slot-results { grid-column: 1; grid-row: 2; }
+  .b-top { gap: 12px; flex-wrap: wrap; }
+  .b-tabs { gap: 16px; }
+  .b-device { max-width: 100%; }
   .b-foot { grid-template-columns: 1fr; }
   .b-foot-tools { grid-column: 1; grid-row: 2; justify-self: center; }
   .b-settings-body, .b-debug { width: 100vw; padding: 18px 16px 40px; }

@@ -24,7 +24,7 @@ test('trend uses actual date gaps, aligned attempt dots, and inspectable points'
   expect(attempts).toEqual(positions);
   await page.locator('.rp-trend-point').first().click();
   await expect(page.locator('.rp-trend-readout')).toContainText('1/2 correct');
-  await expect(page.locator('.rp-trend-readout')).toContainText('median 500ms');
+  await expect(page.locator('.rp-trend-readout')).toContainText('median 0.50 s');
   await page.getByRole('combobox', { name: 'Filter trend period' }).selectOption('7days');
   await expect(page.locator('.rp-count')).toHaveText('1');
   await expect(page.locator('.rp-median')).toHaveText('200ms');
@@ -62,7 +62,7 @@ test('one merged piece graph defaults to numbered attempts and draws a rolling t
   const positions = await page.locator('.rp-trend-point').evaluateAll(points => points.map(p => +p.getAttribute('cx')));
   expect(positions[1] - positions[0]).toBeCloseTo(positions[2] - positions[1], 5);
   await page.locator('.rp-trend-point').first().click();
-  await expect(page.locator('.rp-trend-readout')).toContainText('Attempt 1: 500ms');
+  await expect(page.locator('.rp-trend-readout')).toContainText('answer 1: 0.50 s');
   await page.getByRole('button', { name: 'Hide entries' }).click();
   await expect(page.locator('.rp-trend-point')).toHaveCount(0);
   await expect(page.locator('.rp-rolling-line')).toHaveCount(1);

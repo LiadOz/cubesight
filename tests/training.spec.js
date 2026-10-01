@@ -106,7 +106,7 @@ test('F2L mistakes persist for inspection and continue explicitly', async ({ pag
   const caseNumber = await page.locator('#f2l-case-number').textContent();
   await page.waitForTimeout(1700);
   await expect(page.locator('#f2l-case-number')).toHaveText(caseNumber);
-  await page.getByRole('button', { name: 'Continue to the next F2L case' }).click();
+  await page.locator('#f2l-continue').click();
   await expect(page.locator('#f2l-case-number')).not.toHaveText(caseNumber);
 });
 

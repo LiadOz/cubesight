@@ -66,7 +66,7 @@ test('calculator analyzes, highlights pieces, and plays a verified plan',async({
   await expect(page.locator('#scout-step')).toContainText('Move 0');
   await expect(page.locator('#scout-results')).not.toContainText('verified on the cube');
   await expect(page.locator('.scout-result').first()).toContainText('Look for:');
-  await page.getByText('What do the solution classes mean?',{exact:true}).click();
+  await page.getByText('What do the plan labels mean?',{exact:true}).click();
   await expect(page.locator('.scout-guide')).toContainText('cross + two F2L pairs');
   await expect(page.locator('.scout-guide')).toContainText('not different solving methods');
 });
@@ -89,9 +89,9 @@ test('selected plans support retrieval-first practice before revealing cues',asy
   await expect(page.locator('#scout-practice-time')).toContainText('Commitment time:');
   await expect(page.locator('#scout-practice-cue')).not.toBeEmpty();
   expect(Number(await page.locator('#scout-cube canvas').getAttribute('data-highlight-cages'))).toBeGreaterThanOrEqual(4);
-  await page.getByRole('button',{name:'Found it'}).click();
+  await page.getByRole('button',{name:'found'}).click();
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('cubesight-scout-practice-v1')).at(-1).rating)).toBe('found');
-  await expect(page.getByRole('button',{name:'Found it'})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'found'})).toBeDisabled();
   await page.locator('#scout-practice-exit').click();
   await expect(page.locator('#scout-practice-panel')).toBeHidden();
 });

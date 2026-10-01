@@ -214,7 +214,7 @@ test('coach lines port the v1 texts and keys', () => {
   const live = { phase: 'solving', crossFace: 'D', crossMoveCount: 8, rotations: 3, progress: { crossDone: true, f2lDone: false } };
   const lines = coachLines({ live, state: {}, toggles, optimalCross: { face: 'D', length: 6 } }, lenses);
   assert.deepEqual(lines.map(l => l.text), [
-    'PB cross: yellow, 6 moves', 'cross 8 vs 6', 'hint',
+    'Suggested cross: yellow, 6 moves', 'cross 8 vs 6', 'hint',
     '3 rotations this solve. Fewer often saves time.', 'Efficiency 88/100.',
   ]);
   assert.deepEqual(lines.slice(-2).map(l => l.key), ['rotations', 'efficiency']);
@@ -270,5 +270,5 @@ test('the cross hindsight names the colour, not a face letter', () => {
   const lenses = { crossHindsight: (n, opt, face) => ({ kind: 'long', text: `${face}|${n}|${opt}` }), faceColors: { B: 'blue' }, f2lNextPairHint: () => null };
   const live = { phase: 'solving', crossFace: 'B', crossMoveCount: 8, progress: { crossDone: false } };
   const lines = coachLines({ live, state: {}, toggles: { crossSuggest: true, crossHindsight: true }, optimalCross: { face: 'B', length: 6 } }, lenses);
-  assert.deepEqual(lines.map(l => l.text), ['PB cross: blue, 6 moves', 'blue|8|6']);
+  assert.deepEqual(lines.map(l => l.text), ['Suggested cross: blue, 6 moves', 'blue|8|6']);
 });

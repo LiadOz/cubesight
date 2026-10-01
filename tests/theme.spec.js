@@ -22,12 +22,12 @@ test('theme switch preserves the current cube and its sticker colors', async ({ 
   const before = await page.locator('#cube canvas').getAttribute('data-camera-pose');
   const swatches = await page.locator('.answer-button > i').evaluateAll(els => els.map(el => getComputedStyle(el).backgroundColor));
   await page.locator('#theme-toggle').click();
-  await expect(page.locator('#case-number')).toHaveText('CASE 001');
+  await expect(page.locator('#case-number')).toHaveText('case 1');
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-camera-pose', before);
   expect(await page.locator('.answer-button > i').evaluateAll(els => els.map(el => getComputedStyle(el).backgroundColor))).toEqual(swatches);
   await page.goto('/#/drills/f2l');
   await expect(page.locator('#f2l-cube canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'How to play' }).click();
+  await page.getByRole('button', { name: 'help' }).click();
   await expect(page.locator('#help-dialog')).toHaveCSS('background-color', 'rgb(25, 36, 47)');
 });
 

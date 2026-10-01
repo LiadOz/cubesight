@@ -78,7 +78,7 @@ test('scramble rehearsal advances only on device state and explains a mistake', 
   await expect(page.locator('#studio-test #studio-scramble-status')).toContainText('Matched 1 of 2');
   await expect(page.locator('#studio-test canvas')).toHaveAttribute('data-hint-move', 'U');
   await page.evaluate(() => window.studioHarness.move('F'));
-  await expect(page.locator('#studio-test #studio-scramble-status')).toContainText("Return with F'");
+  await expect(page.locator('#studio-test #studio-scramble-status')).toContainText("Return with F′");
   await expect(page.locator('#studio-test canvas')).toHaveAttribute('data-hint-move', "F'");
   await page.evaluate(() => window.studioHarness.move("F'"));
   await expect(page.locator('#studio-test #studio-scramble-status')).toContainText('Matched 1 of 2');
