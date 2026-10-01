@@ -12,6 +12,8 @@ import { QUICK_ROUNDS, createRoundStore } from './rounds.js';
 import { parseDrillStart } from './start-position.js';
 import { fmt } from '../copy/terms.js';
 import { relabelMoves } from '../analysis/normalize.js';
+import { loadSettings } from '../brain/settings.js';
+import { createRoundPanel } from './round-panel.js';
 
 const LEARNING_KEY = 'cubesight-oll-learning-v1';
 const allCases = getCases('oll');
@@ -24,7 +26,8 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   let active = true, disposed = false, generation = 0, startedAt = 0, current = null, choices = [], answered = false;
   let round = rounds.current?.drill === 'oll' ? rounds.current : null;
   let forced = null, cube = null, timerId = null, activePin = null;
-  root.innerHTML = `<section class="cs-page brain oll-page" data-brain-style="orbit">
+  let roundPanel = null;
+  root.innerHTML = `<section class="cs-page brain oll-page" data-brain-style="${loadSettings().style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / OLL</p><h1>OLL recognition</h1><p class="cs-sub">Name the last-layer pattern before you think about the turns.</p></header>
     <section class="oll-session" aria-label="OLL recognition round">
       <div class="oll-round-bar"><span id="oll-round-state">20-case round</span><span id="oll-round-count">case 0 of 20</span><span id="oll-combo">combo 0</span><span id="oll-clock">0.00 s</span></div>
@@ -43,6 +46,20 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   const $ = selector => root.querySelector(selector);
   try { cube = createCube3D($('#oll-cube'), { mode: 'scout' }); }
   catch { $('#oll-cube').textContent = '3D cube needs WebGL. The case choices still work.'; }
+  roundPanel = createRoundPanel(root, {
+    drill: 'oll', storage, store: rounds,
+    onRestart() {
+      round = rounds.current; current = null; $('#oll-result').hidden = true;
+      $('#oll-start').textContent = 'resume round';
+      void nextCase();
+    },
+    onComplete() {
+      clearInterval(timerId);
+      $('#oll-next').hidden = true;
+      [...$('#oll-answers').children].forEach(button => { button.disabled = true; });
+      round = rounds.current; updateRound();
+    },
+  });
 
   function updateRound() {
     $('#oll-round-count').textContent = `case ${round?.answers?.length ?? 0} of ${round?.preset?.cases ?? 20}`;
@@ -114,7 +131,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     const key = itemKey('oll', current.id);
     review(learning, key, { correct, ms, responseThresholdMs: 900 });
     saveLearning(storage, learning, LEARNING_KEY);
-    const result = rounds.recordAnswer({ correct, ms, caseId: current.id });
+    const result = roundPanel.record({ correct, ms, caseId: current.id });
     round = rounds.current;
     $('#oll-clock').textContent = `${(ms / 1000).toFixed(2)} s`;
     [...$('#oll-answers').children].forEach(button => {
@@ -127,7 +144,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     $('#oll-reveal').hidden = false;
     $('#oll-reveal').innerHTML = `<strong>OLL ${current.number} · ${current.name}</strong>${alg ? `<p>${fmt.moves(alg.moves)}</p><small><a href="${alg.source.url}" target="_blank" rel="noopener noreferrer">${alg.credit} (opens a website)</a></small>` : ''}`;
     updateRound();
-    if (result.complete) finish(result.summary);
+    if (result.complete) return;
     else $('#oll-next').hidden = false;
   }
   function finish(summary) {
@@ -139,6 +156,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   function startRound(resume = true) {
     if (start.invalid) { $('#oll-feedback').textContent = 'This setup is not valid move notation. Check the link and try again.'; return; }
     round = rounds.startRound({ drill: 'oll', preset: QUICK_ROUNDS.oll, from: start.from, resume });
+    roundPanel.refresh();
     $('#oll-result').hidden = true;
     $('#oll-start').textContent = 'resume round';
     updateRound();
@@ -176,10 +194,10 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   else if (start.cases.length || start.moves.length || start.review) startRound(false);
   else if (round?.status === 'active') startRound(true);
   updateRound();
-  syncPageTokens(root);
+  syncPageTokens(root.querySelector('.brain'));
   return {
     ready: Promise.resolve(),
-    setActive(value) { active = value; if (!value) { clearInterval(timerId); generation++; current = null; } else if (round?.status === 'active' && !current) void nextCase(); },
-    detach() { disposed = true; active = false; clearInterval(timerId); generation++; cube?.destroy(); root.replaceChildren(); },
+    setActive(value) { active = value; roundPanel.setActive(value); if (!value) { clearInterval(timerId); generation++; current = null; } else if (round?.status === 'active' && !current) void nextCase(); },
+    detach() { disposed = true; active = false; clearInterval(timerId); generation++; roundPanel.destroy(); cube?.destroy(); root.replaceChildren(); },
   };
 }

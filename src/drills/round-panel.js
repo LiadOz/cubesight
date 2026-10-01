@@ -7,10 +7,10 @@ const PRESETS = Object.freeze({ '2m': { kind: 'timed', durationMs: 120000 }, '20
 const label = preset => preset.kind === 'cases' ? `${preset.cases} cases` : `${Math.ceil(preset.durationMs / 1000)} s`;
 
 /** Shared quick-round controls; ordinary practice continues until a round is chosen. */
-export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete = () => {}, getSettings = () => ({}), storage = globalThis.localStorage, now = () => Date.now() } = {}) {
+export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete = () => {}, getSettings = () => ({}), storage = globalThis.localStorage, now = () => Date.now(), store: sharedStore = null } = {}) {
   const panel = document.createElement('section'); panel.className = 'brain quick-round';
   panel.setAttribute('aria-label', 'Quick round'); host.prepend(panel);
-  let store = createRoundStore(storage, { now }), active = false, timer = null, summary = null, preset = QUICK_ROUNDS[drill];
+  let store = sharedStore || createRoundStore(storage, { now }), active = false, timer = null, summary = null, preset = QUICK_ROUNDS[drill];
   let completed = false;
   function finish(result) {
     if (!result) return;
@@ -57,7 +57,8 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
     setActive(value) {
       active = Boolean(value); if (timer) clearInterval(timer); timer = null;
       if (!active) return;
-      store = createRoundStore(storage, { now }); completed = false; summary = null;
+      if (!sharedStore) store = createRoundStore(storage, { now });
+      completed = false; summary = null;
       const round = store.current;
       if (round?.drill === drill && round.status === 'complete') {
         const saved = store.history.find(row => row.id === `${drill}:${round.startedAt}`);
@@ -69,6 +70,8 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
       }
       render(); timer = setInterval(tick, 250);
     },
+    start(nextPreset = preset) { start(nextPreset); },
+    refresh() { render(); },
     destroy() { active = false; if (timer) clearInterval(timer); panel.remove(); },
   };
 }

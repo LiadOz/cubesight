@@ -11,12 +11,15 @@ import { generatePinVariations } from './pin-variations.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { loadSettings } from '../brain/settings.js';
 import { fmt } from '../copy/terms.js';
+import { parseCaseFilter } from './case-filter.js';
 
 const faces = Object.keys(FACE_COLORS);
 const title = color => color[0].toUpperCase() + color.slice(1);
 
 export function createCrossPlanning(root) {
   const start = parseDrillStart();
+  const caseFilter = parseCaseFilter(start.cases, faces);
+  const requestedFaces = caseFilter.requested ? caseFilter.values : faces;
   let active = true, detached = false, current = null, cube = null, roundPanel = null, startedAt = 0;
   let answer = null, states = [], step = 0, generation = 0, caseNumber = 0;
   let activePin = null;
@@ -60,7 +63,7 @@ export function createCrossPlanning(root) {
   }
   function renderChoices() {
     $('#cp-faces').replaceChildren();
-    for (const face of faces) {
+    for (const face of requestedFaces) {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'cp-face'; button.dataset.face = face;
       button.disabled = !current?.plans || !current.plans.some(plan => plan.face === face) || Boolean(answer) || Boolean(roundPanel?.complete);
@@ -72,7 +75,7 @@ export function createCrossPlanning(root) {
   async function searchPlans(scramble, state, token) {
     const normalizedScramble = parseAnalysisMoves(scramble).join(' ');
     const plans = [];
-    for (const face of faces) {
+    for (const face of requestedFaces) {
       if (token !== generation || detached || !active) return [];
       $('#cp-feedback').textContent = `checking ${title(FACE_COLORS[face])} cross…`;
       try {
@@ -92,6 +95,11 @@ export function createCrossPlanning(root) {
     answer = null; states = []; step = 0; current = null;
     $('#cp-reveal').hidden = true; $('#cp-playback').hidden = true; $('#cp-next').hidden = true;
     $('#cp-time').textContent = '—';
+    if (!caseFilter.valid) {
+      $('#cp-feedback').textContent = `Unknown cross face${caseFilter.invalid.length > 1 ? 's' : ''}: ${caseFilter.invalid.join(', ')}. Use U, D, F, B, R, or L.`;
+      renderChoices();
+      return;
+    }
     let text = scramble;
     if (!text && start.invalid) { $('#cp-feedback').textContent = 'This setup is not valid move notation. Check the link and try again.'; renderChoices(); return; }
     if (!text && (start.moves.length || start.review)) {
@@ -126,7 +134,7 @@ export function createCrossPlanning(root) {
     renderChoices();
     $('#cp-feedback').textContent = plans.length ? 'Choose the cross you would start with.' : 'No cross plan was verified in this search window. Start another scramble.';
     if (!plans.length) $('#cp-next').hidden = false;
-    syncPageTokens(root);
+    syncPageTokens(root.querySelector('.brain'));
   }
   function choose(face) {
     if (!active || roundPanel?.complete || !current?.plans || answer || !current.plans.some(plan => plan.face === face)) return;
@@ -165,6 +173,7 @@ export function createCrossPlanning(root) {
   };
   document.addEventListener('keydown', onKeydown);
   buildRoundPanel();
+  syncPageTokens(root.querySelector('.brain'));
   void nextCase();
   return {
     ready: Promise.resolve(),

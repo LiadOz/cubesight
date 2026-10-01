@@ -27,3 +27,13 @@ test('F2L timed round ends without another answer and saves results on a phone',
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('cubesight-rounds-v1')).rounds[0].reason)).toBe('time');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
 });
+
+for (const drill of ['oll', 'lookahead']) {
+  test(`${drill} exposes all shared quick-round presets`, async ({ page }) => {
+    await page.goto(`/#/drills/${drill}`);
+    const controls = page.locator('.quick-round');
+    await expect(controls.getByRole('button', { name: '2 min', exact: true })).toBeVisible();
+    await expect(controls.getByRole('button', { name: '20 cases', exact: true })).toBeVisible();
+    await expect(controls.getByRole('button', { name: '30 s', exact: true })).toBeVisible();
+  });
+}
