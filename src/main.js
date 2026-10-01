@@ -132,6 +132,7 @@ const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', sc
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
+let algsPageLoad = null;
 let progressPage = null;
 let progressPageLoad = null;
 let historyPage = null;
@@ -1471,6 +1472,8 @@ function setTool(tool, initial = false) {
   brain?.setActive(false);
   drillsHub?.setActive(false);
   historyPage?.setActive(false);
+  algsPage?.setActive(false);
+  progressPage?.setActive(false);
   timerPage?.setActive(false);
   reviewPage?.setActive(false);
   Object.values(drillPages).forEach(page => page?.setActive(false));
@@ -1678,11 +1681,21 @@ function mountPage(tool) {
     }
     return;
   }
-  const held = tool === 'algs' ? algsPage : progressPage;
+  if (tool === 'algs') {
+    if (algsPage) { algsPage.setActive(true); return; }
+    if (!algsPageLoad) {
+      const load = import('./algs/page.js').then(({ mountAlgsPage }) => {
+        if (activeTool !== 'algs') { if (algsPageLoad === load) algsPageLoad = null; return; }
+        algsPage = mountAlgsPage(root);
+      }).catch(error => { if (algsPageLoad === load) algsPageLoad = null; failed(error); });
+      algsPageLoad = load;
+    }
+    return;
+  }
+  const held = progressPage;
   if (held) { held.setActive(true); return; }
   import('./pages/placeholder.js').then(({ createPlaceholderPage }) => {
-    const page = createPlaceholderPage(root, PLACEHOLDERS[tool]);
-    if (tool === 'algs') algsPage = page; else progressPage = page;
+    createPlaceholderPage(root, PLACEHOLDERS[tool]);
   }).catch(failed);
 }
 

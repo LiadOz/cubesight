@@ -1,0 +1,288 @@
+{
+  "version": 1,
+  "source": "SpeedSolving Wiki F2L case references; alternatives independently retained only when they share the verified target-pair setup. The second F2L 7 candidate was excluded after target-pair replay differed.",
+  "cases": [
+    {
+      "id": "f2l/1",
+      "set": "f2l",
+      "number": 1,
+      "name": "F2L 1",
+      "stage": "Pair insertion",
+      "targetPair": "FR",
+      "preservedPairs": [
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "setup": "R U R' U'",
+      "signature": "FR|DFR:1,1,1:F=yellow,R=red,U=green|FR:1,1,0:R=red,U=green",
+      "algs": [
+        {
+          "id": "s.f2l.1.1",
+          "caseId": "f2l/1",
+          "moves": "U R U' R'",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_1",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 4,
+            "etm": 4,
+            "qtm": 4,
+            "normalized": "U R U' R'"
+          }
+        },
+        {
+          "id": "s.f2l.1.2",
+          "caseId": "f2l/1",
+          "moves": "R' F R F'",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_1",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 2,
+          "metrics": {
+            "stm": 4,
+            "etm": 4,
+            "qtm": 4,
+            "normalized": "R' F R F'"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f2l/2",
+      "set": "f2l",
+      "number": 2,
+      "name": "F2L 2",
+      "stage": "Pair insertion",
+      "targetPair": "FR",
+      "preservedPairs": [
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "setup": "F' U' F U",
+      "signature": "FR|DFR:1,1,1:F=green,R=yellow,U=red|FR:0,1,1:F=green,U=red",
+      "algs": [
+        {
+          "id": "s.f2l.2.1",
+          "caseId": "f2l/2",
+          "moves": "U' F' U F",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_2",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 4,
+            "etm": 4,
+            "qtm": 4,
+            "normalized": "U' F' U F"
+          }
+        },
+        {
+          "id": "s.f2l.2.2",
+          "caseId": "f2l/2",
+          "moves": "F R' F' R",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_2",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 2,
+          "metrics": {
+            "stm": 4,
+            "etm": 4,
+            "qtm": 4,
+            "normalized": "F R' F' R"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f2l/3",
+      "set": "f2l",
+      "number": 3,
+      "name": "F2L 3",
+      "stage": "Pair insertion",
+      "targetPair": "FR",
+      "preservedPairs": [
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "setup": "F' U F",
+      "signature": "FR|DFR:1,1,1:F=yellow,R=red,U=green|FR:-1,1,0:L=green,U=red",
+      "algs": [
+        {
+          "id": "s.f2l.3.1",
+          "caseId": "f2l/3",
+          "moves": "F' U' F",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_3",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 3,
+            "etm": 3,
+            "qtm": 3,
+            "normalized": "F' U' F"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f2l/4",
+      "set": "f2l",
+      "number": 4,
+      "name": "F2L 4",
+      "stage": "Pair insertion",
+      "targetPair": "FR",
+      "preservedPairs": [
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "setup": "R U' R'",
+      "signature": "FR|DFR:1,1,1:F=green,R=yellow,U=red|FR:0,1,-1:B=red,U=green",
+      "algs": [
+        {
+          "id": "s.f2l.4.1",
+          "caseId": "f2l/4",
+          "moves": "R U R'",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_4",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 3,
+            "etm": 3,
+            "qtm": 3,
+            "normalized": "R U R'"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f2l/5",
+      "set": "f2l",
+      "number": 5,
+      "name": "F2L 5",
+      "stage": "Pair insertion",
+      "targetPair": "FR",
+      "preservedPairs": [
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "setup": "R U R' U2 R U' R' U",
+      "signature": "FR|DFR:1,1,1:F=yellow,R=red,U=green|FR:0,1,-1:B=red,U=green",
+      "algs": [
+        {
+          "id": "s.f2l.5.1",
+          "caseId": "f2l/5",
+          "moves": "U' R U R' U2 R U' R'",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_5",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 8,
+            "etm": 8,
+            "qtm": 9,
+            "normalized": "U' R U R' U2 R U' R'"
+          }
+        },
+        {
+          "id": "s.f2l.5.2",
+          "caseId": "f2l/5",
+          "moves": "U' R U R' U R' F R F'",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_5",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 2,
+          "metrics": {
+            "stm": 9,
+            "etm": 9,
+            "qtm": 9,
+            "normalized": "U' R U R' U R' F R F'"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f2l/7",
+      "set": "f2l",
+      "number": 7,
+      "name": "F2L 7",
+      "stage": "Pair insertion",
+      "targetPair": "FR",
+      "preservedPairs": [
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "setup": "R U R' U2 R U2 R' U",
+      "signature": "FR|DFR:1,1,1:F=yellow,R=red,U=green|FR:-1,1,0:L=red,U=green",
+      "algs": [
+        {
+          "id": "s.f2l.7.1",
+          "caseId": "f2l/7",
+          "moves": "U' R U2 R' U2 R U' R'",
+          "credit": "SpeedSolving wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/F2L#F2L_7",
+            "name": "SpeedSolving Wiki"
+          },
+          "retrieved": "2026-10-01",
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 8,
+            "etm": 8,
+            "qtm": 10,
+            "normalized": "U' R U2 R' U2 R U' R'"
+          }
+        }
+      ]
+    }
+  ]
+}

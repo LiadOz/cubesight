@@ -6,7 +6,8 @@ import { createCube3D } from '../cube-3d.js';
 import { toRenderData } from '../cross-cube.js';
 import { stateAfter } from '../review/replay.js';
 import { parseCsTimer, exportCsTimer, filterHistory } from './cstimer.js';
-import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
+import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport, algorithmsFromImport } from '../data-port.js';
+import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { readStickerPalette, themedRender } from '../brain/cube-theme.js';
 import { syncPageTokens } from '../pages/tokens.js';
@@ -128,7 +129,8 @@ export function initHistory(host) {
     const action = button.dataset.action;
     if (action === 'backup' || action === 'cstimer') {
       await store.flush(); await store.pins.flush();
-      download(action === 'backup' ? serializeExport(exportAll(globalThis.localStorage, store.records, store.pins.list)) : exportCsTimer(store.records), action === 'backup' ? 'cubesight-backup.json' : 'cstimer.json'); return;
+      const backup = action === 'backup' ? serializeExport(exportAll(globalThis.localStorage, store.records, store.pins.list, await algDatabase.exportPersonalData())) : exportCsTimer(store.records);
+      download(backup, action === 'backup' ? 'cubesight-backup.json' : 'cstimer.json'); return;
     }
     if (action === 'undo' && deleted) { store.restore(deleted); deleted = null; button.remove(); refreshSessions(); renderList(); report('Solve restored.'); return; }
     if (!selected) return;
@@ -156,7 +158,12 @@ export function initHistory(host) {
         if (store.readOnly) throw new Error('History is read-only. Update the app and reload.');
         const text = await file.text(); let count;
         if (event.target.dataset.import === 'cstimer') count = store.importRecords(parseCsTimer(text));
-        else { const parsed = parseImport(text); importAll(globalThis.localStorage, parsed, { skipKeys: [SOLVE_STORE_KEY] }); count = store.importRecords(historyFromImport(parsed)); store.pins.importPins(pinsFromImport(parsed)); }
+        else {
+          const parsed = parseImport(text);
+          importAll(globalThis.localStorage, parsed, { skipKeys: [SOLVE_STORE_KEY] });
+          const algorithms = algorithmsFromImport(parsed); if (algorithms) await algDatabase.importPersonalData(algorithms);
+          count = store.importRecords(historyFromImport(parsed)); store.pins.importPins(pinsFromImport(parsed));
+        }
         await store.flush(); await store.pins.flush(); refreshSessions(); renderList(); report(`Imported ${count} solves.`);
       } catch (error) { report(error.message); }
       event.target.value = ''; return;

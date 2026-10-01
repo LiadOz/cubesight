@@ -7,7 +7,8 @@ import { createSolveLive } from './solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from './solve-coach.js';
 import { loadSolves, appendSolve } from './solve-store.js';
 import { summarize, ao5, ao12 } from './solve-metrics.js';
-import { exportAll, serializeExport, parseImport, importAll } from './data-port.js';
+import { exportAll, serializeExport, parseImport, importAll, algorithmsFromImport } from './data-port.js';
+import { algDatabase } from './algs/runtime.js';
 import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnection } from './smart-cube-diag.js';
 import { clearSavedCubeData } from './smart-cube-bluetooth.js';
 import { METHODS, getMethod, DEFAULT_METHOD } from './solve-methods.js';
@@ -638,9 +639,9 @@ function mountBrain(root, cubeSession, rebuild) {
     toggle(input.dataset.brainToggle, input.checked);
     renderCoach();
   });
-  $('#brain-export').addEventListener('click', () => {
+  $('#brain-export').addEventListener('click', async () => {
     try {
-      const blob = new Blob([serializeExport(exportAll(localStorage))], { type: 'application/json' });
+      const blob = new Blob([serializeExport(exportAll(localStorage, null, null, await algDatabase.exportPersonalData()))], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `cubesight-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -657,6 +658,7 @@ function mountBrain(root, cubeSession, rebuild) {
       const text = await file.text();
       const parsed = parseImport(text);
       importAll(localStorage, parsed, { clearOwned: false });
+      const algorithms = algorithmsFromImport(parsed); if (algorithms) await algDatabase.importPersonalData(algorithms);
       records = loadSolves(localStorage);
       renderMetrics();
       $('#brain-port-status').textContent = 'Imported. Metrics refreshed. Reload to update all trainers.';

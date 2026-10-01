@@ -1,0 +1,689 @@
+{
+  "version": 1,
+  "source": "EO stage variants from SpeedSolving Wiki EOLL and 2-Look OLL; all candidate goals independently replayed.",
+  "cases": [
+    {
+      "id": "oll2/eo-line",
+      "set": "oll2",
+      "slug": "eo-line",
+      "name": "EO \u00b7 Line",
+      "stage": "Edge orientation",
+      "goal": "All four last-layer edges oriented",
+      "setup": "F U R U' R' F'",
+      "signature": "eo|eo-line",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.eo-line.1",
+          "caseId": "oll2/eo-line",
+          "moves": "F R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/EOLL",
+            "name": "SpeedSolving Wiki \u00b7 EOLL"
+          },
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 6,
+            "etm": 6,
+            "qtm": 6,
+            "normalized": "F R U R' U' F'"
+          }
+        }
+      ]
+    },
+    {
+      "id": "oll2/eo-l-shape",
+      "set": "oll2",
+      "slug": "eo-l-shape",
+      "name": "EO \u00b7 L shape",
+      "stage": "Edge orientation",
+      "goal": "All four last-layer edges oriented",
+      "setup": "F R U R' U' F'",
+      "signature": "eo|eo-l-shape",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.eo-l-shape.1",
+          "caseId": "oll2/eo-l-shape",
+          "moves": "F U R U' R' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/EOLL",
+            "name": "SpeedSolving Wiki \u00b7 EOLL"
+          },
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 6,
+            "etm": 6,
+            "qtm": 6,
+            "normalized": "F U R U' R' F'"
+          }
+        }
+      ]
+    },
+    {
+      "id": "oll2/eo-dot",
+      "set": "oll2",
+      "slug": "eo-dot",
+      "name": "EO \u00b7 Dot",
+      "stage": "Edge orientation",
+      "goal": "All four last-layer edges oriented",
+      "setup": "f U R U' R' f' F U R U' R' F'",
+      "signature": "eo|eo-dot",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.eo-dot.1",
+          "caseId": "oll2/eo-dot",
+          "moves": "F R U R' U' F' f R U R' U' f'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "url": "https://www.speedsolving.com/wiki/index.php/EOLL",
+            "name": "SpeedSolving Wiki \u00b7 EOLL"
+          },
+          "verified": true,
+          "seed": true,
+          "rank": 1,
+          "metrics": {
+            "stm": 12,
+            "etm": 14,
+            "qtm": 12,
+            "normalized": "F R U R' U' F' f R U R' U' f'"
+          }
+        }
+      ]
+    },
+    {
+      "id": "oll2/co-oll-21",
+      "set": "oll2",
+      "slug": "co-oll-21",
+      "name": "CO \u00b7 OLL 21",
+      "stage": "Corner orientation",
+      "goal": "All last-layer corners oriented; edge orientation retained",
+      "setup": "R U2 R' U' R U R' U' R U' R'",
+      "signature": "Corner orientation|12120000",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.co-oll-21.1",
+          "caseId": "oll2/co-oll-21",
+          "moves": "R U R' U R U' R' U R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.co-oll-21.2",
+          "caseId": "oll2/co-oll-21",
+          "moves": "U R U2 R' U' R U R' U' R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/co-oll-22",
+      "set": "oll2",
+      "slug": "co-oll-22",
+      "name": "CO \u00b7 OLL 22",
+      "stage": "Corner orientation",
+      "goal": "All last-layer corners oriented; edge orientation retained",
+      "setup": "R' U2 R2 U R2 U R2 U2 R'",
+      "signature": "Corner orientation|11220000",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.co-oll-22.1",
+          "caseId": "oll2/co-oll-22",
+          "moves": "R U2 R2 U' R2 U' R2 U2 R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.co-oll-22.2",
+          "caseId": "oll2/co-oll-22",
+          "moves": "f R U R' U' S' R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/co-oll-23",
+      "set": "oll2",
+      "slug": "co-oll-23",
+      "name": "CO \u00b7 OLL 23",
+      "stage": "Corner orientation",
+      "goal": "All last-layer corners oriented; edge orientation retained",
+      "setup": "R' U2 R' D' R U2 R' D R2",
+      "signature": "Corner orientation|00120000",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.co-oll-23.1",
+          "caseId": "oll2/co-oll-23",
+          "moves": "R2 D' R U2 R' D R U2 R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.co-oll-23.2",
+          "caseId": "oll2/co-oll-23",
+          "moves": "U2 R2 D R' U2 R D' R' U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/co-oll-24",
+      "set": "oll2",
+      "slug": "co-oll-24",
+      "name": "CO \u00b7 OLL 24",
+      "stage": "Corner orientation",
+      "goal": "All last-layer corners oriented; edge orientation retained",
+      "setup": "F R' F' r U R U' r'",
+      "signature": "Corner orientation|00210000",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.co-oll-24.1",
+          "caseId": "oll2/co-oll-24",
+          "moves": "r U R' U' r' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.co-oll-24.2",
+          "caseId": "oll2/co-oll-24",
+          "moves": "U2 l' U' L U l F' L' F",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/co-oll-25",
+      "set": "oll2",
+      "slug": "co-oll-25",
+      "name": "CO \u00b7 OLL 25",
+      "stage": "Corner orientation",
+      "goal": "All last-layer corners oriented; edge orientation retained",
+      "setup": "r U R' U' r' F R F' U2",
+      "signature": "Corner orientation|01020000",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.co-oll-25.1",
+          "caseId": "oll2/co-oll-25",
+          "moves": "U2 F R' F' r U R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.co-oll-25.2",
+          "caseId": "oll2/co-oll-25",
+          "moves": "U' F' r U R' U' r' F R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/co-oll-26",
+      "set": "oll2",
+      "slug": "co-oll-26",
+      "name": "CO \u00b7 OLL 26",
+      "stage": "Corner orientation",
+      "goal": "All last-layer corners oriented; edge orientation retained",
+      "setup": "R U R' U R U2 R' y",
+      "signature": "Corner orientation|01110000",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.co-oll-26.1",
+          "caseId": "oll2/co-oll-26",
+          "moves": "y' R U2 R' U' R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.co-oll-26.2",
+          "caseId": "oll2/co-oll-26",
+          "moves": "U2 R' U' R U' R' U2 R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/co-oll-27",
+      "set": "oll2",
+      "slug": "co-oll-27",
+      "name": "CO \u00b7 OLL 27",
+      "stage": "Corner orientation",
+      "goal": "All last-layer corners oriented; edge orientation retained",
+      "setup": "R U2 R' U' R U' R'",
+      "signature": "Corner orientation|02220000",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.co-oll-27.1",
+          "caseId": "oll2/co-oll-27",
+          "moves": "R U R' U R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.co-oll-27.2",
+          "caseId": "oll2/co-oll-27",
+          "moves": "U' R' U2 R U R' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/cp-t",
+      "set": "oll2",
+      "slug": "cp-t",
+      "name": "CP \u00b7 T permutation",
+      "stage": "Corner permutation",
+      "goal": "Last-layer corners permuted into their solved slots",
+      "setup": "F R U' R' U R U R2 F' R U R U' R'",
+      "signature": "Corner permutation|0,1,3,2,0,3,2,1,0,0,0,0,0,0,0,0",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.cp-t.1",
+          "caseId": "oll2/cp-t",
+          "moves": "R U R' U' R' F R2 U' R' U' R U R' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.cp-t.2",
+          "caseId": "oll2/cp-t",
+          "moves": "F R U' R' U R U R2 F' R U R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/cp-y",
+      "set": "oll2",
+      "slug": "cp-y",
+      "name": "CP \u00b7 Y permutation",
+      "stage": "Corner permutation",
+      "goal": "Last-layer corners permuted into their solved slots",
+      "setup": "R' U' R2 U' L U2 R' U R U2 R' L' U R' U R",
+      "signature": "Corner permutation|0,3,2,1,0,2,1,3,0,0,0,0,0,0,0,0",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.cp-y.1",
+          "caseId": "oll2/cp-y",
+          "moves": "R' U' R U' L R U2 R' U' R U2 L' U R2 U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.cp-y.2",
+          "caseId": "oll2/cp-y",
+          "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/ep-ua",
+      "set": "oll2",
+      "slug": "ep-ua",
+      "name": "EP \u00b7 Ua permutation",
+      "stage": "Edge permutation",
+      "goal": "Last-layer edges permuted into their solved slots",
+      "setup": "R' U' R U' R U R2 U R U' R U' R'",
+      "signature": "Edge permutation|0,1,2,3,0,2,3,1,0,0,0,0,0,0,0,0",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.ep-ua.1",
+          "caseId": "oll2/ep-ua",
+          "moves": "R U R' U R' U' R2 U' R' U R' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.ep-ua.2",
+          "caseId": "oll2/ep-ua",
+          "moves": "U2 M2 U M U2 M' U M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/ep-ub",
+      "set": "oll2",
+      "slug": "ep-ub",
+      "name": "EP \u00b7 Ub permutation",
+      "stage": "Edge permutation",
+      "goal": "Last-layer edges permuted into their solved slots",
+      "setup": "R2 U' R' U' R U R U R U' R",
+      "signature": "Edge permutation|0,1,2,3,0,3,1,2,0,0,0,0,0,0,0,0",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.ep-ub.1",
+          "caseId": "oll2/ep-ub",
+          "moves": "R' U R' U' R' U' R' U R U R2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.ep-ub.2",
+          "caseId": "oll2/ep-ub",
+          "moves": "U2 M2 U' M U2 M' U' M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/ep-h",
+      "set": "oll2",
+      "slug": "ep-h",
+      "name": "EP \u00b7 H permutation",
+      "stage": "Edge permutation",
+      "goal": "Last-layer edges permuted into their solved slots",
+      "setup": "M2 U' M2 U2 M2 U' M2",
+      "signature": "Edge permutation|0,1,2,3,2,3,0,1,0,0,0,0,0,0,0,0",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.ep-h.1",
+          "caseId": "oll2/ep-h",
+          "moves": "M2 U M2 U2 M2 U M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.ep-h.2",
+          "caseId": "oll2/ep-h",
+          "moves": "M2 U' M2 U2 M2 U' M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll2/ep-z",
+      "set": "oll2",
+      "slug": "ep-z",
+      "name": "EP \u00b7 Z permutation",
+      "stage": "Edge permutation",
+      "goal": "Last-layer edges permuted into their solved slots",
+      "setup": "M2 U2 M U' M2 U' M2 U' M U'",
+      "signature": "Edge permutation|0,1,2,3,1,0,3,2,0,0,0,0,0,0,0,0",
+      "preservedPairs": [
+        "FR",
+        "FL",
+        "BR",
+        "BL"
+      ],
+      "algs": [
+        {
+          "id": "s.oll2.ep-z.1",
+          "caseId": "oll2/ep-z",
+          "moves": "U M' U M2 U M2 U M' U2 M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll2.ep-z.2",
+          "caseId": "oll2/ep-z",
+          "moves": "M2 U M2 U M' U2 M2 U2 M'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    }
+  ]
+}

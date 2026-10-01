@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { exportAll, serializeExport, parseImport, importAll } from '../src/data-port.js';
+import { exportAll, serializeExport, parseImport, importAll, algorithmsFromImport } from '../src/data-port.js';
 
 function memoryStorage(seed = {}) {
   const data = new Map(Object.entries(seed));
@@ -19,9 +19,14 @@ test('exportAll collects only owned prefixes', () => {
     'smartcube-ble-mac:abc': 'AA:BB:CC:DD:EE:FF',
     'foreign-key': 'no',
     'cubesight-learning-v1': '{}',
+    'cubesight-alg-learning-v1': '{}',
+    'cubesight-oll-learning-v1': '{}',
+    'cubesight-lookahead-learning-v1': '{}',
+    'cubesight-shell-v1': '{}',
+    'cubesight-rounds-v1': '[]',
   });
   const out = exportAll(storage);
-  assert.deepEqual(Object.keys(out.data).sort(), ['cubesight-learning-v1', 'cubesight-progress-v2', 'smartcube-ble-mac:abc']);
+  assert.deepEqual(Object.keys(out.data).sort(), ['cubesight-alg-learning-v1', 'cubesight-learning-v1', 'cubesight-lookahead-learning-v1', 'cubesight-oll-learning-v1', 'cubesight-progress-v2', 'cubesight-rounds-v1', 'cubesight-shell-v1', 'smartcube-ble-mac:abc']);
   assert.equal(out.version, 1);
 });
 
@@ -54,4 +59,14 @@ test('importAll ignores foreign keys inside a backup', () => {
   importAll(target, parsed);
   assert.equal(target.getItem('cubesight-x'), 'ok');
   assert.equal(target.getItem('evil-key'), null);
+});
+
+test('v3 backup carries algorithm data while v1/v2 imports remain supported', () => {
+  const algorithms = { picks: [{ id: 'oll/1', algId: 's.oll.1.1' }], attempts: [] };
+  const encoded = serializeExport(exportAll(memoryStorage({ 'cubesight-x': 'ok' }), [], [], algorithms));
+  const parsed = parseImport(encoded);
+  assert.equal(parsed.version, 3);
+  assert.deepEqual(algorithmsFromImport(parsed), algorithms);
+  assert.equal(algorithmsFromImport(parseImport(JSON.stringify({ version: 2, data: {} }))), null);
+  assert.throws(() => parseImport(JSON.stringify({ version: 3, data: {}, algorithms: [] })), /valid CubeSight/);
 });

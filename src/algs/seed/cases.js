@@ -1,21 +1,23 @@
 import oll from '../../../data/algs/oll.json' with { type: 'json' };
 import pll from '../../../data/algs/pll.json' with { type: 'json' };
+import f2l from '../../../data/algs/f2l.json' with { type: 'json' };
+import oll2 from '../../../data/algs/oll2.json' with { type: 'json' };
 
 export const ALG_SETS = Object.freeze([
   { id: 'pll', name: 'PLL', count: pll.cases.length, status: 'ready' },
   { id: 'oll', name: 'OLL', count: oll.cases.length, status: 'ready' },
-  { id: 'oll2', name: '2-look', count: 0, status: 'coming-soon' },
-  { id: 'f2l', name: 'F2L', count: 0, status: 'coming-soon' },
+  { id: 'oll2', name: '2-look', count: oll2.cases.length, status: 'ready' },
+  { id: 'f2l', name: 'F2L', count: f2l.cases.length, status: 'ready' },
 ]);
 
-export const CASES = Object.freeze([...pll.cases, ...oll.cases].map(row => Object.freeze({
+export const CASES = Object.freeze([...pll.cases, ...oll.cases, ...f2l.cases, ...oll2.cases].map(row => Object.freeze({
   ...row,
   algs: Object.freeze(row.algs.map(alg => Object.freeze({ ...alg, source: Object.freeze({ ...alg.source }) }))),
 })));
 
 export const SEED_ALGS = Object.freeze(CASES.flatMap(row => row.algs));
 const CASE_BY_ID = new Map(CASES.map(row => [row.id, row]));
-const routeSegment = row => row.set === 'oll' ? String(row.number) : row.name;
+const routeSegment = row => row.slug ?? (['oll', 'f2l'].includes(row.set) ? String(row.number) : row.name);
 const CASE_BY_ROUTE = new Map(CASES.flatMap(row => [
   [`${row.set}/${routeSegment(row)}`.toLowerCase(), row],
   [`${row.set}/${row.name}`.toLowerCase(), row],

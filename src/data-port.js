@@ -20,7 +20,7 @@ import { SOLVE_STORE_KEY } from './solve-metrics.js';
 import { SCHEMA_VERSION } from './store/history.js';
 import { cleanPin } from './store/pins.js';
 
-export const EXPORT_VERSION = 2;
+export const EXPORT_VERSION = 3;
 
 const PREFIXES = ['cubesight-', 'smartcube-ble-mac:'];
 
@@ -33,7 +33,7 @@ function isOwnedKey(key) {
  * records (history store `.records`) to write a version 2 export that includes
  * the IndexedDB history; without them the export is the version 1 shape.
  */
-export function exportAll(storage, historyRecords = null, pins = null) {
+export function exportAll(storage, historyRecords = null, pins = null, algorithms = null) {
   const data = {};
   const store = storage ?? globalThis.localStorage;
   if (store) {
@@ -42,8 +42,14 @@ export function exportAll(storage, historyRecords = null, pins = null) {
       if (key && isOwnedKey(key) && !(historyRecords && key === SOLVE_STORE_KEY)) data[key] = store.getItem(key);
     }
   }
-  if (!historyRecords) return store ? { version: 1, exportedAt: new Date().toISOString(), data } : data;
-  return { version: EXPORT_VERSION, exportedAt: new Date().toISOString(), data, history: { schema: SCHEMA_VERSION, records: historyRecords }, ...(pins ? { pins: pins.map(cleanPin).filter(Boolean) } : {}) };
+  if (!historyRecords && !pins && !algorithms) return store ? { version: 1, exportedAt: new Date().toISOString(), data } : data;
+  const version = algorithms ? EXPORT_VERSION : 2;
+  return {
+    version, exportedAt: new Date().toISOString(), data,
+    ...(historyRecords ? { history: { schema: SCHEMA_VERSION, records: historyRecords } } : {}),
+    ...(pins ? { pins: pins.map(cleanPin).filter(Boolean) } : {}),
+    ...(algorithms ? { algorithms } : {}),
+  };
 }
 
 /** Serialise the export for download. */
@@ -54,7 +60,7 @@ export function serializeExport(exportObject) {
 /** Parse and validate an imported blob. Returns {data} or throws. */
 export function parseImport(text) {
   const parsed = JSON.parse(text);
-  if (!parsed || typeof parsed !== 'object' || ![1, EXPORT_VERSION].includes(parsed.version) || !parsed.data || typeof parsed.data !== 'object') {
+  if (!parsed || typeof parsed !== 'object' || ![1, 2, EXPORT_VERSION].includes(parsed.version) || !parsed.data || typeof parsed.data !== 'object') {
     throw new Error('Not a valid CubeSight backup file.');
   }
   if (parsed.history !== undefined && !(parsed.history && Array.isArray(parsed.history.records))) {
@@ -64,6 +70,7 @@ export function parseImport(text) {
     throw new Error('This backup was made by a newer version of CubeSight. Update the app first.');
   }
   if (parsed.pins !== undefined && !Array.isArray(parsed.pins)) throw new Error('Not a valid CubeSight backup file.');
+  if (parsed.algorithms !== undefined && (!parsed.algorithms || typeof parsed.algorithms !== 'object' || Array.isArray(parsed.algorithms))) throw new Error('Not a valid CubeSight backup file.');
   return parsed;
 }
 
@@ -104,3 +111,6 @@ export function historyFromImport(parsed) {
 
 /** Pins remain self-contained even when the original solve has been deleted. */
 export const pinsFromImport = parsed => (parsed?.pins ?? []).map(cleanPin).filter(Boolean);
+
+/** Personal algorithm picks, attempts, schedules, and imported recons. */
+export const algorithmsFromImport = parsed => parsed?.algorithms ?? null;

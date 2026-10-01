@@ -14,7 +14,8 @@ import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, ef
 import { openHistory } from '../store/history.js';
 import { createRoundStore } from '../drills/rounds.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
-import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
+import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport, algorithmsFromImport } from '../data-port.js';
+import { algDatabase } from '../algs/runtime.js';
 import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnection } from '../smart-cube-diag.js';
 import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
 import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
@@ -666,7 +667,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       await historyReady;
       await history?.flush();
       await history?.pins.flush();
-      const blob = new Blob([serializeExport(exportAll(globalThis.localStorage, history ? history.records : null, history?.pins.list))], { type: 'application/json' });
+      const algs = await algDatabase.exportPersonalData();
+      const blob = new Blob([serializeExport(exportAll(globalThis.localStorage, history ? history.records : null, history?.pins.list, algs))], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `cubesight-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -681,6 +683,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       const parsed = parseImport(await file.text());
       await historyReady;
       importAll(globalThis.localStorage, parsed, { clearOwned: false, skipKeys: history ? [SOLVE_STORE_KEY] : [] });
+      const algorithms = algorithmsFromImport(parsed);
+      if (algorithms) await algDatabase.importPersonalData(algorithms);
       if (history && !history.importRecords(historyFromImport(parsed))) {
         if (history.readOnly) throw new Error('the history is read-only right now');
       }
