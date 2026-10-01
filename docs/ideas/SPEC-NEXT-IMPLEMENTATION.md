@@ -25,10 +25,9 @@ Started 2026-10-01 from `feature/smart-cube-guidance` (`eea1766`). Scope: all ei
 
 ## Research verification
 
-The referenced `docs/research/open-algorithms.md` does not exist. Available inputs are the local self-generation prototypes under `docs/research/alg-gen`. User changes to those files in the original working tree are preserved.
+The completed research is now available in `docs/research/open-algorithms.md` and `docs/research/alg-gen/`, merged from `c9c3619`. Final sourcing decision `2ef22a3` (FEATURES #25) supersedes the self-generation recommendation: use curated standard community algorithms with per-alg credit/source links in a separate JSON data bundle, conventional OLL/PLL identifiers, and independent verification. The spec has been reconciled with this final decision.
 
-Independent checking found a wrong corner-slot mapping in the committed pair prototype and failing PLL search output (157 of 442 candidates). Failing candidates must not be shipped. The existing OLL output verifies, but initially covers only 16 named cases. Full orientation-pattern enumeration and verified generation are required for complete coverage; generic pattern identifiers must not be represented as conventional OLL case numbers.
-
+Independent checking of the initial prototype found a wrong corner-slot mapping and failing PLL candidates (157 of 442). Corrections and inverse reference-setup checks are required before shipping data. Pair runtime targets now follow the completed research: median ≤300 ms and p95 ≤2 s with a hard budget and partial results; compact pruning tables are required.
 ## WP8 data foundation
 
 Commit `e55698e` adds history filtering and a 3D replay/detail page, native csTimer JSON import/export, session-gap controls, pin export/import and shared-store refresh.

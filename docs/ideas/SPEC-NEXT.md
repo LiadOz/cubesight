@@ -52,11 +52,11 @@ Tests: a unit state machine with a fake clock (hold threshold, inspection → so
 
 ## WP3: Best pair completion and better suggestions (engine)
 **Input:** `docs/research/open-algorithms.md` + the prototypes in `docs/research/alg-gen/` (done). Findings that bind this WP:
-- No complete openly licensed OLL/PLL/F2L database exists (the SpeedSolving wiki has no stated licence, csTimer is GPL, J Perm/SpeedCubeDB have none). **Algorithms are self-generated at build time** (a script → a bundled JSON of roughly 30–60 KB), verified against an independent model; external collections are links only.
-- Prototype: meet-in-the-middle over `<R,U>`, `<R,U,F>`, `<R,U,D>`, `<R,U,L>`, `<R,U,F,D>`, `<R,U,r>`, `<R,U,M>`; it rediscovers T, J, R, A, G, U, H, Z, Sune… Missing (E, F, Na, Nb, V, Y, Ja; OLL 2/44/57) need deeper search or `f`/`S`/rotation sets; extend the generator until **all 21 PLL and 57 OLL** have ≥ 2 good algs.
-- Case IDs: derive the 57 OLL / 21 PLL classes from the last-layer group (`ll-classes.mjs`); no external data.
+- **Final sourcing decision:** FEATURES #25 supersedes #16 and the research's self-generation recommendation. Bundle a curated set of standard community algorithms from the SpeedSolving wiki and SpeedCubeDB, with per-alg credit and source links. Keep the data in a separate `data/algs/*.json` bundle. Self-generation is an internal verification tool, not the source of user-facing algorithm lists.
+- Cover **all 21 PLL and 57 OLL** with the standard few algorithms per case (at least two good options). Use conventional OLL 1–57 and PLL names. Independently verify that every bundled algorithm solves its case.
+- Case identification: derive orientation/permutation signatures from the state model and anchor conventional case IDs to independently verified inverse reference setups.
 - Best pair completion: a new IDA* (`pairbest.mjs`) over 18 face turns on a 12-piece tracked state; D turns give pseudo/multislot/keyhole for free; it matched the WASM on 108/108 slot queries. Use the ~332 KB tables (not the 32 MB ones). Expected latency: median 0.2–0.3 s, p95 ≈ 1.8 s per position, so it runs in the analysis worker with a time budget and a "searching…" state, never blocking the UI. Replace the pairs 1–2-only planner path for review suggestions.
-- Replace the hand-typed algs in `src/pll-logic.js` (provenance concern) with generated ones.
+- Move the hand-typed algorithms in `src/pll-logic.js` into the credited, independently verified data bundle.
 
 The user experiences:
 - In the review/results, at any F2L moment: "best pair completion from here", i.e. the shortest/most ergonomic insertion of any available pair (all 4 slots, pseudo/D-offset frames, keyhole/multislot options), shown against what they did, for **pairs 1–4** (today only 1–2).
@@ -65,7 +65,7 @@ The user experiences:
 
 Acceptance:
 - Engine: pure, offline, in a Web Worker. It returns ranked options with move counts (STM/ETM), the generator set and an ergonomic score. Runtime targets: median ≤ 300 ms, p95 ≤ 2 s per position, with a hard budget + partial results; measured and reported.
-- Algorithms come from **self-generated** search results and/or **clearly licensed** sources only, each with credit metadata (FEATURES #16).
+- Algorithm data follows **FEATURES #25**, with per-alg credit metadata and source links. Runtime pair completions are computed locally and verified on the state model.
 - Plugs into the existing review markers ("better pair", new "better alg/AUF") and the detail view; "no suggestion yet" disappears for pairs 3–4.
 - Case capture: every solve records `ollCase` / `pllCase` (+ recognition vs execution time per case).
 
@@ -84,7 +84,7 @@ Acceptance: labels and scores follow SPEC §3 (thresholds documented in code), i
 Tests: golden solves with expected labels/scores (reuse `tests/analysis-golden.mjs`), a retry flow with the fake cube, the import parser round-trip (300 random algs vs the state model, as in the review prototype).
 
 ## WP5: Algorithm database, browser and alg drills
-Design: `docs/design/brain-v2/algs/SPEC.md` + A-*.png. Data from WP3 / the open-algorithms research only (clear rights + credit).
+Design: `docs/design/brain-v2/algs/SPEC.md` + A-*.png. Data from WP3, following the final sourcing decision in FEATURES #25 (curated standard community algorithms + credit).
 
 The user experiences:
 - `#/algs`: a case grid (PLL, OLL, 2-look, F2L) → a case page with algs, sources/credits (links marked "needs internet"), "my pick", and "used by" stats only from user-imported reconstructions.
