@@ -3,6 +3,8 @@ import { physicalModelTokens, tokenizeReconstruction } from '../review/import-pa
 import { createMoveGuide } from './move-guide.js';
 import { createRingTimeline } from '../brain/styles/orbit/timeline-ring.js';
 import { createLinearTimeline } from '../brain/styles/mono/timeline-linear.js';
+import '../brain/css/orbit.css';
+import '../brain/css/mono.css';
 import './sequence-player.css';
 
 let activePlayer = null;

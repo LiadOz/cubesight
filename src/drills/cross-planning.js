@@ -25,7 +25,7 @@ export function createCrossPlanning(root) {
   let answer = null, generation = 0, caseNumber = 0;
   let activePin = null;
   let player = null;
-  root.innerHTML = `<section class="cs-page brain cross-planning-page" data-brain-style="${loadSettings().style}">
+  root.innerHTML = `<section class="cs-page brain cross-planning-page" data-brain-style="${loadSettings(globalThis.localStorage).style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / cross planning</p><h1>cross planning</h1><p class="cs-sub">Choose a cross from the scramble. Then check the verified plans.</p></header>
     <section class="cp-session" aria-label="Cross planning case">
       <div class="cp-status"><span id="cp-case">case 1</span><span id="cp-time">—</span></div>

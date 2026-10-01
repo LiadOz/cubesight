@@ -62,7 +62,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   }
   const dueSeed = () => chooseDue(learning, learningCases)?.id || randomSeed();
 
-  root.innerHTML = `<section class="cs-page brain lookahead-page" data-brain-style="${loadSettings().style}">
+  root.innerHTML = `<section class="cs-page brain lookahead-page" data-brain-style="${loadSettings(storage).style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / F2L</p><h1>lookahead</h1><p class="cs-sub">Choose a pair to solve while keeping the next pair in view.</p></header>
     <section class="lookahead-session" aria-label="Lookahead round">
       <div class="lookahead-status"><span id="la-round-label">20-case round</span><span id="la-round-count">case 0 of 20</span><span id="la-combo">combo 0</span><span id="la-clock">3.00 s</span></div>
@@ -82,6 +82,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     if (disposed) { view.destroy(); return; }
     cube = view;
     if (current) cube.update(toRenderData(current.setup.state));
+    if (typeof selected === 'number') showContinuation(current?.choices[selected]);
   }).catch(() => { if (!disposed) $('#la-cube').textContent = '3D cube needs WebGL. The verified choices still work.'; });
   roundPanel = createRoundPanel(root, {
     drill: 'lookahead', storage, store: rounds,
@@ -202,6 +203,14 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     loading = false;
     $('#la-feedback').textContent = 'No verified pair choice was found. Start a fresh case to try again.';
   }
+  function showContinuation(choice) {
+    if (!choice || !cube || !current || disposed || !active) return;
+    if (!player) player = createSequencePlayer($('#la-playback'), { cube3d: cube, label: 'Verified pair continuation' });
+    $('#la-playback').hidden = false;
+    player.load({ startState: current.setup.state, moves: choice.moves });
+    player.setActive(active);
+    void player.play();
+  }
   function answer(index, timedOut = false) {
     if (!active || loading || !current || selected != null || !round || round.status !== 'active') return;
     clearInterval(clockTimer);
@@ -221,13 +230,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
       if (at === index && !correct) button.dataset.missed = 'true';
     });
     $('#la-feedback').textContent = timedOut ? 'Time is up. No answer was recorded.' : correct ? 'Good choice. This pair has the lowest verified cost.' : 'Another pair had a shorter verified solution. Keep it in view while you solve.';
-    if (choice && cube) {
-      if (!player) player = createSequencePlayer($('#la-playback'), { cube3d: cube, label: 'Verified pair continuation' });
-      $('#la-playback').hidden = false;
-      player.load({ startState: current.setup.state, moves: choice.moves });
-      player.setActive(active);
-      void player.play();
-    }
+    showContinuation(choice);
     labelState();
     if (result.complete) return;
     else $('#la-next').hidden = false;

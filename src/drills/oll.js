@@ -28,7 +28,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   let round = rounds.current?.drill === 'oll' ? rounds.current : null;
   let forced = null, cube = null, timerId = null, activePin = null;
   let roundPanel = null, renderState = null;
-  root.innerHTML = `<section class="cs-page brain oll-page" data-brain-style="${loadSettings().style}">
+  root.innerHTML = `<section class="cs-page brain oll-page" data-brain-style="${loadSettings(storage).style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / OLL</p><h1>OLL recognition</h1><p class="cs-sub">Name the last-layer pattern before you think about the turns.</p></header>
     <section class="oll-session" aria-label="OLL recognition round">
       <div class="oll-round-bar"><span id="oll-round-state">20-case round</span><span id="oll-round-count">case 0 of 20</span><span id="oll-combo">combo 0</span><span id="oll-clock">0.00 s</span></div>
