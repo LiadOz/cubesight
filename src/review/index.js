@@ -115,19 +115,22 @@ export function createSolveReview(host, routeContext = {}) {
   function drillLinkMarkup(item) {
     if (!item) return '<span class="sr-label neutral">Fine</span>';
     const index = Math.max(0, currentMove - 1), from = `review:${record.at}:${index}`;
-    const stage = stageOf(record, index), params = new URLSearchParams({ setup: from, from });
+    const stage = item.stage ?? stageOf(record, index), params = new URLSearchParams({ setup: from, from });
     let path, destination;
     if (stage === 'cross') {
       params.set('face', item.face ?? record.analysis?.face ?? 'D');
       params.set('kind', item.text === 'X-cross' ? 'xcross' : 'cross');
       path = `#/drills/scout?${params}`; destination = 'Cross Scout';
-    } else if (stage.startsWith('pair')) {
+    } else if (stage === 'f2l' || stage.startsWith('pair')) {
       params.set('drill', ['Better pair', 'Pseudo pair'].includes(item.text) ? 'planner' : 'scan');
       params.set('face', 'D');
       if (item.text === 'Pseudo pair') params.set('pseudo', '1');
       path = `#/drills/f2l?${params}`; destination = 'F2L drill';
+    } else if (stage === 'oll' || stage === 'eo' || stage === 'co') {
+      params.set('stage', 'oll');
+      path = `#/drills/oll?${params}`; destination = 'OLL drill';
     } else {
-      params.set('stage', stage === 'last layer' ? 'pll' : stage);
+      params.set('stage', 'pll');
       path = `#/drills/pll?${params}`; destination = 'PLL drill';
     }
     return `<a class="sr-label sr-drill" href="${escapeHtml(path)}" title="${escapeHtml(item.detail ?? '')}">${escapeHtml(item.text ?? 'Fine')} · ${destination} ›</a>`;

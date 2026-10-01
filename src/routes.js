@@ -49,7 +49,7 @@ const PATH_TOOLS = Object.fromEntries(Object.entries(TOOL_PATHS).map(([tool, pat
 // base hash parser or collapse the selected case back to its section root.
 const DYNAMIC_ROUTES = [
   { tool: 'review', match: path => path === '/review/import' || /^\/review\/\d+(?:\/retry)?$/.test(path) },
-  { tool: 'algs', match: path => /^\/algs\/(?:pll|oll|f2l)\/[a-z0-9-]+(?:\/drill)?$/i.test(path) },
+  { tool: 'algs', match: path => /^\/algs\/(?:pll|oll|f2l)(?:\/[a-z0-9-]+(?:\/drill)?)?$/i.test(path) },
 ];
 
 /** '#/drills/pll?cases=Aa' -> { path: '/drills/pll', query: '?cases=Aa' } (trailing slash dropped). */

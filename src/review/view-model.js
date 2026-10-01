@@ -61,6 +61,40 @@ export function labelsFor(record, { inferred = false } = {}) {
     if (offset.stray) push(offset.at, 'Stray offset', 'warn', 'The D layer was turned, but no pair used that frame. One spare move.', 1);
     if (offset.used && valid(offset.resolvedAt, count)) push(offset.resolvedAt, 'D fix', 'neutral', 'This move resolves a D offset used by a pair.');
   }
+  // Stage labels are attached to the last move of that stage so the review can
+  // deep-link them to the exact position immediately before the move.
+  const verifiedCross = a.cross?.proven === true && a.cross?.done === true && Number.isFinite(a.cross?.d0) && Number.isFinite(a.cross?.total) && valid(a.marks?.cross, count);
+  const pairRows = (a.pairs ?? []).filter(pair => !pair.unsupported);
+  const verifiedPairs = pairRows.length > 0 && pairRows.every(provenChosen) && (a.marks?.pairs ?? []).some(index => valid(index, count));
+  const scoreByKey = new Map(stageScores(record).map(score => [score.key, score]));
+  const addStageQuality = (key, stage, end, verified, actual, reference) => {
+    if (!verified || !valid(end, count) || !Number.isFinite(actual) || !Number.isFinite(reference) || reference <= 0) return;
+    const score = scoreByKey.get(key);
+    if (!score) return;
+    if (actual > reference && actual <= reference + 1) push(end, 'Efficient', 'good', `${stage} finished within one move of its verified reference.`, 0, { stage: key });
+    if (score.loss === 0 && hasTimes(record)) push(end, 'Clean', 'good', `${stage} had no counted move waste, pause, cancel, or measured rotation.`, 0, { stage: key });
+    else if (score.loss > 0 && score.loss <= 1) push(end, 'OK', 'neutral', `${stage} lost ${score.loss.toFixed(1)} efficiency point${score.loss === 1 ? '' : 's'}.`, 0, { stage: key });
+  };
+  if (verifiedCross) addStageQuality('cross', 'Cross', a.marks.cross, true, a.marks.cross + 1, a.cross.d0);
+  if (verifiedPairs) {
+    const completedPairs = (a.marks.pairs ?? []).filter(index => valid(index, count));
+    const end = Math.max(...completedPairs);
+    const actual = end + 1 - (valid(a.marks.cross, count) ? a.marks.cross + 1 : 0);
+    const reference = pairRows.reduce((sum, pair) => sum + pair.chosenShortest, 0);
+    addStageQuality('f2l', 'F2L', end, true, actual, reference);
+  }
+  const llReference = a.lastLayerReference;
+  const llStart = Math.max(-1, ...(a.marks.pairs ?? []).filter(index => valid(index, count)), valid(a.marks.cross, count) ? a.marks.cross : -1) + 1;
+  const llEnd = valid(a.marks.solved, count) ? a.marks.solved : count - 1;
+  if (Number.isFinite(llReference) && llStart <= llEnd) {
+    const reference = llReference;
+    const actual = llEnd - llStart + 1;
+    const stage = Number.isInteger(a.marks.eo) && Number.isInteger(a.marks.co) ? 'pll' : 'last layer';
+    addStageQuality('ll', 'Last layer', llEnd, true, actual, reference);
+    // Attach the canonical drill destination metadata when this is a complete
+    // LL score, while preserving the visible "Efficient/Clean/OK" copy.
+    for (const item of labels[llEnd]) if (['Efficient', 'Clean', 'OK'].includes(item.text)) item.stage = stage;
+  }
   if (Array.isArray(inferred)) for (const entry of inferred) push(entry.i, entry.label, 'inferred', `Looks like ${entry.label.toLowerCase()}; this label is inferred.`);
   for (let i = 0; i < count; i++) if (!labels[i].length) push(i, 'Fine', 'neutral', 'No verified move evaluation is available at this position.');
   return labels;
@@ -145,7 +179,9 @@ export function stageOf(record, moveIndex) {
   const marks = indexMarks(record);
   if (Number.isInteger(marks.cross) && moveIndex <= marks.cross) return 'cross';
   const pairIndex = (marks.pairs ?? []).findIndex(index => Number.isInteger(index) && moveIndex <= index);
-  return pairIndex >= 0 ? `pair ${pairIndex + 1}` : 'last layer';
+  if (pairIndex >= 0) return `pair ${pairIndex + 1}`;
+  if (!Number.isInteger(marks.eo) || !Number.isInteger(marks.co)) return 'oll';
+  return moveIndex <= Math.max(marks.eo, marks.co) ? 'oll' : 'pll';
 }
 // The timestamps are cumulative, not individual gap durations. The graph's
 // vertical axis is verified loss units, rather than the number of badges.

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { gradeRetry, retryPlan, retryRegradeRecord, stateAfter } from '../src/review/replay.js';
-import { graphPath, labelsFor, stageScores, keyMoments } from '../src/review/view-model.js';
+import { graphPath, labelsFor, stageOf, stageScores, keyMoments } from '../src/review/view-model.js';
 
 const record = {
   at: 77, source: 'import', scramble: 'R U', solveMoves: ["U'", "R'", 'F', "F'"], moveCount: 4,
@@ -110,4 +110,25 @@ test('Stray offset costs one move once; an exploited offset resolves as a neutra
   assert.ok(labels.some(label => label.text === 'Stray offset' && label.loss === 1));
   assert.ok(labels.some(label => label.text === 'D fix'));
   assert.equal(stageScores(r).at(-1).loss, 1);
+});
+
+test('stage quality labels require measured evidence and distinguish OLL from PLL positions', () => {
+  const clean = {
+    solveMoves: ['R', 'U'], moveTimes: [100, 200],
+    analysis: { marks: { cross: 0, pairs: [1, null, null, null], eo: null, co: null, cp: null, solved: 1 },
+      cross: { moves: 1, d0: 1, total: 0, done: true, proven: true, losses: [] },
+      pairs: [{ from: 1, to: 1, chosenShortest: 1, chosenProven: true }], pauses: [], cancels: [], rotationMarks: [] },
+  };
+  assert.ok(labelsFor(clean)[0].some(item => item.text === 'Clean' && item.stage === 'cross'));
+  assert.ok(labelsFor(clean)[1].some(item => item.text === 'Clean' && item.stage === 'f2l'));
+  const efficient = { ...clean, solveMoves: ['R', 'U', 'F'], moveTimes: [100, 200, 300], analysis: { ...clean.analysis,
+    marks: { ...clean.analysis.marks, cross: 1, pairs: [2, null, null, null], solved: 2 },
+    cross: { moves: 2, d0: 1, total: 1, done: true, proven: true, losses: [{ i: 1, loss: 1 }] },
+    pairs: [{ from: 2, to: 2, chosenShortest: 1, chosenProven: true }] } };
+  assert.ok(labelsFor(efficient)[1].some(item => item.text === 'Efficient' && item.stage === 'cross'));
+  assert.ok(labelsFor(efficient)[1].some(item => item.text === 'OK' && item.stage === 'cross'));
+  const ll = { ...clean, analysis: { ...clean.analysis, marks: { cross: 0, pairs: [null, null, null, null], eo: 1, co: 2, cp: 3, solved: 4 } } };
+  assert.equal(stageOf(ll, 2), 'oll');
+  assert.equal(stageOf(ll, 3), 'pll');
+  assert.equal(stageOf({ ...ll, analysis: { ...ll.analysis, marks: { ...ll.analysis.marks, eo: null, co: null } } }, 2), 'oll', 'an unfinished or unclassified orientation stays in OLL');
 });
