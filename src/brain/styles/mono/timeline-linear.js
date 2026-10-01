@@ -42,7 +42,8 @@ export function createLinearTimeline(host, ctx = {}) {
   const cols = el('div', 'm-tl-cols');
   const list = el('ol', 'm-tl-list');
   const foot = el('p', 'm-tl-foot', 'ghost segments = your average pace per step');
-  root.append(insp, cols, list, foot);
+  const reviewHint = el('p', 'm-tl-review-hint', 'Select a marker to read its note');
+  root.append(insp, cols, list, foot, reviewHint);
   host.append(root);
 
   let planKey = null;
@@ -127,6 +128,7 @@ export function createLinearTimeline(host, ctx = {}) {
     const rebuilt = timeline.planKey !== planKey;
     if (rebuilt) rebuild(timeline);
     if (reviewChanged || rebuilt) { shownReview = review; resultsOn = Boolean(review); toggleClass(root, 'is-reviewing', resultsOn); renderMarkers(review); }
+    reviewHint.hidden = !review;
     toggleClass(root, 'is-ghost', timeline.ghost);
     toggleClass(root, 'is-results', vm.screen === 'results');
     setText(insp, timeline.insp?.text ?? '');

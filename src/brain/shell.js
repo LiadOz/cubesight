@@ -607,7 +607,8 @@ export function createShell(root, { dispatch }) {
     setText($('#brain-phase-detail'), vm.phaseText.detail);
     // Timeline host (aria lives on the host so both styles share it).
     // Orbit keeps its ring host while connecting: the ring sweeps around the cube then.
-    parts.timeline.hidden = !(vm.timeline.visible || (vm.screen === 'connecting' && style?.layout === 'orbit'));
+    const resultsLane = vm.screen === 'results' && style?.layout === 'column';
+    parts.timeline.hidden = !(vm.timeline.visible || resultsLane || (vm.screen === 'connecting' && style?.layout === 'orbit'));
     toggleClass(parts.timeline, 'is-ghost', vm.timeline.ghost);
     setAttr(parts.timeline, 'aria-valuemin', 0);
     setAttr(parts.timeline, 'aria-valuemax', vm.timeline.aria.max);

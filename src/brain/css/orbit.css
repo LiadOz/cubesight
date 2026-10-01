@@ -63,9 +63,18 @@
   align-items: start;
 }
 .brain[data-brain-style="orbit"][data-screen="results"] .brain-body { display: contents; }
-.brain[data-brain-style="orbit"][data-screen="results"] .brain-hero { display: none; }
-.brain[data-brain-style="orbit"][data-screen="results"] .brain-stage { grid-column: 1; position: sticky; top: 16px; }
-.brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 2; }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-hero { display: contents; }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-hero > * { display: none; }
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-hero > [data-slot="timeline-aside"] {
+  display: block; grid-column: 1; grid-row: 2; margin-top: 8px;
+}
+.brain[data-brain-style="orbit"][data-screen="results"] .brain-stage {
+  grid-column: 1; grid-row: 1; position: sticky;
+  top: max(56px, calc((100vh - min(500px, calc(100vh - 230px)) + 56px) / 2));
+  align-self: start;
+}
+.brain[data-brain-style="orbit"][data-screen="results"] [data-slot="timeline-aside"] { display: block; }
+.brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 2; grid-row: 1 / span 2; }
 
 /* --- Ring overlays (shared) ---------------------------------------------- */
 .b-oring, .b-oinsp { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; font-family: var(--b-font-mono); }
@@ -294,8 +303,9 @@
 @media (max-width: 720px) {
   .brain[data-brain-style="orbit"] .brain-body { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
   .brain[data-brain-style="orbit"][data-screen="results"] .b-stage { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
-  .brain[data-brain-style="orbit"][data-screen="results"] .brain-stage { position: relative; top: auto; grid-column: 1; }
-  .brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 1; }
+  .brain[data-brain-style="orbit"][data-screen="results"] .brain-stage { position: relative; top: auto; grid-column: 1; grid-row: 1; }
+  .brain[data-brain-style="orbit"][data-screen="results"] .brain-hero > [data-slot="timeline-aside"] { display: none; }
+  .brain[data-brain-style="orbit"][data-screen="results"] .b-slot-results { grid-column: 1; grid-row: 2; }
   .b-oring-delta { display: none; }   /* the labels would run off the screen; the list below carries the deltas */
   .b-oinsp-tick-label { font-size: 26px; }
   .b-oinsp-zone-label { font-size: 22px; }

@@ -41,6 +41,20 @@
 .brain[data-screen="inspection"] .m-tl-insp { display: none; }
 .brain[data-screen="inspection"] .b-slot-timeline { margin-top: 28px; }
 
+/* Results keep the lane beside the small cube and the long-form results. The
+   lane spans the page so its split marks stay legible at desktop width. */
+.brain[data-layout="column"][data-screen="results"] .b-slot-timeline {
+  display: block; grid-column: var(--mono-results-timeline-col, 1 / -1); grid-row: var(--mono-results-timeline-row, 1); min-width: 0; margin: var(--mono-results-timeline-margin, 0 0 20px);
+}
+.brain[data-layout="column"][data-screen="results"] .b-cube-wrap {
+  grid-column: 1; grid-row: var(--mono-results-cube-row, 2); position: var(--mono-results-cube-position, sticky);
+  top: var(--mono-results-cube-top, max(56px, calc((100vh - 240px + 56px) / 2))); align-self: start; margin: 0;
+}
+.brain[data-layout="column"][data-screen="results"] .b-slot-results { grid-column: var(--mono-results-content-col, 2); grid-row: var(--mono-results-content-row, 2); min-width: 0; }
+.brain[data-layout="column"][data-screen="results"] .b-slot-inspection { display: none; }
+.m-tl-review-hint { margin: 10px 0 0; color: var(--b-muted); font: 12px var(--b-font-mono); text-align: var(--mono-results-hint-align, left); }
+.m-tl-review-hint[hidden] { display: none; }
+
 /* --- Inspection --------------------------------------------------------------- */
 .m-insp-label { order: 10; color: var(--b-muted); font-size: 14px; }
 .m-insp-label[data-tone="error"], .m-insp-label[data-tone="warn"] { color: var(--b-warn-text); }
@@ -147,6 +161,17 @@
   .m-res-recent { display: none; }
   .m-res-session-stats dd { font-size: 20px; }
   .brain[data-brain-style="mono"] .b-results-actions { display: flex; justify-content: stretch; }
+  .brain[data-layout="column"][data-screen="results"] {
+    --mono-results-timeline-col: 1;
+    --mono-results-timeline-row: 2;
+    --mono-results-timeline-margin: 20px 0 0;
+    --mono-results-cube-row: 1;
+    --mono-results-cube-position: relative;
+    --mono-results-cube-top: auto;
+    --mono-results-content-col: 1;
+    --mono-results-content-row: 3;
+    --mono-results-hint-align: center;
+  }
   .brain[data-brain-style="mono"] .b-results-actions .b-textbtn {
     flex: 1; padding: 14px; border: 1.5px solid var(--b-accent); border-radius: var(--b-radius-bar); color: var(--b-accent-text); font-size: 16px;
   }

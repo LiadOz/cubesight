@@ -173,11 +173,51 @@ test('the two modes resolve different tokens', async ({ page }) => {
 test('the shared charts render in their Mono variants, with a small cube beside them', async ({ page }) => {
   const errors = await open(page, 'mono:results', 'dark');
   await expect(page.locator('canvas')).toHaveCount(1);
+  await expect(page.locator('.b-slot-timeline')).toBeVisible();
+  await expect(page.locator('.m-mk')).toHaveCount(5);
   const [cube, stats] = await Promise.all([page.locator('#brain-cube').boundingBox(), page.locator('.m-res').boundingBox()]);
   expect(cube.width).toBeGreaterThan(150);
   expect(cube.x + cube.width).toBeLessThanOrEqual(stats.x + 1);
   await expect(page.locator('.b-ch-tps.is-mono .b-ch-line')).toHaveCount(1);
   await expect(page.locator('.b-ch-tps.is-mono .b-ch-area')).toHaveCount(0);
   await expect(page.locator('.b-ch-splits.is-columns .b-ch-split')).toHaveCount(9);
+  await expect(page.locator('.m-tl-review-hint')).toHaveText('Select a marker to read its note');
   expect(errors).toEqual([]);
+});
+
+test('results layout matrix: cube stays below the header on desktop and stacks on phones', async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const out = 'test-results/r4-results-layout';
+  fs.mkdirSync(out, { recursive: true });
+  for (const style of ['orbit', 'mono']) for (const theme of ['dark', 'light']) for (const size of ['desktop', 'phone']) {
+    const errors = await open(page, `${style}:results`, theme, size);
+    const suffix = size === 'phone' ? '390' : '1280';
+    const name = `${style}-${theme}-${suffix}`;
+    await expect(page.locator('canvas')).toHaveCount(1);
+    if (size === 'phone') {
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(overflow, `${name} has no horizontal overflow`).toBeLessThanOrEqual(1);
+      const position = await page.locator(style === 'orbit' ? '.brain-stage' : '.b-cube-wrap').evaluate(el => getComputedStyle(el).position);
+      expect(position, `${name} uses a non-sticky stacked cube`).not.toBe('sticky');
+    } else {
+      const stageSelector = style === 'orbit' ? '.brain-stage' : '.b-cube-wrap';
+      const stage = page.locator(stageSelector);
+      await expect(stage).toHaveCSS('position', 'sticky');
+      await page.evaluate(() => window.scrollTo(0, 280));
+      const box = await stage.boundingBox();
+      expect(box.y, `${name} stays below the page header`).toBeGreaterThanOrEqual(55);
+      const centeredTop = await page.evaluate(brainStyle => {
+        const availableHeight = innerHeight - 56;
+        const objectHeight = brainStyle === 'orbit' ? Math.min(500, innerHeight - 230) : 240;
+        return 56 + (availableHeight - objectHeight) / 2;
+      }, style);
+      expect(Math.abs(box.y - centeredTop), `${name} remains vertically centered as stats scroll`).toBeLessThan(24);
+    }
+    const screenshot = path.join(out, `${name}.png`);
+    await page.screenshot({ path: screenshot, fullPage: true });
+    await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
+    expect(errors, `${name} browser errors`).toEqual([]);
+  }
 });

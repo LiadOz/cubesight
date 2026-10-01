@@ -147,7 +147,15 @@ for (const [name, style, theme, size] of VIEWS) {
     await playSolve(page, g.scramble, g.moves, { brain: BRAIN, base: 100, gaps: { 14: 1800 } });
     const brain = page.locator(BRAIN);
     await expect(brain.locator('.b-rev-chip')).not.toHaveCount(0, { timeout: 30_000 });
-    if (style === 'mono') await expect(brain.locator('.m-mk')).not.toHaveCount(0);
+    if (style === 'mono') {
+      await expect(brain.locator('.m-mk')).not.toHaveCount(0);
+      const marker = brain.locator('.m-mk:not(.is-selected)').first();
+      const markerId = await marker.getAttribute('data-marker');
+      await marker.click();
+      await expect.poll(() => page.evaluate(() => window.testBrain.handle.getViewModel().results.review.selectedId)).toBe(markerId);
+      await expect(brain.locator(`.m-mk[data-marker="${markerId}"]`)).toHaveClass(/is-selected/);
+      await expect(brain.locator('.m-tl-review-hint')).toHaveText('Select a marker to read its note');
+    }
     await page.waitForTimeout(800);
     fs.mkdirSync(SHOTS, { recursive: true });
     await page.screenshot({ path: `${SHOTS}/${name}-results.png`, fullPage: true });
