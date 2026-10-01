@@ -109,11 +109,22 @@ Extend the existing screenshot tests (`tests/brain-visual*.spec.js`) into a comp
 - Baselines are committed (PNG + JSON) under `tests/snapshots/__baselines__/` (Linux/Chromium only; CI pins the same).
 Acceptance: two consecutive runs on the same commit produce zero diffs (proves determinism, including the 3D cube); deliberately changing one colour token produces a diff gallery that flags exactly the affected cells; runtime budget < 8 min in parallel.
 
+## F10: Design lab: proposals rendered live in the site (required; after F0, not blocking F1)
+The user: the old debug screen should become a way for the agent to show them different designs of pages and components *in the site itself*, with the options available to switch, scroll and see how they fit on each page.
+
+Build a dev-area **design lab** at `#/dev/lab` (reached from the debug drawer; offline; excluded from the user-facing nav):
+- **Proposals as code:** a registry (`src/dev/lab/proposals/*.js`), where each proposal has `{id, title, why, page/route, component?, variants: [{id, label, description, apply()}], fixtures/states}`. A variant is applied with a scoped flag (e.g. a `data-lab-variant` attribute + CSS/JS behind `labVariant('results-actions') === 'B'`) so variants run inside the REAL page with the real Cube/Orbit components, never as screenshots.
+- **The viewer:** pick a proposal → the real page renders with the fake-cube/recording simulation in a chosen state (idle, scramble, solving, results, history, a drill…) → switch variants A/B/C instantly (buttons + keys 1/2/3), or show them **side by side** (two or three iframes of the same route with different variants); a viewport switcher (phone/tablet/desktop) and scroll freely inside each; Orbit dark/light toggle.
+- **Feedback loop:** per variant, "pick" / "reject" + a free-text note, stored locally and exportable as a JSON file (and, in dev builds only, POSTed to a `/__lab-feedback` endpoint that writes `/tmp/cubesight-lab/<timestamp>.json`, like the recordings), so the agent can read the user's choices directly.
+- **Promotion:** once a variant is picked, the agent promotes it to the default and deletes the losing variants (the registry keeps the decision log in `docs/design/lab-decisions.md`).
+- **Agent workflow (documented in `docs/design/LAB.md`):** for design questions after the redesign, agents add a proposal to the lab instead of (or in addition to) static SVGs, and report the link `http://localhost:5173/#/dev/lab/<proposal-id>`.
+Acceptance: a sample proposal with 3 variants of the results actions area and 2 of the history list renders live with the fake cube; side-by-side works on desktop; feedback round-trips to a JSON file; the lab code is tree-shaken out of production builds (or gated so it never appears there); the layout (F8) and snapshot (F9) suites ignore lab routes except a smoke test.
+
 ## Parallelism and ownership
 | Wave | WPs (parallel) | Owns |
 |---|---|---|
 | 1 | **F0** alone (+ F3, F6, **F8** and **F9** in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. F8: `tests/layout/**`, the package.json script, CI. F9: `tests/snapshots/**`, `scripts/snapshots-compare.mjs`, the package.json scripts. |
-| 2 | **F1, F2, F4, F5** in parallel after F0 merges | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
+| 2 | **F1, F2, F4, F5** in parallel after F0 merges; **F10** any time after F0 (doesn't block F1) | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
 Shared files (`src/main.js` routes, `types.js`, `tokens-*.css`): additive edits only, coordinate via small commits; the lead resolves merges.
 
 ## How the lead reviews each WP
