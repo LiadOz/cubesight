@@ -26,6 +26,19 @@ const buildInfoPlugin = {
   },
 };
 
+// Generated search experiments are research artifacts, never application data.
+const researchBoundaryPlugin = {
+  name: 'cubesight-research-boundary',
+  apply: 'build',
+  generateBundle() {
+    for (const id of this.getModuleIds()) {
+      if (/[/\\]docs[/\\]research[/\\]alg-gen[/\\]out[/\\]/.test(id)) {
+        this.error(`Research output cannot ship in the app bundle: ${id}`);
+      }
+    }
+  },
+};
+
 // The product name comes from src/copy/nav.js (one place to rename it).
 const appNamePlugin = {
   name: 'cubesight-app-name',
@@ -85,6 +98,7 @@ export default defineConfig({
   },
   plugins: [
     buildInfoPlugin,
+    researchBoundaryPlugin,
     appNamePlugin,
     devLogPlugin,
     recordingPlugin,
