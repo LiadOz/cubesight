@@ -332,7 +332,7 @@ test('a version 1 backup still imports, its legacy solves blob going into the hi
   assert.deepEqual(store.records.map(r => r.solveMs), [10000, 11000]);
   assert.equal(exportAll(memoryStorage({ 'cubesight-x': 'y' })).version, 1, 'without history the export keeps the v1 shape');
   assert.throws(() => parseImport(JSON.stringify({ version: 2, data: {}, history: { records: 'no' } })), /valid CubeSight/);
-  assert.throws(() => parseImport(JSON.stringify({ version: 3, data: {} })), /valid CubeSight/);
+  assert.throws(() => parseImport(JSON.stringify({ version: 4, data: {} })), /valid CubeSight/);
 });
 
 // --- view-model, keys, settings ------------------------------------------------------------

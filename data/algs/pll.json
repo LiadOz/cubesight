@@ -1,0 +1,832 @@
+{
+  "version": 1,
+  "set": "pll",
+  "source": {
+    "id": "speedsolving-pll",
+    "name": "SpeedSolving Wiki community contributors",
+    "url": "https://www.speedsolving.com/wiki/index.php/PLL",
+    "retrieved": "2026-10-01"
+  },
+  "verifiedWith": "cubing.js replay: all PLL cases distinct under AUF/y frame, variants match the case reference and preserve F2L",
+  "cases": [
+    {
+      "id": "pll/H",
+      "set": "pll",
+      "name": "H",
+      "label": "H",
+      "family": "H",
+      "category": "opposite edges",
+      "cue": "Four headlights and no solved side: opposite edge pairs swap.",
+      "signature": "0,1,2,3,2,3,0,1,0,0,0,0,0,0,0,0",
+      "setup": "M2 U' M2 U2 M2 U' M2",
+      "algs": [
+        {
+          "id": "s.pll.H.1",
+          "caseId": "pll/H",
+          "moves": "M2 U M2 U2 M2 U M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.H.2",
+          "caseId": "pll/H",
+          "moves": "M2 U' M2 U2 M2 U' M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Ua",
+      "set": "pll",
+      "name": "Ua",
+      "label": "Ua",
+      "family": "U",
+      "category": "three-edge cycle",
+      "cue": "All corners are solved; three edges cycle clockwise.",
+      "signature": "0,1,2,3,0,2,3,1,0,0,0,0,0,0,0,0",
+      "setup": "R' U' R U' R U R2 U R U' R U' R'",
+      "algs": [
+        {
+          "id": "s.pll.Ua.1",
+          "caseId": "pll/Ua",
+          "moves": "R U R' U R' U' R2 U' R' U R' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Ua.2",
+          "caseId": "pll/Ua",
+          "moves": "U2 M2 U M U2 M' U M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Ub",
+      "set": "pll",
+      "name": "Ub",
+      "label": "Ub",
+      "family": "U",
+      "category": "three-edge cycle",
+      "cue": "All corners are solved; three edges cycle counter-clockwise.",
+      "signature": "0,1,2,3,0,3,1,2,0,0,0,0,0,0,0,0",
+      "setup": "R2 U' R' U' R U R U R U' R",
+      "algs": [
+        {
+          "id": "s.pll.Ub.1",
+          "caseId": "pll/Ub",
+          "moves": "R' U R' U' R' U' R' U R U R2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Ub.2",
+          "caseId": "pll/Ub",
+          "moves": "U2 M2 U' M U2 M' U' M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Z",
+      "set": "pll",
+      "name": "Z",
+      "label": "Z",
+      "family": "Z",
+      "category": "adjacent edges",
+      "cue": "Four headlights with two adjacent edge pairs exchanged.",
+      "signature": "0,1,2,3,1,0,3,2,0,0,0,0,0,0,0,0",
+      "setup": "M2 U2 M U' M2 U' M2 U' M U'",
+      "algs": [
+        {
+          "id": "s.pll.Z.1",
+          "caseId": "pll/Z",
+          "moves": "U M' U M2 U M2 U M' U2 M2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Z.2",
+          "caseId": "pll/Z",
+          "moves": "M2 U M2 U M' U2 M2 U2 M'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Aa",
+      "set": "pll",
+      "name": "Aa",
+      "label": "Aa",
+      "family": "A",
+      "category": "adjacent corners",
+      "cue": "One adjacent pair of headlights; the corners swap around the other side.",
+      "signature": "0,1,3,2,1,2,3,0,0,0,0,0,0,0,0,0",
+      "setup": "x R2 D2 R U R' D2 R U' R x' U",
+      "algs": [
+        {
+          "id": "s.pll.Aa.1",
+          "caseId": "pll/Aa",
+          "moves": "U' x R' U R' D2 R U' R' D2 R2 x'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Aa.2",
+          "caseId": "pll/Aa",
+          "moves": "x' R2 D2 R' U' R D2 R' U R' x",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Ab",
+      "set": "pll",
+      "name": "Ab",
+      "label": "Ab",
+      "family": "A",
+      "category": "adjacent corners",
+      "cue": "One adjacent pair of headlights; the opposite A-perm direction.",
+      "signature": "0,1,3,2,3,0,1,2,0,0,0,0,0,0,0,0",
+      "setup": "x R' U R' D2 R U' R' D2 R2 x' U",
+      "algs": [
+        {
+          "id": "s.pll.Ab.1",
+          "caseId": "pll/Ab",
+          "moves": "U' x R2 D2 R U R' D2 R U' R x'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Ab.2",
+          "caseId": "pll/Ab",
+          "moves": "x' R U' R D2 R' U R D2 R2 x",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/E",
+      "set": "pll",
+      "name": "E",
+      "label": "E",
+      "family": "E",
+      "category": "diagonal corners",
+      "cue": "No solved corner pair: the two diagonal corner pairs are exchanged.",
+      "signature": "0,3,2,1,1,2,3,0,0,0,0,0,0,0,0,0",
+      "setup": "x' D R U R' D' R U' R' D R U' R' D' R U R' x U'",
+      "algs": [
+        {
+          "id": "s.pll.E.1",
+          "caseId": "pll/E",
+          "moves": "U x' R U' R' D R U R' D' R U R' D R U' R' D' x",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.E.2",
+          "caseId": "pll/E",
+          "moves": "R' D' R U' R' D R U R' D' R U2 R' D R U' R' D' R U R' D R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/F",
+      "set": "pll",
+      "name": "F",
+      "label": "F",
+      "family": "F",
+      "category": "corner and edge swap",
+      "cue": "A corner swap with a single adjacent edge swap; look for the F-perm headlights.",
+      "signature": "0,1,3,2,2,1,0,3,0,0,0,0,0,0,0,0",
+      "setup": "R U' L U2 R' U R2 U R U R2 U' R' U' R2 L' y'",
+      "algs": [
+        {
+          "id": "s.pll.F.1",
+          "caseId": "pll/F",
+          "moves": "y L R2 U R U R2 U' R' U' R2 U' R U2 L' U R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.F.2",
+          "caseId": "pll/F",
+          "moves": "y R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Ga",
+      "set": "pll",
+      "name": "Ga",
+      "label": "Ga",
+      "family": "G",
+      "category": "double cycle",
+      "cue": "A diagonal corner cycle with an adjacent edge cycle; use the Ga anchor.",
+      "signature": "0,1,3,2,2,0,3,1,0,0,0,0,0,0,0,0",
+      "setup": "D R' U' R U D' R2 U R' U R U' R U' R2 y'",
+      "algs": [
+        {
+          "id": "s.pll.Ga.1",
+          "caseId": "pll/Ga",
+          "moves": "y R2 U R' U R' U' R U' R2 D U' R' U R D'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Ga.2",
+          "caseId": "pll/Ga",
+          "moves": "y R2 u R' U R' U' R u' R2 y' R' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Gb",
+      "set": "pll",
+      "name": "Gb",
+      "label": "Gb",
+      "family": "G",
+      "category": "double cycle",
+      "cue": "A diagonal corner cycle with an adjacent edge cycle; mirror direction of Ga.",
+      "signature": "0,1,3,2,1,3,0,2,0,0,0,0,0,0,0,0",
+      "setup": "D' R2 U R' U R' U' R U' R2 D U' R' U R",
+      "algs": [
+        {
+          "id": "s.pll.Gb.1",
+          "caseId": "pll/Gb",
+          "moves": "R' U' R U D' R2 U R' U R U' R U' R2 D",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Gb.2",
+          "caseId": "pll/Gb",
+          "moves": "R' U' R y R2 u R' U R U' R u' R2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Gc",
+      "set": "pll",
+      "name": "Gc",
+      "label": "Gc",
+      "family": "G",
+      "category": "double cycle",
+      "cue": "A diagonal corner cycle with an adjacent edge cycle; use the Gc bar pattern.",
+      "signature": "0,1,3,2,3,2,0,1,0,0,0,0,0,0,0,0",
+      "setup": "D' R U R' U' D R2 U' R U' R' U R' U R2 y'",
+      "algs": [
+        {
+          "id": "s.pll.Gc.1",
+          "caseId": "pll/Gc",
+          "moves": "y R2 U' R U' R U R' U R2 D' U R U' R' D",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Gc.2",
+          "caseId": "pll/Gc",
+          "moves": "y' R2 F2 R U2 R U2 R' F R U R' U' R' F R2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Gd",
+      "set": "pll",
+      "name": "Gd",
+      "label": "Gd",
+      "family": "G",
+      "category": "double cycle",
+      "cue": "A diagonal corner cycle with an adjacent edge cycle; mirror direction of Gc.",
+      "signature": "0,1,3,2,2,3,1,0,0,0,0,0,0,0,0,0",
+      "setup": "D R2 U' R U' R U R' U R2 D' U R U' R' y2",
+      "algs": [
+        {
+          "id": "s.pll.Gd.1",
+          "caseId": "pll/Gd",
+          "moves": "y2 R U R' U' D R2 U' R U' R' U R' U R2 D'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Gd.2",
+          "caseId": "pll/Gd",
+          "moves": "y2 D' R U R' U' D R2 U' R U' R' U R' U R2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Ja",
+      "set": "pll",
+      "name": "Ja",
+      "label": "Ja",
+      "family": "J",
+      "category": "adjacent corners",
+      "cue": "One adjacent pair of headlights and one adjacent corner swap; Ja direction.",
+      "signature": "0,1,3,2,3,1,2,0,0,0,0,0,0,0,0,0",
+      "setup": "x U2 r' U' r U2 R' F R' F' R2 x' y2",
+      "algs": [
+        {
+          "id": "s.pll.Ja.1",
+          "caseId": "pll/Ja",
+          "moves": "y2 x R2 F R F' R U2 r' U r U2 x'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Ja.2",
+          "caseId": "pll/Ja",
+          "moves": "y2 L U' R' U L' U2 R U' R' U2 R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Jb",
+      "set": "pll",
+      "name": "Jb",
+      "label": "Jb",
+      "family": "J",
+      "category": "adjacent corners",
+      "cue": "One adjacent pair of headlights and one adjacent corner swap; Jb direction.",
+      "signature": "0,1,3,2,0,1,3,2,0,0,0,0,0,0,0,0",
+      "setup": "L U2 L' U' L U2 R' U L' U' R y2",
+      "algs": [
+        {
+          "id": "s.pll.Jb.1",
+          "caseId": "pll/Jb",
+          "moves": "y2 R' U L U' R U2 L' U L U2 L'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Jb.2",
+          "caseId": "pll/Jb",
+          "moves": "R U R' F' R U R' U' R' F R2 U' R' U'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Na",
+      "set": "pll",
+      "name": "Na",
+      "label": "Na",
+      "family": "N",
+      "category": "diagonal corners",
+      "cue": "No headlights: diagonal corner swap with the Na edge cycle.",
+      "signature": "0,3,2,1,0,3,2,1,0,0,0,0,0,0,0,0",
+      "setup": "U2 r' D' r U2 r' D' r U2 r' D' r U2 r' D' r U2 r' D' r",
+      "algs": [
+        {
+          "id": "s.pll.Na.1",
+          "caseId": "pll/Na",
+          "moves": "r' D r U2 r' D r U2 r' D r U2 r' D r U2 r' D r U2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Na.2",
+          "caseId": "pll/Na",
+          "moves": "r' D' r U2 r' D' r U2 r' D' r U2 r' D' r U2 r' D' r U2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Nb",
+      "set": "pll",
+      "name": "Nb",
+      "label": "Nb",
+      "family": "N",
+      "category": "diagonal corners",
+      "cue": "No headlights: diagonal corner swap with the Nb edge cycle.",
+      "signature": "0,3,2,1,2,1,0,3,0,0,0,0,0,0,0,0",
+      "setup": "U2 r D' r' U2 r D' r' U2 r D' r' U2 r D' r' U2 r D' r'",
+      "algs": [
+        {
+          "id": "s.pll.Nb.1",
+          "caseId": "pll/Nb",
+          "moves": "r D r' U2 r D r' U2 r D r' U2 r D r' U2 r D r' U2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Nb.2",
+          "caseId": "pll/Nb",
+          "moves": "r D' r' U2 r D' r' U2 r D' r' U2 r D' r' U2 r D' r' U2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Ra",
+      "set": "pll",
+      "name": "Ra",
+      "label": "Ra",
+      "family": "R",
+      "category": "adjacent corners",
+      "cue": "One adjacent corner swap with the Ra edge cycle.",
+      "signature": "0,1,3,2,1,0,2,3,0,0,0,0,0,0,0,0",
+      "setup": "R U2 R D R' U R D' R' U' R' U R U R' y",
+      "algs": [
+        {
+          "id": "s.pll.Ra.1",
+          "caseId": "pll/Ra",
+          "moves": "y' R U' R' U' R U R D R' U' R D' R' U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Ra.2",
+          "caseId": "pll/Ra",
+          "moves": "y' R U R' F' R U2 R' U2 R' F R U R U2 R' U'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Rb",
+      "set": "pll",
+      "name": "Rb",
+      "label": "Rb",
+      "family": "R",
+      "category": "adjacent corners",
+      "cue": "One adjacent corner swap with the Rb edge cycle.",
+      "signature": "0,1,3,2,0,2,1,3,0,0,0,0,0,0,0,0",
+      "setup": "U R2 F R U R U' R' F' R U2 R' U2 R",
+      "algs": [
+        {
+          "id": "s.pll.Rb.1",
+          "caseId": "pll/Rb",
+          "moves": "R' U2 R U2 R' F R U R' U' R' F' R2 U'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Rb.2",
+          "caseId": "pll/Rb",
+          "moves": "y' L' U' L F L' U2 L U2 L F' L' U' L' U2 L U",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/T",
+      "set": "pll",
+      "name": "T",
+      "label": "T",
+      "family": "T",
+      "category": "adjacent corners",
+      "cue": "One adjacent corner swap and one adjacent edge swap; the T-perm headlights are prominent.",
+      "signature": "0,1,3,2,0,3,2,1,0,0,0,0,0,0,0,0",
+      "setup": "F R U' R' U R U R2 F' R U R U' R'",
+      "algs": [
+        {
+          "id": "s.pll.T.1",
+          "caseId": "pll/T",
+          "moves": "R U R' U' R' F R2 U' R' U' R U R' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.T.2",
+          "caseId": "pll/T",
+          "moves": "F R U' R' U R U R2 F' R U R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/V",
+      "set": "pll",
+      "name": "V",
+      "label": "V",
+      "family": "V",
+      "category": "diagonal corners",
+      "cue": "No headlights: diagonal corner swap with an adjacent edge cycle.",
+      "signature": "0,3,2,1,0,1,3,2,0,0,0,0,0,0,0,0",
+      "setup": "R2 D R2 U' R2 D' U R' D R' D' R U' R' U R' y'",
+      "algs": [
+        {
+          "id": "s.pll.V.1",
+          "caseId": "pll/V",
+          "moves": "y R U' R U R' D R D' R U' D R2 U R2 D' R2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.V.2",
+          "caseId": "pll/V",
+          "moves": "y R' U R' U' R D' R' D R' U D' R2 U' R2 D R2",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "pll/Y",
+      "set": "pll",
+      "name": "Y",
+      "label": "Y",
+      "family": "Y",
+      "category": "diagonal corners",
+      "cue": "No headlights: diagonal corner swap with the Y edge cycle.",
+      "signature": "0,3,2,1,0,2,1,3,0,0,0,0,0,0,0,0",
+      "setup": "R' U' R2 U' L U2 R' U R U2 R' L' U R' U R",
+      "algs": [
+        {
+          "id": "s.pll.Y.1",
+          "caseId": "pll/Y",
+          "moves": "R' U' R U' L R U2 R' U' R U2 L' U R2 U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.pll.Y.2",
+          "caseId": "pll/Y",
+          "moves": "F R U' R' U' R U R' F' R U R' U' R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-pll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/PLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    }
+  ]
+}

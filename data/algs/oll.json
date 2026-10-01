@@ -1,0 +1,2070 @@
+{
+  "version": 1,
+  "set": "oll",
+  "source": {
+    "id": "speedsolving-oll",
+    "name": "SpeedSolving Wiki community contributors",
+    "url": "https://www.speedsolving.com/wiki/index.php/OLL",
+    "retrieved": "2026-10-01"
+  },
+  "alternatesSource": {
+    "id": "speedcubedb-oll",
+    "name": "SpeedCubeDB community contributors",
+    "retrieved": "2026-10-01"
+  },
+  "verifiedWith": "cubing.js replay: all OLL signatures distinct under AUF, variants equivalent by OLL orientation, setup preserves F2L (including y view frames)",
+  "cases": [
+    {
+      "id": "oll/1",
+      "set": "oll",
+      "number": 1,
+      "name": "Runway, Blank",
+      "signature": "12121111",
+      "setup": "F R' F' R U2 F R' F' R2 U2 R'",
+      "algs": [
+        {
+          "id": "s.oll.1.1",
+          "caseId": "oll/1",
+          "moves": "R U2 R2 F R F' U2 R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.1.2",
+          "caseId": "oll/1",
+          "moves": "U R U' R2 D' r U' r' D R2 U R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/2",
+      "set": "oll",
+      "number": 2,
+      "name": "Zamboni",
+      "signature": "11221111",
+      "setup": "R U' R2 D' r U' r' D R2 U R' U",
+      "algs": [
+        {
+          "id": "s.oll.2.1",
+          "caseId": "oll/2",
+          "moves": "U' R U' R2 D' r U r' D R2 U R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.2.2",
+          "caseId": "oll/2",
+          "moves": "F R U R' U' S R U R' U' f'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/3",
+      "set": "oll",
+      "number": 3,
+      "name": "Anti-Pinwheel, Anti-Mouse",
+      "signature": "02221111",
+      "setup": "F U R U' R' F' U f U R U' R' f' U'",
+      "algs": [
+        {
+          "id": "s.oll.3.1",
+          "caseId": "oll/3",
+          "moves": "U f R U R' U' f' U' F R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.3.2",
+          "caseId": "oll/3",
+          "moves": "U2 r' R2 U R' U r U2 r' U M'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/4",
+      "set": "oll",
+      "number": 4,
+      "name": "Pinwheel, Mouse",
+      "signature": "01111111",
+      "setup": "F U R U' R' F' U' f U R U' R' f'",
+      "algs": [
+        {
+          "id": "s.oll.4.1",
+          "caseId": "oll/4",
+          "moves": "f R U R' U' f' U F R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.4.2",
+          "caseId": "oll/4",
+          "moves": "U l L2 U' L U' l' U2 l U' M'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/5",
+      "set": "oll",
+      "number": 5,
+      "name": "Right back wide antisune (RBWAS), Lefty Square",
+      "signature": "02220011",
+      "setup": "l' U' L U' L' U2 l U2",
+      "algs": [
+        {
+          "id": "s.oll.5.1",
+          "caseId": "oll/5",
+          "moves": "U2 l' U2 L U L' U l",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.5.2",
+          "caseId": "oll/5",
+          "moves": "r' U2 R U R' U r",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/6",
+      "set": "oll",
+      "number": 6,
+      "name": "Right front wide antisune (RFWAS), Righty Square",
+      "signature": "01110011",
+      "setup": "r U R' U R U2 r' U2",
+      "algs": [
+        {
+          "id": "s.oll.6.1",
+          "caseId": "oll/6",
+          "moves": "U2 r U2 R' U' R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.6.2",
+          "caseId": "oll/6",
+          "moves": "r U2 R' U' R U' r'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_6"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/7",
+      "set": "oll",
+      "number": 7,
+      "name": "Lightning, Wide Sune",
+      "signature": "02220110",
+      "setup": "r U2 R' U' R U' r'",
+      "algs": [
+        {
+          "id": "s.oll.7.1",
+          "caseId": "oll/7",
+          "moves": "r U R' U R U2 r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.7.2",
+          "caseId": "oll/7",
+          "moves": "S' R U R' U R U2 R' U S",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_7"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/8",
+      "set": "oll",
+      "number": 8,
+      "name": "Wide Left Sune, Reverse Lightning",
+      "signature": "01111001",
+      "setup": "l' U2 L U L' U l",
+      "algs": [
+        {
+          "id": "s.oll.8.1",
+          "caseId": "oll/8",
+          "moves": "l' U' L U' L' U2 l",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.8.2",
+          "caseId": "oll/8",
+          "moves": "U2 r' U' R U' R' U2 r",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/9",
+      "set": "oll",
+      "number": 9,
+      "name": "Kite",
+      "signature": "01111100",
+      "setup": "F U R U' R2 F' R U R U' R' U",
+      "algs": [
+        {
+          "id": "s.oll.9.1",
+          "caseId": "oll/9",
+          "moves": "U' R U R' U' R' F R2 U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.9.2",
+          "caseId": "oll/9",
+          "moves": "y R U R' U' R' F R2 U R' U' F'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_9"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/10",
+      "set": "oll",
+      "number": 10,
+      "name": "Anti-Kite",
+      "signature": "02221100",
+      "setup": "R U2 R' F R' F' R U' R U' R' U",
+      "algs": [
+        {
+          "id": "s.oll.10.1",
+          "caseId": "oll/10",
+          "moves": "U' R U R' U R' F R F' R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.10.2",
+          "caseId": "oll/10",
+          "moves": "F U F' R' F R U' R' F' R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/11",
+      "set": "oll",
+      "number": 11,
+      "name": "Downstairs",
+      "signature": "02221001",
+      "setup": "M U' R U2 R' U' R U' R2 r U",
+      "algs": [
+        {
+          "id": "s.oll.11.1",
+          "caseId": "oll/11",
+          "moves": "U' r' R2 U R' U R U2 R' U M'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.11.2",
+          "caseId": "oll/11",
+          "moves": "U r U R' U R' F R F' R U2 r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/12",
+      "set": "oll",
+      "number": 12,
+      "name": "Upstairs",
+      "signature": "01110110",
+      "setup": "R' r U R' U2 R U R' U R2 r' U",
+      "algs": [
+        {
+          "id": "s.oll.12.1",
+          "caseId": "oll/12",
+          "moves": "U' r R2 U' R U' R' U2 R U' r' R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.12.2",
+          "caseId": "oll/12",
+          "moves": "U l L2 U' L U' L' U2 L U' M'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/13",
+      "set": "oll",
+      "number": 13,
+      "name": "Gun, Trigger",
+      "signature": "02220101",
+      "setup": "F R U' R' U R U2 R' U' F'",
+      "algs": [
+        {
+          "id": "s.oll.13.1",
+          "caseId": "oll/13",
+          "moves": "F U R U2 R' U' R U R' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.13.2",
+          "caseId": "oll/13",
+          "moves": "F U R U' R2 F' R U R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/14",
+      "set": "oll",
+      "number": 14,
+      "name": "Anti-Gun, Anti-Trigger",
+      "signature": "01111010",
+      "setup": "F U F' R' F R U' R' F' R",
+      "algs": [
+        {
+          "id": "s.oll.14.1",
+          "caseId": "oll/14",
+          "moves": "R' F R U R' F' R F U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.14.2",
+          "caseId": "oll/14",
+          "moves": "r U R' U' r' F R2 U R' U' F'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_14"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/15",
+      "set": "oll",
+      "number": 15,
+      "name": "Squeegee",
+      "signature": "02221010",
+      "setup": "l' U' l U' L' U L l' U l U2",
+      "algs": [
+        {
+          "id": "s.oll.15.1",
+          "caseId": "oll/15",
+          "moves": "U2 l' U' l L' U' L U l' U l",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.15.2",
+          "caseId": "oll/15",
+          "moves": "r' U' r R' U' R U r' U r",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/16",
+      "set": "oll",
+      "number": 16,
+      "name": "Anti-Squeegee",
+      "signature": "01110101",
+      "setup": "r U r' U R U' R' r U' r' U2",
+      "algs": [
+        {
+          "id": "s.oll.16.1",
+          "caseId": "oll/16",
+          "moves": "U2 r U r' R U R' U' r U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.16.2",
+          "caseId": "oll/16",
+          "moves": "r U r' R U R' U' r U' r'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_16"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/17",
+      "set": "oll",
+      "number": 17,
+      "name": "Slash, Diagonal",
+      "signature": "01021111",
+      "setup": "F R' F' R U2 F R' F' R U' R U' R'",
+      "algs": [
+        {
+          "id": "s.oll.17.1",
+          "caseId": "oll/17",
+          "moves": "R U R' U R' F R F' U2 R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.17.2",
+          "caseId": "oll/17",
+          "moves": "U2 F R' F' R U S' R U' R' S",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/18",
+      "set": "oll",
+      "number": 18,
+      "name": "Crown",
+      "signature": "00121111",
+      "setup": "r U R' U' M U2 F R' F' R2 U2 R'",
+      "algs": [
+        {
+          "id": "s.oll.18.1",
+          "caseId": "oll/18",
+          "moves": "R U2 R2 F R F' U2 M' U R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.18.2",
+          "caseId": "oll/18",
+          "moves": "U R U R2 F' U' F U R U2 R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/19",
+      "set": "oll",
+      "number": 19,
+      "name": "Bunny",
+      "signature": "00211111",
+      "setup": "F R' F' R U S' R U' R' S",
+      "algs": [
+        {
+          "id": "s.oll.19.1",
+          "caseId": "oll/19",
+          "moves": "S' R U R' S U' R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.19.2",
+          "caseId": "oll/19",
+          "moves": "U' r' R U R U R' U' r R2 F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/20",
+      "set": "oll",
+      "number": 20,
+      "name": "X, Checkers",
+      "signature": "00001111",
+      "setup": "r U R' U' M R r' U R U' R' U' R' r",
+      "algs": [
+        {
+          "id": "s.oll.20.1",
+          "caseId": "oll/20",
+          "moves": "r' R U R U R' U' r R' M' U R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.20.2",
+          "caseId": "oll/20",
+          "moves": "r U R' U' r R' M' U R U' R' U' M'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/21",
+      "set": "oll",
+      "number": 21,
+      "name": "H, Double Sune, Flip, Cross",
+      "signature": "12120000",
+      "setup": "R U2 R' U' R U R' U' R U' R'",
+      "algs": [
+        {
+          "id": "s.oll.21.1",
+          "caseId": "oll/21",
+          "moves": "R U R' U R U' R' U R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.21.2",
+          "caseId": "oll/21",
+          "moves": "U R U2 R' U' R U R' U' R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/22",
+      "set": "oll",
+      "number": 22,
+      "name": "Pi, Bruno, Wheel, T-shirt, Antarctica",
+      "signature": "11220000",
+      "setup": "R' U2 R2 U R2 U R2 U2 R'",
+      "algs": [
+        {
+          "id": "s.oll.22.1",
+          "caseId": "oll/22",
+          "moves": "R U2 R2 U' R2 U' R2 U2 R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.22.2",
+          "caseId": "oll/22",
+          "moves": "f R U R' U' S' R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/23",
+      "set": "oll",
+      "number": 23,
+      "name": "U, cite50†Headlights , Superman",
+      "signature": "00120000",
+      "setup": "R' U2 R' D' R U2 R' D R2",
+      "algs": [
+        {
+          "id": "s.oll.23.1",
+          "caseId": "oll/23",
+          "moves": "R2 D' R U2 R' D R U2 R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.23.2",
+          "caseId": "oll/23",
+          "moves": "U2 R2 D R' U2 R D' R' U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/24",
+      "set": "oll",
+      "number": 24,
+      "name": "T, Chameleon, Shark, Hammerhead, Little Horse, Stingray",
+      "signature": "00210000",
+      "setup": "F R' F' r U R U' r'",
+      "algs": [
+        {
+          "id": "s.oll.24.1",
+          "caseId": "oll/24",
+          "moves": "r U R' U' r' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.24.2",
+          "caseId": "oll/24",
+          "moves": "U2 l' U' L U l F' L' F",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/25",
+      "set": "oll",
+      "number": 25,
+      "name": "L, Bowtie, Triple-Sune, Side-winder, Diagonals, Spaceship",
+      "signature": "01020000",
+      "setup": "r U R' U' r' F R F' U2",
+      "algs": [
+        {
+          "id": "s.oll.25.1",
+          "caseId": "oll/25",
+          "moves": "U2 F R' F' r U R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.25.2",
+          "caseId": "oll/25",
+          "moves": "U' F' r U R' U' r' F R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/26",
+      "set": "oll",
+      "number": 26,
+      "name": "Antisune, AS, S-, Swimming Right",
+      "signature": "01110000",
+      "setup": "R U R' U R U2 R' y",
+      "algs": [
+        {
+          "id": "s.oll.26.1",
+          "caseId": "oll/26",
+          "moves": "y' R U2 R' U' R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.26.2",
+          "caseId": "oll/26",
+          "moves": "U2 R' U' R U' R' U2 R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/27",
+      "set": "oll",
+      "number": 27,
+      "name": "Sune, S, Swimming Left",
+      "signature": "02220000",
+      "setup": "R U2 R' U' R U' R'",
+      "algs": [
+        {
+          "id": "s.oll.27.1",
+          "caseId": "oll/27",
+          "moves": "R U R' U R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.27.2",
+          "caseId": "oll/27",
+          "moves": "U' R' U2 R U R' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/28",
+      "set": "oll",
+      "number": 28,
+      "name": "Stealth, Arrow, Arrowhead, Fish",
+      "signature": "00000011",
+      "setup": "R U R' U' R' r U R U' r'",
+      "algs": [
+        {
+          "id": "s.oll.28.1",
+          "caseId": "oll/28",
+          "moves": "r U R' U' r' R U R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.28.2",
+          "caseId": "oll/28",
+          "moves": "U2 M' U l L' U2 M' U l L'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/29",
+      "set": "oll",
+      "number": 29,
+      "name": "Spotted Chameleon",
+      "signature": "00211100",
+      "setup": "R U' R' F' U F R U R' U R U' R' U'",
+      "algs": [
+        {
+          "id": "s.oll.29.1",
+          "caseId": "oll/29",
+          "moves": "U R U R' U' R U' R' F' U' F R U R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.29.2",
+          "caseId": "oll/29",
+          "moves": "U R U R' U' R' F R F' R U R' U' M' U R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/30",
+      "set": "oll",
+      "number": 30,
+      "name": "Anti-Spotted Chameleon",
+      "signature": "00210110",
+      "setup": "F U R U2 R' U R U2 R' U' F' U2",
+      "algs": [
+        {
+          "id": "s.oll.30.1",
+          "caseId": "oll/30",
+          "moves": "U2 F U R U2 R' U' R U2 R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.30.2",
+          "caseId": "oll/30",
+          "moves": "U' r' D' r U' r' D r2 U' r' U r U r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/31",
+      "set": "oll",
+      "number": 31,
+      "name": "Couch",
+      "signature": "00211001",
+      "setup": "R' F R U R' U' F' U R U2",
+      "algs": [
+        {
+          "id": "s.oll.31.1",
+          "caseId": "oll/31",
+          "moves": "U2 R' U' F U R U' R' F' R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.31.2",
+          "caseId": "oll/31",
+          "moves": "R' U' F U R U' R' F' R",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_31"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/32",
+      "set": "oll",
+      "number": 32,
+      "name": "Anti-Couch",
+      "signature": "00210011",
+      "setup": "f R' F' R U R U' R' S'",
+      "algs": [
+        {
+          "id": "s.oll.32.1",
+          "caseId": "oll/32",
+          "moves": "S R U R' U' R' F R f'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.32.2",
+          "caseId": "oll/32",
+          "moves": "U2 L U F' U' L' U L F L'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/33",
+      "set": "oll",
+      "number": 33,
+      "name": "Tying Shoelaces, Key",
+      "signature": "00211010",
+      "setup": "F R' F' R U R U' R'",
+      "algs": [
+        {
+          "id": "s.oll.33.1",
+          "caseId": "oll/33",
+          "moves": "R U R' U' R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.33.2",
+          "caseId": "oll/33",
+          "moves": "y2 L' U' L U L F' L' F",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_33"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/34",
+      "set": "oll",
+      "number": 34,
+      "name": "City (C and T)",
+      "signature": "00210101",
+      "setup": "F U R' U' R' F' R U R2 U' R'",
+      "algs": [
+        {
+          "id": "s.oll.34.1",
+          "caseId": "oll/34",
+          "moves": "R U R2 U' R' F R U R U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.34.2",
+          "caseId": "oll/34",
+          "moves": "R U R' U' y l' U' L U L' l",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/35",
+      "set": "oll",
+      "number": 35,
+      "name": "Fish Salad",
+      "signature": "01021100",
+      "setup": "R U2 R' F R' F' R2 U2 R'",
+      "algs": [
+        {
+          "id": "s.oll.35.1",
+          "caseId": "oll/35",
+          "moves": "R U2 R2 F R F' R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.35.2",
+          "caseId": "oll/35",
+          "moves": "f R U R' U' f' R U R' U R U2 R'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_35"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/36",
+      "set": "oll",
+      "number": 36,
+      "name": "Sea-Mew, Wario, Anti-Moustache",
+      "signature": "01021001",
+      "setup": "F' L F L' U' L' U' L U L' U L U2",
+      "algs": [
+        {
+          "id": "s.oll.36.1",
+          "caseId": "oll/36",
+          "moves": "U2 L' U' L U' L' U L U L F' L' F",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.36.2",
+          "caseId": "oll/36",
+          "moves": "U2 R U R' F' R U R' U' R' F R U' R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/37",
+      "set": "oll",
+      "number": 37,
+      "name": "Mounted Fish, Untying Shoelaces",
+      "signature": "01020011",
+      "setup": "R U R' U' R' F R F' U'",
+      "algs": [
+        {
+          "id": "s.oll.37.1",
+          "caseId": "oll/37",
+          "moves": "U F R' F' R U R U' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.37.2",
+          "caseId": "oll/37",
+          "moves": "F R' F' R U R U' R'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_37"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/38",
+      "set": "oll",
+      "number": 38,
+      "name": "Mario, Moustache",
+      "signature": "01020110",
+      "setup": "F R' F' R U R U R' U' R U' R' U2",
+      "algs": [
+        {
+          "id": "s.oll.38.1",
+          "caseId": "oll/38",
+          "moves": "U2 R U R' U R U' R' U' R' F R F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.38.2",
+          "caseId": "oll/38",
+          "moves": "R U R' U R U' R' U' R' F R F'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_38"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/39",
+      "set": "oll",
+      "number": 39,
+      "name": "Fung",
+      "signature": "01020101",
+      "setup": "L U F' U' L' U L F L'",
+      "algs": [
+        {
+          "id": "s.oll.39.1",
+          "caseId": "oll/39",
+          "moves": "L F' L' U' L U F U' L'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.39.2",
+          "caseId": "oll/39",
+          "moves": "U2 R U R' F' U' F U R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/40",
+      "set": "oll",
+      "number": 40,
+      "name": "Anti-Fung",
+      "signature": "01021010",
+      "setup": "R' U' F U R U' R' F' R",
+      "algs": [
+        {
+          "id": "s.oll.40.1",
+          "caseId": "oll/40",
+          "moves": "R' F R U R' U' F' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.40.2",
+          "caseId": "oll/40",
+          "moves": "y R' F R U R' U' F' U R",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_40"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/41",
+      "set": "oll",
+      "number": 41,
+      "name": "Awkward Fish, Dalmation",
+      "signature": "00120110",
+      "setup": "F U R U' R' F' R U2 R' U' R U' R' U2",
+      "algs": [
+        {
+          "id": "s.oll.41.1",
+          "caseId": "oll/41",
+          "moves": "U2 R U R' U R U2 R' F R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.41.2",
+          "caseId": "oll/41",
+          "moves": "y2 R U R' U R U2 R' F R U R' U' F'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_41"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/42",
+      "set": "oll",
+      "number": 42,
+      "name": "Lefty Awkward Fish, Anti-Dalmation",
+      "signature": "00121100",
+      "setup": "F U R U' R' F' R' U2 R U R' U R",
+      "algs": [
+        {
+          "id": "s.oll.42.1",
+          "caseId": "oll/42",
+          "moves": "R' U' R U' R' U2 R F R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.42.2",
+          "caseId": "oll/42",
+          "moves": "R' U' R U' R' U2 R U R' F' U' F U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/43",
+      "set": "oll",
+      "number": 43,
+      "name": "Anti-P",
+      "signature": "00121001",
+      "setup": "R' F' U' F U R U'",
+      "algs": [
+        {
+          "id": "s.oll.43.1",
+          "caseId": "oll/43",
+          "moves": "U R' U' F' U F R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.43.2",
+          "caseId": "oll/43",
+          "moves": "y R' U' F' U F R",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_43"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/44",
+      "set": "oll",
+      "number": 44,
+      "name": "P",
+      "signature": "00120011",
+      "setup": "F R U R' U' F' U2",
+      "algs": [
+        {
+          "id": "s.oll.44.1",
+          "caseId": "oll/44",
+          "moves": "U2 F U R U' R' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.44.2",
+          "caseId": "oll/44",
+          "moves": "f R U R' U' f'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/45",
+      "set": "oll",
+      "number": 45,
+      "name": "Suit up, T",
+      "signature": "00121010",
+      "setup": "F U R U' R' F'",
+      "algs": [
+        {
+          "id": "s.oll.45.1",
+          "caseId": "oll/45",
+          "moves": "F R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.45.2",
+          "caseId": "oll/45",
+          "moves": "y R' F' U' F U R",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_45"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/46",
+      "set": "oll",
+      "number": 46,
+      "name": "Seein' Headlights (C and headlights)",
+      "signature": "00120101",
+      "setup": "R' U' F R' F' R U R",
+      "algs": [
+        {
+          "id": "s.oll.46.1",
+          "caseId": "oll/46",
+          "moves": "R' U' R' F R F' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.46.2",
+          "caseId": "oll/46",
+          "moves": "R' F' U' F R U' R' U2 R",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_46"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/47",
+      "set": "oll",
+      "number": 47,
+      "name": "Anti-Breakneck",
+      "signature": "11221100",
+      "setup": "R U2 R' U' R U R' U2 R' F R F' U",
+      "algs": [
+        {
+          "id": "s.oll.47.1",
+          "caseId": "oll/47",
+          "moves": "U' F R' F' R U2 R U' R' U R U2 R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.47.2",
+          "caseId": "oll/47",
+          "moves": "R' U' R' F R F' R' F R F' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/48",
+      "set": "oll",
+      "number": 48,
+      "name": "Breakneck",
+      "signature": "11221001",
+      "setup": "F U R U' R' U R U' R' F'",
+      "algs": [
+        {
+          "id": "s.oll.48.1",
+          "caseId": "oll/48",
+          "moves": "F R U R' U' R U R' U' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.48.2",
+          "caseId": "oll/48",
+          "moves": "y2 f U R U' R' U R U' R' f'",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_48"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/49",
+      "set": "oll",
+      "number": 49,
+      "name": "Right back squeezy",
+      "signature": "11220011",
+      "setup": "r' U r2 U' r2 U' r2 U r' U2",
+      "algs": [
+        {
+          "id": "s.oll.49.1",
+          "caseId": "oll/49",
+          "moves": "U2 r U' r2 U r2 U r2 U' r",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.49.2",
+          "caseId": "oll/49",
+          "moves": "R B' R2 F R2 B R2 F' R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/50",
+      "set": "oll",
+      "number": 50,
+      "name": "Right front squeezy",
+      "signature": "11220110",
+      "setup": "R B' R2 F R2 B R2 F' R U2",
+      "algs": [
+        {
+          "id": "s.oll.50.1",
+          "caseId": "oll/50",
+          "moves": "U2 R' F R2 B' R2 F' R2 B R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.50.2",
+          "caseId": "oll/50",
+          "moves": "r' U r2 U' r2 U' r2 U r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/51",
+      "set": "oll",
+      "number": 51,
+      "name": "Bottlecap, Ant",
+      "signature": "11220101",
+      "setup": "F R U R' U' R U R' U' F'",
+      "algs": [
+        {
+          "id": "s.oll.51.1",
+          "caseId": "oll/51",
+          "moves": "F U R U' R' U R U' R' F'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.51.2",
+          "caseId": "oll/51",
+          "moves": "U2 f R U R' U' R U R' U' f'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/52",
+      "set": "oll",
+      "number": 52,
+      "name": "Rice Cooker",
+      "signature": "11221010",
+      "setup": "R B U B' U R' U' R U' R'",
+      "algs": [
+        {
+          "id": "s.oll.52.1",
+          "caseId": "oll/52",
+          "moves": "R U R' U R U' B U' B' R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.52.2",
+          "caseId": "oll/52",
+          "moves": "U2 R' F' U' F U' R U R' U R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/53",
+      "set": "oll",
+      "number": 53,
+      "name": "Frying Pan",
+      "signature": "12120011",
+      "setup": "l' U2 L U L' U' L U L' U l",
+      "algs": [
+        {
+          "id": "s.oll.53.1",
+          "caseId": "oll/53",
+          "moves": "l' U' L U' L' U L U' L' U2 l",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.53.2",
+          "caseId": "oll/53",
+          "moves": "U' r' U2 R U R' U' R U R' U r",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/54",
+      "set": "oll",
+      "number": 54,
+      "name": "Anti-Frying Pan",
+      "signature": "12120110",
+      "setup": "r U2 R' U' R U R' U' R U' r'",
+      "algs": [
+        {
+          "id": "s.oll.54.1",
+          "caseId": "oll/54",
+          "moves": "r U R' U R U' R' U R U2 r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.54.2",
+          "caseId": "oll/54",
+          "moves": "U' r U2 R' U' R U R' U' R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/55",
+      "set": "oll",
+      "number": 55,
+      "name": "Highway, Freeway",
+      "signature": "12120101",
+      "setup": "R U' R' U' R U R2 F R2 U R' U' R' F' R U'",
+      "algs": [
+        {
+          "id": "s.oll.55.1",
+          "caseId": "oll/55",
+          "moves": "U R' F R U R U' R2 F' R2 U' R' U R U R'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.55.2",
+          "caseId": "oll/55",
+          "moves": "U R' F U R U' R2 F' R2 U R' U' R",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/56",
+      "set": "oll",
+      "number": 56,
+      "name": "Streetlights, Dead Man",
+      "signature": "12121010",
+      "setup": "r U r' R U R' U' R U R' U' r U' r'",
+      "algs": [
+        {
+          "id": "s.oll.56.1",
+          "caseId": "oll/56",
+          "moves": "r U r' U R U' R' U R U' R' r U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.56.2",
+          "caseId": "oll/56",
+          "moves": "r U r' U R U' R' M' U R U2 r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    },
+    {
+      "id": "oll/57",
+      "set": "oll",
+      "number": 57,
+      "name": "Mummy, H, I, Brick",
+      "signature": "00000101",
+      "setup": "r U R' U' M U R U' R'",
+      "algs": [
+        {
+          "id": "s.oll.57.1",
+          "caseId": "oll/57",
+          "moves": "R U R' U' M' U R U' r'",
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": {
+            "id": "speedsolving-oll",
+            "name": "SpeedSolving Wiki community contributors",
+            "url": "https://www.speedsolving.com/wiki/index.php/OLL"
+          },
+          "verified": true,
+          "rank": 1
+        },
+        {
+          "id": "s.oll.57.2",
+          "caseId": "oll/57",
+          "moves": "y R U' R' S' R U R' S",
+          "credit": "SpeedCubeDB community contributors",
+          "source": {
+            "id": "speedcubedb-oll",
+            "name": "SpeedCubeDB community contributors",
+            "url": "https://speedcubedb.com/a/3x3/OLL/OLL_57"
+          },
+          "verified": true,
+          "rank": 2
+        }
+      ]
+    }
+  ]
+}
