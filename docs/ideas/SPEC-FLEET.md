@@ -13,7 +13,7 @@ The brief for the next fleet of builder agents, and the checklist the lead revie
 6. **Honesty:** only proven/verified results are presented as facts; partial searches are labelled; sample data only in dev fixtures.
 7. **Replayable:** smart-cube and user-action behaviour stays reproducible with `scripts/replay-recording.mjs`; real recordings live in `/home/loz/Downloads/cubesight-recording-*.json` (and `tests/fixtures/rotation-cross-recording.json`).
 8. **Process:** branch from the tip of `feature/smart-cube-guidance` in your own worktree; never push; never use port 5173; never bypass the pre-commit hook; tests never write into `docs/` or `src/`; descriptive commit messages only (no WIP auto-commits).
-9. **Quality gate for a merge request:** `npm run check` green (0 lint errors), the full `npx playwright test` green, `npx playwright test --config=playwright.pwa.config.js` green.
+9. **Quality gate for a merge request:** `npm run check` green (0 lint errors), the full `npx playwright test` green, `npx playwright test --config=playwright.pwa.config.js` green, and (once F8 lands) the **layout invariant suite** `npm run test:layout` green. Every new route/screen/state must be registered in the F8 matrix.
 10. **Show your work:** screenshots of every changed screen in Orbit dark (+ Orbit light, + a 390 px phone); write a gallery `index.html` next to them (relative paths) and report its `file://` link. Read your screenshots and compare them with the orbit-v3 frames.
 11. **Report:** commits, files, test results, the gallery link, deviations, open questions.
 
@@ -79,10 +79,27 @@ A physical GAN solve (cube clock, results), a disconnect mid-solve → resume/di
 
 ---
 
+## F8: Layout test kit: no sideways scrolling, nothing off-screen, ever (wave 1, parallel with F0)
+The user: "we should never be able to scroll to the side, except scrolling up and down… things flowing off-screen must always be tested."
+
+Build a reusable Playwright layout-invariant suite (`tests/layout/**`, `npm run test:layout`, included in the full Playwright run and CI):
+- **A matrix:** every route from the route table (incl. legacy redirects' targets, history/past-solve/replay, drills, algs case pages, the timer, progress, settings/debug drawers open) × every major STATE reachable with the fake-cube harness / fixtures (idle, connecting, guided scramble + wrong turn, inspection + overtime, solving, results, review detail, replay mid-way, a drill mid-round, alg playback mid-way) × viewports **320×568, 360×740, 390×844, 768×1024, 1024×768, 1280×720, 1440×900, 1920×1080** × Orbit dark + Orbit light (Mono at 390 and 1440 only). Also emulate the 200% text zoom at 1280 and the `prefers-reduced-motion`.
+- **Invariants checked at every cell:**
+  1. **No horizontal scroll:** `document.scrollingElement.scrollWidth <= innerWidth` AND `window.scrollX` stays 0 after `scrollBy(500, 0)`. **Masking with `overflow-x: hidden` on html/body is not a fix**: also check (2).
+  2. **Nothing off-screen sideways:** every visible element's bounding box lies within `[0, innerWidth]` (tolerance 1 px), except descendants of elements explicitly marked as horizontal scrollers (`data-scroll-x`), which themselves must fit the viewport and be keyboard/touch scrollable.
+  3. **No clipped text:** text elements whose `scrollWidth > clientWidth` must have intentional truncation (`text-overflow: ellipsis` + a full-text title/aria-label); otherwise fail.
+  4. **No overlap of key UI:** the header, the cube canvas, the orbit labels, the rail, the actions and the key bar don't overlap each other (pairwise box intersection; orbit labels must not overlap each other).
+  5. **Touch targets** ≥ 40×40 px on phone widths; focus outlines visible on keyboard focus.
+  6. **Sticky/scroll behaviour:** on the scrolling screens (results, history, progress) scroll to the top/middle/bottom and assert that sticky elements (e.g. the centred results cube) stay within the viewport and never cover the header; no layout jump > 4 px when a lazy component (cube, orbit, worker results) loads (CLS-style check via PerformanceObserver).
+  7. **Exactly one canvas** per page.
+- **A clear report:** on failure, a screenshot with the offending element outlined, plus its selector, box and the cell (route/state/viewport/theme), saved under `test-results/layout/`, with an `index.html` gallery of the failures.
+- **A baseline run:** run it on the current app, fix every real failure found (or list them as tasks for F1/F2/F4/F5 if they're in their files), and keep the suite green afterwards. Runtime budget: < 6 min in parallel; a `--grep` per route for quick local runs.
+- **Docs:** a short `tests/layout/README.md`: how to add a route/state to the matrix and how to mark an intentional horizontal scroller.
+
 ## Parallelism and ownership
 | Wave | WPs (parallel) | Owns |
 |---|---|---|
-| 1 | **F0** alone (+ F3 and F6 in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. |
+| 1 | **F0** alone (+ F3, F6 and **F8** in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. F8: `tests/layout/**`, the package.json script, CI. |
 | 2 | **F1, F2, F4, F5** in parallel after F0 merges | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
 Shared files (`src/main.js` routes, `types.js`, `tokens-*.css`): additive edits only, coordinate via small commits; the lead resolves merges.
 
