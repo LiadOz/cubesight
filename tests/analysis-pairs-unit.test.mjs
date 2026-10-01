@@ -4,10 +4,11 @@ import { cube3x3x3 } from 'cubing/puzzles';
 import { GOLD } from './analysis-golden.mjs';
 import { applyMoves, stateFromScramble } from '../src/cross-cube.js';
 import { segmentSolve } from '../src/analysis/segment.js';
-import { evaluatePairs, pairTargets } from '../src/analysis/pairs.js';
+import { evaluatePairs, evaluatePairsAsync, pairTargets } from '../src/analysis/pairs.js';
 import { OLL_PATTERN_COUNT, OLL_PATTERNS } from '../src/analysis/last-layer-patterns.js';
 import { unrelabelMoves } from '../src/analysis/normalize.js';
-import { crossSolved, findCompletions, solvedSlots, SLOTS, trackedFrom } from '../src/analysis/pair-completion.js';
+import { bestCompletions, buildPairCrossTables, crossSolved, findCompletions, PAIR_CROSS_TABLE_BYTES, PAIR_CROSS_TABLE_VERSION, pairCrossTable, solvedSlots, SLOTS, trackedFrom } from '../src/analysis/pair-completion.js';
+import { installCachedPairCrossTables } from '../src/analysis/pair-table-cache.js';
 import { stateOf } from '../src/analysis/cube-model.js';
 
 test('the synchronous worker cubie model matches cubing.js primitive and composed turns', async () => {
@@ -59,6 +60,22 @@ test('all four pair stages return ranked, replayable completions on a warm engin
   }
 });
 
+test('async pair search publishes a first pass before its optional-table upgrade', async () => {
+  const fixture = GOLD.normal;
+  const segmentation = segmentSolve({ scramble: fixture.scramble, moves: fixture.moves.split(' '), crossFace: 'D' });
+  const updates = [];
+  const result = await evaluatePairsAsync(segmentation, null, {
+    maxPairs: 1, maxDepth: 12, initialBudgetMs: 30, upgradeBudgetMs: 400, slack: 0,
+    onProgress: pairs => updates.push(pairs),
+  });
+  assert.equal(result.length, 1);
+  assert.equal(updates.length, 2, 'quick and refined results are both published');
+  assert.equal(updates[0][0].pendingUpgrade, true);
+  assert.equal(updates[1][0].pendingUpgrade, false);
+  assert.ok(updates[0][0].options.length, 'the first pass includes a usable candidate or recorded upper bound');
+  assert.equal(result[0].proven, true, 'the refined shortest proof is independent of alternative enumeration');
+});
+
 test('pseudo-offset pair completions search from the recorded frame and verify', () => {
   const fixture = GOLD.pseudoPair;
   const moves = fixture.moves.split(' ');
@@ -87,6 +104,102 @@ test('the pair search also reaches a verified D-offset end goal', () => {
   assert.equal(crossSolved(end, 1), true);
   assert.ok(solvedSlots(end, 1).includes(0), `FR reaches the D-offset goal; slots=${solvedSlots(end, 1).map(i => SLOTS[i].name)}`);
   assert.ok(preserve.every(slot => solvedSlots(end, 1).includes(slot)), 'all completed pairs remain solved in that end frame');
+});
+
+test('one IDA run searches the union of all four D-offset end goals', () => {
+  const setup = "R U R'";
+  const codes = trackedFrom(setup), preserve = solvedSlots(codes);
+  const any = findCompletions(codes, { newSlots: [0], preserve, goalShift: 'any', maxDepth: 8, maxSolutions: 20, slack: 0, timeBudgetMs: 1000, useCrossEdge: false });
+  const exact = [0, 1, 2, 3].map(goalShift => findCompletions(codes, { newSlots: [0], preserve, goalShift, maxDepth: 8, maxSolutions: 1, slack: 0, timeBudgetMs: 1000, useCrossEdge: false }));
+  assert.equal(any.shortest, Math.min(...exact.map(result => result.shortest < 0 ? Infinity : result.shortest)));
+  assert.equal(any.shortestProven, true);
+  assert.ok(any.solutions.every((moves, index) => {
+    const shift = any.solutionGoalShifts[index];
+    const end = trackedFrom(`${setup} ${moves}`);
+    return crossSolved(end, shift) && preserve.every(slot => solvedSlots(end, shift).includes(slot)) && solvedSlots(end, shift).includes(0);
+  }));
+});
+
+test('minimum proof survives stopping before all ergonomic alternatives are enumerated', () => {
+  const codes = trackedFrom("R U R'"), preserve = solvedSlots(codes);
+  const result = findCompletions(codes, { newSlots: [0], preserve, goalShift: 'any', maxDepth: 10, maxSolutions: 1, slack: 2, timeBudgetMs: 1000, useCrossEdge: false });
+  assert.ok(result.solutions.length);
+  assert.equal(result.shortestProven, true, 'all lower depth bounds are complete once the first shortest path is found');
+  assert.equal(result.alternativesComplete, false, 'the solution cap stopped ergonomic alternative enumeration');
+});
+
+test('optional pair plus adjacent cross-edge tables are goal-seeded and admissible', () => {
+  const adjacent = [[0, 1], [1, 2], [2, 3], [3, 0]];
+  for (let slot = 0; slot < 4; slot++) {
+    const table = pairCrossTable(slot);
+    assert.equal(table.length, 24 ** 4);
+    for (const goal of ['', "D'", 'D2', 'D']) {
+      const codes = trackedFrom(goal);
+      const [a, b] = adjacent[slot];
+      const at = (((codes[a] * 24 + codes[b]) * 24 + codes[4 + slot]) * 24 + codes[8 + slot]);
+      assert.equal(table[at], 0, `slot ${slot} goal ${goal || 'plain'} is a zero-distance seed`);
+    }
+    for (const setup of ["R U R'", 'F2 U L D']) {
+      const state = trackedFrom(setup), [a, b] = adjacent[slot];
+      const at = codes => (((codes[a] * 24 + codes[b]) * 24 + codes[4 + slot]) * 24 + codes[8 + slot]);
+      const here = table[at(state)];
+      for (const move of ['U', "U'", 'R', "R'", 'F', "F'", 'D', "D'"]) {
+        const next = table[at(trackedFrom(`${setup} ${move}`))];
+        assert.ok(here <= next + 1, `slot ${slot}: PDB distance obeys the one-move lower-bound property`);
+      }
+    }
+  }
+});
+
+test('optional table cache rejects stale or malformed IndexedDB records', () => {
+  const tables = buildPairCrossTables();
+  const good = { version: PAIR_CROSS_TABLE_VERSION, bytes: PAIR_CROSS_TABLE_BYTES, tables };
+  assert.equal(installCachedPairCrossTables({ ...good, version: PAIR_CROSS_TABLE_VERSION - 1 }), null, 'table algorithm version must match');
+  assert.equal(installCachedPairCrossTables({ ...good, bytes: PAIR_CROSS_TABLE_BYTES - 1 }), null, 'declared size must match');
+  assert.equal(installCachedPairCrossTables({ ...good, tables: [new Uint8Array(2), ...tables.slice(1)] }), false, 'every projection has the exact expected length');
+  assert.equal(installCachedPairCrossTables(good), true, 'all four validated projections can be restored');
+});
+
+test('IDA* minimum agrees with an independent cubing.js shallow BFS', async () => {
+  const kp = await cube3x3x3.kpuzzle();
+  const setup = "R U R'";
+  const startCodes = trackedFrom(setup), preserve = solvedSlots(startCodes);
+  const open = SLOTS.map((_, i) => i).filter(i => !preserve.includes(i));
+  assert.equal(open.length, 1);
+  const exact = bestCompletions(setup, { maxDepth: 5, timeBudgetMs: 1000, slack: 0 });
+  assert.equal(exact.proven, true);
+
+  const goals = ['', "D'", 'D2', 'D'].map(alg => kp.defaultPattern().applyAlg(alg).patternData);
+  const targetPieces = [4, 5, 6, 7].map(home => ({ kind: 'EDGES', home }))
+    .concat(preserve.flatMap(i => [{ kind: 'EDGES', home: SLOTS[i].e }, { kind: 'CORNERS', home: SLOTS[i].c }]))
+    .concat([{ kind: 'EDGES', home: SLOTS[open[0]].e }, { kind: 'CORNERS', home: SLOTS[open[0]].c }]);
+  const solvedAtGoal = pattern => goals.some(goal => {
+    return targetPieces.every(home => {
+      const statePart = pattern[home.kind], goalPart = goal[home.kind];
+      const position = statePart.pieces.indexOf(home.home);
+      const goalPosition = goalPart.pieces.indexOf(home.home);
+      return position === goalPosition && statePart.orientation[position] === goalPart.orientation[goalPosition];
+    });
+  });
+  const faces = ['U', 'D', 'R', 'L', 'F', 'B'];
+  const suffixes = ['', "'", '2'];
+  const rank = { U: 1, D: 0, R: 1, L: 0, F: 1, B: 0 };
+  const axis = { U: 'y', D: 'y', R: 'x', L: 'x', F: 'z', B: 'z' };
+  const moves = faces.flatMap(face => suffixes.map(suffix => face + suffix));
+  let frontier = [{ state: kp.defaultPattern().applyAlg(setup), last: '' }];
+  let bfsDepth = solvedAtGoal(frontier[0].state.patternData) ? 0 : -1;
+  for (let depth = 1; bfsDepth < 0 && depth <= 5; depth++) {
+    const next = [];
+    for (const entry of frontier) for (const move of moves) {
+      const face = move[0], previousFace = entry.last;
+      if (face === previousFace || (previousFace && axis[face] === axis[previousFace] && rank[face] < rank[previousFace])) continue;
+      const state = entry.state.applyMove(move);
+      if (solvedAtGoal(state.patternData)) { bfsDepth = depth; break; }
+      next.push({ state, last: face });
+    }
+    frontier = next;
+  }
+  assert.equal(bfsDepth, exact.shortest, 'cubing.js state-space BFS independently confirms the minimum');
 });
 
 test('last-layer case capture is colour-neutral and keeps timing at the case boundary', () => {

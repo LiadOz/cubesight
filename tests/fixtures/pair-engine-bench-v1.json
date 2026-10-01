@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "generatedFrom": "seeded random 22-turn scrambles; cross and preceding pairs solved with xcross WASM; all inputs independently checked with cubing.js",
+  "seed": 48271,
+  "total": 50,
+  "coverage": {
+    "stages": {
+      "1": 13,
+      "2": 13,
+      "3": 12,
+      "4": 12
+    },
+    "pseudo": 25
+  },
+  "positions": [
+    {
+      "id": 1,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "D F2 R' U2 D2 U D2 F U F R2 U B F U2 F L2 D F' D2 B F' U2 F2 R2 B' L' D"
+    },
+    {
+      "id": 2,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "F2 L' D' L2 U L D2 B F U' D' B' U2 R' L D' B D' R' B U F2 U' L' D F R2 B F' B U F U' B' D'"
+    },
+    {
+      "id": 3,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "R2 L U L2 B D2 F' L U2 B' L D2 B' U2 D2 F D2 R' U D' F' L2 L2 D' R' F2 L' F U' F' L' U' L R' U2 R2 U R'"
+    },
+    {
+      "id": 4,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "D L2 F' U D R' B' U2 B' D L' R2 D' R F2 B2 L D' U B' L2 U' D' L D' R' F' D D R U' R' D' D B' U B D' R2 U R' U' R2 D'"
+    },
+    {
+      "id": 5,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "R' D' L B' L' R2 B U2 L' B2 L U2 R2 D F' R2 L' F U2 L' R2 D2 R U2 L D L"
+    },
+    {
+      "id": 6,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "B L2 D L' U2 D2 U D2 L2 F D2 L2 U R' B' F R' D2 L2 U' B2 R R D2 F L D B' L' D2 R' F2 R2 F2 D2 L D'"
+    },
+    {
+      "id": 7,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "B U B' D2 U' F' R' D2 U2 B2 U2 D R D U B2 F' R' B' R2 F D' R' D2 R D L' B2 L B' U B' F U2 F' U2 R U R'"
+    },
+    {
+      "id": 8,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "D R D F2 U2 R L2 F' L R2 B2 U F2 D2 U' R D2 L2 F2 U F D2 R2 D' B' R2 D' L R2 D F' U' F B2 D' U2 R' F2 R F2 R B' U' B U2 R' D'"
+    },
+    {
+      "id": 9,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "L' D F' L2 U2 F L2 U L2 F U B' R' F B U B' U' R' L' R D R B D R F L' D"
+    },
+    {
+      "id": 10,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "F' L' R' D F' L2 D' R B' U' L D2 U' L' U' D' F' D' U L2 F2 R U R2 B' R' D R2 U L2 B2 L2 B2 D'"
+    },
+    {
+      "id": 11,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "U D2 B' F2 D B' F U B' R' L2 D' L F' R U F2 U D R B R U2 F2 L' B2 R D U R F R2 U' F' R' L' U L2 U L'"
+    },
+    {
+      "id": 12,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "B R L' D2 B F B L' B L2 B' U F2 D' L2 B D' L2 D R U R2 U' R' D F R' L R U R F R2 F' D2 L U L' D2 B L2 B' L U2 L D'"
+    },
+    {
+      "id": 13,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "F2 B F' L D2 F U2 B2 F2 U' F' R' F2 D B2 D2 B2 D' R2 B F' R' R2 F2 D B D' L"
+    },
+    {
+      "id": 14,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "R' D' F' U2 D2 B' U' D' R2 B U' B' R2 D' R' U' D2 F L F2 B' L D2 B D' L' F' D2 R2 D B R' D' R' U F2 D'"
+    },
+    {
+      "id": 15,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "R2 D R B2 F U2 L D U2 F2 L' R' D' F L2 B2 D R D R U R U2 B U' L' D2 B U B' U F B U' F' L' B2 L B' U2 B'"
+    },
+    {
+      "id": 16,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "D' B2 U' D2 F D' R L2 B' F2 D2 F' L D' B L2 F2 U' B D U L U F' R' L D L L U' F2 L' F2 R' U R L' B U2 L B' L U2 B L B' L' D'"
+    },
+    {
+      "id": 17,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "L2 U2 F D' U' R' F' L U' F D F' U' B R U2 R' U L' D B' D R2 D' B D' B"
+    },
+    {
+      "id": 18,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "L U B' D' F' L' B2 R2 D R' L B L' F' R2 B F2 L R B D2 B' U2 F U R' D F L U L' B L' B' L2 D'"
+    },
+    {
+      "id": 19,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "F L' F' L' R' U2 D' U' B2 R2 D2 L' U2 F' U B L F' B L U2 F' D' R' F B' D' L U2 F R' U R F' U2 B U' B'"
+    },
+    {
+      "id": 20,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "U R' D U R L' R B2 D2 L' U2 F2 D2 U2 L' F2 D' R2 U2 L' B R' R D2 B D R2 D L' U L D' U F' U' F L' U L D'"
+    },
+    {
+      "id": 21,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "B D B D' B D U' D2 B' F2 D L' D' U' B' L' U' L' B2 L R2 F2 R' L2 B L D' L"
+    },
+    {
+      "id": 22,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "B2 U2 F2 D U2 F2 U L2 F R D2 F2 R U2 R2 B2 R2 B2 R B U2 D2 R' B L D' L' D2 L' U' L D2 D'"
+    },
+    {
+      "id": 23,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "U R' L' F' D2 F' R L F' D' R L F2 L' U' F2 U' D' U' D' R' U U R U2 F R B' L' R' F2 U' R D R D' R U2 R' L U L'"
+    },
+    {
+      "id": 24,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "D2 R2 U' L2 B' U R2 D2 R F2 L2 B2 D' L2 B' L R2 F2 U F D' F D2 R2 D' L B' R2 L U' L' D B2 D' U R U2 R B' R2 B U F B2 U' F' U B2 D'"
+    },
+    {
+      "id": 25,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "F L' B2 L B2 U' L R D2 R2 U2 R' D' B2 F' D2 B D2 B' R' L R' F2 L U F B2"
+    },
+    {
+      "id": 26,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "R2 D R D2 F L2 F L U2 B2 R' F2 B L' R2 D L2 B2 F' R U2 F' U' F2 D' R' B' R U L B L B' L' D'"
+    },
+    {
+      "id": 27,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "R L2 R' D' L2 D' F U2 B D' R2 L' U F2 B' R' D B2 L2 D L' R2 U' F D F L B U' B' L' U' L B' U B2 R B' R' B'"
+    },
+    {
+      "id": 28,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "U' L' B2 D2 R' D2 R' U R' L' F2 D F' R F' U2 D B' R2 F2 D L2 U2 R L2 D2 B' D' U R F U F' U' R' F2 D2 B' D2 F2 D2 L' U L D2 D'"
+    },
+    {
+      "id": 29,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "F' R2 U' R' F L U B U2 R' F2 D' F U2 D L2 B R' F D' U' F2 B2 L D2 B L' D'"
+    },
+    {
+      "id": 30,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "U' L' F U2 F2 L2 D2 B L' B2 F2 U' F2 D L2 R F' U F L' B F' B D' F R' L' D' U2 F B' U2 F' U B D'"
+    },
+    {
+      "id": 31,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "U' F' R B2 F2 U D U B D2 R2 F' B F2 L' F U2 L U2 D2 R D' R2 U' F L B2 R D2 L' D2 R' U2 F2 B2 L F2 L' B2"
+    },
+    {
+      "id": 32,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "R B' L2 F2 D U R' B' U2 R2 D2 F B2 U2 R L U2 L' D F' D L' U2 D F R2 B R2 D2 L D F D R2 B U R B R' B' U2 R B' U2 B R' D'"
+    },
+    {
+      "id": 33,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "R' D' R L B R' F B' D2 B U2 F2 L' B2 U' L2 B2 R' U2 L' F' D U2 F L' B2 D' L2"
+    },
+    {
+      "id": 34,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "F R D2 L2 B D U' L2 U2 F2 D2 F L R L R2 B R B2 R' B2 D' F' U L D2 F' B2 U2 R' D2 L' D2 R D'"
+    },
+    {
+      "id": 35,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "B' F2 R' F L' F' D F2 L U2 B R' F2 B D B' R U2 D U D' U2 R' F L B' L D B2 R' F' U F D' F' D R B L' B L B2"
+    },
+    {
+      "id": 36,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "B F U' F' B2 L2 B F2 D2 U2 B2 F' U2 B2 R' U' F' L B' L2 D' R2 L' B D' L' D2 B U2 L2 U L U' L2 R2 B' R' B U2 R' U F U' F' B U' B' D'"
+    },
+    {
+      "id": 37,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "L' U' B' U' R2 U F2 B L U' B' R2 L' R' L2 R2 B' L' D2 U' R2 D2 R D R' D2 R B"
+    },
+    {
+      "id": 38,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "R L2 B' D B F R B2 R2 L' U D B' D' L R' L' R F' L' D U2 U R' B2 U' F' L F' L U R' U' R L' D'"
+    },
+    {
+      "id": 39,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "D' B' R F2 U B' U' R2 F2 D' B' U' D' R2 F' B2 U' F D L' R' F2 U2 D L' B D2 R D B D' F R2 F' R' F U' F2 L2 F L2"
+    },
+    {
+      "id": 40,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "L D F2 U2 L2 U D B' R' F D L2 U B' R' F2 U2 L' D' U' L U2 U2 F2 R' F' B L' L2 B L B L B2 F U2 F2 L2 F L2 R F' L F R' L' D'"
+    },
+    {
+      "id": 41,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "B R' U' B L' F' R2 D2 U2 R2 L2 B F' R L U F R' F2 D2 U D2 R F2 B2 D2"
+    },
+    {
+      "id": 42,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "U' R' U' D2 B2 U2 L R2 F2 D' F' B D' F' R F B' F' U' F U B' F U2 D F2 L' B2 U2 B U R B R' B' D'"
+    },
+    {
+      "id": 43,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "R' F' U F2 D2 F2 D2 F' U' F B U' F2 B' L' D2 L2 B F U' F2 U2 U F2 U R2 B' L' B' U F U2 F2 U' F U2 L' U2 L2 U L'"
+    },
+    {
+      "id": 44,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "B' D L' U B2 U D R L' D' L U' L F' R B2 F L2 D F' B2 L' U2 R' F2 D' B' R D2 R2 F L F R2 U' L' F' U' L' B2 L B2 L F' U' F U2 L' D'"
+    },
+    {
+      "id": 45,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "D R2 U2 L' U F B' U R U2 F2 U F2 L2 D2 L2 F' R F R2 F2 B' U F R' L' D' R'"
+    },
+    {
+      "id": 46,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "D U2 B2 L2 B R2 B2 R' L2 D' B2 U' B F' L' D' F' L R' L2 D' U2 D R2 F D' L R U' R' D'"
+    },
+    {
+      "id": 47,
+      "stage": 3,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "D2 F R F U' D' U' R' D B' D B L2 B D' U' L' D F B L D' R F U R' L F2 U2 F' L U F L' R U2 F2 R2 F2 R'"
+    },
+    {
+      "id": 48,
+      "stage": 4,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "F' D R' F2 R B' R L R U2 B2 F' L' B' F' D U B2 F R' F' U F2 U F L F' B R2 F2 R F2 U2 R U' F U F' B' U' B U' L' U R L U' R' D'"
+    },
+    {
+      "id": 49,
+      "stage": 1,
+      "pseudo": false,
+      "startShift": 0,
+      "setup": "F' L F B2 L' R F B' L' F B2 R2 D' R B F2 B' F B2 L2 D U2 D L B R F B2"
+    },
+    {
+      "id": 50,
+      "stage": 2,
+      "pseudo": true,
+      "startShift": 1,
+      "setup": "R' B' R B2 L2 R2 F' R2 L D' B2 R2 D' B2 U2 L B F2 R' D' L' R' U2 L F' D F' B U R U R' D'"
+    }
+  ]
+}

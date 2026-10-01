@@ -28,6 +28,8 @@ test('the stored summary is small, survives the store whitelist unchanged, and r
   assert.deepEqual(Object.keys(record.rotationMarks[0]).sort(), ['from', 'idx', 'tMs', 'to']);
   assert.equal(cleanAnalysis({ v: 3 }), null);
   assert.equal(cleanAnalysis({ v: 1, pairs: [] }).v, 1, 'older stored summaries remain readable');
+  const partial = cleanAnalysis({ v: 2, engine: ENGINE_VERSION, pairs: [{ n: 1, from: 0, to: 1, yours: 'R', pendingUpgrade: true }] });
+  assert.equal(partial.pairs[0].pendingUpgrade, true, 'a persisted first pass keeps its resumable status');
   assert.equal(cleanAnalysis('x'), null);
   const hostile = cleanAnalysis({ ...record.analysis, cross: { ...record.analysis.cross, best: 'rm -rf', losses: [{ i: 1, loss: 9 }] }, pairs: [{ n: 1, from: 0, to: 1, yours: '<b>', better: { moves: 'R <script>', slot: 'FR' } }] });
   assert.equal(hostile.cross.best, '');
@@ -106,6 +108,24 @@ test('the worker handler answers with the compact summary and a fresh memo per r
   assert.equal(posted[1].type, 'error');
 });
 
+test('the worker handler streams compact pair partials before its final summary', async () => {
+  const solver = await solverPromise;
+  const fixture = GOLD.normal;
+  const posted = [];
+  const handle = createAnalysisHandler(() => cachedSolver(solver), message => posted.push(message));
+  await handle({
+    type: 'analyze', id: 70,
+    input: { scramble: fixture.scramble, moves: fixture.moves.split(' '), crossFace: 'D' },
+    options: { pairs: true }, summary: true,
+  });
+  const progress = posted.filter(message => message.type === 'progress');
+  assert.ok(progress.length >= 2, 'each pair publishes a quick result and a refined result');
+  assert.ok(progress.some(message => message.result.pairs.some(pair => pair.pendingUpgrade)), 'quick result is marked as an upgrade in progress');
+  assert.ok(progress.some(message => message.result.pairs.length && message.result.pairs.every(pair => !pair.pendingUpgrade)), 'a completed group of refinements clears its pending flags');
+  assert.equal(posted.at(-1).type, 'result');
+  assert.ok(posted.at(-1).result.pairs.every(pair => !pair.pendingUpgrade));
+});
+
 // A stand-in for the Worker: answers every request through `reply(message)`.
 function fakeWorker(reply) {
   const worker = {
@@ -140,6 +160,50 @@ test('the analysis client loads the worker lazily, runs one at a time, caches pe
   assert.equal(worker.posted.length, 3);
   await new Promise(resolve => setTimeout(resolve, 60));
   assert.equal(worker.terminated, true, 'the idle worker is dropped');
+  client.destroy();
+});
+
+test('incremental summaries reach the review before the final result and can resume a stored partial', async () => {
+  const seen = [];
+  let runs = 0;
+  const worker = fakeWorker((message, send) => {
+    runs++;
+    const partial = { v: 2, engine: ENGINE_VERSION, pairs: [{ n: 1, pendingUpgrade: true }] };
+    send({ type: 'progress', id: message.id, result: partial });
+    send({ type: 'result', id: message.id, result: { ...partial, pairs: [{ n: 1, pendingUpgrade: false }] } });
+  });
+  const client = createAnalysisClient({ createWorker: () => worker, idleMs: 1000 });
+  const record = { at: 765, scramble: 'R U', solveMoves: ['R'], moveCount: 1, solved: true };
+  const final = await client.analyze(record, { onProgress: summary => seen.push(summary) });
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].pairs[0].pendingUpgrade, true);
+  assert.equal(final.pairs[0].pendingUpgrade, false);
+  const resumed = await client.analyze({ ...record, at: 766, analysis: seen[0] });
+  assert.equal(resumed.pairs[0].pendingUpgrade, false, 'a persisted partial is recomputed after reload');
+  assert.equal(runs, 2);
+  client.destroy();
+});
+
+test('analysis cancellation reaches the worker and drops the pending request', async () => {
+  let cancelled = false;
+  const worker = {
+    onmessage: null, onerror: null,
+    postMessage(message) {
+      if (message.type === 'cancel') {
+        cancelled = true;
+        setImmediate(() => worker.onmessage?.({ data: { type: 'error', id: message.id, message: 'Analysis cancelled' } }));
+      }
+    },
+    terminate() {},
+  };
+  const client = createAnalysisClient({ createWorker: () => worker, idleMs: 1000 });
+  const controller = new AbortController();
+  const record = { at: 767, scramble: 'R U', solveMoves: ['R'], moveCount: 1, solved: true };
+  const pending = client.analyze(record, { signal: controller.signal });
+  await new Promise(resolve => setImmediate(resolve));
+  controller.abort();
+  assert.equal(await pending, null);
+  assert.equal(cancelled, true);
   client.destroy();
 });
 

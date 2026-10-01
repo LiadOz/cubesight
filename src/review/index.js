@@ -79,7 +79,7 @@ export function createSolveReview(host, routeContext = {}) {
       if (route.imported) renderImport();
       else if (!record) renderError('This solve is no longer in your local history.');
       else {
-        if (record.analysis?.v !== SUMMARY_VERSION || record.analysis?.engine !== ENGINE_VERSION) {
+        if (record.analysis?.v !== SUMMARY_VERSION || record.analysis?.engine !== ENGINE_VERSION || record.analysis?.pairs?.some(pair => pair.pendingUpgrade)) {
           const analysis = await analysisClient().analyze(record);
           if (detached) return;
           if (analysis) record = saveAnalysis(record, analysis);

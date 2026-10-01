@@ -8,14 +8,26 @@ import { cachedSolver, createWasmSolver } from './wasm-solver.js';
 
 let modulePromise;
 const load = () => modulePromise ||= createXCross({ locateFile: () => wasmUrl });
+const jobs = new Map();
 
-self.onmessage = async ({ data }) => {
+self.onmessage = ({ data }) => {
+  if (data?.type === 'cancel') { jobs.get(data.id)?.abort(); return; }
   if (data?.type !== 'analyze') return;
-  try {
-    const solver = createWasmSolver(await load());
-    // A fresh memo per analysis: positions repeat inside one solve, not across solves.
-    await createAnalysisHandler(() => cachedSolver(solver), message => self.postMessage(message))(data);
-  } catch (error) {
-    self.postMessage({ type: 'error', id: data.id, message: error?.message || String(error) });
-  }
+  const abortController = new AbortController();
+  jobs.set(data.id, abortController);
+  void (async () => {
+    try {
+      const solver = createWasmSolver(await load());
+      // A fresh memo per analysis: positions repeat inside one solve, not across solves.
+      // Pair search yields through a macrotask between stages, so cancellation messages
+      // can be delivered and acted on before its more expensive refinement pass.
+      await createAnalysisHandler(() => cachedSolver(solver), message => self.postMessage(message))({
+        ...data, options: { ...data.options, signal: abortController.signal },
+      });
+    } catch (error) {
+      self.postMessage({ type: 'error', id: data.id, message: error?.message || String(error) });
+    } finally {
+      jobs.delete(data.id);
+    }
+  })();
 };

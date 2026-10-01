@@ -54,13 +54,19 @@ export function compareFor({ row, marker = null, record, pending = false }) {
   }));
   if (pair && !pair.unsupported) {
     const frameNote = `${pair.frame ? ` · starts in D offset frame ${pair.frame}` : ''}${pair.better?.goalShift ? ' · D offset finish' : ''}`;
+    if (pair.pendingUpgrade) {
+      return { status: 'pending', from: row.from, yours, better: [], options, text: `first pass · checking for a shorter completion${frameNote}` };
+    }
+    const proofNote = pair.proven && Number.isInteger(pair.shortest)
+      ? ` · minimum ${pair.shortest} moves proven`
+      : ' · partial search; minimum not proven';
     if (pair.better) {
       const better = words(pair.better.moves);
       const comparison = better.length < yours.length ? `yours ${yours.length} · better ${better.length}` : `same length · easier turns`;
-      return { status: 'better', from: row.from, yours, better, options, text: `${comparison}${frameNote}` };
+      return { status: 'better', from: row.from, yours, better, options, text: `${comparison}${proofNote}${frameNote}` };
     }
-    const resultNote = pair.proven ? 'shortest found' : options.some(option => option.source === 'recorded-fallback')
-      ? 'recorded completion · no shorter found in this search' : 'no shorter completion found in this search';
+    const resultNote = pair.proven && Number.isInteger(pair.shortest) ? `minimum ${pair.shortest} moves proven` : options.some(option => option.source === 'recorded-fallback')
+      ? 'recorded completion · no shorter found in this search · minimum not proven' : 'no shorter completion found in this search · minimum not proven';
     return { status: 'shortest', from: row.from, yours, better: [], options, text: `yours ${yours.length} · ${resultNote}${frameNote}` };
   }
   return { ...none('none-yet', 'no suggestion yet'), yours };

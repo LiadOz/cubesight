@@ -87,6 +87,7 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
         ...(option.source ? { source: option.source } : {}), proven: option.proven !== false, goalShift: option.goalShift ?? 0,
       })),
       shortest: pair.shortest, proven: pair.proven === true, complete: pair.complete === true, ms: pair.ms,
+      ...(pair.pendingUpgrade ? { pendingUpgrade: true } : {}),
     });
   }
   return out;

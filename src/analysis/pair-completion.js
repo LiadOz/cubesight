@@ -75,6 +75,10 @@ function bfs(pieces, size, encode) {
 }
 const enc = arr => { let a = 0; for (let i = 0; i < arr.length; i++) a = a * 24 + arr[i]; return a; };
 const tablesByShift = new Map();
+const PAIR_CROSS_EDGES = [[0, 1], [1, 2], [2, 3], [3, 0]];
+const pairCrossTables = {};
+export const PAIR_CROSS_TABLE_VERSION = 1;
+export const PAIR_CROSS_TABLE_BYTES = 4 * 24 ** 4;
 export function buildTables() {
   if (tablesByShift.has(0)) return tablesByShift.get(0);
   const tables = {
@@ -87,19 +91,49 @@ export function buildTables() {
 // cross edges + one slot edge (24^5 = 8M bytes per slot, built lazily)
 const crossEdgeTables = {};
 export function crossEdgeTable(i) { return crossEdgeTables[i] ||= bfs([0, 1, 2, 3, 4 + i], 24 ** 5, enc); }
-export const tableStats = () => ({ shifts: tablesByShift.size, extra: Object.keys(crossEdgeTables).length });
+// A compact optional joint table for one pair and its two adjacent cross
+// edges. Four 24^4 byte tables add ~1.27 MiB and strengthen the default 332 KB
+// PDB without allocating the 32 MB full cross+edge set.
+export function pairCrossTable(i) {
+  if (!pairCrossTables[i]) {
+    const [a, b] = PAIR_CROSS_EDGES[i];
+    pairCrossTables[i] = bfs([a, b, 4 + i, 8 + i], 24 ** 4, enc);
+  }
+  return pairCrossTables[i];
+}
+export function buildPairCrossTables() { return PAIR_CROSS_EDGES.map((_, i) => pairCrossTable(i)); }
+export function installPairCrossTables(tables) {
+  if (!Array.isArray(tables) || tables.length !== PAIR_CROSS_EDGES.length) return false;
+  const checked = tables.map((table, i) => {
+    if (!(table instanceof Uint8Array) || table.length !== 24 ** 4) return null;
+    for (const value of table) if (value !== 255 && value > 31) return null;
+    const [a, b] = PAIR_CROSS_EDGES[i];
+    for (let shift = 0; shift < 4; shift++) {
+      const goal = GOAL_CODES[shift];
+      const index = (((goal[a] * 24 + goal[b]) * 24 + goal[4 + i]) * 24 + goal[8 + i]);
+      if (table[index] !== 0) return null;
+    }
+    return table;
+  });
+  if (checked.some(table => table === null)) return false;
+  for (let i = 0; i < checked.length; i++) pairCrossTables[i] = checked[i];
+  return true;
+}
+export const tableStats = () => ({ shifts: tablesByShift.size, extra: Object.keys(crossEdgeTables).length, pairCross: Object.keys(pairCrossTables).length });
 
 // ---- IDA* -----------------------------------------------------------------
 // targets: array of slot indices that must end solved (preserved + new)
-export function findCompletions(codes0, { newSlots, preserve = solvedSlots(codes0), maxDepth = 10, maxSolutions = 50, slack = 1, timeBudgetMs = 4000, useCrossEdge = true, goalShift = 0 }) {
+export function findCompletions(codes0, { newSlots, preserve = solvedSlots(codes0), maxDepth = 10, maxSolutions = 50, slack = 1, timeBudgetMs = 4000, useCrossEdge = true, usePairCross = false, goalShift = 0 }) {
   const { cross: crossTable, pairs: pairTables } = buildTables();
   const goalSlots = [...new Set([...preserve, ...newSlots])];
   const pieces = [0, 1, 2, 3, ...goalSlots.flatMap(i => [4 + i, 8 + i])];
   const ceTables = useCrossEdge && goalShift === 0 ? goalSlots.map(i => [i, crossEdgeTable(i)]) : [];
+  const pcTables = usePairCross ? goalSlots.map(i => [i, pairCrossTable(i)]) : [];
+  const pieceIndex = new Map(pieces.map((piece, index) => [piece, index]));
   const n = pieces.length;
   const start = Uint8Array.from(pieces, t => codes0[t]);
   const t0 = performance.now(); let nodes = 0, timedOut = false;
-  const solutions = []; const path = [];
+  const solutions = []; const solutionGoalShifts = []; const path = [];
   const stack = Array.from({ length: maxDepth + 2 }, () => new Uint8Array(n));
   function h(st) {
     let best = crossTable[enc([st[0], st[1], st[2], st[3]])];
@@ -110,37 +144,58 @@ export function findCompletions(codes0, { newSlots, preserve = solvedSlots(codes
     for (const [i, tab] of ceTables) {
       const idx = goalSlots.indexOf(i); const d = tab[enc([st[0], st[1], st[2], st[3], st[4 + 2 * idx]])]; if (d > best) best = d;
     }
+    for (const [i, tab] of pcTables) {
+      const [a, b] = PAIR_CROSS_EDGES[i];
+      const d = tab[enc([st[pieceIndex.get(a)], st[pieceIndex.get(b)], st[pieceIndex.get(4 + i)], st[pieceIndex.get(8 + i)]])];
+      if (d > best) best = d;
+    }
     return best;
   }
-  function isGoal(st) {
-    for (let i = 0; i < pieces.length; i++) if (st[i] !== GOAL_CODES[goalShift][pieces[i]]) return false;
-    return true;
+  function goalFor(st) {
+    const shifts = goalShift === 'any' ? [0, 1, 2, 3] : [goalShift];
+    for (const shift of shifts) {
+      let match = true;
+      for (let i = 0; i < pieces.length; i++) if (st[i] !== GOAL_CODES[shift][pieces[i]]) { match = false; break; }
+      if (match) return shift;
+    }
+    return -1;
   }
   function dfs(depth, limit, prevMi) {
     if (performance.now() - t0 > timeBudgetMs && (nodes & 0xfff) === 0) { timedOut = true; }
-    if (timedOut) return;
+    if (timedOut || solutions.length >= maxSolutions) return false;
     const st = stack[depth]; nodes++;
     const hv = h(st);
-    if (isGoal(st)) { if (depth === limit) solutions.push(path.slice(0, depth).map(i => MOVES[i]).join(' ')); return; }
-    if (depth + hv > limit) return;
+    const goal = goalFor(st);
+    if (goal >= 0) {
+      if (depth === limit) {
+        solutions.push(path.slice(0, depth).map(i => MOVES[i]).join(' '));
+        solutionGoalShifts.push(goal);
+      }
+      return solutions.length < maxSolutions;
+    }
+    if (depth + hv > limit) return true;
     const pf = prevMi < 0 ? null : moveFace[prevMi];
     for (let mi = 0; mi < 18; mi++) {
       const f = moveFace[mi];
       if (pf && (f === pf || (FACE_AXIS[f] === FACE_AXIS[pf] && FACE_RANK[f] < FACE_RANK[pf]))) continue;
       const nx = stack[depth + 1];
       for (let i = 0; i < n; i++) nx[i] = next(pieces[i], st[i], mi);
-      path[depth] = mi; dfs(depth + 1, limit, mi);
-      if (solutions.length >= maxSolutions || timedOut) return;
+      path[depth] = mi;
+      if (!dfs(depth + 1, limit, mi)) return false;
     }
+    return true;
   }
-  let found = -1;
+  let found = -1, shortestProven = false, completedThroughDepth = -1, alternativesComplete = true;
   for (let limit = 0; limit <= maxDepth && !timedOut; limit++) {
-    stack[0].set(start); dfs(0, limit, -1);
-    if (solutions.length && found < 0) found = limit;
-    if (found >= 0 && limit >= found + slack) break;
-    if (solutions.length >= maxSolutions) break;
+    stack[0].set(start);
+    const complete = dfs(0, limit, -1);
+    if (complete) completedThroughDepth = limit;
+    else alternativesComplete = false;
+    if (solutions.length && found < 0) { found = limit; shortestProven = completedThroughDepth >= limit - 1; }
+    if (!complete || (found >= 0 && limit >= found + slack)) break;
   }
-  return { solutions, shortest: found, nodes, ms: Math.round(performance.now() - t0), timedOut };
+  return { solutions, solutionGoalShifts, shortest: found, shortestProven, completedThroughDepth, alternativesComplete,
+    nodes, ms: Math.round(performance.now() - t0), timedOut };
 }
 
 // Planner weight used by src/f2l-planner.js weightedMoveCount (F/B = 5, rotations 2)
@@ -163,21 +218,24 @@ export function bestCompletions(scramble, opts = {}) {
   const coldStart = performance.now();
   buildTables();
   const coldMs = performance.now() - coldStart;
+  const optionalStart = performance.now();
+  if (opts.usePairCross) buildPairCrossTables();
+  const optionalColdMs = performance.now() - optionalStart;
   const t0 = performance.now();
+  let incumbent = Infinity;
   for (const i of open) {
     const variants = [];
-    let shortest = Infinity, timedOut = false, nodes = 0;
-    const searchedGoalShifts = [];
-    for (let goalShift = 0; goalShift < 4; goalShift++) {
-      if (performance.now() - t0 >= (opts.timeBudgetMs ?? 4000)) { timedOut = true; break; }
-      const remainingMs = Math.max(1, (opts.timeBudgetMs ?? 4000) - (performance.now() - t0));
-      const r = findCompletions(codes, { newSlots: [i], preserve: solved, ...opts, goalShift, useCrossEdge: false, timeBudgetMs: remainingMs });
-      searchedGoalShifts.push(goalShift);
-      if (r.shortest >= 0) shortest = Math.min(shortest, r.shortest);
-      timedOut ||= r.timedOut;
-      nodes += r.nodes;
-      variants.push(...r.solutions.map(s => ({ s, goalShift })));
-    }
+    const remainingMs = Math.max(1, (opts.timeBudgetMs ?? 4000) - (performance.now() - t0));
+    const r = remainingMs <= 1 && performance.now() - t0 >= (opts.timeBudgetMs ?? 4000)
+      ? { solutions: [], solutionGoalShifts: [], shortest: -1, shortestProven: false, completedThroughDepth: -1, alternativesComplete: false, nodes: 0, timedOut: true }
+      : findCompletions(codes, {
+        newSlots: [i], preserve: solved, ...opts,
+        maxDepth: Math.min(opts.maxDepth ?? 10, Number.isFinite(incumbent) ? incumbent : (opts.maxDepth ?? 10)),
+        maxSolutions: 1, slack: 0,
+        goalShift: 'any', useCrossEdge: false, timeBudgetMs: remainingMs,
+      });
+    if (r.shortest >= 0) incumbent = Math.min(incumbent, r.shortest);
+    variants.push(...r.solutions.map((s, index) => ({ s, goalShift: r.solutionGoalShifts[index] ?? startShift })));
     const ranked = variants.map(({ s, goalShift }) => {
       const moveList = tokens(s);
       const finalCodes = trackedFrom(`${scramble} ${s}`);
@@ -185,7 +243,15 @@ export function bestCompletions(scramble, opts = {}) {
       const added = finalSlots.filter(slot => !solved.includes(slot));
       return { moves: s, tokens: moveList, slots: added.map(slot => SLOTS[slot].name), w: plannerWeight(moveList), e: ergoScore(moveList), goalShift };
     }).sort((a, b) => a.e - b.e || a.w - b.w || a.tokens.length - b.tokens.length);
-    out.push({ slots: [SLOTS[i].name], shortest: shortest === Infinity ? -1 : shortest, ms: performance.now() - t0, nodes, timedOut, searchedGoalShifts, options: ranked.slice(0, 5) });
+    out.push({ slots: [SLOTS[i].name], shortest: r.shortest, shortestProven: r.shortestProven,
+      completedThroughDepth: r.completedThroughDepth, alternativesComplete: r.alternativesComplete,
+      ms: performance.now() - t0, nodes: r.nodes, timedOut: r.timedOut,
+      searchedGoalShifts: [0, 1, 2, 3], options: ranked.slice(0, 5) });
   }
-  return { solved: solved.map(i => SLOTS[i].name), candidates: out, coldMs, searchMs: performance.now() - t0 };
+  const best = out.filter(candidate => candidate.shortest >= 0).sort((a, b) => a.shortest - b.shortest)[0] ?? null;
+  const proven = Boolean(best && out.length === open.length && out.every(candidate =>
+    (candidate.shortestProven && candidate.shortest >= best.shortest)
+      || candidate.completedThroughDepth >= best.shortest - 1));
+  return { solved: solved.map(i => SLOTS[i].name), candidates: out, shortest: best?.shortest ?? -1, proven,
+    coldMs, optionalColdMs, searchMs: performance.now() - t0 };
 }

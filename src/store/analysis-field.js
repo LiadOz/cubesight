@@ -78,6 +78,7 @@ export function cleanAnalysis(a) {
         } : {}),
         better: better ? (a.v >= 2 ? better : { slot: better.slot, moves: better.moves, w: better.w }) : null,
         shortest: int(p.shortest), proven: Boolean(p.proven),
+        ...(p.pendingUpgrade === true ? { pendingUpgrade: true } : {}),
       };
     }),
     lastLayerReference: Number.isFinite(a.lastLayerReference) ? Math.max(0, a.lastLayerReference) : null,

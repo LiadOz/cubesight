@@ -1,6 +1,7 @@
 // Best verified F2L completion from each recorded pair boundary. The search is
 // pure and local; worker.js calls it on the analysis worker, never the UI thread.
 import { bestCompletions, crossSolved, ergoScore, plannerWeight, SLOTS, solvedSlots, trackedFrom } from './pair-completion.js';
+import { preparePairCrossTables } from './pair-table-cache.js';
 import { FACE_TO_D, unrelabelMoves } from './normalize.js';
 
 const generatorSet = moves => [...new Set(moves.map(move => move[0]))].sort().join('');
@@ -33,12 +34,12 @@ export function pairTargets(segmentation, { maxPairs = 4 } = {}) {
   return out;
 }
 
-function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, slack = 1 } = {}) {
+function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, slack = 1, usePairCross = false, pendingUpgrade = false } = {}) {
   const { normalized, crossFace } = segmentation;
   const prefixMoves = normalized.moves.slice(0, target.from);
   const setup = [normalized.scramble, ...prefixMoves].filter(Boolean).join(' ');
   const yours = normalized.moves.slice(target.from, target.to + 1);
-  const found = bestCompletions(setup, { maxDepth, maxSolutions: 32, slack, timeBudgetMs, startShift: target.frame });
+  const found = bestCompletions(setup, { maxDepth, maxSolutions: 32, slack, timeBudgetMs, startShift: target.frame, usePairCross });
   const byAlg = new Map();
   for (const candidate of found.candidates) for (const option of candidate.options) {
     const moves = [...option.tokens];
@@ -57,8 +58,7 @@ function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, sl
       // A verified replay is not necessarily a proven shortest completion.
       // Only the candidate's exact minimum can carry proof status, and only
       // when every end-frame search completed.
-      proven: option.source === 'recorded-fallback' ? false : Boolean(candidate.shortest === moves.length
-        && !candidate.timedOut && candidate.searchedGoalShifts.length === 4),
+      proven: option.source === 'recorded-fallback' ? false : Boolean(candidate.shortest === moves.length && candidate.shortestProven),
     };
     if (!current || row.ergonomicScore < current.ergonomicScore) byAlg.set(key, row);
   }
@@ -93,8 +93,7 @@ function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, sl
     .filter(candidate => candidate.shortest >= 0)
     .sort((a, b) => a.shortest - b.shortest)[0] ?? null;
   const chosenShortest = chosenCandidate?.shortest >= 0 ? chosenCandidate.shortest : null;
-  const chosenProven = Boolean(chosenCandidate && chosenShortest !== null && !chosenCandidate.timedOut
-    && chosenCandidate.searchedGoalShifts.length === 4);
+  const chosenProven = Boolean(chosenCandidate && chosenShortest !== null && chosenCandidate.shortestProven);
   const betterCandidate = best && (best.stm < yours.length || (best.stm === yours.length && best.ergonomicScore < ergoScore(yours))) ? best : null;
   const yoursWeight = plannerWeight(yours);
   return {
@@ -119,9 +118,10 @@ function pairSteps(segmentation, target, { maxDepth = 12, timeBudgetMs = 300, sl
       ...option,
       moves: unrelabelMoves(option.moves, crossFace),
     })),
-    complete: found.candidates.every(candidate => !candidate.timedOut && candidate.searchedGoalShifts.length === 4),
-    proven: Boolean(globallyShortest && globallyShortest.shortest === shortestWithFrame
-      && found.candidates.every(candidate => !candidate.timedOut && candidate.searchedGoalShifts.length === 4)),
+    complete: found.candidates.length === SLOTS.length - startSlots.length
+      && found.candidates.every(candidate => candidate.alternativesComplete),
+    proven: Boolean(globallyShortest && globallyShortest.shortest === shortestWithFrame && found.proven),
+    pendingUpgrade,
     searchDepth: maxDepth,
     ms: Math.round(found.searchMs * 100) / 100,
     coldMs: Math.round(found.coldMs * 100) / 100,
@@ -132,14 +132,31 @@ export function evaluatePairs(segmentation, _solver, options = {}) {
   return pairTargets(segmentation, options).map(target => pairSteps(segmentation, target, options));
 }
 
-export async function evaluatePairsAsync(segmentation, _solver, { signal, ...options } = {}) {
+export async function evaluatePairsAsync(segmentation, _solver, {
+  signal, onProgress, initialBudgetMs = 80, upgradeBudgetMs = 400, ...options
+} = {}) {
   const out = [];
+  let refinedTablesReady = false;
+  let checkedTables = false;
   for (const target of pairTargets(segmentation, options)) {
     if (signal?.aborted) { const error = new Error(/* copy-ok: AbortError is an internal worker contract */ 'Analysis cancelled'); error.name = 'AbortError'; throw error; }
-    out.push(pairSteps(segmentation, target, options));
-    // Give the worker event loop a chance to process cancellation between stages.
-    await Promise.resolve();
-
+    const quick = pairSteps(segmentation, target, { ...options, timeBudgetMs: initialBudgetMs, pendingUpgrade: true });
+    out.push(quick);
+    onProgress?.(out.slice());
+    // A worker must return to its event loop so the browser can paint this partial result
+    // and process cancellation/new messages before the optional refinement starts.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (signal?.aborted) { const error = new Error(/* copy-ok: AbortError is an internal worker contract */ 'Analysis cancelled'); error.name = 'AbortError'; throw error; }
+    if (!checkedTables) {
+      checkedTables = true;
+      try { refinedTablesReady = await preparePairCrossTables({ signal }); }
+      catch { refinedTablesReady = false; }
+    }
+    if (signal?.aborted) { const error = new Error(/* copy-ok: AbortError is an internal worker contract */ 'Analysis cancelled'); error.name = 'AbortError'; throw error; }
+    const refined = pairSteps(segmentation, target, { ...options, timeBudgetMs: upgradeBudgetMs, usePairCross: refinedTablesReady, pendingUpgrade: false });
+    out[out.length - 1] = refined;
+    onProgress?.(out.slice());
+    await new Promise(resolve => setTimeout(resolve, 0));
   }
   return out;
 }

@@ -24,10 +24,12 @@ export function analyzeSolve(input, solver, { pairs: withPairs = false, ...optio
 }
 
 // Same, for an async solver (e.g. a worker round trip). Supports AbortSignal.
-export async function analyzeSolveAsync(input, solver, { signal, pairs: withPairs = false, ...options } = {}) {
+export async function analyzeSolveAsync(input, solver, { signal, onProgress, pairs: withPairs = false, ...options } = {}) {
   const segmentation = segmentSolve(input);
   const cross = solver ? await evaluateCrossAsync({ segmentation, ...options }, solver, { signal }) : null;
-  const pairs = withPairs && solver ? await evaluatePairsAsync(segmentation, solver, { signal }) : null;
+  const pairs = withPairs && solver ? await evaluatePairsAsync(segmentation, solver, {
+    ...options, signal, onProgress: progressPairs => onProgress?.({ segmentation, cross, pairs: progressPairs }),
+  }) : null;
   let lastLayer = null;
   try { lastLayer = await evaluateLastLayer(segmentation); }
   catch (error) { if (signal?.aborted) throw error; }
@@ -43,7 +45,8 @@ export function createAnalysisHandler(solver, post) {
   return async function onMessage(data) {
     if (data?.type !== 'analyze') return;
     try {
-      const result = await analyzeSolveAsync(data.input, typeof solver === 'function' ? solver() : solver, data.options);
+      const onProgress = partial => post({ type: 'progress', id: data.id, result: data.summary ? summarizeAnalysis(partial) : partial });
+      const result = await analyzeSolveAsync(data.input, typeof solver === 'function' ? solver() : solver, { ...data.options, onProgress });
       post({ type: 'result', id: data.id, result: data.summary ? summarizeAnalysis(result) : result });
     } catch (error) {
       post({ type: 'error', id: data.id, message: error?.message || String(error) });

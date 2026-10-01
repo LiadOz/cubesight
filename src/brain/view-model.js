@@ -456,8 +456,8 @@ function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus,
     markerId: selected.id, tag: selected.label, tone: selected.tone, text: selected.note, compare: selected.compare,
     better: selected.better ? `yours ${selected.better.yours.length} · better ${selected.better.moves.length}` : null,
   } : {
-    markerId: null, tag: pending ? 'review' : 'clean', tone: pending ? 'info' : 'good',
-    text: pending ? 'reviewing this solve…' : analysisStatus === 'done' ? 'Nothing to flag. Clean solve.' : 'No review for this solve.', compare: null, better: null,
+    markerId: null, tag: pending || analysisStatus === 'partial' ? 'review' : 'clean', tone: pending || analysisStatus === 'partial' ? 'info' : 'good',
+    text: pending ? 'reviewing this solve…' : analysisStatus === 'partial' ? 'first pass ready · checking pair options…' : analysisStatus === 'done' ? 'Nothing to flag. Clean solve.' : 'No review for this solve.', compare: null, better: null,
   };
   const pinSource = detail?.pin ?? selectedPin?.pin ?? { available: false, pinned: false, payload: null, trainer: null };
   return {

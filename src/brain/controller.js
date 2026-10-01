@@ -339,10 +339,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     const at = entry.at;
     if (!analysisInputFromRecord(entry).input) { analysisState.set(at, 'none'); return; }
     analysisState.set(at, 'pending');
-    void import('../analysis/client.js').then(({ analysisClient }) => analysisClient().analyze(entry)).catch(() => null).then(summary => {
-      if (detached) return;
-      analysisState.set(at, summary ? 'done' : 'none');
-      if (summary) withHistory(store => { store.update(at, {
+    const saveSummary = summary => {
+      if (!summary || detached) return;
+      withHistory(store => { store.update(at, {
         analysis: summary,
         ollCase: summary.lastLayer?.oll?.caseId ?? summary.ollCase?.id ?? entry.ollCase ?? null,
         pllCase: summary.lastLayer?.pll?.caseId ?? summary.pllCase?.id ?? entry.pllCase ?? null,
@@ -351,6 +350,18 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         pllRecognitionMs: summary.lastLayer?.pll?.recognitionMs ?? entry.pllRecognitionMs ?? null,
         pllExecutionMs: summary.lastLayer?.pll?.executionMs ?? entry.pllExecutionMs ?? null,
       }); });
+    };
+    void import('../analysis/client.js').then(({ analysisClient }) => analysisClient().analyze(entry, {
+      onProgress: summary => {
+        if (detached || !['pending', 'partial'].includes(analysisState.get(at))) return;
+        analysisState.set(at, 'partial');
+        saveSummary(summary);
+        if (active) render();
+      },
+    })).catch(() => null).then(summary => {
+      if (detached) return;
+      analysisState.set(at, summary ? 'done' : 'none');
+      saveSummary(summary);
       if (active) render();
     });
   }
