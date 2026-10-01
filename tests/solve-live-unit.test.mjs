@@ -255,7 +255,7 @@ test('bug 5: guided needs a solved cube, free needs a scrambled cube', async () 
     assert.throws(() => h.live.startFree(), /Scramble the cube first\./);
     assert.equal(h.s().phase, 'idle');
     h.physical('R U');
-    assert.throws(() => h.live.startGuided(SCR), /Solve the cube \(or sync\) before starting a guided scramble\./);
+    assert.throws(() => h.live.startGuided(SCR), /Solve the cube, then sync\./);
     assert.equal(h.s().phase, 'idle');
     h.live.startFree();
     assert.equal(h.s().phase, 'inspecting');

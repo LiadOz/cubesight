@@ -242,7 +242,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     for (const move of planMoves) { target = applyMoves(target, [move]); states.push(target); }
     const snap = session.getSnapshot();
     // The plan starts from solved; on a scrambled cube the cues would be wrong.
-    if (!isSolved(snap.state)) throw new Error('Solve the cube (or sync) before starting a guided scramble.');
+    if (!isSolved(snap.state)) throw new Error('Solve the cube, then sync.');
     stopInspectionTimer();
     notice = null;
     mode = 'guided';

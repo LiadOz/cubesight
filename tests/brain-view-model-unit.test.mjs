@@ -215,7 +215,7 @@ test('coach lines port the v1 texts and keys', () => {
   const lines = coachLines({ live, state: {}, toggles, optimalCross: { face: 'D', length: 6 } }, lenses);
   assert.deepEqual(lines.map(l => l.text), [
     'Suggested cross: yellow, 6 moves', 'cross 8 vs 6', 'hint',
-    '3 rotations this solve. Fewer often saves time.', 'Efficiency 88/100.',
+    '3 rotations this solve. Fewer often saves time.', 'efficiency 88',
   ]);
   assert.deepEqual(lines.slice(-2).map(l => l.key), ['rotations', 'efficiency']);
   assert.equal(lines[1].tone, 'warn');

@@ -1,6 +1,7 @@
 import { applyMoves, createSolvedState, FACE_COLORS, parseScramble } from './cross-cube.js';
 import { logConnection } from './smart-cube-diag.js';
 import { sameCornersAndEdges, stateFromFacelets } from './facelets-state.js';
+import { MSG } from './copy/terms.js';
 
 const SOLVED_FACELETS = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
 const solvedState = () => createSolvedState();
@@ -185,7 +186,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
       if (snapshot.phase === 'awaiting-solved') {
         if (resumeCtx) finishResume(event.facelets);
         else if (event.facelets === SOLVED_FACELETS) establishSolvedBaseline();
-        else publish({ detail: 'Cube connected. Solve it, then sync.' });
+        else publish({ detail: MSG.syncFirst });
       } else if (snapshot.phase === 'tracking') verifyFacelets(event.facelets);
     } else if (event.type === 'MOVE' && snapshot.phase === 'tracking') {
       logConnection({ kind: 'debug', label: `[session] MOVE event.move=${JSON.stringify(event.move)} phase=${snapshot.phase} moves.len=${snapshot.moves.length}` });
@@ -200,7 +201,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
         state = applyMoves(snapshot.state, [move]);
       } catch (error) {
         logConnection({ kind: 'error', label: /* copy-ok: protocol diagnostic shown in developer log */ `[session] MOVE DESYNC move=${JSON.stringify(event.move)} phase=${snapshot.phase} error=${error.message}` });
-        publish({ phase: 'desynced', detail: `Unsupported move from cube: ${String(event.move).slice(0, 20)}. Solve it and sync again.` });
+        publish({ phase: 'desynced', detail: `Unsupported move from cube: ${String(event.move).slice(0, 20)}. ${MSG.syncFirst}` });
         return;
       }
       const face = move.replace(/'|2$/g, '');
@@ -331,7 +332,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
       attach(connected, { resume: false });
       if (connected.capabilities?.facelets) {
         connected.sendCommand({ type: 'REQUEST_FACELETS' }).catch(() => {
-          if (token === generation && snapshot.phase === 'awaiting-solved') publish({ detail: 'Couldn’t read the cube. Solve it, then sync.' });
+          if (token === generation && snapshot.phase === 'awaiting-solved') publish({ detail: `Couldn’t read the cube. ${MSG.syncFirst}` });
         });
       } else publish({ detail: 'This cube cannot report its state. Start only when it is physically solved.' });
     } catch (error) {
@@ -359,7 +360,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
         connected.sendCommand({ type: 'REQUEST_FACELETS' }).catch(() => {
           if (token === generation && snapshot.phase === 'awaiting-solved') {
             resumeCtx = null;
-            publish({ detail: 'Could not read cube state. Solve it, then tap Sync solved cube.' });
+            publish({ detail: `Couldn’t read the cube. ${MSG.syncFirst}` });
           }
         });
       } else {
@@ -384,7 +385,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
     resumeCtx = null;
     const reported = stateFromFacelets(facelets);
     if (!reported) {
-    publish({ detail: 'Reconnected, but the cube state could not be read. Solve it, then sync.' });
+    publish({ detail: `Reconnected, but the cube state could not be read. ${MSG.syncFirst}` });
       return;
     }
     const match = sameCornersAndEdges(reported, ctx.state);
@@ -409,7 +410,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
     void facelets.catch(() => {});
     try {
       await connection.sendCommand({ type: 'REQUEST_FACELETS' });
-      if (await facelets !== SOLVED_FACELETS) throw new Error('Cube is not solved yet. Solve it, then try again.');
+      if (await facelets !== SOLVED_FACELETS) throw new Error(MSG.syncFirst);
       establishSolvedBaseline();
     } catch (error) {
       endFaceletsRequest(error);

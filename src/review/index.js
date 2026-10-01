@@ -167,7 +167,7 @@ export function createSolveReview(host, routeContext = {}) {
           <svg class="sr-graph" viewBox="0 0 640 180" role="img" aria-label="Moves versus efficiency loss graph"><line x1="8" y1="90" x2="632" y2="90" class="sr-par"></line><path class="sr-graph-line"></path><circle class="sr-cursor" r="6"></circle></svg>
           <div class="sr-scores">${stageAccuracyMarkup()}</div><section class="sr-moments"><h2>Key moments</h2><div class="sr-moment-list"></div></section>
           <label class="sr-toggle"><input type="checkbox" data-toggle="inferred"> show inferred labels</label>
-          <div class="sr-continuation"><h2>Suggested continuation</h2><p class="sr-best"></p><button data-action="play-best">show on cube</button></div></section>
+          <div class="sr-continuation"><h2>Suggested continuation</h2><p class="sr-best"></p><button data-action="play-best">reveal best move</button></div></section>
         <section class="sr-moves"><h2>Moves <small>([ and ] key moments · arrow keys step)</small></h2><ol>${record.solveMoves.map((move, i) => {
           const details = labels[i]?.map(item => `${item.text}: ${item.detail}`).join(' · ') || `${stageOf(record, i)} · no verified move evaluation`;
           return `<li><button data-move="${i}" title="${escapeHtml(details)}" aria-label="Move ${i + 1}, ${escapeHtml(moveText(move))}. ${escapeHtml(details)}">${moveText(move)}</button></li>`;

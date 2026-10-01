@@ -148,8 +148,12 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (!box || paintedToggles === settings.toggles) return;
     paintedToggles = settings.toggles;
     const entries = Object.entries(settings.toggles);
+    const labels = {
+      crossSuggest: 'cross hint', f2lHint: 'next pair hint', pllLens: 'PLL cue',
+      ollStage: 'OLL stages', rotationFlag: 'rotation flag', efficiencyScore: 'efficiency', autoCross: 'auto cross',
+    };
     if (box.querySelectorAll('[data-brain-toggle]').length !== entries.length) {
-      box.innerHTML = entries.map(([key]) => `<label class="brain-toggle"><input type="checkbox" data-brain-toggle="${key}"><span>${key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())}</span></label>`).join('');
+      box.innerHTML = entries.map(([key]) => `<label class="brain-toggle"><input type="checkbox" data-brain-toggle="${key}"><span>${labels[key] ?? key}</span></label>`).join('');
     }
     for (const [key, value] of entries) { const input = box.querySelector(`[data-brain-toggle="${key}"]`); if (input && input.checked !== value) input.checked = value; }
   }
@@ -320,7 +324,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       withHistory(store => { if (replaying) store.beginEphemeral(); store.append(entry); });
       if (!replaying) createRoundStore().markActiveDay(entry.at);
       startAnalysis(entry);
-      statusOverride = `Solve logged · ${fmtSeconds(snap.record.solveMs)} · ${snap.record.moveCount} moves.`;
+      statusOverride = `Solve saved · ${fmtSeconds(snap.record.solveMs)} · ${snap.record.moveCount} moves.`;
     }
     // Leaving the results (a new scramble, cancel) puts the real cube back.
     if (snap.phase !== 'done' && (reviewHold || reviewUi !== NO_REVIEW)) closeReview();
@@ -571,7 +575,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'sync': void cubeSession.syncSolved().catch(() => {}); break;
       case 'recenter': cube?.recenterGyro(); message('Cube motion recentered.'); break;
       case 'disconnect': void cubeSession.disconnect(); break;
-      case 'clearSavedCube': clearSavedCubeData(); message('Saved cube address cleared. Connect again to derive it from scratch.'); break;
+      case 'clearSavedCube': clearSavedCubeData(); message('Cube address forgotten. Connect again to derive it from scratch.'); break;
       case 'resetView': cube?.resetView(); break;
       case 'rebuildView': rebuild(); break;
       case 'start': return start();

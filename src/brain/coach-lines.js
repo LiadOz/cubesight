@@ -51,7 +51,7 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
     }
     if (toggles.efficiencyScore) {
       const score = lenses.efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, rotations: snap.rotations, solved: p.solved, f2lPairs: p.pairsSolved, ollDone: p.ollDone });
-      lines.push({ key: 'efficiency', tone: 'good', text: `Efficiency ${score}/100.` });
+      lines.push({ key: 'efficiency', tone: 'good', text: `efficiency ${score}` });
     }
   } else if (snap?.phase === 'done' && snap.record) {
     lines.push({ tone: 'good', text: `Solved in ${seconds(snap.record.solveMs)} · ${snap.record.moveCount} moves · ${snap.record.tps?.toFixed(2) ?? '—'} TPS.` });

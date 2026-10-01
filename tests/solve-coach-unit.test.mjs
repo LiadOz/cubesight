@@ -9,7 +9,8 @@ import { f2lPairSlots } from '../src/solve-tracker.js';
 
 test('crossHindsight flags extra moves vs an optimal cross', () => {
   assert.equal(crossHindsight(7, 5, 'D').kind, 'suboptimal');
-  assert.ok(crossHindsight(7, 5, 'D').text.includes('2 extra moves'));
+  assert.equal(crossHindsight(7, 5, 'D').text, 'D cross: 7 moves, 2 extra moves.');
+  assert.equal(crossHindsight(2, 1, 'F').text, 'F cross: 2 moves, 1 extra move.');
   assert.equal(crossHindsight(5, 5, 'D').kind, 'optimal');
   assert.equal(crossHindsight(null, 5, 'D'), null);
 });

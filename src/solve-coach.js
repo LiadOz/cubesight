@@ -49,12 +49,12 @@ export async function crossSuggestion(scramble, { extended = false, timeLimitMs 
 export function crossHindsight(userCrossMoveCount, optimalMoveCount, crossFace) {
   if (optimalMoveCount == null || userCrossMoveCount == null) return null;
   if (userCrossMoveCount <= optimalMoveCount) {
-    return { kind: 'optimal', text: `Your ${crossFace} cross took ${userCrossMoveCount} move${userCrossMoveCount === 1 ? '' : 's'}, the shortest this scramble allows.` };
+    return { kind: 'optimal', text: `${crossFace} cross: ${userCrossMoveCount} move${userCrossMoveCount === 1 ? '' : 's'}, optimal for this scramble.` };
   }
   const extra = userCrossMoveCount - optimalMoveCount;
   return {
     kind: 'suboptimal',
-    text: `Cross took ${userCrossMoveCount} moves, optimal on ${crossFace}. ${extra} extra moves.`,
+    text: `${crossFace} cross: ${userCrossMoveCount} moves, ${extra} extra move${extra === 1 ? '' : 's'}.`,
   };
 }
 

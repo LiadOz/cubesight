@@ -59,7 +59,7 @@ test('a still-scrambled cube cannot be used as a solved baseline', async () => {
   device.setFacelets(`R${SOLVED.slice(1)}`);
   await session.connect();
   await new Promise((resolve) => setImmediate(resolve));
-  await assert.rejects(session.syncSolved(), /not solved/i);
+  await assert.rejects(session.syncSolved(), /Solve the cube, then sync\./i);
   assert.equal(session.getSnapshot().phase, 'awaiting-solved');
   await session.disconnect();
 });
