@@ -91,6 +91,21 @@ test('a proven optimal target and proven pair choices produce praise with eviden
     'a double X-cross is never compared with the single X-cross opportunity table');
 });
 
+test('a proven one-move-over X-cross gets praise without a plain extra-move warning', async () => {
+  const nearOptimal = GOLD.xcross.moves.replace("R D'", "R2 R' D'");
+  const moves = nearOptimal.split(' ');
+  const record = await analysed({
+    at: 2100, scramble: GOLD.xcross.scramble, solveMoves: moves, moveCount: moves.length,
+    solved: true, crossFace: 'D', tps: 4, rotations: 0, moveTimes: timesFor(moves.length),
+  });
+  assert.equal(record.analysis.cross.target.kind, 'xcross');
+  assert.equal(record.analysis.cross.extra, 1);
+  assert.equal(record.analysis.cross.proven, true);
+  const { markers } = buildMarkers({ record, stages: fullRows(), plan: PLAN, faceColors: FACE_COLORS });
+  assert.ok(markers.some(marker => marker.kind === 'efficient-cross' && marker.label === 'efficient x-cross'));
+  assert.equal(markers.some(marker => marker.kind === 'extra-move' || marker.kind === 'detour'), false);
+});
+
 test('rotations come from the recorded gyro marks and compare with your average', async () => {
   const base = await replayRecord();
   assert.ok(base.rotationMarks.length >= 3);

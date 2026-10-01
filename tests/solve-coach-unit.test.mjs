@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  crossHindsight, f2lNextPairHint, betterInsertionHindsight,
+  crossFacesForPreference, crossSuggestion, crossHindsight, f2lNextPairHint, betterInsertionHindsight,
   ollStage, pllLens, efficiencyScore,
 } from '../src/solve-coach.js';
 import { stateFromScramble, createSolvedState } from '../src/cross-cube.js';
@@ -13,6 +13,29 @@ test('crossHindsight flags extra moves vs an optimal cross', () => {
   assert.equal(crossHindsight(2, 1, 'F').text, 'F cross: 2 moves, 1 extra move.');
   assert.equal(crossHindsight(5, 5, 'D').kind, 'optimal');
   assert.equal(crossHindsight(null, 5, 'D'), null);
+});
+
+test('cross search preference selects one face or all six colour-neutral faces', () => {
+  assert.deepEqual(crossFacesForPreference(), ['U', 'D', 'F', 'B', 'R', 'L']);
+  assert.deepEqual(crossFacesForPreference('yellow'), ['D']);
+  assert.deepEqual(crossFacesForPreference('green'), ['F']);
+  assert.deepEqual(crossFacesForPreference('purple'), []);
+});
+
+test('selected-color inspection search returns only that face; neutral returns all six', async () => {
+  const faces = [];
+  const search = async request => {
+    faces.push(request.face);
+    return { results: [{ moves: ['R'], optimality: 'proven-for-target' }], complete: true };
+  };
+  const selected = await crossSuggestion('R U R\'', { color: 'yellow', timeLimitMs: 1000, search });
+  assert.deepEqual(selected.perFace.map(row => row.face), ['D']);
+  assert.equal(selected.best.face, 'D');
+  assert.deepEqual(faces, ['D', 'D']);
+  faces.length = 0;
+  const neutral = await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 1000, search });
+  assert.deepEqual(neutral.perFace.map(row => row.face), ['U', 'D', 'F', 'B', 'R', 'L']);
+  assert.equal(faces.length, 12);
 });
 
 test('f2lNextPairHint returns null when all pairs solved, and a pair when not', () => {

@@ -42,6 +42,7 @@ const ENUMS = {
   scramble: ['guided', 'paste', 'free'],
   coach: ['live', 'after', 'off'],
   crossHint: ['tab', 'always', 'off'],
+  crossColor: ['neutral', 'white', 'yellow', 'green', 'blue', 'red', 'orange'],
   timer: ['visible', 'hide'],
   timeline: ['on', 'off'],
   compare: ['avg', 'pb', 'raw'],
@@ -60,6 +61,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   scramble: 'guided',
   coach: 'live',
   crossHint: 'tab',
+  crossColor: 'neutral',
   timer: 'visible',
   timeline: 'on',
   compare: 'avg',
@@ -158,6 +160,7 @@ const LABELS = {
   scramble: { guided: 'guided', paste: 'paste', free: 'free' },
   coach: { live: 'live', after: 'after solve', off: 'off' },
   crossHint: { tab: 'on tab', always: 'always', off: 'off' },
+  crossColor: { neutral: 'all colors', white: 'white', yellow: 'yellow', green: 'green', blue: 'blue', red: 'red', orange: 'orange' },
   timer: { visible: 'visible', hide: 'hide while solving' },
   timeline: { on: 'on', off: 'off' },
   compare: { avg: 'vs avg', pb: 'vs PB', raw: 'raw' },
@@ -190,6 +193,7 @@ const HELP = {
   scramble: 'Guided cues each move. Paste uses your scramble. Free starts from your scramble.',
   coach: 'When coach insights appear.',
   crossHint: 'Show a suggested cross during inspection.',
+  crossColor: 'Search all six faces for the shortest cross, or choose one color to limit the search.',
   timer: 'Hide the running clock to focus on the cube.',
   timeline: 'Show the stage timeline.',
   compare: 'What split deltas compare against.',
@@ -199,7 +203,7 @@ const ROW_LABELS = {
   style: 'style', theme: 'mode', method: 'method', f2l: 'F2L pairs', oll: 'OLL', pll: 'PLL',
   'inspection.mode': 'inspection', 'inspection.seconds': 'seconds', 'inspection.overtime': 'overtime',
   'inspection.graceSeconds': 'grace', 'inspection.gracePenalty': 'then', 'inspection.callouts': 'callouts', voice: 'voice',
-  penalties: 'penalties', scramble: 'scramble', coach: 'coach', crossHint: 'cross hint', timer: 'timer',
+  penalties: 'penalties', scramble: 'scramble', coach: 'coach', crossHint: 'cross hint', crossColor: 'cross color', timer: 'timer',
   timeline: 'timeline', compare: 'split compare', 'stats.source': 'stats source',
 };
 
@@ -207,7 +211,7 @@ const SECTIONS = [
   { id: 'look', label: 'look', rows: ['style', 'theme'] },
   { id: 'method', label: 'method', rows: ['method', 'f2l', 'oll', 'pll'] },
   { id: 'inspection', label: 'inspection', rows: ['inspection.mode', 'inspection.seconds', 'inspection.overtime', 'inspection.graceSeconds', 'inspection.gracePenalty', 'inspection.callouts', 'voice', 'penalties'] },
-  { id: 'solve', label: 'solve', rows: ['scramble', 'coach', 'crossHint', 'timer', 'timeline', 'compare'] },
+  { id: 'solve', label: 'solve', rows: ['scramble', 'coach', 'crossHint', 'crossColor', 'timer', 'timeline', 'compare'] },
   { id: 'stats', label: 'stats', rows: ['stats.source'] },
 ];
 
@@ -343,6 +347,7 @@ export function parseCommand(text) {
     case 'timer': return ON.includes(arg) || arg === 'visible' ? { path: 'timer', value: 'visible' } : OFF.includes(arg) ? { path: 'timer', value: 'hide' } : null;
     case 'coach': return ENUMS.coach.includes(arg) ? { path: 'coach', value: arg } : ON.includes(arg) ? { path: 'coach', value: 'live' } : null;
     case 'hint': case 'crosshint': return ENUMS.crossHint.includes(arg) ? { path: 'crossHint', value: arg } : null;
+    case 'crosscolor': return ENUMS.crossColor.includes(arg) ? { path: 'crossColor', value: arg } : null;
     case 'timeline': return ON.includes(arg) ? { path: 'timeline', value: 'on' } : OFF.includes(arg) ? { path: 'timeline', value: 'off' } : null;
     case 'compare': return { avg: 'avg', average: 'avg', pb: 'pb', raw: 'raw', off: 'raw' }[arg] ? { path: 'compare', value: { avg: 'avg', average: 'avg', pb: 'pb', raw: 'raw', off: 'raw' }[arg] } : null;
     case 'scramble': return ENUMS.scramble.includes(arg) ? { path: 'scramble', value: arg } : null;

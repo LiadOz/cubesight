@@ -64,6 +64,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let toastTimer = 0;
   let optimalCross = null;      // {face, length} from crossSuggestion during inspection
   let pendingSuggestion = null;
+  let suggestionRequest = 0;
   let savedRecord = null;       // the live record already appended to the solve store
   let scrambleText = '';
   let lastScramble = '';
@@ -270,14 +271,15 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   // --- Cross suggestion (async, during inspection) -------------------------------------------
   async function suggestCrossFor(scramble) {
+    const request = ++suggestionRequest;
     if (!settings.toggles.crossSuggest || settings.crossHint === 'off' || !scramble) { optimalCross = null; return; }
     pendingSuggestion = scramble;
     try {
-      const result = await crossSuggestion(scramble, { extended: false, timeLimitMs: 1500 });
-      if (pendingSuggestion !== scramble || detached) return;
+      const result = await crossSuggestion(scramble, { extended: false, timeLimitMs: 1500, color: settings.crossColor });
+      if (request !== suggestionRequest || pendingSuggestion !== scramble || detached) return;
       optimalCross = result.best ? { ...result.best, best: result.best, bestXcross: result.bestXcross } : null;
       render();
-    } catch { optimalCross = null; }
+    } catch { if (request === suggestionRequest) optimalCross = null; }
   }
 
   // --- Live tracker ---------------------------------------------------------------------------
@@ -444,6 +446,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (next.f2l !== before.f2l) live.setPseudo(next.f2l === 'pseudo');
     if (JSON.stringify(next.inspection) !== JSON.stringify(before.inspection)) live.setInspection(next.inspection);
     if (next.style !== before.style) void applyStyle(next.style);
+    const livePhase = live.getSnapshot().phase;
+    if (livePhase === 'inspecting' && (next.crossColor !== before.crossColor || next.crossHint !== before.crossHint
+      || next.toggles.crossSuggest !== before.toggles.crossSuggest)) void suggestCrossFor(lastScramble);
     if (next.session.gapMin !== before.session.gapMin && history && !isReplaying()) { history.setSessionGapMin(next.session.gapMin); history.regroupSessions(); records = history.records; }
     render();
   }

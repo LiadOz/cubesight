@@ -19,21 +19,26 @@ import { FACE_COLORS } from './cross-cube.js';
 
 // --- Cross lens ---------------------------------------------------------------
 
-// Optimal cross (and optional X-cross / double X-cross) for every face, given a
-// scramble string. Returns one entry per face with its move count, plus a `best`
-// recommendation. This is colour-neutral: we search all six faces and let the
-// cheapest win, the way a solver chooses a cross during inspection. The
-// solver runs in a worker, so this is async; a per-face failure never blocks
-// the others, and the lens degrades to "no suggestion" if the budget runs out.
-export async function crossSuggestion(scramble, { extended = false, timeLimitMs = 1500 } = {}) {
-  const faces = Object.keys(FACE_COLORS);
+// Optimal cross and X-cross starts for the requested colour preference, given
+// a scramble. Neutral searches all six faces; a selected colour searches only
+// its face. The solver runs in a worker, so this is async; a per-face failure
+// never blocks the others, and the lens degrades to a partial result if time
+// runs out.
+export function crossFacesForPreference(color = 'neutral') {
+  if (color === 'neutral') return Object.keys(FACE_COLORS);
+  const selected = Object.entries(FACE_COLORS).find(([, faceColor]) => faceColor === color)?.[0];
+  return selected ? [selected] : [];
+}
+
+export async function crossSuggestion(scramble, { extended = false, timeLimitMs = 1500, color = 'neutral', search = solveCross } = {}) {
+  const faces = crossFacesForPreference(color);
   const results = [];
   const opportunities = [];
   const queryBudget = Math.max(100, Math.floor(timeLimitMs / (faces.length * 2)));
   const xcrossBudget = Math.max(400, Math.floor(timeLimitMs / faces.length));
   for (const face of faces) {
     try {
-      const reply = await solveCross({
+      const reply = await search({
         scramble, face,
         kind: 'cross', maxResults: 1, maxDepth: 10, timeLimitMs: queryBudget,
       });
@@ -41,7 +46,7 @@ export async function crossSuggestion(scramble, { extended = false, timeLimitMs 
       results.push({ face, moves, length: moves ? moves.length : null, proven: reply.complete === true });
     } catch { /* a single face timing out must not abort the rest */ }
     try {
-      const reply = await solveCross({ scramble, face, kind: 'xcross', maxResults: 4, maxDepth: 10, timeLimitMs: xcrossBudget });
+      const reply = await search({ scramble, face, kind: 'xcross', maxResults: 4, maxDepth: 10, timeLimitMs: xcrossBudget });
       const candidate = reply.results?.filter(row => row.optimality === 'proven-for-target')
         .sort((a, b) => a.moves.length - b.moves.length)[0];
       opportunities.push({ face, moves: candidate?.moves ?? null, length: candidate?.moves?.length ?? null, proven: Boolean(candidate && reply.complete === true), complete: reply.complete === true });

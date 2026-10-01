@@ -150,7 +150,9 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
 
     // --- cross: spare moves and detours ------------------------------------------------------------
     if (cross?.done) {
+      const extendedTarget = cross.target?.kind === 'xcross' || cross.target?.kind === 'xxcross';
       for (const loss of cross.losses) {
+        if (extendedTarget && cross.proven && cross.extra <= 1) continue;
         const remaining = cross.moves - loss.i;   // moves from here to the cross, this one included
         const shortest = loss.d;
         const detour = loss.loss === 2;
