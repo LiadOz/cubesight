@@ -389,7 +389,7 @@ function resultsVM({ live, records, settings, plan, track, optimalCross, reviewU
   const averages = stageAverages(others, plan);
   const pbs = pbSplits(others, plan);
   const { stages, solveStartAt, moveTimes } = recordStages(stored, track, plan);
-  const review = reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus: focusOf(stored), ui: reviewUi, pins, analysisStatus, durationMs: stored.solveMs });
+  const review = reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus: focusOf(stored), crossColor: settings.crossColor, ui: reviewUi, pins, analysisStatus, durationMs: stored.solveMs });
   const prevAo12 = ao12(others);
   const vsAo12 = Number.isFinite(prevAo12) && Number.isFinite(ms) ? { text: fmtDelta(ms - prevAo12), tone: deltaTone(ms - prevAo12) } : null;
   const tpsValues = others.map(r => r.tps).filter(Number.isFinite).sort((a, b) => a - b);
@@ -438,10 +438,10 @@ function resultsVM({ live, records, settings, plan, track, optimalCross, reviewU
 // --- Review: markers on the timeline, the selected note, the detail view -------------------------
 
 /** @returns {import('./types.js').ReviewVM} */
-function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus, ui = {}, pins = [], analysisStatus = 'none', durationMs }) {
+function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus, crossColor = 'neutral', ui = {}, pins = [], analysisStatus = 'none', durationMs }) {
   const baselines = reviewBaselines(others);
   const pending = analysisStatus === 'pending';
-  const { markers, defaultId } = buildMarkers({ record: stored, stages, plan, baselines, focus, faceColors: FACE_COLORS });
+  const { markers, defaultId } = buildMarkers({ record: stored, stages, plan, baselines, focus, faceColors: FACE_COLORS, crossColor });
   const selectedId = markers.some(m => m.id === ui.selectedId) ? ui.selectedId : defaultId;
   // Where each marker sits: inside its stage (by time), so the ring and the lane can place it, and on the time axis.
   const rows = new Map(stages.filter(s => s.startAt != null && s.endAt != null).map(s => [s.key, { from: s.startAt - solveStartAt, to: s.endAt - solveStartAt }]));
@@ -571,7 +571,7 @@ export function buildViewModel(input, prev = null) {
     : (screen === 'solving' && settings.f2l === 'pseudo' && session?.state && live?.crossFace ? currentDShift(session.state, live.crossFace) : null);
   const timeline = timelineVM({ screen, settings, plan, averages, pbs, track, live, now, prevTimeline: prev?.timeline, dShift });
   const result = screen === 'results'
-    ? cached('results', [live?.record, sourceRecords, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross, input.reviewUi, input.pins, input.analysisStatus], () => resultsVM({ live, records: sourceRecords, settings, plan, track, optimalCross, reviewUi: input.reviewUi, pins: input.pins ?? [], analysisStatus: input.analysisStatus ?? 'none' }))
+    ? cached('results', [live?.record, sourceRecords, settings.penalties, settings.compare, settings.crossColor, plan, track?.stamps?.solvedAt, optimalCross, input.reviewUi, input.pins, input.analysisStatus], () => resultsVM({ live, records: sourceRecords, settings, plan, track, optimalCross, reviewUi: input.reviewUi, pins: input.pins ?? [], analysisStatus: input.analysisStatus ?? 'none' }))
     : null;
   const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, input.connectStep ?? '', session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, input.connectStep ?? '', live));
   const themePreference = input.themePreference ?? 'system';

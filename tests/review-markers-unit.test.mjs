@@ -106,6 +106,20 @@ test('a proven one-move-over X-cross gets praise without a plain extra-move warn
   assert.equal(markers.some(marker => marker.kind === 'extra-move' || marker.kind === 'detour'), false);
 });
 
+test('review alternatives respect the selected cross color while neutral review considers all faces', async () => {
+  const record = await crossRecord();
+  const cross = {
+    ...record.analysis.cross, target: { kind: 'cross', slots: [], mask: 0 }, moves: 8, d0: 8, extra: 0,
+    proven: true, startProven: true, faces: { U: 3, D: 6, F: 5, B: 7, R: 8, L: 7 },
+    faceProven: { U: true, D: true, F: true, B: true, R: true, L: true }, losses: [],
+  };
+  record.analysis = { ...record.analysis, face: 'L', cross };
+  const neutral = buildMarkers({ record, stages: crossRows, plan: PLAN, faceColors: FACE_COLORS }).markers.find(marker => marker.kind === 'better-cross');
+  const yellow = buildMarkers({ record, stages: crossRows, plan: PLAN, faceColors: FACE_COLORS, crossColor: 'yellow' }).markers.find(marker => marker.kind === 'better-cross');
+  assert.match(neutral.note, /white, 3 moves/);
+  assert.match(yellow.note, /yellow, 6 moves/);
+});
+
 test('rotations come from the recorded gyro marks and compare with your average', async () => {
   const base = await replayRecord();
   assert.ok(base.rotationMarks.length >= 3);

@@ -40,10 +40,10 @@ const TRAINER_OF = key => (key === 'cross' ? 'cross' : /^pair/.test(key) ? 'f2l'
 
 /**
  * @param {{record:Object, stages:{key:string, startAt:number|null, endAt:number|null, ms:number|null, moves:number|null, skipped:boolean, merged:boolean}[],
- *   plan:{key:string,label:string}[], baselines?:Object|null, focus?:string, faceColors?:Object}} input
+ *   plan:{key:string,label:string}[], baselines?:Object|null, focus?:string, faceColors?:Object, crossColor?:string}} input
  * @returns {{markers:Object[], defaultId:string|null, prominentIds:string[]}}
  */
-export function buildMarkers({ record, stages = [], plan = [], baselines = null, focus = 'speed', faceColors = {} }) {
+export function buildMarkers({ record, stages = [], plan = [], baselines = null, focus = 'speed', faceColors = {}, crossColor = 'neutral' }) {
   if (!record) return { markers: [], defaultId: null, prominentIds: [] };
   const a = record.analysis ?? null;
   const moves = record.solveMoves ?? [];
@@ -51,6 +51,8 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
   const count = moves.length || record.moveCount || 0;
   const weights = FOCUS_WEIGHT[focus] ?? FOCUS_WEIGHT.speed;
   const colorOf = face => (faceColors[face] ?? face ?? '').toLowerCase();
+  const selectedCrossFace = crossColor === 'neutral' ? null
+    : Object.entries(faceColors).find(([, color]) => String(color).toLowerCase() === crossColor)?.[0] ?? null;
   const b = baselines?.reliable ? baselines : null;
   const hasKey = key => plan.some(p => p.key === key);
   const firstKey = (...keys) => keys.find(hasKey) ?? keys[0];
@@ -169,7 +171,8 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       }
       // A cross on another face was clearly shorter.
       const faces = cross.target?.kind === 'cross' ? (cross.faces ?? {}) : {};
-      const others = Object.entries(faces).filter(([face, length]) => face !== a.face && Number.isFinite(length) && cross.faceProven?.[face]);
+      const others = Object.entries(faces).filter(([face, length]) => face !== a.face && (!selectedCrossFace || face === selectedCrossFace)
+        && Number.isFinite(length) && cross.faceProven?.[face]);
       const best = others.sort((x, y) => x[1] - y[1])[0];
       if (cross.startProven && cross.faceProven?.[a.face] && best && cross.d0 - best[1] >= 2) {
         push({
@@ -191,7 +194,8 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       }
       if (cross.done && cross.xcrossFaces && ['cross', 'xcross'].includes(cross.target?.kind)) {
         const targetSize = cross.target.kind === 'xcross' ? cross.target.slots?.length ?? 1 : 1;
-        const otherXcrosses = Object.entries(cross.xcrossFaces).filter(([face, row]) => face !== a.face && row?.complete)
+        const otherXcrosses = Object.entries(cross.xcrossFaces).filter(([face, row]) => face !== a.face
+          && (!selectedCrossFace || face === selectedCrossFace) && row?.complete)
           .flatMap(([face, row]) => (row.opportunities ?? []).filter(item => item.proven && item.length != null
             && item.length <= cross.moves - 2 && targetSize === 1)
             .map(item => ({ face, ...item }))).sort((x, y) => x.length - y.length);
