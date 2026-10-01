@@ -247,6 +247,7 @@ export function createHistoryStore({
     async reload() {
       await queue;
       if (!readOnly) cache = deriveSessionIds(cleanAll(await backend.getAll()), gapMin);
+      await pins.reload();
       return cache;
     },
   };
