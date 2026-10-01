@@ -48,5 +48,13 @@ test('algorithm case cold-load, self drill, and IndexedDB history survive offlin
     };
   }));
   expect(attemptsAfterReload).toBe(attemptsBeforeReload);
+  await page.goto('/#/algs/f2l?slot=BL');
+  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(41);
+  await page.locator('#algs-view .alg-case-card').first().click();
+  await expect(page).toHaveURL(/#\/algs\/f2l\/1-bl$/);
+  await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
+  await page.locator('[data-sequence-speed]').selectOption('4');
+  await page.locator('[data-sequence="play"]').click();
+  await expect.poll(async () => page.locator('[data-sequence-position]').textContent()).toMatch(/^(\d+) \/ \1$/);
   expect(errors).toEqual([]);
 });

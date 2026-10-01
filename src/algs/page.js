@@ -66,12 +66,15 @@ function caseDetail(row) {
 
 function browser(set = null) {
   const active = ALG_SETS.find(item => item.id === set) ?? ALG_SETS.find(item => item.status === 'ready');
-  const rows = active ? CASES.filter(row => row.set === active.id) : CASES;
+  const requestedSlot = new URLSearchParams(location.hash.split('?')[1] ?? '').get('slot') ?? 'FR';
+  const slot = ['FR', 'BR', 'BL', 'all'].includes(requestedSlot) ? requestedSlot : 'FR';
+  const rows = (active ? CASES.filter(row => row.set === active.id) : CASES).filter(row => active?.id !== 'f2l' || slot === 'all' || row.targetPair === slot);
+  const slotNav = active?.id === 'f2l' ? `<nav class="alg-set-tabs" aria-label="F2L slot">${[['FR', 'front right'], ['BR', 'back right'], ['BL', 'back left'], ['all', 'all slots']].map(([value, label]) => `<a class="${slot === value ? 'is-active' : ''}" href="#/algs/f2l?slot=${value}">${label}</a>`).join('')}</nav>` : '';
   // copy-ok: Algorithms is the library's name, separate from the Drills navigation label.
-  const note = set === 'f2l' ? '<p class="alg-browser__scope">Six curated F2L examples are available here; they are a subset of the full 41-case set.</p>' : set === 'oll2' ? '<p class="alg-browser__scope">Practice each stage goal separately: edge orientation, corner orientation, corner permutation, then edge permutation.</p>' : '';
+  const note = set === 'f2l' ? '<p class="alg-browser__scope">All 41 standard F2L cases, plus 41 back-right and 41 back-left variants. Each credited insertion is checked with the cross and other three pairs solved.</p>' : set === 'oll2' ? '<p class="alg-browser__scope">Practice each stage goal separately: edge orientation, corner orientation, corner permutation, then edge permutation.</p>' : '';
   return /* copy-ok: Drill is a feature label used by the algorithm case actions. */ `<section class="cs-page brain alg-page" data-brain-style="orbit"><section class="alg-browser"><header class="alg-browser__head"><p class="alg-eyebrow">OFFLINE ALGORITHM LIBRARY</p><h1>Algorithm library</h1><p>Browse canonical cases, compare credited variants, and practice your picked algorithm. Community source links need an internet connection.</p>${note}</header>
     <nav class="alg-set-tabs" aria-label="Algorithm sets">${ALG_SETS.map(item => item.status === 'ready' ? `<a class="${item.id === active?.id ? 'is-active' : ''}" href="#/algs/${item.id}">${esc(item.name)} <small>${item.count}</small></a>` : `<span class="is-disabled" aria-disabled="true">${esc(item.name)} <small>Coming soon</small></span>`).join('')}</nav>
-    <div class="alg-case-grid">${rows.map(caseCard).join('')}</div></section></section>`;
+    ${slotNav}<div class="alg-case-grid">${rows.map(caseCard).join('')}</div></section></section>`;
 }
 
 function drillMarkup(row, alg, mode = 'self') {

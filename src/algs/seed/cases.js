@@ -7,7 +7,7 @@ export const ALG_SETS = Object.freeze([
   { id: 'pll', name: 'PLL', count: pll.cases.length, status: 'ready' },
   { id: 'oll', name: 'OLL', count: oll.cases.length, status: 'ready' },
   { id: 'oll2', name: '2-look', count: oll2.cases.length, status: 'ready' },
-  { id: 'f2l', name: 'F2L', count: f2l.cases.length, status: 'ready' },
+  { id: 'f2l', name: 'F2L', count: f2l.cases.filter(row => !row.variantOf).length, variants: f2l.cases.filter(row => row.variantOf).length, status: 'ready' },
 ]);
 
 export const CASES = Object.freeze([...pll.cases, ...oll.cases, ...f2l.cases, ...oll2.cases].map(row => Object.freeze({
@@ -41,4 +41,4 @@ export function algorithmLink(alg) {
   return alg?.source?.url ?? null;
 }
 
-export const ALGORITHM_DATA_VERSION = 1;
+export const ALGORITHM_DATA_VERSION = 2;

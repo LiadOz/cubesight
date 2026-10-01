@@ -25,16 +25,19 @@ test('algorithm notation flattens groups and normalizes double-turn suffixes', (
 test('the curated offline bundle covers every standard PLL and OLL case with two credited algorithms', () => {
   assert.equal(getCases('pll').length, 21);
   assert.equal(getCases('oll').length, 57);
-  assert.equal(CASES.length, 100);
-  assert.equal(SEED_ALGS.length, 194);
+  assert.equal(CASES.length, 217);
+  assert.equal(SEED_ALGS.length, 541);
   assert.ok(CASES.filter(row => ['oll', 'pll'].includes(row.set)).every(row => row.algs.length >= 2 && row.algs.every(alg => alg.verified && alg.credit && alg.source?.url)));
   assert.ok(getCases('f2l').every(row => row.algs.length >= 1 && row.algs.every(alg => alg.verified && alg.credit && alg.source?.url)));
   assert.ok(getCases('oll2').every(row => row.algs.length >= 1 && row.algs.every(alg => alg.credit && alg.source?.url)));
   assert.equal(getCase('oll/21').number, 21);
   assert.equal(getCase('pll/Jb').id, 'pll/Jb');
   assert.equal(getSeedAlg('s.oll.21.1').caseId, 'oll/21');
-  assert.equal(getCases('f2l').length, 6);
-  assert.equal(getCase('f2l/7').algs.length, 1, 'the independently rejected alternate is excluded');
+  assert.equal(getCases('f2l').length, 123);
+  assert.equal(getCases('f2l').filter(row => !row.variantOf).length, 41);
+  assert.equal(getCases('f2l').filter(row => row.variantOf).length, 82);
+  for (const slot of ['FR', 'BR', 'BL']) assert.equal(getCases('f2l').filter(row => row.targetPair === slot).length, 41);
+  assert.equal(canonicalCasePath(getCase('f2l/1-br')), '#/algs/f2l/1-br');
   assert.equal(getCases('oll2').length, 16);
   assert.ok(getCases('oll2').every(row => row.stage && row.goal));
   assert.equal(canonicalCasePath(getCase('oll/21')), '#/algs/oll/21');
@@ -229,4 +232,26 @@ test('personal imports cannot shadow seed IDs or select an algorithm from anothe
   assert.equal(counts.sources, 0);
   assert.equal((await db.getPick(row.id)).algId, 'u.valid');
   assert.notEqual(other.id, row.id);
+});
+
+
+test('all F2L slot variants preserve the cross and other slots in the independent cubing model', async () => {
+  const cube = await cube3x3x3.kpuzzle();
+  const pairIndices = { FR: [4, 8], FL: [5, 9], BL: [6, 11], BR: [7, 10] };
+  const intact = (orbit, indices) => indices.every(i => orbit.permutation[i] === i && orbit.orientationDelta[i] === 0);
+  const canonical = moves => normalizeAlg(moves);
+  const { canonicalizeReconstruction } = await import('../src/review/import-parser.js');
+  for (const row of getCases('f2l')) {
+    const before = cube.algToTransformation(row.setup).transformationData;
+    assert.ok(intact(before.EDGES, [4, 5, 6, 7]), `${row.id} begins with its cross solved`);
+    for (const slot of row.preservedPairs) {
+      const [corner, edge] = pairIndices[slot];
+      assert.ok(intact(before.CORNERS, [corner]) && intact(before.EDGES, [edge]), `${row.id} preserves ${slot}`);
+    }
+    for (const alg of row.algs) {
+      const fixed = canonicalizeReconstruction(tokenizeReconstruction(canonical(alg.moves)).tokens).moves.map(move => move.move).join(' ');
+      const after = cube.algToTransformation(`${row.setup} ${fixed}`).transformationData;
+      assert.ok(intact(after.CORNERS, [4, 5, 6, 7]) && intact(after.EDGES, [4, 5, 6, 7, 8, 9, 10, 11]), `${alg.id} completes all four F2L slots`);
+    }
+  }
 });

@@ -75,13 +75,20 @@ test('algorithm drill labels, move counts, theme contrast, and touch targets sta
   expect(await card.evaluate(node => getComputedStyle(node).transform)).toBe('none');
 });
 
-test('six-case F2L subset and staged two-look OLL routes are functional', async ({ page }) => {
+test('all standard F2L cases, back-slot variants and staged two-look routes are functional', async ({ page }) => {
   await page.goto('/#/algs/f2l');
-  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(6);
-  await expect(page.locator('#algs-view')).toContainText('subset of the full 41-case set');
+  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(41);
+  await expect(page.locator('#algs-view')).toContainText('All 41 standard F2L cases');
   await page.locator('#algs-view .alg-case-card').first().click();
   await expect(page.locator('.alg-cube-card')).toContainText('Set up this F2L case on your cube before each round');
   await expect(page.locator('.alg-cube-card')).toContainText('do not use the no-reset virtual repaint flow');
+  await page.goto('/#/algs/f2l');
+  await page.getByRole('navigation', { name: 'F2L slot' }).getByRole('link', { name: 'back right', exact: true }).click();
+  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(41);
+  await page.locator('#algs-view .alg-case-card').first().click();
+  await expect(page).toHaveURL(/#\/algs\/f2l\/1-br$/);
+  await expect(page.locator('.alg-detail__head')).toContainText('BR pair needs insertion');
+  await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
   await page.goto('/#/algs/oll2');
   await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(16);
   await page.goto('/#/algs/oll2/eo-line');
