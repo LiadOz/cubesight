@@ -41,7 +41,8 @@ test('markers rank by cost, the top few are prominent, and none are dropped', as
   const { markers, prominentIds } = buildMarkers({ record, stages: fullRows(), plan: PLAN, faceColors: FACE_COLORS });
   const a = record.analysis;
   const expected = a.cross.losses.length + a.pauses.length + a.cancels.length + record.rotationMarks.length + a.pseudo.length
-    + a.skips.filter(s => s.kind !== 'xcross').length + (a.xcross ? 1 : 0) + 1;   // + the better cross
+    + a.skips.filter(s => s.kind !== 'xcross').length + (a.xcross ? 1 : 0) + 1
+    + a.pairs.filter(pair => pair.better && pair.yours.split(' ').length - pair.better.moves.split(' ').length >= 2).length; // better cross + material pair savings
   assert.equal(markers.length, expected, 'every fact becomes a marker');
   assert.equal(markers.length > PROMINENT, true);
   assert.equal(markers.filter(m => m.prominent).length, PROMINENT);

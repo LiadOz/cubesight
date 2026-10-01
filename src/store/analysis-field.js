@@ -15,11 +15,11 @@ export function cleanRotationMarks(marks) {
 
 /** @returns {Object|null} */
 export function cleanAnalysis(a) {
-  if (!a || typeof a !== 'object' || a.v !== 1) return null;
+  if (!a || typeof a !== 'object' || ![1, 2].includes(a.v)) return null;
   const marks = a.marks && typeof a.marks === 'object' ? a.marks : {};
   const cross = a.cross && typeof a.cross === 'object' ? a.cross : null;
   const out = {
-    v: 1,
+    v: a.v,
     engine: int(a.engine) ?? 0,
     face: ['U', 'D', 'F', 'B', 'R', 'L'].includes(a.face) ? a.face : 'D',
     solved: Boolean(a.solved),
@@ -39,14 +39,54 @@ export function cleanAnalysis(a) {
     medianGapMs: Number.isFinite(a.medianGapMs) ? Math.round(a.medianGapMs) : null,
     cancels: list(a.cancels, 8, c => (c && Number.isInteger(c.from) && Number.isInteger(c.to) ? { from: c.from, to: c.to, waste: int(c.waste, 1, 50) ?? 1 } : null)),
     cross: null,
+    ...(a.v >= 2 ? { ollCase: null, pllCase: null } : {}),
     pairs: list(a.pairs, 4, p => {
       if (!p || !int(p.n, 1, 4)) return null;
       if (p.unsupported) return { n: p.n, unsupported: str(p.unsupported, 12) };
       if (!Number.isInteger(p.from) || !Number.isInteger(p.to)) return null;
-      const better = p.better && moveString(p.better.moves) ? { slot: str(p.better.slot, 4) ?? '', moves: moveString(p.better.moves), w: Number.isFinite(p.better.w) ? p.better.w : 0 } : null;
-      return { n: p.n, from: p.from, to: p.to, yours: moveString(p.yours), w: Number.isFinite(p.w) ? p.w : 0, better, shortest: int(p.shortest), proven: Boolean(p.proven) };
+      const slots = value => list(value, 4, slot => ['FR', 'BR', 'BL', 'FL'].includes(slot) ? slot : null);
+      const option = o => {
+        if (!o || !moveString(o.moves)) return null;
+        return {
+          slots: slots(o.slots), moves: moveString(o.moves), stm: int(o.stm, 0, 60) ?? 0, etm: int(o.etm, 0, 60) ?? 0,
+          generators: str(o.generators, 12) ?? '', ergonomicScore: Number.isFinite(o.ergonomicScore) ? o.ergonomicScore : 0,
+          plannerWeight: Number.isFinite(o.plannerWeight) ? o.plannerWeight : 0,
+          ...(o.source === 'recorded-fallback' ? { source: o.source } : {}), proven: o.proven !== false,
+          goalShift: int(o.goalShift, 0, 3) ?? 0,
+        };
+      };
+      const better = p.better && moveString(p.better.moves) ? {
+        slot: str(p.better.slot, 8) ?? '', slots: slots(p.better.slots), moves: moveString(p.better.moves),
+        w: Number.isFinite(p.better.w) ? p.better.w : 0, stm: int(p.better.stm, 0, 60) ?? 0,
+        etm: int(p.better.etm, 0, 60) ?? 0, generators: str(p.better.generators, 12) ?? '',
+        ergonomicScore: Number.isFinite(p.better.ergonomicScore) ? p.better.ergonomicScore : 0,
+        goalShift: int(p.better.goalShift, 0, 3) ?? 0,
+      } : null;
+      return {
+        n: p.n, from: p.from, to: p.to, yours: moveString(p.yours), w: Number.isFinite(p.w) ? p.w : 0,
+        ...(a.v >= 2 ? { yoursErgonomicScore: Number.isFinite(p.yoursErgonomicScore) ? p.yoursErgonomicScore : null } : {}),
+        ...(a.v >= 2 ? {
+          frame: int(p.frame, 0, 3) ?? 0,
+          proofScope: ['cross-and-pair-up-to-D-offset', 'D-offset-start-and-cross-up-to-D-offset-end'].includes(p.proofScope) ? p.proofScope : 'cross-and-pair-up-to-D-offset',
+          chosenSlot: ['FR', 'BR', 'BL', 'FL'].includes(p.chosenSlot) ? p.chosenSlot : null,
+          chosenSlots: slots(p.chosenSlots), chosenShortest: int(p.chosenShortest, 0, 60), chosenProven: Boolean(p.chosenProven),
+          bestSlot: ['FR', 'BR', 'BL', 'FL'].includes(p.bestSlot) ? p.bestSlot : null,
+          options: list(p.options, 8, option), ms: Number.isFinite(p.ms) ? p.ms : null, complete: Boolean(p.complete),
+        } : {}),
+        better: better ? (a.v >= 2 ? better : { slot: better.slot, moves: better.moves, w: better.w }) : null,
+        shortest: int(p.shortest), proven: Boolean(p.proven),
+      };
     }),
   };
+  for (const field of (a.v >= 2 ? ['ollCase', 'pllCase'] : [])) {
+    const item = a[field];
+    if (item && typeof item.id === 'string') out[field] = {
+      id: item.id.slice(0, 24),
+      ...(field === 'pllCase' ? { auf: ['', 'U', 'U2', "U'"].includes(item.auf) ? item.auf : null } : {}),
+      recognitionMs: Number.isFinite(item.recognitionMs) && item.recognitionMs >= 0 ? Math.round(item.recognitionMs) : null,
+      executionMs: Number.isFinite(item.executionMs) && item.executionMs >= 0 ? Math.round(item.executionMs) : null,
+    };
+  }
   if (cross) {
     out.cross = {
       moves: int(cross.moves) ?? 0, d0: int(cross.d0) ?? 0, extra: int(cross.extra, 0, 60), total: int(cross.total) ?? 0, done: Boolean(cross.done), proven: Boolean(cross.proven),

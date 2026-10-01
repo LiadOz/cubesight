@@ -47,9 +47,20 @@ export function compareFor({ row, marker = null, record, pending = false }) {
   }
   const pair = /^pair(\d)$/.test(row.key) ? a.pairs.find(p => p.n === Number(row.key[4])) : null;
   if (pair?.unsupported) return { ...none('pseudo', 'no suggestion for pseudo pairs yet'), yours };
+  const options = (pair?.options ?? []).map(option => ({
+    moves: words(option.moves), slots: option.slots ?? [], stm: option.stm, etm: option.etm,
+    generators: option.generators, ergonomicScore: option.ergonomicScore, source: option.source, proven: option.proven, goalShift: option.goalShift,
+  }));
   if (pair && !pair.unsupported) {
-    if (pair.better) { const better = words(pair.better.moves); return { status: 'better', from: row.from, yours, better, text: `yours ${yours.length} · better ${better.length}` }; }
-    return { status: 'shortest', from: row.from, yours, better: [], text: `yours ${yours.length} · the shortest found` };
+    const frameNote = `${pair.frame ? ` · starts in D-offset frame ${pair.frame}` : ''}${pair.better?.goalShift ? ' · D-offset finish' : ''}`;
+    if (pair.better) {
+      const better = words(pair.better.moves);
+      const comparison = better.length < yours.length ? `yours ${yours.length} · better ${better.length}` : `same length · easier turns`;
+      return { status: 'better', from: row.from, yours, better, options, text: `${comparison}${frameNote}` };
+    }
+    const resultNote = pair.proven ? 'shortest found' : options.some(option => option.source === 'recorded-fallback')
+      ? 'recorded completion · no shorter found in this search' : 'no shorter completion found in this search';
+    return { status: 'shortest', from: row.from, yours, better: [], options, text: `yours ${yours.length} · ${resultNote}${frameNote}` };
   }
   return { ...none('none-yet', 'no suggestion yet'), yours };
 }
@@ -102,12 +113,15 @@ export function buildDetail({ kind, key, record, markers = [], rows = [], plan =
   const tps = ms > 0 && count > 0 ? count / (ms / 1000) : null;
   const avgTps = avg && avg.avgMs > 0 && avg.avgMoves != null ? avg.avgMoves / (avg.avgMs / 1000) : null;
   const pauses = stageMarkers.filter(m => m.kind === 'pause');
+  const lastLayer = /^eo$|^co$|^oll$/.test(stageKey) ? record.analysis?.ollCase
+    : /^cp$|^ep$|^pll$/.test(stageKey) ? record.analysis?.pllCase : null;
   const delta = ms != null && avg && avg.source === 'history' && !row?.skipped && !row?.merged ? ms - avg.avgMs : null;
   const usual = baselines?.medianGapMs ?? record.analysis?.medianGapMs ?? null;
   const labels = [
     ...(row?.pseudo ? [{ text: 'pseudo', tone: 'good' }] : []),
     ...(row?.skipped ? [{ text: 'skip', tone: 'good' }] : []),
     ...(row?.merged ? [{ text: 'with the cross', tone: 'good' }] : []),
+    ...(lastLayer ? [{ text: `${lastLayer.id}${lastLayer.recognitionMs == null ? '' : ` · recognition ${(lastLayer.recognitionMs / 1000).toFixed(2)} s`}${lastLayer.executionMs == null ? '' : ` · execution ${(lastLayer.executionMs / 1000).toFixed(2)} s`}`, tone: 'good' }] : []),
     ...stageMarkers.map(m => ({ text: m.label, tone: m.tone, id: m.id })),
   ];
   const payload = replayable ? pinPayload({ record, row, marker, compare }) : null;

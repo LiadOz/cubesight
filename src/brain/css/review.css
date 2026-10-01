@@ -72,6 +72,11 @@ button.b-rev-mv:hover { border-color: var(--b-ink); }
 .b-rev-alg span { min-width: 4.2em; }
 .b-rev-alg code { font: 15px var(--b-font-mono); color: var(--b-ink); word-break: break-word; }
 .b-rev-alg-better code { color: var(--b-accent-text); }
+.b-rev-options { display: grid; gap: 6px; padding: 0; list-style: none; }
+.b-rev-options[hidden] { display: none; }
+.b-rev-option { display: grid; grid-template-columns: minmax(7em, auto) 1fr; gap: 10px; width: 100%; padding: 6px 8px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); background: transparent; color: var(--b-ink); font: 12px var(--b-font-mono); text-align: left; cursor: pointer; }
+.b-rev-option:hover { border-color: var(--b-accent); color: var(--b-accent-text); }
+.b-rev-option code { font: inherit; overflow-wrap: anywhere; color: var(--b-muted); }
 
 /* markers drawn on the ring, the lane and the chart share these */
 .b-mk { cursor: pointer; }

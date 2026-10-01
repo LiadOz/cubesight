@@ -15,12 +15,13 @@
 import { applyMoves, createSolvedState, parseScramble, sameCubeState } from '../cross-cube.js';
 import { crossFrame, solvedPairs, eoSolved, coSolved, cpSolved } from '../solve-tracker.js';
 import { FACE_TO_D, inferCrossFace, relabelMoves, toMoveList } from './normalize.js';
+import { captureLastLayer } from './last-layer.js';
 
 export const STAGES = Object.freeze(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
 export const STAGE_GROUP = Object.freeze({
   cross: 'cross', pair1: 'f2l', pair2: 'f2l', pair3: 'f2l', pair4: 'f2l', eo: 'oll', co: 'oll', cp: 'pll', ep: 'pll',
 });
-export const ENGINE_VERSION = 1;
+export const ENGINE_VERSION = 2;
 
 // Pause allowances (ms) by the boundary a gap sits on (SPEC 5.3).
 export const PAUSE_ALLOW_MS = Object.freeze({
@@ -280,7 +281,7 @@ export function segmentSolve({ scramble, moves, moveTimes, orient, crossFace: fo
   };
   const outMarks = { ...marks, pairFrame: pairs.slice().sort((a, b) => a.n - b.n).map(record => record.k) };
 
-  return {
+  const result = {
     version: ENGINE_VERSION,
     scramble: scrambleMoves.join(' '),
     moves: original,
@@ -292,4 +293,6 @@ export function segmentSolve({ scramble, moves, moveTimes, orient, crossFace: fo
     timing: { hasTimes: Boolean(times), medianGapMs },
     solved, warnings,
   };
+  result.cases = captureLastLayer(result);
+  return result;
 }

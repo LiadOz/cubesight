@@ -49,6 +49,7 @@ const TEMPLATE = `
       </div>
       <p class="b-rev-alg b-rev-alg-yours"><span>yours</span><code></code></p>
       <p class="b-rev-alg b-rev-alg-better"><span>better</span><code></code></p>
+      <ol class="b-rev-options" aria-label="Ranked pair completions"></ol>
     </div>
   </section>`;
 
@@ -70,6 +71,7 @@ export function createReviewPanel(host, { dispatch }) {
     if (target.dataset.marker) dispatch({ type: 'selectMarker', id: target.dataset.marker });
     else if (target.dataset.at != null) dispatch({ type: 'jumpTo', at: Number(target.dataset.at) });
     else if (target.dataset.variant) dispatch({ type: 'playVariant', variant: target.dataset.variant });
+    else if (target.dataset.option != null) dispatch({ type: 'playOption', option: Number(target.dataset.option) });
     else if (target.dataset.act === 'close') dispatch({ type: 'closeDetail' });
     else if (target.dataset.act === 'pin') dispatch({ type: 'togglePin' });
     else if (target.dataset.act === 'open' && shown?.coach.markerId) dispatch({ type: 'selectMarker', id: shown.coach.markerId });
@@ -133,6 +135,17 @@ export function createReviewPanel(host, { dispatch }) {
     setText($('.b-rev-alg-yours code'), cmp.yoursText);
     $('.b-rev-alg-better').hidden = !better;
     setText($('.b-rev-alg-better code'), cmp.betterText);
+    const options = (cmp.options ?? []).slice(0, 8).map((option, index) => {
+      const li = el('li');
+      const label = `${option.slots?.length > 1 ? option.slots.join('+') : option.slots?.[0] ?? 'pair'} · ${option.stm} moves${option.goalShift ? ' · D-offset finish' : ''}${option.source === 'recorded-fallback' ? ' · recorded' : ''}`;
+      const pick = button('b-rev-option', label, { option: index });
+      pick.append(el('code', null, option.moves.join(' ')));
+      li.append(pick);
+      return li;
+    });
+    const optionsList = $('.b-rev-options');
+    optionsList.hidden = !options.length;
+    optionsList.replaceChildren(...options);
   }
 
   return {

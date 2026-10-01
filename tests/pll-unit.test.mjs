@@ -6,6 +6,7 @@ import {
   PLL_CASE_NAMES,
   generatePllCase,
   identifyPllCase,
+  identifyPllCaseDetails,
   isPllState,
 } from '../src/pll-logic.js';
 import { createSolvedState } from '../src/cross-cube.js';
@@ -74,6 +75,9 @@ test('case identity remains stable for every AUF', () => {
     for (const auf of ['', 'U', 'U2', "U'"]) {
       const prompt = generatePllCase(entry.name, { auf });
       assert.equal(identifyPllCase(prompt.state)?.name, entry.name, `${entry.name} with ${auf || 'no AUF'}`);
+      const detail = identifyPllCaseDetails(prompt.state);
+      assert.equal(detail?.case.name, entry.name);
+      assert.ok(detail.aufOptions.includes(auf));
     }
   }
 });
