@@ -36,4 +36,15 @@ for (const drill of ['oll', 'lookahead']) {
     await expect(controls.getByRole('button', { name: '20 cases', exact: true })).toBeVisible();
     await expect(controls.getByRole('button', { name: '30 s', exact: true })).toBeVisible();
   });
+
+  test(`${drill} timed round ends without waiting for another answer`, async ({ page }) => {
+    await page.clock.install();
+    await page.goto(`/#/drills/${drill}`);
+    await page.locator('.quick-round').getByRole('button', { name: '30 s', exact: true }).click();
+    await page.locator(drill === 'oll' ? '.oll-answer' : '.lookahead-choice').first().waitFor({ timeout: 30000 });
+    await page.clock.fastForward(30100);
+    await expect(page.locator('.quick-round')).toContainText('round complete');
+    const lastRound = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-rounds-v1')).rounds.at(-1));
+    expect(lastRound.reason).toBe('time');
+  });
 }
