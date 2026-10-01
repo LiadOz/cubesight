@@ -8,7 +8,7 @@ Started 2026-10-01 from `feature/smart-cube-guidance` (`eea1766`). Scope: all ei
 |---|---|---|
 | WP1 · site structure | `implement/spec-next-site` | Integrated; route/browser/offline checks pass |
 | WP2 · manual timer | `implement/spec-next-timer` | Integrated; keyboard/touch/persistence pass; offline scramble fix in progress |
-| WP3 · suggestion engine | `implement/spec-next-engine` | Implementation and verification in progress |
+| WP3 · suggestion engine | `implement/spec-next-engine` | Pair engine integrated; canonical last-layer data/suggestions in progress |
 | WP4 · full solve review | `implement/spec-next-review` | Implementation in progress |
 | WP5 · algorithm browser/drills | after WP3 | Pending |
 | WP6 · drills/progress | after WP1 | Pending |
@@ -52,6 +52,14 @@ Legacy hash redirects retain query strings:
 | `#/f2l` | `#/drills/f2l` |
 | `#/cross-scout`, `#/scout` | `#/drills/scout` |
 | `#/debug`, `#/smart-cube`, `#/dev` | `#/dev/studio` |
+
+## Pair engine evidence
+
+Snapshots `e033ce9` and `d7026a3` merged via `7abe935`: all four pair boundaries, pseudo start/end frames, compact multi-source pruning table with exact goal checks, verified completions, ranked STM/ETM/generator/ergonomic metadata, chosen-slot references, and OLL/PLL case timing capture. Combined `npm run check`: 396/396 unit tests, lint zero errors, build and 102 precached assets pass.
+
+Reproduce the independent runtime sample with `node scripts/benchmark-pairs.mjs`. On 16 seeded random 22-turn positions, after a real WASM cross and successive engine-chosen pair completions: 58 queried pair positions, 54 with options, 57 partial searches; median 160.64 ms, p95 161.56 ms, max 163.39 ms; compact-table cold build 81.05 ms. Every returned completion preserves the cross and previous pairs and completes a new pair when independently checked against cubing.js: zero failures. The bounded search meets the runtime targets on this machine; it does **not** prove optimality for most sampled positions. Subsequent stages depend on the preceding chosen completion, and time budgets can change how many stages are reached. No phone performance claim is made.
+
+The canonical curated algorithm bundle and full last-layer suggestions remain active dependencies of WP3/WP5. No claim of complete WP3 acceptance is made yet.
 
 ## Final review
 
