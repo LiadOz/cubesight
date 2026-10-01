@@ -50,6 +50,8 @@ const TEMPLATE = `
           </section>
         </div>
       </details>
+      <a class="b-tab b-tab-timer" href="#/timer">manual timer</a>
+      <a class="b-tab b-tab-history" href="#/history">history</a>
     </nav>
     <div class="b-device brain-connect-chip" aria-label="Smart cube connection">
       <button class="b-device-toggle" type="button" aria-expanded="false" aria-controls="b-device-menu">

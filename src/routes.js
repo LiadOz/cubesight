@@ -14,6 +14,8 @@ export const TOOL_PATHS = Object.freeze({
   scout: '/drills/scout',
   algs: '/algs',
   progress: '/progress',
+  history: '/history',
+  timer: '/timer',
   smart: '/dev/studio',
 });
 

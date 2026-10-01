@@ -3,8 +3,12 @@ import { test, expect } from 'playwright/test';
 const PAGES = [['solve', 'brain'], ['drills', 'drills'], ['algs', 'algs'], ['progress', 'progress']];
 
 for (const theme of ['dark', 'light']) {
-  test(`the nav reaches solve, drills, algs and progress in ${theme} mode`, async ({ page }) => {
-    await page.addInitScript(mode => localStorage.setItem('cubesight-theme', mode), theme);
+  for (const style of ['orbit', 'mono']) {
+  test(`the nav reaches solve, drills, algs and progress in ${style} / ${theme}`, async ({ page }) => {
+    await page.addInitScript(({ mode, pageStyle }) => {
+      localStorage.setItem('cubesight-theme', mode);
+      localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: pageStyle }));
+    }, { mode: theme, pageStyle: style });
     await page.goto('/#/drills');
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await expect(page.locator('.main-nav .nav-link')).toHaveText(['solve', 'drills', 'algs', 'progress']);
@@ -12,6 +16,7 @@ for (const theme of ['dark', 'light']) {
       await page.getByRole('link', { name: label, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`#/${label}$`));
       await expect(page.locator(`#${view}-view`)).toBeVisible();
+      if (view !== 'brain') await expect(page.locator(`#${view}-view .cs-page`)).toHaveAttribute('data-brain-style', style);
       await expect(page.getByRole('link', { name: label, exact: true })).toHaveAttribute('aria-current', 'page');
       // The header stays readable: nav text contrasts with the bar behind it.
       const { ink, bar } = await page.evaluate(() => ({
@@ -21,6 +26,7 @@ for (const theme of ['dark', 'light']) {
       expect(ink).not.toBe(bar);
     }
   });
+  }
 }
 
 test('the theme button shows the current mode and switches it', async ({ page }) => {

@@ -4,6 +4,7 @@
 import './page.css';
 import './placeholder.css';
 import { loadSettings } from '../brain/settings.js';
+import { syncPageTokens } from './tokens.js';
 
 /**
  * @param {HTMLElement} root
@@ -34,6 +35,7 @@ export function createPlaceholderPage(root, copy, storage = globalThis.localStor
       page.append(link);
     }
     root.replaceChildren(page);
+    syncPageTokens(page);
   }
   render();
   return {

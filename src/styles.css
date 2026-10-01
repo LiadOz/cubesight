@@ -213,9 +213,10 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
 @media (hover:hover) { .answer-button:hover:not(.muted) { border-color: #8ca5b6; background: #f5f8fa; } .nav-link:hover:not(.active), .header-button:hover { color: var(--ink); } .cross-option:hover { border-color: #90c9be; } }
 @media (max-width:1100px) { .trainer-shell { grid-template-columns: minmax(0,1.15fr) minmax(330px,1fr); } .answer-stage { padding: 24px; } .learning-controls { margin-left: 0; } .stats-grid { grid-template-columns: repeat(3,1fr); } .trend-card { grid-column: 1 / -1; } .retention-panel small { max-width: 210px; } }
 @media (max-width:700px) {
-  .site-header { gap: 10px; padding: max(8px,env(safe-area-inset-top)) 12px 8px; }
+  .site-header { gap: 8px; padding: max(8px,env(safe-area-inset-top)) 12px 8px; }
   .brand { font-size: 17px; }
-  .main-nav { gap: 0; min-width: 0; } .nav-link { padding: 8px 8px; font-size: 13px; }
+  .main-nav { gap: 0; min-width: 0; margin-right: 2px; } .nav-link { padding: 8px 7px; font-size: 13px; }
+  .header-actions { gap: 6px; }
   .header-button { padding: 0 6px; min-width: 40px; min-height: 40px; } .theme-label { display: none; }
   main { width: calc(100% - 24px); }
   .intro-row { padding: 17px 4px; } .intro-row .eyebrow, .intro-copy { display: none; } h1 { font-size: 23px; letter-spacing: -.7px; }

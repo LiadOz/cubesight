@@ -18,12 +18,14 @@ export const NAV_FOR_TOOL = Object.freeze({
   drills: 'drills', corner: 'drills', f2l: 'drills', pll: 'drills', scout: 'drills',
   algs: 'algs',
   progress: 'progress',
+  history: null,
+  timer: null,
   smart: null,
 });
 
 /** Document titles ("<title> · <app name>"). */
 export const PAGE_TITLES = Object.freeze({
-  brain: 'solve', drills: 'drills', algs: 'algs', progress: 'progress',
+  brain: 'solve', drills: 'drills', algs: 'algs', progress: 'progress', history: 'history', timer: 'timer',
   corner: 'corner recognition', f2l: 'F2L deduction', pll: 'PLL recognition', scout: 'Cross Scout',
   smart: 'studio',
 });

@@ -9,6 +9,7 @@ import '../pages/page.css';
 import './hub.css';
 import { loadSettings } from '../brain/settings.js';
 import { CUBE_LABELS, DRILLS, agoLabel, drillSettings, lastDrill } from './catalog.js';
+import { syncPageTokens } from '../pages/tokens.js';
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -45,7 +46,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
       el('strong', 'hub-continue-title', pick.title),
       el('span', 'hub-continue-meta', [drillSettings(storage, pick), last ? `last played ${agoLabel(last.at)}` : null].filter(Boolean).join(' · ')),
     );
-    const play = el('span', 'hub-play', last ? 'continue' : 'play');
+    const play = el('span', 'hub-play', last ? 'continue' : 'start');
     play.append(el('kbd', null, 'enter'));
     goOn.append(copy, play);
     page.append(goOn);
@@ -69,12 +70,22 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     }
     page.append(list);
 
+    const pageLinks = el('nav', 'hub-page-links');
+    pageLinks.setAttribute('aria-label', 'More pages');
+    const timerLink = el('a', null, 'manual timer');
+    timerLink.href = '#/timer';
+    const historyLink = el('a', null, 'history');
+    historyLink.href = '#/history';
+    pageLinks.append(timerLink, historyLink);
+    page.append(pageLinks);
+
     const hints = el('p', 'hub-keys');
     hints.setAttribute('aria-hidden', 'true');
     hints.innerHTML = `<span><kbd>${DRILLS.map(drill => drill.key).join(' ')}</kbd> open drill</span><span><kbd>enter</kbd> continue</span>`;
     page.append(hints);
 
     root.replaceChildren(page);
+    syncPageTokens(page);
   }
 
   function onKey(event) {

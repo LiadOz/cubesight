@@ -48,3 +48,31 @@ test('Brain renders offline in both styles and modes', async ({ page, context })
   expect(failed).toEqual([]);
   expect(pageErrors).toEqual([]);
 });
+
+test('site navigation and every WP1 route load offline after installation', async ({ page, context }) => {
+  const failed = [];
+  const pageErrors = [];
+  page.on('requestfailed', request => failed.push(`${request.url()} ${request.failure()?.errorText}`));
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.goto('/');
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (navigator.serviceWorker.controller) return;
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Service worker did not take control')), 10_000);
+      navigator.serviceWorker.addEventListener('controllerchange', () => { clearTimeout(timeout); resolve(); }, { once: true });
+    });
+  });
+  await context.setOffline(true);
+  const routes = [
+    ['drills', 'drills-view'], ['drills/corners', 'corner-view'], ['drills/pll', 'pll-view'],
+    ['drills/f2l', 'f2l-view'], ['drills/scout', 'scout-view'], ['algs', 'algs-view'], ['progress', 'progress-view'],
+    ['dev/studio', 'smart-view'],
+  ];
+  for (const [route, view] of routes) {
+    await page.goto(`/#/${route}`);
+    await expect(page.locator(`#${view}`)).toBeVisible();
+  }
+  expect(failed).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});

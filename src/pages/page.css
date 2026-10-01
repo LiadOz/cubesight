@@ -6,16 +6,12 @@
 
 /* The page behind takes the style's background, so the page is not a box in the site
    (the same colours as the tokens' --b-page, for pages that are not #brain-view). */
-:root[data-theme="dark"]:has(.cs-host:not([hidden]) .cs-page[data-brain-style="orbit"]) { --cs-page: #141311; --cs-page-line: #34312b; }
-:root:not([data-theme="dark"]):has(.cs-host:not([hidden]) .cs-page[data-brain-style="orbit"]) { --cs-page: #f3f0e8; --cs-page-line: #dcd6c8; }
-:root[data-theme="dark"]:has(.cs-host:not([hidden]) .cs-page[data-brain-style="mono"]) { --cs-page: #16171b; --cs-page-line: #34373f; }
-:root:not([data-theme="dark"]):has(.cs-host:not([hidden]) .cs-page[data-brain-style="mono"]) { --cs-page: #f1eee6; --cs-page-line: #cbc6ba; }
-:root:has(.cs-host:not([hidden]) .cs-page),
-:root:has(.cs-host:not([hidden]) .cs-page) body,
-:root:has(.cs-host:not([hidden]) .cs-page) .site-header {
-  background: var(--cs-page);
-  border-color: var(--cs-page-line);
-}
+:root:has(.cs-host:not([hidden]) .brain),
+:root:has(.cs-host:not([hidden]).brain) { background: var(--cs-page); }
+:root:has(.cs-host:not([hidden]) .brain) body,
+:root:has(.cs-host:not([hidden]).brain) body { background: var(--cs-page); }
+:root:has(.cs-host:not([hidden]) .brain) .site-header,
+:root:has(.cs-host:not([hidden]).brain) .site-header { background: var(--cs-page); border-color: var(--cs-page-line); }
 
 .cs-page.brain {
   display: flex;

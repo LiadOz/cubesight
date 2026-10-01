@@ -22,6 +22,8 @@ const routes = [
   ['drills/scout', 'scout', 'drills', 'Cross Scout'],
   ['algs', 'algs', 'algs', 'algs'],
   ['progress', 'progress', 'progress', 'progress'],
+  ['history', 'history', null, 'history'],
+  ['timer', 'timer', null, 'timer'],
   ['dev/studio', 'smart', null, 'studio'],
 ];
 
@@ -53,6 +55,7 @@ const redirects = [
   ['scout', 'drills/scout', 'scout'],
   ['debug', 'dev/studio', 'smart'],
   ['smart-cube', 'dev/studio', 'smart'],
+  ['dev', 'dev/studio', 'smart'],
 ];
 for (const [oldPath, newPath, tool] of redirects) {
   test(`old #/${oldPath} redirects to #/${newPath}, keeping query parameters`, async ({ page }) => {
@@ -112,6 +115,7 @@ test('unknown routes fall back to home without dropping query parameters', async
 test('the solve screen debug drawer links to the studio', async ({ page }) => {
   await page.goto('/#/solve');
   await page.locator('#brain-debug-toggle').click();
+  await expect(page.getByTestId('open-studio')).toBeVisible();
   await page.getByTestId('open-studio').click();
   await expect(page).toHaveURL(/#\/dev\/studio$/);
   await expect(page.locator('#smart-view')).toBeVisible();

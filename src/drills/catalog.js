@@ -48,7 +48,7 @@ export function lastDrill(storage) {
     const stored = JSON.parse(storage?.getItem(LAST_DRILL_KEY) ?? 'null');
     const drill = DRILLS.find(item => item.id === stored?.id);
     if (!drill) return null;
-    const hash = typeof stored.hash === 'string' && stored.hash.startsWith(drill.href) ? stored.hash : drill.href;
+    const hash = typeof stored.hash === 'string' && (stored.hash === drill.href || stored.hash.startsWith(`${drill.href}?`)) ? stored.hash : drill.href;
     return { drill, hash, at: Number(stored.at) || 0 };
   } catch { return null; }
 }
@@ -56,10 +56,36 @@ export function lastDrill(storage) {
 /** The settings worth showing next to "continue" (what the drill will start with). */
 export function drillSettings(storage, drill) {
   const read = key => { try { return storage?.getItem(key) ?? null; } catch { return null; } };
+  if (drill.id === 'corners') {
+    const mode = read('cubesight-corner-mode') || 'single';
+    const glance = read('cubesight-corner-glance') === 'true';
+    const pace = read('cubesight-corner-exposure-mode') || 'adaptive';
+    const exposure = read('cubesight-corner-exposure-ms') || '600';
+    const labels = { single: 'single corner', triple: 'three corners', recall: 'one-glance recall' };
+    return [labels[mode] || labels.single, glance || mode === 'recall' ? `${pace} glance · ${exposure} ms` : null].filter(Boolean).join(' · ');
+  }
+  if (drill.id === 'pll') {
+    const mode = read('cubesight-pll-mode') || 'learn';
+    const family = read('cubesight-pll-family') || 'A';
+    const glance = read('cubesight-pll-glance-enabled') === 'true';
+    const glanceMs = read('cubesight-pll-glance-ms') || '600';
+    const modes = { learn: `${family} family`, mix: 'mix', transfer: 'random AUF' };
+    return [modes[mode] || modes.learn, glance ? `glance · ${glanceMs} ms` : null].filter(Boolean).join(' · ');
+  }
+  if (drill.id === 'scout') {
+    let colors = ['U'];
+    try {
+      const saved = JSON.parse(read('cubesight-scout-colors') || 'null');
+      if (Array.isArray(saved) && saved.length) colors = saved;
+    } catch { /* Use the default white cross. */ }
+    return `${colors.length === 6 ? 'color neutral' : `${colors.length} cross ${colors.length === 1 ? 'color' : 'colors'}`}`;
+  }
   if (drill.id === 'f2l') {
+    const mode = read('cubesight-f2l-mode') || 'deduction';
     const seconds = read('cubesight-f2l-scan-seconds');
     const pseudo = read('cubesight-f2l-scan-pseudo') === 'true';
-    return [`timed scan · ${seconds ?? 30} s`, pseudo ? 'pseudo pairs' : null].filter(Boolean).join(' · ');
+    const label = mode === 'scan' ? `timed scan · ${seconds ?? 30} s` : mode === 'planner' ? 'best next pair' : 'pair deduction';
+    return [label, mode === 'scan' && pseudo ? 'pseudo pairs' : null].filter(Boolean).join(' · ');
   }
   return drill.modes.slice(0, 3).join(' · ');
 }

@@ -4,8 +4,9 @@ import '@fontsource/dm-mono/latin-500.css';
 import './styles.css';
 import { setupTheme } from './theme.js';
 import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
-import { TOOL_PATHS, resolveRoute, chooseHome, keyScope } from './routes.js';
+import { TOOL_PATHS, resolveRoute, keyScope } from './routes.js';
 import { rememberDrill } from './drills/catalog.js';
+import { syncPageTokens } from './pages/tokens.js';
 import { renderCube } from './cube-renderer.js';
 import { createCube3D } from './cube-3d.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
@@ -98,11 +99,12 @@ let trialTimeout = null;
 let previousCornerView = '';
 
 const initialStats = () => ({ attempts: 0, correct: 0, totalMs: 0, bestMs: null, streak: 0, bestStreak: 0, byCase: {}, history: [] });
+const GLANCE_EXPOSURES = [25, 50, 75, 100, 150, 200, 300, 450, 600, 800, 1000, 1500];
 let stats = loadStats();
 let learning = loadLearning(localStorage);
 let session = { attempts: 0, correct: 0, times: [], streak: 0 };
 let state = {
-  mode: 'single',
+  mode: ['single', 'triple', 'recall'].includes(localStorage.getItem('cubesight-corner-mode')) ? localStorage.getItem('cubesight-corner-mode') : 'single',
   sprint: false,
   sprintLength: 10,
   current: null,
@@ -110,24 +112,27 @@ let state = {
   locked: false,
   timerFrame: null,
   answerChoices: [],
-  glance: false,
-  exposureMs: 600,
-  exposureMode: 'adaptive',
+  glance: localStorage.getItem('cubesight-corner-glance') === 'true',
+  exposureMs: GLANCE_EXPOSURES.includes(Number(localStorage.getItem('cubesight-corner-exposure-ms'))) ? Number(localStorage.getItem('cubesight-corner-exposure-ms')) : 600,
+  exposureMode: localStorage.getItem('cubesight-corner-exposure-mode') === 'fixed' ? 'fixed' : 'adaptive',
   glanceTimer: null,
   transitionTimer: null,
   onsetFrame: null,
   generation: 0,
 };
-const glancePacing = createGlancePacing();
+const glancePacing = createGlancePacing({ mode: state.exposureMode, exposureMs: state.exposureMs });
 let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
 let progressPage = null;
+let historyPage = null;
+let timerPage = null;
+let timerPageLoad = null;
 let scout = null;
 let scoutLoad = null;
 let smart = null;
@@ -139,7 +144,7 @@ let pllLoad = null;
 let f2lCube3D = null;
 let paused = false;
 let f2lState = {
-  drill: 'deduction',
+  drill: ['deduction', 'scan', 'planner'].includes(localStorage.getItem('cubesight-f2l-mode')) ? localStorage.getItem('cubesight-f2l-mode') : 'deduction',
   current: null,
   caseNumber: 0,
   selected: null,
@@ -324,6 +329,8 @@ document.querySelector('#app').innerHTML = `
     <div id="drills-view" class="cs-host" hidden></div>
     <div id="algs-view" class="cs-host" hidden></div>
     <div id="progress-view" class="cs-host" hidden></div>
+    <div id="history-view" class="cs-host" hidden></div>
+    <div id="timer-view" class="cs-host" hidden></div>
     <div id="pll-view" hidden></div>
     <div id="scout-view" hidden></div>
     <div id="brain-view" hidden></div>
@@ -592,6 +599,7 @@ function syncExposureSelect() {
     select.append(option);
   }
   select.value = value;
+  try { localStorage.setItem('cubesight-corner-exposure-ms', value); } catch { /* Keep the current pace for this page. */ }
 }
 
 function startCase(successNotice = null) {
@@ -917,7 +925,10 @@ function resetSession() {
 function setMode(mode) {
   if (!['single', 'triple', 'recall'].includes(mode)) return;
   state.mode = mode;
+  try { localStorage.setItem('cubesight-corner-mode', mode); } catch { /* Keep the current mode for this page. */ }
   const glanceToggle = document.querySelector('#glance-toggle');
+  document.querySelector('#exposure-mode').value = state.exposureMode;
+  syncExposureSelect();
   glanceToggle.checked = usesGlance();
   glanceToggle.disabled = mode === 'recall';
   const sprintLength = mode === 'recall' ? 12 : 10;
@@ -1155,6 +1166,7 @@ function setF2LDrill(drill) {
   stopF2LScan();
   f2lState.plannerGeneration += 1;
   f2lState.drill = drill;
+  try { localStorage.setItem('cubesight-f2l-mode', drill); } catch { /* Keep the current drill for this page. */ }
   f2lState.planner = null;
   f2lState.current = null;
   f2lState.scanScore = 0;
@@ -1430,6 +1442,8 @@ function setTool(tool, initial = false) {
   pll?.setActive(false);
   brain?.setActive(false);
   drillsHub?.setActive(false);
+  historyPage?.setActive(false);
+  timerPage?.setActive(false);
   activeTool = tool;
   document.title = `${PAGE_TITLES[tool]} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
@@ -1461,7 +1475,7 @@ function setTool(tool, initial = false) {
         brainLoad = null;
       });
     } else brain?.setActive(true);
-  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress') {
+  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer') {
     state.locked = true;
     f2lState.locked = true;
     mountPage(tool);
@@ -1509,7 +1523,7 @@ function setTool(tool, initial = false) {
     newF2LCase();
   } else {
     f2lCube3D?.setMode('f2l');
-    startCase();
+    setMode(state.mode);
   }
   updateHelp();
   updateLearningUI();
@@ -1530,6 +1544,26 @@ function mountPage(tool) {
         drillsHub = createDrillsHub(root);
         drillsHub.setActive(activeTool === 'drills');
       }).catch((error) => { drillsHubLoad = null; failed(error); });
+    }
+    return;
+  }
+  if (tool === 'history') {
+    if (historyPage) { historyPage.setActive(true); return; }
+    import('./history/index.js').then(({ initHistory }) => {
+      historyPage = initHistory(root);
+      historyPage.setActive(activeTool === 'history');
+    }).catch(failed);
+    return;
+  }
+  if (tool === 'timer') {
+    if (timerPage) { timerPage.setActive(true); return; }
+    if (!timerPageLoad) {
+      timerPageLoad = import('./timer/index.js').then(({ createManualTimer }) => {
+        timerPage = createManualTimer(root);
+        syncPageTokens(root);
+        timerPage.setActive(activeTool === 'timer');
+        return timerPage.ready;
+      }).catch((error) => { timerPageLoad = null; failed(error); });
     }
     return;
   }
@@ -1648,6 +1682,7 @@ document.addEventListener('click', (event) => {
 
 document.querySelector('#glance-toggle').addEventListener('change', (event) => {
   state.glance = event.target.checked;
+  try { localStorage.setItem('cubesight-corner-glance', String(state.glance)); } catch { /* Keep the current setting for this page. */ }
   glancePacing.reset();
   startCase();
 });
@@ -1655,11 +1690,13 @@ document.querySelector('#exposure-mode').addEventListener('change', (event) => {
   state.exposureMode = event.target.value === 'fixed' ? 'fixed' : 'adaptive';
   glancePacing.setMode(state.exposureMode);
   state.exposureMs = glancePacing.exposureMs;
+  try { localStorage.setItem('cubesight-corner-exposure-mode', state.exposureMode); } catch { /* Keep the current pace for this page. */ }
   startCase();
 });
 document.querySelector('#exposure-select').addEventListener('change', (event) => {
   state.exposureMs = Number(event.target.value) || 600;
   glancePacing.setExposure(state.exposureMs);
+  try { localStorage.setItem('cubesight-corner-exposure-ms', String(state.exposureMs)); } catch { /* Keep the current pace for this page. */ }
   if (usesGlance()) startCase();
 });
 document.querySelector('#f2l-scan-duration').addEventListener('change', (event) => {
