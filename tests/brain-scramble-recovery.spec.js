@@ -19,9 +19,9 @@ for (const style of ['orbit', 'mono']) {
       await mountTestBrain(page, style);
       const brain = page.locator('#brain-test');
       await startGuidedScramble(page, SCRAMBLE);
-      await expect(brain.locator('#brain-phase-label')).toHaveText('Perform the scramble');
+      await expect(brain.locator('#brain-phase-label')).toHaveText('apply scramble');
       await page.evaluate(() => window.testBrain.emitTurns("R2 D'"));
-      await expect(brain.locator('#brain-phase-detail')).toHaveText(/Scramble turn 3 of/);
+      await expect(brain.locator('#brain-phase-detail')).toHaveText(/Scramble move 3 of/);
       expect(await head(page, 4)).toEqual(['done', 'done', 'current', '']);
       // the 3D cue is on the current plan move (it restarts after the live turn animation)
       await expect.poll(() => cue(page)).toBe('F2');
@@ -43,7 +43,7 @@ for (const style of ['orbit', 'mono']) {
 
       // ...and the scramble can be finished: inspection starts.
       await page.evaluate(s => window.testBrain.emitTurns(s), SCRAMBLE.split(' ').slice(2).join(' '));
-      await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
+      await expect(brain.locator('#brain-phase-label')).toHaveText('inspection');
       await expect.poll(() => cue(page)).toBeNull();   // scramble done: the cue stops
       expect(errors).toEqual([]);
     });
@@ -54,7 +54,7 @@ for (const style of ['orbit', 'mono']) {
     await mountTestBrain(page, style);
     const brain = page.locator('#brain-test');
     await startGuidedScramble(page, SCRAMBLE);
-    await expect(brain.locator('#brain-phase-label')).toHaveText('Perform the scramble');
+    await expect(brain.locator('#brain-phase-label')).toHaveText('apply scramble');
     await page.evaluate(() => window.testBrain.emitTurns("R2 D' L"));
     await expect.poll(() => recoveryText(page)).toEqual(['L′']);
     // The same layer again merges into a half turn: undo L2.

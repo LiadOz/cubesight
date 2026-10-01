@@ -80,7 +80,7 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   let v = await vm(page);
   expect(v.screen).toBe('scramble');
   expect(v.scramble.number).toBe(1);
-  expect(v.label).toBe('Perform the scramble');
+  expect(v.label).toBe('apply scramble');
   expect(v.scramble.moves.map(m => m.state).slice(0, 2)).toEqual(['current', 'todo']);
 
   await page.evaluate(s => window.testBrain.emitTurns(s), scramble);
@@ -92,7 +92,7 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   await page.evaluate(s => window.testBrain.emitTurns(s), inverse(scramble));
   await expect.poll(async () => (await vm(page)).screen).toBe('results');
   v = await vm(page);
-  expect(v.label).toBe('Solved');
+  expect(v.label).toBe('solved');
   expect(v.results.moves).toBe('13');
   expect(v.results.time.penalty).toBe(null);
 

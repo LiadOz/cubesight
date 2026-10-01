@@ -37,7 +37,7 @@ test('scramble turn guide names the next face and direction', async ({ page }) =
   await page.goto('/#/drills/scout');
   const scramble = page.locator('#scout-scramble');
   await scramble.fill("R U' F2");
-  await expect(page.locator('#scout-turn-guide')).toContainText('Scramble turn 1 of 3');
+  await expect(page.locator('#scout-turn-guide')).toContainText('Scramble move 1 of 3');
   await expect(page.locator('#scout-turn-guide')).toContainText('right face (red center) clockwise');
   await page.locator('#scout-turn-guide .smart-turn-next').click();
   await expect(page.locator('#scout-turn-guide')).toContainText('top face (white center) counterclockwise');

@@ -66,10 +66,10 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   await brain.locator('.brain-advanced-scramble > summary').click();
   await brain.locator('#brain-scramble').fill(scramble);
   await brain.locator('#brain-start-custom').click();
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Perform the scramble');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('apply scramble');
 
   await page.evaluate(s => window.testBrain.emitTurns(s), scramble);
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('inspection');
 
   // First solving move is a plain R, then primes and doubles.
   await page.evaluate(() => window.testBrain.emitTurns("R U' F2 R' D2 L"));
@@ -80,7 +80,7 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   // Undo those and then the scramble: the cube returns to solved and the solve is logged.
   const inverse = moves => moves.split(' ').reverse().map(m => m.endsWith('2') ? m : m.endsWith("'") ? m[0] : `${m}'`).join(' ');
   await page.evaluate(s => window.testBrain.emitTurns(s), `${inverse("R U' F2 R' D2 L")} ${inverse(scramble)}`);
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Solved');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('solved');
   await expect(brain.locator('#brain-review')).toBeVisible();
 
   // The tracker re-emits while done (e.g. toggling inspection); the solve is stored once.
@@ -112,11 +112,11 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   await brain.locator('.brain-advanced-scramble > summary').click();
   await brain.locator('#brain-scramble').fill("F R' U2");
   await brain.locator('#brain-start-custom').click();
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Perform the scramble');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('apply scramble');
   await page.evaluate(() => window.testBrain.emitTurns("F R' U2"));
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('inspection');
   await page.evaluate(() => window.testBrain.emitTurns("U2 R F'"));
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Solved');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('solved');
   expect(await storedSolves()).toBe(2);
 
   const log = await page.evaluate(async () => (await import('/src/smart-cube-diag.js')).getConnectionLog().map(e => e.label));
@@ -149,7 +149,7 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
   await brain.locator('.brain-advanced-scramble > summary').click();
   await brain.locator('#brain-scramble').fill(scramble);
   await brain.locator('#brain-start-custom').click();
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Perform the scramble');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('apply scramble');
   await expect(brain.locator('#brain-coach .brain-coach-line')).toHaveCount(1);
   await page.waitForTimeout(400);  // let the line's fade-in finish
 
@@ -169,7 +169,7 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
   });
   const firstFour = scramble.split(' ').slice(0, 4).join(' ');
   await page.evaluate(s => window.testBrain.emitTurns(s), firstFour);
-  await expect(brain.locator('#brain-phase-detail')).toHaveText(/Scramble turn 5 of/);
+  await expect(brain.locator('#brain-phase-detail')).toHaveText(/Scramble move 5 of/);
   const stable = await page.evaluate(() => {
     const root = document.querySelector('#brain-test');
     window.coachObserver.disconnect(); window.cueObserver.disconnect();
@@ -191,7 +191,7 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
 
   // Finish the scramble: inspection shows the timeline sitting on Cross, with no Scramble stage.
   await page.evaluate(s => window.testBrain.emitTurns(s), scramble.split(' ').slice(4).join(' '));
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('inspection');
   const timeline = brain.locator('#brain-timeline');
   await expect(timeline).toBeVisible();
   const keys = state => page.evaluate(([sel, state]) => [...document.querySelectorAll(`#brain-test ${sel}`)]
@@ -234,7 +234,7 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
   await expect.poll(current).toBe('cp');
   await shot('5-after-oll');
   await page.evaluate(s => window.testBrain.emitTurns(s), steps.pll);
-  await expect(brain.locator('#brain-phase-label')).toHaveText('Solved');
+  await expect(brain.locator('#brain-phase-label')).toHaveText('solved');
   expect((await finished()).sort()).toEqual(['co', 'cp', 'cross', 'eo', 'ep', 'pair1', 'pair2', 'pair3', 'pair4']);
   await expect(brain.locator('#brain-review')).toBeVisible();
   await page.waitForTimeout(600);

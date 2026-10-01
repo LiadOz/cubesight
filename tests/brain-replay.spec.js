@@ -55,7 +55,7 @@ async function expectCleanDisconnected(page) {
   const view = page.locator('#brain-view');
   await expect(view.locator('#brain-connect')).toBeVisible();
   await expect(view.locator('#brain-disconnect')).toBeHidden();
-  await expect(view.locator('#brain-device')).toHaveText('No cube connected');
+  await expect(view.locator('#brain-device')).toHaveText('No cube');
   expect(await page.evaluate(() => document.documentElement.dataset.cubePhase)).toBe('disconnected');
   const state = await page.evaluate(async () => {
     const { smartCube, isReplayAdapterInstalled } = await import('/src/smart-cube-bluetooth.js');
@@ -90,8 +90,8 @@ test('an instant replay of a few thousand events finishes fast and leaves a clea
 
   // The replayed solve finished: its review stays on screen, but it is not in the history.
   const view = page.locator('#brain-view');
-  await expect(view.locator('#brain-phase-label')).toHaveText('Solved');
-  await expect(view.locator('#brain-replay-banner')).toContainText('Replay finished · Connect your cube');
+  await expect(view.locator('#brain-phase-label')).toHaveText('solved');
+  await expect(view.locator('#brain-replay-banner')).toContainText('Replay finished. Connect your cube');
   await expectCleanDisconnected(page);
   expect(errors).toEqual([]);
 });
@@ -106,7 +106,7 @@ test('stopping a replay returns the Brain to a clean, disconnected state', async
   expect(await page.evaluate(async () => (await import('/src/smart-cube-bluetooth.js')).isReplayAdapterInstalled())).toBe(true);
   await view.locator('#brain-replay-banner button').click();
   await page.waitForFunction(() => document.documentElement.dataset.replay === 'stopped');
-  await expect(view.locator('#brain-replay-banner')).toContainText('Replay stopped · Connect your cube');
+  await expect(view.locator('#brain-replay-banner')).toContainText('Replay stopped. Connect your cube');
   await expect(view.locator('#brain-replay-banner button')).toBeHidden();
   // Back to the no-cube screen: connecting is the next step, nothing is mid-solve.
   await expect(view.locator('[data-primary="connect"]')).toBeVisible();

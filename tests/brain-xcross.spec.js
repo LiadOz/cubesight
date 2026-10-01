@@ -62,7 +62,7 @@ for (const style of STYLES) {
     await brain.locator('#brain-scramble').fill(SCRAMBLE);
     await brain.locator('#brain-start-custom').click();
     await page.evaluate(s => window.testBrain.emitTurns(s), SCRAMBLE);
-    await expect(brain.locator('#brain-phase-label')).toHaveText('Inspection');
+    await expect(brain.locator('#brain-phase-label')).toHaveText('inspection');
     expect(Object.keys(await states())).toEqual(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
 
     // "B R": crosses complete on two faces at once (D with one pair, B with two).
@@ -82,7 +82,7 @@ for (const style of STYLES) {
 
     // Finish the solve: the stored splits keep the merged pair out of the skips.
     await page.evaluate(s => window.testBrain.emitTurns(s), "B2 R' F2 R F2 B2");
-    await expect(brain.locator('#brain-phase-label')).toHaveText('Solved');
+    await expect(brain.locator('#brain-phase-label')).toHaveText('solved');
     await expect.poll(() => page.evaluate(async () => {
       const backend = await (await import('/src/store/idb.js')).openIdbBackend();
       const n = (await backend.getAll()).length;

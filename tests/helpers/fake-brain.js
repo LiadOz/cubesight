@@ -73,7 +73,7 @@ export async function playSolve(page, scramble, solution, { gaps = {}, base = 60
   await root.locator('#brain-scramble').fill(scramble);
   await root.locator('#brain-start-custom').click();
   await page.evaluate(s => window.testBrain.emitTurns(s), scramble);
-  await root.locator('#brain-phase-label').filter({ hasText: 'Inspection' }).waitFor();
+  await root.locator('#brain-phase-label').filter({ hasText: 'inspection' }).waitFor();
   await page.evaluate(([s, gaps, base]) => window.testBrain.emitTimed(s, i => gaps[i] ?? base), [solution, gaps, base]);
-  await root.locator('#brain-phase-label').filter({ hasText: 'Solved' }).waitFor();
+  await root.locator('#brain-phase-label').filter({ hasText: 'solved' }).waitFor();
 }

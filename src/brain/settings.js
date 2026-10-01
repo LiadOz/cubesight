@@ -189,7 +189,7 @@ const HELP = {
   penalties: 'Count +2 and DNF in averages.',
   scramble: 'Guided cues each move. Paste uses your scramble. Free starts from your scramble.',
   coach: 'When coach insights appear.',
-  crossHint: 'Show the PB cross during inspection.',
+  crossHint: 'Show a suggested cross during inspection.',
   timer: 'Hide the running clock to focus on the cube.',
   timeline: 'Show the stage timeline.',
   compare: 'What split deltas compare against.',

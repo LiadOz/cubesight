@@ -83,7 +83,7 @@ export function readProgress(storage, { records = null, algorithms = [], source 
   const slowest = splits.length ? Math.max(...splits.map(row => row.ms)) : null;
   return {
     source, focus, days, solves, stats: scopeStats(solves),
-    trend: solves.map((r, i) => ({ at: r.at, ms: ao12(solves.slice(0, i + 1)) })),
+    trend: solves.map((r, i) => ({ at: r.at, ms: ao12(solves.slice(Math.max(0, i - 11), i + 1)) })),
     drills, due: drills.reduce((sum, row) => sum + row.due, 0),
     splits: splits.map(row => ({ ...row, largest: row.ms === slowest })),
     activity: [...activity.values()].sort((a, b) => a.date.localeCompare(b.date)),

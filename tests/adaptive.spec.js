@@ -24,12 +24,12 @@ async function startGlance(page, exposure = '1500') {
 test('Fixed glance never changes after ten skipped outcomes', async ({ page }) => {
   await startGlance(page, '600');
   await page.locator('#exposure-mode').selectOption('fixed');
-  await expect(page.locator('#exposure-note')).toContainText('600 ms view');
+  await expect(page.locator('#exposure-note')).toContainText('glance 600 ms · fixed');
 
   for (let i = 0; i < 10; i++) await skipAndWait(page);
 
   await expect(page.locator('#exposure-select')).toHaveValue('600');
-  await expect(page.locator('#exposure-note')).toContainText('fixed pace');
+  await expect(page.locator('#exposure-note')).toContainText('fixed');
 });
 
 test('Adaptive glance eases slower after ten skipped outcomes', async ({ page }) => {
@@ -41,7 +41,7 @@ test('Adaptive glance eases slower after ten skipped outcomes', async ({ page })
   for (let i = 0; i < 10; i++) await skipAndWait(page);
 
   await expect(page.locator('#exposure-select')).toHaveValue('700');
-  await expect(page.locator('#exposure-note')).toContainText('Adaptive · 700 ms');
+  await expect(page.locator('#exposure-note')).toContainText('adaptive glance · 700 ms');
 });
 
 test('Changing pacing mode resets adaptive evidence progress', async ({ page }) => {
