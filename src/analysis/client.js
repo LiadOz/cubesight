@@ -4,6 +4,7 @@
 // free. Everything stays on this device.
 import { analysisInputFromRecord } from './record.js';
 import { SUMMARY_VERSION } from './summary.js';
+import { ENGINE_VERSION } from './segment.js';
 
 const IDLE_MS = 30_000;
 const TIMEOUT_MS = 45_000;
@@ -64,7 +65,7 @@ export function createAnalysisClient({
      */
     analyze(record) {
       const stored = record?.analysis;
-      if (stored && stored.v === SUMMARY_VERSION) return Promise.resolve(stored);
+      if (stored && stored.v === SUMMARY_VERSION && stored.engine === ENGINE_VERSION) return Promise.resolve(stored);
       const { input } = analysisInputFromRecord(record);
       if (!input) return Promise.resolve(null);
       const key = String(record.at);
