@@ -8,7 +8,10 @@ test('routed timer saves a solve and its keys stay scoped after navigation', asy
   await expect(page.locator('#timer-view .tm-scramble')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   const paletteMatches = () => page.evaluate(() => {
     const token = getComputedStyle(document.querySelector('#timer-view')).getPropertyValue('--b-bg').trim();
-    return token === getComputedStyle(document.documentElement).getPropertyValue('--cs-page').trim();
+    const pageColor = getComputedStyle(document.querySelector('#timer-view')).backgroundColor;
+    return token === getComputedStyle(document.documentElement).getPropertyValue('--cs-page').trim()
+      && pageColor === getComputedStyle(document.querySelector('.site-header')).backgroundColor
+      && pageColor === getComputedStyle(document.documentElement).backgroundColor;
   });
   await expect.poll(paletteMatches).toBe(true);
   await page.locator('#theme-toggle').click();

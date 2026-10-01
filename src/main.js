@@ -2,6 +2,7 @@ import '@fontsource-variable/manrope';
 import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
 import './styles.css';
+import './pages/page.css';
 import { setupTheme } from './theme.js';
 import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
 import { TOOL_PATHS, resolveRoute, keyScope } from './routes.js';

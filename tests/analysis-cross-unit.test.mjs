@@ -11,6 +11,10 @@ import { GOLD, MOCK } from './analysis-golden.mjs';
 
 // These run the real xcross WASM in node (first query builds tables, about 1 s).
 const solver = await loadNodeSolver();
+// Build the real WASM tables before assertions with a cold-start allowance.
+// Search deadlines below measure warm queries, even on a busy CI machine.
+const warmup = solver.search({ scramble: MOCK.scramble, face: 'D', timeoutMs: 15_000 });
+assert.equal(warmup.status, 0, 'cross solver table warmup completes');
 
 const mock = () => segmentSolve({ scramble: MOCK.scramble, moves: MOCK.cross });
 
