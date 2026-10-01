@@ -86,7 +86,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   if (!root) throw new Error('An algorithm page root is required.');
   const db = database ?? algDatabase;
   const learning = loadLearning(storage);
-  let session = null, tick = null, destroyed = false, renderId = 0, active = true;
+  let session = null, tick = null, destroyed = false, renderId = 0, active = true, lastRouteKey = null;
   let cubeView = null, cubeSnapshot = smartCube.getSnapshot(), cubeUnsubscribe = null, repaintRound = null, repaintReady = false;
   let setupState = null, lastCubeMoveSeq = 0;
   const saveLearning = () => { try { storage?.setItem(LEARNING_KEY, JSON.stringify(learning)); } catch { /* Keep the schedule for this tab. */ } };
@@ -95,6 +95,9 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     if (destroyed) return;
     const thisRender = ++renderId;
     const { set, caseData, drill } = routeSelection();
+    const routeKey = `${set ?? ''}/${caseData?.id ?? ''}`;
+    if (lastRouteKey !== null && lastRouteKey !== routeKey) window.scrollTo(0, 0);
+    lastRouteKey = routeKey;
     root.innerHTML = caseData ? caseDetail(caseData) : browser(set);
     const shell = root.querySelector('.alg-page');
     if (shell) { shell.dataset.brainStyle = loadSettings(storage).style; syncPageTokens(shell); }

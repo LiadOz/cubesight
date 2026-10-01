@@ -40,6 +40,17 @@ test('the curated offline bundle covers every standard PLL and OLL case with two
   assert.equal(canonicalCasePath(getCase('oll/21')), '#/algs/oll/21');
 });
 
+test('the complete bundled algorithm metadata contains no scraped citation artifacts', () => {
+  const artifacts = [];
+  const collect = (value, path) => {
+    if (typeof value === 'string' && /\uE200|\uE201|\[cite|†/iu.test(value)) artifacts.push(path);
+    else if (Array.isArray(value)) value.forEach((item, index) => collect(item, `${path}[${index}]`));
+    else if (value && typeof value === 'object') for (const [key, item] of Object.entries(value)) collect(item, `${path}.${key}`);
+  };
+  collect(CASES, 'CASES');
+  assert.deepEqual(artifacts, []);
+});
+
 test('F2L integrity requires a solved D cross as well as four solved pairs', () => {
   const state = createSolvedState();
   const df = state.cubies.find(cubie => cubie.id === 'DF');

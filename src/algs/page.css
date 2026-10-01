@@ -7,7 +7,7 @@
 .alg-browser__head > p:last-child, .alg-detail__head > p { color: var(--b-muted); line-height: 1.55; }
 .alg-set-tabs { display: flex; flex-wrap: wrap; gap: 8px; max-width: 1180px; margin: 0 auto 18px; }
 .alg-set-tabs a, .alg-set-tabs span { padding: 10px 15px; border: 1px solid var(--b-hairline); border-radius: 999px; color: inherit; text-decoration: none; }
-.alg-set-tabs a.is-active { background: var(--b-accent); color: var(--b-accent-text); border-color: transparent; }
+.alg-set-tabs a.is-active { background: var(--b-accent); color: var(--b-on-accent); border-color: transparent; }
 .alg-set-tabs small { margin-left: 5px; opacity: .7; }
 .alg-set-tabs .is-disabled { opacity: .48; }
 .alg-case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }

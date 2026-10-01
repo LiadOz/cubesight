@@ -26,6 +26,16 @@ test('case drill deep link is preserved and opens the requested case', async ({ 
   await expect(page.locator('[data-timer]')).toBeVisible();
 });
 
+test('changing to a different algorithm case resets scroll to the page top', async ({ page }) => {
+  await page.goto('/#/algs/oll/1/drill');
+  await expect(page.locator('[data-drill]')).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.evaluate(() => { location.hash = '#/algs/oll/2'; });
+  await expect(page.getByRole('heading', { name: 'Zamboni' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
+
 test('six-case F2L subset and staged two-look OLL routes are functional', async ({ page }) => {
   await page.goto('/#/algs/f2l');
   await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(6);
