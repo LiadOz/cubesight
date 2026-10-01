@@ -9,6 +9,9 @@ import { caseSetupState, f2lStateIntact } from './cube.js';
  */
 export function createVirtualRepaint(caseData) {
   if (!caseData) throw new Error('Choose a case to repaint.');
+  if (!['oll', 'pll', 'oll2'].includes(caseData.set)) {
+    throw new Error('Virtual repaint is available for last-layer cases only. Set up F2L cases again between rounds.');
+  }
   let virtualState = caseSetupState(caseData);
   let activeCaseId = caseData.id;
   let moveCount = 0;
@@ -21,6 +24,9 @@ export function createVirtualRepaint(caseData) {
     },
     repaint(nextCase) {
       if (!nextCase) throw new Error('Choose a case to repaint.');
+      if (!['oll', 'pll', 'oll2'].includes(nextCase.set)) {
+        throw new Error('Virtual repaint is available for last-layer cases only.');
+      }
       virtualState = caseSetupState(nextCase);
       activeCaseId = nextCase.id;
       moveCount = 0;

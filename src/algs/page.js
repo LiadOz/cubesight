@@ -31,6 +31,8 @@ function routeSelection(hash = location.hash) {
   return { set, caseData, drill: match[3] === 'drill' };
 }
 
+const supportsVirtualRepaint = row => ['oll', 'pll', 'oll2'].includes(row?.set);
+
 function caseCard(row) {
   const count = row.algs.length;
   return `<a class="alg-case-card" href="${canonicalCasePath(row)}"><span class="alg-case-card__id">${esc(row.set.toUpperCase())} ${esc(row.number ?? row.name)}</span><span class="alg-case-card__name">${esc(row.name)}</span><span class="alg-case-card__count">${count} verified algorithms</span></a>`;
@@ -46,7 +48,7 @@ function caseDetail(row) {
   return `<section class="cs-page brain alg-page" data-brain-style="orbit">
     <section class="alg-detail">
     <header class="alg-detail__head"><a href="#/algs/${esc(row.set)}">← ${esc(row.set.toUpperCase())} cases</a><p class="alg-eyebrow">${esc(row.set.toUpperCase())} ${esc(row.number ?? row.name)}</p><h1>${esc(row.name)}</h1><p>${row.set === 'oll' ? 'Standard OLL case. The setup below preserves the solved first two layers.' : row.set === 'oll2' ? `${esc(row.stage)} stage. Goal: ${esc(row.goal)}.` : row.set === 'f2l' ? `F2L pair insertion. The cross and three solved pairs are preserved; the ${esc(row.targetPair)} pair needs insertion.` : 'Standard PLL case. The setup below preserves the solved first two layers.'}</p><p class="alg-setup"><span>Case setup</span><code>${esc(fmt.moves(row.setup))}</code></p></header>
-    <section class="alg-cube-card"><div class="alg-cube" data-alg-cube aria-label="Virtual cube case setup"></div><div><strong>Virtual repaint</strong><p>Use this setup as a reference while setting up the case on your cube.</p><p data-cube-status>Connect your cube to check the setup and time each turn.</p><div class="alg-cube-actions"><button type="button" data-action="connect-cube">Connect smart cube</button><button type="button" data-action="start-cube-drill" disabled>Start cube drill</button></div></div></section>
+    <section class="alg-cube-card"><div class="alg-cube" data-alg-cube aria-label="Virtual cube case setup"></div><div><strong>${supportsVirtualRepaint(row) ? 'Virtual repaint' : 'F2L setup'}</strong><p>${supportsVirtualRepaint(row) ? 'Use this setup as a reference. After a clean OLL, PLL, or two-look round, the virtual case can repaint while your physical cube stays in place.' : 'Set up this F2L case on your cube before each round. F2L drills do not use the no-reset virtual repaint flow.'}</p><p data-cube-status>Connect your cube to check the setup and time each turn.</p><div class="alg-cube-actions"><button type="button" data-action="connect-cube">Connect smart cube</button><button type="button" data-action="start-cube-drill" disabled>Start cube drill</button></div></div></section>
     <div class="alg-detail__tools"><button type="button" data-action="start-case-drill">Start no-cube drill</button><span data-case-usage>Imported reconstruction usage loading…</span></div>
     <div class="alg-entry-grid">${algorithms}</div>
     <details class="alg-add-own"><summary>Add your own algorithm</summary><p>It is checked against this case and rejected if it does not solve it while preserving F2L.</p><label>Moves<textarea data-new-alg rows="2" placeholder="R U R′ U′"></textarea></label><button type="button" data-action="save-alg">Check and save</button><span data-own-alg-status role="status"></span></details>
@@ -67,11 +69,12 @@ function browser(set = null) {
 }
 
 function drillMarkup(row, alg, mode = 'self') {
-  const smart = mode === 'repeat';
+  const smart = mode !== 'self';
+  const repaint = mode === 'repeat';
   const sourceUrl = safeHttpUrl(alg.source?.url);
   // copy-ok: The no-cube label distinguishes the manual timer from smart-cube input.
   return `<div class="alg-drill__top"><div><p class="alg-eyebrow">${smart ? 'smart-cube drill' : 'no-cube drill'}</p><h2>${esc(row.name)} · ${esc(alg.id)}</h2></div><button type="button" data-action="close-drill" aria-label="Close drill">×</button></div>
-    <p>${smart ? 'Follow this verified sequence in the virtual case. After a clean round, the next case can be repainted without resetting the physical cube.' : 'Remember the selected algorithm, then use Start and Done to record a self-timed round. This mode has no per-turn timing.'}</p>
+    <p>${smart ? repaint ? 'Follow the verified sequence in the virtual case. This last-layer case was repainted without resetting the physical cube.' : row.set === 'f2l' ? 'Follow the verified insertion on your cube. Set up the displayed F2L case again before each round.' : 'Follow the verified sequence in the virtual case. After a clean round, the next last-layer case can be repainted without resetting the physical cube.' : 'Remember the selected algorithm, then use Start and Done to record a self-timed round. This mode has no per-turn timing.'}</p>
     <div class="alg-drill__alg"><code>${esc(fmt.moves(alg.moves))}</code>${sourceUrl ? `<a href="${esc(sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(alg.credit)} · needs internet</a>` : '<span>Added on this device.</span>'}</div>
     ${smart ? '<p data-cube-match aria-live="polite">Turn through the algorithm on the cube.</p><div data-cube-metrics></div>' : '<div class="alg-drill__timer" data-timer>Ready</div><div class="alg-drill__actions"><button type="button" data-action="drill-start">Start</button><button type="button" data-action="drill-done" disabled>Done</button></div><p data-drill-result></p>'}
     <div class="alg-drill__actions"><button type="button" data-action="drill-next">Next due algorithm</button></div>`;
@@ -96,6 +99,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     const shell = root.querySelector('.alg-page');
     if (shell) { shell.dataset.brainStyle = loadSettings(storage).style; syncPageTokens(shell); }
     if (caseData) {
+      if (!supportsVirtualRepaint(caseData)) repaintReady = false;
       try { setupState = caseSetupState(caseData); }
       catch { setupState = null; }
       try {
@@ -115,7 +119,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
         personalSection.innerHTML = `<h2>Your algorithms</h2><div class="alg-entry-grid">${personal.map((alg, index) => `<article class="alg-entry ${pick?.algId === alg.id ? 'is-picked' : ''}" data-alg-entry="${esc(alg.id)}"><div class="alg-entry__top"><strong>Personal ${index + 1}</strong><span>${alg.verified ? 'verified' : 'Failed verification · excluded from matching'}</span></div><code>${esc(fmt.moves(alg.moves))}</code><p>${safeHttpUrl(alg.source?.url) ? `Credit: ${esc(alg.credit ?? alg.source.name)} · <a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">Source (needs internet)</a>` : 'Added on this device.'}</p><div class="alg-entry__actions"><button type="button" data-pick="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Choose this alg</button><button type="button" data-drill-alg="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Drill</button></div></article>`).join('')}</div>`;
       }
       refreshCubeStatus();
-      if (drill) void startDrill(pick?.algId, repaintReady && cubeSnapshot.phase === 'tracking' ? 'repeat' : 'self');
+      if (drill) void startDrill(pick?.algId, cubeSnapshot.phase === 'tracking' ? supportsVirtualRepaint(caseData) && repaintReady ? 'repeat' : 'smart' : 'self');
     }
   }
 
@@ -124,13 +128,14 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     if (!caseData) return;
     const storedAlg = algId ? await db.getAlg(algId) : null;
     const alg = storedAlg?.caseId === caseData.id ? storedAlg : caseData.algs[0];
-    if (mode === 'repeat') {
+    repaintRound = null;
+    if (mode !== 'self' && supportsVirtualRepaint(caseData)) {
       repaintRound = createVirtualRepaint(caseData);
       if (cubeView) cubeView.update(toRenderData(repaintRound.state));
     }
     session = createAlgDrillSession({
       caseData, algs: storedAlg?.caseId === caseData.id && !caseData.algs.some(seed => seed.id === alg.id) ? [...caseData.algs, alg] : caseData.algs, cases: CASES, db, learningData: learning, saveLearning, mode,
-      f2lIntact: () => mode === 'repeat' ? repaintRound?.f2lIntact(cubeSnapshot.state) : f2lStateIntact(cubeSnapshot.state),
+      f2lIntact: () => repaintRound ? repaintRound.f2lIntact(cubeSnapshot.state) : f2lStateIntact(cubeSnapshot.state),
       onChange: state => {
         const status = root.querySelector('[data-cube-match]');
         if (status) status.textContent = state.match?.status === 'complete' ? 'Algorithm complete · F2L intact.' : state.match?.status === 'f2l-broken' ? 'F2L changed before the algorithm matched.' : state.match?.status === 'mismatch' ? 'That turn sequence does not match this algorithm.' : state.match?.status === 'prefix' ? `Matched ${state.moves.length} turns · next: ${state.match.nextMoves.join(' / ')}` : 'Turn through the algorithm on the cube.';
@@ -149,8 +154,10 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     const snapshot = cubeSnapshot;
     const tracking = snapshot.phase === 'tracking';
     const atSetup = tracking && setupState && sameCubeState(snapshot.state, setupState);
-    const repaint = repaintReady && tracking && f2lStateIntact(snapshot.state);
-    status.textContent = !tracking ? (snapshot.detail || 'Connect your smart cube to begin.') : repaint ? 'Virtual repaint ready. The physical cube stays in place for the next case.' : atSetup ? 'Cube matches this case. Start when ready.' : 'Turn your cube until it matches the virtual case setup.';
+    const row = routeSelection().caseData;
+    const repaint = supportsVirtualRepaint(row) && repaintReady && tracking && f2lStateIntact(snapshot.state);
+    const f2lComplete = row?.set === 'f2l' && session?.state.phase === 'results' && session.state.lastAttempt?.clean;
+    status.textContent = !tracking ? (snapshot.detail || 'Connect your smart cube to begin.') : repaint ? 'Virtual repaint ready. The physical cube stays in place for the next last-layer case.' : atSetup ? 'Cube matches this case. Start when ready.' : f2lComplete ? 'F2L round complete. Set up this case again before another round.' : 'Turn your cube until it matches the virtual case setup.';
     start.disabled = !(atSetup || repaint);
   }
 
@@ -167,7 +174,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
         void session.turn(event.move, performance.now()).then(result => {
           if (result?.metrics) {
             showMetrics(result);
-            if (result.attempt.clean) repaintReady = true;
+            if (result.attempt.clean && supportsVirtualRepaint(routeSelection().caseData)) repaintReady = true;
             refreshCubeStatus();
           }
           if (snapshot.resync !== before.resync) setCubeMessage('Cube state changed unexpectedly. Recheck the case setup before continuing.');
@@ -200,10 +207,11 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     }
     if (action === 'start-cube-drill') {
       const row = routeSelection().caseData;
-      if (row && cubeSnapshot.phase === 'tracking' && setupState && (matchesCaseSetup(cubeSnapshot.state, row) || (repaintReady && f2lStateIntact(cubeSnapshot.state)))) {
+      const repaint = supportsVirtualRepaint(row) && repaintReady && f2lStateIntact(cubeSnapshot.state);
+      if (row && cubeSnapshot.phase === 'tracking' && setupState && (matchesCaseSetup(cubeSnapshot.state, row) || repaint)) {
         lastCubeMoveSeq = cubeSnapshot.moveEvent?.seq ?? 0;
         const pick = await db.getPick(row.id);
-        await startDrill(pick?.algId, 'repeat');
+        await startDrill(pick?.algId, repaint ? 'repeat' : 'smart');
       }
       return;
     }
@@ -240,7 +248,10 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
         const row = getCase(picked.caseId);
         if (!row) return;
         const target = `${canonicalCasePath(row)}/drill`;
-        if (routeSelection().caseData?.id === row.id) await startDrill(picked.algId, repaintReady && cubeSnapshot.phase === 'tracking' ? 'repeat' : 'self');
+        if (routeSelection().caseData?.id === row.id) {
+          const current = routeSelection().caseData;
+          await startDrill(picked.algId, cubeSnapshot.phase === 'tracking' ? supportsVirtualRepaint(current) && repaintReady ? 'repeat' : 'smart' : 'self');
+        }
         else location.hash = target.slice(1);
       }
     }

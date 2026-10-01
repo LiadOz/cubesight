@@ -9,8 +9,8 @@ import { createAlgDrillSession } from '../src/algs/drill/session.js';
 import { createAlgDatabase } from '../src/algs/db.js';
 import { itemKey } from '../src/learning.js';
 import { caseSetupState, f2lStateIntact, matchesCaseSetup } from '../src/algs/drill/cube.js';
-import { applyMoves } from '../src/cross-cube.js';
-import { solvedPairs } from '../src/solve-tracker.js';
+import { applyMoves, createSolvedState, FACE_COLORS } from '../src/cross-cube.js';
+import { crossSolved, solvedPairs } from '../src/solve-tracker.js';
 import { createVirtualRepaint } from '../src/algs/drill/repaint.js';
 import { physicalModelTokens, tokenizeReconstruction } from '../src/review/import-parser.js';
 
@@ -38,6 +38,15 @@ test('the curated offline bundle covers every standard PLL and OLL case with two
   assert.equal(getCases('oll2').length, 16);
   assert.ok(getCases('oll2').every(row => row.stage && row.goal));
   assert.equal(canonicalCasePath(getCase('oll/21')), '#/algs/oll/21');
+});
+
+test('F2L integrity requires a solved D cross as well as four solved pairs', () => {
+  const state = createSolvedState();
+  const df = state.cubies.find(cubie => cubie.id === 'DF');
+  df.stickers = { D: FACE_COLORS.F, F: FACE_COLORS.D };
+  assert.equal(solvedPairs(state, 'D').length, 4, 'the four side pairs remain solved');
+  assert.equal(crossSolved(state, 'D'), false, 'the flipped cross edge is unsolved');
+  assert.equal(f2lStateIntact(state), false, 'F2L integrity must include the cross');
 });
 
 test('all bundled algorithms independently solve their canonical case and preserve F2L', async () => {
@@ -110,6 +119,12 @@ test('two consecutive virtual repaint rounds keep the real cube state and preser
     assert.ok(completions > 0, `${row.id} completes through the virtual case stream`);
     assert.equal(f2lStateIntact(physical), true, `${row.id} did not disturb physical F2L`);
   }
+});
+
+test('virtual repaint rejects F2L insertion cases and remains available for last-layer stages', () => {
+  assert.throws(() => createVirtualRepaint(getCase('f2l/1')), /last-layer cases only/);
+  assert.doesNotThrow(() => createVirtualRepaint(getCase('oll/1')));
+  assert.doesNotThrow(() => createVirtualRepaint(getCase('oll2/eo-line')));
 });
 
 test('matcher accepts AUF and normalized double-turn forms and rejects F2L damage', () => {

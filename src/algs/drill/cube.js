@@ -1,6 +1,5 @@
 import { applyMoves, canonicalizeForRecognition, createSolvedState, sameCubeState } from '../../cross-cube.js';
-import { solvedPairs } from '../../solve-tracker.js';
-import { crossSolved } from '../../solve-tracker.js';
+import { crossSolved, solvedPairs } from '../../solve-tracker.js';
 import { physicalModelTokens, tokenizeReconstruction } from '../../review/import-parser.js';
 
 /** Apply a canonical case setup using the app's independent physical cube model. */
@@ -18,7 +17,10 @@ export function matchesCaseSetup(state, caseData) {
 
 /** OLL/PLL drills allow the user to reorient the whole cube during an alg. */
 export function f2lStateIntact(state) {
-  try { return solvedPairs(canonicalizeForRecognition(state, 'D'), 'D').length === 4; }
+  try {
+    const frame = canonicalizeForRecognition(state, 'D');
+    return crossSolved(frame, 'D') && solvedPairs(frame, 'D').length === 4;
+  }
   catch { return false; }
 }
 

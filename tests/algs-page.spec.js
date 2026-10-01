@@ -30,11 +30,35 @@ test('six-case F2L subset and staged two-look OLL routes are functional', async 
   await page.goto('/#/algs/f2l');
   await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(6);
   await expect(page.locator('#algs-view')).toContainText('subset of the full 41-case set');
+  await page.locator('#algs-view .alg-case-card').first().click();
+  await expect(page.locator('.alg-cube-card')).toContainText('Set up this F2L case on your cube before each round');
+  await expect(page.locator('.alg-cube-card')).toContainText('do not use the no-reset virtual repaint flow');
   await page.goto('/#/algs/oll2');
   await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(16);
   await page.goto('/#/algs/oll2/eo-line');
   await expect(page.getByRole('heading', { name: 'EO · Line' })).toBeVisible();
   await expect(page.locator('.alg-detail__head')).toContainText('All four last-layer edges oriented');
+});
+
+test('algorithm case screens render across Orbit/Mono and light/dark at mobile width', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const style of ['orbit', 'mono']) for (const theme of ['light', 'dark']) {
+    await page.goto('/');
+    await page.evaluate(([style, theme]) => {
+      localStorage.setItem('cubesight-theme', theme);
+      localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
+    }, [style, theme]);
+    await page.reload();
+    await page.goto('/#/algs/oll/1');
+    const screen = page.locator('#algs-view .alg-detail');
+    await expect(screen).toBeVisible();
+    await expect(page.locator('#algs-view .alg-page')).toHaveAttribute('data-brain-style', style);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    await expect(page.locator('.alg-cube-card')).toBeVisible();
+    await expect(page.locator('.alg-entry-grid .alg-entry')).toHaveCount(2);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+    await page.screenshot({ path: `/tmp/cubesight-algs-${style}-${theme}-390.png`, fullPage: true });
+  }
 });
 
 test('a verified personal algorithm can be drilled and its self-timed PB is stored', async ({ page }) => {
