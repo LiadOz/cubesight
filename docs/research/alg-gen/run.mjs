@@ -17,6 +17,7 @@ const args = process.argv.slice(2);
 const kind = args[0] || 'pll';
 const opt = (n, d) => { const i = args.indexOf('--' + n); return i < 0 ? d : args[i + 1]; };
 const DEPTHS = { RU: [8, 8], RUF: [7, 7], RUD: [7, 7], RUL: [7, 7], RUr: [6, 7], RUM: [6, 7], RUFD: [6, 6] };
+for (const kv of (opt('depths', '') ? opt('depths', '').split(',') : [])) { const [k, v] = kv.split('='); DEPTHS[k] = v.split(':').map(Number); }
 const sets = opt('sets', 'RU,RUF,RUD,RUL,RUr,RUM,RUFD').split(',');
 const onlyCases = opt('cases', '') ? opt('cases', '').split(',') : null;
 const budget = Number(opt('budget', 60000));

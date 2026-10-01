@@ -10,10 +10,10 @@ export const MOVES = FACES.flatMap(f => SUF.map(s => f + s));
 const FACE_RANK = { U: 1, D: 0, R: 1, L: 0, F: 1, B: 0 }, FACE_AXIS = { U: 0, D: 0, R: 1, L: 1, F: 2, B: 2 };
 const moveFace = MOVES.map(m => m[0]);
 
-// cubing layout: corners UFR UBR UBL UFL DFR DBR DBL DFL ; edges UF UR UB UL DF DR DB DL FR FL BR BL
+// cubing layout: corners UFR UBR UBL UFL DFR DFL DBL DBR ; edges UF UR UB UL DF DR DB DL FR FL BR BL
 export const CROSS_EDGES = [4, 5, 6, 7];
 export const SLOTS = [ // name, corner index, edge index
-  { name: 'FR', c: 4, e: 8 }, { name: 'BR', c: 5, e: 10 }, { name: 'BL', c: 6, e: 11 }, { name: 'FL', c: 7, e: 9 },
+  { name: 'FR', c: 4, e: 8 }, { name: 'BR', c: 7, e: 10 }, { name: 'BL', c: 6, e: 11 }, { name: 'FL', c: 5, e: 9 },
 ];
 // piece tracking: t = 0..3 cross edges, 4..7 slot edges (slot order), 8..11 slot corners
 const PIECE_KIND = t => (t < 8 ? 'e' : 'c');
@@ -47,21 +47,23 @@ export const crossSolved = codes => [0, 1, 2, 3].every(t => isHome(codes, t));
 export const solvedSlots = codes => SLOTS.map((_, i) => i).filter(i => isHome(codes, 4 + i) && isHome(codes, 8 + i));
 
 // ---- pruning tables -------------------------------------------------------
-function bfs(pieces, size, encode, decodeAll) {
-  const dist = new Uint8Array(size).fill(255);
-  const start = pieces.map(homeCode);
-  let frontier = [start]; dist[encode(start)] = 0;
+function bfs(pieces, size, encode) {
+  const dist = new Uint8Array(size).fill(255), n = pieces.length;
+  let frontier = Uint8Array.from(pieces.map(homeCode)); dist[encode(frontier)] = 0;
+  const nxt = pieces.map(t => (PIECE_KIND(t) === 'e' ? edgeNext : cornerNext));
+  const tmp = new Uint8Array(n);
   for (let d = 1; frontier.length; d++) {
-    const nf = [];
-    for (const st of frontier) for (let mi = 0; mi < 18; mi++) {
-      const n = st.map((c, i) => next(pieces[i], c, mi)); const k = encode(n);
-      if (dist[k] === 255) { dist[k] = d; nf.push(n); }
+    const out = [];
+    for (let off = 0; off < frontier.length; off += n) for (let mi = 0; mi < 18; mi++) {
+      for (let i = 0; i < n; i++) tmp[i] = nxt[i][mi][frontier[off + i]];
+      const k = encode(tmp);
+      if (dist[k] === 255) { dist[k] = d; for (let i = 0; i < n; i++) out.push(tmp[i]); }
     }
-    frontier = nf;
+    frontier = Uint8Array.from(out);
   }
   return dist;
 }
-const enc = (arr, n = 24) => arr.reduce((a, c) => a * n + c, 0);
+const enc = arr => { let a = 0; for (let i = 0; i < arr.length; i++) a = a * 24 + arr[i]; return a; };
 let crossTable, pairTables = {};
 export function buildTables() {
   if (crossTable) return;
@@ -75,7 +77,7 @@ export const tableStats = () => ({ crossTable: crossTable?.length, extra: Object
 
 // ---- IDA* -----------------------------------------------------------------
 // targets: array of slot indices that must end solved (preserved + new)
-export function findCompletions(codes0, { newSlots, preserve = solvedSlots(codes0), maxDepth = 10, maxSolutions = 50, slack = 1, timeBudgetMs = 4000, useCrossEdge = true }) {
+export function findCompletions(codes0, { newSlots, preserve = solvedSlots(codes0), maxDepth = 10, maxSolutions = 50, slack = 1, timeBudgetMs = 4000, useCrossEdge = !process.env.NOCE }) {
   buildTables();
   const goalSlots = [...new Set([...preserve, ...newSlots])];
   const pieces = [0, 1, 2, 3, ...goalSlots.flatMap(i => [4 + i, 8 + i])];

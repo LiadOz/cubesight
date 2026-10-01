@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-30T19:58:40.375Z",
+ "generated": "2026-10-01T04:25:37.078Z",
  "sets": [
   "RU",
   "RUF",
@@ -17,7 +17,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 65,
+     "ms": 22,
      "found": 176,
      "tableSize": 9840,
      "truncated": false
@@ -25,7 +25,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1181,
+     "ms": 416,
      "found": 523,
      "tableSize": 335922,
      "truncated": false
@@ -33,7 +33,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 407,
+     "ms": 128,
      "found": 890,
      "tableSize": 115710,
      "truncated": false
@@ -41,7 +41,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 380,
+     "ms": 109,
      "found": 742,
      "tableSize": 93642,
      "truncated": false
@@ -49,7 +49,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 123,
+     "ms": 55,
      "found": 210,
      "tableSize": 19284,
      "truncated": false
@@ -57,7 +57,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 179,
+     "ms": 69,
      "found": 334,
      "tableSize": 19284,
      "truncated": false
@@ -65,7 +65,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1114,
+     "ms": 480,
      "found": 624,
      "tableSize": 408492,
      "truncated": false
@@ -537,7 +537,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 37,
+     "ms": 22,
      "found": 176,
      "tableSize": 9840,
      "truncated": false
@@ -545,7 +545,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 997,
+     "ms": 420,
      "found": 523,
      "tableSize": 335922,
      "truncated": false
@@ -553,7 +553,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 331,
+     "ms": 133,
      "found": 890,
      "tableSize": 115710,
      "truncated": false
@@ -561,7 +561,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 348,
+     "ms": 122,
      "found": 742,
      "tableSize": 93642,
      "truncated": false
@@ -569,7 +569,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 85,
+     "ms": 63,
      "found": 210,
      "tableSize": 19284,
      "truncated": false
@@ -577,7 +577,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 122,
+     "ms": 72,
      "found": 334,
      "tableSize": 19284,
      "truncated": false
@@ -585,7 +585,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 892,
+     "ms": 470,
      "found": 624,
      "tableSize": 408492,
      "truncated": false
@@ -1057,7 +1057,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 49,
+     "ms": 15,
      "found": 82,
      "tableSize": 9840,
      "truncated": false
@@ -1065,7 +1065,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1562,
+     "ms": 402,
      "found": 160,
      "tableSize": 335922,
      "truncated": false
@@ -1073,7 +1073,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 369,
+     "ms": 125,
      "found": 116,
      "tableSize": 115710,
      "truncated": false
@@ -1081,7 +1081,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 262,
+     "ms": 109,
      "found": 188,
      "tableSize": 93642,
      "truncated": false
@@ -1089,7 +1089,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 102,
+     "ms": 55,
      "found": 40,
      "tableSize": 19284,
      "truncated": false
@@ -1097,7 +1097,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 160,
+     "ms": 67,
      "found": 18,
      "tableSize": 19284,
      "truncated": false
@@ -1105,7 +1105,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1465,
+     "ms": 455,
      "found": 24,
      "tableSize": 408492,
      "truncated": false
@@ -1577,7 +1577,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 35,
+     "ms": 21,
      "found": 116,
      "tableSize": 9840,
      "truncated": false
@@ -1585,7 +1585,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 750,
+     "ms": 388,
      "found": 220,
      "tableSize": 335922,
      "truncated": false
@@ -1593,7 +1593,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 231,
+     "ms": 124,
      "found": 298,
      "tableSize": 115710,
      "truncated": false
@@ -1601,7 +1601,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 305,
+     "ms": 115,
      "found": 378,
      "tableSize": 93642,
      "truncated": false
@@ -1609,7 +1609,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 156,
+     "ms": 51,
      "found": 64,
      "tableSize": 19284,
      "truncated": false
@@ -1617,7 +1617,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 128,
+     "ms": 66,
      "found": 74,
      "tableSize": 19284,
      "truncated": false
@@ -1625,7 +1625,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 975,
+     "ms": 458,
      "found": 174,
      "tableSize": 408492,
      "truncated": false
@@ -2097,7 +2097,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 46,
+     "ms": 16,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -2105,7 +2105,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 764,
+     "ms": 370,
      "found": 274,
      "tableSize": 335922,
      "truncated": false
@@ -2113,7 +2113,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 205,
+     "ms": 144,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -2121,7 +2121,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 298,
+     "ms": 114,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -2129,7 +2129,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 90,
+     "ms": 57,
      "found": 2,
      "tableSize": 19284,
      "truncated": false
@@ -2137,7 +2137,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 113,
+     "ms": 67,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -2145,7 +2145,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 818,
+     "ms": 459,
      "found": 572,
      "tableSize": 408492,
      "truncated": false
@@ -2612,7 +2612,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 27,
+     "ms": 22,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -2620,7 +2620,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 741,
+     "ms": 384,
      "found": 505,
      "tableSize": 335922,
      "truncated": false
@@ -2628,7 +2628,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 247,
+     "ms": 124,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -2636,7 +2636,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 187,
+     "ms": 113,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -2644,7 +2644,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 173,
+     "ms": 53,
      "found": 1,
      "tableSize": 19284,
      "truncated": false
@@ -2652,7 +2652,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 356,
+     "ms": 70,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -2660,7 +2660,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1261,
+     "ms": 508,
      "found": 475,
      "tableSize": 408492,
      "truncated": false
@@ -3132,7 +3132,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 39,
+     "ms": 22,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -3140,7 +3140,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 944,
+     "ms": 426,
      "found": 474,
      "tableSize": 335922,
      "truncated": false
@@ -3148,7 +3148,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 233,
+     "ms": 128,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -3156,7 +3156,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 244,
+     "ms": 114,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -3164,7 +3164,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 92,
+     "ms": 51,
      "found": 2,
      "tableSize": 19284,
      "truncated": false
@@ -3172,7 +3172,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 118,
+     "ms": 66,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3180,7 +3180,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 876,
+     "ms": 481,
      "found": 536,
      "tableSize": 408492,
      "truncated": false
@@ -3647,7 +3647,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 21,
+     "ms": 16,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -3655,7 +3655,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 753,
+     "ms": 394,
      "found": 574,
      "tableSize": 335922,
      "truncated": false
@@ -3663,7 +3663,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 330,
+     "ms": 153,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -3671,7 +3671,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 199,
+     "ms": 126,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -3679,7 +3679,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 135,
+     "ms": 54,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3687,7 +3687,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 110,
+     "ms": 67,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3695,7 +3695,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1205,
+     "ms": 634,
      "found": 620,
      "tableSize": 408492,
      "truncated": false
@@ -4162,7 +4162,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 77,
+     "ms": 33,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -4170,7 +4170,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1133,
+     "ms": 582,
      "found": 138,
      "tableSize": 335922,
      "truncated": false
@@ -4178,7 +4178,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 265,
+     "ms": 140,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -4186,7 +4186,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 189,
+     "ms": 133,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -4194,7 +4194,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 105,
+     "ms": 54,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -4202,7 +4202,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 111,
+     "ms": 99,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -4210,7 +4210,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 906,
+     "ms": 642,
      "found": 68,
      "tableSize": 408492,
      "truncated": false
@@ -4677,7 +4677,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 33,
+     "ms": 34,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -4685,7 +4685,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 722,
+     "ms": 416,
      "found": 396,
      "tableSize": 335922,
      "truncated": false
@@ -4693,7 +4693,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 233,
+     "ms": 131,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -4701,7 +4701,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 196,
+     "ms": 117,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -4709,7 +4709,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 102,
+     "ms": 53,
      "found": 184,
      "tableSize": 19284,
      "truncated": false
@@ -4717,7 +4717,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 126,
+     "ms": 78,
      "found": 2858,
      "tableSize": 19284,
      "truncated": false
@@ -4725,7 +4725,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1018,
+     "ms": 591,
      "found": 40,
      "tableSize": 408492,
      "truncated": false
@@ -5191,7 +5191,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 42,
+     "ms": 15,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -5199,7 +5199,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 824,
+     "ms": 474,
      "found": 192,
      "tableSize": 335922,
      "truncated": false
@@ -5207,7 +5207,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 223,
+     "ms": 177,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -5215,7 +5215,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 259,
+     "ms": 113,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -5223,7 +5223,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 88,
+     "ms": 52,
      "found": 54,
      "tableSize": 19284,
      "truncated": false
@@ -5231,7 +5231,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 230,
+     "ms": 68,
      "found": 334,
      "tableSize": 19284,
      "truncated": false
@@ -5239,7 +5239,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1040,
+     "ms": 467,
      "found": 20,
      "tableSize": 408492,
      "truncated": false
@@ -5703,7 +5703,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 28,
+     "ms": 15,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -5711,7 +5711,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 878,
+     "ms": 450,
      "found": 220,
      "tableSize": 335922,
      "truncated": false
@@ -5719,7 +5719,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 527,
+     "ms": 140,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -5727,7 +5727,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 388,
+     "ms": 115,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -5735,7 +5735,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 202,
+     "ms": 50,
      "found": 2,
      "tableSize": 19284,
      "truncated": false
@@ -5743,7 +5743,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 268,
+     "ms": 81,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -5751,7 +5751,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1240,
+     "ms": 564,
      "found": 56,
      "tableSize": 408492,
      "truncated": false
@@ -6218,7 +6218,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 34,
+     "ms": 15,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -6226,7 +6226,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 893,
+     "ms": 454,
      "found": 24,
      "tableSize": 335922,
      "truncated": false
@@ -6234,7 +6234,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 211,
+     "ms": 145,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -6242,7 +6242,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 188,
+     "ms": 113,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -6250,7 +6250,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 84,
+     "ms": 62,
      "found": 4,
      "tableSize": 19284,
      "truncated": false
@@ -6258,7 +6258,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 112,
+     "ms": 96,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -6266,7 +6266,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 896,
+     "ms": 502,
      "found": 2,
      "tableSize": 408492,
      "truncated": false
@@ -6601,7 +6601,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 45,
+     "ms": 15,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -6609,7 +6609,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 692,
+     "ms": 450,
      "found": 84,
      "tableSize": 335922,
      "truncated": false
@@ -6617,7 +6617,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 229,
+     "ms": 176,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -6625,7 +6625,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 188,
+     "ms": 109,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -6633,7 +6633,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 90,
+     "ms": 63,
      "found": 32,
      "tableSize": 19284,
      "truncated": false
@@ -6641,7 +6641,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 133,
+     "ms": 69,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -6649,7 +6649,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1117,
+     "ms": 457,
      "found": 2,
      "tableSize": 408492,
      "truncated": false
@@ -7116,7 +7116,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 35,
+     "ms": 16,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -7124,7 +7124,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 857,
+     "ms": 447,
      "found": 505,
      "tableSize": 335922,
      "truncated": false
@@ -7132,7 +7132,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 295,
+     "ms": 141,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -7140,7 +7140,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 198,
+     "ms": 143,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -7148,7 +7148,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 90,
+     "ms": 77,
      "found": 1,
      "tableSize": 19284,
      "truncated": false
@@ -7156,7 +7156,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 142,
+     "ms": 71,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -7164,7 +7164,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 810,
+     "ms": 526,
      "found": 475,
      "tableSize": 408492,
      "truncated": false
@@ -7631,7 +7631,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 33,
+     "ms": 23,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -7639,7 +7639,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 770,
+     "ms": 410,
      "found": 200,
      "tableSize": 335922,
      "truncated": false
@@ -7647,7 +7647,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 256,
+     "ms": 132,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -7655,7 +7655,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 220,
+     "ms": 113,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -7663,7 +7663,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 95,
+     "ms": 51,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -7671,7 +7671,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 111,
+     "ms": 66,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -7679,7 +7679,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 896,
+     "ms": 550,
      "found": 24,
      "tableSize": 408492,
      "truncated": false

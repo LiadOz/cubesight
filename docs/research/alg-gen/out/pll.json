@@ -1,5 +1,5 @@
 {
- "generated": "2026-09-30T19:57:55.496Z",
+ "generated": "2026-10-01T04:25:15.285Z",
  "sets": [
   "RU",
   "RUF",
@@ -17,7 +17,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 155,
+     "ms": 21,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -25,7 +25,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1616,
+     "ms": 562,
      "found": 44,
      "tableSize": 335922,
      "truncated": false
@@ -33,7 +33,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 608,
+     "ms": 135,
      "found": 26,
      "tableSize": 115710,
      "truncated": false
@@ -41,7 +41,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 490,
+     "ms": 111,
      "found": 40,
      "tableSize": 93642,
      "truncated": false
@@ -49,7 +49,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 169,
+     "ms": 53,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -57,7 +57,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 318,
+     "ms": 82,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -65,7 +65,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 2001,
+     "ms": 496,
      "found": 74,
      "tableSize": 408492,
      "truncated": false
@@ -75,7 +75,7 @@
     {
      "alg": "R U' R F2 R' U R' U' R2 F2 R2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 16,
      "stm": 11,
@@ -97,7 +97,7 @@
     {
      "alg": "R2 D R2 D' F2 R2 U' R2 U F2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 19,
      "stm": 10,
@@ -130,7 +130,7 @@
     {
      "alg": "R' U2 R' U2 R' D' R U2 R' D R2 U2 R",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUD",
      "score": 19,
      "stm": 13,
@@ -141,7 +141,7 @@
     {
      "alg": "D' F2 D R2 U' F2 U R2 U' F2 R2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 20,
      "stm": 11,
@@ -185,7 +185,7 @@
     {
      "alg": "R U2 R' U L U' R' U L' U' R2 U2 R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 13,
@@ -196,7 +196,7 @@
     {
      "alg": "R2 F2 U' R2 U' R2 U F2 U' R2 U R2 U R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -207,7 +207,7 @@
     {
      "alg": "R2 U R2 U R2 U2 F2 U2 R2 U' R2 U' F2 R2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -218,7 +218,7 @@
     {
      "alg": "R2 U' R2 U2 R2 U F2 U' R2 U2 R2 U F2 R2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -229,7 +229,7 @@
     {
      "alg": "R2 U2 R2 U' R2 U' F2 U R2 U R2 U2 F2 R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -240,7 +240,7 @@
     {
      "alg": "R2 U F2 U' F2 R2 D' F2 D F2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 21,
      "stm": 10,
@@ -251,7 +251,7 @@
     {
      "alg": "R U' F D' F' U' F D F' U2 R'",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 11,
@@ -284,7 +284,7 @@
     {
      "alg": "F' U2 R' D R U' R' D' R U' F",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 11,
@@ -295,7 +295,7 @@
     {
      "alg": "F2 D R2 U' F2 U R2 U' F2 R2 D'",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 11,
@@ -372,7 +372,7 @@
     {
      "alg": "D' F2 D F2 U' F2 R2 U' R2 U F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 11,
@@ -394,7 +394,7 @@
     {
      "alg": "F2 D F2 U' F2 R2 U' R2 U F2 D'",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 11,
@@ -405,7 +405,7 @@
     {
      "alg": "F2 R2 F2 R U' R' F2 R2 F2 R U R'",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 22,
      "stm": 12,
@@ -416,7 +416,7 @@
     {
      "alg": "R F R D R' U' R D' R' U F' R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -471,7 +471,7 @@
     {
      "alg": "R2 U F2 U' F2 R2 U' R2 D R2 U' D'",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -482,7 +482,7 @@
     {
      "alg": "R2 U F2 U' F2 R2 U' R2 D R2 U D'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -493,7 +493,7 @@
     {
      "alg": "F2 D R2 U' F2 U R2 U' F2 R2 U2 D'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -529,7 +529,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 153,
+     "ms": 35,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -537,7 +537,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1660,
+     "ms": 422,
      "found": 44,
      "tableSize": 335922,
      "truncated": false
@@ -545,7 +545,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 628,
+     "ms": 145,
      "found": 26,
      "tableSize": 115710,
      "truncated": false
@@ -553,7 +553,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 539,
+     "ms": 110,
      "found": 40,
      "tableSize": 93642,
      "truncated": false
@@ -561,7 +561,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 276,
+     "ms": 68,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -569,7 +569,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 381,
+     "ms": 94,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -577,7 +577,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1655,
+     "ms": 514,
      "found": 74,
      "tableSize": 408492,
      "truncated": false
@@ -609,7 +609,7 @@
     {
      "alg": "F2 U' R2 U R2 F2 D R2 D' R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 19,
      "stm": 10,
@@ -642,7 +642,7 @@
     {
      "alg": "R' U2 R2 D' R U2 R' D R U2 R U2 R",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUD",
      "score": 19,
      "stm": 13,
@@ -653,7 +653,7 @@
     {
      "alg": "D R2 D' R2 U R2 F2 U F2 U' R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 20,
      "stm": 11,
@@ -664,7 +664,7 @@
     {
      "alg": "R2 D' R2 U R2 F2 U F2 U' R2 D",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 20,
      "stm": 11,
@@ -697,7 +697,7 @@
     {
      "alg": "R U2 R2 U L U' R U L' U' R U2 R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 13,
@@ -708,7 +708,7 @@
     {
      "alg": "R2 F2 U R2 U R2 U2 F2 U2 R2 U' R2 U' R2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -719,7 +719,7 @@
     {
      "alg": "R2 F2 U' R2 U2 R2 U F2 U' R2 U2 R2 U R2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -730,7 +730,7 @@
     {
      "alg": "R2 F2 U2 R2 U' R2 U' F2 U R2 U R2 U2 R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -741,7 +741,7 @@
     {
      "alg": "R2 U' R2 U' R2 U F2 U' R2 U R2 U F2 R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -752,7 +752,7 @@
     {
      "alg": "F2 D' F2 D R2 F2 U F2 U' R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 21,
      "stm": 10,
@@ -763,7 +763,7 @@
     {
      "alg": "R U2 F D' F' U F D F' U R'",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 11,
@@ -785,7 +785,7 @@
     {
      "alg": "F' U R' D R U R' D' R U2 F",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 11,
@@ -807,7 +807,7 @@
     {
      "alg": "R2 D' F2 U R2 U' F2 U R2 F2 D",
      "preAUF": 2,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 11,
@@ -851,7 +851,7 @@
     {
      "alg": "R2 D' R2 U R2 F2 U F2 U' R2 U2 D",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 12,
@@ -884,7 +884,7 @@
     {
      "alg": "D R2 D' F2 U R2 U' F2 U R2 F2",
      "preAUF": 2,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 22,
      "stm": 11,
@@ -917,7 +917,7 @@
     {
      "alg": "R U' R' F2 R2 F2 R U R' F2 R2 F2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 22,
      "stm": 12,
@@ -928,7 +928,7 @@
     {
      "alg": "R F U' R D R' U R D' R' F' R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -939,7 +939,7 @@
     {
      "alg": "D U2 R2 D' R2 U R2 F2 U F2 U' R2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -950,7 +950,7 @@
     {
      "alg": "D U' R2 D' R2 U R2 F2 U F2 U' R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -961,7 +961,7 @@
     {
      "alg": "D U R2 D' R2 U R2 F2 U F2 U' R2",
      "preAUF": 3,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -994,7 +994,7 @@
     {
      "alg": "D U2 R2 D' F2 U R2 U' F2 U R2 F2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 22,
      "stm": 12,
@@ -1041,7 +1041,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 82,
+     "ms": 17,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -1049,7 +1049,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1495,
+     "ms": 437,
      "found": 4,
      "tableSize": 335922,
      "truncated": false
@@ -1057,7 +1057,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 550,
+     "ms": 145,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -1065,7 +1065,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 483,
+     "ms": 125,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -1073,7 +1073,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 227,
+     "ms": 58,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1081,7 +1081,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 324,
+     "ms": 87,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1089,7 +1089,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1707,
+     "ms": 459,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -1121,7 +1121,7 @@
     {
      "alg": "R2 U F2 U2 F2 R2 U F2 U F2 U2 R2 U' R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 24,
      "stm": 14,
@@ -1132,7 +1132,7 @@
     {
      "alg": "R2 U R2 U2 F2 U' F2 U' R2 F2 U2 F2 U' R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 24,
      "stm": 14,
@@ -1157,7 +1157,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 62,
+     "ms": 17,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -1165,7 +1165,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1713,
+     "ms": 452,
      "found": 4,
      "tableSize": 335922,
      "truncated": false
@@ -1173,7 +1173,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 515,
+     "ms": 142,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -1181,7 +1181,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 434,
+     "ms": 131,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -1189,7 +1189,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 216,
+     "ms": 70,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1197,7 +1197,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 397,
+     "ms": 103,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1205,7 +1205,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1848,
+     "ms": 469,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -1215,7 +1215,7 @@
     {
      "alg": "R2 F R F' R' U' F' U F R2 U R' U' R",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 23,
      "stm": 14,
@@ -1248,7 +1248,7 @@
     {
      "alg": "F U' F' U F2 R U R' U' F' R' F R F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 28,
      "stm": 14,
@@ -1273,7 +1273,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 48,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -1281,7 +1281,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1730,
+     "ms": 413,
      "found": 4,
      "tableSize": 335922,
      "truncated": false
@@ -1289,7 +1289,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 521,
+     "ms": 132,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -1297,7 +1297,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 413,
+     "ms": 129,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -1305,7 +1305,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 252,
+     "ms": 59,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1313,7 +1313,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 344,
+     "ms": 89,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1321,7 +1321,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1793,
+     "ms": 505,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -1342,7 +1342,7 @@
     {
      "alg": "F2 R2 U F2 U F2 U' R U' R F2 R' U R",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 24,
      "stm": 14,
@@ -1353,7 +1353,7 @@
     {
      "alg": "R2 F2 U R2 F U F' R2 F U' F' U' F2 R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 27,
      "stm": 14,
@@ -1364,7 +1364,7 @@
     {
      "alg": "F2 U2 F2 R2 U F2 U' F2 U' R2 U2 F2 U F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 28,
      "stm": 14,
@@ -1389,7 +1389,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 52,
+     "ms": 20,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -1397,7 +1397,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1303,
+     "ms": 397,
      "found": 4,
      "tableSize": 335922,
      "truncated": false
@@ -1405,7 +1405,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 444,
+     "ms": 137,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -1413,7 +1413,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 406,
+     "ms": 118,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -1421,7 +1421,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 209,
+     "ms": 57,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1429,7 +1429,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 252,
+     "ms": 92,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1437,7 +1437,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1936,
+     "ms": 497,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -1447,7 +1447,7 @@
     {
      "alg": "R2 U' F2 U2 R2 U F2 R2 U' R2 U' R2 U2 F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 22,
      "stm": 14,
@@ -1458,7 +1458,7 @@
     {
      "alg": "R' U' R F2 R' U R' U F2 U' F2 U' R2 F2",
      "preAUF": 3,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 24,
      "stm": 14,
@@ -1505,7 +1505,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 77,
+     "ms": 17,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -1513,7 +1513,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1805,
+     "ms": 428,
      "found": 4,
      "tableSize": 335922,
      "truncated": false
@@ -1521,7 +1521,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 611,
+     "ms": 136,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -1529,7 +1529,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 509,
+     "ms": 121,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -1537,7 +1537,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 202,
+     "ms": 57,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1545,7 +1545,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 351,
+     "ms": 86,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1553,7 +1553,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1556,
+     "ms": 515,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -1596,7 +1596,7 @@
     {
      "alg": "R2 U2 F2 U' F2 U' F2 R2 U F2 U2 R2 U' F2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 25,
      "stm": 14,
@@ -1621,7 +1621,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 51,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -1629,7 +1629,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1552,
+     "ms": 421,
      "found": 4,
      "tableSize": 335922,
      "truncated": false
@@ -1637,7 +1637,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 474,
+     "ms": 136,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -1645,7 +1645,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 392,
+     "ms": 119,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -1653,7 +1653,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 149,
+     "ms": 56,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1661,7 +1661,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 198,
+     "ms": 85,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -1669,7 +1669,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1801,
+     "ms": 490,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -1679,7 +1679,7 @@
     {
      "alg": "R2 U R2 U2 F2 U' R2 U' R2 U F2 R2 U2 R2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 19,
      "stm": 14,
@@ -1690,7 +1690,7 @@
     {
      "alg": "F2 R2 U' R' U' R F2 R' U R F2 U R2 F2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 23,
      "stm": 14,
@@ -1737,7 +1737,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 75,
+     "ms": 18,
      "found": 12,
      "tableSize": 9840,
      "truncated": false
@@ -1745,7 +1745,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1793,
+     "ms": 398,
      "found": 58,
      "tableSize": 335922,
      "truncated": false
@@ -1753,7 +1753,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 540,
+     "ms": 135,
      "found": 376,
      "tableSize": 115710,
      "truncated": false
@@ -1761,7 +1761,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 534,
+     "ms": 121,
      "found": 154,
      "tableSize": 93642,
      "truncated": false
@@ -1769,7 +1769,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 359,
+     "ms": 60,
      "found": 284,
      "tableSize": 19284,
      "truncated": false
@@ -1777,7 +1777,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 379,
+     "ms": 91,
      "found": 1254,
      "tableSize": 19284,
      "truncated": false
@@ -1785,7 +1785,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1553,
+     "ms": 494,
      "found": 44,
      "tableSize": 408492,
      "truncated": false
@@ -1817,7 +1817,7 @@
     {
      "alg": "M2 U2 M2 U' M2 U2 M2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 10,
      "stm": 7,
@@ -1828,7 +1828,7 @@
     {
      "alg": "M2 U2 M2 U M2 U2 M2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 10,
      "stm": 7,
@@ -2059,7 +2059,7 @@
     {
      "alg": "R2 U2 R2 U2 R2 U' R2 U2 R2 U2 R2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RU",
      "score": 12,
      "stm": 11,
@@ -2070,7 +2070,7 @@
     {
      "alg": "R2 U2 R2 U2 R2 U R2 U2 R2 U2 R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RU",
      "score": 12,
      "stm": 11,
@@ -2213,7 +2213,7 @@
     {
      "alg": "M2 U2 M2 U' M2 R U2 M2 U2 R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUM",
      "score": 13,
      "stm": 10,
@@ -2224,7 +2224,7 @@
     {
      "alg": "M2 U2 M2 U M2 R U2 M2 U2 R'",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUM",
      "score": 13,
      "stm": 10,
@@ -2251,7 +2251,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 85,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -2259,7 +2259,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1320,
+     "ms": 474,
      "found": 76,
      "tableSize": 335922,
      "truncated": false
@@ -2267,7 +2267,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 501,
+     "ms": 132,
      "found": 20,
      "tableSize": 115710,
      "truncated": false
@@ -2275,7 +2275,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 376,
+     "ms": 126,
      "found": 92,
      "tableSize": 93642,
      "truncated": false
@@ -2283,7 +2283,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 96,
+     "ms": 59,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -2291,7 +2291,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 211,
+     "ms": 86,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -2299,7 +2299,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1188,
+     "ms": 496,
      "found": 50,
      "tableSize": 408492,
      "truncated": false
@@ -2320,7 +2320,7 @@
     {
      "alg": "R' U L' U2 R U' R' U2 R L",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 17,
      "stm": 10,
@@ -2331,7 +2331,7 @@
     {
      "alg": "L U' R' U L' U2 R U' R' U2 R",
      "preAUF": 2,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 18,
      "stm": 11,
@@ -2342,7 +2342,7 @@
     {
      "alg": "R' U2 R U R' U2 L U' R U L'",
      "preAUF": 2,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 18,
      "stm": 11,
@@ -2353,7 +2353,7 @@
     {
      "alg": "R2 D U' R2 U' R2 U R2 D' R2 U R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUD",
      "score": 18,
      "stm": 12,
@@ -2375,7 +2375,7 @@
     {
      "alg": "R2 F2 U' F2 D R2 D' R2 U R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 19,
      "stm": 10,
@@ -2408,7 +2408,7 @@
     {
      "alg": "R' F R' U' R2 U' R2 U R' F' R U R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 19,
      "stm": 13,
@@ -2430,7 +2430,7 @@
     {
      "alg": "R' U' R' D R2 U' R' U R2 D' R2 U R",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUD",
      "score": 19,
      "stm": 13,
@@ -2474,7 +2474,7 @@
     {
      "alg": "F R' U R U' F' U R' U2 R U' R' U2 R",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 20,
      "stm": 14,
@@ -2496,7 +2496,7 @@
     {
      "alg": "R U2 L' R' U2 R U R' U2 L U' R U' R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 14,
@@ -2507,7 +2507,7 @@
     {
      "alg": "R U R' U L' U2 R U' R' U2 R L U2 R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 14,
@@ -2518,7 +2518,7 @@
     {
      "alg": "R' U2 L' R' U2 R U R' U2 L U' R U' R",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 14,
@@ -2529,7 +2529,7 @@
     {
      "alg": "R' U R' U L' U2 R U' R' U2 R L U2 R",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 14,
@@ -2540,7 +2540,7 @@
     {
      "alg": "R2 U2 L' R' U2 R U R' U2 L U' R U' R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 14,
@@ -2551,7 +2551,7 @@
     {
      "alg": "R2 U R' U L' U2 R U' R' U2 R L U2 R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 20,
      "stm": 14,
@@ -2573,7 +2573,7 @@
     {
      "alg": "R2 F2 U' F2 U F2 D' F2 D R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 10,
@@ -2584,7 +2584,7 @@
     {
      "alg": "F' U2 R F R' U R F' R' U F",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 21,
      "stm": 11,
@@ -2595,7 +2595,7 @@
     {
      "alg": "F' U R' U F U F' U' R U2 F",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 21,
      "stm": 11,
@@ -2628,7 +2628,7 @@
     {
      "alg": "R2 D U' R2 D' F2 U F2 U' R2 U R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 12,
@@ -2661,7 +2661,7 @@
     {
      "alg": "R2 D' F2 R' U' R F2 R' U R D R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 12,
@@ -2683,7 +2683,7 @@
     {
      "alg": "R2 F2 D U2 R2 U R2 U D2 F2 D R2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 21,
      "stm": 12,
@@ -2716,7 +2716,7 @@
     {
      "alg": "L2 U' R' U L' U2 R U' R' U2 R L'",
      "preAUF": 2,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 21.5,
      "stm": 12,
@@ -2727,7 +2727,7 @@
     {
      "alg": "L2 R' U2 R U R' U2 L U' R U L",
      "preAUF": 2,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 21.5,
      "stm": 12,
@@ -2738,7 +2738,7 @@
     {
      "alg": "L' U' R' U L' U2 R U' R' U2 R L2",
      "preAUF": 2,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 21.5,
      "stm": 12,
@@ -2763,7 +2763,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 43,
+     "ms": 19,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -2771,7 +2771,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1189,
+     "ms": 411,
      "found": 76,
      "tableSize": 335922,
      "truncated": false
@@ -2779,7 +2779,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 373,
+     "ms": 137,
      "found": 20,
      "tableSize": 115710,
      "truncated": false
@@ -2787,7 +2787,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 396,
+     "ms": 131,
      "found": 92,
      "tableSize": 93642,
      "truncated": false
@@ -2795,7 +2795,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 175,
+     "ms": 58,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -2803,7 +2803,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 338,
+     "ms": 84,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -2811,7 +2811,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1497,
+     "ms": 505,
      "found": 50,
      "tableSize": 408492,
      "truncated": false
@@ -2821,7 +2821,7 @@
     {
      "alg": "L R U2 R' U' R U2 L' U R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 16,
      "stm": 10,
@@ -2854,7 +2854,7 @@
     {
      "alg": "R U' F U' R' U' R U F' U2 R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 16,
      "stm": 11,
@@ -2898,7 +2898,7 @@
     {
      "alg": "R2 U R2 D' R2 U R2 U' R2 U' D R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUD",
      "score": 17,
      "stm": 12,
@@ -2920,7 +2920,7 @@
     {
      "alg": "R U R' F' R U R' U' R' F R2 U' R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 18,
      "stm": 13,
@@ -2931,7 +2931,7 @@
     {
      "alg": "R2 U R' F' R U R2 U' R' F R' U' R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 18,
      "stm": 13,
@@ -2953,7 +2953,7 @@
     {
      "alg": "R U R2 D' R2 U R' U' R2 D R' U' R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUD",
      "score": 18,
      "stm": 13,
@@ -2986,7 +2986,7 @@
     {
      "alg": "F2 R2 U R2 U' R2 D R2 D' F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 19,
      "stm": 10,
@@ -3041,7 +3041,7 @@
     {
      "alg": "R U2 F' R' F U' F' R F U' R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 20,
      "stm": 11,
@@ -3074,7 +3074,7 @@
     {
      "alg": "F2 R2 U R2 D' F2 D F2 U' F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 21,
      "stm": 10,
@@ -3096,7 +3096,7 @@
     {
      "alg": "F2 R U R' U' R2 D R D' R F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 21,
      "stm": 11,
@@ -3107,7 +3107,7 @@
     {
      "alg": "R U F U F' R' F U' F' R U' R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 21,
      "stm": 12,
@@ -3129,7 +3129,7 @@
     {
      "alg": "R2 U F U F' R2 F U' F' R2 U' R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 21,
      "stm": 12,
@@ -3173,7 +3173,7 @@
     {
      "alg": "R U2 R U2 L' R' U R U' L U2 R' U' R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 21,
      "stm": 14,
@@ -3195,7 +3195,7 @@
     {
      "alg": "R U R U2 L' U R' U' R L U2 R' U2 R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 21,
      "stm": 14,
@@ -3277,7 +3277,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 67,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -3285,7 +3285,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1312,
+     "ms": 456,
      "found": 7,
      "tableSize": 335922,
      "truncated": false
@@ -3293,7 +3293,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 491,
+     "ms": 148,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -3301,7 +3301,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 346,
+     "ms": 124,
      "found": 4,
      "tableSize": 93642,
      "truncated": false
@@ -3309,7 +3309,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 241,
+     "ms": 56,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3317,7 +3317,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 187,
+     "ms": 85,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3325,7 +3325,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1248,
+     "ms": 523,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -3335,7 +3335,7 @@
     {
      "alg": "F2 U2 R2 U F2 U2 F2 R2 U R2 U2 R2 F2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 22,
      "stm": 13,
@@ -3346,7 +3346,7 @@
     {
      "alg": "F2 R2 U2 R2 U' R2 F2 U2 F2 U' R2 U2 F2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 22,
      "stm": 13,
@@ -3357,7 +3357,7 @@
     {
      "alg": "L U' R U2 L' U L R' U' R U2 L' U R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3368,7 +3368,7 @@
     {
      "alg": "L U' R U2 L' U R' L U' R U2 L' U R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3379,7 +3379,7 @@
     {
      "alg": "R U' L U2 R' U L' R U' L U2 R' U L'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3390,7 +3390,7 @@
     {
      "alg": "R U' L U2 R' U R L' U' L U2 R' U L'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3401,7 +3401,7 @@
     {
      "alg": "F' U F2 R2 U F' R2 F U' R2 F2 U' F",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 26,
      "stm": 13,
@@ -3470,7 +3470,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 36,
+     "ms": 21,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -3478,7 +3478,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1529,
+     "ms": 421,
      "found": 7,
      "tableSize": 335922,
      "truncated": false
@@ -3486,7 +3486,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 390,
+     "ms": 133,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -3494,7 +3494,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 482,
+     "ms": 121,
      "found": 4,
      "tableSize": 93642,
      "truncated": false
@@ -3502,7 +3502,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 176,
+     "ms": 56,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3510,7 +3510,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 250,
+     "ms": 88,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3518,7 +3518,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1433,
+     "ms": 512,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -3528,7 +3528,7 @@
     {
      "alg": "R U' R2 F2 U' R F2 R' U F2 R2 U R'",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 20,
      "stm": 13,
@@ -3539,7 +3539,7 @@
     {
      "alg": "R2 F2 U2 F2 U F2 R2 U2 R2 U F2 U2 R2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 22,
      "stm": 13,
@@ -3550,7 +3550,7 @@
     {
      "alg": "R2 U2 F2 U' R2 U2 R2 F2 U' F2 U2 F2 R2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 22,
      "stm": 13,
@@ -3605,7 +3605,7 @@
     {
      "alg": "L' U R' U2 L U' L' R U R' U2 L U' R",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3616,7 +3616,7 @@
     {
      "alg": "L' U R' U2 L U' R L' U R' U2 L U' R",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3627,7 +3627,7 @@
     {
      "alg": "R' U L' U2 R U' L R' U L' U2 R U' L",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3638,7 +3638,7 @@
     {
      "alg": "R' U L' U2 R U' R' L U L' U2 R U' L",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUL",
      "score": 25,
      "stm": 14,
@@ -3663,7 +3663,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 74,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -3671,7 +3671,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1772,
+     "ms": 440,
      "found": 8,
      "tableSize": 335922,
      "truncated": false
@@ -3679,7 +3679,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 466,
+     "ms": 147,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -3687,7 +3687,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 324,
+     "ms": 133,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -3695,7 +3695,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 131,
+     "ms": 56,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3703,7 +3703,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 303,
+     "ms": 86,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3711,7 +3711,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1414,
+     "ms": 478,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -3721,7 +3721,7 @@
     {
      "alg": "R2 F2 U R U R' U' R' U' F2 R' U R'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 18,
      "stm": 13,
@@ -3743,7 +3743,7 @@
     {
      "alg": "F U2 F' R' U' R U F U' R' U R U2 F'",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 24,
      "stm": 14,
@@ -3765,7 +3765,7 @@
     {
      "alg": "F2 R' F' U' F U F U' R F R' U R F",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 28,
      "stm": 14,
@@ -3776,7 +3776,7 @@
     {
      "alg": "F' R' U' R F' R' U F' U' F' U F R F2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 28,
      "stm": 14,
@@ -3798,7 +3798,7 @@
     {
      "alg": "F U2 F' U2 F R' F' U' F U F R F2",
      "preAUF": 2,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 29,
      "stm": 13,
@@ -3823,7 +3823,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 43,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -3831,7 +3831,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1415,
+     "ms": 405,
      "found": 8,
      "tableSize": 335922,
      "truncated": false
@@ -3839,7 +3839,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 314,
+     "ms": 139,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -3847,7 +3847,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 394,
+     "ms": 119,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -3855,7 +3855,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 232,
+     "ms": 56,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3863,7 +3863,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 233,
+     "ms": 88,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -3871,7 +3871,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1544,
+     "ms": 474,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -3892,7 +3892,7 @@
     {
      "alg": "R2 F R U R U' R' F' R U2 R' U2 R",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 19,
      "stm": 13,
@@ -3925,7 +3925,7 @@
     {
      "alg": "R' U2 F U F' U' R U F U' F' R' U2 R",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 24,
      "stm": 14,
@@ -3958,7 +3958,7 @@
     {
      "alg": "F' U F' R2 U' F' U' F' U F U R2 F2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 27,
      "stm": 13,
@@ -3985,7 +3985,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 82,
+     "ms": 19,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -3993,7 +3993,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1281,
+     "ms": 464,
      "found": 18,
      "tableSize": 335922,
      "truncated": false
@@ -4001,7 +4001,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 532,
+     "ms": 135,
      "found": 36,
      "tableSize": 115710,
      "truncated": false
@@ -4009,7 +4009,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 301,
+     "ms": 125,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -4017,7 +4017,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 221,
+     "ms": 55,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -4025,7 +4025,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 208,
+     "ms": 88,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -4033,7 +4033,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1629,
+     "ms": 499,
      "found": 56,
      "tableSize": 408492,
      "truncated": false
@@ -4263,7 +4263,7 @@
     {
      "alg": "R2 U R2 U' R2 D U' R2 U' R2 U R2 U' D'",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUD",
      "score": 19,
      "stm": 14,
@@ -4274,7 +4274,7 @@
     {
      "alg": "R2 U R2 U' R2 D U' R2 U' R2 U R2 U D'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUD",
      "score": 19,
      "stm": 14,
@@ -4296,7 +4296,7 @@
     {
      "alg": "R2 U' R2 U R2 D' U R2 U R2 U' R2 U' D",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUD",
      "score": 19,
      "stm": 14,
@@ -4307,7 +4307,7 @@
     {
      "alg": "R2 U' R2 U R2 D' U R2 U R2 U' R2 U D",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUD",
      "score": 19,
      "stm": 14,
@@ -4417,7 +4417,7 @@
     {
      "alg": "R2 U R2 U' R2 D U' R2 D' F2 U F2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 20,
      "stm": 12,
@@ -4428,7 +4428,7 @@
     {
      "alg": "R2 U R2 U' R2 U' D R2 D' F2 U F2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 20,
      "stm": 12,
@@ -4439,7 +4439,7 @@
     {
      "alg": "R2 U R2 U' R2 F2 U' F2 D R2 U' D'",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 20,
      "stm": 12,
@@ -4450,7 +4450,7 @@
     {
      "alg": "R2 U R2 U' R2 F2 U' F2 D R2 U D'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUFD",
      "score": 20,
      "stm": 12,
@@ -4472,7 +4472,7 @@
     {
      "alg": "R2 D' F2 U F2 R2 U R2 U' R2 U' D",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUFD",
      "score": 20,
      "stm": 12,
@@ -4499,7 +4499,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 81,
+     "ms": 17,
      "found": 71,
      "tableSize": 9840,
      "truncated": false
@@ -4507,7 +4507,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1404,
+     "ms": 412,
      "found": 70,
      "tableSize": 335922,
      "truncated": false
@@ -4515,7 +4515,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 423,
+     "ms": 138,
      "found": 123,
      "tableSize": 115710,
      "truncated": false
@@ -4523,7 +4523,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 222,
+     "ms": 124,
      "found": 62,
      "tableSize": 93642,
      "truncated": false
@@ -4531,7 +4531,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 114,
+     "ms": 59,
      "found": 127,
      "tableSize": 19284,
      "truncated": false
@@ -4539,7 +4539,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 195,
+     "ms": 93,
      "found": 985,
      "tableSize": 19284,
      "truncated": false
@@ -4547,7 +4547,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1384,
+     "ms": 496,
      "found": 24,
      "tableSize": 408492,
      "truncated": false
@@ -4700,7 +4700,7 @@
     {
      "alg": "R2 U' R' U' R2 U R U R U2 R",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RU",
      "score": 13,
      "stm": 11,
@@ -4711,7 +4711,7 @@
     {
      "alg": "R U2 R U R U R2 U' R' U' R2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RU",
      "score": 13,
      "stm": 11,
@@ -4755,7 +4755,7 @@
     {
      "alg": "M2 U M2 U2 M' U2 M' U' M2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -4766,7 +4766,7 @@
     {
      "alg": "M2 U M2 U2 M U2 M U' M2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -4777,7 +4777,7 @@
     {
      "alg": "M2 U' M' U2 M' U2 M2 U M2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -4788,7 +4788,7 @@
     {
      "alg": "M2 U' M U2 M U2 M2 U M2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -5019,7 +5019,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 38,
+     "ms": 18,
      "found": 71,
      "tableSize": 9840,
      "truncated": false
@@ -5027,7 +5027,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1566,
+     "ms": 410,
      "found": 70,
      "tableSize": 335922,
      "truncated": false
@@ -5035,7 +5035,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 548,
+     "ms": 144,
      "found": 123,
      "tableSize": 115710,
      "truncated": false
@@ -5043,7 +5043,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 261,
+     "ms": 123,
      "found": 62,
      "tableSize": 93642,
      "truncated": false
@@ -5051,7 +5051,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 110,
+     "ms": 58,
      "found": 127,
      "tableSize": 19284,
      "truncated": false
@@ -5059,7 +5059,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 158,
+     "ms": 90,
      "found": 985,
      "tableSize": 19284,
      "truncated": false
@@ -5067,7 +5067,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1186,
+     "ms": 528,
      "found": 24,
      "tableSize": 408492,
      "truncated": false
@@ -5220,7 +5220,7 @@
     {
      "alg": "R2 U R U R2 U' R' U' R' U2 R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RU",
      "score": 13,
      "stm": 11,
@@ -5231,7 +5231,7 @@
     {
      "alg": "R' U2 R' U' R' U' R2 U R U R2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RU",
      "score": 13,
      "stm": 11,
@@ -5275,7 +5275,7 @@
     {
      "alg": "M2 U M' U2 M' U2 M2 U' M2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -5286,7 +5286,7 @@
     {
      "alg": "M2 U M U2 M U2 M2 U' M2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -5297,7 +5297,7 @@
     {
      "alg": "M2 U' M2 U2 M' U2 M' U M2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -5308,7 +5308,7 @@
     {
      "alg": "M2 U' M2 U2 M U2 M U M2",
      "preAUF": 3,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -5539,7 +5539,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 38,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -5547,7 +5547,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 784,
+     "ms": 396,
      "found": 4,
      "tableSize": 335922,
      "truncated": false
@@ -5555,7 +5555,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 274,
+     "ms": 135,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -5563,7 +5563,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 233,
+     "ms": 122,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -5571,7 +5571,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 164,
+     "ms": 57,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -5579,7 +5579,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 197,
+     "ms": 86,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -5587,7 +5587,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1470,
+     "ms": 528,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -5597,7 +5597,7 @@
     {
      "alg": "R F R F' U F' U' F2 R' F' U' R' U R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 26,
      "stm": 14,
@@ -5608,7 +5608,7 @@
     {
      "alg": "R U' R U F R F2 U F U' F R' F' R'",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 26,
      "stm": 14,
@@ -5619,7 +5619,7 @@
     {
      "alg": "F' U F' U' R' F' R2 U' R' U R' F R F",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 26,
      "stm": 14,
@@ -5630,7 +5630,7 @@
     {
      "alg": "F' R' F' R U' R U R2 F R U F U' F",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 26,
      "stm": 14,
@@ -5655,7 +5655,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 80,
+     "ms": 18,
      "found": 0,
      "tableSize": 9840,
      "truncated": false
@@ -5663,7 +5663,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1338,
+     "ms": 413,
      "found": 16,
      "tableSize": 335922,
      "truncated": false
@@ -5671,7 +5671,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 264,
+     "ms": 134,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -5679,7 +5679,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 340,
+     "ms": 123,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -5687,7 +5687,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 174,
+     "ms": 57,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -5695,7 +5695,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 305,
+     "ms": 89,
      "found": 0,
      "tableSize": 19284,
      "truncated": false
@@ -5703,7 +5703,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1270,
+     "ms": 545,
      "found": 0,
      "tableSize": 408492,
      "truncated": false
@@ -5713,7 +5713,7 @@
     {
      "alg": "R2 U' R2 F2 U' R2 U R2 U F2 U' R2 U R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 19,
      "stm": 14,
@@ -5801,7 +5801,7 @@
     {
      "alg": "R2 U R2 F2 U2 F2 U F2 U F2 U2 R2 U' R2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "RUF",
      "score": 23,
      "stm": 14,
@@ -5834,7 +5834,7 @@
     {
      "alg": "F2 U' F2 R2 U2 R2 U' R2 U' R2 U2 F2 U F2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 23,
      "stm": 14,
@@ -5878,7 +5878,7 @@
     {
      "alg": "F2 U F2 R2 U F2 U' F2 U' R2 U F2 U' F2",
      "preAUF": 0,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "RUF",
      "score": 27,
      "stm": 14,
@@ -5903,7 +5903,7 @@
     "RU": {
      "dA": 8,
      "dW": 8,
-     "ms": 30,
+     "ms": 24,
      "found": 10,
      "tableSize": 9840,
      "truncated": false
@@ -5911,7 +5911,7 @@
     "RUF": {
      "dA": 7,
      "dW": 7,
-     "ms": 1315,
+     "ms": 438,
      "found": 12,
      "tableSize": 335922,
      "truncated": false
@@ -5919,7 +5919,7 @@
     "RUD": {
      "dA": 7,
      "dW": 7,
-     "ms": 453,
+     "ms": 141,
      "found": 0,
      "tableSize": 115710,
      "truncated": false
@@ -5927,7 +5927,7 @@
     "RUL": {
      "dA": 7,
      "dW": 7,
-     "ms": 248,
+     "ms": 110,
      "found": 0,
      "tableSize": 93642,
      "truncated": false
@@ -5935,7 +5935,7 @@
     "RUr": {
      "dA": 6,
      "dW": 7,
-     "ms": 98,
+     "ms": 57,
      "found": 32,
      "tableSize": 19284,
      "truncated": false
@@ -5943,7 +5943,7 @@
     "RUM": {
      "dA": 6,
      "dW": 7,
-     "ms": 295,
+     "ms": 92,
      "found": 1680,
      "tableSize": 19284,
      "truncated": false
@@ -5951,7 +5951,7 @@
     "RUFD": {
      "dA": 6,
      "dW": 6,
-     "ms": 1418,
+     "ms": 473,
      "found": 4,
      "tableSize": 408492,
      "truncated": false
@@ -5994,7 +5994,7 @@
     {
      "alg": "M2 U2 M' U M2 U M2 U M'",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 12.5,
      "stm": 9,
@@ -6027,7 +6027,7 @@
     {
      "alg": "M2 U2 M U M2 U M2 U M",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 12.5,
      "stm": 9,
@@ -6082,7 +6082,7 @@
     {
      "alg": "M' U M2 U M2 U M' U2 M2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 12.5,
      "stm": 9,
@@ -6104,7 +6104,7 @@
     {
      "alg": "M U M2 U M2 U M U2 M2",
      "preAUF": 0,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 12.5,
      "stm": 9,
@@ -6115,7 +6115,7 @@
     {
      "alg": "M2 U M2 U M' U2 M2 U2 M'",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -6126,7 +6126,7 @@
     {
      "alg": "M2 U M2 U M U2 M2 U2 M",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -6137,7 +6137,7 @@
     {
      "alg": "M' U2 M2 U2 M' U' M2 U' M2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -6148,7 +6148,7 @@
     {
      "alg": "M U2 M2 U2 M U' M2 U' M2",
      "preAUF": 1,
-     "postAUF": 3,
+     "postAUF": 1,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -6159,7 +6159,7 @@
     {
      "alg": "M2 U' M' U2 M2 U2 M' U M2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,
@@ -6170,7 +6170,7 @@
     {
      "alg": "M2 U' M U2 M2 U2 M U M2",
      "preAUF": 1,
-     "postAUF": 1,
+     "postAUF": 3,
      "gens": "UM",
      "score": 13.5,
      "stm": 9,

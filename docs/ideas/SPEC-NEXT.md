@@ -51,7 +51,12 @@ Acceptance:
 Tests: a unit state machine with a fake clock (hold threshold, inspection → solve, every overtime mode, truncation, the record shape); Playwright keyboard + touch (phone emulation), a penalty edit, persistence, offline.
 
 ## WP3: Best pair completion and better suggestions (engine)
-**Depends on** the research in `docs/research/open-algorithms.md` (in progress; read it first).
+**Input:** `docs/research/open-algorithms.md` + the prototypes in `docs/research/alg-gen/` (done). Findings that bind this WP:
+- No complete openly licensed OLL/PLL/F2L database exists (the SpeedSolving wiki has no stated licence, csTimer is GPL, J Perm/SpeedCubeDB have none). **Algorithms are self-generated at build time** (a script → a bundled JSON of roughly 30–60 KB), verified against an independent model; external collections are links only.
+- Prototype: meet-in-the-middle over `<R,U>`, `<R,U,F>`, `<R,U,D>`, `<R,U,L>`, `<R,U,F,D>`, `<R,U,r>`, `<R,U,M>`; it rediscovers T, J, R, A, G, U, H, Z, Sune… Missing (E, F, Na, Nb, V, Y, Ja; OLL 2/44/57) need deeper search or `f`/`S`/rotation sets; extend the generator until **all 21 PLL and 57 OLL** have ≥ 2 good algs.
+- Case IDs: derive the 57 OLL / 21 PLL classes from the last-layer group (`ll-classes.mjs`); no external data.
+- Best pair completion: a new IDA* (`pairbest.mjs`) over 18 face turns on a 12-piece tracked state; D turns give pseudo/multislot/keyhole for free; it matched the WASM on 108/108 slot queries. Use the ~332 KB tables (not the 32 MB ones). Expected latency: median 0.2–0.3 s, p95 ≈ 1.8 s per position, so it runs in the analysis worker with a time budget and a "searching…" state, never blocking the UI. Replace the pairs 1–2-only planner path for review suggestions.
+- Replace the hand-typed algs in `src/pll-logic.js` (provenance concern) with generated ones.
 
 The user experiences:
 - In the review/results, at any F2L moment: "best pair completion from here", i.e. the shortest/most ergonomic insertion of any available pair (all 4 slots, pseudo/D-offset frames, keyhole/multislot options), shown against what they did, for **pairs 1–4** (today only 1–2).
@@ -59,7 +64,7 @@ The user experiences:
 - Everything animates on the real 3D cube ("yours vs better").
 
 Acceptance:
-- Engine: pure, offline, in a Web Worker. It returns ranked options with move counts (STM/ETM), the generator set and an ergonomic score. Runtime: <200 ms per position warm, measured and reported.
+- Engine: pure, offline, in a Web Worker. It returns ranked options with move counts (STM/ETM), the generator set and an ergonomic score. Runtime targets: median ≤ 300 ms, p95 ≤ 2 s per position, with a hard budget + partial results; measured and reported.
 - Algorithms come from **self-generated** search results and/or **clearly licensed** sources only, each with credit metadata (FEATURES #16).
 - Plugs into the existing review markers ("better pair", new "better alg/AUF") and the detail view; "no suggestion yet" disappears for pairs 3–4.
 - Case capture: every solve records `ollCase` / `pllCase` (+ recognition vs execution time per case).
@@ -113,7 +118,7 @@ A history page (list, search/filter by session/focus/source, per-solve detail wi
 | `feature/smart-cube-guidance` | everything merged so far | green; the base for all WPs |
 | `worktree-agent-a18f056b4aefe5abc` | WP1 WIP (site structure) | stopped mid-build; passed the pre-commit checks |
 | `worktree-agent-aa96eb3024509a21c` | WP2 WIP (manual timer) | stopped mid-build; passed the pre-commit checks |
-| `docs/research/open-algorithms.md` | WP3/WP5 input | research in progress |
+| `docs/research/open-algorithms.md` + `alg-gen/` | WP3/WP5 input | done (prototypes, verified outputs) |
 
 ## Suggested order and parallelism
 - Wave A (parallel): WP1, WP2, WP3.
