@@ -5,7 +5,7 @@ test('Cross Scout explains how to find a GAN MAC in Chrome', async ({ page }) =>
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText(value) { window.copiedMacHelpAddress = value; return Promise.resolve(); } } });
   });
-  await page.goto('/#/cross-scout');
+  await page.goto('/#/drills/scout');
   await page.locator('#scout-mac-help summary').click();
   await expect(page.locator('#scout-mac-help')).toContainText('chrome://bluetooth-internals/#devices');
   await expect(page.locator('#scout-mac-help')).toContainText('Start Scan');
@@ -28,13 +28,13 @@ test('smart-cube picker does not hide devices behind name filters', async ({ pag
       },
     });
   });
-  await page.goto('/#/cross-scout');
+  await page.goto('/#/drills/scout');
   await page.locator('#scout-smart-connect').click();
   await expect.poll(() => page.evaluate(() => window.smartCubePickerOptions?.acceptAllDevices)).toBe(true);
 });
 
 test('scramble turn guide names the next face and direction', async ({ page }) => {
-  await page.goto('/#/cross-scout');
+  await page.goto('/#/drills/scout');
   const scramble = page.locator('#scout-scramble');
   await scramble.fill("R U' F2");
   await expect(page.locator('#scout-turn-guide')).toContainText('Scramble turn 1 of 3');
@@ -46,7 +46,7 @@ test('scramble turn guide names the next face and direction', async ({ page }) =
 });
 
 test('Reset view restores the Cross Scout camera after a drag', async ({ page }) => {
-  await page.goto('/#/cross-scout');
+  await page.goto('/#/drills/scout');
   const canvas = page.locator('#scout-cube canvas');
   await canvas.scrollIntoViewIfNeeded();
   const initial = await canvas.getAttribute('data-camera-pose');
@@ -65,7 +65,7 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'bluetooth', { configurable: true, value: { requestDevice() {} } });
   });
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.evaluate(async () => {
     const { createCrossScout } = await import('/src/cross-scout.js');
     const { createSmartCubeSession } = await import('/src/smart-cube-session.js');

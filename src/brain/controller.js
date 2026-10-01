@@ -53,7 +53,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   const undoStack = [];         // solves deleted in this view, newest last (undoDelete)
   let active = true;
   let detached = false;
-  let refreshingHistory = false;
   let vm = null;
   let track = createTrack();
   let skips = [];               // { kind, label } hurrahs this solve (for the toast)
@@ -549,7 +548,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // --- Actions ----------------------------------------------------------------------------------
 
   function dispatch(action) {
-    if (detached || !action || refreshingHistory) return;
+    if (detached || !action) return;
     // (The site mode is the page's, not the session's: a replay must not flip it.)
     if (RECORDED.has(action.type) && !(action.type === 'setSetting' && (LIVE_RECORDED_PATHS.test(action.path) || action.path === 'theme'))) record('ui', { type: 'action', action });
     switch (action.type) {
@@ -738,7 +737,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // --- Keyboard and theme -------------------------------------------------------------------------
 
   function onKeydown(event) {
-    if (!active || detached || refreshingHistory || !vm) return;
+    if (!active || detached || !vm) return;
     if (event.key === 'Escape' && reviewUi.detail && vm.screen === 'results' && !settingsOpen && !debugOpen) { event.preventDefault(); dispatch({ type: 'closeDetail' }); return; }
     const target = event.target;
     const focused = document.activeElement;
@@ -797,8 +796,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       if (detached) return;
       active = value;
       const token = ++activationToken;
-      if (!value) { refreshingHistory = false; live.cancel(); cancelAnimationFrame(raf); raf = 0; return; }
-      refreshingHistory = true;
+      if (!value) { live.cancel(); cancelAnimationFrame(raf); raf = 0; return; }
       render();
       await historyReady;
       if (detached || !active || token !== activationToken) return;
@@ -811,7 +809,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         const latest = loadSettings(globalThis.localStorage);
         applySettings(latest);
       }
-      refreshingHistory = false;
       render();
     },
     detach() {

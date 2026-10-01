@@ -6,7 +6,7 @@ import { test, expect } from 'playwright/test';
 const STYLES = ['orbit', 'mono'];
 
 async function mountBrain(page, style, { connected = true } = {}) {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.evaluate(async ([style, connected]) => {
     localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));

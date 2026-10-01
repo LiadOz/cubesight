@@ -2,8 +2,8 @@ import { test, expect } from 'playwright/test';
 
 test.setTimeout(60_000);
 async function openScout(page){
-  await page.goto('/');
-  await page.getByRole('link', { name: 'Cross Scout',exact:true}).click();
+  await page.goto('/#/drills/corners');
+  await page.goto('/#/drills/scout');
   await expect(page.locator('#scout-cube canvas')).toBeVisible();
 }
 
@@ -149,14 +149,14 @@ test('scout can tumble past its poles and has no corner timeout or scoring',asyn
   await page.clock.fastForward(30_000);
   await expect(page.locator('#pause-overlay')).toBeHidden();
   await expect(page.locator('.retention-panel')).toBeHidden();
-  await page.getByRole('link', { name: 'Corner recognition',exact:true}).click();
+  await page.goto('/#/drills/corners');
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-rotation','locked');
 });
 
 test('mobile can switch from page scrolling to unrestricted touch rotation',async({browser})=>{
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   const page=await context.newPage();
-  await page.goto('/#/cross-scout');
+  await page.goto('/#/drills/scout');
   const canvas=page.locator('#scout-cube canvas');
   await expect(canvas).toBeVisible();
   await expect(canvas).toHaveAttribute('data-touch-mode','page-scroll');

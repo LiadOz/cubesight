@@ -100,10 +100,13 @@ export function createPLLTrainer(root) {
   const cases = catalog();
   const families = [...new Set(cases.map((item) => item.family))].filter(Boolean);
   const stats = readStats(cases);
-  let mode = 'learn';
+  const storedMode = localStorage.getItem('cubesight-pll-mode');
+  let mode = ['learn', 'mix', 'transfer'].includes(storedMode) ? storedMode : 'learn';
   // Learn starts with one small family/block. Mixing all 21 cases is useful
   // later, but is needlessly noisy for a first exposure.
-  let family = families[0] || 'all';
+  const storedFamily = localStorage.getItem('cubesight-pll-family');
+  let family = storedFamily === 'all' || families.includes(storedFamily) ? storedFamily : families[0] || 'all';
+  if (mode !== 'learn') family = 'all';
   let active = true;
   let trial = null;
   let trialToken = 0;
@@ -344,7 +347,9 @@ export function createPLLTrainer(root) {
   }
   function onClick(event) { const button = event.target.closest('[data-pll-answer]'); if (button) answer(button.dataset.pllAnswer); }
   $('#pll-answers').addEventListener('click', onClick); $('#pll-next').addEventListener('click', newTrial); $('#pll-skip').addEventListener('click', () => answer('', true)); $('#pll-resume').addEventListener('click', newTrial); $('#pll-clear').addEventListener('click', () => { if (confirm('Clear all PLL recognition history?')) clearHistory(); });
-  $('#pll-family').addEventListener('change', (event) => { family = event.target.value; renderAnswers(); newTrial(); });
+  $('#pll-family').value = family;
+  $('#pll-mode-note').textContent = MODES.find((item) => item.id === mode).note;
+  $('#pll-family').addEventListener('change', (event) => { family = event.target.value; localStorage.setItem('cubesight-pll-family', family); renderAnswers(); newTrial(); });
   $('#pll-glance').addEventListener('change', (event) => { glanceEnabled = event.target.checked; localStorage.setItem('cubesight-pll-glance-enabled', String(glanceEnabled)); newTrial(); });
   $('#pll-glance-ms').value = String(glanceMs); $('#pll-glance-ms').addEventListener('change', (event) => { glanceMs = Math.max(GLANCE_MIN, Math.min(GLANCE_MAX, Number(event.target.value) || 600)); localStorage.setItem('cubesight-pll-glance-ms', String(glanceMs)); $('#pll-glance-caption').textContent = `Adaptive · ${glanceMs} ms`; if (glanceEnabled) newTrial(); });
   root.querySelectorAll('[data-pll-mode]').forEach((button) => button.addEventListener('click', () => {
@@ -352,6 +357,8 @@ export function createPLLTrainer(root) {
     // Learn deliberately blocks a small family; Mix and Transfer begin with
     // all cases so their discrimination/transfer purpose is explicit.
     family = mode === 'learn' ? (families[0] || 'all') : 'all';
+    localStorage.setItem('cubesight-pll-mode', mode);
+    localStorage.setItem('cubesight-pll-family', family);
     $('#pll-family').value = family;
     root.querySelectorAll('[data-pll-mode]').forEach((item) => item.classList.toggle('active', item === button));
     $('#pll-mode-note').textContent = MODES.find((item) => item.id === mode).note;

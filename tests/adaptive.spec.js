@@ -15,7 +15,7 @@ async function skipAndWait(page) {
 }
 
 async function startGlance(page, exposure = '1500') {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.locator('#exposure-select').selectOption(exposure);
   await page.locator('#glance-toggle').check();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', /^(visible|covered)$/, { timeout: 4_000 });

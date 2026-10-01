@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import { APP_NAME } from './src/copy/nav.js';
 
 function currentRevision() {
   if (process.env.CUBESIGHT_REF) return process.env.CUBESIGHT_REF;
@@ -23,6 +24,12 @@ const buildInfoPlugin = {
   generateBundle() {
     this.emitFile({ type: 'asset', fileName: 'version.json', source: buildInfo });
   },
+};
+
+// The product name comes from src/copy/nav.js (one place to rename it).
+const appNamePlugin = {
+  name: 'cubesight-app-name',
+  transformIndexHtml: { order: 'pre', handler: html => html.replaceAll('%APP_NAME%', APP_NAME) },
 };
 
 // Dev-only diagnostics sink: trainers POST connection logs / errors here so the agent
@@ -78,6 +85,7 @@ export default defineConfig({
   },
   plugins: [
     buildInfoPlugin,
+    appNamePlugin,
     devLogPlugin,
     recordingPlugin,
     VitePWA({
@@ -85,9 +93,10 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         id: '/',
-        name: 'CubeSight — Recognition Training',
-        short_name: 'CubeSight',
-        description: 'Offline Rubik\'s Cube recognition, F2L, PLL, and cross-planning practice.',
+        name: APP_NAME,
+        short_name: APP_NAME,
+        description: 'Solve with a smart cube, drill recognition, and track progress. Works offline.',
+        // The home route (#/) picks solve or drills for the device.
         start_url: '/',
         scope: '/',
         display: 'standalone',

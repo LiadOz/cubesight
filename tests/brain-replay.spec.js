@@ -46,7 +46,7 @@ async function makeRecording() {
 
 async function openReplay(page, json, speed) {
   await page.route('**/replay-fixture.json', route => route.fulfill({ body: json, contentType: 'application/json' }));
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.evaluate(() => localStorage.clear());
   await page.goto(`/?replay=/replay-fixture.json&replaySpeed=${speed}#/brain`);
 }

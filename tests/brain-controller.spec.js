@@ -14,7 +14,7 @@ const storedSolves = page => page.evaluate(async () => {
   return all;
 });
 async function mountController(page, { fresh = true } = {}) {
-  await page.goto('/');
+  await page.goto('/#/drills/corners');
   await page.evaluate(async fresh => {
     if (fresh) localStorage.clear();
     const { mountBrainController } = await import('/src/brain/controller.js');

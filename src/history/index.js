@@ -8,6 +8,7 @@ import { parseCsTimer, exportCsTimer, filterHistory } from './cstimer.js';
 import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { readStickerPalette, themedRender } from '../brain/cube-theme.js';
+import { syncPageTokens } from '../pages/tokens.js';
 
 export const historyTime = record => {
   if (!Number.isFinite(record.solveMs)) return '—';
@@ -30,7 +31,7 @@ const download = (text, name) => {
 export function initHistory(host) {
   let store, active = false, cube = null, selected = null, move = 0, playback = null;
   const settings = loadSettings(globalThis.localStorage);
-  host.innerHTML = `<section class="brain history-page" data-brain-style="${settings.style}">
+  host.innerHTML = `<section class="brain cs-page history-page" data-brain-style="${settings.style}">
     <header><h1>history</h1><p>Solves and saved moments on this device.</p><a href="#/solve">back to solve</a></header>
     <form class="history-filters" aria-label="Filter history">
       <label>search<input type="search" name="query" placeholder="scramble, case, time" /></label>
@@ -48,6 +49,7 @@ export function initHistory(host) {
     <section class="history-detail" aria-label="Solve detail"><p>Select a solve to see its scramble and replay.</p></section></div>
   </section>`;
   const root = host.firstElementChild;
+  syncPageTokens(root);
   const form = root.querySelector('form');
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
@@ -117,6 +119,8 @@ export function initHistory(host) {
   async function onClick(event) {
     const button = event.target.closest('button');
     if (!button) return;
+    await ready;
+    if (!active) return;
     if (button.dataset.at) { showRecord(store.records.find(r => r.at === Number(button.dataset.at))); return; }
     const action = button.dataset.action;
     if (action === 'backup' || action === 'cstimer') {
@@ -131,7 +135,9 @@ export function initHistory(host) {
         else { if (move === selected.solveMoves.length) move = 0; button.textContent = 'pause'; playback = setInterval(() => { move++; showPosition(); if (move >= selected.solveMoves.length) { stopPlayback(); button.textContent = 'play'; } }, 500); }
       } else { stopPlayback(); move = Math.min(selected.solveMoves.length, Math.max(0, move + (action === 'next' ? 1 : -1))); showPosition(); }
     } else if (action === 'delete') {
-      deleted = store.remove(selected.at); stopPlayback(); cube?.destroy(); cube = null; selected = null;
+      deleted = store.remove(selected.at);
+      if (!deleted) { report(store.warning || 'This history is read-only. Update the app and reload.'); return; }
+      stopPlayback(); cube?.destroy(); cube = null; selected = null;
       detail.replaceChildren(make('p', 'Solve deleted.'));
       const undo = make('button', 'undo'); undo.type = 'button'; undo.dataset.action = 'undo'; detail.append(undo); refreshSessions(); renderList();
     } else if (['none', 'plus2', 'dnf'].includes(action)) {
@@ -139,6 +145,8 @@ export function initHistory(host) {
     }
   }
   async function onChange(event) {
+    await ready;
+    if (!active) return;
     if (event.target.dataset.import) {
       const file = event.target.files?.[0]; if (!file) return;
       try {
@@ -173,6 +181,7 @@ export function initHistory(host) {
       await ready;
       if (!active) return;
       root.dataset.brainStyle = loadSettings(globalThis.localStorage).style;
+      syncPageTokens(root);
       await store.reload();
       refreshSessions(); renderList();
       if (selected) {

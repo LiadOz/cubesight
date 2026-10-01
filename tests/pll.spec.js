@@ -1,7 +1,7 @@
 import { test, expect } from 'playwright/test';
 
 async function openPLL(page) {
-  await page.goto('/#/pll-recognition');
+  await page.goto('/#/drills/pll');
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
 }
 
@@ -74,7 +74,7 @@ test('PLL stays within a mobile viewport and collapses settings', async ({ page 
 test('PLL canvas stays bounded on a high-density Android display', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await context.newPage();
-  await page.goto('/#/pll-recognition');
+  await page.goto('/#/drills/pll');
   const canvas = page.locator('#pll-cube canvas');
   await expect(canvas).toBeVisible();
   const sizes = [];
@@ -100,7 +100,7 @@ test('PLL remains usable with the SVG compatibility view when WebGL is unavailab
   await page.addInitScript(() => {
     HTMLCanvasElement.prototype.getContext = () => null;
   });
-  await page.goto('/#/pll-recognition');
+  await page.goto('/#/drills/pll');
   await expect(page.locator('#pll-cube svg')).toBeVisible();
   await expect(page.locator('.pll-stage-topline .view-lock')).toHaveText('Fixed 2D compatibility view');
   await expect(page.locator('#pll-cube [data-kind="corner"]')).toHaveCount(12);
