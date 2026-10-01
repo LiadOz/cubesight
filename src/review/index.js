@@ -8,6 +8,8 @@ import { openHistory } from '../store/history.js';
 import { smartCube } from '../smart-cube-bluetooth.js';
 import { createSolveLive } from '../solve-live.js';
 import { analysisClient } from '../analysis/client.js';
+import { SUMMARY_VERSION } from '../analysis/summary.js';
+import { ENGINE_VERSION } from '../analysis/segment.js';
 import { buildImportedReconstruction, parseAlgCubingUrl, physicalModelTokens, tokenizeReconstruction } from './import-parser.js';
 import { applyMovesInChunks, gradeRetry, retryPlan, retryRegradeRecord, stateAfter } from './replay.js';
 import { graphPath, keyMoments, labelsFor, stageOf, stageScores } from './view-model.js';
@@ -55,7 +57,7 @@ export function createSolveReview(host, routeContext = {}) {
       if (route.imported) renderImport();
       else if (!record) renderError('This solve is no longer in your local history.');
       else {
-        if (!record.analysis) {
+        if (record.analysis?.v !== SUMMARY_VERSION || record.analysis?.engine !== ENGINE_VERSION) {
           const analysis = await analysisClient().analyze(record);
           if (detached) return;
           if (analysis) record = saveAnalysis(record, analysis);

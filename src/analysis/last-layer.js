@@ -11,6 +11,7 @@ import { analysisStateFromScramble, applyAnalysisMoves, parseAnalysisMoves } fro
 const AUFS = Object.freeze(['', 'U', 'U2', "U'"]);
 const string = moves => (moves ?? []).join(' ');
 const validIndex = (index, length) => Number.isInteger(index) && index >= 0 && index < length;
+const reached = (index, length) => Number.isInteger(index) && index >= -1 && index < length;
 const metric = alg => algorithmMetrics(alg);
 const candidateOrder = (a, b) => a.stm - b.stm || a.etm - b.etm || (a.rank ?? 999) - (b.rank ?? 999) || a.moves.localeCompare(b.moves);
 
@@ -32,13 +33,13 @@ function stages(segmentation) {
   return { f2lEnd, ollStart: f2lEnd, ollEnd, pllStart, pllEnd };
 }
 
-function timing(segmentation, from, to) {
+function timing(segmentation, from, to, completed = true) {
   const rows = segmentation.frames ?? [];
-  if (!validIndex(from, rows.length) || !validIndex(to, rows.length) || to < from || !Number.isFinite(rows[from]?.t) || !Number.isFinite(rows[to]?.t)) {
-    return { recognitionMs: null, executionMs: null };
-  }
-  const gap = Number.isFinite(rows[from].gapMs) ? Math.max(0, rows[from].gapMs) : null;
-  return { recognitionMs: gap, executionMs: Math.max(0, Math.round(rows[to].t - rows[from].t)) };
+  const hasStart = validIndex(from, rows.length) && Number.isFinite(rows[from]?.t);
+  const recognitionMs = hasStart && Number.isFinite(rows[from].gapMs) ? Math.max(0, rows[from].gapMs) : null;
+  const hasEnd = completed && hasStart && validIndex(to, rows.length) && to >= from && Number.isFinite(rows[to]?.t);
+  const executionMs = hasEnd ? Math.max(0, Math.round(rows[to].t - rows[from].t)) : null;
+  return { recognitionMs, executionMs };
 }
 
 function verifiedAlgs(caseRow) {
@@ -114,6 +115,9 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
   const limits = stages(segmentation);
   if (!limits) return null;
   const puzzle = kpuzzle ?? await getPuzzle();
+  const ollCompleted = reached(segmentation.marks.eoIdx, segmentation.moves.length)
+    && reached(segmentation.marks.coIdx, segmentation.moves.length);
+  const pllCompleted = reached(segmentation.marks.solvedIdx, segmentation.moves.length);
   const out = { oll: null, pll: null, lastLayerReference: null };
   const ollSetup = f2lSetup(segmentation, limits.f2lEnd);
   const ollCaseSignature = signature(puzzle, invertAlg(ollSetup.join(' ')).join(' '), 'oll');
@@ -124,8 +128,8 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
     const used = metric(usedMoves.join(' '));
     const pattern = puzzle.defaultPattern().applyAlg(ollSetup.join(' '));
     const best = bestOll(ollCase, pattern);
-    const measured = timing(segmentation, limits.ollStart, limits.ollEnd);
-    const better = best && usedMoves.length && used.stm > best.stm ? { stm: used.stm - best.stm, loss: used.stm - best.stm, best: best.moves } : null;
+    const measured = timing(segmentation, limits.ollStart, limits.ollEnd, ollCompleted);
+    const better = ollCompleted && best && usedMoves.length && used.stm > best.stm ? { stm: used.stm - best.stm, loss: used.stm - best.stm, best: best.moves } : null;
     out.oll = { caseId: ollCase.id, name: ollCase.name, number: ollCase.number ?? null, from: limits.ollStart, to: Math.max(limits.ollStart - 1, limits.ollEnd),
       used: { moves: string(usedMoves), stm: used.stm, etm: used.etm }, best, better, ...measured };
   }
@@ -141,10 +145,10 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
       const usedCore = metric(parts.core.join(' '));
       const usedTotal = metric(usedMoves.join(' '));
       const best = bestPllFromState(canonical, caseRow);
-      const measured = timing(segmentation, limits.pllStart, limits.pllEnd);
-      const better = best && usedMoves.length && usedCore.stm > best.coreStm ? { stm: usedCore.stm - best.coreStm, loss: usedCore.stm - best.coreStm, best: best.moves } : null;
+      const measured = timing(segmentation, limits.pllStart, limits.pllEnd, pllCompleted);
+      const better = pllCompleted && best && usedMoves.length && usedCore.stm > best.coreStm ? { stm: usedCore.stm - best.coreStm, loss: usedCore.stm - best.coreStm, best: best.moves } : null;
       const actualAufStm = metric([...parts.pre, ...parts.post].join(' ')).stm;
-      const extraAuf = best && actualAufStm > best.aufStm
+      const extraAuf = pllCompleted && best && actualAufStm > best.aufStm
         ? { loss: actualAufStm - best.aufStm, indices: parts.aufIndices.slice(0, actualAufStm - best.aufStm), used: string([...parts.pre, ...parts.post]), best: string([best.pre, best.post].filter(Boolean)) }
         : null;
       out.pll = { caseId: caseRow.id, name: caseRow.name, from: limits.pllStart, to: Math.max(limits.pllStart - 1, limits.pllEnd),
@@ -153,7 +157,7 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
     }
   }
 
-  if (out.oll || out.pll) {
+  if (ollCompleted && pllCompleted && (out.oll || out.pll)) {
     const ollRef = out.oll?.best?.stm ?? 0;
     const pllRef = out.pll?.best?.stm ?? 0;
     const pllAuf = out.pll?.best?.aufStm ?? 0;

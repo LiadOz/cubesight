@@ -49,6 +49,18 @@ test('OLL recognition accounts for a U AUF and retains its verified continuation
   assert.ok([...after.CORNERS.orientation.slice(0, 4), ...after.EDGES.orientation.slice(0, 4)].every(value => value === 0));
 });
 
+test('an already oriented EO marker at -1 still counts when timing a Sune OLL', async () => {
+  const row = getCase('oll/27');
+  const segmentation = {
+    solved: false, scramble: row.setup, moves: ['R'], crossFace: 'D', frames: timingFrames(1),
+    normalized: { scramble: row.setup, moves: ['R'] },
+    marks: { pairIdx: [-1, -1, -1, -1], eoIdx: -1, coIdx: 0, solvedIdx: null },
+  };
+  const result = await evaluateLastLayer(segmentation);
+  assert.equal(result.oll.caseId, 'oll/27');
+  assert.equal(Number.isFinite(result.oll.executionMs), true, 'the pre-oriented EO milestone does not make the completed OLL look unfinished');
+});
+
 test('PLL best continuation includes the needed AUF and replays the actual case state', async () => {
   const prompt = generatePllCase('T', { auf: 'U2' });
   const solve = ['U2', ...prompt.algorithm.split(' ')];
@@ -93,6 +105,43 @@ test('an incomplete recording after F2L retains the current OLL case and its gui
   assert.equal(result?.oll?.caseId, 'oll/27');
   assert.ok(result.oll.best.moves.length > 0);
   assert.equal(result.pll, null, 'PLL is not offered while OLL is unfinished');
+});
+
+test('unfinished OLL and PLL stages keep case suggestions but do not receive efficiency or execution grades', async () => {
+  const ollMoves = getCase('oll/27').algs[0].moves.split(' ');
+  const pllMoves = getCase('pll/T').algs[0].moves.split(' ');
+  const cancelPairs = (face, count) => Array.from({ length: count }, () => [face, `${face}'`]).flat();
+  // Add neutral move pairs inside OLL so its partial recorded move count exceeds
+  // the verified algorithm, then add a slower OLL and unfinished PLL tail.
+  const completeSolution = [ollMoves[0], ...cancelPairs('U', 16), ...ollMoves.slice(1), ...pllMoves];
+  const scramble = invertAlg(completeSolution.join(' ')).join(' ');
+  const sampleTimes = moves => moves.map((_, index) => 500 + index * 100);
+
+  const partialOllMoves = [ollMoves[0], ...cancelPairs('U', 16)];
+  const partialOll = segmentSolve({ scramble, moves: partialOllMoves, crossFace: 'D', moveTimes: sampleTimes(partialOllMoves) });
+  const partialOllReview = await evaluateLastLayer(partialOll);
+  assert.ok(partialOllReview.oll.used.stm > partialOllReview.oll.best.stm);
+  assert.equal(partialOllReview.oll.better, null);
+  assert.equal(partialOllReview.oll.executionMs, null);
+  assert.equal(partialOllReview.lastLayerReference, null);
+
+  const complete = segmentSolve({ scramble, moves: completeSolution, crossFace: 'D', moveTimes: sampleTimes(completeSolution) });
+  const ollEnd = Math.max(complete.marks.eoIdx, complete.marks.coIdx);
+  const partialPllMoves = [
+    ...completeSolution.slice(0, ollEnd + 1),
+    ...cancelPairs('R', 16),
+    ...cancelPairs('U', 16),
+  ];
+  const partialPll = segmentSolve({ scramble, moves: partialPllMoves, crossFace: 'D', moveTimes: sampleTimes(partialPllMoves) });
+  const partialPllReview = await evaluateLastLayer(partialPll);
+  assert.ok(partialPllReview.oll.used.stm > partialPllReview.oll.best.stm);
+  assert.ok(partialPllReview.oll.better?.loss > 0, 'a completed OLL can still be compared when PLL is unfinished');
+  assert.ok(Number.isFinite(partialPllReview.oll.executionMs), 'completed OLL execution timing remains available');
+  assert.ok(partialPllReview.pll.used.coreStm > partialPllReview.pll.best.coreStm);
+  assert.equal(partialPllReview.pll.better, null);
+  assert.equal(partialPllReview.pll.extraAuf, null);
+  assert.equal(partialPllReview.pll.executionMs, null);
+  assert.equal(partialPllReview.lastLayerReference, null);
 });
 
 test('summary maps canonical D-frame OLL suggestions back to the solve face and preserves source notation', () => {
