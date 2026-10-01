@@ -72,7 +72,7 @@ for (const style of STYLES) {
     await expect.poll(states).toMatchObject({ cross: 'done', pair1: 'done', pair2: 'done', pair3: 'current' });
     await expect(brain.locator(`${SEGMENTS}[data-key="pair2"]`)).not.toHaveAttribute('data-state', 'skipped');
     await expect(brain.locator(`${SEGMENTS}[data-key="pair1"]`)).not.toHaveAttribute('data-state', 'skipped');
-    await expect(brain.locator('#brain-coach')).toContainText('X-cross!');
+    await expect(brain.locator('#brain-coach')).toContainText('xx-cross!');
     await expect(brain.locator('.b-toast')).toContainText('x-cross');
     const tags = await brain.locator(`${SEGMENTS}[data-key="cross"]`).evaluate((node, style) => {
       if (style === 'mono') return node.querySelector('.m-seg-tags').textContent;

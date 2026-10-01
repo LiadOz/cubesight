@@ -8,6 +8,7 @@ import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
 import { T, MSG, fmt, KEYS } from './copy/terms.js';
 import { TOOL_PATHS, resolveRoute, keyScope, parseHash } from './routes.js';
 import { rememberDrill } from './drills/catalog.js';
+import { createRoundPanel } from './drills/round-panel.js';
 import { syncPageTokens } from './pages/tokens.js';
 import { renderCube } from './cube-renderer.js';
 import { createCube3D } from './cube-3d.js';
@@ -152,6 +153,7 @@ let pll = null;
 let pllLoad = null;
 let f2lCube3D = null;
 let paused = false;
+const legacyRounds = Object.create(null);
 let f2lState = {
   drill: ['deduction', 'scan', 'planner'].includes(localStorage.getItem('cubesight-f2l-mode')) ? localStorage.getItem('cubesight-f2l-mode') : 'deduction',
   current: null,
@@ -616,7 +618,7 @@ function syncExposureSelect() {
 
 function startCase(successNotice = null) {
   cancelCornerTimers();
-  if (activeTool !== 'corner' || paused) return;
+  if (activeTool !== 'corner' || paused || legacyRounds.corner?.complete) return;
   state.current = createCase();
   state.current.viewPose = chooseCornerView(previousCornerView);
   previousCornerView = state.current.viewPose.id;
@@ -689,6 +691,7 @@ function answerRecall(color, skipped, answeredAt) {
   // An interrupted sequence is never partly scored. Commit only all three.
   const outcomes = current.recallAnswers.map((response, index) =>
     recordCornerAnswer(current.targets[index], response.color, response.skipped, response.ms, index + 1, response.at));
+  if (legacyRounds.corner?.complete) return;
   const allCorrect = outcomes.every((outcome) => outcome.isCorrect);
   const pacingResult = glancePacing.record(allCorrect);
   state.exposureMs = glancePacing.exposureMs;
@@ -808,6 +811,7 @@ function recordCornerAnswer(active, color, skipped, elapsed, position, at = Date
   });
   stats.history = stats.history.slice(-1000);
   saveStats();
+  legacyRounds.corner?.record({correct:isCorrect,ms:elapsed,caseId:family,at});
   return { isCorrect, correctColor };
 }
 
@@ -820,6 +824,7 @@ function answer(color, skipped = false) {
   cancelCornerTimers();
   const elapsed = Math.round(answeredAt - state.startedAt);
   const { isCorrect, correctColor } = recordCornerAnswer(activeTarget(), color, skipped, elapsed, state.current.activeIndex + 1);
+  if (legacyRounds.corner?.complete) return;
   showCornerResult(isCorrect, correctColor, skipped);
   const feedback = document.querySelector('#feedback');
   if (!isCorrect) {
@@ -1133,6 +1138,7 @@ async function newF2LPlannerCase() {
     f2lState.planner = { setup, choices, orientation: colorNeutralOrientation(seed), answer: null };
     f2lState.locked = false;
     f2lState.message = '';
+    f2lState.startedAt = performance.now();
     renderF2LPlanner();
     return;
   }
@@ -1246,7 +1252,7 @@ function renderF2L() {
 function newF2LCase() {
   clearTimeout(trialTimeout);
   clearTimeout(f2lState.nextTimer);
-  if (paused || activeTool !== 'f2l') return;
+  if (paused || activeTool !== 'f2l' || legacyRounds.f2l?.complete) return;
   if (f2lState.drill === 'planner') return newF2LPlannerCase();
   // Pick the neutral bottom once; adaptive case filtering must not bias it.
   const bottom = Object.keys(COLORS)[randomSeed() % 6];
@@ -1337,6 +1343,8 @@ function handleF2LPiece({ piece }) {
   }
   f2lState.feedback = { status: correct ? 'correct' : 'wrong', piece };
   if (f2lState.drill === 'scan') {
+    legacyRounds.f2l?.record({correct:Boolean(correct),ms:Math.round(performance.now()-f2lState.firstSelectedAt),caseId:pseudoScan?pseudoPairId:first.pairId});
+    if (legacyRounds.f2l?.complete) return;
     const firstPiece = f2lState.selected;
     f2lState.selected = null;
     f2lState.firstSelectedAt = 0;
@@ -1366,6 +1374,8 @@ function handleF2LPiece({ piece }) {
   const pairId = first.pairId || second.pairId;
   if (pairId) review(learning, pairLearningKey(current, pairId), { correct: Boolean(correct), ms: elapsed, responseThresholdMs: 3000 });
   saveLearningState();
+  legacyRounds.f2l?.record({correct:Boolean(correct),ms:elapsed,caseId:pairId});
+  if (legacyRounds.f2l?.complete) return;
   if (correct) {
     f2lState.matchedPairIds.push(first.pairId);
     f2lState.message = 'Pair found. Nice deduction.';
@@ -1439,6 +1449,7 @@ const cubeConnected = () => {
   const phase = document.documentElement.dataset.cubePhase;
   return Boolean(phase) && phase !== 'disconnected';
 };
+let routedHash = null;
 function syncRoute(initial = false) {
   const { tool, hash } = resolveRoute(location.hash, { isPhone: isPhone(), cubeConnected: cubeConnected() });
   if (location.hash !== hash) history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
@@ -1446,7 +1457,8 @@ function syncRoute(initial = false) {
     reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
   }
   reviewRouteHash = tool === 'review' ? hash : '';
-  setTool(tool, initial);
+  setTool(tool, initial || routedHash !== hash);
+  routedHash = hash;
   rememberDrill(localStorage, tool, hash);
 }
 
@@ -1465,6 +1477,7 @@ function setTool(tool, initial = false) {
   if (activeTool === 'review' && tool !== 'review') {
     reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
   }
+  Object.values(legacyRounds).forEach(panel => panel.setActive(false));
   activeTool = tool;
   document.title = `${PAGE_TITLES[tool]} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
@@ -1483,6 +1496,7 @@ function setTool(tool, initial = false) {
     f2lState.plannerGeneration += 1;
   }
   cancelCornerTimers();
+  legacyRounds[tool]?.setActive(true);
   if (tool === 'brain') {
     state.locked = true;
     f2lState.locked = true;
@@ -1545,6 +1559,15 @@ function setTool(tool, initial = false) {
   } else {
     f2lCube3D?.setMode('f2l');
     setMode(state.mode);
+  }
+  if (tool === 'corner' || tool === 'f2l') {
+    legacyRounds[tool] ??= createRoundPanel(document.querySelector(`#${TOOL_VIEWS[tool]}`), {
+      drill: tool === 'corner' ? 'corners' : 'f2l',
+      getSettings: () => tool === 'corner' ? {mode:state.mode,glance:state.glance,exposureMs:state.exposureMs} : {drill:f2lState.drill,pseudo:f2lState.plannerShiftD},
+      onComplete: () => { if(tool==='corner'){state.locked=true;cancelCornerTimers();document.querySelectorAll('.answer-button').forEach(button=>button.disabled=true);} else {f2lState.locked=true;clearTimeout(f2lState.nextTimer);stopF2LScan();f2lState.plannerGeneration++;} },
+      onRestart: () => { paused=false;if(tool==='corner')startCase();else newF2LCase(); },
+    });
+    legacyRounds[tool].setActive(true);
   }
   updateHelp();
   updateLearningUI();
@@ -1737,6 +1760,8 @@ document.addEventListener('click', (event) => {
   const plannerChoice = event.target.closest('[data-planner-choice]');
   if (plannerChoice && f2lState.drill === 'planner' && f2lState.planner?.answer == null) {
     f2lState.planner.answer = Number(plannerChoice.dataset.plannerChoice);
+    const choice = f2lState.planner.choices[f2lState.planner.answer];
+    legacyRounds.f2l?.record({correct:choice.weight===f2lState.planner.choices[0].weight,ms:Math.round(performance.now()-f2lState.startedAt),caseId:choice.slot});
     f2lState.locked = true;
     return renderF2LPlanner();
   }
@@ -1806,6 +1831,7 @@ document.querySelector('#planner-shift-d').addEventListener('change', (event) =>
 });
 
 document.addEventListener('keydown', (event) => {
+  if (legacyRounds[activeTool]?.handleKey(event)) return;
   // Keys are scoped per route: only the corner and F2L drills use this handler. Every other page
   // (solve, hub, algs, progress, studio, PLL, Scout) owns its keys or has none.
   const scope = keyScope(activeTool);

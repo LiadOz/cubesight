@@ -34,6 +34,7 @@ async function prepareF2L(page, selectedFixture = fixture) {
 }
 
 async function clickPiece(page, piece) {
+  await page.locator('#f2l-cube canvas').scrollIntoViewIfNeeded();
   const point = await page.evaluate(async (piece) => {
     const THREE = await import('/node_modules/three/build/three.module.js');
     const canvas = document.querySelector('#f2l-cube canvas');
@@ -206,9 +207,9 @@ test('best-next-pair drill shows locally verified weighted choices', async ({ pa
 test('opening help pauses the trial until explicit resume', async ({ page }) => {
   await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'help' }).click();
-  await page.getByRole('button', { name: 'Start training' }).click();
+  await page.getByRole('button', { name: 'start', exact:true }).click();
   await expect(page.locator('#pause-overlay')).toBeVisible();
-  await page.getByRole('button', { name: 'Resume with a fresh case' }).click();
+  await page.getByRole('button', { name: 'resume', exact:true }).click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
 });
 

@@ -55,7 +55,8 @@ export function loadShell(storage = globalThis.localStorage) {
 
 export function loadRounds(storage = globalThis.localStorage) {
   const value = read(storage, ROUNDS_KEY, {});
-  const rounds = Array.isArray(value.rounds) ? value.rounds.filter(item => item && typeof item === 'object' && typeof item.drill === 'string').slice(-MAX_ROUNDS) : [];
+  const rows = Array.isArray(value) ? value : Array.isArray(value.rounds) ? value.rounds : [];
+  const rounds = rows.filter(item => item && typeof item === 'object' && typeof item.drill === 'string').slice(-MAX_ROUNDS);
   return { version: 1, rounds };
 }
 
@@ -79,7 +80,7 @@ export function recordActiveDay(shell, at = Date.now()) {
 function cleanAnswer(answer, at) {
   return {
     correct: answer.correct === true,
-    ms: Number.isFinite(Number(answer.ms)) && Number(answer.ms) >= 0 ? Math.round(Number(answer.ms)) : null,
+    ms: answer.ms != null && Number.isFinite(Number(answer.ms)) && Number(answer.ms) >= 0 ? Math.round(Number(answer.ms)) : null,
     caseId: typeof answer.caseId === 'string' ? answer.caseId.slice(0, 100) : null,
     at,
   };

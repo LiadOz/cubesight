@@ -78,3 +78,14 @@ test('invalid stored records are ignored and storage failures do not break a dri
   assert.equal(store.startRound({ drill: 'f2l' }).status, 'active');
   assert.equal(store.recordAnswer({ correct: true }).accepted, true);
 });
+
+test('round history preserves array backups and unknown timing stays unknown', () => {
+  const prior = {drill:'oll',at:100,total:20,correct:10};
+  const storage=memoryStorage({'cubesight-rounds-v1':JSON.stringify([prior])});
+  const store=createRoundStore(storage,{now:()=>200});
+  store.startRound({drill:'pll',preset:{kind:'cases',cases:1}});
+  const result=store.recordAnswer({correct:true,ms:null});
+  assert.equal(result.summary.medianMs,null);
+  assert.equal(loadRounds(storage).rounds.length,2);
+  assert.deepEqual(loadRounds(storage).rounds[0],prior);
+});

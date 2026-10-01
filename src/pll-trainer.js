@@ -1,4 +1,5 @@
 import './pll-trainer.css';
+import { createRoundPanel } from './drills/round-panel.js';
 import { createCube3D } from './cube-3d.js';
 import { renderCube } from './cube-renderer.js';
 import { toRenderData } from './cross-cube.js';
@@ -265,6 +266,7 @@ export function createPLLTrainer(root) {
     return weighted[Math.floor(Math.random() * weighted.length)];
   }
   async function newTrial() {
+    if (roundPanel.complete) return;
     const token = ++trialToken; stopClock(); locked = false; paused = false; elapsed = 0; $('#pll-pause').hidden = true; $('#pll-cube').classList.remove('is-paused'); $('#pll-next').hidden = true; setTimerText(0); setGlance(true); setMessage('Choose the case you see.');
     const selected = chooseCase();
     let generated;
@@ -294,6 +296,7 @@ export function createPLLTrainer(root) {
     return cue.text || cue.label || cue.description || '';
   }
   function answer(value, skipped = false) {
+    if (roundPanel.complete) return;
     if (!trial || locked || paused) return;
     locked = true; stopClock(); elapsed = trial.invalidated ? IDLE_LIMIT : performance.now() - startedAt; setTimerText(elapsed); setGlance(true);
     const correct = !skipped && sameId(value, trial.caseId); const itemStats = caseStats(trial.caseId); const retention = mode === 'transfer'; const recordable = !trial.invalidated;
@@ -329,7 +332,9 @@ export function createPLLTrainer(root) {
         itemStats.nextReviewAt = answeredAt + 15 * 60 * 1000;
       }
       completed++; saveStats(stats); refreshStats();
+      roundPanel.record({correct,ms:elapsed,caseId:trial.caseId,at:answeredAt});
     }
+    if (roundPanel.complete) return;
     const expected = getCase(trial.caseId); const cue = feedbackCue();
     const result = skipped ? `Skipped, it was ${expected.name}.` : correct ? `Nice · ${expected.name}` : `Not quite, it was ${expected.name}.`;
     setMessage(`${result}${recordable ? '' : ' · this one won’t count.'}`, correct ? 'correct' : 'wrong');
@@ -339,6 +344,7 @@ export function createPLLTrainer(root) {
   }
   function clearHistory() { Object.keys(stats).forEach((id) => { stats[id] = blankStats(); }); dueRetries = []; completed = 0; paceWindow = []; saveStats(stats); refreshStats(); setMessage('History cleared.'); }
   function onKey(event) {
+    if (roundPanel.handleKey(event)) return;
     if (!active || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key.toLowerCase() === KEYS.case.s && !locked && !paused) { event.preventDefault(); answer('', true); return; }
     if ((event.key === 'Enter' || event.key === ' ') && locked) { event.preventDefault(); newTrial(); return; }
@@ -367,6 +373,8 @@ export function createPLLTrainer(root) {
   }));
   $('#pll-retention-help').addEventListener('click', () => setMessage('Random AUF cases return after 24 h to check your recog.', 'info'));
   window.addEventListener('keydown', onKey);
+  const roundPanel = createRoundPanel(root, {drill:'pll',getSettings:()=>({mode,family,glanceEnabled,glanceMs}),onRestart:()=>newTrial(),onComplete:()=>{locked=true;stopClock();$('#pll-answers').querySelectorAll('button').forEach(button=>button.disabled=true);}});
+  roundPanel.setActive(true);
   refreshStats(); renderAnswers(); newTrial();
 
   return {
@@ -376,12 +384,13 @@ export function createPLLTrainer(root) {
     setActive(value) {
       if (active === value) return;
       active = value;
+      roundPanel.setActive(value);
       if (!value) { stopClock(); locked = true; paused = true; if (trial) trial = { ...trial, invalidated: true }; }
       else { newTrial(); }
     },
     handleKey(event) { onKey(event); },
     updateHelp() {},
-    destroy() { active = false; stopClock(); window.removeEventListener('keydown', onKey); cube.destroy(); root.replaceChildren(); },
+    destroy() { active = false; roundPanel.destroy(); stopClock(); window.removeEventListener('keydown', onKey); cube.destroy(); root.replaceChildren(); },
   };
 }
 
