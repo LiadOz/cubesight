@@ -3,6 +3,7 @@ import './oll.css';
 import { createCube3D } from '../cube-3d.js';
 import { toRenderData } from '../cross-cube.js';
 import { analysisStateFromScramble } from '../analysis/long-replay.js';
+import { caseSetupState } from '../algs/drill/cube.js';
 import { getCase, getCases } from '../algs/seed/cases.js';
 import { identifyOllCase } from './oll-model.js';
 import { resolveDrillPosition } from './position.js';
@@ -98,9 +99,15 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     if (forced) current = forced;
     choices = buildChoices(current);
     answered = false;
-    const sequence = customPosition || current.setup;
-    try { cube?.update({ ...toRenderData(analysisStateFromScramble(sequence)), mode: 'scout' }); }
-    catch { $('#oll-feedback').textContent = 'This setup could not be read. A new verified case is ready.'; return; }
+    try {
+      const state = customPosition ? analysisStateFromScramble(customPosition) : caseSetupState(current);
+      cube?.update({ ...toRenderData(state), mode: 'scout' });
+    }
+    catch {
+      $('#oll-feedback').textContent = 'This verified case setup could not be loaded. No substitute case was started.';
+      $('#oll-answers').replaceChildren();
+      return;
+    }
     const answerRoot = $('#oll-answers');
     answerRoot.replaceChildren();
     choices.forEach(row => {

@@ -1,3 +1,4 @@
+import { validateSolution } from '../cross-cube.js';
 import { bestCompletions } from '../analysis/pair-completion.js';
 
 const OPTIONS = Object.freeze({ maxDepth: 12, timeBudgetMs: 160, maxSolutions: 6 });
@@ -36,4 +37,35 @@ export function pinnedPairMoveList(moves, startShift = 0, goalShift = 0) {
     goalFix: goalFix ? [goalFix] : [],
     moves: Array.isArray(moves) ? moves : String(moves || '').split(/\s+/).filter(Boolean),
   };
+}
+
+export async function pinnedPairChoices(setup) {
+  const frames = await pinnedPairCompletions(setup.scramble);
+  const best = new Map();
+  for (const frame of frames) {
+    const beforeMoves = [];
+    const beforeFrame = pinnedPairMoveList([], frame.startShift, 0);
+    beforeMoves.push(...beforeFrame.startFix);
+    const before = validateSolution(setup.state, beforeMoves, 'D');
+    if (!before.crossSolved) continue;
+    if (!Number.isInteger(setup.startShift)) {
+      setup.startShift = frame.startShift;
+      setup.solvedPairs = frame.solved;
+      setup.solvedCount = frame.solved.length;
+    }
+    for (const candidate of frame.candidates) for (const option of candidate.options) {
+      const plan = pinnedPairMoveList(option.tokens, frame.startShift, option.goalShift);
+      const after = validateSolution(setup.state, [...plan.moves, ...plan.goalFix], 'D');
+      if (!after.crossSolved) continue;
+      const preserved = before.pairs.every(pair => after.pairs.some(item => item.cornerId === pair.cornerId && item.edgeId === pair.edgeId));
+      if (!preserved) continue;
+      const added = after.pairs.filter(pair => !before.pairs.some(item => item.cornerId === pair.cornerId && item.edgeId === pair.edgeId));
+      if (!added.length) continue;
+      const pair = added[0];
+      const choice = { slot: pair.slot, cornerId: pair.cornerId, edgeId: pair.edgeId, moves: plan.moves, weight: option.w, pseudo: option.goalShift !== 0, goalShift: option.goalShift, startShift: frame.startShift };
+      const previous = best.get(choice.slot);
+      if (!previous || choice.weight < previous.weight || (choice.weight === previous.weight && choice.moves.length < previous.moves.length)) best.set(choice.slot, choice);
+    }
+  }
+  return [...best.values()].sort((a, b) => a.weight - b.weight || a.moves.length - b.moves.length || a.slot.localeCompare(b.slot));
 }

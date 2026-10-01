@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initSync, f2l_case } from '../src/wasm/cubesight_core.js';
-import { createF2LCase, createF2LCaseFromWasm, createPseudoScanCase, deduce, COLOR_HEX } from '../src/f2l-logic.js';
+import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, deduce, COLOR_HEX } from '../src/f2l-logic.js';
+import { createPlannerSetup } from '../src/f2l-planner.js';
+import { currentDShift } from '../src/solve-tracker.js';
 
 initSync({ module: readFileSync(new URL('../src/wasm/cubesight_core_bg.wasm', import.meta.url)) });
 const faceColors = { U: 'white', D: 'yellow', F: 'green', B: 'blue', R: 'red', L: 'orange' };
@@ -86,5 +88,92 @@ test('pseudo scan rotates the real D-layer stickers and maps corners to shifted-
     const restored = createPseudoScanCase(pseudo, 4 - turns);
     assert.deepEqual(restored.cornerStickers, base.cornerStickers);
     assert.deepEqual(restored.edgeStickers, base.edgeStickers);
+  }
+});
+
+test('pinned pseudo metadata recognizes the exact already-shifted board without remapping it', () => {
+  const base = createF2LCase(17);
+  for (const turns of [1, 2, 3]) {
+    const physical = createPseudoScanCase(base, turns);
+    const exact = { ...physical, targetPairIds: base.targetPairIds, pairOptions: undefined };
+    const before = {
+      cornerStickers: structuredClone(exact.cornerStickers),
+      edgeStickers: structuredClone(exact.edgeStickers),
+      pairByPiece: structuredClone(exact.pairByPiece),
+      pieceByPiece: structuredClone(exact.pieceByPiece),
+      selectablePieces: [...exact.selectablePieces],
+    };
+    const pinned = createPinnedPseudoScanCase(exact, 4 - turns);
+    assert.deepEqual(pinned.cornerStickers, before.cornerStickers);
+    assert.deepEqual(pinned.edgeStickers, before.edgeStickers);
+    assert.deepEqual(pinned.pairByPiece, before.pairByPiece);
+    assert.deepEqual(pinned.pieceByPiece, before.pieceByPiece);
+    assert.deepEqual(pinned.selectablePieces, before.selectablePieces);
+    assert.deepEqual(pinned.targetPairIds, physical.targetPairIds);
+    assert.deepEqual(pinned.pairOptions, physical.pairOptions);
+    assert.equal(pinned.dShift, physical.dShift);
+    for (const [id, option] of Object.entries(pinned.pairOptions)) {
+      const [cornerId, edgeId] = id.split('>');
+      assert.equal(pinned.pairByPiece[option.cornerPiece].pairId, cornerId);
+      assert.equal(pinned.pairByPiece[option.edgePiece].pairId, edgeId);
+      assert.equal(['FR', 'BR', 'BL', 'FL'].includes(option.slot), true);
+    }
+  }
+});
+
+test('pinned pseudo metadata reports zero or unknown cross shifts without inventing a D offset', () => {
+  const current = createF2LCase(17);
+  for (const shift of [0, null]) {
+    const pinned = createPinnedPseudoScanCase(current, shift);
+    assert.deepEqual(pinned.cornerStickers, current.cornerStickers);
+    assert.deepEqual(pinned.edgeStickers, current.edgeStickers);
+    assert.deepEqual(pinned.targetPairIds, []);
+    assert.deepEqual(pinned.pairOptions, {});
+    assert.ok(pinned.pseudoError);
+  }
+});
+
+test('actual cube-state adaptation preserves oriented cubie identities for planner positions', () => {
+  for (const seed of [1, 2, 17, 22]) {
+    const setup = createPlannerSetup(seed);
+    const current = createF2LCaseFromCubeState(setup.state, 42);
+    assert.ok(current.targetPairIds.length > 0, `seed ${seed} should expose unresolved planner pairs`);
+    for (const pairId of current.targetPairIds) {
+      const members = Object.entries(current.pairByPiece).filter(([, item]) => item.pairId === pairId);
+      assert.deepEqual(members.map(([, item]) => item.type).sort(), ['corner', 'edge']);
+      assert.ok(members.every(([piece]) => [...piece].some(face => face !== 'D')));
+      const complete = members.every(([piece, item]) => [...piece].every(face => (
+        (item.type === 'corner' ? current.cornerStickers : current.edgeStickers)[`${face}:${piece}`] === current.palette[face]
+      )));
+      assert.equal(complete, false);
+    }
+  }
+});
+
+test('actual D-offset cube positions produce usable pinned pseudo-scan answers without changing the model', () => {
+  const setup = createPlannerSetup(1, { shiftD: true });
+  const current = createF2LCaseFromCubeState(setup.state, 42);
+  const shiftFix = currentDShift(setup.state, 'D');
+  assert.equal(shiftFix, 1);
+  const before = {
+    cornerStickers: structuredClone(current.cornerStickers),
+    edgeStickers: structuredClone(current.edgeStickers),
+    pairByPiece: structuredClone(current.pairByPiece),
+    selectablePieces: [...current.selectablePieces],
+  };
+  const pinned = createPinnedPseudoScanCase(current, shiftFix);
+  assert.ok(pinned.targetPairIds.length > 0);
+  assert.deepEqual(pinned.cornerStickers, before.cornerStickers);
+  assert.deepEqual(pinned.edgeStickers, before.edgeStickers);
+  assert.deepEqual(pinned.pairByPiece, before.pairByPiece);
+  assert.deepEqual(pinned.selectablePieces, before.selectablePieces);
+  for (const id of pinned.targetPairIds) {
+    const [cornerId, edgeId] = id.split('>');
+    const option = pinned.pairOptions[id];
+    assert.equal(pinned.pairByPiece[option.cornerPiece].pairId, cornerId);
+    assert.equal(pinned.pairByPiece[option.edgePiece].pairId, edgeId);
+    assert.ok(pinned.selectablePieces.includes(option.cornerPiece));
+    assert.ok(pinned.selectablePieces.includes(option.edgePiece));
+    assert.ok(['FR', 'BR', 'BL', 'FL'].includes(option.slot));
   }
 });

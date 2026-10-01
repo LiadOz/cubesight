@@ -18,11 +18,12 @@ import { parseCaseFilter } from './drills/case-filter.js';
 import { resolveDrillPosition } from './drills/position.js';
 import { analysisStateFromScramble } from './analysis/long-replay.js';
 import { relabelMoves } from './analysis/normalize.js';
+import { currentDShift } from './solve-tracker.js';
 import { loadSettings } from './brain/settings.js';
 import { renderCube } from './cube-renderer.js';
 import { createCube3D } from './cube-3d.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
-import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
+import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
 import { toRenderData, validateSolution } from './cross-cube.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from './f2l-planner.js';
@@ -62,6 +63,14 @@ function prepareCornerStart(hash) {
 
 function prepareF2LStart(hash) {
   if (f2lStartHash === hash) return;
+  stopF2LScan();
+  f2lState.plannerGeneration++;
+  const params = new URLSearchParams(parseHash(hash).query);
+  if (['scan', 'deduction', 'planner'].includes(params.get('drill'))) f2lState.drill = params.get('drill');
+  if (params.has('pseudo')) {
+    if (f2lState.drill === 'scan') f2lState.scanPseudo = params.get('pseudo') === '1';
+    else if (f2lState.drill === 'planner') f2lState.plannerShiftD = params.get('pseudo') === '1';
+  }
   f2lStartHash = hash;
   f2lStartPosition = null;
   f2lActivePin = null;
@@ -733,32 +742,35 @@ function syncExposureSelect() {
   try { localStorage.setItem('cubesight-corner-exposure-ms', value); } catch { /* Keep the current pace for this page. */ }
 }
 
+function showCornerUnavailable(message) {
+  state.current = null; state.locked = true;
+  document.querySelector('#cube').hidden = true;
+  document.querySelector('#feedback').textContent = message;
+  document.querySelectorAll('.answer-button').forEach(button => { button.disabled = true; });
+}
+
 function startCase(successNotice = null) {
   cancelCornerTimers();
   if (activeTool !== 'corner' || paused || legacyRounds.corner?.complete) return;
   if (cornerStartPromise) {
     const pending = cornerStartPromise;
     cornerStartPromise = null;
-    state.current = null;
-    state.locked = true;
-    document.querySelector('#feedback').textContent = 'loading the saved position…';
+    showCornerUnavailable('loading the saved position…');
     void pending.then(position => {
       if (activeTool !== 'corner' || cornerStartHash !== location.hash) return;
-      if (position.error) { document.querySelector('#feedback').textContent = position.error; return; }
+      if (position.error) { showCornerUnavailable(position.error); return; }
       cornerStartPosition = position;
       startCase();
     });
     return;
   }
-  if (cornerCaseFilter && !cornerCaseFilter.valid) { state.current = null; state.locked = true; document.querySelector('#cube').hidden = true; document.querySelector('#feedback').textContent = 'No known corner cases match this link.'; return; }
+  if (cornerCaseFilter && !cornerCaseFilter.valid) { showCornerUnavailable('No known corner cases match this link.'); return; }
   document.querySelector('#cube').hidden = false;
   const pinned = cornerStartPosition;
   cornerStartPosition = null;
   try { state.current = pinned ? createCornerCaseFromCubeState(pinned.state, pinned.cases) : createCase(); }
   catch (error) {
-    state.current = null;
-    state.locked = true;
-    document.querySelector('#feedback').textContent = error.message;
+    showCornerUnavailable(error.message);
     return;
   }
   state.current.viewPose = chooseCornerView(previousCornerView);
@@ -1227,6 +1239,7 @@ function renderF2LPlanner() {
   button.dataset.action = 'new-f2l';
   button.innerHTML = `next case <kbd>space</kbd>`;
   button.setAttribute('aria-label', 'next case');
+  document.querySelector('#f2l-cube').hidden = !planner;
   if (!planner) {
     status.className = '';
     status.textContent = f2lState.message || 'searching…';
@@ -1252,35 +1265,8 @@ function renderF2LPlanner() {
 }
 
 async function pinnedPlannerChoices(setup) {
-  const { pinnedPairCompletions, pinnedPairMoveList } = await import('./drills/pinned-pairs.js');
-  const frames = await pinnedPairCompletions(setup.scramble);
-  const best = new Map();
-  for (const frame of frames) {
-    const beforeMoves = [];
-    const beforeFrame = pinnedPairMoveList([], frame.startShift, 0);
-    beforeMoves.push(...beforeFrame.startFix);
-    const before = validateSolution(setup.state, beforeMoves, 'D');
-    if (!before.crossSolved) continue;
-    if (!Number.isInteger(setup.startShift)) {
-      setup.startShift = frame.startShift;
-      setup.solvedPairs = frame.solved;
-      setup.solvedCount = frame.solved.length;
-    }
-    for (const candidate of frame.candidates) for (const option of candidate.options) {
-      const plan = pinnedPairMoveList(option.tokens, frame.startShift, option.goalShift);
-      const after = validateSolution(setup.state, [...plan.moves, ...plan.goalFix], 'D');
-      if (!after.crossSolved) continue;
-      const preserved = before.pairs.every(pair => after.pairs.some(item => item.cornerId === pair.cornerId && item.edgeId === pair.edgeId));
-      if (!preserved) continue;
-      const added = after.pairs.filter(pair => !before.pairs.some(item => item.cornerId === pair.cornerId && item.edgeId === pair.edgeId));
-      if (!added.length) continue;
-      const pair = added[0];
-      const choice = { slot: pair.slot, cornerId: pair.cornerId, edgeId: pair.edgeId, moves: plan.moves, weight: option.w, pseudo: option.goalShift !== 0, goalShift: option.goalShift, startShift: frame.startShift };
-      const previous = best.get(choice.slot);
-      if (!previous || choice.weight < previous.weight || (choice.weight === previous.weight && choice.moves.length < previous.moves.length)) best.set(choice.slot, choice);
-    }
-  }
-  return [...best.values()].sort((a, b) => a.weight - b.weight || a.moves.length - b.moves.length || a.slot.localeCompare(b.slot));
+  const { pinnedPairChoices } = await import('./drills/pinned-pairs.js');
+  return pinnedPairChoices(setup);
 }
 
 async function newF2LPlannerCase(pinned = null) {
@@ -1354,7 +1340,12 @@ function startF2LScan() {
   f2lState.scanScore = 0;
   f2lState.scanMisses = 0;
   f2lState.scanEndsAt = performance.now() + f2lState.scanDuration * 1000;
-  newF2LCase();
+  if (f2lState.current?.pinned) {
+    f2lState.locked = false;
+    f2lState.startedAt = performance.now();
+    f2lState.message = 'Find a corner and its matching edge.';
+    renderF2L();
+  } else newF2LCase();
   updateF2LScanClock();
 }
 
@@ -1432,7 +1423,7 @@ function renderF2L() {
 function filterF2LCase(current) {
   if (!f2lCaseFilter?.requested) return current;
   const ids = f2lCaseFilter.values.map(slot => [...slot].map(face => current.orientation[face]).sort().join('-'));
-  return {...current, targetPairIds: current.targetPairIds.filter(id => ids.includes(id))};
+  return {...current, targetPairIds: current.targetPairIds.filter(id => current.pairOptions?.[id] ? f2lCaseFilter.values.includes(current.pairOptions[id].slot) : ids.includes(id))};
 }
 
 function newF2LCase() {
@@ -1488,7 +1479,10 @@ function newF2LCase() {
   }
   const candidates = [];
   let generated;
-  if (pinned) generated = createF2LCaseFromCubeState(pinned.state, randomSeed(), 'neutral');
+  if (pinned) {
+    generated = createF2LCaseFromCubeState(pinned.state, randomSeed(), 'neutral');
+    if (f2lState.drill === 'scan' && f2lState.scanPseudo) generated = createPinnedPseudoScanCase(generated, currentDShift(pinned.state, 'D'));
+  }
   else {
     // Pick the neutral bottom once; adaptive case filtering must not bias it.
     const bottom = Object.keys(COLORS)[randomSeed() % 6];
@@ -1508,7 +1502,7 @@ function newF2LCase() {
   if (pinned && generated && !generated.targetPairIds.length && f2lState.drill !== 'planner') {
     f2lState.current = null;
     f2lState.locked = true;
-    f2lState.message = 'No pair is visible enough to identify from this pinned position. Choose another point in the solve.';
+    f2lState.message = generated.pseudoError || 'No pair is visible enough to identify from this pinned position. Choose another point in the solve.';
     renderF2L();
     return;
   }
@@ -1519,7 +1513,7 @@ function newF2LCase() {
   }
   f2lState = {
     ...f2lState,
-    current: generated,
+    current: {...generated, pinned: Boolean(pinned)},
     caseNumber: f2lState.caseNumber + 1,
     selected: null,
     matchedPairIds: [],

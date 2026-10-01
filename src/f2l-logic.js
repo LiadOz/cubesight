@@ -200,7 +200,7 @@ export function createPseudoScanCase(current, turns) {
     const cornerPiece = Object.entries(pairByPiece).find(([, item]) => item.type === 'corner' && item.pairId === cornerId)?.[0];
     const edgePiece = Object.entries(pairByPiece).find(([, item]) => item.type === 'edge' && item.pairId === edgeId)?.[0];
     if (!selectablePieces.includes(cornerPiece) || !selectablePieces.includes(edgePiece)) continue;
-    pairOptions[`${cornerId}>${edgeId}`] = { cornerPiece, edgePiece };
+    pairOptions[`${cornerId}>${edgeId}`] = { cornerPiece, edgePiece, slot: [...sides].sort().join('') };
   }
   return {
     ...current,
@@ -213,6 +213,44 @@ export function createPseudoScanCase(current, turns) {
     pairOptions,
     dShift: ['D', 'D2', "D'"][turns - 1],
     source: `${current.source}-pseudo-scan`,
+  };
+}
+
+/** Attach pseudo-pair targets to an exact, already-rendered pinned position.
+ * `shiftFix` is currentDShift's D fix (the inverse of the physical offset).
+ * The board model is intentionally left untouched: only target metadata is added. */
+export function createPinnedPseudoScanCase(current, shiftFix) {
+  if (![1, 2, 3].includes(shiftFix)) {
+    return {
+      ...current,
+      targetPairIds: [],
+      pairOptions: {},
+      dShift: null,
+      pseudoError: shiftFix === 0
+        ? 'This saved position has no D offset, so it has no pseudo pairs.'
+        : 'This saved position has no solved cross frame for a pseudo-pair scan.',
+    };
+  }
+  const turns = (4 - shiftFix) % 4;
+  const available = new Set(current.targetPairIds || []);
+  const pairOptions = {};
+  for (const slot of CORNER_SLOTS.filter((item) => item.piece.startsWith('D'))) {
+    const sides = slot.faces.filter((face) => face !== 'D');
+    const cornerId = key(sides.map((face) => current.orientation[face]));
+    const edgeId = key(sides.map((face) => current.orientation[shiftedFace(face, turns)]));
+    if (!available.has(cornerId) || !available.has(edgeId)) continue;
+    const cornerPiece = Object.entries(current.pairByPiece || {}).find(([, item]) => item.type === 'corner' && item.pairId === cornerId)?.[0];
+    const edgePiece = Object.entries(current.pairByPiece || {}).find(([, item]) => item.type === 'edge' && item.pairId === edgeId)?.[0];
+    if (!current.selectablePieces?.includes(cornerPiece) || !current.selectablePieces?.includes(edgePiece)) continue;
+    pairOptions[`${cornerId}>${edgeId}`] = { cornerPiece, edgePiece, slot: [...sides].sort().join('') };
+  }
+  return {
+    ...current,
+    targetPairIds: Object.keys(pairOptions),
+    pairOptions,
+    dShift: ['D', 'D2', "D'"][turns - 1],
+    pseudoError: Object.keys(pairOptions).length ? null : 'No pseudo pairs are visible enough to identify in this saved position.',
+    source: `${current.source}-pinned-pseudo-scan`,
   };
 }
 
@@ -307,7 +345,10 @@ export function createF2LCaseFromWasm(raw, seed, preference = 'neutral') {
 export function createF2LCaseFromCubeState(state, seed, preference = 'neutral') {
   const faceFor = ([x, y, z]) => [y > 0 ? 'U' : y < 0 ? 'D' : '', z > 0 ? 'F' : z < 0 ? 'B' : '', x > 0 ? 'R' : x < 0 ? 'L' : ''].join('');
   const adapt = (cubie, slots) => ({
-    id: slots.find(slot => sameLetters(slot.piece, cubie.id))?.piece || cubie.id,
+    // The deduction engine consumes each identity in the slot's physical
+    // sticker order. `piece` is a sorted display key (UFR), while `faces`
+    // preserves the orientation order (URF) needed to retain chirality.
+    id: slots.find(slot => sameLetters(slot.piece, cubie.id))?.faces.join('') || cubie.id,
     position: [...faceFor(cubie.position)],
     stickers: Object.entries(cubie.stickers).map(([face, color]) => ({ face, color: COLOR_FACE[color] || face })),
   });

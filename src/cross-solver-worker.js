@@ -3,6 +3,7 @@ import wasmUrl from './xcross-wasm/xcross.wasm?url';
 import { parseAnalysisMoves } from './analysis/long-replay.js';
 
 let modulePromise;
+let tablesReady = false;
 function load(){return modulePromise ||= createXCross({locateFile:()=>wasmUrl});}
 function search(module,scramble,face,mask,maxDepth,maxResults,timeoutMs){
   const bytes=module.lengthBytesUTF8(scramble)+1,ptr=module._malloc(bytes);
@@ -21,6 +22,14 @@ self.onmessage=async({data})=>{
     const masks={cross:[0],xcross:[1,2,4,8],xxcross:[3,5,9,6,10,12]}[data.kind];
     if(!masks)throw new Error('Unknown search goal.');
     const module=await load();
+    // Building the pruning tables is initialization, not part of a query's
+    // search budget. Otherwise the first short search can time out before
+    // examining even a one-move cross.
+    if(!tablesReady){
+      const initialized=search(module,'',faceNumber,0,0,1,15000);
+      if(initialized.status!==0)throw new Error('Cross search initialization failed.');
+      tablesReady=true;
+    }
     self.postMessage({id:data.id,type:'ready'});
     const budget=Math.min(15000,Math.max(100,Number(data.timeLimitMs)||2500));
     const deadline=performance.now()+budget;

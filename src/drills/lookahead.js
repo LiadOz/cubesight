@@ -152,6 +152,23 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
           $('#la-feedback').textContent = 'This setup could not be read. No substitute position was started.';
           return;
         }
+        let choices = [];
+        try {
+          const { pinnedPairChoices } = await import('./pinned-pairs.js');
+          choices = await pinnedPairChoices(setup);
+        } catch { /* Report a missing verified continuation below. */ }
+        if (token !== generation || disposed || !active) return;
+        if (requestedSlots.length) choices = choices.filter(choice => requestedSlots.includes(choice.slot));
+        if (!choices.length) {
+          loading = false;
+          $('#la-feedback').textContent = 'No verified next pair was found for this exact position. Choose another point in the solve.';
+          return;
+        }
+        currentSeed = candidateSeed;
+        current = { setup, choices, pinned: Boolean(custom?.pinned) };
+        loading = false;
+        renderCase();
+        return;
       }
       const results = setup.recoveryPlans.map(moves => ({ moves }));
       if (custom?.better?.length) results.push({ moves: custom.better });

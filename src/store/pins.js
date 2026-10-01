@@ -29,7 +29,10 @@ import { parseScramble } from '../cross-cube.js';
 export const TRAINERS = Object.freeze(['cross', 'f2l', 'oll', 'pll', 'lookahead']);
 export const PIN_CAP = 500;
 const FACES = ['U', 'D', 'F', 'B', 'R', 'L'];
-const MOVE = /^[URFDLB]['2]?$/;
+// Review records and verified algorithms can contain wide and slice turns.
+// Keep pins on the same physical move model as applyMoves(), without admitting
+// whole-cube rotations that this position format cannot replay directly.
+const MOVE = /^(?:[URFDLB]w?|[urfdlb]|[MES])(?:2|')?$/;
 
 export const pinId = (at, stage, moveIdx) => `${at}:${stage}:${moveIdx}`;
 
@@ -42,7 +45,7 @@ export function cleanPin(raw) {
   if (typeof raw.stage !== 'string' || !raw.stage) return null;
   if (!TRAINERS.includes(raw.trainer)) return null;
   const scramble = typeof raw.scramble === 'string' ? raw.scramble.trim().slice(0, 600) : '';
-  try { parseScramble(scramble); } catch { return null; }
+  try { parseScramble(scramble, { allowWide: true }); } catch { return null; }
   const movesUpTo = moveList(raw.movesUpTo);
   if (movesUpTo.length !== raw.moveIdx) return null;
   const better = Array.isArray(raw.better) ? moveList(raw.better, 60) : null;

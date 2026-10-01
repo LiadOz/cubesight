@@ -19,7 +19,7 @@ const title = color => color[0].toUpperCase() + color.slice(1);
 export function createCrossPlanning(root) {
   const start = parseDrillStart();
   const caseFilter = parseCaseFilter(start.cases, faces);
-  const requestedFaces = caseFilter.requested ? caseFilter.values : faces;
+  let requestedFaces = caseFilter.requested ? caseFilter.values : (start.face ? [start.face] : faces);
   let active = true, detached = false, current = null, cube = null, roundPanel = null, startedAt = 0;
   let answer = null, states = [], step = 0, generation = 0, caseNumber = 0;
   let activePin = null;
@@ -107,6 +107,7 @@ export function createCrossPlanning(root) {
       if (token !== generation || detached) return;
       if (position.missing) { $('#cp-feedback').textContent = 'This saved position is no longer available. Open the solve from history to choose another point.'; renderChoices(); return; }
       activePin = position.pin ?? null;
+      if (!caseFilter.requested && /^[UDFBRL]$/.test(activePin?.crossFace ?? '')) requestedFaces = [activePin.crossFace];
       text = position.moves.join(' ');
       start.moves = []; start.review = null; start.invalid = false;
     } else if (start.moves.length) {

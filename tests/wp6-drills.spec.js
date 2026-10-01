@@ -18,6 +18,15 @@ test('changing the OLL case query while staying on the route loads the new setup
   await expect(page.getByRole('button', { name: /2 · Zamboni/ })).toBeVisible();
 });
 
+test('the canonical OLL 26 setup with a whole-cube rotation loads and reveals', async ({ page }) => {
+  await page.goto('/#/drills/oll?cases=oll%2F26');
+  const answer = page.getByRole('button', { name: /26 · Antisune/ });
+  await expect(answer).toBeVisible();
+  await expect(page.locator('#oll-feedback')).not.toContainText('could not be loaded');
+  await answer.click();
+  await expect(page.locator('#oll-reveal')).toContainText('OLL 26 · Antisune');
+});
+
 test('the lookahead drill offers planner-verified next-pair choices', async ({ page }) => {
   await page.goto('/#/drills/lookahead');
   await expect(page.locator('#lookahead-view')).toBeVisible();
@@ -47,12 +56,33 @@ test('lookahead cases filter selects only requested pair slots', async ({ page }
   await expect(choices.first()).toContainText('FR');
 });
 
+test('lookahead planner finds the fourth pair in a plain three-pair setup', async ({ page }) => {
+  await page.goto('/');
+  const scramble = await page.evaluate(async () => {
+    const { createPlannerSetup } = await import('/src/f2l-planner.js');
+    const setup = createPlannerSetup(3);
+    return [setup.scramble, ...setup.recoveryPlans[0]].join(' ');
+  });
+  await page.goto(`/#/drills/lookahead?scramble=${encodeURIComponent(scramble)}`);
+  const choices = page.locator('.lookahead-choice');
+  await expect(choices.first()).toBeVisible({ timeout: 30000 });
+  await expect(choices).toHaveCount(1);
+  await expect(page.locator('#la-feedback')).toContainText('Only one pair remains');
+});
+
 test('cross planning cases filter limits both choices and comparison to requested crosses', async ({ page }) => {
   await page.goto('/#/drills/scout?cases=D');
   const choices = page.locator('.cp-face');
   await expect(choices).toHaveCount(1);
   await expect(choices.first()).toHaveAttribute('data-face', 'D');
   await expect(page.locator('#cp-feedback')).not.toContainText('Unknown cross face');
+});
+
+test('cross planning honors a linked face when no cases filter overrides it', async ({ page }) => {
+  await page.goto('/#/drills/scout?face=F');
+  const choices = page.locator('.cp-face');
+  await expect(choices).toHaveCount(1);
+  await expect(choices.first()).toHaveAttribute('data-face', 'F');
 });
 
 test('Cross Scout accepts a linked setup without replacing it with a random scramble', async ({ page }) => {

@@ -70,23 +70,31 @@ const frameState = (state, face, shift) => shift ? applyMoves(state, [`${face}${
 function essentialPieces(pin, state, bestMoves) {
   const face = pin.crossFace || 'D';
   const frame = currentDShift(state, face);
-  if (frame == null) return null;
+  if (frame == null && pin.trainer !== 'cross') return null;
   const beforePairs = solvedPairsPseudo(state, face);
   const afterState = applyMoves(state, bestMoves);
-  if (currentDShift(afterState, face) !== frame) return null;
+  const answerFrame = currentDShift(afterState, face);
+  if (answerFrame == null) return null;
   const afterPairs = solvedPairsPseudo(afterState, face);
   const solved = new Set(beforePairs.map(pair => pair.slot));
   const newPairs = afterPairs.filter(pair => !solved.has(pair.slot));
   const stageNumber = /pair([1-4])/.exec(pin.stage)?.[1];
   const target = newPairs[0] ?? afterPairs.find(pair => stageNumber && pair.slot === stageNumber);
+  const partialSlots = frame == null ? [] : f2lPairSlots(face).flatMap(pair => {
+    const cornerSolved = solvedCubie(frameState(state, face, frame).cubies.find(cubie => cubie.id === pair.cornerId));
+    const edgeSolved = solvedCubie(frameState(state, face, frame).cubies.find(cubie => cubie.id === pair.edgeId));
+    return cornerSolved !== edgeSolved ? [{ slot: pair.slot, cornerSolved, edgeSolved }] : [];
+  });
   const pieces = new Set(EDGE_IDS.filter(id => id.includes(face)));
   for (const pair of beforePairs) { pieces.add(pair.cornerId); pieces.add(pair.edgeId); }
   if (target) { pieces.add(target.cornerId); pieces.add(target.edgeId); }
-  const beforeFrame = frameState(state, face, frame);
-  for (const pair of f2lPairSlots(face)) for (const id of [pair.cornerId, pair.edgeId]) {
-    if (solvedCubie(beforeFrame.cubies.find(cubie => cubie.id === id))) pieces.add(id);
+  if (frame != null) {
+    const beforeFrame = frameState(state, face, frame);
+    for (const pair of f2lPairSlots(face)) for (const id of [pair.cornerId, pair.edgeId]) {
+      if (solvedCubie(beforeFrame.cubies.find(cubie => cubie.id === id))) pieces.add(id);
+    }
   }
-  return { face, frame, beforePairs, afterPairs, solved, target, pieces };
+  return { face, frame, answerFrame, beforePairs, afterPairs, partialSlots, solved, target, pieces };
 }
 
 async function checkWithPairPlanner(scramble, options = {}) {
@@ -120,7 +128,7 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
   } catch { return []; }
   const constraints = essentialPieces({ ...pin, crossFace: 'D' }, normalizedSourceState, normalizedMoves);
   if (!constraints) return [];
-  const { frame, beforePairs, target, pieces: fixedPieces } = constraints;
+  const { frame, answerFrame, beforePairs, partialSlots, target, pieces: fixedPieces } = constraints;
   if (pin.trainer !== 'cross' && !target) return [];
 
   puzzlePromise ??= Promise.all([import('cubing/puzzles'), import('cubing/kpuzzle'), import('cubing/search'), import('../algs/notation.js')])
@@ -158,8 +166,8 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
       const answerShift = currentDShift(answerState, 'D');
       const answerPairs = answerShift == null ? [] : solvedPairsPseudo(answerState, 'D');
       const retained = beforePairs.every(pair => answerPairs.some(next => next.slot === pair.slot));
-      const focused = pin.trainer === 'cross' ? answerShift === frame : Boolean(target && answerPairs.some(pair => pair.slot === target.slot));
-      if (answerShift !== frame || !retained || !focused) continue;
+      const focused = pin.trainer === 'cross' ? answerShift === answerFrame : Boolean(target && answerPairs.some(pair => pair.slot === target.slot));
+      if (answerShift !== answerFrame || !retained || !focused) continue;
       const essentialsStayed = [...fixedPieces].every(id => {
         const source = normalizedSourceState.cubies.find(item => item.id === id);
         const variant = normalizedState.cubies.find(item => item.id === id);
@@ -167,6 +175,18 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
           && Object.entries(source.stickers).every(([faceName, color]) => variant.stickers[faceName] === color);
       });
       if (!essentialsStayed) continue;
+      if (partialSlots.length) {
+        const candidateFrame = currentDShift(normalizedState, 'D');
+        if (candidateFrame !== frame) continue;
+        const candidateAligned = frameState(normalizedState, 'D', candidateFrame);
+        const partialShapePreserved = partialSlots.every(({ slot, cornerSolved, edgeSolved }) => {
+          const pair = f2lPairSlots('D').find(item => item.slot === slot);
+          return pair
+            && solvedCubie(candidateAligned.cubies.find(cubie => cubie.id === pair.cornerId)) === cornerSolved
+            && solvedCubie(candidateAligned.cubies.find(cubie => cubie.id === pair.edgeId)) === edgeSolved;
+        });
+        if (!partialShapePreserved) continue;
+      }
       let plannerChecked = false;
       if (pin.trainer === 'cross') {
         if (!planner) continue;
@@ -175,8 +195,7 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
           ...(planned?.results ?? []).map(item => item.moves),
           ...(planned?.candidates ?? []).flatMap(candidate => candidate.options ?? []).map(item => item.moves ?? item.tokens),
         ].filter(Boolean);
-        const physicalFrame = currentDShift(state, face);
-        plannerChecked = proposed.some(candidateMoves => currentDShift(applyMoves(state, candidateMoves), face) === physicalFrame);
+        plannerChecked = proposed.some(candidateMoves => currentDShift(applyMoves(state, candidateMoves), face) === answerFrame);
       } else {
         try {
           const planned = await checkWithPairPlanner(normalizedScramble, { startShift: frame });
@@ -184,7 +203,7 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
             && candidate.options.some(option => {
               const replay = applyMoves(normalizedState, option.tokens ?? option.moves ?? []);
               const replayPairs = solvedPairsPseudo(replay, 'D');
-              return currentDShift(replay, 'D') === frame
+              return currentDShift(replay, 'D') === answerFrame
                 && beforePairs.every(pair => replayPairs.some(next => next.slot === pair.slot))
                 && replayPairs.some(pair => pair.slot === target.slot);
             })) ?? false;
@@ -251,10 +270,14 @@ async function pllVariants(pin, { count, random }) {
       const normalizedState = analysisStateFromScramble(normalizedScramble);
       if (identifyPllCase(normalizedState)?.name !== base.name) continue;
       if (currentDShift(normalizedState, 'D') !== frame || solvedPairsPseudo(normalizedState, 'D').length !== 4) continue;
-      const solvedState = applyMoves(normalizedState, solveAlg);
-      if (currentDShift(solvedState, 'D') !== frame || solvedPairsPseudo(solvedState, 'D').length !== 4) continue;
-      const restored = frameState(solvedState, 'D', frame);
-      if (!['', 'U', 'U2', "U'"].some(aufMove => sameCubeState(aufMove ? applyMoves(restored, [aufMove]) : restored, createSolvedState()))) continue;
+      const solved = ['','U','U2',"U'"].some(before => {
+        const aligned = before ? applyMoves(normalizedState, [before]) : normalizedState;
+        const solvedState = applyMoves(aligned, solveAlg);
+        if (currentDShift(solvedState, 'D') !== frame || solvedPairsPseudo(solvedState, 'D').length !== 4) return false;
+        const restored = frameState(solvedState, 'D', frame);
+        return ['', 'U', 'U2', "U'"].some(after => sameCubeState(after ? applyMoves(restored, [after]) : restored, createSolvedState()));
+      });
+      if (!solved) continue;
       const scramble = face === 'D' ? normalizedScramble : unrelabelMoves(normalizedScramble.split(/\s+/), face).join(' ');
       const state = face === 'D' ? normalizedState : analysisStateFromScramble(scramble);
       output.push({ scramble, state, verified: true, plannerChecked: true, randomized: true });
