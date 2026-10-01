@@ -14,7 +14,7 @@ The brief for the next fleet of builder agents, and the checklist the lead revie
 7. **Replayable:** smart-cube and user-action behaviour stays reproducible with `scripts/replay-recording.mjs`; real recordings live in `/home/loz/Downloads/cubesight-recording-*.json` (and `tests/fixtures/rotation-cross-recording.json`).
 8. **Process:** branch from the tip of `feature/smart-cube-guidance` in your own worktree; never push; never use port 5173; never bypass the pre-commit hook; tests never write into `docs/` or `src/`; descriptive commit messages only (no WIP auto-commits).
 9. **Quality gate for a merge request:** `npm run check` green (0 lint errors), the full `npx playwright test` green, `npx playwright test --config=playwright.pwa.config.js` green, and (once F8/F9 land) the **layout invariant suite** `npm run test:layout` and the **snapshot suite** `npm run test:snapshots` green, with any intended visual change shown in a `snapshots:compare` gallery. Every new route/screen/state must be registered in the F8 matrix.
-10. **Show your work:** screenshots of every changed screen in Orbit dark (+ Orbit light, + a 390 px phone); write a gallery `index.html` next to them (relative paths) and report its `file://` link. Read your screenshots and compare them with the orbit-v3 frames.
+10. **Show your work:** screenshots of every changed screen in Orbit dark (+ Orbit light, + a 390 px phone); write a gallery `index.html` next to them (relative paths) that includes the shared lightbox (`docs/design/_gallery/lightbox.js` + `.css`: click to zoom/loupe, ←/→ to browse) and report its `file://` link. Read your screenshots and compare them with the orbit-v3 frames.
 11. **Report:** commits, files, test results, the gallery link, deviations, open questions.
 
 ---

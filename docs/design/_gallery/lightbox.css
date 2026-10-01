@@ -1,0 +1,27 @@
+/* Shared design-gallery lightbox. See ../GALLERY.md */
+.lb-root{--lb-bg:rgba(8,8,10,.97);--lb-fg:#f2efe6;--lb-chip:rgba(255,255,255,.12);--lb-chip-h:rgba(255,255,255,.24);--lb-focus:#3dbfad;
+  position:fixed;inset:0;z-index:2147483000;display:none;flex-direction:column;background:var(--lb-bg);color:var(--lb-fg);
+  font:14px/1.4 system-ui,sans-serif;touch-action:none;overscroll-behavior:contain}
+@media (prefers-color-scheme:light){.lb-root{--lb-bg:rgba(246,244,238,.98);--lb-fg:#1b1a17;--lb-chip:rgba(0,0,0,.08);--lb-chip-h:rgba(0,0,0,.16);--lb-focus:#0a7f70}}
+.lb-root.lb-open{display:flex}
+.lb-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;flex:none;position:relative;z-index:3}
+.lb-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-count{opacity:.7;font-variant-numeric:tabular-nums;flex:none}
+.lb-btn{appearance:none;border:0;border-radius:8px;background:var(--lb-chip);color:inherit;font:inherit;min-width:36px;height:36px;padding:0 10px;
+  cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.lb-btn:hover{background:var(--lb-chip-h)}
+.lb-btn[aria-pressed=true]{background:var(--lb-focus);color:#fff}
+.lb-root :focus-visible{outline:2px solid var(--lb-focus);outline-offset:2px}
+.lb-stage{position:relative;flex:1;min-height:0;overflow:hidden;cursor:grab}
+.lb-stage.lb-drag{cursor:grabbing}
+.lb-stage.lb-loupe-on{cursor:none}
+.lb-img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;user-select:none;-webkit-user-drag:none;will-change:transform}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:64px;font-size:26px}
+.lb-prev{left:8px}.lb-next{right:8px}
+.lb-loupe{position:absolute;left:0;top:0;width:180px;height:180px;margin:-90px 0 0 -90px;border-radius:50%;pointer-events:none;display:none;z-index:2;
+  border:3px solid var(--lb-fg);box-shadow:0 4px 24px rgba(0,0,0,.5);background-repeat:no-repeat;background-color:#000}
+.lb-stage.lb-loupe-on .lb-loupe.lb-loupe-show{display:block}
+body.lb-lock{overflow:hidden}
+@media (max-width:600px){.lb-nav{width:36px;height:52px}.lb-loupe{width:140px;height:140px;margin:-70px 0 0 -70px}.lb-hint{display:none}}
+.lb-hint{opacity:.6;font-size:12px}
+@media (prefers-reduced-motion:no-preference){.lb-root.lb-open{animation:lbfade .12s ease-out}@keyframes lbfade{from{opacity:0}}}
