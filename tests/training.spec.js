@@ -158,8 +158,8 @@ test('timed F2L scan scores matching pieces and keeps the limited camera', async
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
 });
 
-test('timed scan accepts real touch taps on a phone-sized canvas', async ({ browser }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4174', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+test('timed scan accepts real touch taps on a phone-sized canvas', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   await prepareF2L(page);
   await page.locator('#f2l-view summary').tap();
@@ -170,8 +170,8 @@ test('timed scan accepts real touch taps on a phone-sized canvas', async ({ brow
   await context.close();
 });
 
-test('timed scan scores a pseudo pair with phone taps under a visible D offset', async ({ browser }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4174', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+test('timed scan scores a pseudo pair with phone taps under a visible D offset', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   await prepareF2L(page, pseudoFixture);
   await page.locator('#f2l-view summary').tap();
