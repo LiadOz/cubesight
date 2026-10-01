@@ -62,7 +62,7 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await expect(page.locator('.pll-trainer-shell')).toHaveCSS('display', 'flex');
   const pllCase = await page.locator('#pll-view').getAttribute('data-pll-case');
   await page.locator(`[data-pll-answer="${pllCase}"]`).tap();
-  await expect(page.locator('#pll-feedback')).toContainText('Correct');
+  await expect(page.locator('#pll-feedback')).toContainText('Nice');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.goto('/#/drills');
   await page.locator('#drills-view a[href="#/drills/scout"]').click();
