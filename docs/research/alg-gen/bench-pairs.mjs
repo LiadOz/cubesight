@@ -18,9 +18,16 @@ function verify(seq, slots) {
 }
 const stats = { cross: [], 1: [], 2: [], 3: [], 4: [], multi2: [], multi3: [], multi4: [] };
 const lens = { 1: [], 2: [], 3: [], 4: [] };
-let t = performance.now(); buildTables(); for (let i = 0; i < 4; i++) crossEdgeTable(i);
+let t = performance.now(); buildTables(); if (!process.env.NOCE) for (let i = 0; i < 4; i++) crossEdgeTable(i);
 console.log('table build ms (cross + 4 cross+edge tables)', performance.now() - t);
+let slotOfBit; const WASM_BIT = [0, 1, 2, 3]; // overwritten below after learning the mapping
 const wasm = NWASM ? await loadNodeSolver() : null; const wasmCmp = [];
+if (wasm) { // learn which WASM mask bit is which slot, using a fixed cross-solved position
+  const sc0 = "R2 D' B U2 F' L2 D2 F2 R2 U B2 D' L2 U' B D' R' F' L D2 R B' U2 U2 R' L' F U R' L2";
+  for (let b = 0; b < 4; b++) { const w = wasm.search({ scramble: sc0, face: 'D', mask: 1 << b, maxDepth: 10, maxResults: 1, timeoutMs: 5000 });
+    const solvedNow = SLOTS.map((_, i) => i).filter(i => verify(`${sc0} ${w.results[0].moves.join(' ')}`, [i])); WASM_BIT[solvedNow[0]] = b; }
+  console.log('WASM mask bit for slots FR,BR,BL,FL =', WASM_BIT.join(','));
+}
 let bad = 0, timeouts = 0;
 for (let p = 0; p < NPOS; p++) {
   let sc = scramble();
@@ -46,11 +53,16 @@ for (let p = 0; p < NPOS; p++) {
         if (m.solutions.length && !verify(`${sc} ${m.solutions[0]}`, [...solved, ...pr])) { bad++; console.log('VERIFY FAIL multi'); } }
       stats['multi' + (stage + 1)]?.push(performance.now() - tm);
     }
-    if (wasm && p < NWASM && stage <= 2) { // compare the shortest length with the WASM engine (cross + slot masks)
-      const masks = solved.length ? [3, 5, 9, 6, 10, 12].filter(m => solved.every(s => m & (1 << s))) : [1, 2, 4, 8];
-      let bestW = 99, tw = performance.now();
-      for (const m of masks) { const w = wasm.search({ scramble: sc, face: 'D', mask: m, maxDepth: 10, maxResults: 1, timeoutMs: 8000 }); if (w.results[0]) bestW = Math.min(bestW, w.results[0].moves.length); }
-      wasmCmp.push({ stage, mine: best.shortest, wasm: bestW, wasmMs: performance.now() - tw, mineMs: bc.totalMs });
+    if (wasm && p < NWASM && stage <= 3) { // per-slot comparison with the WASM engine (mask = solved slots + this slot)
+      if (!slotOfBit) { slotOfBit = []; const base = sc.split(' ').slice(0, 22).join(' ');
+        // learn the WASM bit -> slot mapping on a position with the cross solved and nothing else (stage-1 position of this solve)
+      }
+      for (const c of bc.candidates) {
+        const s = SLOTS.findIndex(x => x.name === c.slots[0]);
+        const mask = [...solved, s].reduce((m, i) => m | (1 << WASM_BIT[i]), 0);
+        const tw = performance.now(); const w = wasm.search({ scramble: sc, face: 'D', mask, maxDepth: 12, maxResults: 1, timeoutMs: 6000 });
+        wasmCmp.push({ stage, slot: c.slots[0], mine: c.shortest, wasm: w.results[0]?.moves.length ?? null, wasmStatus: w.status, wasmMs: Math.round(performance.now() - tw), mineMs: c.ms });
+      }
     }
     sc += ' ' + best.options[0].moves;
   }
@@ -61,4 +73,11 @@ console.log(`positions ${NPOS}, slack ${SLACK}, verify failures ${bad}, timeouts
 row('cross', stats.cross); for (const s of [1, 2, 3, 4]) row('pair' + s + '(all open slots)', stats[s]);
 for (const k of ['multi2', 'multi3', 'multi4']) if (stats[k].length) row(k, stats[k]);
 for (const s of [1, 2, 3, 4]) console.log('shortest pair' + s + ' length: mean', (lens[s].reduce((a, b) => a + b, 0) / lens[s].length).toFixed(2), 'max', Math.max(...lens[s]));
-if (wasmCmp.length) { console.log('WASM vs mine (shortest completion of any slot):'); let same = 0; for (const c of wasmCmp) if (c.mine === c.wasm) same++; console.log(`  equal lengths ${same}/${wasmCmp.length}; wasm ms median ${q(wasmCmp.map(c => c.wasmMs), .5)} max ${Math.max(...wasmCmp.map(c => c.wasmMs))}; mine median ${q(wasmCmp.map(c => c.mineMs), .5)}`); console.log(wasmCmp.filter(c => c.mine !== c.wasm)); }
+if (wasmCmp.length) {
+  const ok = wasmCmp.filter(c => c.wasmStatus === 0 && c.wasm !== null);
+  console.log(`WASM comparison (mask = solved slots + candidate slot): ${wasmCmp.length} slot queries, ${ok.length} proven by WASM`);
+  for (const st of [1, 2, 3]) { const g = ok.filter(c => c.stage === st); if (!g.length) continue;
+    console.log(`  pair ${st}: equal ${g.filter(c => c.mine === c.wasm).length}/${g.length}; mine shorter ${g.filter(c => c.mine < c.wasm).length}, wasm shorter ${g.filter(c => c.mine > c.wasm).length}; WASM ms median ${q(g.map(c => c.wasmMs), .5)} max ${Math.max(...g.map(c => c.wasmMs))}; mine ms median ${q(g.map(c => c.mineMs), .5)} max ${Math.max(...g.map(c => c.mineMs))}`); }
+  console.log('  WASM not proven (timeout / depth) by stage:', [1, 2, 3].map(st => wasmCmp.filter(c => c.stage === st && c.wasmStatus !== 0).length).join(','));
+  console.log(wasmCmp.filter(c => c.wasmStatus === 0 && c.wasm !== null && c.mine !== c.wasm));
+}

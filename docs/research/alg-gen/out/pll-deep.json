@@ -1,0 +1,7857 @@
+{
+ "generated": "2026-10-01T04:28:32.530Z",
+ "sets": [
+  "RUF",
+  "RUD"
+ ],
+ "results": [
+  {
+   "id": "Aa",
+   "ref": "R' D' R U2 R' D R U' R' D' R U' R' D R",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1359,
+     "found": 148,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 344,
+     "found": 165,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R U' R F2 R' U R' U' R2 F2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 16,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 2,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R U2 R2 D R' U2 R D' R' U2 R' U2 R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U2 R' U2 R' D' R U2 R' D R2 U2 R",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' F2 U R2 U R2 U2 F2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' F2 U' R2 U' R2 U F2 U' R2 U R2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R U' R' D' R U2 R' D R U' R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U R' U' R D R' U' R D' R' U2 R U' R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R U' R D R' U' R D' R' U2 R' U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F2 U' R2 U' R2 U F2 U' R2 U R2 U R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U R2 U2 F2 U2 R2 U' R2 U' F2 R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' R2 U2 R2 U F2 U' R2 U2 R2 U F2 R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 R2 U' R2 U' F2 U R2 U R2 U2 F2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 D R2 U2 R U2 R U2 R D' R' U2 R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U' R U' R2 D' R2 U R' U R U2 R2 D R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' R2 U' R2 D' R2 U R2 U R2 U2 R2 D R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U2 R' U' R F' R' U R U' F U' F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F2 U2 R' U' R F2 R' U R U' F2 U' F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R U F' U' R' U' R U F U' R' U2 R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U2 R2 U R U' F' U R' U' R F R U2 R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U2 R' F R' U R U' F' U R' U' R2 U2 R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R2 U F U' R2 U' R2 U F' U' R2 U' R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R U F U' R' U' R U F' U' R' U2 R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R U' R' F' R U R' U' R' F R U2 R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' F' R U2 R U2 R' F' R U2 R' U2 R' F2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R2 U F2 U' R2 U' R2 U F2 U' R2 U' R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R2 U' R' F' R U R2 U' R' F R U2 R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U' F2 U R2 U R2 U2 F2 U2 R2 U2 R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R' U2 R' D' R U' R' D R U' R U' R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 D R2 U2 R U R' U R2 D' R2 U' R U' R'",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U2 R2 D R2 U' R' U R2 D' R2 U' R U' R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U' R U2 R' D' R U' R' D R U' R' U R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R' U' R D R' U2 R D' R' U' R U2 R",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 D' R U2 R' D2 R' U R D' R' U' R2 U2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R U' R2 D' R2 U R' U' R2 D R2 U2 R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 D R2 U2 R2 U R2 U R2 D' R2 U' R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U2 R2 D R2 U' R2 U R2 D' R2 U' R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R2 U' R2 D' R2 U R2 U' R2 D R2 U2 R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R' U2 R' D' R U2 R U2 R U2 R2 D R2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 F2 R U' R' F2 R2 F2 R U R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "D' R2 D R2 U' R2 D' U R2 U' R2 D R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 22,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 14
+    }
+   ],
+   "known": {
+    "core": "R' D' R U2 R' D R U' R' D' R U' R' D R",
+    "gens": "RUD",
+    "stm": 15,
+    "found": true,
+    "inDepthOf": [
+     "RUD"
+    ]
+   },
+   "totalFound": 313
+  },
+  {
+   "id": "Ab",
+   "ref": "R' D' R U R' D R U R' D' R U2 R' D R",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1393,
+     "found": 148,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 338,
+     "found": 165,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 F2 R2 U R U' R F2 R' U R'",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 16,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 2,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R U2 R U2 R D R' U2 R D' R2 U2 R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U2 R2 D' R U2 R' D R U2 R U2 R",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' F2 U2 R2 U' R2 U' F2 U R2 U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R2 U' R2 U F2 U' R2 U R2 U F2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R U R' D' R U2 R' D R U R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U R' U2 R D R' U R D' R' U R U' R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R U2 R D R' U R D' R' U R' U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F2 U R2 U R2 U2 F2 U2 R2 U' R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 U' R2 U2 R2 U F2 U' R2 U2 R2 U R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 U2 R2 U' R2 U' F2 U R2 U R2 U2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' R2 U' R2 U F2 U' R2 U R2 U F2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 D' R2 U2 R' U' R U' R2 D R2 U R' U R",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 D' R2 U2 R2 U' R2 U' R2 D R2 U R2 U R2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R U2 R D R' U2 R' U2 R' U2 R2 D' R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U F' U R' U' R F R' U R U2 F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F2 U F2 U R' U' R F2 R' U R U2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U2 R U F' U' R' U R U F U' R' U R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U2 R2 U R U' F U R' U' R F' R U2 R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U2 R' F' R' U R U' F U R' U' R2 U2 R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R U F U' R' U R U F' U' R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R' F' R U R U' R' F R U R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U R2 U F U' R2 U R2 U F' U' R2 U2 R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' F2 R U2 R U2 R' F R U2 R' U2 R' F R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R2 U2 F2 U2 R2 U' R2 U' F2 U R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U2 R' F' R U R2 U' R' F R U R2 U R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U F2 U' R2 U R2 U F2 U' R2 U2 R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R' U R' D' R U R' D R U2 R U' R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U' R U R' D' R U R' D R U2 R' U R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R' U R2 D R2 U' R U R2 D' R2 U2 R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R2 D' R2 U R U' R2 D R2 U R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R' U R D R' U2 R D' R' U R U2 R",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 D' R2 U2 R' U2 R' U2 R' D R U2 R U2 R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U2 R2 D' R2 U R2 U' R2 D R2 U R2 U R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R2 D R2 U' R2 U R2 D' R2 U2 R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R' U R2 D R2 U' R U' R' U2 R2 D' R2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R2 D R2 U' R2 U' R2 U2 R2 D' R2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R2 U R D R' U' R D2 R U2 R' D R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U' R' F2 R2 F2 R U R' F2 R2 F2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "D R2 D' R2 U R2 D U' R2 U R2 D' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 22,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 14
+    }
+   ],
+   "known": {
+    "core": "R' D' R U R' D R U R' D' R U2 R' D R",
+    "gens": "RUD",
+    "stm": 15,
+    "found": true,
+    "inDepthOf": [
+     "RUD"
+    ]
+   },
+   "totalFound": 313
+  },
+  {
+   "id": "E",
+   "ref": "R' U' R' D' R U' R' D R U R' D' R U R' D R2",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1279,
+     "found": 8,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 345,
+     "found": 0,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "F2 U' F2 U2 R2 U R2 U F2 R2 U2 R2 U F2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U' R2 U2 R2 F2 U' R2 U' R2 U2 F2 U F2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R2 U F2 U2 R2 U F2 U' R2 U2 F2 U R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' F2 U2 R2 U F2 U' R2 U2 F2 U' R2 U2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U F2 U2 F2 R2 U F2 U F2 U2 R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U2 F2 U' F2 U' R2 F2 U2 F2 U' R2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 F2 U' R2 U2 F2 U' R2 U F2 U2 R2 U' F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U R2 U2 F2 U' R2 U F2 U2 R2 U F2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    }
+   ],
+   "known": {
+    "core": "R' U' R' D' R U' R' D R U R' D' R U R' D R2",
+    "gens": "RUD",
+    "stm": 17,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 8
+  },
+  {
+   "id": "F",
+   "ref": "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1346,
+     "found": 20,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 356,
+     "found": 0,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "F2 U2 R2 U R2 U' R2 U2 R2 U' F2 U2 R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 F2 U' R2 U' R2 U2 R2 U R2 U2 F2 U R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' F2 U2 R2 U' R2 U2 R2 U R2 U F2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U2 F2 U R2 U2 R2 U R2 U' R2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U R2 U R2 U2 F2 U R2 U2 R2 U R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U' R2 U2 R2 U' F2 U2 R2 U' R2 U' F2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 F R F' R' U' F' U F R2 U R' U' R",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U R U' R2 F' U' F U R F R' F' R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R U F R F2 U F U' F R' F' U R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U' F R F' U F' U' F2 R' F' U' R' U2 R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U2 F' U' R' F' R2 U' R' U R' F R U' F",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U R' F' R U' R U R2 F R U F U2 F",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R' F' R F U R U' R' F2 U' F U F'",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U' F' U F2 R U R' U' F' R' F R F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' F2 U F2 U2 F2 U R2 U2 F2 U F2 U R2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 R2 U F2 U F2 U2 F2 U' F2 U2 R2 U' F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' F2 U' F2 U2 R2 U' F2 U2 F2 U' F2 U F2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U R2 U2 F2 U F2 U2 F2 U' F2 U' R2 U2 F2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' F2 U2 R2 U' F2 U2 F2 U' F2 U F2 U2 R2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U2 F2 U' F2 U F2 U2 F2 U R2 U2 F2 U F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    }
+   ],
+   "known": {
+    "core": "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
+    "gens": "RUF",
+    "stm": 18,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 20
+  },
+  {
+   "id": "Ga",
+   "ref": "R2 U R' U R' U' R U' R2 D U' R' U R D'",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1323,
+     "found": 20,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 342,
+     "found": 2,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "D' R2 U R' U R' U' R U' R2 U' D R' U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R' U R' U' R U' R2 U' D R' U R D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U R U2 R' U' R' U2 R2 U R' F2 R' U R",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U' F2 U R U2 R U2 R' U F2 U2 R U' R'",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U2 R2 U R2 U R2 F2 U' R2 U2 F2 U R2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U2 F2 U R2 U F2 U' R2 U' F2 U R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F' U' R' U' R U F2 R U R U' R' F' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 U F2 U F2 U' R U' R F2 R' U R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U F2 U' F2 U' F2 U2 F2 U2 R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U F2 U2 R2 U R2 U R2 U' F2 U F2 U' R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 R' U2 F U' R' U R U F' U R F2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 U R F' R U R2 U' R' F R U' F2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 R2 U' R2 U' R2 U2 F2 U2 F2 U F2 U F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 F2 U R2 F U F' R2 F U' F' U' F2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' U' R' F U' F2 U F R U F U2 R U' R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U2 F2 R2 U F2 U' F2 U' R2 U2 F2 U F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 R' U F' R' F U F' R F U2 R F2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 F2 U F2 U' F2 U' R2 U2 F2 U F2 U R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 F' U2 F' R' U2 F' U' F R F U R2 F'",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U' F R' F2 R F U F R U2 R' F U' F'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' F' U' F R' F2 R F U F R U2 F U' F'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 F' U2 F' U2 F R' F' U' F U F R' F2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 32,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 8,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "R2 U R' U R' U' R U' R2 D U' R' U R D'",
+    "gens": "RUD",
+    "stm": 15,
+    "found": true,
+    "inDepthOf": [
+     "RUD"
+    ]
+   },
+   "totalFound": 22
+  },
+  {
+   "id": "Gb",
+   "ref": "R' U' R U D' R2 U R' U R U' R U' R2 D",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1339,
+     "found": 20,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 348,
+     "found": 2,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "D R' U' R D' U R2 U R' U R U' R U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R D' U R2 U R' U R U' R U' R2 D",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R F2 R U' R2 U2 R U R U2 R' U' F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U R' U2 F2 U' R U2 R' U2 R' U' F2 U R",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' F2 U2 R2 U F2 R2 U' R2 U' R2 U2 F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' F2 U R2 U F2 U' R2 U' F2 U2 R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F R U R' U' R' F2 U' R' U R U F R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U' R F2 R' U R' U F2 U' F2 U' R2 F2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U2 F2 U2 F2 U F2 U F2 U' R2 U' R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 R' U' F U' R' U' R U F' U2 R F2 R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 U R' F' R U R2 U' R' F R' U' F2 R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U F2 U' F2 U R2 U' R2 U' R2 U2 F2 U' F2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' F2 U' F2 U2 F2 U2 R2 U R2 U R2 U2 R2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 F2 U F U F' R2 F U' F' R2 U' F2 R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U R' U2 F' U' R' F' U' F2 U F' R U F",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' F2 U2 R2 U F2 U F2 U' R2 F2 U2 F2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 R' U2 F' R' F U' F' R F U' R F2 R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' F2 U' F2 U2 R2 U F2 U F2 U' F2 U2 F2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F R2 U' F' R' F' U F U2 R F U2 F R2 F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U F' U2 R' F' U' F' R' F2 R F' U F R",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F U F' R U2 R' F' U' F' R' F2 R F' U F",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R F' U' F' U F R F' U2 F U2 F R2 F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 32,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 8,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "R' U' R D' U R2 U R' U R U' R U' R2 D",
+    "gens": "RUD",
+    "stm": 15,
+    "found": true,
+    "inDepthOf": [
+     "RUD"
+    ]
+   },
+   "totalFound": 22
+  },
+  {
+   "id": "Gc",
+   "ref": "R2 U' R U' R U R' U R2 D' U R U' R' D",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1296,
+     "found": 20,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 339,
+     "found": 2,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 U2 R2 F2 U' R2 U R2 U F2 U2 R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D R2 U' R U' R U R' U R2 U D' R U' R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R U' R U R' U R2 U D' R U' R' D",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R2 U' R2 U R2 U F2 U2 R2 U' R2 U' F2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 U' F2 R' U' R F2 R' U R U R2 F2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F2 R U2 R U2 R' F R U R' U' R' F R2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U2 F2 U F2 U F2 U2 R2 U2 R2 U' R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 U' R2 U' R2 U F' U F' R2 F U' F'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 F2 U' F2 U' F2 R2 U F2 U2 R2 U' F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F R U R' F R2 F' R' U' R' F' U2 R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R' F R2 F' R' U' R' F' U2 F R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 F2 R U2 R F U2 R U R' F' R' U' F2 R",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U F R' U R2 U' R' F' U' R' U2 F' U F",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R2 U2 F2 U' F2 U' F2 U R2 U' R2 U F2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' F2 U' R2 U R2 U R2 U2 R2 U2 F2 U F2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' F2 U2 R2 U' F2 U' R2 U F2 U R2 U' F2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U R2 U' F' U2 F' U2 F U' R2 U2 F' U F",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 F U2 R' U F U' F' U' R U' F' R2 F2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 F U' R F R' U' R F' R' U2 F' R2 F2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' F' U2 F U F U2 F2 U' F R2 F U' F'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R U F U F' U' R2 F' U' F' U F R F2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 U' F' R F' U' F2 U F R' F' U R2 F2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "R2 U' R U' R U R' U R2 D' U R U' R' D",
+    "gens": "RUD",
+    "stm": 15,
+    "found": true,
+    "inDepthOf": [
+     "RUD"
+    ]
+   },
+   "totalFound": 22
+  },
+  {
+   "id": "Gd",
+   "ref": "R U R' U' D R2 U' R U' R' U R' U R2 D'",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1352,
+     "found": 20,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 345,
+     "found": 2,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 U R2 U2 F2 U' R2 U' R2 U F2 R2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D' R U R' D U' R2 U' R U' R' U R' U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U R' D U' R2 U' R U' R' U R' U R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U R2 U R2 U2 F2 U' R2 U' R2 U R2 U2 R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 U' R' U' R F2 R' U R F2 U R2 F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F' R U R U' R' F' R U2 R' U2 R' F2 R2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R2 U2 R2 U2 F2 U' F2 U' F2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U R2 U2 F2 U' R2 F2 U F2 U F2 U2 R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F U F' R2 F U' F U' R2 U R2 U F2 R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R F' U2 F R U R F R2 F' R U' R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U' F U2 R U F R U R2 U' R F' U' R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' R2 U R2 U' F2 U F2 U F2 U2 R2 U R2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' F2 U R F R U' R' U2 F' R' U2 R' F2 R2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R U2 F R U R F R2 F' R U' R' F'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' F2 U2 R2 U2 R2 U' R2 U' R2 U F2 U F2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U R2 U' F2 U' R2 U F2 U R2 U2 F2 U F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U' F U2 R2 U F' U2 F U2 F U R2 U' F'",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 F U2 R F R' U R F' R' U F' R2 F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 F U R' U F U F' U' R U2 F' R2 F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U F' R2 F' U F2 U2 F' U' F' U2 F U R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R' F' U' F U F R2 U F U' F' U' R' F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 U' F R F' U' F2 U F R' F U R2 F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "R U R' D U' R2 U' R U' R' U R' U R2 D'",
+    "gens": "RUD",
+    "stm": 15,
+    "found": true,
+    "inDepthOf": [
+     "RUD"
+    ]
+   },
+   "totalFound": 22
+  },
+  {
+   "id": "H",
+   "ref": "M2 U' M2 U2 M2 U' M2",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1337,
+     "found": 224,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 354,
+     "found": 1028,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 U2 R' U2 R2 U2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 11,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 11
+    },
+    {
+     "alg": "R2 U2 R U2 R2 U2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 11,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 11
+    },
+    {
+     "alg": "R2 U2 R2 U2 R2 U' R2 U2 R2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 12,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R2 U2 R2 U2 R2 U R2 U2 R2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 12,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R U2 R2 U2 R2 U R2 U R U R U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 14,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U2 R' U' R' U' R2 U' R2 U2 R2 U2 R'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 14,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' U2 R2 U2 R2 U' R2 U' R' U' R' U2 R",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 14,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' U2 R U R U R2 U R2 U2 R2 U2 R",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 14,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' U2 R2 U2 R2 U2 R2 U' R2 U R U R U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U2 R U R U R2 U' R2 U2 R2 U2 R2 U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R2 U2 R2 U2 R2 U R2 U' R' U' R' U2 R",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R' U' R' U' R2 U R2 U2 R2 U2 R2 U2 R",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "D2 R2 U2 R' U2 R2 D2 U2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R2 U2 R' U2 R2 D U2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R2 U2 R' U2 R2 D' U2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' D U2 D' R2 U2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' D' U2 D R2 U2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' D2 U2 D2 R2 U2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R2 U2 R' U2 R2 U2 D' R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' U2 R2 D U2 D' R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R2 U2 R' U2 R2 U2 D R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' U2 R2 D' U2 D R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D2 R2 U2 R' U2 R2 U2 D2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' U2 R2 D2 U2 D2 R2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D2 R2 U2 R U2 R2 D2 U2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R2 U2 R U2 R2 D U2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R2 U2 R U2 R2 D' U2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R D U2 D' R2 U2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R D' U2 D R2 U2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R D2 U2 D2 R2 U2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R2 U2 R U2 R2 U2 D' R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R U2 R2 D U2 D' R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R2 U2 R U2 R2 U2 D R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R U2 R2 D' U2 D R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D2 R2 U2 R U2 R2 U2 D2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R U2 R2 D2 U2 D2 R2 U2 R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R2 U2 R' U2 R2 U2 R2 U2 R' U2 R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' U2 R2 D U2 R2 U2 R' U2 R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U2 R' U2 R2 U2 D R2 U2 R' U2 R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R2 U2 R U2 R2 U2 R2 U2 R U2 R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    }
+   ],
+   "known": {
+    "core": "M2 U' M2 U2 M2 U' M2",
+    "gens": "UM",
+    "stm": 7,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 1240
+  },
+  {
+   "id": "Ja",
+   "ref": "L' U' L F L' U' L U L F' L2 U L",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1291,
+     "found": 324,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 357,
+     "found": 97,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 D U' R2 U' R2 U R2 D' R2 U R2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 18,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U' R2 D R2 U' R2 U R2 U D' R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 18,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U' R' F R U' R2 U R2 U R F' R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' F R' U' R2 U' R2 U R' F' R U R2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R2 D R2 U' R U R2 D' R U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R' D R2 U' R' U R2 D' R2 U R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R' F R U' R' U R U2 R2 U' F' U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R2 U' R2 U2 F2 U' R2 U' R2 U F2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' U2 R' U F U' F' U' R U' F",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 4,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "F' U' R F R' U' R F' R' U2 F",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 4,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "F R' U R U' F' U R' U2 R U' R' U2 R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U2 R U R' U2 R U' F U R' U' R F'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U' R' U' F U R2 U2 R' U' R U R' F' R",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' R2 U2 R2 U F2 U2 R2 U R2 U' R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U F2 U' R2 U R2 U' R2 U' R2 U' F2 U' R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U F2 U2 R2 U R2 U R2 U' R2 U2 F2 U' R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U F2 U' R2 U2 R2 U F2 U R2 U R2 U R2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' R2 U2 F2 U' R2 U R2 U F2 U2 R2 U R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 R2 U F2 U R2 U R2 U R2 U' R2 U F2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' R2 U' F2 U' R2 U2 R2 U F2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 R2 U F2 U2 R2 U R2 U' R2 U' R2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U2 R F R' U R F' R' U F",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F' U R' U F U F' U' R U2 F",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F' U' F R' U' R F' R' U R U F",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F2 U' F2 R' U' R F2 R' U R U F2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U' F U R2 U2 R' U' R U R' F' R U2 R'",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U R' U2 R U R' U2 R U' F U R' U' R",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F R U' R2 U' R U R U R' F' U' R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R F R' U R U' F' U' R U R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' F R U' R' U R U2 R2 U' F' U R U R",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' R2 U2 R2 U F2 U R2 U R2 U R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U F2 U R2 U R2 U R2 U' R2 U F2 U' R2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R2 U' R2 U' F2 U' R2 U2 R2 U F2 U' R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U F2 U2 R2 U R2 U' R2 U' R2 U2 F2 U' R2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R U' R' U F U R' U' R F' R' U R2",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R2 U2 F2 U' R2 U' R2 U F2 U2 R2 U R2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' R2 U R2 U' R2 U' R2 U' F2 U' R2 U2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U2 R2 U R2 U R2 U' R2 U2 F2 U' R2 U2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U2 F2 U' R2 U R2 U F2 U2 R2 U R2 U2 R2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R U F R U' R' U' R' U R2 U R' F'",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    }
+   ],
+   "known": {
+    "core": "L' U' L F L' U' L U L F' L2 U L",
+    "gens": "UFL",
+    "stm": 13,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 421
+  },
+  {
+   "id": "Jb",
+   "ref": "R U R' F' R U R' U' R' F R2 U' R' U'",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1455,
+     "found": 324,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 347,
+     "found": 97,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R U2 F U' R' U R U F' U R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 16,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 2,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R U' F U' R' U' R U F' U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 16,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 2,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R2 D' U R2 U R2 U' R2 D R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U R2 D' R2 U R2 U' R2 U' D R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U R2 F' R U R U' R' F R U' R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U R' F' R U R' U' R' F R2 U' R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U R' F' R U R2 U' R' F R' U' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U R F' R U R2 U' R' F R U' R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U R2 D' R2 U R' U' R2 D R' U' R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U R D' R2 U R U' R2 D R2 U' R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U2 R' U' R U F' U2 R' U' R U' F U R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U' F' U R' U R U2 F U' R' U R U2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 F' R' F U' F' R F U' R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 4,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R U F' R' F U F' R F U2 R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 4,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R U2 R U F' R U R U' R' F U' R' U R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U' R U F' R U R' U' R' F U' R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U F U F' R' F U' F' R U' R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U R' F U F' R F U' F' U' R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U F U F' R2 F U' F' R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U R2 F U F' R2 F U' F' U' R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U2 R U F' U R' U R U2 F U' R' U' R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U2 R U' F U' R' U' R U F' U2 R' U R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R U F' U2 R' U' R U' F U' R' U2 R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U' R U2 F U' R' U R U F' U R' U2 R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R U' F U' R' U' R U F' U2 R' U R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R U2 F U' R' U R U F' U R' U2 R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' R2 U R2 U F2 U' R2 U R2 U' R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' R2 U R2 U F2 U2 R2 U R2 U R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U2 R U' F U' R' U' R U F' U2 R' U R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' F2 U' R2 U R2 U F2 U2 R2 U R2 U R2",
+     "preAUF": 2,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R2 U' R2 U2 F2 U' R2 U' R2 U F2 U R2",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R U2 F U' R' U R U F' U R' U2 R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R2 U' R2 U F2 U' R2 U' R2 U F2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' R2 U2 F2 U' R2 U' R2 U F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F U F' R F U2 R' U R U F' R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F U' R' U' R U2 F' R' F U' F' R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R F U' R' U' R U2 F' R' F U' F'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' F U F' R F U2 R' U R U F'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F2 R2 U R2 U' R2 U F2 U R2 U2 F2 U2 R2",
+     "preAUF": 2,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 F2 U2 R2 U' F2 U' R2 U R2 U' R2 F2",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "R U R' F' R U R' U' R' F R2 U' R'",
+    "gens": "RUF",
+    "stm": 13,
+    "found": true,
+    "inDepthOf": [
+     "RUF"
+    ]
+   },
+   "totalFound": 421
+  },
+  {
+   "id": "Na",
+   "ref": "F' R U R' U' R' F R2 F U' R' U' R U F' R'",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1313,
+     "found": 14,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 343,
+     "found": 9,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 U2 F2 U' R2 U' R2 U F2 U R2 U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' F2 U' R2 U R2 U F2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 R2 U F2 U2 F2 R2 U R2 U2 R2 F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F2 R2 U2 R2 U' R2 F2 U2 F2 U' R2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R D' U2 R U' R2 D R' D' R2 U D R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R D' U' R2 D R D' R2 U R' U2 D R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' R2 U R2 U' R2 F U2 F' R2 U R2 U' R2 F",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "D R2 D' R' D R2 U' R U2 D' R U2 R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 D' R D R2 D' U' R U2 R U2 R' U2 D R'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R D' U2 R U2 R' U2 R' U D R2 D' R' D R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "D' R U2 R U2 R' D U2 R' U R2 D' R D R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "D' R U2 R U2 R' U2 D R' U R2 D' R D R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R U2 R' D U2 R' U R2 D' R D R2 D'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 D' R' D R2 U' R U2 D' R U2 R' U2 R' D",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U F2 R2 U F' R2 F U' R2 F2 U' F",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 6,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F2 U2 R2 U' R2 F2 U2 F2 R2 F2 R2 U F2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 F2 U' R2 F2 R2 F2 U2 F2 R2 U R2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 U2 F' U2 F2 R2 F' U2 F2 U2 R2 F' R2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U2 F' U2 R2 F2 R2 F R2 U2 F2 U2 F R2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F R2 U2 F2 U2 F R2 F2 U2 F U2 R2 F2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F' U2 F2 U2 R2 F' R2 F2 R2 U2 F U2 F2",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U F2 U2 R2 U F2 U2 F2 U' R2 U2 F2 U' F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' R2 U2 F2 U' F2 U2 F2 U F2 U2 R2 U F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "F' R U R' U' R' F R2 F U' R' U' R U F' R'",
+    "gens": "RUF",
+    "stm": 16,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 23
+  },
+  {
+   "id": "Nb",
+   "ref": "R' U R U' R' F' U' F R U R' F R' F' R U' R",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1338,
+     "found": 14,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 336,
+     "found": 9,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R U' R2 F2 U' R F2 R' U F2 R2 U R'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 3,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U F2 U2 R2 U R2 U2 R2 U' R2 U2 F2 U' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' R2 U2 F2 U' R2 U2 R2 U F2 U2 R2 U R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 U2 F2 U F2 R2 U2 R2 U F2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U2 F2 U' R2 U2 R2 F2 U' F2 U2 F2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F2 R U2 R2 U2 F2 R F2 R2 F2 U2 R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F2 R' F2 U2 R2 U2 R' F2 R2 U2 R' U2 F2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U2 R U2 F2 R2 F2 R' F2 U2 R2 U2 R' F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 F2 U2 R U2 R2 F2 R U2 R2 U2 F2 R F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' D U2 R' U R2 D' R D R2 U' D' R U2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U2 R' D U R2 D' R' D R2 U' R U2 D' R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D' R2 D R D' R2 U R' U2 D R' U2 R U2 R",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 D R' D' R2 D U R' U2 R' U2 R U2 D' R",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "D R' U2 R' U2 R D' U2 R U' R2 D R' D' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "D R' U2 R' U2 R U2 D' R U' R2 D R' D' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' D U2 R' U2 R U2 R U' D' R2 D R D' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 D R D' R2 U R' U2 D R' U2 R U2 R D'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U2 R' U2 R D' U2 R U' R2 D R' D' R2 D",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 R2 U F2 R2 F2 R2 U2 R2 F2 U' F2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 F2 U F2 R2 U2 R2 F2 R2 F2 U' R2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R F2 U' F2 U F2 R' U2 R F2 U' F2 U F2 R'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 R2 U F2 U F2 U' R2 U' F2 U' F2 U F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' F2 U F2 U R2 U F2 U' F2 U' R2 U2 F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "R' U R U' R' F' U' F R U R' F R' F' R U' R",
+    "gens": "RUF",
+    "stm": 17,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 23
+  },
+  {
+   "id": "Ra",
+   "ref": "R U' R' U' R U R D R' U' R D' R' U2 R' U'",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1336,
+     "found": 34,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 343,
+     "found": 2,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 F2 U R U R' U' R' U' F2 R' U R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U' R F2 U R U R U' R' U' F2 R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U2 R' U' R' F' R U2 R U2 R' F R U' R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U R' F' R U2 R' U2 R' F R U R U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R D R' U R D' R' U' R' U R U R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U' R' U' R U R D R' U' R D' R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U2 F' R' U' R U F U' R' U R U2 F'",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U2 R' U' R U F' U' R' U R F U2 F'",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' F2 U' F2 U R2 U2 R2 U' R2 U' R2 U' F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U R2 U R2 U R2 U2 R2 U' F2 U F2 U F2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R2 F R F' R U' R' F' U F R U' R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F R' F' R U' F' U F R U' R' U2 R U2 R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R' F' U' F R U R' F R' F' R2 U2 R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U2 R' U2 R U R' F' U' F U R' F R F'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 F' U' F R U F' U' R' U R F2 R' F' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F R F2 R' U' R U F U' R' F' U F R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' F2 U' F2 R' F' R F' U F R U' R' F R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' F' R U R' F' U' F R' F R F2 U F2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 R' F' U' F U F U' R F R' U R F",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' R' U' R F' R' U F' U' F' U F R F2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U2 F' R F U R2 U' F R2 F' U R2 F' R'",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U' F2 U' R2 U2 F2 U F2 U' F2 U F2 U R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F2 U R2 F U F' R2 U' F' U' F' U F' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 F U' F U F U R2 F U' F' R2 U' F2 R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R F R2 U' F R2 F' U R2 U' F' R' F U2 F'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' F2 U' F2 U F2 U' F2 U2 R2 U F2 U F2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R' F' U' F' U F R F' U2 F U2 F'",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 7,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F U2 F' U2 F R' F' U' F U F R F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 7,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' U' F' R U R2 F' R2 U' R2 F2 R F U F'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F U' F' R' F2 R2 U R2 F R2 U' R' F U F",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U2 R' F2 R F' R' F' R U F2 U F U2 F",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U2 F' U' F2 U' R' F R F R' F2 R U2 F2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 30,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F U2 F' U2 R' F' U F U2 F U2 F2 U' F R",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 F' R2 U' F' R' F' U F U2 R F U2 F'",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' F' U F2 U2 F' U2 F' U' F R U2 F U2 F'",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F U2 F' R' U2 F' U' F R F U R2 F R2 F2",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    }
+   ],
+   "known": {
+    "core": "R U' R' U' R U R D R' U' R D' R' U2 R'",
+    "gens": "RUD",
+    "stm": 15,
+    "found": true,
+    "inDepthOf": [
+     "RUD"
+    ]
+   },
+   "totalFound": 36
+  },
+  {
+   "id": "Rb",
+   "ref": "R' U2 R U2 R' F R U R' U' R' F' R2",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1394,
+     "found": 34,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 347,
+     "found": 2,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R' U2 R U2 R' F R U R' U' R' F' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 F R U R U' R' F' R U2 R' U2 R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U2 R U2 F R U' R' U2 R' U2 R2 U R' F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U2 R' D' R U' R' D R U R U' R' U' R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F R U' R2 U2 R U2 R U R' F' U2 R' U2 R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U R2 U R2 U' R2 U R2 U2 F2 U' R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U F2 U2 R2 U' R2 U R2 U' R2 U' F2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U R U R' U' R' D' R U R' D R U2 R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 R F U F' U' R' U F U' F' U2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' U2 R F U2 R U R' F' R' U' F2 R' F2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F R U R' U' R' U F' R' F U' F' R'",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U2 F U F' U' R U F U' F' R' U2 R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R F U F' R F U' R U R U' R' F' R2",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R U R2 U F R' F' R' F R2 F' U2 R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R2 U' F2 R' U' R F2 U R U R U' R F2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 F R2 F' R F R F' U' R2 U' R' U2 R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 F2 R F2 U R F R U' R' U2 F' R' U2 R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' F2 U' F2 U' F2 U2 F2 U R2 U' R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R2 U' F2 U2 F2 U F2 U F2 U R2",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R' U R' U' R' U' F2 R' U R F2 U R2 F2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 U' F' U' F U F U R2 F U' F",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 6,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' U2 R F' R' U' F2 U R' F2 R U' F2 R F",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U F' R2 U' F' U' F' U F U R2 F2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U R F R2 F2 U' F2 R' F2 U F R' U' R'",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R F' U' F2 R F2 U F2 R2 F' R' U' R",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' R' F2 U R' F2 R U' F2 U R F R' U2 R",
+     "preAUF": 2,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U2 F U2 F' U' F R U R' U' F R' F' R",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' F R F' U R U' R' F' U F U2 F' U2 F",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 R U R' F' U' R U F U' F' R2 F R F2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F R2 U R2 F R F' R U' R' F' U F R' F'",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F R F' U' F R U R' F R' F' R2 U' R2 F'",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R' F' R2 F U F' U' R' U F R U' R' F2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U2 F2 R' F' R F' U F R U' R' F' U F",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U' F R U R' F' U' F R' F R F2 U2 F",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F' U' F R F' U2 F U2 F R' F' U' F' U2 F",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 32,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 8,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U2 F U F R F' U2 F' U2 F R' F' U F",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 33,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 8,
+     "stmWithAuf": 17
+    }
+   ],
+   "known": {
+    "core": "R' U2 R U2 R' F R U R' U' R' F' R2",
+    "gens": "RUF",
+    "stm": 13,
+    "found": true,
+    "inDepthOf": [
+     "RUF"
+    ]
+   },
+   "totalFound": 36
+  },
+  {
+   "id": "T",
+   "ref": "R U R' U' R' F R2 U' R' U' R U R' F'",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1296,
+     "found": 54,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 358,
+     "found": 102,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "D R2 U' R2 U R2 D' U R2 U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R2 U' R2 U R2 U D' R2 U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R2 U R2 U' R2 D U' R2 U' R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R2 U R2 U' R2 U' D R2 U' R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U R2 U' R2 D U' R2 U' R2 U R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' D R2 U' R2 U R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U' R2 U R2 D' U R2 U R2 U' R2 D",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U' R2 U R2 U D' R2 U R2 U' R2 D",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F R U' R' U R U R2 F' R U R U' R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U R' U' R' F R2 U' R' U' R U R' F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "D U2 R2 U' R2 U R2 U D' R2 U R2 U' R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D U' R2 U' R2 U R2 U D' R2 U R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D U R2 U' R2 U R2 U D' R2 U R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D' U2 R2 U R2 U' R2 U' D R2 U' R2 U R2",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D' U' R2 U R2 U' R2 U' D R2 U' R2 U R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D' U R2 U R2 U' R2 U' D R2 U' R2 U R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R2 D U' R2 U' R2 U R2 U' D'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' D R2 U' R2 U R2 U' D'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R2 D U' R2 U' R2 U R2 U D'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' D R2 U' R2 U R2 U D'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R2 D U' R2 U' R2 U R2 U2 D'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R2 U' D R2 U' R2 U R2 U2 D'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U R2 D' U R2 U R2 U' R2 U' D",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U R2 U D' R2 U R2 U' R2 U' D",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U R2 D' U R2 U R2 U' R2 U D",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U R2 U D' R2 U R2 U' R2 U D",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U R2 D' U R2 U R2 U' R2 U2 D",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U R2 U D' R2 U R2 U' R2 U2 D",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U' R' F R' U' R2 U' R2 U R' F' R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U R2 U R F' R U R2 U' R' F R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R F R U' R2 U R2 U R F' R U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R F' R U R2 U' R' F R' U' R2 U' R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' D R2 U' R' U R U R D' R2 U R U' R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R U R2 D' R U R U R' U' R2 D R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R D' R2 U R U' R' U' R' D R2 U' R' U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U R' U' R2 D R' U' R' U' R U R2 D' R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "D R2 U' R2 U R2 D2 U D R2 U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "D R2 U' R2 U R2 D U D2 R2 U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "D' R2 U R2 U' R2 D2 U' D' R2 U' R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "D' R2 U R2 U' R2 D' U' D2 R2 U' R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 20,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 3,
+     "stmWithAuf": 14
+    }
+   ],
+   "known": {
+    "core": "R U R' U' R' F R2 U' R' U' R U R' F'",
+    "gens": "RUF",
+    "stm": 14,
+    "found": true,
+    "inDepthOf": [
+     "RUF"
+    ]
+   },
+   "totalFound": 156
+  },
+  {
+   "id": "Ua",
+   "ref": "R U' R U R U R U' R' U' R2",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1458,
+     "found": 402,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 346,
+     "found": 419,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R U' R U R U R U' R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 11,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 11
+    },
+    {
+     "alg": "R2 U' R' U' R U R U R U' R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 13,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U' R' U' R2 U R U R U2 R",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 13,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U2 R U R U R2 U' R' U' R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 13,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U R' U' R' U' R U R U R U2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 13,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U R' U R' U' R2 U' R' U R' U R",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 14,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R U2 R U R U R U' R' U' R' U R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R' U' R' U R2 U2 R2 U' R U R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R2 U' R U R U2 R' U' R' U R",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U R' U' R' U2 R U R U' R2 U2 R",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R U2 R' U' R' U' R2 U R U' R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U R U' R2 U2 R2 U R' U' R' U2 R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R U R2 U' R' U' R' U2 R U2 R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U R U' R' U' R U R U R U' R2 U' R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R2 U' R' U' R' U R U R U R U2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R U R U R U R' U' R' U' R2 U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R U2 R2 U2 R' U R U R2 U' R' U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R U R U R U2 R' U' R' U' R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R' U' R2 U R U R' U2 R2 U2 R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R U' R' U' R' U2 R U R U R U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R2 U' R U' R2 U2 R2 U2 R' U2 R' U' R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U2 R U R' U R U R U2 R' U' R U' R'",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U' R2 U R U R' U2 R' U R U R2 U' R'",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U R' U2 R2 U' R U2 R U' R2 U2 R' U R'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R2 U2 R2 U R U' R U R U R2 U2 R'",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U2 R U R U R' U R U2 R' U' R' U' R",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U' R D U D' R U R U' R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R D' U D R U R U' R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R D2 U D2 R U R U' R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R U R D U D' R U' R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R U R D' U D R U' R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R U R D2 U D2 R U' R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R U' R U R U R U' R' U' R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R U' R U R U R U' R' U' R2 D",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D2 R U' R U R U R U' R' U' R2 D2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U R2 U' R' U' R U R U R U' R U' R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R2 U' R' U' R' U R U R U R U' R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R U R U' R U R2 U2 R2 U2 R U' R'",
+     "preAUF": 3,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R U' R' U R U R U R' U' R2 U' R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U' R2 U R U' R' U' R' U' R U R' U R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    }
+   ],
+   "known": {
+    "core": "R U' R U R U R U' R' U' R2",
+    "gens": "RU",
+    "stm": 11,
+    "found": true,
+    "inDepthOf": [
+     "RUF",
+     "RUD"
+    ]
+   },
+   "totalFound": 750
+  },
+  {
+   "id": "Ub",
+   "ref": "R' U R' U' R' U' R' U R U R2",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1450,
+     "found": 402,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 374,
+     "found": 419,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R' U R' U' R' U' R' U R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 11,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 11
+    },
+    {
+     "alg": "R2 U R U R' U' R' U' R' U R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 13,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U R U R2 U' R' U' R' U2 R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 13,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U2 R' U' R' U' R2 U R U R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 13,
+     "stm": 11,
+     "etm": 11,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R U R U R' U' R' U' R' U2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 13,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U' R U' R U R2 U R U' R U' R'",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 14,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' U2 R2 U R' U' R' U2 R U R U' R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R U R U2 R' U' R' U R2 U2 R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R U R U' R2 U2 R2 U R' U' R",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U2 R' U' R' U' R' U R U R U' R",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R' U2 R U R U R2 U' R' U R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R' U' R2 U R U R U2 R' U2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U' R' U R2 U2 R2 U' R U R U2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 15,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U R' U' R' U' R' U' R U R U R2 U' R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R' U R U R' U' R' U' R' U R2 U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U2 R2 U R U R U' R' U' R' U' R' U2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R' U' R' U' R' U2 R U R U R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R U R2 U' R' U' R U2 R2 U2 R' U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R' U2 R2 U2 R U' R' U' R2 U R U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U2 R' U R U R U2 R' U' R' U' R' U2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R U2 R' U' R' U' R U' R' U2 R U R U R'",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U' R U2 R2 U R' U2 R' U R2 U2 R U' R",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U2 R' U' R U' R' U' R' U2 R U R' U R",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 R2 U R' U R2 U2 R2 U2 R U2 R U R",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U R2 U' R' U' R U2 R U' R' U' R2 U R",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U2 R2 U2 R2 U' R' U R' U' R' U' R2 U2 R",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F R' U R' U' R' U' R' U R U R2 F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F' R' U R' U' R' U' R' U R U R2 F",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F2 R' U R' U' R' U' R' U R U R2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U R' D U' D' R' U' R' U R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U R' D' U' D R' U' R' U R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U R' D2 U' D2 R' U' R' U R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U R' U' R' D U' D' R' U R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U R' U' R' D' U' D R' U R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U R' U' R' D2 U' D2 R' U R U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D R' U R' U' R' U' R' U R U R2 D'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D' R' U R' U' R' U' R' U R U R2 D",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "D2 R' U R' U' R' U' R' U R U R2 D2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 17,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 2,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U R2 U R U' R' U' R' U' R U R' U' R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R2 U R' U' R' U' R' U R U R' U' R'",
+     "preAUF": 2,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    }
+   ],
+   "known": {
+    "core": "R' U R' U' R' U' R' U R U R2",
+    "gens": "RU",
+    "stm": 11,
+    "found": true,
+    "inDepthOf": [
+     "RUF",
+     "RUD"
+    ]
+   },
+   "totalFound": 750
+  },
+  {
+   "id": "V",
+   "ref": "R' U R' U' R D' R' D R' U D' R2 U' R2 D R2",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1484,
+     "found": 16,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 396,
+     "found": 0,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 U2 R2 U R2 U2 F2 U R2 U R2 U2 F2 U' R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U2 R2 U' F2 U2 R2 U' R2 U' F2 U2 R2 U R2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U F2 U2 R2 U' R2 U' F2 U2 R2 U' R2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' R2 U2 F2 U R2 U R2 U2 F2 U R2 U2 R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 20,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R F R F' U F' U' F2 R' F' U' R' U R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U' R U F R F2 U F U' F R' F' R'",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U F' U' R' F' R2 U' R' U R' F R F",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' R' F' R U' R U R2 F R U F U' F",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' R2 F R U' F' R F2 R2 U R U' R F' R",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' F R' U R' U' R2 F2 R' F U R' F' R2 F",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 26,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 F2 U R2 U2 F2 U F2 U R2 U2 F2 U' F2",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U2 F2 U' F2 U2 R2 U' F2 U' F2 U2 R2 U F2",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U F2 U2 R2 U' F2 U' F2 U2 R2 U' F2 U2 F2",
+     "preAUF": 2,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U' R2 U2 F2 U F2 U R2 U2 F2 U F2 U2 F2",
+     "preAUF": 2,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 29,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F R' F U' F U F2 R2 F R' U' F R F2 R'",
+     "preAUF": 2,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R F2 R' F' U R F' R2 F2 U' F' U F' R F'",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 31,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 7,
+     "stmWithAuf": 17
+    }
+   ],
+   "known": {
+    "core": "R' U R' U' R D' R' D R' D' U R2 U' R2 D R2",
+    "gens": "RUD",
+    "stm": 16,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 16
+  },
+  {
+   "id": "Y",
+   "ref": "F R' F R2 U' R' U' R U R' F' R U R' U' F'",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1549,
+     "found": 40,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 375,
+     "found": 4,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 U' R2 F2 U' R2 U R2 U F2 U' R2 U R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U F2 U' R2 U' R2 U F2 R2 U R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U' R2 U R' F' R U R2 U' R' F R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' F' R U R2 U' R' F R U' R2 U R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 D' R2 U R2 U' R2 D R2 U' R2 U R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U' R2 U R2 D' R2 U R2 U' R2 D R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUD",
+     "score": 19,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U F2 U F2 U' R' U' R F2 R' U R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F U F' R2 F U' F' U' R2 U R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U' R2 U' R2 U F U F' R2 F U' F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R' U' R F2 R' U R U F2 U' F2 U' F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 4,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 U' F2 U' R2 U2 R2 U F2 U' R2 U R2 U' R2",
+     "preAUF": 2,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U' R2 U F2 U' R2 U2 R2 U F2 U R2",
+     "preAUF": 3,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 D R2 U' R2 U R2 D' R2 U R2 U' R2 U' R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R2 U' R2 D R2 U' R2 U R2 D' R2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUD",
+     "score": 21,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 2,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U' R F' R' U R U F U' F' U' F R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R' F' U F U F' U' R' U' R F R' U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "R2 U R2 F2 U2 F2 U F2 U F2 U2 R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U R2 U2 F2 U' F2 U' F2 U2 F2 R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U' F2 U2 R2 U R2 U R2 U2 R2 F2 U F2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U' F2 R2 U2 R2 U' R2 U' R2 U2 F2 U F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F R2 U F' U2 R' U' R U' F U' R' U' R' F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F R U R U F' U R' U R U2 F U' R2 F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U F' R F U' F' U' R' U R U R' F'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F R U' R' U' R U F U F' R' F U' F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 5,
+     "stmWithAuf": 14
+    },
+    {
+     "alg": "F U' F' U' R U2 R2 U F U' F' U' R2 U' R'",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F' U' F2 U' R' U' R U F2 U2 F U' R' U' R",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' F' U F R2 U' R F R' U R2 U' F' U' R",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U F U R2 U' R F' R' U R2 F' U' F R",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U R2 U F U F' U' R2 U2 R' U F U F'",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U R U F' U2 F2 U' R' U R U F2 U F",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F2 U2 F2 U R U' R' U' F2 U2 F2 U' R U R'",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' F2 U' R U2 F U F' U R' U F U F R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' F' U' F' U' R U' F U' F' U2 R' U F2 R",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' U F U' R2 U2 R2 U' F' U' F U R2 U2 R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U2 R2 U' F' U F U R2 U2 R2 U F' U' F",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U' R' U F2 U2 F2 U R U R' U' F2 U2 F2",
+     "preAUF": 3,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 U F2 U' R2 U F2 U F2 U' R2 F2 U' F2",
+     "preAUF": 3,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 U F2 R2 U F2 U' F2 U' R2 U F2 U' F2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 27,
+     "stm": 14,
+     "etm": 14,
+     "regrips": 6,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F U' R' U' F2 U F' R F U' F2 R U R' F'",
+     "preAUF": 2,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "F R U' R' F2 U F' R' F U' F2 U R U F'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RUF",
+     "score": 28,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 6,
+     "stmWithAuf": 16
+    }
+   ],
+   "known": {
+    "core": "F R' F R2 U' R' U' R U R' F' R U R' U' F'",
+    "gens": "RUF",
+    "stm": 16,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 44
+  },
+  {
+   "id": "Z",
+   "ref": "M2 U' M2 U' M' U2 M2 U2 M' U2",
+   "perSet": {
+    "RUF": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 1555,
+     "found": 88,
+     "tableSize": 335922,
+     "truncated": false
+    },
+    "RUD": {
+     "dA": 7,
+     "dW": 8,
+     "ms": 353,
+     "found": 10,
+     "tableSize": 115710,
+     "truncated": false
+    }
+   },
+   "algs": [
+    {
+     "alg": "R2 U' R2 U' R' U2 R2 U2 R2 U2 R' U R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 U' R2 U' R U2 R2 U2 R2 U2 R U R2 U R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RU",
+     "score": 15,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' U' R U' R U R U' R' U R U R2 U' R'",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R U R2 U' R' U' R U R' U' R' U R' U R",
+     "preAUF": 0,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R2 U' R2 U2 R2 U' R2 U R2 U' R2 U2 R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 16,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U' R2 U R U R' U' R U R U' R U' R'",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R U R' U R' U' R' U R U' R' U' R2 U R",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R' U2 R2 U2 R2 U2 R' U' R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U R U2 R2 U2 R2 U2 R U' R2 U' R2",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 U R2 U2 R2 U R2 U' R2 U R2 U2 R2 U R2",
+     "preAUF": 1,
+     "postAUF": 2,
+     "gens": "RU",
+     "score": 17,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 0,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R2 U' F2 U R2 F2 R2 U R2 U' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 3,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R2 U R2 U' R2 F2 R2 U' F2 U R2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 18,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 3,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "F2 U' F2 U F2 R2 F2 U R2 U' F2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 5,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R2 F2 U R2 U' F2 R2 F2 U' F2 U F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 22,
+     "stm": 12,
+     "etm": 12,
+     "regrips": 5,
+     "stmWithAuf": 12
+    },
+    {
+     "alg": "R2 F2 U' R2 F2 R2 U2 F2 R2 F2 U' F2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 5,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R2 F2 U F2 R2 F2 U2 R2 F2 R2 U F2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 5,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F2 R2 U' R2 F2 R2 U2 F2 R2 F2 U' R2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 5,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "F2 R2 U F2 R2 F2 U2 R2 F2 R2 U R2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 13,
+     "etm": 13,
+     "regrips": 5,
+     "stmWithAuf": 13
+    },
+    {
+     "alg": "R U' R' U F2 U2 R' F2 R U2 F2 U' R U R'",
+     "preAUF": 1,
+     "postAUF": 1,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 3,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R2 F U F' R' U2 R2 U2 R2 U2 R' F U' F' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F U F' R U2 R2 U2 R2 U2 R F U' F' R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F' U F R' U2 R2 U2 R2 U2 R' F' U' F R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F' U F R U2 R2 U2 R2 U2 R F' U' F R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F2 U F2 R' U2 R2 U2 R2 U2 R' F2 U' F2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R2 F2 U F2 R U2 R2 U2 R2 U2 R F2 U' F2 R2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' R2 U F R' U2 R2 U2 R2 U2 R' F' U' R2 F",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' R2 U F R U2 R2 U2 R2 U2 R F' U' R2 F",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 R2 U F2 R' U2 R2 U2 R2 U2 R' F2 U' R2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F2 R2 U F2 R U2 R2 U2 R2 U2 R F2 U' R2 F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 23,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R' F' U' F U R U R' U' F R' F' R U R",
+     "preAUF": 0,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R' U' R' F R F' U R U' R' U' F' U F R",
+     "preAUF": 1,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 24,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 16
+    },
+    {
+     "alg": "R F2 R U' R2 F2 R2 U2 F2 R2 F2 U' R' F2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R F2 R U F2 R2 F2 U2 R2 F2 R2 U R' F2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R F2 U' R' F2 R2 U2 F2 R2 F2 U2 R' U F2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "R F2 U' R U2 F2 R2 F2 U2 R2 F2 R U F2 R'",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    },
+    {
+     "alg": "F' U F R' U' F R F' R2 U' R' U R U R",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U2 F' U F R' U' F R F' R' U R U R",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R' U' R F R' F' U R F' U' F U2 R",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "R' U' R' U' R U R2 F R' F' U R F' U' F",
+     "preAUF": 1,
+     "postAUF": 3,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 4,
+     "stmWithAuf": 17
+    },
+    {
+     "alg": "F2 R U' R' F2 R2 U2 F2 R2 F2 U2 R' U R' F2",
+     "preAUF": 0,
+     "postAUF": 0,
+     "gens": "RUF",
+     "score": 25,
+     "stm": 15,
+     "etm": 15,
+     "regrips": 5,
+     "stmWithAuf": 15
+    }
+   ],
+   "known": {
+    "core": "M2 U' M2 U' M' U2 M2 U2 M'",
+    "gens": "UM",
+    "stm": 9,
+    "found": false,
+    "inDepthOf": []
+   },
+   "totalFound": 88
+  }
+ ]
+}
