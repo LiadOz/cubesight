@@ -114,6 +114,7 @@ export function createPLLTrainer(root) {
   let trial = null;
   let trialToken = 0;
   let startHash = null, linkedStart = null, startPromise = null;
+  let linkedAttempts = 0, linkedVariations = null;
   let startedAt = 0;
   let timerFrame = null;
   let idleTimer = null;
@@ -251,7 +252,7 @@ export function createPLLTrainer(root) {
   async function readLinkedStart() {
     const hash = globalThis.location?.hash ?? '';
     if (hash !== startHash) {
-      startHash = hash; linkedStart = null;
+      startHash = hash; linkedStart = null; linkedAttempts = 0; linkedVariations = null;
       startPromise = resolvePLLStart(hash).catch(() => ({ error: 'This position could not be loaded. Check the link and try again.' }));
     }
     const value = await startPromise;
@@ -297,18 +298,33 @@ export function createPLLTrainer(root) {
       return;
     }
     $('#pll-cube').hidden = false;
+    let linkedState = start.state;
+    if (start.pin && linkedAttempts > 0) {
+      setMessage('preparing a verified variation…');
+      linkedVariations ??= import('./drills/pin-variations.js').then(({generatePinVariations}) => generatePinVariations(start.pin, {count: 3})).catch(() => []);
+      const variants = await linkedVariations;
+      if (token !== trialToken || !active) return;
+      const variation = variants[(linkedAttempts - 1) % variants.length];
+      if (!variation) {
+        locked = true; $('#pll-cube').hidden = true; $('#pll-answers').replaceChildren();
+        setMessage('No new verified variation was found for this saved position. Choose another point in the solve.', 'info');
+        return;
+      }
+      linkedState = variation.state;
+    }
     const selected = start.recognized ? getCase(start.recognized.name) : chooseCase();
     let generated;
     try {
       generated = await Promise.resolve(createPLLTrial({ mode, family, caseId: selected?.id || selected?.caseId }));
-      if (start.state) {
-        const state = start.state;
+      if (linkedState) {
+        const state = linkedState;
         generated = {...generated, state, renderData: toRenderData(state)};
       }
     } catch { setMessage('Couldn’t load PLL cases. Reload and try again.', 'error'); return; }
     if (token !== trialToken || !active) return;
     trial = { ...generated, caseId: generated?.caseId || generated?.id || selected?.id, name: generated?.name || generated?.label || selected?.name || selected?.id, family: generated?.family || selected?.family || family };
     root.dataset.pllCase = trial.caseId;
+    if (start.pin) linkedAttempts++;
     const seenStats = caseStats(trial.caseId);
       trial.delayedEligible = mode === 'transfer' && isDelayedRetentionEligible(seenStats.lastSeen);
     const data = renderDataFor(trial); cube.update(data);

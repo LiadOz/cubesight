@@ -186,7 +186,7 @@ test('timed scan scores a pseudo pair with phone taps under a visible D offset',
   await clickPiece(page, pair.cornerPiece);
   await clickPiece(page, pair.edgePiece);
   await expect(page.locator('#f2l-found')).toHaveText('1');
-  await expect(page.locator('#f2l-status')).toContainText('Pseudo pair found');
+  await expect(page.locator('#f2l-status')).toContainText('Pseudo pair!');
   await context.close();
 });
 

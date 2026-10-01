@@ -14,6 +14,7 @@ import { rememberDrill } from './drills/catalog.js';
 import { createRoundPanel } from './drills/round-panel.js';
 import { syncPageTokens } from './pages/tokens.js';
 import { parseDrillStart } from './drills/start-position.js';
+import { parseCaseFilter } from './drills/case-filter.js';
 import { resolveDrillPosition } from './drills/position.js';
 import { analysisStateFromScramble } from './analysis/long-replay.js';
 import { relabelMoves } from './analysis/normalize.js';
@@ -37,12 +38,15 @@ let f2lActivePin = null;
 let cornerStartHash = null;
 let cornerStartPromise = null;
 let cornerStartPosition = null;
+let cornerCaseFilter = null;
+let f2lCaseFilter = null;
 
 function prepareCornerStart(hash) {
   if (cornerStartHash === hash) return;
   cornerStartHash = hash;
   cornerStartPosition = null;
   const start = parseDrillStart(hash);
+  cornerCaseFilter = parseCaseFilter(start.cases, [...TARGETS.map(item => item.corner), ...CORNER_PIECES.map(familyId)]);
   if (!(start.moves.length || start.review || start.invalid)) { cornerStartPromise = null; return; }
   cornerStartPromise = (async () => {
     if (start.invalid) return { error: 'This setup is not valid move notation. Check the link and try again.' };
@@ -62,6 +66,7 @@ function prepareF2LStart(hash) {
   f2lStartPosition = null;
   f2lActivePin = null;
   const start = parseDrillStart(hash);
+  f2lCaseFilter = parseCaseFilter(start.cases, ['FR', 'BR', 'BL', 'FL']);
   if (!(start.moves.length || start.review || start.invalid)) { f2lStartPromise = null; return; }
   f2lStartPromise = (async () => {
     if (start.invalid) return { error: 'This setup is not valid move notation. Check the link and try again.' };
@@ -325,7 +330,7 @@ document.querySelector('#app').innerHTML = `
         </div>
         <div class="timer-wrap">
           <span class="timer-label">recog · includes key</span>
-          <div id="timer" class="timer" aria-live="off">0.00<span> s</span></div>
+          <div id="timer" class="timer" aria-live="off">0.00</div>
           <small id="exposure-note" class="timing-note">adaptive glance · accuracy before speed</small>
         </div>
         <div class="prompt-block">
@@ -401,7 +406,7 @@ document.querySelector('#app').innerHTML = `
       </section>
       <section class="f2l-info-grid">
         <article><p class="eyebrow">01 / inspect</p><h3>Limited view</h3><p>Scan the top, front, left, and right faces. The camera stops before the back becomes visible.</p></article>
-        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards corner–edge recognition across fresh cases, with optional D-offset pseudo pairs.</p></article>
+        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards corner–edge recognition across fresh cases, with optional D offset pseudo pairs.</p></article>
         <article><p class="eyebrow">03 / plan</p><h3>Choose efficiently</h3><p>The planner compares verified next-pair solutions with ergonomic weights, not raw move count alone.</p></article>
       </section>
     </div>
@@ -417,7 +422,7 @@ document.querySelector('#app').innerHTML = `
     <div id="scout-view" hidden></div>
     <div id="brain-view" hidden></div>
     <div id="smart-view" hidden></div>
-    <section class="retention-panel" aria-label="drill progress"><div><span>due</span><strong id="review-due">0 cases</strong></div><p id="review-summary">No cases yet. Start a round.</p><small>Misses and slow recog return sooner. Accuracy and delayed recall are separate.</small></section>
+    <section class="retention-panel" aria-label="drill progress"><div><span>due</span><strong id="review-due">0 cases</strong></div><p id="review-summary">No cases due. Do a round to build your queue.</p><small>Misses and slow recog return sooner. Accuracy and delayed recall are separate.</small></section>
   </main>
 
   <footer><span>Cubesight <span class="footer-dot">·</span> solve · see the pattern <button class="build-badge" data-action="check-update">Build <b>${BUILD_LABEL}</b></button></span><span>${MSG.stays}</span></footer>
@@ -557,8 +562,8 @@ function createCornerCaseFromCubeState(cubeState, requestedCases = []) {
     const colors = target.faces.map(face => stickers[face]);
     return { target, colors, stickers, family: familyId(colors), twist: 0 };
   }).filter(Boolean);
-  const allowed = new Set(requestedCases);
-  const selected = allowed.size ? targets.filter(item => allowed.has(item.target.id) || allowed.has(item.target.corner) || allowed.has(item.family)) : targets;
+  const allowed = new Set(requestedCases.map(value => value.toLowerCase()));
+  const selected = allowed.size ? targets.filter(item => allowed.has(item.target.id.toLowerCase()) || allowed.has(item.target.corner.toLowerCase()) || allowed.has(item.family.toLowerCase())) : targets;
   if (!selected.length) throw new Error('No corners in this position match the requested cases.');
   // copy-ok: setup-constraint guidance when a requested case filter omits corners
   if (multiCorner() && selected.length !== 3) throw new Error('This mode needs three visible corners. Choose another setup or switch to single-corner practice.');
@@ -575,7 +580,8 @@ function createCornerCaseFromCubeState(cubeState, requestedCases = []) {
 
 function createCase(randomOnly = false) {
   if (multiCorner() && !randomOnly) {
-    const cases = Array.from({ length: 24 }, () => createCase(true));
+    const cases = Array.from({ length: 24 }, () => createCase(true)).filter(current => !cornerCaseFilter?.requested || current.targets.every(item => cornerCaseFilter.values.some(value => value === item.target.corner || value === item.family)));
+    if (!cases.length) throw new Error('This mode needs three matching corners. Choose another case filter or single-corner mode.');
     const candidates = cases.flatMap((current) => current.targets.map((item) => ({ current, learningKey: cornerLearningKey(item) })));
     return chooseDue(learning, candidates).current;
   }
@@ -601,7 +607,9 @@ function createCase(randomOnly = false) {
     const item = makeTargetCase(target, piece, twist);
     return { item, learningKey: cornerLearningKey(item) };
   })));
-  const chosen = chooseDue(learning, candidates);
+  const filtered = cornerCaseFilter?.requested ? candidates.filter(({item}) => cornerCaseFilter.values.some(value => value === item.target.corner || value === item.family)) : candidates;
+  if (!filtered.length) throw new Error('No corners match the requested cases. Choose another case filter.');
+  const chosen = chooseDue(learning, filtered);
   return { orientation, targets: [chosen.item], activeIndex: 0 };
 }
 
@@ -733,7 +741,7 @@ function startCase(successNotice = null) {
     cornerStartPromise = null;
     state.current = null;
     state.locked = true;
-    document.querySelector('#feedback').textContent = 'Loading the saved position…';
+    document.querySelector('#feedback').textContent = 'loading the saved position…';
     void pending.then(position => {
       if (activeTool !== 'corner' || cornerStartHash !== location.hash) return;
       if (position.error) { document.querySelector('#feedback').textContent = position.error; return; }
@@ -742,6 +750,8 @@ function startCase(successNotice = null) {
     });
     return;
   }
+  if (cornerCaseFilter && !cornerCaseFilter.valid) { state.current = null; state.locked = true; document.querySelector('#cube').hidden = true; document.querySelector('#feedback').textContent = 'No known corner cases match this link.'; return; }
+  document.querySelector('#cube').hidden = false;
   const pinned = cornerStartPosition;
   cornerStartPosition = null;
   try { state.current = pinned ? createCornerCaseFromCubeState(pinned.state, pinned.cases) : createCase(); }
@@ -888,8 +898,8 @@ function presentCorner(previousInputAt = null, successNotice = null) {
 function tickTimer(includeFeedback = false) {
   if (state.locked && !includeFeedback) return;
   if (expireTrial(state.startedAt)) return;
-  const elapsed = (performance.now() - state.startedAt) / 1000;
-  document.querySelector('#timer').innerHTML = `${elapsed.toFixed(2)}<span>s</span>`;
+  const elapsed = performance.now() - state.startedAt;
+  document.querySelector('#timer').textContent = fmt.time(elapsed);
   state.timerFrame = requestAnimationFrame(() => tickTimer(includeFeedback));
 }
 
@@ -1117,7 +1127,7 @@ async function checkForUpdate() {
   if (checkingForUpdate) return;
   checkingForUpdate = true;
   const status = document.querySelector('#update-status');
-  status.textContent = 'Checking the server…';
+  status.textContent = 'checking the server…';
   try {
     const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1211,7 +1221,7 @@ function renderF2LPlanner() {
   document.querySelector('#f2l-cross-label').textContent = planner ? `${COLORS[planner.orientation.D].label.toLowerCase()} bottom` : 'CN';
   document.querySelector('#f2l-orientation').textContent = planner
     ? `${COLORS[planner.orientation.D].label} bottom · ${COLORS[planner.orientation.F].label} front`
-    : 'Preparing a verified case…';
+    : 'preparing a verified case…';
   document.querySelector('#f2l-timings').textContent = 'U/R/L/D/Uw = 1 · F/B = 5 · rotations = 2';
   const button = document.querySelector('#f2l-continue');
   button.dataset.action = 'new-f2l';
@@ -1219,7 +1229,7 @@ function renderF2LPlanner() {
   button.setAttribute('aria-label', 'next case');
   if (!planner) {
     status.className = '';
-    status.textContent = f2lState.message || 'Searching for verified choices…';
+    status.textContent = f2lState.message || 'searching…';
     choices.innerHTML = '<div class="planner-loading">finding verified next-pair plans…</div>';
     return;
   }
@@ -1275,7 +1285,7 @@ async function pinnedPlannerChoices(setup) {
 
 async function newF2LPlannerCase(pinned = null) {
   const generation = ++f2lState.plannerGeneration;
-  f2lState = { ...f2lState, planner: null, locked: true, correction: false, caseNumber: f2lState.caseNumber + 1, message: 'Searching for verified choices…' };
+  f2lState = { ...f2lState, planner: null, locked: true, correction: false, caseNumber: f2lState.caseNumber + 1, message: 'searching…' };
   renderF2LPlanner();
   for (let attempt = 0; attempt < (pinned ? 1 : 8); attempt += 1) {
     const seed = randomSeed() + attempt;
@@ -1300,8 +1310,10 @@ async function newF2LPlannerCase(pinned = null) {
       }
     }
     if (generation !== f2lState.plannerGeneration || activeTool !== 'f2l' || f2lState.drill !== 'planner') return;
-    const choices = pinned ? await pinnedPlannerChoices(setup) : plannerChoices(setup, results);
-    if (choices.length < (pinned ? 1 : 2)) continue;
+    const foundChoices = pinned ? await pinnedPlannerChoices(setup) : plannerChoices(setup, results);
+    const choices = f2lCaseFilter?.requested ? foundChoices.filter(choice => f2lCaseFilter.values.includes(choice.slot)) : foundChoices;
+    if (generation !== f2lState.plannerGeneration || activeTool !== 'f2l' || f2lState.drill !== 'planner') return;
+    if (choices.length < (pinned || f2lCaseFilter?.requested ? 1 : 2)) continue;
     f2lState.planner = { setup, choices, orientation: pinned ? FACE_COLOR : colorNeutralOrientation(seed), answer: null, pinned: Boolean(pinned) };
     f2lState.locked = false;
     f2lState.message = '';
@@ -1365,7 +1377,8 @@ function renderF2L() {
   if (f2lState.drill === 'planner') return renderF2LPlanner();
   renderF2LControls();
   const current = f2lState.current;
-  if (!current) return;
+  document.querySelector('#f2l-cube').hidden = !current;
+  if (!current) { document.querySelector('#f2l-status').textContent = f2lState.message || 'preparing a case…'; return; }
   const matched = matchedPieces();
   const selectable = current.selectablePieces.filter((piece) => !matched.includes(piece));
   f2lCube3D?.update({
@@ -1416,6 +1429,12 @@ function renderF2L() {
   }
 }
 
+function filterF2LCase(current) {
+  if (!f2lCaseFilter?.requested) return current;
+  const ids = f2lCaseFilter.values.map(slot => [...slot].map(face => current.orientation[face]).sort().join('-'));
+  return {...current, targetPairIds: current.targetPairIds.filter(id => ids.includes(id))};
+}
+
 function newF2LCase() {
   clearTimeout(trialTimeout);
   clearTimeout(f2lState.nextTimer);
@@ -1423,7 +1442,7 @@ function newF2LCase() {
   if (f2lStartPromise) {
     const pending = f2lStartPromise;
     f2lStartPromise = null;
-    f2lState = { ...f2lState, current: null, locked: true, message: 'Loading the saved position…' };
+    f2lState = { ...f2lState, current: null, locked: true, message: 'loading the saved position…' };
     renderF2L();
     void pending.then(position => {
       if (activeTool !== 'f2l' || f2lStartHash !== location.hash) return;
@@ -1433,6 +1452,7 @@ function newF2LCase() {
     });
     return;
   }
+  if (f2lCaseFilter && !f2lCaseFilter.valid) { f2lState.current = null; f2lState.planner = null; f2lState.locked = true; f2lState.message = 'No known F2L cases match this link.'; renderF2L(); return; }
   if (f2lState.drill === 'planner') {
     if (f2lStartPosition) {
       const pinned = f2lStartPosition; f2lStartPosition = null;
@@ -1440,7 +1460,7 @@ function newF2LCase() {
       return newF2LPlannerCase(pinned);
     }
     if (f2lActivePin) {
-      f2lState = { ...f2lState, current: null, locked: true, message: 'Preparing a verified variation…' };
+      f2lState = { ...f2lState, current: null, locked: true, message: 'preparing a verified variation…' };
       renderF2L();
       void nextF2LPinPosition(f2lActivePin).then(position => {
         if (activeTool !== 'f2l') return;
@@ -1456,7 +1476,7 @@ function newF2LCase() {
   f2lStartPosition = null;
   if (pinned?.pin) f2lActivePin = pinned.pin;
   if (!pinned && f2lActivePin) {
-    f2lState = { ...f2lState, current: null, locked: true, message: 'Preparing a verified variation…' };
+    f2lState = { ...f2lState, current: null, locked: true, message: 'preparing a verified variation…' };
     renderF2L();
     void nextF2LPinPosition(f2lActivePin).then(position => {
       if (activeTool !== 'f2l') return;
@@ -1478,12 +1498,13 @@ function newF2LCase() {
       if (wasmReady) candidate = createF2LCaseFromWasm(JSON.parse(wasmF2LCase(BigInt(seed), COLOR_FACE[bottom])), seed, 'neutral');
       else candidate = createF2LCase(seed, bottom);
       if (f2lState.drill === 'scan' && f2lState.scanPseudo) candidate = createPseudoScanCase(candidate, 1 + seed % 3);
+      candidate = filterF2LCase(candidate);
       candidate.targetPairIds.forEach((pairId) => candidates.push({ current: candidate, learningKey: f2lState.scanPseudo && f2lState.drill === 'scan' ? `scan-pseudo:${pairId}` : pairLearningKey(candidate, pairId) }));
       if (candidates.length >= 32) break;
     }
     generated = chooseDue(learning, candidates)?.current;
   }
-  if (pinned && f2lState.drill === 'scan' && f2lState.scanPseudo) generated = createPseudoScanCase(generated, 1 + randomSeed() % 3);
+  if (pinned && generated) generated = filterF2LCase(generated);
   if (pinned && generated && !generated.targetPairIds.length && f2lState.drill !== 'planner') {
     f2lState.current = null;
     f2lState.locked = true;
@@ -1493,7 +1514,7 @@ function newF2LCase() {
   }
   if (!generated) {
     f2lState.locked = true;
-    document.querySelector('#f2l-status').textContent = 'No suitable case generated. Choose New cube to retry.';
+    document.querySelector('#f2l-status').textContent = 'No suitable case found. Select next case to try again.';
     return;
   }
   f2lState = {
@@ -1573,14 +1594,14 @@ function handleF2LPiece({ piece }) {
       f2lState.scanScore += 1;
       f2lState.matchedPairIds.push(pseudoScan ? pseudoPairId : first.pairId);
       if (pseudoScan) f2lState.matchedPieceIds.push(firstPiece, piece);
-      f2lState.message = pseudoScan ? 'Pseudo pair found. Keep scanning.' : 'Found. Keep scanning.';
+      f2lState.message = pseudoScan ? 'Pseudo pair!' : 'Found.';
       renderF2L();
       if (f2lState.matchedPairIds.length === current.targetPairIds.length) {
         f2lState.nextTimer = setTimeout(() => { if (f2lState.scanRunning) newF2LCase(); }, 180);
       }
     } else {
       f2lState.scanMisses += 1;
-      f2lState.message = pseudoScan ? 'Not a pseudo pair for this D offset. Keep scanning.' : 'Not a pair. Keep scanning.';
+      f2lState.message = pseudoScan ? 'Miss.' : 'Miss.';
       f2lState.feedback = null;
       renderF2L();
     }
@@ -1591,7 +1612,7 @@ function handleF2LPiece({ piece }) {
   const elapsed = Math.round(now - f2lState.startedAt);
   const findMs = Math.round(f2lState.firstSelectedAt - f2lState.startedAt);
   const matchMs = Math.round(now - f2lState.firstSelectedAt);
-  document.querySelector('#f2l-timings').textContent = `Search ${formatMs(findMs)} · match ${formatMs(matchMs)} · includes pointing`;
+  document.querySelector('#f2l-timings').textContent = `find ${formatMs(findMs)} · match ${formatMs(matchMs)}`;
   const pairId = first.pairId || second.pairId;
   if (pairId) review(learning, pairLearningKey(current, pairId), { correct: Boolean(correct), ms: elapsed, responseThresholdMs: 3000 });
   saveLearningState();
@@ -1690,8 +1711,8 @@ function setTool(tool, initial = false) {
     delete drillPages[tool];
     delete drillPageLoads[tool];
   }
-  if (tool === 'scout' && scout && scoutRouteHash !== location.hash) {
-    scout.detach?.(); scout = null; scoutLoad = null;
+  if (tool === 'scout' && scoutLoad && scoutRouteHash !== location.hash) {
+    scout?.detach?.(); scout?.destroy?.(); scout = null; scoutLoad = null;
   }
   document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
   scout?.setActive(false);
@@ -1750,12 +1771,12 @@ function setTool(tool, initial = false) {
     state.locked = true;
     f2lState.locked = true;
     if (!smartLoad) {
-      document.querySelector('#smart-view').textContent = 'Loading Smart Cube debug…';
+      document.querySelector('#smart-view').textContent = 'loading studio…';
       smartLoad = import('./smart-cube-studio.js').then(({ createSmartCubeStudio }) => {
         smart = createSmartCubeStudio(document.querySelector('#smart-view'));
         smart.setActive(activeTool === 'smart');
       }).catch((error) => {
-        document.querySelector('#smart-view').textContent = `Smart cube debug could not load: ${error.message}`;
+        document.querySelector('#smart-view').textContent = MSG.loadFailed('studio');
         smartLoad = null;
       });
     } else smart?.setActive(true);
@@ -1764,27 +1785,31 @@ function setTool(tool, initial = false) {
     f2lState.locked = true;
     if (!scoutLoad) {
       const explore = new URLSearchParams(parseHash(location.hash).query).get('mode') === 'explore';
-      document.querySelector('#scout-view').textContent = explore ? 'Loading cross scout…' : 'Loading cross planning…';
+      document.querySelector('#scout-view').textContent = explore ? 'loading cross scout…' : 'loading cross planning…';
       const moduleLoad = explore ? import('./cross-scout.js') : import('./drills/cross-planning.js');
-      scoutLoad = moduleLoad.then(module => {
+      const routeHash = location.hash;
+      scoutRouteHash = routeHash;
+      const load = moduleLoad.then(module => {
+        if (activeTool !== 'scout' || location.hash !== routeHash) { if (scoutLoad === load) scoutLoad = null; return; }
         scout = explore ? module.createCrossScout(document.querySelector('#scout-view')) : module.createCrossPlanning(document.querySelector('#scout-view'));
         scoutRouteHash = location.hash;
         scout.setActive(activeTool === 'scout');
       }).catch((error) => {
-        document.querySelector('#scout-view').textContent = `Cross Scout could not load: ${error.message}. Switch trainers and try again.`;
-        scoutLoad = null;
+        document.querySelector('#scout-view').textContent = MSG.loadFailed('cross planning');
+        if (scoutLoad === load) scoutLoad = null;
       });
+      scoutLoad = load;
     } else scout?.setActive(true);
   } else if (tool === 'pll') {
     state.locked = true;
     f2lState.locked = true;
     if (!pllLoad) {
-      document.querySelector('#pll-view').textContent = 'Loading PLL recognition…';
+      document.querySelector('#pll-view').textContent = 'loading PLL recognition…';
       pllLoad = import('./pll-trainer.js').then(({ createPLLTrainer }) => {
         pll = createPLLTrainer(document.querySelector('#pll-view'));
         pll.setActive(activeTool === 'pll');
       }).catch((error) => {
-        document.querySelector('#pll-view').textContent = `PLL recognition could not load: ${error.message}. Switch trainers and try again.`;
+        document.querySelector('#pll-view').textContent = MSG.loadFailed('PLL recognition');
         pllLoad = null;
       });
     } else pll?.setActive(true);
@@ -1817,7 +1842,7 @@ const PLACEHOLDERS = {
 };
 function mountPage(tool) {
   const root = document.querySelector(`#${TOOL_VIEWS[tool]}`);
-  const failed = (error) => { root.textContent = `This page could not load: ${error.message}. Try again.`; };
+  const failed = (_error) => { root.textContent = MSG.loadFailed('this page'); };
   if (tool === 'drills') {
     if (drillsHub) drillsHub.setActive(true);
     else if (!drillsHubLoad) {
@@ -1883,7 +1908,7 @@ function mountPage(tool) {
         return reviewPage.ready;
       }).catch((error) => {
         if (reviewPageLoad === load) reviewPageLoad = null;
-        if (routeHash === reviewRouteHash && activeTool === 'review') document.querySelector('#review-view').textContent = `Review could not load: ${error.message}`;
+        if (routeHash === reviewRouteHash && activeTool === 'review') document.querySelector('#review-view').textContent = MSG.loadFailed('review');
       });
       reviewPageLoad = load;
     }

@@ -66,6 +66,12 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   await page.goto('/#/drills');
   await page.locator('#drills-view a[href="#/drills/scout"]').click();
+  await expect(page.locator('.cp-question')).toBeVisible();
+  const crossChoice = page.locator('.cp-face:not(:disabled)').first();
+  await expect(crossChoice).toBeVisible({timeout: 15000});
+  await crossChoice.tap();
+  await expect(page.locator('#cp-playback')).toBeVisible();
+  await page.goto('/#/drills/scout?mode=explore');
   await expect(page.locator('#scout-highlight')).toBeVisible();
   await page.goto('/#/dev/studio');
   await expect(page.locator('#studio-cube canvas')).toBeVisible();

@@ -27,7 +27,7 @@ export function createCrossPlanning(root) {
       <div class="cp-layout"><div class="cp-cube" id="cp-cube" aria-label="Scrambled cube"></div>
         <div class="cp-work"><p class="cp-question">Which cross would you start with?</p><p class="cp-hint">Pick a face before seeing the plans. The search checks all six crosses locally.</p>
           <div class="cp-faces" id="cp-faces" role="group" aria-label="Choose a cross face"></div>
-          <p id="cp-feedback" role="status" aria-live="polite">Preparing the scramble…</p>
+          <p id="cp-feedback" role="status" aria-live="polite">preparing the scramble…</p>
           <div class="cp-reveal" id="cp-reveal" hidden></div>
           <div class="cp-playback" id="cp-playback" hidden><button id="cp-restart" type="button">restart</button><button id="cp-back" type="button" aria-label="previous move">←</button><button id="cp-forward" type="button" aria-label="next move">→</button><span id="cp-step">scrambled state</span></div>
           <button id="cp-next" type="button" hidden>next scramble</button>
@@ -74,7 +74,7 @@ export function createCrossPlanning(root) {
     const plans = [];
     for (const face of faces) {
       if (token !== generation || detached || !active) return [];
-      $('#cp-feedback').textContent = `Checking ${title(FACE_COLORS[face])} cross…`;
+      $('#cp-feedback').textContent = `checking ${title(FACE_COLORS[face])} cross…`;
       try {
         const reply = await solveCross({ scramble: normalizedScramble, face, kind: 'cross', maxResults: 2, maxDepth: 10, timeLimitMs: 450 });
         for (const result of reply.results || []) {
@@ -120,7 +120,7 @@ export function createCrossPlanning(root) {
     $('#cp-case').textContent = `case ${++caseNumber}`;
     renderChoices();
     const plans = await searchPlans(text, state, token);
-    if (token !== generation || detached) return;
+    if (token !== generation || detached || roundPanel?.complete) return;
     current.plans = plans;
     startedAt = performance.now();
     renderChoices();

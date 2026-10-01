@@ -25,3 +25,11 @@ test('invalid face/case inputs are bounded and ignored', () => {
   assert.equal(start.face, null);
   assert.equal(start.cases.length, 100);
 });
+
+test('portable long setups retain every move and reject over-budget input', () => {
+  const moves = Array(240).fill('U');
+  const start = parseDrillStart(drillStartHref('/drills/corners', {scramble: moves.join(' ')}));
+  assert.equal(start.invalid, false);
+  assert.deepEqual(start.moves, moves);
+  assert.equal(parseDrillStart(drillStartHref('/drills/corners', {scramble: Array(10001).fill('U').join(' ')})).invalid, true);
+});

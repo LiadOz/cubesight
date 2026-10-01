@@ -43,7 +43,7 @@ test('the drills hub lists each drill with its cube marker and opens it by key',
   await page.goto('/#/drills');
   await expect(page.locator('.hub-row')).toHaveCount(6);
   await expect(page.locator('[data-drill="corners"] .hub-cube')).toHaveText('no cube needed');
-  await expect(page.locator('[data-drill="scout"] .hub-cube')).toHaveText('cube optional');
+  await expect(page.locator('[data-drill="scout"] .hub-cube')).toHaveText('no cube needed');
   await page.keyboard.press('p');
   await expect(page).toHaveURL(/#\/drills\/pll$/);
   await expect(page.locator('#pll-view')).toBeVisible();

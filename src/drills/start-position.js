@@ -1,5 +1,5 @@
 import { parseHash } from '../routes.js';
-import { parseScramble } from '../cross-cube.js';
+import { parseAnalysisMoves } from '../analysis/long-replay.js';
 
 const list = value => String(value ?? '').split(',').map(item => item.trim()).filter(Boolean).slice(0, 100);
 
@@ -12,7 +12,7 @@ export function parseDrillStart(hash = globalThis.location?.hash ?? '') {
   let moves = [];
   let invalid = false;
   if (raw && !review) {
-    try { moves = parseScramble(raw, { allowWide: true }).slice(0, 300); }
+    try { moves = parseAnalysisMoves(raw); }
     catch { moves = []; invalid = true; }
   }
   return {
