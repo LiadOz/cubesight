@@ -1,6 +1,7 @@
 import '../pages/page.css';
 import './lookahead.css';
-import { createCube3D } from '../cube-3d.js';
+import { createPageCube } from '../pages/cube-view.js';
+import { createSequencePlayer } from '../moves/sequence-player.js';
 import { toRenderData, validateSolution } from '../cross-cube.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from '../f2l-planner.js';
 import { solveCross } from '../cross-solver.js';
@@ -31,6 +32,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   let activePin = null;
   let cube = null, feedback = '', loading = false, clockTimer = null;
   let roundPanel = null;
+  let player = null;
   const positionPromise = resolveDrillPosition(start, 'lookahead');
   const learningCases = Array.from({ length: 48 }, (_, index) => {
     const id = index + 1;
@@ -67,7 +69,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
       <div class="lookahead-layout"><div class="lookahead-cube" id="la-cube" aria-label="F2L case cube"></div>
         <div class="lookahead-work"><p class="lookahead-prompt">Which pair would you solve next?</p><p class="lookahead-hint">Choose a short, verified pair solution. Keep your eyes on the other unsolved pairs.</p>
           <div id="la-choices" class="lookahead-choices" role="group" aria-label="Choose the next pair"></div>
-          <p id="la-feedback" role="status" aria-live="polite">preparing a verified F2L case…</p>
+          <p id="la-feedback" role="status" aria-live="polite">preparing a verified F2L case…</p><div id="la-playback" hidden></div>
           <button id="la-next" class="la-next" type="button" hidden>next case</button>
         </div>
       </div>
@@ -76,8 +78,11 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     <section class="lookahead-result" id="la-result" hidden aria-live="polite"></section>
   </section>`;
   const $ = selector => root.querySelector(selector);
-  try { cube = createCube3D($('#la-cube'), { mode: 'scout' }); }
-  catch { $('#la-cube').textContent = '3D cube needs WebGL. The verified choices still work.'; }
+  const cubeReady = createPageCube($('#la-cube'), { mode: 'scout' }).then(view => {
+    if (disposed) { view.destroy(); return; }
+    cube = view;
+    if (current) cube.update(toRenderData(current.setup.state));
+  }).catch(() => { if (!disposed) $('#la-cube').textContent = '3D cube needs WebGL. The verified choices still work.'; });
   roundPanel = createRoundPanel(root, {
     drill: 'lookahead', storage, store: rounds,
     onRestart() {
@@ -101,6 +106,8 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     $('#la-start').textContent = round?.status === 'active' ? 'resume round' : 'start 20-case round';
   }
   function renderCase() {
+    player?.setActive(false);
+    $('#la-playback').hidden = true;
     if (!current) return;
     startedAt = performance.now();
     clearInterval(clockTimer);
@@ -214,6 +221,13 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
       if (at === index && !correct) button.dataset.missed = 'true';
     });
     $('#la-feedback').textContent = timedOut ? 'Time is up. No answer was recorded.' : correct ? 'Good choice. This pair has the lowest verified cost.' : 'Another pair had a shorter verified solution. Keep it in view while you solve.';
+    if (choice && cube) {
+      if (!player) player = createSequencePlayer($('#la-playback'), { cube3d: cube, label: 'Verified pair continuation' });
+      $('#la-playback').hidden = false;
+      player.load({ startState: current.setup.state, moves: choice.moves });
+      player.setActive(active);
+      void player.play();
+    }
     labelState();
     if (result.complete) return;
     else $('#la-next').hidden = false;
@@ -271,14 +285,15 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   }
   syncPageTokens(root.querySelector('.brain'));
   return {
-    ready: Promise.resolve(),
+    ready: cubeReady,
     setActive(value) {
       active = value;
+      player?.setActive(value);
       roundPanel.setActive(value);
       if (!value) { generation++; clearInterval(clockTimer); }
       else if (round?.status === 'active' && current && selected == null) renderCase();
       else if (round?.status === 'active' && !current && !loading) void makeCase(dueSeed());
     },
-    detach() { disposed = true; active = false; generation++; clearInterval(clockTimer); roundPanel.destroy(); cube?.destroy(); root.replaceChildren(); },
+    detach() { disposed = true; active = false; generation++; clearInterval(clockTimer); roundPanel.destroy(); player?.destroy(); cube?.destroy(); root.replaceChildren(); },
   };
 }

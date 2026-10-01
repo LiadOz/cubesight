@@ -21,7 +21,7 @@ import { relabelMoves } from './analysis/normalize.js';
 import { currentDShift } from './solve-tracker.js';
 import { loadSettings } from './brain/settings.js';
 import { renderCube } from './cube-renderer.js';
-import { createCube3D } from './cube-3d.js';
+import { createPageCube } from './pages/cube-view.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
@@ -1725,6 +1725,7 @@ function setTool(tool, initial = false) {
   }
   Object.values(legacyRounds).forEach(panel => panel.setActive(false));
   activeTool = tool;
+  syncLegacyCubes(tool);
   if (tool === 'corner' || tool === 'pll' || tool === 'f2l') syncLegacyDrillStyle();
   document.title = `${PAGE_TITLES[tool]} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
@@ -2119,16 +2120,26 @@ document.addEventListener('keydown', (event) => {
   if (event.key.toLowerCase() === KEYS.case.s) answer(null, true);
 });
 
-try {
-  cube3D = createCube3D(document.querySelector('#cube'), { mode: 'corner' });
-} catch (error) {
-  console.warn('WebGL cube unavailable; using accessible SVG fallback.', error);
-}
-try {
-  f2lCube3D = createCube3D(document.querySelector('#f2l-cube'), { mode: 'f2l', onPieceClick: handleF2LPiece });
-} catch (error) {
-  console.warn('WebGL F2L cube unavailable.', error);
-  document.querySelector('#f2l-cube').textContent = 'F2L drills need WebGL. Enable hardware acceleration or try another browser.';
+let legacyCubeLoad = null;
+function syncLegacyCubes(tool) {
+  if (tool !== 'corner' && cube3D) { cube3D.destroy(); cube3D = null; }
+  if (tool !== 'f2l' && f2lCube3D) { f2lCube3D.destroy(); f2lCube3D = null; }
+  if (legacyCubeLoad?.tool === tool) return;
+  legacyCubeLoad?.controller.abort();
+  legacyCubeLoad = null;
+  if (!['corner', 'f2l'].includes(tool) || (tool === 'corner' ? cube3D : f2lCube3D)) return;
+  const controller = new AbortController();
+  legacyCubeLoad = { tool, controller };
+  const host = document.querySelector(tool === 'corner' ? '#cube' : '#f2l-cube');
+  void createPageCube(host, { mode: tool === 'corner' ? 'corner' : 'f2l', signal: controller.signal }).then(view => {
+    if (controller.signal.aborted || activeTool !== tool) { view.destroy(); return; }
+    if (tool === 'corner') { cube3D = view; if (state.current) renderCurrentCase(); }
+    else { f2lCube3D = view; renderF2L(); }
+  }).catch(error => {
+    if (error.name === 'AbortError') return;
+    if (tool === 'corner') console.warn('WebGL cube unavailable; using accessible SVG fallback.', error);
+    else if (activeTool === 'f2l') host.textContent = 'F2L drills need WebGL. Enable hardware acceleration or try another browser.';
+  }).finally(() => { if (legacyCubeLoad?.controller === controller) legacyCubeLoad = null; });
 }
 updateStatsUI();
 updateSprintUI();

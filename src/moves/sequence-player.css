@@ -1,0 +1,30 @@
+.sequence-player { display: grid; gap: 12px; min-width: 0; }
+.sequence-progress { max-width: 240px; width: 100%; margin-inline: auto; }
+.has-sequence-ring > .sequence-progress {
+  position: absolute;
+  inset: 0;
+  max-width: none;
+  pointer-events: none;
+}
+.has-sequence-ring > .sequence-progress .b-oring { height: 100%; }
+.sequence-progress .b-oring { width: 100%; position: static; animation: none; }
+.sequence-progress .b-oring-dot-halo { animation: none; }
+.sequence-progress .b-oring * { animation: none; }
+.has-sequence-ring .sequence-progress .b-oring .b-oring-track,
+.has-sequence-ring .sequence-progress .b-oring .b-oring-done,
+.has-sequence-ring .sequence-progress .b-oring .b-oring-connect-sweep { animation: none; }
+.sequence-progress .m-tl { min-height: 0; }
+.sequence-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sequence-controls button, .sequence-controls select {
+  min-height: 44px;
+  border: 1px solid var(--b-hairline);
+  border-radius: var(--b-radius-control);
+  background: var(--b-surface);
+  color: var(--b-ink);
+  padding: 8px 12px;
+}
+.sequence-controls label { display: flex; align-items: center; gap: 6px; }
+.sequence-controls kbd, [data-sequence-position] { color: var(--b-muted); font-family: var(--b-font-mono); }
+@media (prefers-reduced-motion: reduce) {
+  .sequence-player * { animation: none; transition: none; }
+}

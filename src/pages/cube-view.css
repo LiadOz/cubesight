@@ -1,0 +1,15 @@
+.cs-cube {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  isolation: isolate;
+}
+
+.cs-cube:not(.cube-mount) { aspect-ratio: 1; }
+
+.cs-cube canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--b-radius-bar);
+}

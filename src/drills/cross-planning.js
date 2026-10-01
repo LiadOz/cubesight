@@ -1,7 +1,8 @@
 import '../pages/page.css';
 import './cross-planning.css';
-import { createCube3D } from '../cube-3d.js';
-import { COLOR_HEX, FACE_COLORS, applyMoves, randomScramble, toRenderData, validateSolution } from '../cross-cube.js';
+import { createPageCube } from '../pages/cube-view.js';
+import { createSequencePlayer } from '../moves/sequence-player.js';
+import { COLOR_HEX, FACE_COLORS, randomScramble, toRenderData, validateSolution } from '../cross-cube.js';
 import { analysisStateFromScramble, parseAnalysisMoves } from '../analysis/long-replay.js';
 import { solveCross } from '../cross-solver.js';
 import { createRoundPanel } from './round-panel.js';
@@ -21,8 +22,9 @@ export function createCrossPlanning(root) {
   const caseFilter = parseCaseFilter(start.cases, faces);
   let requestedFaces = caseFilter.requested ? caseFilter.values : (start.face ? [start.face] : faces);
   let active = true, detached = false, current = null, cube = null, roundPanel = null, startedAt = 0;
-  let answer = null, states = [], step = 0, generation = 0, caseNumber = 0;
+  let answer = null, generation = 0, caseNumber = 0;
   let activePin = null;
+  let player = null;
   root.innerHTML = `<section class="cs-page brain cross-planning-page" data-brain-style="${loadSettings().style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / cross planning</p><h1>cross planning</h1><p class="cs-sub">Choose a cross from the scramble. Then check the verified plans.</p></header>
     <section class="cp-session" aria-label="Cross planning case">
@@ -32,7 +34,7 @@ export function createCrossPlanning(root) {
           <div class="cp-faces" id="cp-faces" role="group" aria-label="Choose a cross face"></div>
           <p id="cp-feedback" role="status" aria-live="polite">preparing the scramble…</p>
           <div class="cp-reveal" id="cp-reveal" hidden></div>
-          <div class="cp-playback" id="cp-playback" hidden><button id="cp-restart" type="button">restart</button><button id="cp-back" type="button" aria-label="previous move">←</button><button id="cp-forward" type="button" aria-label="next move">→</button><span id="cp-step">scrambled state</span></div>
+          <div class="cp-playback" id="cp-playback" hidden></div>
           <button id="cp-next" type="button" hidden>next scramble</button>
         </div>
       </div>
@@ -47,19 +49,31 @@ export function createCrossPlanning(root) {
     back.hidden = false;
     back.innerHTML = `<a href="#/review/${reviewFrom[1]}?move=${reviewFrom[2]}">← review · solve · move ${Number(reviewFrom[2]) + 1}</a>`;
   }
-  try { cube = createCube3D($('#cp-cube'), { mode: 'scout' }); }
-  catch { $('#cp-cube').textContent = '3D cube needs WebGL. Cross choices still work.'; }
+  const cubeReady = createPageCube($('#cp-cube'), { mode: 'scout' }).then(view => {
+    if (detached) { view.destroy(); return; }
+    cube = view;
+    if (current?.chosen) showPlan(current.chosen, false);
+    else if (current?.state) cube.update(toRenderData(current.state));
+  }).catch(() => { if (!detached) $('#cp-cube').textContent = '3D cube needs WebGL. Cross choices still work.'; });
   function buildRoundPanel() {
     roundPanel = createRoundPanel(root, { drill: 'cross', getSettings: () => ({ search: 'all six crosses' }), onComplete: () => { renderChoices(); $('#cp-next').hidden = true; }, onRestart: () => { void nextCase(); } });
     roundPanel.setActive(active);
   }
-  function renderStep() {
-    if (!states.length) return;
-    step = Math.max(0, Math.min(step, states.length - 1));
-    cube?.update(toRenderData(states[step]));
-    $('#cp-step').textContent = step === 0 ? 'scrambled state' : `move ${step} of ${states.length - 1}`;
-    $('#cp-back').disabled = step === 0;
-    $('#cp-forward').disabled = step === states.length - 1;
+  function showPlan(chosen, autoplay = true) {
+    if (!cube) return;
+    if (!player) {
+      player = createSequencePlayer($('#cp-playback'), { cube3d: cube, onChange(snapshot) {
+        const count = $('#cp-step');
+        if (count) count.textContent = snapshot.index === 0 ? 'scrambled state' : `move ${snapshot.index} of ${snapshot.moves.length}`;
+      } });
+      $('#cp-playback [data-sequence-position]').id = 'cp-step';
+      $('#cp-playback [data-sequence="reset"]').id = 'cp-restart';
+      $('#cp-playback [data-sequence="back"]').id = 'cp-back';
+      $('#cp-playback [data-sequence="next"]').id = 'cp-forward';
+    }
+    player.load({ startState: current.state, moves: chosen.moves });
+    player.setActive(active);
+    if (autoplay) void player.play();
   }
   function renderChoices() {
     $('#cp-faces').replaceChildren();
@@ -92,7 +106,8 @@ export function createCrossPlanning(root) {
   async function nextCase(scramble = '') {
     if (roundPanel?.complete) return;
     const token = ++generation;
-    answer = null; states = []; step = 0; current = null;
+    player?.setActive(false);
+    answer = null; current = null;
     $('#cp-reveal').hidden = true; $('#cp-playback').hidden = true; $('#cp-next').hidden = true;
     $('#cp-time').textContent = '—';
     if (!caseFilter.valid) {
@@ -153,17 +168,13 @@ export function createCrossPlanning(root) {
       ? `<strong>${title(FACE_COLORS[face])} cross · ${chosen.moves.length} moves</strong><p>${fmt.moves(chosen.moves.join(' '))}</p><small>Shortest found in this search: ${scored.map(plan => `${FACE_COLORS[plan.face]} · ${plan.moves.length}`).join(' / ')}</small>`
       : `<strong>No verified plan found for ${title(FACE_COLORS[face])}.</strong><p>Shortest found in this search: ${scored.map(plan => `${FACE_COLORS[plan.face]} · ${plan.moves.length} moves`).join(' / ')}</p>`;
     if (chosen) {
-      states = [current.state];
-      for (const move of chosen.moves) states.push(applyMoves(states.at(-1), [move]));
-      $('#cp-playback').hidden = false; renderStep();
+      current.chosen = chosen;
+      $('#cp-playback').hidden = false; showPlan(chosen);
     }
     $('#cp-next').hidden = Boolean(roundPanel?.complete);
     renderChoices();
   }
   $('#cp-next').addEventListener('click', () => { start.moves = []; start.review = null; start.invalid = false; void nextCase(); });
-  $('#cp-restart').addEventListener('click', () => { step = 0; renderStep(); });
-  $('#cp-back').addEventListener('click', () => { step -= 1; renderStep(); });
-  $('#cp-forward').addEventListener('click', () => { step += 1; renderStep(); });
   const onKeydown = event => {
     if (!active || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName ?? '') || event.target?.closest('button,a')) return;
     if (roundPanel?.handleKey(event)) return;
@@ -177,8 +188,8 @@ export function createCrossPlanning(root) {
   syncPageTokens(root.querySelector('.brain'));
   void nextCase();
   return {
-    ready: Promise.resolve(),
-    setActive(value) { active = value; roundPanel?.setActive(value); if (active && !current && !detached) void nextCase(); else if (!active) { generation++; current = null; answer = null; states = []; } },
-    detach() { detached = true; active = false; generation++; document.removeEventListener('keydown', onKeydown); roundPanel?.destroy(); cube?.destroy(); root.replaceChildren(); },
+    ready: cubeReady,
+    setActive(value) { active = value; player?.setActive(value); roundPanel?.setActive(value); if (active && !current && !detached) void nextCase(); else if (!active) { generation++; current = null; answer = null; } },
+    detach() { detached = true; active = false; generation++; document.removeEventListener('keydown', onKeydown); roundPanel?.destroy(); player?.destroy(); cube?.destroy(); root.replaceChildren(); },
   };
 }
