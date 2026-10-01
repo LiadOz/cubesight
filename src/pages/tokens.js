@@ -8,10 +8,12 @@ export function syncPageTokens(page) {
   const root = document.documentElement;
   root.style.setProperty('--cs-page', styles.getPropertyValue('--b-bg').trim());
   root.style.setProperty('--cs-page-line', styles.getPropertyValue('--b-hairline').trim());
+  root.style.setProperty('--b-page', styles.getPropertyValue('--b-bg').trim());
+  root.style.setProperty('--b-page-line', styles.getPropertyValue('--b-hairline').trim());
   if (!listening) {
     listening = true;
     document.addEventListener('cubesight-theme', () => {
-      const currentPage = document.querySelector('.cs-host:not([hidden]) .brain, .cs-host:not([hidden]).brain');
+      const currentPage = document.querySelector('.cs-host:not([hidden]) .brain, .cs-host:not([hidden]).brain, #corner-view:not([hidden]).brain, #pll-view:not([hidden]).brain, #f2l-view:not([hidden]).brain');
       if (currentPage) syncPageTokens(currentPage);
     });
   }

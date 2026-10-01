@@ -1,0 +1,218 @@
+/* Legacy drill views share the solve page palette while retaining their
+   compact, answer-first layouts. Every surface reads the active --b tokens. */
+:root:has(#corner-view:not([hidden]).legacy-drill-view),
+:root:has(#pll-view:not([hidden]).legacy-drill-view),
+:root:has(#f2l-view:not([hidden]).legacy-drill-view),
+:root:has(#corner-view:not([hidden]).legacy-drill-view) body,
+:root:has(#pll-view:not([hidden]).legacy-drill-view) body,
+:root:has(#f2l-view:not([hidden]).legacy-drill-view) body,
+:root:has(#corner-view:not([hidden]).legacy-drill-view) .site-header,
+:root:has(#pll-view:not([hidden]).legacy-drill-view) .site-header,
+:root:has(#f2l-view:not([hidden]).legacy-drill-view) .site-header,
+:root:has(#corner-view:not([hidden]).legacy-drill-view) main,
+:root:has(#pll-view:not([hidden]).legacy-drill-view) main,
+:root:has(#f2l-view:not([hidden]).legacy-drill-view) main {
+  background: var(--b-page, var(--cs-page, var(--paper)));
+  border-color: var(--b-page-line, var(--cs-page-line, var(--line)));
+  color: var(--b-ink, var(--ink));
+}
+
+.legacy-drill-view.brain {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--b-ink);
+  font-family: var(--b-font-sans);
+  font-size: var(--b-fs-body);
+}
+
+.legacy-drill-view :is(.training-settings, .trainer-shell, .pll-settings, .pll-trainer-shell,
+.case-table-card, .pll-case-card, .metric-card, .trend-card, .pll-metric-grid article,
+.f2l-info-grid article, .pll-answer-stage, .answer-stage) {
+  border-color: var(--b-hairline);
+  background-color: var(--b-surface);
+  color: var(--b-ink);
+  box-shadow: none;
+}
+
+.legacy-drill-view :is(.trainer-shell, .pll-trainer-shell) {
+  border-radius: var(--b-radius-bar);
+  background: var(--b-surface);
+}
+
+.legacy-drill-view :is(.cube-stage, .pll-cube-stage) {
+  background: var(--b-canvas);
+  color: var(--b-ink);
+}
+
+.legacy-drill-view :is(.stage-topline, .cube-caption, .pll-stage-topline, .pll-cube-caption,
+.case-meta, .pll-case-meta, .control-label, .pll-label, .pll-case-row, .f2l-timings) {
+  color: var(--b-muted);
+}
+
+.legacy-drill-view :is(.status-dot i, .progress-track i, .mini-track i, .pll-mini-track em) {
+  background: var(--b-accent);
+  box-shadow: none;
+}
+
+.legacy-drill-view :is(.view-lock, .pll-stage-topline .view-lock) {
+  border-color: var(--b-hairline);
+  color: var(--b-muted);
+}
+
+.legacy-drill-view :is(.training-settings, .pll-settings, .case-table-card, .pll-case-card,
+.metric-card, .trend-card, .pll-metric-grid article, .f2l-info-grid article) {
+  border-radius: var(--b-radius-bar);
+}
+
+.legacy-drill-view :is(.segmented, .pll-segmented, .cross-option, .f2l-progress i,
+.selected-piece-card, .pll-control-group select, .scan-duration select) {
+  border-color: var(--b-hairline);
+  background: var(--b-bg);
+  color: var(--b-ink);
+}
+
+.legacy-drill-view :is(.segment.active, .pll-segment.active, .cross-option.active) {
+  border-color: var(--b-accent);
+  background: var(--b-accent-soft);
+  color: var(--b-accent-text);
+  box-shadow: none;
+}
+
+.legacy-drill-view :is(.answer-button, .planner-choice, .pll-answer) {
+  border-color: var(--b-hairline);
+  border-radius: var(--b-radius-control);
+  background: var(--b-bg);
+  color: var(--b-ink);
+}
+
+.legacy-drill-view :is(.answer-button.correct, .planner-choice.best, .selected-piece-card.has-selection,
+.f2l-progress i.done, .cross-option.active, .pll-answer.correct) {
+  border-color: var(--b-good);
+  background: var(--b-accent-soft);
+  color: var(--b-accent-text);
+}
+
+.legacy-drill-view :is(.answer-button.wrong, .planner-choice.picked-wrong, .pll-answer.wrong) {
+  border-color: var(--b-warn);
+  background: color-mix(in srgb, var(--b-warn) 14%, var(--b-surface));
+  color: var(--b-ink);
+}
+
+.legacy-drill-view :is(.answer-button:focus-visible, .planner-choice:focus-visible, .pll-answer:focus-visible,
+.segment:focus-visible, .pll-segment:focus-visible, .new-case-button:focus-visible, .pll-next:focus-visible) {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 2px;
+}
+
+.legacy-drill-view :is(.new-case-button, .pll-next, .correction-button, .primary-button) {
+  border-color: var(--b-accent);
+  border-radius: var(--b-radius-control);
+  background: var(--b-accent);
+  color: var(--b-on-accent);
+}
+
+.legacy-drill-view :is(.corner-sequence, .pll-pause) {
+  border-color: var(--b-hairline);
+  border-radius: var(--b-radius-bar);
+  background: var(--b-surface-2);
+  color: var(--b-ink);
+}
+
+.legacy-drill-view .corner-sequence span { color: var(--b-muted); }
+.legacy-drill-view .corner-sequence span.active { background: var(--b-accent-soft); color: var(--b-accent-text); box-shadow: inset 0 2px var(--b-accent); }
+.legacy-drill-view .corner-sequence span.done { color: var(--b-good); }
+.legacy-drill-view :is(.feedback-line p.is-correct, .f2l-instructions p.is-correct, .pll-feedback-row p[data-kind="correct"]) { color: var(--b-good); }
+.legacy-drill-view :is(.feedback-line p.is-wrong, .f2l-instructions p.is-wrong, .pll-feedback-row p[data-kind="wrong"], .pll-feedback-row p[data-kind="error"]) { color: var(--b-warn); }
+.legacy-drill-view :is(.pll-pause span, .pll-pause .pll-text-button) { color: var(--b-muted); }
+.legacy-drill-view .pll-pause button { border-radius: var(--b-radius-control); background: var(--b-accent); color: var(--b-on-accent); }
+.legacy-drill-view .planner-loading { border-color: var(--b-hairline); color: var(--b-muted); }
+
+:root[data-theme] .legacy-drill-view :is(.segmented, .pll-segmented, .cross-option, .f2l-progress i,
+.selected-piece-card, .pll-control-group select, .scan-duration select, .answer-button, .planner-choice, .pll-answer) {
+  border-color: var(--b-hairline);
+  background: var(--b-bg);
+  color: var(--b-ink);
+}
+
+:root[data-theme] .legacy-drill-view :is(.segment.active, .pll-segment.active, .cross-option.active,
+.answer-button.correct, .planner-choice.best, .selected-piece-card.has-selection, .f2l-progress i.done,
+.pll-answer.correct) {
+  border-color: var(--b-good);
+  background: var(--b-accent-soft);
+  color: var(--b-accent-text);
+}
+
+:root[data-theme] .legacy-drill-view :is(.answer-button.wrong, .planner-choice.picked-wrong, .pll-answer.wrong) {
+  border-color: var(--b-warn);
+  background: color-mix(in srgb, var(--b-warn) 14%, var(--b-surface));
+  color: var(--b-ink);
+}
+
+:root[data-theme] .legacy-drill-view :is(.new-case-button, .pll-next) {
+  border-color: var(--b-accent);
+  background: var(--b-accent);
+  color: var(--b-on-accent);
+}
+
+:root[data-theme] .legacy-drill-view .correction-button {
+  border-color: var(--b-good);
+  background: var(--b-accent-soft);
+  color: var(--b-accent-text);
+}
+
+:root:has(#corner-view:not([hidden]).legacy-drill-view) .retention-panel,
+:root:has(#pll-view:not([hidden]).legacy-drill-view) .retention-panel,
+:root:has(#f2l-view:not([hidden]).legacy-drill-view) .retention-panel {
+  border-color: var(--b-hairline);
+  border-radius: var(--b-radius-bar);
+  background: var(--b-surface);
+  color: var(--b-ink);
+}
+
+.legacy-drill-view .corner-result {
+  border-color: var(--b-good);
+  border-radius: var(--b-radius-bar);
+  background: var(--b-surface);
+  color: var(--b-good);
+  box-shadow: none;
+}
+.legacy-drill-view .corner-result.is-wrong { border-color: var(--b-warn); color: var(--b-warn); }
+
+.legacy-drill-view .recognition-profile {
+  color: var(--b-ink);
+  font-family: var(--b-font-sans);
+}
+
+.legacy-drill-view .recognition-profile :is(.rp-summary > div, .rp-chart-wrap, .rp-details > div, .rp-trend) {
+  border-color: var(--b-hairline);
+  border-radius: var(--b-radius-bar);
+  background: var(--b-surface);
+  color: var(--b-ink);
+}
+
+.legacy-drill-view .recognition-profile :is(.rp-controls select, .rp-trend-controls select, .rp-entry-toggle) {
+  border-color: var(--b-hairline);
+  border-radius: var(--b-radius-control);
+  background: var(--b-bg);
+  color: var(--b-ink);
+}
+
+.legacy-drill-view .recognition-profile :is(.rp-summary span, .rp-bar span, .rp-note, .rp-muted, .rp-context,
+.rp-time-breakdown summary, .rp-trend-note, .rp-trend-readout) { color: var(--b-muted); }
+
+.legacy-drill-view .recognition-profile :is(.rp-grid, .rp-axis) { stroke: var(--b-hairline); }
+.legacy-drill-view .recognition-profile :is(.rp-line, .rp-point, .rp-trend-point, .rp-entry-point) { stroke: var(--b-accent); }
+.legacy-drill-view .recognition-profile :is(.rp-point, .rp-trend-point, .rp-entry-point, .rp-bar b) { fill: var(--b-accent); }
+.legacy-drill-view .recognition-profile .rp-line { fill: none; }
+.legacy-drill-view .recognition-profile :is(.rp-point, .rp-trend-point) { stroke: var(--b-surface); }
+
+@media (max-width: 700px) {
+  .legacy-drill-view.brain { padding: 0; }
+  .legacy-drill-view :is(.cube-mount, .pll-cube-mount) { max-height: 28svh; }
+  .legacy-drill-view :is(.answer-grid, .pll-answer-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .legacy-drill-view :is(.answer-button, .pll-answer) { min-width: 0; }
+}

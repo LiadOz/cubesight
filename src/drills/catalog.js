@@ -20,8 +20,8 @@ export const DRILLS = Object.freeze([
   },
   {
     id: 'scout', tool: 'scout', key: 'x', href: '#/drills/scout',
-    title: 'cross scout', blurb: 'plan cross and x-cross from a scramble',
-    modes: ['explore', 'recall'], cube: 'optional',
+    title: 'cross planning', blurb: 'choose a cross before you see the verified plans',
+    modes: ['cross-face choices', 'all six crosses', 'quick rounds'], cube: 'none',
   },
   {
     id: 'oll', tool: 'oll', key: 'o', href: '#/drills/oll',

@@ -3,7 +3,7 @@ import { test, expect } from 'playwright/test';
 test.setTimeout(60_000);
 async function openScout(page){
   await page.goto('/#/drills/corners');
-  await page.goto('/#/drills/scout');
+  await page.goto('/#/drills/scout?mode=explore');
   await expect(page.locator('#scout-cube canvas')).toBeVisible();
 }
 
@@ -156,7 +156,7 @@ test('scout can tumble past its poles and has no corner timeout or scoring',asyn
 test('mobile can switch from page scrolling to unrestricted touch rotation',async({browser})=>{
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   const page=await context.newPage();
-  await page.goto('/#/drills/scout');
+  await page.goto('/#/drills/scout?mode=explore');
   const canvas=page.locator('#scout-cube canvas');
   await expect(canvas).toBeVisible();
   await expect(canvas).toHaveAttribute('data-touch-mode','page-scroll');

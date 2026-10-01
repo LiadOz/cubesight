@@ -1,6 +1,6 @@
 import createXCross from './xcross-wasm/xcross.js';
 import wasmUrl from './xcross-wasm/xcross.wasm?url';
-import { parseScramble } from './cross-cube.js';
+import { parseAnalysisMoves } from './analysis/long-replay.js';
 
 let modulePromise;
 function load(){return modulePromise ||= createXCross({locateFile:()=>wasmUrl});}
@@ -15,7 +15,7 @@ function search(module,scramble,face,mask,maxDepth,maxResults,timeoutMs){
 self.onmessage=async({data})=>{
   if(data.type!=='solve')return;
   try{
-    const scramble=parseScramble(data.scramble||'').join(' ');
+    const scramble=parseAnalysisMoves(data.scramble||'').join(' ');
     const faceNumber={U:0,R:1,F:2,D:3,L:4,B:5}[data.face];
     if(faceNumber===undefined)throw new Error('Unknown cross face.');
     const masks={cross:[0],xcross:[1,2,4,8],xxcross:[3,5,9,6,10,12]}[data.kind];

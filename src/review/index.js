@@ -140,7 +140,7 @@ export function createSolveReview(host, routeContext = {}) {
     if (stage === 'cross') {
       params.set('face', item.face ?? record.analysis?.face ?? 'D');
       params.set('kind', item.text === 'X-cross' ? 'xcross' : 'cross');
-      path = `#/drills/scout?${params}`; destination = 'Cross Scout';
+      path = `#/drills/scout?${params}`; destination = 'cross planning';
     } else if (stage === 'f2l' || stage.startsWith('pair')) {
       params.set('drill', ['Better pair', 'Pseudo pair'].includes(item.text) ? 'planner' : 'scan');
       params.set('face', 'D');

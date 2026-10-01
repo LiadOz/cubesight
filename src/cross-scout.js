@@ -6,8 +6,10 @@ import { smartCube } from './smart-cube-bluetooth.js';
 import { createSmartCubeTurnGuide } from './smart-cube-turn-guide.js';
 import { followPlanTurn, recoveryMoves } from './smart-cube-guidance.js';
 import { fmt } from './copy/terms.js';
-import { openHistory } from './store/history.js';
-
+import { parseDrillStart } from './drills/start-position.js';
+import { resolveDrillPosition } from './drills/position.js';
+import { analysisStateFromScramble } from './analysis/long-replay.js';
+import { createRoundPanel } from './drills/round-panel.js';
 
 const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const title = value => value[0].toUpperCase()+value.slice(1);
@@ -29,9 +31,8 @@ export function createCrossScout(root, cubeSession = smartCube) {
   let allowed=['U'];
   try { const saved=JSON.parse(localStorage.getItem('cubesight-scout-colors')); if(Array.isArray(saved) && saved.length && saved.every(f=>Object.hasOwn(FACE_COLORS,f))) allowed=[...new Set(saved)]; } catch { /* Use white initially. */ }
   const routeQuery = new URLSearchParams((globalThis.location?.hash ?? '').split('?')[1] ?? '');
+  const drillStart = parseDrillStart();
   const reviewFrom = /^review:(\d+):(\d+)$/.exec(routeQuery.get('from') ?? '');
-  const reviewSetup = /^review:(\d+):(\d+)$/.exec(routeQuery.get('setup') ?? '');
-  const linkedScramble = (routeQuery.get('scramble') ?? (reviewSetup ? '' : routeQuery.get('setup')))?.replaceAll('_', ' ').replaceAll('-', "'").replace(/[′’]/g, "'").trim() ?? '';
   const linkedFace = routeQuery.get('face');
   if (reviewFrom && linkedFace && Object.hasOwn(FACE_COLORS, linkedFace)) allowed = [linkedFace];
   let source=stateFromScramble(''), results=[], selected=null, step=0, states=[], active=true, playing=false, playbackGeneration=0;
@@ -68,6 +69,12 @@ export function createCrossScout(root, cubeSession = smartCube) {
     </section>
     <section class="scout-results"><div class="scout-results-head"><h2>plans found</h2><select id="scout-sort" aria-label="sort plans"><option value="cue">easiest cues first</option><option value="moves">fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose cross colors and find plans for candidates.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). These are random-move scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search uses the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, which runs locally. Smart-cube moves stay on your device. Bluetooth needs a compatible cube and a supported browser on a secure page.</p></section>`;
   const $=selector=>root.querySelector(selector);
+  const roundPanel = createRoundPanel(root, {
+    drill: 'cross',
+    getSettings: () => ({ faces: allowed, practice: 'cross planning' }),
+    onRestart: () => { if (selected) beginPractice(); else message('Find plans and choose one to start recall.'); },
+    onComplete: () => { stopPlayback(); message('Round complete. Your result is in the quick-round strip.'); },
+  });
   if (reviewFrom) {
     const back = document.createElement('a');
     back.className = 'scout-review-back';
@@ -144,7 +151,13 @@ export function createCrossScout(root, cubeSession = smartCube) {
     const history=[...readPracticeHistory(),attempt].slice(-60);
     try{localStorage.setItem(PRACTICE_STORE,JSON.stringify(history));}catch{/* Keep the session usable if storage is unavailable. */}
     practice.rated=rating;
+    roundPanel.record({ correct: rating === 'found', ms: attempt.durationMs, caseId: `${attempt.face}:${attempt.cue}`, at: Date.now() });
     $('#scout-practice-history').textContent=`${history.length} recall rounds · ${history.filter(item=>item.rating==='found').length} found.`;
+  }
+  function beginPractice(){
+    if(!selected)return;
+    stopPlayback();highlightsOn=false;step=0;practice={startedAt:performance.now(),revealedAt:null,rated:null};
+    cube.update(toRenderData(source));renderPlan();message('Recall started. Identify the cross edges and plan pieces before you reveal.');
   }
   function renderPractice(){
     const panel=$('#scout-practice-panel');
@@ -366,9 +379,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
   $('#scout-next').addEventListener('click',()=>{stopPlayback();advance();});
   $('#scout-play').addEventListener('click',play);
   $('#scout-practice').addEventListener('click',()=>{
-    if(!selected)return;
-    stopPlayback();highlightsOn=false;step=0;practice={startedAt:performance.now(),revealedAt:null,rated:null};
-    cube.update(toRenderData(source));renderPlan();message('Recall started. Identify the cross and pair pieces before you reveal the verified plan.');
+    beginPractice();
   });
   $('#scout-practice-reveal').addEventListener('click',()=>{
     if(!practice||!selected||practice.revealedAt)return;
@@ -386,29 +397,45 @@ export function createCrossScout(root, cubeSession = smartCube) {
   });
   renderColors();
   try {
-    $('#scout-scramble').value = linkedScramble ? parseScramble(linkedScramble).join(' ') : randomScramble();
-    loadScramble();
+    const hasLinkedStart = Boolean(drillStart.moves.length || drillStart.review || drillStart.invalid);
+    if (drillStart.invalid) {
+      $('#scout-scramble').value = '';
+      message('This setup is not valid move notation. Check the link and try again.');
+    } else if (hasLinkedStart) {
+      void resolveDrillPosition(drillStart, 'cross').then(async position => {
+        if (position.missing) {
+          $('#scout-scramble').value = '';
+          message('This saved position is no longer available. Open the solve from history to choose another point.');
+          return;
+        }
+        const moves = position.moves;
+        if (position.pin) {
+          if (position.pin.crossFace || drillStart.face) {
+            allowed = [position.pin.crossFace || drillStart.face];
+            try { localStorage.setItem('cubesight-scout-colors', JSON.stringify(allowed)); } catch { /* Keep the pinned cross in memory. */ }
+          }
+        }
+        const text = moves.join(' ');
+        try {
+          source = analysisStateFromScramble(text);
+          currentScramble = text;
+          $('#scout-scramble').value = text;
+          cube.update(toRenderData(source));
+          renderColors();
+          message(position.pin ? 'Exact pinned cross position loaded. Find plans.' : 'Pinned position loaded. Find plans.');
+        } catch {
+          $('#scout-scramble').value = '';
+          message('This position could not be loaded. No substitute scramble was started.');
+        }
+      }).catch(() => message('This position could not be loaded. No substitute scramble was started.'));
+    } else {
+      $('#scout-scramble').value = randomScramble();
+      loadScramble();
+    }
   } catch {
     $('#scout-scramble').value = randomScramble(); loadScramble();
     if (reviewFrom) message('This review link has no usable scramble. Paste a scramble to start a Cross Scout search.');
   }
-  if (reviewSetup) {
-    const [, atText, moveText] = reviewSetup;
-    const setupGeneration = requestGeneration;
-    void openHistory().then(history => {
-      if (!active || setupGeneration !== requestGeneration) return;
-      const record = history.records.find(item => item.at === Number(atText));
-      if (!record) throw new Error('The linked solve is no longer in local history.');
-      const move = Math.min(record.solveMoves.length, Number(moveText));
-      const setup = [...parseScramble(record.scramble), ...record.solveMoves.slice(0, move)];
-      if (setup.length > 200) throw new Error('This position is over Cross Scout’s 200-move setup limit. Choose an earlier move.');
-      $('#scout-scramble').value = setup.join(' ');
-      loadScramble();
-      message(`Review position loaded · move ${move + 1}. Analyze to practice this ${routeQuery.get('kind') === 'xcross' ? 'X-cross' : 'cross'} opportunity.`);
-    }).catch(error => {
-      if (active) message(error.message || 'The linked review position could not be loaded.');
-    });
-  }
   cubeSession.subscribe(onSmartCube);
-  return {setActive(value){active=value;if(!value){stopPlayback();if(selected)cube.update(planData(states[step]));if(busy){cancelSearch();message('Search stopped while away. Existing results are kept.');}}}};
+  return {setActive(value){active=value;roundPanel.setActive(value);if(!value){stopPlayback();if(selected)cube.update(planData(states[step]));if(busy){cancelSearch();message('Search stopped while away. Existing results are kept.');}}},destroy(){roundPanel.destroy();cube.destroy();}};
 }

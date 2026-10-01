@@ -6,6 +6,7 @@ export const QUICK_ROUNDS = Object.freeze({
   corners: Object.freeze({ kind: 'timed', durationMs: 2 * 60 * 1000 }),
   pll: Object.freeze({ kind: 'cases', cases: 20 }),
   f2l: Object.freeze({ kind: 'timed', durationMs: 30 * 1000 }),
+  cross: Object.freeze({ kind: 'cases', cases: 20 }),
   oll: Object.freeze({ kind: 'cases', cases: 20 }),
   lookahead: Object.freeze({ kind: 'cases', cases: 20 }),
 });

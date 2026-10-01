@@ -19,7 +19,7 @@ const routes = [
   ['drills/corners', 'corner', 'drills', 'corner recognition'],
   ['drills/f2l', 'f2l', 'drills', 'F2L deduction'],
   ['drills/pll', 'pll', 'drills', 'PLL recognition'],
-  ['drills/scout', 'scout', 'drills', 'Cross Scout'],
+  ['drills/scout', 'scout', 'drills', 'cross planning'],
   ['algs', 'algs', 'algs', 'algs'],
   ['progress', 'progress', 'progress', 'progress'],
   ['history', 'history', null, 'history'],
@@ -123,7 +123,7 @@ test('the solve screen debug drawer links to the studio', async ({ page }) => {
 
 test('direct Scout navigation does not arm the corner inactivity prompt', async ({ page }) => {
   await page.clock.install();
-  await page.goto('/#/cross-scout');
+  await page.goto('/#/cross-scout?mode=explore');
   await expect(page.locator('#scout-highlight')).toBeVisible();
   await page.clock.fastForward(11_000);
   await expect(page.locator('#pause-overlay')).toBeHidden();

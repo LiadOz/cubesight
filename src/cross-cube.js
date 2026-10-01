@@ -79,7 +79,7 @@ export function parseScramble(input='', { allowWide = false, allowRotations = fa
   // allowWide also admits slice moves (M, E, S): smart cubes and the move model
   // treat both as ordinary single moves, but manual scramble entry stays strict.
   const pattern = allowRotations ? /^(?:[URFDLB]w?|[urfdlb]|[MESxyz])(?:2|')?$/
-    : allowWide ? /^(?:[URFDLB]w?|[MES])(?:2|')?$/ : /^[URFDLB](?:2|')?$/;
+    : allowWide ? /^(?:[URFDLB]w?|[urfdlb]|[MES])(?:2|')?$/ : /^[URFDLB](?:2|')?$/;
   for (const token of tokens) if (!pattern.test(token)) throw new Error(`Unsupported move “${token.slice(0,30)}”. Use U, D, R, L, F, B${allowWide ? ', a wide move such as Rw, or a slice move (M, E, S),' : ''}${allowRotations ? ' a lowercase wide move (r), a rotation (x, y, z),' : ''} with 2 or a prime.`);
   return tokens;
 }
@@ -110,7 +110,8 @@ function quarter(v, n) {
 const SLICE_FACE = Object.freeze({ M:'L', E:'D', S:'F' });
 
 export function applyMoves(state, input) {
-  const moves = parseScramble(typeof input === 'string' ? input : input.join(' '), { allowWide: true });
+  const moves = parseScramble(typeof input === 'string' ? input : input.join(' '), { allowWide: true })
+    .map(move => /^[urfdlb]/.test(move) ? `${move[0].toUpperCase()}w${move.slice(1)}` : move);
   let cubies = state.cubies.map(c=>({id:c.id,position:[...c.position],stickers:{...c.stickers}}));
   for (const move of moves) {
     const slice = move[0] in SLICE_FACE;
@@ -126,7 +127,7 @@ export function applyMoves(state, input) {
   }
   return { cubies };
 }
-export function stateFromScramble(scramble) { return applyMoves(createSolvedState(),parseScramble(scramble)); }
+export function stateFromScramble(scramble) { return applyMoves(createSolvedState(),parseScramble(scramble, { allowWide: true })); }
 
 // Rotate the whole cube so that `toBottomFace` sits on the bottom (D). Used to
 // bring a colour-neutral cross onto D so last-layer recognisers (PLL/OLL, which

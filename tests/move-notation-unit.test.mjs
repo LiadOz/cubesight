@@ -170,10 +170,10 @@ test('toPhysicalTurn maps a held move onto the physical frame', () => {
   assert.equal(Math.abs(m.axis[2]), 1);
 });
 
-test('parseScramble: rotations and lowercase wide only with allowRotations', () => {
+test('parseScramble: rotations and lowercase wide are opt-in', () => {
   assert.throws(() => parseScramble('R y U'));
   assert.throws(() => parseScramble('R y U', { allowWide: true }));
-  assert.throws(() => parseScramble('r U', { allowWide: true }));
+  assert.deepEqual(parseScramble('r U', { allowWide: true }), ['r', 'U']);
   assert.deepEqual(parseScramble("r U R' y2 x' z", { allowRotations: true }), ['r', 'U', "R'", 'y2', "x'", 'z']);
   assert.deepEqual(parseScramble('R′ U’', { allowRotations: true }), ["R'", "U'"]);
   assert.throws(() => parseScramble('R Q', { allowRotations: true }));

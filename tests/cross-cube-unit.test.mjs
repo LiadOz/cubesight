@@ -58,6 +58,7 @@ test('all wide faces turn two layers and preserve inverses', () => {
     assert.deepEqual(applyMoves(solved, [move, move, move, move]), solved);
     assert.notDeepEqual(applyMoves(solved, move), applyMoves(solved, face));
   }
+  assert.deepEqual(stateFromScramble('r U'), stateFromScramble('Rw U'));
   assert.throws(() => parseScramble('Rw'), /Unsupported move/);
 });
 

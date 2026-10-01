@@ -7,15 +7,17 @@ const list = value => String(value ?? '').split(',').map(item => item.trim()).fi
 export function parseDrillStart(hash = globalThis.location?.hash ?? '') {
   const { query } = parseHash(hash);
   const params = new URLSearchParams(query);
-  const raw = params.get('scramble') ?? params.get('setup') ?? '';
+  const raw = (params.get('scramble') ?? params.get('setup') ?? '').replaceAll('_', ' ');
+  const review = /^review:(\d{1,16}):(\d{1,5})$/.exec(params.get('setup') ?? '');
   let moves = [];
-  if (raw) {
-    try { moves = parseScramble(raw).slice(0, 300); }
-    catch { moves = []; }
+  let invalid = false;
+  if (raw && !review) {
+    try { moves = parseScramble(raw, { allowWide: true }).slice(0, 300); }
+    catch { moves = []; invalid = true; }
   }
-  const review = /^review:(\d{1,16}):(\d{1,4})$/.exec(params.get('setup') ?? '');
   return {
     moves,
+    invalid,
     cases: list(params.get('cases')),
     from: params.get('from')?.slice(0, 160) || null,
     face: /^[UDFBRL]$/.test(params.get('face') ?? '') ? params.get('face') : null,

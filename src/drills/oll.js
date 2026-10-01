@@ -1,7 +1,8 @@
 import '../pages/page.css';
 import './oll.css';
 import { createCube3D } from '../cube-3d.js';
-import { stateFromScramble, toRenderData } from '../cross-cube.js';
+import { toRenderData } from '../cross-cube.js';
+import { analysisStateFromScramble } from '../analysis/long-replay.js';
 import { getCase, getCases } from '../algs/seed/cases.js';
 import { identifyOllCase } from './oll-model.js';
 import { resolveDrillPosition } from './position.js';
@@ -9,6 +10,8 @@ import { syncPageTokens } from '../pages/tokens.js';
 import { loadLearning, saveLearning, review, itemKey, chooseDue, dueItems } from '../learning.js';
 import { QUICK_ROUNDS, createRoundStore } from './rounds.js';
 import { parseDrillStart } from './start-position.js';
+import { fmt } from '../copy/terms.js';
+import { relabelMoves } from '../analysis/normalize.js';
 
 const LEARNING_KEY = 'cubesight-oll-learning-v1';
 const allCases = getCases('oll');
@@ -20,7 +23,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   const learning = loadLearning(storage, LEARNING_KEY);
   let active = true, disposed = false, generation = 0, startedAt = 0, current = null, choices = [], answered = false;
   let round = rounds.current?.drill === 'oll' ? rounds.current : null;
-  let forced = null, cube = null, timerId = null;
+  let forced = null, cube = null, timerId = null, activePin = null;
   root.innerHTML = `<section class="cs-page brain oll-page" data-brain-style="orbit">
     <header class="cs-head"><p class="cs-eyebrow">drills / OLL</p><h1>OLL recognition</h1><p class="cs-sub">Name the last-layer pattern before you think about the turns.</p></header>
     <section class="oll-session" aria-label="OLL recognition round">
@@ -70,7 +73,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     if (!current) current = random(allCases);
     forced = customPosition ? await identifyOllCase(customPosition) : null;
     if (token !== generation || disposed || !active) return;
-    if (customPosition && !forced && !start.cases.length) {
+    if (customPosition && !forced) {
       $('#oll-feedback').textContent = 'This position does not match a standard OLL case with the first two layers solved.';
       $('#oll-answers').replaceChildren();
       return;
@@ -79,7 +82,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     choices = buildChoices(current);
     answered = false;
     const sequence = customPosition || current.setup;
-    try { cube?.update({ ...toRenderData(stateFromScramble(sequence)), mode: 'scout' }); }
+    try { cube?.update({ ...toRenderData(analysisStateFromScramble(sequence)), mode: 'scout' }); }
     catch { $('#oll-feedback').textContent = 'This setup could not be read. A new verified case is ready.'; return; }
     const answerRoot = $('#oll-answers');
     answerRoot.replaceChildren();
@@ -122,7 +125,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     $('#oll-feedback').textContent = correct ? 'Nice. That’s the case.' : `Not quite. This is OLL ${current.number}, ${current.name}.`;
     const alg = current.algs?.[0];
     $('#oll-reveal').hidden = false;
-    $('#oll-reveal').innerHTML = `<strong>OLL ${current.number} · ${current.name}</strong>${alg ? `<p>${alg.moves}</p><small>Source: <a href="${alg.source.url}" target="_blank" rel="noopener noreferrer">${alg.credit}</a></small>` : ''}`;
+    $('#oll-reveal').innerHTML = `<strong>OLL ${current.number} · ${current.name}</strong>${alg ? `<p>${fmt.moves(alg.moves)}</p><small><a href="${alg.source.url}" target="_blank" rel="noopener noreferrer">${alg.credit} (opens a website)</a></small>` : ''}`;
     updateRound();
     if (result.complete) finish(result.summary);
     else $('#oll-next').hidden = false;
@@ -134,17 +137,43 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     $('#oll-round-state').textContent = 'round complete';
   }
   function startRound(resume = true) {
+    if (start.invalid) { $('#oll-feedback').textContent = 'This setup is not valid move notation. Check the link and try again.'; return; }
     round = rounds.startRound({ drill: 'oll', preset: QUICK_ROUNDS.oll, from: start.from, resume });
-    rounds.markActiveDay();
     $('#oll-result').hidden = true;
     $('#oll-start').textContent = 'resume round';
     updateRound();
-    void resolveDrillPosition(start, 'oll').then(position => nextCase(null, position.moves.join(' ')));
+    void resolveDrillPosition(start, 'oll').then(async position => {
+      if (position.missing) {
+        $('#oll-feedback').textContent = 'This saved position is no longer available. Open the solve from history to choose another point.';
+        $('#oll-answers').replaceChildren();
+        return;
+      }
+      const face = position.pin?.crossFace || start.face || 'D';
+      const toD = moves => face === 'D' ? moves : relabelMoves(moves, face);
+      const setup = toD(position.moves).join(' ');
+      if (position.pin) {
+        activePin = {
+          ...position.pin,
+          scramble: toD(position.pin.scramble.split(/\s+/).filter(Boolean)).join(' '),
+          movesUpTo: toD(position.pin.movesUpTo),
+          crossFace: 'D',
+        };
+      }
+      await nextCase(null, setup);
+    });
   }
   $('#oll-start').textContent = round?.status === 'active' ? 'resume round' : 'start 20-case round';
   $('#oll-start').addEventListener('click', () => startRound(round?.status === 'active'));
-  $('#oll-next').addEventListener('click', () => nextCase());
-  if (start.cases.length || start.moves.length || start.review) startRound(false);
+  $('#oll-next').addEventListener('click', async () => {
+    if (!activePin) return nextCase();
+    const { generatePinVariations } = await import('./pin-variations.js');
+    const variations = await generatePinVariations(activePin, { count: 3 });
+    const variation = random(variations);
+    if (!variation) { $('#oll-feedback').textContent = 'No new verified variation was found for this saved position. Choose another point in the solve.'; return; }
+    nextCase(null, variation.scramble);
+  });
+  if (start.invalid) $('#oll-feedback').textContent = 'This setup is not valid move notation. Check the link and try again.';
+  else if (start.cases.length || start.moves.length || start.review) startRound(false);
   else if (round?.status === 'active') startRound(true);
   updateRound();
   syncPageTokens(root);

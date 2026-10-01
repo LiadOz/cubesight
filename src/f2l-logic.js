@@ -303,6 +303,23 @@ export function createF2LCaseFromWasm(raw, seed, preference = 'neutral') {
   };
 }
 
+/** Adapt the local cube-state model to the same deduction view as a generated case. */
+export function createF2LCaseFromCubeState(state, seed, preference = 'neutral') {
+  const faceFor = ([x, y, z]) => [y > 0 ? 'U' : y < 0 ? 'D' : '', z > 0 ? 'F' : z < 0 ? 'B' : '', x > 0 ? 'R' : x < 0 ? 'L' : ''].join('');
+  const adapt = (cubie, slots) => ({
+    id: slots.find(slot => sameLetters(slot.piece, cubie.id))?.piece || cubie.id,
+    position: [...faceFor(cubie.position)],
+    stickers: Object.entries(cubie.stickers).map(([face, color]) => ({ face, color: COLOR_FACE[color] || face })),
+  });
+  const raw = {
+    id: seed,
+    bottom_face: 'D',
+    corners: state.cubies.filter(cubie => cubie.id.length === 3).map(cubie => adapt(cubie, CORNER_SLOTS)),
+    edges: state.cubies.filter(cubie => cubie.id.length === 2).map(cubie => adapt(cubie, EDGE_SLOTS)),
+  };
+  return createF2LCaseFromWasm(raw, seed, preference);
+}
+
 export function createF2LCase(seed, preference = 'neutral') {
   const random = seeded(seed);
   const wanted = preference === 'neutral'
