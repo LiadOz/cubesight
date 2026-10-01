@@ -2,7 +2,8 @@ import { CASES, ALG_SETS, getCase, canonicalCasePath } from './seed/cases.js';
 import { algDatabase } from './runtime.js';
 import { createAlgDrillSession } from './drill/session.js';
 import { smartCube } from '../smart-cube-bluetooth.js';
-import { createCube3D } from '../cube-3d.js';
+import { createPageCube } from '../pages/cube-view.js';
+import { createSequencePlayer } from '../moves/sequence-player.js';
 import { sameCubeState, toRenderData } from '../cross-cube.js';
 import { caseSetupState, f2lStateIntact, matchesCaseSetup } from './drill/cube.js';
 import { createVirtualRepaint } from './drill/repaint.js';
@@ -52,7 +53,8 @@ function caseDetail(row) {
   return `<section class="cs-page brain alg-page" data-brain-style="orbit">
     <section class="alg-detail">
     <header class="alg-detail__head"><a href="#/algs/${esc(row.set)}">← ${esc(row.set.toUpperCase())} cases</a><p class="alg-eyebrow">${esc(row.set.toUpperCase())} ${esc(row.number ?? row.name)}</p><h1>${esc(row.name)}</h1><p>${row.set === 'oll' ? 'Standard OLL case. The setup below preserves the solved first two layers.' : row.set === 'oll2' ? `${esc(row.stage)} stage. Goal: ${esc(row.goal)}.` : row.set === 'f2l' ? `F2L pair insertion. The cross and three solved pairs are preserved; the ${esc(row.targetPair)} pair needs insertion.` : 'Standard PLL case. The setup below preserves the solved first two layers.'}</p><p class="alg-setup"><span>Case setup</span><code>${esc(fmt.moves(row.setup))}</code></p></header>
-    <section class="alg-cube-card"><div class="alg-cube" data-alg-cube aria-label="Virtual cube case setup"></div><div><strong>${supportsVirtualRepaint(row) ? 'Virtual repaint' : 'F2L setup'}</strong><p>${supportsVirtualRepaint(row) ? 'Use this setup as a reference. After a clean OLL, PLL, or two-look round, the virtual case can repaint while your physical cube stays in place.' : 'Set up this F2L case on your cube before each round. F2L drills do not use the no-reset virtual repaint flow.'}</p><p data-cube-status>Connect your cube to check the setup and time each turn.</p><div class="alg-cube-actions"><button type="button" data-action="connect-cube">Connect smart cube</button><button type="button" data-action="start-cube-drill" disabled>Start cube drill</button></div></div></section>
+    <section class="alg-cube-card"><div class="alg-cube" data-alg-cube aria-label="3D cube case setup"></div><div><strong>${supportsVirtualRepaint(row) ? 'Virtual repaint' : 'F2L setup'}</strong><p>${supportsVirtualRepaint(row) ? 'Use this setup as a reference. After a clean OLL, PLL, or two-look round, the virtual case can repaint while your physical cube stays in place.' : 'Set up this F2L case on your cube before each round. F2L drills do not use the no-reset virtual repaint flow.'}</p><p data-cube-status>Connect your cube to check the setup and time each turn.</p><div class="alg-cube-actions"><button type="button" data-action="connect-cube">Connect smart cube</button><button type="button" data-action="start-cube-drill" disabled>Start cube drill</button></div></div></section>
+    <section class="alg-case-playback" aria-label="Algorithm playback"><h2>Play an alg</h2><p>Choose an alg above, then follow its cue and move chips on the cube.</p><div data-case-sequence></div></section>
     <div class="alg-detail__tools"><button type="button" data-action="start-case-drill">Start no-cube drill</button><span data-case-usage>Imported reconstruction usage loading…</span></div>
     <div class="alg-entry-grid">${algorithms}</div>
     <details class="alg-add-own"><summary>Add your own algorithm</summary><p>It is checked against this case and rejected if it does not solve it while preserving F2L.</p><label>Moves<textarea data-new-alg rows="2" placeholder="R U R′ U′"></textarea></label><button type="button" data-action="save-alg">Check and save</button><span data-own-alg-status role="status"></span></details>
@@ -93,7 +95,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   const db = database ?? algDatabase;
   const learning = loadLearning(storage);
   let session = null, tick = null, destroyed = false, renderId = 0, active = true, lastRouteKey = null;
-  let cubeView = null, cubeSnapshot = smartCube.getSnapshot(), cubeUnsubscribe = null, repaintRound = null, repaintReady = false;
+  let cubeView = null, sequencePlayer = null, selectedAlgId = null, cubeSnapshot = smartCube.getSnapshot(), cubeUnsubscribe = null, repaintRound = null, repaintReady = false;
   let setupState = null, lastCubeMoveSeq = 0;
   const saveLearning = () => { try { storage?.setItem(LEARNING_KEY, JSON.stringify(learning)); } catch { /* Keep the schedule for this tab. */ } };
 
@@ -104,6 +106,8 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     const routeKey = `${set ?? ''}/${caseData?.id ?? ''}`;
     if (lastRouteKey !== null && lastRouteKey !== routeKey) window.scrollTo(0, 0);
     lastRouteKey = routeKey;
+    sequencePlayer?.destroy(); sequencePlayer = null;
+    cubeView?.destroy(); cubeView = null;
     root.innerHTML = caseData ? caseDetail(caseData) : browser(set);
     const shell = root.querySelector('.alg-page');
     if (shell) { shell.dataset.brainStyle = loadSettings(storage).style; syncPageTokens(shell); }
@@ -113,15 +117,25 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       catch { setupState = null; }
       try {
         const mount = root.querySelector('[data-alg-cube]');
-        cubeView?.destroy(); cubeView = mount ? createCube3D(mount, { mode: 'corner' }) : null;
-        if (cubeView && setupState) cubeView.update(toRenderData(setupState));
+        if (mount) {
+          const created = await createPageCube(mount, { state: setupState, mode: 'corner' });
+          if (destroyed || !active || thisRender !== renderId || !root.isConnected) { created.destroy(); return; }
+          cubeView = created;
+        }
       } catch { const mount = root.querySelector('[data-alg-cube]'); if (mount) mount.textContent = 'Virtual cube view is unavailable in this browser.'; }
       const [pick, usage, storedAlgs] = await Promise.all([db.getPick(caseData.id), db.usageFor(caseData.id), db.listAlgs(caseData.id)]);
       if (destroyed || !active || thisRender !== renderId || !root.isConnected) return;
+      const personal = storedAlgs.filter(alg => !caseData.algs.some(seed => seed.id === alg.id));
+      const allAlgs = [...caseData.algs, ...personal].filter(alg => alg.verified === true);
+      selectedAlgId = allAlgs.find(alg => alg.id === pick?.algId)?.id ?? allAlgs[0]?.id ?? null;
+      const selectedAlg = allAlgs.find(alg => alg.id === selectedAlgId) ?? null;
+      const playerHost = root.querySelector('[data-case-sequence]');
+      if (cubeView && selectedAlg && playerHost) {
+        sequencePlayer = createSequencePlayer(playerHost, { cube3d: cubeView, startState: setupState, moves: selectedAlg.moves, label: `${caseData.name} alg`, onChange: state => { playerHost.dataset.caseSequenceIndex = String(state.index); } });
+      }
       const usageEl = root.querySelector('[data-case-usage]');
       if (usageEl) usageEl.textContent = usage.length ? `${usage.reduce((n, row) => n + row.total, 0)} imported reconstruction${usage.reduce((n, row) => n + row.total, 0) === 1 ? '' : 's'} use this case` : 'No imported reconstructions use this case yet';
-      if (pick) root.querySelector(`[data-alg-entry="${CSS.escape(pick.algId)}"]`)?.classList.add('is-picked');
-      const personal = storedAlgs.filter(alg => !caseData.algs.some(seed => seed.id === alg.id));
+      if (selectedAlgId) root.querySelector(`[data-alg-entry="${CSS.escape(selectedAlgId)}"]`)?.classList.add('is-picked');
       const personalSection = root.querySelector('[data-personal-algs]');
       if (personalSection && personal.length) {
         personalSection.hidden = false;
@@ -135,8 +149,13 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   const startDrill = async (algId, mode = 'self') => {
     const { caseData } = routeSelection();
     if (!caseData) return;
-    const storedAlg = algId ? await db.getAlg(algId) : null;
-    const alg = storedAlg?.caseId === caseData.id ? storedAlg : caseData.algs[0];
+    const requestedAlgId = algId ?? selectedAlgId;
+    const storedAlg = requestedAlgId ? await db.getAlg(requestedAlgId) : null;
+    const alg = storedAlg?.caseId === caseData.id ? storedAlg : caseData.algs.find(item => item.id === requestedAlgId) ?? caseData.algs[0];
+    selectedAlgId = alg.id;
+    sequencePlayer?.pause();
+    sequencePlayer?.setActive(mode === 'self');
+    if (mode === 'self') sequencePlayer?.load({ startState: setupState, moves: alg.moves, index: 0 });
     repaintRound = null;
     if (mode !== 'self' && supportsVirtualRepaint(caseData)) {
       repaintRound = createVirtualRepaint(caseData);
@@ -205,7 +224,17 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   function stopTimer() { if (tick != null) clearInterval(tick); tick = null; }
   const clickHandler = async event => {
     const pick = event.target.closest('[data-pick]');
-    if (pick) { const row = routeSelection().caseData; if (row) { await db.setPick(row.id, pick.dataset.pick); root.querySelectorAll('.alg-entry').forEach(el => el.classList.toggle('is-picked', el.dataset.algEntry === pick.dataset.pick)); } return; }
+    if (pick) {
+      const row = routeSelection().caseData;
+      if (row) {
+        await db.setPick(row.id, pick.dataset.pick);
+        selectedAlgId = pick.dataset.pick;
+        root.querySelectorAll('.alg-entry').forEach(el => el.classList.toggle('is-picked', el.dataset.algEntry === selectedAlgId));
+        const selected = await db.getAlg(selectedAlgId) ?? row.algs.find(alg => alg.id === selectedAlgId);
+        if (selected && (!session || session.state.mode === 'self' || session.state.phase !== 'running')) sequencePlayer?.load({ startState: setupState, moves: selected.moves, index: 0 });
+      }
+      return;
+    }
     const drill = event.target.closest('[data-drill-alg]');
     if (drill) { await startDrill(drill.dataset.drillAlg); return; }
     const action = event.target.closest('[data-action]')?.dataset.action;
@@ -238,8 +267,17 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       } catch (error) { if (status) status.textContent = error.message; }
       return;
     }
-    if (action === 'close-drill') { root.querySelector('[data-drill]').hidden = true; session = null; stopTimer(); }
+    if (action === 'close-drill') {
+      root.querySelector('[data-drill]').hidden = true; session = null; stopTimer();
+      sequencePlayer?.setActive(true);
+      const row = routeSelection().caseData;
+      const alg = row?.algs.find(item => item.id === selectedAlgId);
+      if (alg) sequencePlayer?.load({ startState: setupState, moves: alg.moves, index: 0 });
+      if (cubeSnapshot.phase === 'tracking' && cubeView) cubeView.update(toRenderData(cubeSnapshot.state));
+      return;
+    }
     if (action === 'drill-start') {
+      sequencePlayer?.pause();
       session?.start({ startedAt: performance.now() }); const started = performance.now();
       root.querySelector('[data-action="drill-start"]').disabled = true; root.querySelector('[data-action="drill-done"]').disabled = false;
       tick = setInterval(() => { const node = root.querySelector('[data-timer]'); if (node) node.textContent = `${((performance.now() - started) / 1000).toFixed(1)} s`; }, 100);
@@ -248,6 +286,12 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       stopTimer(); const result = await session?.completeSelf(performance.now());
       root.querySelector('[data-action="drill-start"]').disabled = false; root.querySelector('[data-action="drill-done"]').disabled = true;
       root.querySelector('[data-drill-result]').textContent = result ? `Recorded ${result.metrics.executionMs} ms${result.pbMs === result.metrics.executionMs ? ' · PB (all-time)' : ''}.` : '';
+      const alg = session?.selectedAlg;
+      if (result && alg && sequencePlayer) {
+        sequencePlayer.setActive(true);
+        sequencePlayer.load({ startState: setupState, moves: alg.moves, index: 0 });
+        void sequencePlayer.play();
+      }
     }
     if (action === 'drill-next') {
       const picked = session?.chooseNext({ cases: CASES });
@@ -272,9 +316,9 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     setActive(isActive) {
       active = Boolean(isActive);
       if (active) { cubeSnapshot = smartCube.getSnapshot(); void render(); }
-      else { stopTimer(); session = null; cubeUnsubscribe?.(); cubeUnsubscribe = null; }
+      else { stopTimer(); sequencePlayer?.setActive(false); session = null; cubeUnsubscribe?.(); cubeUnsubscribe = null; }
     },
-    destroy() { destroyed = true; stopTimer(); cubeUnsubscribe?.(); cubeView?.destroy(); root.removeEventListener('click', clickHandler); window.removeEventListener('hashchange', render); root.replaceChildren(); },
+    destroy() { destroyed = true; stopTimer(); cubeUnsubscribe?.(); sequencePlayer?.destroy(); cubeView?.destroy(); root.removeEventListener('click', clickHandler); window.removeEventListener('hashchange', render); root.replaceChildren(); },
   };
 }
 

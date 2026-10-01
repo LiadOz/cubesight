@@ -135,3 +135,68 @@ test('a verified personal algorithm can be drilled and its self-timed PB is stor
   }));
   expect(attemptCount).toBeGreaterThan(0);
 });
+
+test('case playback changes algorithms without remounting its cube and reaches the exact indexed state', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/#/algs/oll/1');
+  const canvas = page.locator('#algs-view [data-alg-cube] canvas');
+  await expect(canvas).toHaveCount(1);
+  const sequence = page.locator('[data-case-sequence]');
+  await expect(sequence.locator('[data-sequence="play"]')).toBeVisible();
+  await expect(sequence.locator('.mg-strip i')).toHaveCount(11);
+
+  await page.locator('.alg-entry [data-pick]').last().click();
+  await expect(page.locator('.alg-entry.is-picked')).toHaveCount(1);
+  await expect(canvas).toHaveCount(1);
+  await expect.poll(() => sequence.getAttribute('data-case-sequence-index')).toBe('0');
+  const selectedMoveCount = await sequence.locator('.mg-strip i').count();
+  expect(selectedMoveCount).toBeGreaterThan(0);
+  await sequence.locator('[data-sequence="next"]').click();
+  await expect.poll(() => sequence.getAttribute('data-case-sequence-index')).toBe('1');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await sequence.locator('[data-sequence="play"]').click();
+  await expect(sequence.locator('[data-sequence-position]')).toHaveText(`${selectedMoveCount} / ${selectedMoveCount}`);
+  await expect(canvas).toHaveCount(1);
+});
+
+test('sequence playback ends at the exact physical model state for the selected alg', async ({ page }) => {
+  await page.goto('/#/algs/oll/1');
+  const result = await page.evaluate(async () => {
+    const [{ createSequencePlayer }, { getCase }, { caseSetupState }, cube, parser] = await Promise.all([
+      import('/src/moves/sequence-player.js'), import('/src/algs/seed/cases.js'), import('/src/algs/drill/cube.js'),
+      import('/src/cross-cube.js'), import('/src/review/import-parser.js'),
+    ]);
+    const row = getCase('oll/1'), alg = row.algs[0], startState = caseSetupState(row);
+    const moves = parser.physicalModelTokens(parser.tokenizeReconstruction(alg.moves).tokens);
+    const expected = cube.applyMoves(startState, moves);
+    const host = document.createElement('div');
+    const pageRoot = document.createElement('section'); pageRoot.className = 'brain'; pageRoot.dataset.brainStyle = 'orbit';
+    pageRoot.append(host); document.body.append(pageRoot);
+    const cubeView = { update() {}, animateMove: async () => {}, clearCue() {} };
+    const player = createSequencePlayer(host, { cube3d: cubeView, startState, moves: alg.moves });
+    await player.play();
+    const snapshot = player.getSnapshot();
+    const same = snapshot.state.cubies.every(actual => {
+      const wanted = expected.cubies.find(item => item.id === actual.id);
+      return wanted && actual.position.every((value, index) => value === wanted.position[index])
+        && Object.entries(actual.stickers).every(([face, color]) => wanted.stickers[face] === color);
+    });
+    const report = { same, index: snapshot.index, moveCount: snapshot.moves.length };
+    player.destroy(); pageRoot.remove(); return report;
+  });
+  expect(result).toEqual({ same: true, index: 11, moveCount: 11 });
+});
+
+test('a completed no-cube attempt plays its chosen alg on the same cube', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#/algs/oll/1');
+  const canvas = page.locator('#algs-view [data-alg-cube] canvas');
+  await expect(canvas).toHaveCount(1);
+  await page.getByRole('button', { name: 'Start no-cube drill' }).click();
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  await page.waitForTimeout(20);
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect.poll(async () => page.locator('[data-case-sequence] [data-sequence-position]').textContent(), { timeout: 8_000 }).toMatch(/^(\d+) \/ \1$/);
+  await expect(page.locator('[data-drill-result]')).toContainText('Recorded');
+  await expect(canvas).toHaveCount(1);
+});

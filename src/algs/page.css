@@ -30,6 +30,12 @@
 .alg-cube-card p { margin-top: 7px; color: var(--b-muted); line-height: 1.45; }
 .alg-cube-actions, .alg-detail__tools, .alg-entry__actions, .alg-drill__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .alg-cube-actions { margin-top: 12px; }
+.alg-case-playback { max-width: 760px; margin: 0 auto 16px; padding: 14px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); }
+.alg-case-playback h2 { margin: 0 0 5px; font-size: 16px; }
+.alg-case-playback > p { margin: 0 0 12px; color: var(--b-muted); font-size: 13px; line-height: 1.45; }
+.alg-case-playback .sequence-controls { justify-content: center; }
+.alg-case-playback [data-sequence-guide], .alg-case-playback .mg-guide { min-width: 0; width: 100%; }
+.alg-case-playback .mg-strip { box-sizing: border-box; width: 100%; }
 .alg-detail__tools { max-width: 760px; margin: 0 auto 14px; }
 .alg-detail__tools span { color: var(--b-muted); font-size: 12px; }
 .alg-detail button, .alg-drill button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 13px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); background: var(--b-surface); color: var(--b-ink); cursor: pointer; }
