@@ -10,7 +10,7 @@ test('installed progress page retains local totals with the network off', async 
   });
   await context.setOffline(true);
   await page.reload({waitUntil:'domcontentloaded'});
-  await expect(page.locator('.progress-drills')).toContainText('12 cases all time');
+  await expect(page.locator('.progress-drills')).toContainText('12 answers all time');
   await expect(page.locator('.progress-drills')).toContainText('75% correct');
   await page.locator('.progress-link[href="#/history"]').first().click();
   await expect(page.locator('.history-page')).toBeVisible();
