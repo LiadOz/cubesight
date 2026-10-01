@@ -1,48 +1,31 @@
-# SPEC-NEXT implementation
+# SPEC-NEXT implementation report
 
-Started 2026-10-01 from `feature/smart-cube-guidance` (`eea1766`). Scope: all eight work packages in [SPEC-NEXT.md](SPEC-NEXT.md), confirmed by the user. Builders use Luna agents and isolated worktrees; the lead reviews and combines their changes on `implement/spec-next` in `/home/loz/projects/cubesight-spec-next`. No changes are pushed.
+All eight work packages in [SPEC-NEXT](SPEC-NEXT.md) are implemented for `feature/smart-cube-guidance`, combined on `implement/spec-next` and merged locally after the final quality gates. The user confirmed the full scope. Work was split across isolated worktrees and combined on the integration branch; nothing was pushed. Implementation history runs from base `2ef22a3` through source commit `bef2863`; final integration fixes are `f965020`, `08ed612`, and `bef2863`.
 
-## Status
+## Feature matrix
 
-| Package | Branch | Status |
+| Package | Integrated behavior | Evidence and scope |
 |---|---|---|
-| WP1 · site structure | `implement/spec-next-site` | Integrated; route/browser/offline checks pass |
-| WP2 · manual timer | `implement/spec-next-timer` | Integrated; keyboard/touch/persistence and offline WCA scrambles pass |
-| WP3 · suggestion engine | `implement/spec-next-engine` | Pair engine integrated; canonical last-layer data/suggestions in progress |
-| WP4 · full solve review | `implement/spec-next-review` | Integrated; acceptance audit and label-to-drill links in progress |
-| WP5 · algorithm browser/drills | `implement/spec-next-engine` | Curated bundle independently verified; database and UI in progress |
-| WP6 · drills/progress | `implement/spec-next-copy` + lead | Progress integrated; quick rounds and new drills in progress |
-| WP7 · vocabulary | `implement/spec-next-copy` | Integrated; copy ratchet baseline empty; legacy browser assertions updated |
-| WP8 · history/data | `implement/spec-next` | Integrated; unit/browser/offline checks pass; screenshots inspected |
+| WP1 · Site and routes | Responsive solve, drills, algs and progress navigation; legacy hash redirects retain query strings; pages load offline. | Route, browser and PWA checks; desktop/mobile site screens in `test-results/spec-next-final/ui/site-ui/` (16 images). Redirect map below. |
+| WP2 · Manual timer | Keyboard and touch timer, hold-to-start, inspection and penalty settings, persistent results, and offline WCA scrambles. | Timer, persistence and installed-app tests; Orbit/Mono × light/dark × desktop/phone screens in `test-results/spec-next-final/ui/timer-ui/` (8 images). |
+| WP3 · Solve suggestions | Worker-based cross/pair analysis with all four pair boundaries, pseudo-pair frames, compact pruning tables, verified continuations, case recognition and timing for OLL/PLL. Partial searches remain explicitly unproven. | Independent 16-scramble sample: 58 queried pair positions, 54 with options, 57 partial searches, zero completion-verification failures; median 160.64 ms, p95 161.56 ms, max 163.39 ms, cold table build 81.05 ms. Production tables are approximately 332 KB. These are bounded results, not a global-optimality claim; most sampled positions returned partial searches. |
+| WP4 · Solve review | Replay, stage and move timing, efficiency comparisons, review markers, retry/regrade, long recordings, and imported reconstructions with route/deep-link support. | Focused review and route tests; 300 notation/physical-model round trips; review/import/retry matrix in `test-results/spec-next-final/ui/review-ui/` (24 style/theme/viewport images plus 2 phone solve captures). |
+| WP5 · Algorithm browser and drills | Curated offline library with 194 credited algorithms across 100 cases: 57 OLL, 21 PLL, 16 two-look stages, and a six-case F2L subset. Includes independent verification, source links, custom algorithms, picks, SRS, self-timed and smart-cube drills, and last-layer virtual repaint. | All bundled algorithms replay against their canonical case and preservation constraints in `tests/algs-unit.test.mjs`; last-layer recognition and partial guards in `tests/analysis-last-layer-unit.test.mjs`; progress and backup integration in `tests/progress-unit.test.mjs` and `tests/data-port-unit.test.mjs`. Algorithm screenshot matrix: 48 grid/case/drill views plus 16 active-control views in `test-results/spec-next-final/ui/algs-ui-final/`. |
+| WP6 · Drills and progress | Cross planning, pin variations, OLL recognition, lookahead and reusable quick rounds. Progress reads dated solve/drill activity, algorithm attempts and schedules, and legacy aggregates without inventing dates. | Drill, round, progress and offline checks; `test-results/spec-next-final/ui/progress-ui/` has 8 screens and `test-results/spec-next-final/ui/wp6-final-ui/` has 48 current drill screens across styles, themes, and desktop/phone widths. Current integration also has mobile review/timer captures in `test-results/spec-next-final/ui/visual-final-mobile/` (16 images). |
+| WP7 · Vocabulary | Shared terms and formats with an A1–A92 implementation map; current copy uses the approved product vocabulary. | `docs/ideas/VOICE-AUDIT-IMPLEMENTATION.md` maps all 92 rows to current code or N/A. No row is marked Partial. `tests/copy-unit.test.mjs` checks the active-source vocabulary and formatting contracts. |
+| WP8 · History and data | IndexedDB solve history, filters, sessions, replay/detail, csTimer import/export, pins, algorithm data, and versioned personal backups. Older backup versions remain readable. | History, import/export, migration and offline tests; `test-results/spec-next-final/ui/history-ui/` has 16 screens and a montage. The replay check passes for a 95-move fixture with a recorded solve duration of 69,363 ms. No physical cube or user Downloads recording was available, so this validates the fixture path rather than live hardware. |
 
-## Baseline and environment
+The final algorithm sourcing decision in [FEATURES #25](FEATURES.md) (commit `2ef22a3`) governs the bundled lists: standard community algorithms from SpeedSolving Wiki and SpeedCubeDB have per-algorithm credit and source links. Algorithm data lives in `data/algs/*.json`. Search-generated pair completions remain local analysis results, not user-facing algorithm-library entries.
 
-- `npm run check`: passed on the unchanged base (lint has existing warnings, zero errors).
-- Browser baseline: 162 tests passed; two tests created mobile contexts with a hardcoded port 4174 despite the configured worktree port. Changed them to use Playwright's `baseURL` fixture; both affected tests pass. No application failure found in the baseline suite.
-- Chromium and its required system libraries installed for browser testing. Ubuntu package sources use HTTPS; HTTP package requests were blocked while HTTPS requests worked.
-- The requested `/home/loz/Downloads/cubesight-recording-*.json` location is unavailable in this environment. The repository recording `tests/fixtures/rotation-cross-recording.json` replays successfully through the real session/tracker. This is a fixture check, not a substitute for hardware testing.
-- Tests and screenshots use worktree-specific ports; port 5173 is untouched.
+F2L coverage is intentionally a **six-case curated subset**, not the full 41-case set. The library contains 16 functional two-look stages. The smart-cube flows are exercised through the cube model, recorded move streams and browser integration; no physical device was attached for this report.
 
-## Research verification
+## Cache and review compatibility
 
-The completed research is now available in `docs/research/open-algorithms.md` and `docs/research/alg-gen/`, merged from `c9c3619`. Final sourcing decision `2ef22a3` (FEATURES #25) supersedes the self-generation recommendation: use curated standard community algorithms with per-alg credit/source links in a separate JSON data bundle, conventional OLL/PLL identifiers, and independent verification. The spec has been reconciled with this final decision.
+Compact solve summaries use `SUMMARY_VERSION = 2`; analysis invalidation uses `ENGINE_VERSION = 3`. Stored v1 and v2 summaries remain readable, while summaries with a stale engine or summary version are recomputed when their records can be analyzed. Incomplete OLL/PLL stages can retain a recognized case and continuation, but receive no completed-stage execution or efficiency grade. Completed OLL and PLL recognition is tested across all six cross faces and AUF variants.
 
-Independent checking of the initial prototype found a wrong corner-slot mapping and failing PLL candidates (157 of 442). Corrections and inverse reference-setup checks are required before shipping data. Pair runtime targets now follow the completed research: median ≤300 ms and p95 ≤2 s with a hard budget and partial results; compact pruning tables are required.
-## WP8 data foundation
+## Legacy route redirects
 
-Commit `e55698e` adds history filtering and a 3D replay/detail page, native csTimer JSON import/export, session-gap controls, pin export/import and shared-store refresh.
-
-The four new data tests verify raw time and penalty round-trips, independent sessions, rejection of malformed imports before writes, duplicate timestamp handling, intersecting filters, and self-contained pin backup restoration without duplicate moments. The two history browser tests pass (filtering, replay, penalty/delete/undo, persistence, atomic csTimer imports, exports, session gap). Its installed-app offline replay test passes. Sixteen screenshots cover replay/detail and data tools in Orbit/Mono × dark/light at 1280 and 390 px; paths: `test-results/history-ui/`. Seeded records are test fixtures only. Inspection caught a direct-route shared palette dependency; shared page CSS now loads with the shell and the routed timer test checks the rendered header/page colors.
-
-## Integrated wave A
-
-WP1 commit `fa238c0` merged via `a20fd5d`; WP2 commit `2e65f76` merged via `c362dec`. Combined focused browser checks: 47 passed, 4 optional screenshot tests skipped; the separate timer agent screenshot run passed all 11. Actual routed timer and history checks: 3 passed. WP1 focused navigation/routes: 38 passed.
-
-Installed-app checks currently pass Brain/style modes, all WP1 routes, history/replay, and legacy trainers (4 test cases). The cubing.js worker-entry loading failure is fixed by isolating the core worker dependency chunk and choosing its compatible worker-instantiation path. Offline WCA scrambles now pass without substituting random moves.
-
-WP1 screenshots: `/home/loz/projects/cubesight-wp1/test-results/wp1-ui/`. WP2 screenshots: `/home/loz/projects/cubesight-wp2/test-results/timer-screenshots/`. Each contains desktop style/mode coverage and 390 px phone states, inspected by its builder and sampled by the lead.
-
-Legacy hash redirects retain query strings:
+Redirects preserve query strings:
 
 | Old hash | New hash |
 |---|---|
@@ -53,30 +36,26 @@ Legacy hash redirects retain query strings:
 | `#/cross-scout`, `#/scout` | `#/drills/scout` |
 | `#/debug`, `#/smart-cube`, `#/dev` | `#/dev/studio` |
 
-## Pair engine evidence
+## Final integration fixes
 
-Snapshots `e033ce9` and `d7026a3` merged via `7abe935`: all four pair boundaries, pseudo start/end frames, compact multi-source pruning table with exact goal checks, verified completions, ranked STM/ETM/generator/ergonomic metadata, chosen-slot references, and OLL/PLL case timing capture. Combined `npm run check`: 396/396 unit tests, lint zero errors, build and 102 precached assets pass.
+- Opening solve settings updates controller state immediately, so a late style load cannot undo the interaction. A delayed-style browser check covers this startup race.
+- Cold cross searches initialize pruning tables before starting the per-query search budget. A cold offline one-move cross pin and its distinct next variation are exercised in the installed-app suite.
+- Pinned positions retain legal wide/slice notation through storage and backups; exact physical state is checked after restoration.
+- F2L adaptation preserves cubie sticker ordering. Saved pseudo scans keep the exact position, attach its actual D-offset targets, and score a matching pair in the browser.
+- Saved lookahead positions use verified next-pair continuations, including positions with three existing pairs. OLL recognition handles canonical setups containing rotations.
 
-Reproduce the independent runtime sample with `node scripts/benchmark-pairs.mjs`. On 16 seeded random 22-turn positions, after a real WASM cross and successive engine-chosen pair completions: 58 queried pair positions, 54 with options, 57 partial searches; median 160.64 ms, p95 161.56 ms, max 163.39 ms; compact-table cold build 81.05 ms. Every returned completion preserves the cross and previous pairs and completes a new pair when independently checked against cubing.js: zero failures. The bounded search meets the runtime targets on this machine; it does **not** prove optimality for most sampled positions. Subsequent stages depend on the preceding chosen completion, and time budgets can change how many stages are reached. No phone performance claim is made.
+## Final checks
 
-The canonical curated algorithm bundle and full last-layer suggestions remain active dependencies of WP3/WP5. No claim of complete WP3 acceptance is made yet.
+Validated on the combined integration tree on October 1, 2026:
 
-## Final review
+| Gate | Result |
+|---|---|
+| `npm run check` | Pass: JavaScript/CSS lint has zero errors (75 JS and 3 CSS warnings); all 488 unit tests pass; production build succeeds. |
+| Full Playwright browser suite | Pass: 241 tests in 8.4 minutes; 4 optional timer screenshot-capture tests skipped. The full screenshot matrices were captured and inspected separately. |
+| Installed-app offline PWA suite | Pass: 12/12, including cold non-D PLL pins and cold unsolved-cross pin variations. |
+| Production offline cache | 110 precached entries, 3,815.91 KiB. |
+| Independent solve-model checks | All bundled algorithms and all six last-layer cross-face frames verified; recorded 95-move fixture replay passes. |
 
-Pending: combined lint/unit/build, full browser suite, offline PWA suite, screenshots inspected in both styles/themes and on 390 px phones, recording replay, acceptance item audit, redirect table, final commit/file list and documented deviations.
+Full browser and PWA checks use separate ports 4191 and 4192; the user's port 5173 is untouched. Logs and benchmark/replay evidence are collected under `test-results/spec-next-final/`. Pre-commit lint and unit hooks run normally.
 
-## Review, vocabulary and progress integration
-
-WP4 snapshots `72f01c2` and `947c956` merged through `cfd592b`. Review includes real cube replay, time/move graph, stage efficiency, golden label/score tests, locally parsed imports (300 physical round-trips), guided retry/regrade, and long reconstruction replay. Integration caught the last-layer capture's 200-move public-parser limit; it now uses the bounded analysis replay helper. Offline timer and review tests pass. Builder screenshots: `/home/loz/projects/cubesight-wp2/test-results/solve-review/`; the lead inspected the desktop review. More taxonomy/deep-link acceptance work remains active.
-
-WP7 snapshot `0bd58fa` merged through `b5c4035`, with terms/formats/key mappings and an AST-based vocabulary ratchet whose baseline is empty. Integration updated new review copy and added an explicit exception for the specified Cancel move label. Legacy browser assertions are being aligned to the new visible copy without weakening their behavior checks.
-
-Progress (`src/progress/`) reads existing learning/recognition/round keys and IndexedDB history, separates source and focus, applies +2/DNF statistics, shows an ao12 trend, dated activity, real phase-to-drill links, and explicitly labeled all-time aggregates. Five adapter tests pass; actual-route filtering/reload/legacy preservation browser test passes. All eight Orbit/Mono × dark/light × 1280/390 screenshots in `test-results/progress-ui/` were inspected. Inspection found and fixed phone Mono select overlap. Algorithm progress remains dependent on WP5's shared database integration. Latest combined check: lint zero errors, 419 unit tests passed, production build passed.
-
-## Quick-round integration and regression checks
-
-WP6 snapshot `a407e7c` was integrated as `0b73e10`; lead snapshot `8a327b4` adds shared resumable 2 min / 20 cases / 30 s controls to corners, PLL and F2L (deduction, scan and pair planning). Completed rounds save their actual answer counts, accuracy, median and combo; timing remains unknown when no timing was supplied. Array-format round backups are preserved. Same-route query changes restart the route lifecycle. Brain and manual solves join the gentle active-day record; recording replays are excluded. Progress now reads the OLL/lookahead schedules using each schedule's own trial counter.
-
-The stable pre-WP6 full browser run had 204 passes, 4 optional screenshot skips and 3 failures from obsolete vocabulary assertions (x-cross coach and help/resume). Those assertions were corrected and pass targeted checks. The updated legacy training/phone suite passes all 18 checks; PLL/recall/round regression checks pass all 12. Combined new-drill/round/help/x-cross checks pass 8/8. Combined lint/unit/build passes with 440 unit tests. A new installed-app test cold-loads OLL and lookahead while offline, completes a recognition answer, and reloads a partly finished corner round successfully.
-
-Remaining acceptance work: cross-planning drill and verified pin variations; full algorithm browser/database/smart-cube repetition; canonical OLL/PLL review suggestions; final combined quality gate and screenshot matrix.
+Physical-cube testing and performance measurements on a physical phone remain unverified. The environment has no `/home/loz/Downloads` directory or user recording; the replay evidence uses the supplied fixture.

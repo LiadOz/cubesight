@@ -2,6 +2,8 @@
 
 This document is the brief for the next set of builder agents and the checklist the lead reviews against. Each work package (WP) states **what the user must experience**, **acceptance criteria** (every one must be demonstrably true before a merge), **tests required**, and **what it must not break**. Background and rationale: `docs/ideas/FEATURES.md` (numbered items), `docs/ideas/ROADMAP.md`, the designs in `docs/design/`.
 
+Implementation status and validation: [SPEC-NEXT-IMPLEMENTATION.md](SPEC-NEXT-IMPLEMENTATION.md).
+
 ## Ground rules for every WP
 
 1. **Offline-first PWA.** No backend, no runtime network calls to other origins. Imports come from paste or file. External sources are plain links marked "needs internet". New assets must be precached; `pwa-tests/` must pass with the network off.

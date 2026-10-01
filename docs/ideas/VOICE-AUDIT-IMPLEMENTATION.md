@@ -54,7 +54,7 @@ The automated copy baseline is empty, so it is not treated as proof. tests/copy-
 | A44 | Covered | Actions use stop consistently, with an object when needed (“stop search”, “stop replay”); the former cancel/exit variants are gone (src/copy/terms.js, src/cross-scout.js, src/brain/controller.js). |
 | A45 | Covered | Saved device control says forget this cube; confirmation says Cube address forgotten (src/brain/shell.js, src/brain/controller.js). |
 | A46 | N/A | Former save/load recording controls are retired. Current personal data actions are export data / import data (src/brain/shell.js, src/data-port.js). |
-| A47 | Covered | Visible progress states use lowercase verbs and the single ellipsis character, including lazy loaders, case preparation, cross search, PLL variants, lookahead choices, and smart-cube sync (src/main.js, src/pll-trainer.js, src/drills/cross-planning.js, src/drills/lookahead.js, src/smart-cube-session.js). The lookahead wording is in the pending WP6 follow-up. |
+| A47 | Covered | Visible progress states use lowercase verbs and the single ellipsis character, including lazy loaders, case preparation, cross search, PLL variants, lookahead choices, and smart-cube sync (src/main.js, src/pll-trainer.js, src/drills/cross-planning.js, src/drills/lookahead.js, src/smart-cube-session.js). |
 | A48 | Covered | Corner and PLL controls use glance / adaptive glance for visibility timing; remaining `exposure` references are internal setting IDs or code comments, not displayed copy (src/main.js, src/pll-trainer.js). |
 | A49 | Covered | Corner/F2L prompts support taps and keyboard input (src/main.js); see tests/training.spec.js. |
 | A50 | Covered | Recognition graphs and summaries use recog (src/recognition-profile.js, src/pll-trainer.js). |
