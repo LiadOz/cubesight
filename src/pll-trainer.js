@@ -1,6 +1,6 @@
 import './pll-trainer.css';
 import { createRoundPanel } from './drills/round-panel.js';
-import { createCube3D } from './cube-3d.js';
+import { createPageCube } from './pages/cube-view.js';
 import { renderCube } from './cube-renderer.js';
 import { toRenderData } from './cross-cube.js';
 import { PLL_CASES, createPLLTrial } from './pll-logic.js';
@@ -148,10 +148,13 @@ export function createPLLTrainer(root) {
 
   const $ = (selector) => root.querySelector(selector);
   if (window.matchMedia('(max-width: 700px)').matches) $('.pll-settings').open = false;
-  let cube;
-  try {
-    cube = createCube3D($('#pll-cube'), { mode: 'corner' });
-  } catch (error) {
+  let cube = null, renderData = null, disposed = false;
+  const cubeReady = createPageCube($('#pll-cube'), { mode: 'corner' }).then(view => {
+    if (disposed) { view.destroy(); return; }
+    cube = view;
+    if (renderData) cube.update(renderData);
+  }).catch(error => {
+    if (disposed) return;
     console.warn('WebGL PLL cube unavailable; using the offline SVG view.', error);
     const mount=$('#pll-cube');
     mount.classList.add('is-svg-fallback');
@@ -160,7 +163,8 @@ export function createPLLTrainer(root) {
       update(data){mount.replaceChildren(renderCube(data,{title:'PLL recognition cube',description:'Top, front, and right stickers for the current PLL case.'}));},
       destroy(){mount.replaceChildren();},
     };
-  }
+    if (renderData) cube.update(renderData);
+  });
   const setTimerText = (milliseconds) => { $('#pll-timer').textContent = fmt.time(milliseconds); };
   const totalAttempts = () => Object.values(stats).reduce((sum, item) => sum + (item.attempts || 0), 0);
   const totalCorrect = () => Object.values(stats).reduce((sum, item) => sum + (item.correct || 0), 0);
@@ -327,7 +331,7 @@ export function createPLLTrainer(root) {
     if (start.pin) linkedAttempts++;
     const seenStats = caseStats(trial.caseId);
       trial.delayedEligible = mode === 'transfer' && isDelayedRetentionEligible(seenStats.lastSeen);
-    const data = renderDataFor(trial); cube.update(data);
+    const data = renderDataFor(trial); renderData = data; cube?.update(data);
     $('#pll-case-number').textContent = `case ${completed + 1}`; $('#pll-case-mode').textContent = `${MODES.find(item => item.id === mode)?.label || 'learn'} · ${currentFamilyLabel()}`;
     $('#pll-timing-note').textContent = mode === 'transfer'
       ? 'random AUF · no cue until reveal.'
@@ -432,6 +436,7 @@ export function createPLLTrainer(root) {
     // Route changes and hidden tabs invalidate the live observation. Returning
     // to the trainer always starts a fresh case, so unseen time is never
     // mistaken for recognition time.
+    ready: cubeReady,
     setActive(value) {
       if (active === value) return;
       active = value;
@@ -441,7 +446,7 @@ export function createPLLTrainer(root) {
     },
     handleKey(event) { onKey(event); },
     updateHelp() {},
-    destroy() { active = false; roundPanel.destroy(); stopClock(); window.removeEventListener('keydown', onKey); cube.destroy(); root.replaceChildren(); },
+    destroy() { disposed = true; active = false; roundPanel.destroy(); stopClock(); window.removeEventListener('keydown', onKey); cube?.destroy(); root.replaceChildren(); },
   };
 }
 

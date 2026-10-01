@@ -16,7 +16,7 @@ import { fmtMoves } from '../format.js';
 
 export const PROMINENT = 4;
 
-// Moves a skip saves (SPEC 6), and a free pair / x-cross pair.
+// Typical move savings used to rank skips and free pairs, not measured counterfactuals.
 const SKIP_SAVED = { eo: 6, co: 8, oll: 11, pll: 12, cp: 6 };
 const PAIR_SAVED = 7;
 const ROTATION_COST = 2;
@@ -80,7 +80,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       push({
         id: 'xcross', kind: 'xcross', tone: 'good', stage: 'cross', idx: a.marks.cross, at: a.marks.cross + 1, tMs: timeOf(a.marks.cross),
         cost: pairs * PAIR_SAVED, label,
-        note: `${cap(label)}: ${pairs === 1 ? 'a pair' : 'two pairs'} came with the cross. That is about ${pairs * PAIR_SAVED} moves saved.`,
+        note: `${cap(label)}: ${pairs === 1 ? 'a pair' : 'two pairs'} came with the cross. Estimated saving: about ${pairs * PAIR_SAVED} moves for a typical pair insertion.`,
       });
     }
     for (const skip of a.skips) {
@@ -89,7 +89,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
         push({
           id: `free-pair-${skip.idx}`, kind: 'free-pair', tone: 'good', stage: stageOfMove(skip.idx), idx: skip.idx, at: skip.idx + 1, tMs: timeOf(skip.idx),
           cost: PAIR_SAVED * Math.max(1, (skip.count ?? 2) - 1), label: 'free pair',
-          note: `Free pair: ${skip.count ?? 2} pairs went in with one move. That is about ${PAIR_SAVED} moves saved.`,
+          note: `Free pair: ${skip.count ?? 2} pairs went in with one move. Estimated saving: about ${PAIR_SAVED} moves for a typical pair insertion.`,
         });
         continue;
       }
@@ -99,7 +99,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       push({
         id: `skip-${skip.kind}`, kind: 'skip', tone: 'good', stage, idx: skip.idx, at: skip.idx + 1, tMs: timeOf(skip.idx),
         cost: saved, label: `${skip.kind} skip`,
-        note: `${name} skip. That step was done for you, about ${saved} moves saved.`,
+        note: `${name} skip. That step was done for you. Estimated saving: about ${saved} moves for a typical ${name} algorithm.`,
       });
     }
     for (const n of a.pseudo) {

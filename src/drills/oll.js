@@ -1,6 +1,6 @@
 import '../pages/page.css';
 import './oll.css';
-import { createCube3D } from '../cube-3d.js';
+import { createPageCube } from '../pages/cube-view.js';
 import { toRenderData } from '../cross-cube.js';
 import { analysisStateFromScramble } from '../analysis/long-replay.js';
 import { caseSetupState } from '../algs/drill/cube.js';
@@ -27,7 +27,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   let active = true, disposed = false, generation = 0, startedAt = 0, current = null, choices = [], answered = false;
   let round = rounds.current?.drill === 'oll' ? rounds.current : null;
   let forced = null, cube = null, timerId = null, activePin = null;
-  let roundPanel = null;
+  let roundPanel = null, renderState = null;
   root.innerHTML = `<section class="cs-page brain oll-page" data-brain-style="${loadSettings().style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / OLL</p><h1>OLL recognition</h1><p class="cs-sub">Name the last-layer pattern before you think about the turns.</p></header>
     <section class="oll-session" aria-label="OLL recognition round">
@@ -45,8 +45,11 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     <section id="oll-result" class="oll-result" hidden aria-live="polite"></section>
   </section>`;
   const $ = selector => root.querySelector(selector);
-  try { cube = createCube3D($('#oll-cube'), { mode: 'scout' }); }
-  catch { $('#oll-cube').textContent = '3D cube needs WebGL. The case choices still work.'; }
+  const cubeReady = createPageCube($('#oll-cube'), { mode: 'scout' }).then(view => {
+    if (disposed) { view.destroy(); return; }
+    cube = view;
+    if (renderState) cube.update({ ...toRenderData(renderState), mode: 'scout' });
+  }).catch(() => { if (!disposed) $('#oll-cube').textContent = '3D cube needs WebGL. The case choices still work.'; });
   roundPanel = createRoundPanel(root, {
     drill: 'oll', storage, store: rounds,
     onRestart() {
@@ -101,6 +104,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     answered = false;
     try {
       const state = customPosition ? analysisStateFromScramble(customPosition) : caseSetupState(current);
+      renderState = state;
       cube?.update({ ...toRenderData(state), mode: 'scout' });
     }
     catch {
@@ -203,7 +207,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   updateRound();
   syncPageTokens(root.querySelector('.brain'));
   return {
-    ready: Promise.resolve(),
+    ready: cubeReady,
     setActive(value) { active = value; roundPanel.setActive(value); if (!value) { clearInterval(timerId); generation++; current = null; } else if (round?.status === 'active' && !current) void nextCase(); },
     detach() { disposed = true; active = false; clearInterval(timerId); generation++; roundPanel.destroy(); cube?.destroy(); root.replaceChildren(); },
   };

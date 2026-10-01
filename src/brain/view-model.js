@@ -446,7 +446,7 @@ function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus,
     const frac = row && span > 0 ? Math.min(1, Math.max(0, (m.tMs - row.from) / span)) : 0.5;
     return {
       id: m.id, kind: m.kind, tone: m.tone, label: m.label, stage: m.stage, stageLabel: m.stageLabel, seg: m.stage, frac, tMs: m.tMs, tFrac: Math.min(1, m.tMs / total),
-      prominent: m.prominent, rank: m.rank, selected: m.id === selectedId, at: m.at, costText: m.tone === 'good' ? `saves ~${Math.round(m.cost)}` : `~${Math.max(1, Math.round(m.rawCost ?? m.cost))} lost`,
+      prominent: m.prominent, rank: m.rank, selected: m.id === selectedId, at: m.at, costText: m.tone === 'good' ? `estimated saving: ~${Math.round(m.cost)} moves` : `~${Math.max(1, Math.round(m.rawCost ?? m.cost))} lost`,
     };
   });
   const selected = markers.find(m => m.id === selectedId) ?? null;
