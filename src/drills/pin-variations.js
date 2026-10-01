@@ -1,12 +1,15 @@
-import { validateSolution, sameCubeState } from '../cross-cube.js';
+import { FACE_COLORS, applyMoves, createSolvedState, sameCubeState } from '../cross-cube.js';
 import { analysisStateFromScramble } from '../analysis/long-replay.js';
+import { relabelMoves, unrelabelMoves } from '../analysis/normalize.js';
 import { getCase, getCases } from '../algs/seed/cases.js';
 import { identifyOllCase } from './oll-model.js';
 import { identifyPllCase } from '../pll-logic.js';
 import { bestCompletions } from '../analysis/pair-completion.js';
+import { currentDShift, f2lPairSlots, ollSolved, solvedPairsPseudo } from '../solve-tracker.js';
 
 // cubing.js KPattern order; keep this aligned with the solver's orbit arrays.
-const CORNER_IDS = ['UFR', 'UBR', 'UBL', 'UFL', 'DFR', 'DBR', 'DBL', 'DFL'];
+// cubing's KPattern corner orbit order (note the final four use DFR, DFL, DBL, DBR).
+const CORNER_IDS = ['UFR', 'UBR', 'UBL', 'UFL', 'DFR', 'DFL', 'DBL', 'DBR'];
 const EDGE_IDS = ['UF', 'UR', 'UB', 'UL', 'DF', 'DR', 'DB', 'DL', 'FR', 'FL', 'BR', 'BL'];
 const NORMAL = { U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1], B: [0, 0, -1], R: [1, 0, 0], L: [-1, 0, 0] };
 const positionOf = id => [...id].reduce((position, face) => position.map((value, index) => value + NORMAL[face][index]), [0, 0, 0]);
@@ -60,23 +63,34 @@ function fixedSlotsFor(state, ids, indexById) {
   return slots;
 }
 
+const OFFSET_SUFFIX = ['', '', '2', "'"];
+const solvedCubie = cubie => cubie && Object.entries(cubie.stickers).every(([face, color]) => FACE_COLORS[face] === color);
+const frameState = (state, face, shift) => shift ? applyMoves(state, [`${face}${OFFSET_SUFFIX[shift]}`]) : state;
+
 function essentialPieces(pin, state, bestMoves) {
   const face = pin.crossFace || 'D';
-  const before = validateSolution(state, [], face);
-  const after = validateSolution(state, bestMoves, face);
-  if (!after.crossSolved) return null;
-  const solved = new Set(before.pairs.map(pair => pair.slot));
-  const newPairs = after.pairs.filter(pair => !solved.has(pair.slot));
+  const frame = currentDShift(state, face);
+  if (frame == null) return null;
+  const beforePairs = solvedPairsPseudo(state, face);
+  const afterState = applyMoves(state, bestMoves);
+  if (currentDShift(afterState, face) !== frame) return null;
+  const afterPairs = solvedPairsPseudo(afterState, face);
+  const solved = new Set(beforePairs.map(pair => pair.slot));
+  const newPairs = afterPairs.filter(pair => !solved.has(pair.slot));
   const stageNumber = /pair([1-4])/.exec(pin.stage)?.[1];
-  const target = newPairs[0] ?? after.pairs.find(pair => stageNumber && pair.slot === stageNumber);
+  const target = newPairs[0] ?? afterPairs.find(pair => stageNumber && pair.slot === stageNumber);
   const pieces = new Set(EDGE_IDS.filter(id => id.includes(face)));
-  for (const pair of before.pairs) { pieces.add(pair.cornerId); pieces.add(pair.edgeId); }
+  for (const pair of beforePairs) { pieces.add(pair.cornerId); pieces.add(pair.edgeId); }
   if (target) { pieces.add(target.cornerId); pieces.add(target.edgeId); }
-  return { face, before, after, solved, target, pieces };
+  const beforeFrame = frameState(state, face, frame);
+  for (const pair of f2lPairSlots(face)) for (const id of [pair.cornerId, pair.edgeId]) {
+    if (solvedCubie(beforeFrame.cubies.find(cubie => cubie.id === id))) pieces.add(id);
+  }
+  return { face, frame, beforePairs, afterPairs, solved, target, pieces };
 }
 
-async function checkWithPairPlanner(scramble) {
-  const options = { maxDepth: 12, timeBudgetMs: 160, maxSolutions: 6 };
+async function checkWithPairPlanner(scramble, options = {}) {
+  options = { maxDepth: 12, timeBudgetMs: 160, maxSolutions: 6, ...options };
   if (typeof window === 'undefined' || typeof Worker === 'undefined') return bestCompletions(scramble, options);
   return new Promise(resolve => {
     const worker = new Worker(new URL('./pin-planner-worker.js', import.meta.url), { type: 'module' });
@@ -95,21 +109,28 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
   if (!moves?.length || !['cross', 'f2l', 'lookahead'].includes(pin.trainer)) return [];
   const sourceMoves = [...pin.scramble.split(/\s+/).filter(Boolean), ...pin.movesUpTo];
   const sourceText = sourceMoves.join(' ');
+  const face = pin.crossFace || 'D';
+  const normalizedSource = face === 'D' ? sourceText : relabelMoves(sourceMoves, face).join(' ');
+  const normalizedMoves = face === 'D' ? moves : relabelMoves(moves, face);
   let sourceState;
-  try { sourceState = analysisStateFromScramble(sourceText); } catch { return []; }
-  const constraints = essentialPieces(pin, sourceState, moves);
+  let normalizedSourceState;
+  try {
+    sourceState = analysisStateFromScramble(sourceText);
+    normalizedSourceState = face === 'D' ? sourceState : analysisStateFromScramble(normalizedSource);
+  } catch { return []; }
+  const constraints = essentialPieces({ ...pin, crossFace: 'D' }, normalizedSourceState, normalizedMoves);
   if (!constraints) return [];
-  const { face, before, target, pieces: fixedPieces } = constraints;
+  const { frame, beforePairs, target, pieces: fixedPieces } = constraints;
   if (pin.trainer !== 'cross' && !target) return [];
 
   puzzlePromise ??= Promise.all([import('cubing/puzzles'), import('cubing/kpuzzle'), import('cubing/search'), import('../algs/notation.js')])
     .then(async ([{ cube3x3x3 }, { KPattern }, search, notation]) => ({ kpuzzle: await cube3x3x3.kpuzzle(), KPattern, solve: search.experimentalSolve3x3x3IgnoringCenters, invertAlg: notation.invertAlg }));
   const { kpuzzle, KPattern, solve, invertAlg } = await puzzlePromise;
   let original;
-  try { original = kpuzzle.defaultPattern().applyAlg(sourceText).patternData; } catch { return []; }
-  const fixedCorners = fixedSlotsFor(sourceState, [...fixedPieces].filter(id => CORNER_INDEX.has(id)), CORNER_INDEX);
-  const fixedEdges = fixedSlotsFor(sourceState, [...fixedPieces].filter(id => EDGE_INDEX.has(id)), EDGE_INDEX);
-  const output = [], seen = new Set([sourceText]);
+  try { original = kpuzzle.defaultPattern().applyAlg(normalizedSource).patternData; } catch { return []; }
+  const fixedCorners = fixedSlotsFor(normalizedSourceState, [...fixedPieces].filter(id => CORNER_INDEX.has(id)), CORNER_INDEX);
+  const fixedEdges = fixedSlotsFor(normalizedSourceState, [...fixedPieces].filter(id => EDGE_INDEX.has(id)), EDGE_INDEX);
+  const output = [], seen = new Set([normalizedSource]);
   for (let attempt = 0; attempt < maxAttempts && output.length < count; attempt++) {
     const corners = permutationOrbit(original.CORNERS, fixedCorners, CORNER_IDS.length, 3, random);
     const edges = permutationOrbit(original.EDGES, fixedEdges, EDGE_IDS.length, 2, random);
@@ -126,18 +147,22 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
     };
     try {
       const solution = await solve(new KPattern(kpuzzle, patternData));
-      const scramble = invertAlg(solution.toString()).join(' ');
-      if (!scramble || seen.has(scramble)) continue;
-      seen.add(scramble);
-      const state = analysisStateFromScramble(scramble);
+      const normalizedScramble = invertAlg(solution.toString()).join(' ');
+      if (!normalizedScramble || seen.has(normalizedScramble)) continue;
+      seen.add(normalizedScramble);
+      const normalizedState = analysisStateFromScramble(normalizedScramble);
+      const scramble = face === 'D' ? normalizedScramble : unrelabelMoves(normalizedScramble.split(/\s+/).filter(Boolean), face).join(' ');
+      const state = face === 'D' ? normalizedState : analysisStateFromScramble(scramble);
       if (sameCubeState(state, sourceState)) continue;
-      const verification = validateSolution(state, moves, face);
-      const retained = before.pairs.every(pair => verification.pairs.some(next => next.slot === pair.slot));
-      const focused = pin.trainer === 'cross' ? verification.crossSolved : Boolean(target && verification.pairs.some(pair => pair.slot === target.slot));
-      if (!verification.crossSolved || !retained || !focused) continue;
+      const answerState = applyMoves(normalizedState, normalizedMoves);
+      const answerShift = currentDShift(answerState, 'D');
+      const answerPairs = answerShift == null ? [] : solvedPairsPseudo(answerState, 'D');
+      const retained = beforePairs.every(pair => answerPairs.some(next => next.slot === pair.slot));
+      const focused = pin.trainer === 'cross' ? answerShift === frame : Boolean(target && answerPairs.some(pair => pair.slot === target.slot));
+      if (answerShift !== frame || !retained || !focused) continue;
       const essentialsStayed = [...fixedPieces].every(id => {
-        const source = sourceState.cubies.find(item => item.id === id);
-        const variant = state.cubies.find(item => item.id === id);
+        const source = normalizedSourceState.cubies.find(item => item.id === id);
+        const variant = normalizedState.cubies.find(item => item.id === id);
         return source && variant && equalPosition(source.position, variant.position)
           && Object.entries(source.stickers).every(([faceName, color]) => variant.stickers[faceName] === color);
       });
@@ -146,11 +171,23 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
       if (pin.trainer === 'cross') {
         if (!planner) continue;
         const planned = await planner({ scramble, face, kind: 'cross' });
-        plannerChecked = Boolean(planned?.results?.length || planned?.candidates?.some(candidate => candidate.options?.length));
+        const proposed = [
+          ...(planned?.results ?? []).map(item => item.moves),
+          ...(planned?.candidates ?? []).flatMap(candidate => candidate.options ?? []).map(item => item.moves ?? item.tokens),
+        ].filter(Boolean);
+        const physicalFrame = currentDShift(state, face);
+        plannerChecked = proposed.some(candidateMoves => currentDShift(applyMoves(state, candidateMoves), face) === physicalFrame);
       } else {
         try {
-          const planned = await checkWithPairPlanner(scramble);
-          plannerChecked = planned.candidates.some(candidate => candidate.slots.includes(target.slot) && candidate.options.length > 0);
+          const planned = await checkWithPairPlanner(normalizedScramble, { startShift: frame });
+          plannerChecked = planned?.candidates?.some(candidate => candidate.slots.includes(target.slot)
+            && candidate.options.some(option => {
+              const replay = applyMoves(normalizedState, option.tokens ?? option.moves ?? []);
+              const replayPairs = solvedPairsPseudo(replay, 'D');
+              return currentDShift(replay, 'D') === frame
+                && beforePairs.every(pair => replayPairs.some(next => next.slot === pair.slot))
+                && replayPairs.some(pair => pair.slot === target.slot);
+            })) ?? false;
         } catch { plannerChecked = false; }
       }
       if (!plannerChecked) continue;
@@ -161,23 +198,33 @@ async function cubePatternVariants(pin, { count, random, maxAttempts, planner })
 }
 
 async function ollVariants(pin, { count, random, maxAttempts }) {
-  const source = [...pin.scramble.split(/\s+/).filter(Boolean), ...pin.movesUpTo].join(' ');
-  const target = await identifyOllCase(source);
+  const face = pin.crossFace || 'D';
+  const sourceMoves = [...pin.scramble.split(/\s+/).filter(Boolean), ...pin.movesUpTo];
+  const normalizedSource = face === 'D' ? sourceMoves.join(' ') : relabelMoves(sourceMoves, face).join(' ');
+  const target = await identifyOllCase(normalizedSource);
   if (!target) return [];
+  let sourceState;
+  try { sourceState = analysisStateFromScramble(normalizedSource); } catch { return []; }
+  const frame = currentDShift(sourceState, 'D');
+  if (frame == null || solvedPairsPseudo(sourceState, 'D').length !== 4) return [];
   const algorithms = getCases('pll').flatMap(row => row.algs.map(alg => alg.moves))
     .filter(alg => /^[URFDLB2'\s]+$/.test(alg));
   const solveAlg = getCase(target.id)?.algs?.[0]?.moves;
   if (!solveAlg) return [];
   const candidates = shuffle(algorithms, random);
-  const output = [], seen = new Set([source]);
+  const output = [], seen = new Set([normalizedSource]);
   for (const algorithm of candidates.slice(0, maxAttempts)) {
-    const scramble = `${source} ${algorithm}`.trim();
-    if (seen.has(scramble)) continue;
-    seen.add(scramble);
-    if ((await identifyOllCase(scramble))?.id !== target.id) continue;
-    if (await identifyOllCase(`${scramble} ${solveAlg}`)) continue;
-    let state;
-    try { state = analysisStateFromScramble(scramble); } catch { continue; }
+    const normalizedScramble = `${normalizedSource} ${algorithm}`.trim();
+    if (seen.has(normalizedScramble)) continue;
+    seen.add(normalizedScramble);
+    if ((await identifyOllCase(normalizedScramble))?.id !== target.id) continue;
+    let normalizedState;
+    try { normalizedState = analysisStateFromScramble(normalizedScramble); } catch { continue; }
+    if (currentDShift(normalizedState, 'D') !== frame || solvedPairsPseudo(normalizedState, 'D').length !== 4) continue;
+    const solvedState = applyMoves(normalizedState, solveAlg);
+    if (currentDShift(solvedState, 'D') !== frame || solvedPairsPseudo(solvedState, 'D').length !== 4 || !ollSolved(solvedState, 'D')) continue;
+    const scramble = face === 'D' ? normalizedScramble : unrelabelMoves(normalizedScramble.split(/\s+/), face).join(' ');
+    const state = face === 'D' ? normalizedState : analysisStateFromScramble(scramble);
     output.push({ scramble, state, verified: true, plannerChecked: true, randomized: true });
     if (output.length >= count) break;
   }
@@ -185,19 +232,31 @@ async function ollVariants(pin, { count, random, maxAttempts }) {
 }
 
 async function pllVariants(pin, { count, random }) {
-  const source = [...pin.scramble.split(/\s+/).filter(Boolean), ...pin.movesUpTo].join(' ');
+  const face = pin.crossFace || 'D';
+  const sourceMoves = [...pin.scramble.split(/\s+/).filter(Boolean), ...pin.movesUpTo];
+  const normalizedSource = face === 'D' ? sourceMoves.join(' ') : relabelMoves(sourceMoves, face).join(' ');
+  let sourceState;
+  try { sourceState = analysisStateFromScramble(normalizedSource); } catch { return []; }
+  const frame = currentDShift(sourceState, 'D');
+  if (frame == null || solvedPairsPseudo(sourceState, 'D').length !== 4) return [];
   let base;
-  try { base = identifyPllCase(analysisStateFromScramble(source)); } catch { return []; }
+  try { base = identifyPllCase(sourceState); } catch { return []; }
   if (!base) return [];
   const solveAlg = getCases('pll').find(row => row.name === base.name)?.algs?.[0]?.moves;
   if (!solveAlg) return [];
   const output = [];
   for (const auf of shuffle(['U', 'U2', "U'"], random).slice(0, count)) {
-    const scramble = `${source} ${auf}`.trim();
+    const normalizedScramble = `${normalizedSource} ${auf}`.trim();
     try {
-      const state = analysisStateFromScramble(scramble);
-      if (identifyPllCase(state)?.name !== base.name) continue;
-      if (identifyPllCase(analysisStateFromScramble(`${scramble} ${solveAlg}`))) continue;
+      const normalizedState = analysisStateFromScramble(normalizedScramble);
+      if (identifyPllCase(normalizedState)?.name !== base.name) continue;
+      if (currentDShift(normalizedState, 'D') !== frame || solvedPairsPseudo(normalizedState, 'D').length !== 4) continue;
+      const solvedState = applyMoves(normalizedState, solveAlg);
+      if (currentDShift(solvedState, 'D') !== frame || solvedPairsPseudo(solvedState, 'D').length !== 4) continue;
+      const restored = frameState(solvedState, 'D', frame);
+      if (!['', 'U', 'U2', "U'"].some(aufMove => sameCubeState(aufMove ? applyMoves(restored, [aufMove]) : restored, createSolvedState()))) continue;
+      const scramble = face === 'D' ? normalizedScramble : unrelabelMoves(normalizedScramble.split(/\s+/), face).join(' ');
+      const state = face === 'D' ? normalizedState : analysisStateFromScramble(scramble);
       output.push({ scramble, state, verified: true, plannerChecked: true, randomized: true });
     } catch { /* Keep only recognized PLL positions. */ }
   }
