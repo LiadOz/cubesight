@@ -35,3 +35,10 @@ test('ao12 trend needs actual timed solves and accounts for +2', () => {
   const data=readProgress(store({}),{records,now});
   assert.equal(data.trend[10].ms,null);assert.equal(data.trend[11].ms,10000);assert.equal(data.trend[12].ms,10000);
 });
+
+test('phase drill links use only actual solved cube stages', () => {
+  const phases={crossMs:1000,f2lMs:6000,ollMs:2000,pllMs:1500};
+  const records=[{at:now-1,solveMs:10500,solved:true,phases},{at:now-2,solveMs:99999,solved:true,source:'manual',phases}];
+  const data=readProgress(store({}),{records,source:'all',now});
+  assert.equal(data.splits[1].ms,6000);assert.equal(data.splits[1].largest,true);assert.equal(data.splits[1].samples,1);assert.equal(data.splits[1].href,'#/drills/f2l');
+});
