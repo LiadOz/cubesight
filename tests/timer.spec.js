@@ -167,6 +167,8 @@ test('scramble preview matches the WCA state, keeps one canvas, and owns its key
   await open(page);
   const canvas = page.locator('.tm-preview canvas');
   await expect(canvas).toHaveCount(1);
+  await expect.poll(() => canvas.evaluate(node => node.getBoundingClientRect().width)).toBeGreaterThanOrEqual(240);
+  await expect.poll(() => page.locator('.tm-scramble').evaluate(node => node.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
   expect(await page.locator('.tm-preview').evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
   const snapshot = await page.evaluate(() => window.timerDev.timer.getPreviewSnapshot());
   expect(snapshot).toMatchObject({ index: snapshot.moves.length, playing: false });
@@ -177,6 +179,17 @@ test('scramble preview matches the WCA state, keeps one canvas, and owns its key
   expect(matches).toBe(true);
 
   const player = page.locator('.tm-preview-tools');
+  const strip = player.locator('.mg-strip');
+  const currentChipIsVisible = () => strip.evaluate(node => {
+    const chip = node.querySelector('i.current');
+    if (!chip) return false;
+    const view = node.getBoundingClientRect(); const item = chip.getBoundingClientRect();
+    return item.left >= view.left - 1 && item.right <= view.right + 1;
+  });
+  await player.locator('[data-sequence="reset"]').click();
+  await expect.poll(currentChipIsVisible).toBe(true);
+  for (let i = 0; i < 8; i++) await player.locator('[data-sequence="next"]').click();
+  await expect.poll(currentChipIsVisible).toBe(true);
   const play = player.locator('[data-sequence="play"]');
   await play.focus();
   await page.keyboard.press('Space');
@@ -238,6 +251,7 @@ test.describe('phone', () => {
     await page.waitForSelector('html[data-timer-ready]');
     await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect.poll(() => page.locator('.tm-preview canvas').evaluate(node => node.getBoundingClientRect().width)).toBeGreaterThanOrEqual(190);
     await page.locator('button[data-action="hold"]').click();
     await expect(page.locator('button[data-action="hold"]')).toHaveText('hold 550 ms');
     const finger = await touch(page);

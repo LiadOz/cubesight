@@ -136,7 +136,13 @@ export function createMoveGuide(host, options = {}) {
   function scrollToCurrent() {
     const chip = strip.children[Math.min(Math.max(state.index, 0), strip.children.length - 1)];
     if (!chip || strip.scrollWidth <= strip.clientWidth) return;
-    const left = Math.max(0, chip.offsetLeft - Math.max(0, (strip.clientWidth - chip.offsetWidth) / 2));
+    // offsetLeft is relative to the chip's offsetParent (which may be the guide
+    // host rather than the scroll strip). Use viewport geometry so nested page
+    // layouts still center the selected chip accurately.
+    const stripRect = strip.getBoundingClientRect();
+    const chipRect = chip.getBoundingClientRect();
+    const chipCenter = strip.scrollLeft + chipRect.left - stripRect.left + chipRect.width / 2;
+    const left = Math.max(0, Math.min(strip.scrollWidth - strip.clientWidth, chipCenter - strip.clientWidth / 2));
     if (Math.abs(strip.scrollLeft - left) > 2) strip.scrollTo({ left, behavior: reduced() ? 'auto' : 'smooth' });
   }
 

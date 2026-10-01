@@ -343,6 +343,10 @@ export function createTimer(root, {
       : shownScramble == null ? 'generating scramble…' : fmtMoves(shownScramble);
     setText(scrambleText, scrambleLine);
     scrambleText.dataset.state = scrambleState;
+    // The chips are the visible scramble when available. Keep the full notation
+    // line in the accessibility tree (and as the loading/error message), without
+    // asking sighted users to read the same scramble twice.
+    root.classList.toggle('has-ready-scramble', scrambleState === 'ready' && Boolean(shownScramble));
 
     // Stats.
     const row = statsRow(store.records, focus(), prefs.statsSource);

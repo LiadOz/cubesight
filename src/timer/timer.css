@@ -52,26 +52,37 @@
   letter-spacing: .04em; word-spacing: .18em; text-wrap: balance;
 }
 .tm-scramble[data-state="loading"], .tm-scramble[data-state="failed"] { color: var(--b-muted); font-size: 15px; letter-spacing: 0; word-spacing: 0; }
+.tm.has-ready-scramble .tm-scramble {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%);
+  white-space: nowrap; border: 0;
+}
+.tm.has-ready-scramble .tm-scramble-row { margin-top: 4px; }
 
 /* One persistent cube and the shared move player. */
 .tm-preview {
-  box-sizing: border-box; overflow: hidden; display: grid; grid-template-columns: 176px minmax(0, 1fr); align-items: center; gap: 14px;
-  width: min(680px, 100%); min-height: 150px; margin: 10px auto 0; padding: 8px 14px;
+  box-sizing: border-box; overflow: hidden; display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: center; gap: 16px;
+  width: min(860px, 100%); min-height: 272px; margin: 10px auto 0; padding: 10px 18px;
   border: 1px solid var(--b-hairline); border-radius: var(--b-radius-panel, 14px); background: var(--b-panel);
   transition: opacity .18s ease, filter .18s ease;
 }
-.tm-preview-cube { width: 156px; max-width: 100%; justify-self: center; }
-.tm-preview-tools { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
+.tm-preview-cube { width: 256px; max-width: 100%; aspect-ratio: 1; justify-self: center; }
+.tm-preview-cube.has-sequence-ring > canvas { transform: none; }
+.tm-preview-tools { width: 100%; min-width: 0; max-width: 100%; overflow: visible; }
 .tm-preview-tools.sequence-player { gap: 6px; }
-.tm-preview-tools .mg-guide { min-width: 0; max-width: 100%; overflow: hidden; }
-.tm-preview-tools .mg-strip { box-sizing: border-box; max-width: 100%; gap: 4px; padding-block: 2px; }
-.tm-preview-tools .sequence-progress { width: min(180px, 100%); margin-inline: 0; }
+.tm-preview-tools .mg-guide { min-width: 0; max-width: 100%; }
+.tm-preview-tools .mg-strip {
+  box-sizing: border-box; width: 100%; max-width: 100%; gap: 4px; padding-block: 4px;
+  padding-inline: max(8px, calc(50% - 22px)); scroll-padding-inline: 50%; overscroll-behavior-inline: contain;
+}
+/* Timer playback uses the cube cue and move chips; the solve timeline's numeric ring/lane
+   labels add density here without helping identify a move. */
+.tm-preview-tools .sequence-progress, .tm-preview-cube > .sequence-progress { display: none; }
 .tm-preview-tools .sequence-controls { gap: 6px; }
 .tm-preview-tools .sequence-controls button, .tm-preview-tools .sequence-controls select {
   min-height: 40px; padding: 6px 9px; font-size: var(--b-fs-label); cursor: pointer;
 }
 .tm-preview-tools .sequence-controls label { color: var(--b-muted); font-size: var(--b-fs-label); }
-.tm-preview-tools .mg-strip i { min-width: 34px; padding: 6px 8px; font-size: 15px; }
+.tm-preview-tools .mg-strip i { min-width: 36px; padding: 6px 8px; font-size: 16px; }
 .tm-preview-tools .mg-strip i.current { min-width: 42px; padding: 7px 10px; font-size: 20px; }
 .tm.is-busy .tm-preview { opacity: .14; filter: saturate(.35); pointer-events: none; }
 .tm[data-phase="running"] .tm-preview { opacity: .08; }
@@ -137,15 +148,16 @@
 }
 @media (max-width: 720px) {
   .brain.tm { width: calc(100% - 24px); }
-  .tm-preview { grid-template-columns: 104px minmax(0, 1fr); gap: 8px; min-height: 106px; margin-top: 4px; padding: 4px 6px; }
-  .tm-preview-cube { width: 100px; }
+  .tm-preview { grid-template-columns: minmax(190px, 204px) minmax(0, 1fr); gap: 6px; min-height: 220px; margin-top: 4px; padding: 6px; }
+  .tm-preview-cube { width: min(100%, 204px); }
   .tm-preview-tools.sequence-player { gap: 3px; }
   .tm-preview-tools .sequence-controls { gap: 4px; }
   .tm-preview-tools .sequence-controls button, .tm-preview-tools .sequence-controls select { min-height: 44px; padding: 6px; }
   .tm-preview-tools .sequence-controls kbd { display: none; }
   .tm-preview-tools .sequence-controls label { gap: 3px; }
-  .tm-preview-tools .mg-strip i { min-width: 32px; font-size: 14px; }
-  .tm-preview-tools .sequence-progress { display: none; }
+  .tm-preview-tools .mg-strip { gap: 3px; padding-inline: max(8px, calc(50% - 18px)); }
+  .tm-preview-tools .mg-strip i { min-width: 32px; padding-inline: 6px; font-size: 14px; }
+  .tm-preview-tools .mg-strip i.current { min-width: 36px; padding: 7px 7px; font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tm * { transition: none !important; animation: none !important; }
