@@ -106,10 +106,11 @@ test('the desktop home is the solve screen, with or without a cube', async ({ pa
   await expect(page.locator('#brain-view')).toBeVisible();
 });
 
-test('unknown routes fall back to home without dropping query parameters', async ({ page }) => {
+test('unknown routes show recovery without dropping query parameters', async ({ page }) => {
   await page.goto('/?source=test#/unknown');
-  await expect(page).toHaveURL(/\?source=test#\/solve$/);
-  await expect(page.locator('#brain-view')).toBeVisible();
+  await expect(page).toHaveURL(/\?source=test#\/unknown$/);
+  await expect(page.locator('#not-found-view')).toBeVisible();
+  await expect(page.locator('#brain-view')).toBeHidden();
 });
 
 test('the solve screen debug drawer links to the studio', async ({ page }) => {
