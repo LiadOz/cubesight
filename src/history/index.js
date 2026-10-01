@@ -7,6 +7,7 @@ import { stateFromScramble, applyMoves, toRenderData } from '../cross-cube.js';
 import { parseCsTimer, exportCsTimer, filterHistory } from './cstimer.js';
 import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
+import { readStickerPalette, themedRender } from '../brain/cube-theme.js';
 
 export const historyTime = record => {
   if (!Number.isFinite(record.solveMs)) return '—';
@@ -80,7 +81,7 @@ export function initHistory(host) {
     if (!selected?.solveMoves?.length) return;
     try {
       const state = applyMoves(stateFromScramble(selected.scramble || selected.scrambleTurns.join(' ')), selected.solveMoves.slice(0, move));
-      cube?.update(toRenderData(state));
+      cube?.update(themedRender(toRenderData(state), readStickerPalette(root)));
       detail.querySelector('[data-move]').textContent = `move ${move} of ${selected.solveMoves.length}${move ? ` · ${selected.solveMoves[move - 1].replaceAll("'", '′')}` : ''}`;
       detail.querySelector('input[type="range"]').value = move;
     } catch { stopPlayback(); report('This solve uses notation the replay cannot read yet.'); }
@@ -161,6 +162,26 @@ export function initHistory(host) {
     else if (event.target.name === 'query') renderList();
   });
   form.addEventListener('submit', event => event.preventDefault());
+  const retheme = () => { if (active) showPosition(); };
+  document.addEventListener('cubesight-theme', retheme);
   const ready = openHistory({ sessionGapMin: settings.session.gapMin }).then(value => { store = value; refreshSessions(); renderList(); report(store.warning); });
-  return { ready, async setActive(value) { active = Boolean(value); if (!active) { stopPlayback(); return; } await ready; root.dataset.brainStyle = loadSettings(globalThis.localStorage).style; await store.reload(); refreshSessions(); renderList(); }, detach() { active = false; stopPlayback(); cube?.destroy(); host.replaceChildren(); } };
+  return {
+    ready,
+    async setActive(value) {
+      active = Boolean(value);
+      if (!active) { stopPlayback(); cube?.destroy(); cube = null; return; }
+      await ready;
+      if (!active) return;
+      root.dataset.brainStyle = loadSettings(globalThis.localStorage).style;
+      await store.reload();
+      refreshSessions(); renderList();
+      if (selected) {
+        const previousMove = move;
+        const record = store.records.find(r => r.at === selected.at);
+        if (record) { showRecord(record); move = previousMove; showPosition(); }
+        else { selected = null; detail.replaceChildren(make('p', 'This solve was deleted. Select another solve.')); }
+      }
+    },
+    detach() { active = false; stopPlayback(); document.removeEventListener('cubesight-theme', retheme); cube?.destroy(); host.replaceChildren(); },
+  };
 }
