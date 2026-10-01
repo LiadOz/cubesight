@@ -91,3 +91,23 @@ test('verified chosen-slot references use STM and include cancels once; one-move
   assert.equal(stageScores(r)[1].loss, 2);
   assert.ok(!labelsFor(r).flat().some(label => label.text === 'Better pair'));
 });
+
+test('Better cross is solver-proven and colour-neutral, with its face-specific move loss in the graph ledger', () => {
+  const r = { ...mockCross, analysis: { ...mockCross.analysis, crossSource: 'inferred', face: 'D', cross: { d0: 8, total: 0, done: true, proven: false, startProven: true, faceProven: { D: true, F: true }, faces: { D: 8, F: 5 }, losses: [] } } };
+  const better = labelsFor(r).flat().find(label => label.text === 'Better cross');
+  assert.equal(better.face, 'F');
+  assert.equal(better.loss, 2);
+  assert.equal(stageScores(r)[0].loss, 2);
+  assert.ok(!labelsFor({ ...r, analysis: { ...r.analysis, crossSource: 'given' } }).flat().some(label => label.text === 'Better cross'));
+  assert.ok(!labelsFor({ ...r, analysis: { ...r.analysis, cross: { ...r.analysis.cross, faceProven: { D: true, F: false } } } }).flat().some(label => label.text === 'Better cross'));
+  assert.ok(!labelsFor({ ...r, analysis: { ...r.analysis, cross: { ...r.analysis.cross, startProven: false } } }).flat().some(label => label.text === 'Better cross'));
+  assert.ok(!labelsFor({ ...r, analysis: { ...r.analysis, cross: { ...r.analysis.cross, faceProven: { D: false, F: true } } } }).flat().some(label => label.text === 'Better cross'), 'an unproven chosen cross cannot support a comparison');
+});
+
+test('Stray offset costs one move once; an exploited offset resolves as a neutral D fix', () => {
+  const r = { ...record, solveMoves: ['R', 'D', 'U', "D'"], moveCount: 4, analysis: { ...record.analysis, cross: null, marks: { cross: 0, pairs: [null, null, null, null] }, cancels: [], offsets: [{ at: 1, resolvedAt: 2, used: false, stray: true }, { at: 2, resolvedAt: 3, used: true, stray: false }] } };
+  const labels = labelsFor(r).flat();
+  assert.ok(labels.some(label => label.text === 'Stray offset' && label.loss === 1));
+  assert.ok(labels.some(label => label.text === 'D fix'));
+  assert.equal(stageScores(r).at(-1).loss, 1);
+});

@@ -15,11 +15,20 @@ export function labelsFor(record, { inferred = false } = {}) {
   const count = record?.solveMoves?.length ?? 0, a = record?.analysis;
   const labels = Array.from({ length: count }, () => []);
   if (!a) return labels;
-  const push = (i, text, kind, detail, loss = 0) => { if (valid(i, count)) labels[i].push({ text, kind, detail, loss }); };
+  const push = (i, text, kind, detail, loss = 0, extra = {}) => { if (valid(i, count)) labels[i].push({ text, kind, detail, loss, ...extra }); };
   const losses = a.cross?.losses ?? [];
   const allCrossLosses = a.cross?.proven === true && a.cross?.done === true && Number.isFinite(a.cross.total)
     && losses.reduce((sum, row) => sum + row.loss, 0) === a.cross.total;
+  const chosenCrossLength = a.cross?.faces?.[a.face] ?? a.cross?.d0;
+  const alternateCross = a.crossSource === 'inferred' && a.cross?.startProven === true && a.cross?.faceProven?.[a.face] === true && a.cross?.done === true
+    ? Object.entries(a.cross.faces ?? {}).filter(([face, length]) => face !== a.face && a.cross.faceProven?.[face] === true && Number.isFinite(length) && chosenCrossLength - length >= 2)
+      .sort((left, right) => left[1] - right[1])[0] : null;
+  if (alternateCross) {
+    const [face, length] = alternateCross, loss = Math.min(3, chosenCrossLength - length - 1);
+    push(0, 'Better cross', 'warn', `${face} cross was ${length} moves; your inferred ${a.face} cross needs ${chosenCrossLength}.`, loss, { face });
+  }
   for (const row of losses) if (row.loss > 0) push(row.i, row.loss >= 2 ? 'Detour' : 'Extra move', 'warn', `Cross distance ${row.d} → ${row.after}; suggested continuation: ${row.best || 'no suggestion yet'}.`, row.loss);
+
   if (allCrossLosses) for (let i = 0; i <= a.marks?.cross && i < count; i++) if (!labels[i].length) push(i, 'Optimal', 'good', 'This move stays on a shortest path to the cross.');
   for (const cancel of a.cancels ?? []) {
     if (!(cancel.waste > 0)) continue;
@@ -43,11 +52,15 @@ export function labelsFor(record, { inferred = false } = {}) {
   for (const skip of a.skips ?? []) push(skip.idx, skip.kind === 'f2l' ? 'Free pair' : 'Skip', 'good', skip.kind === 'f2l' ? 'A pair finished with the previous stage.' : `${String(skip.kind).toUpperCase()} was already complete at this boundary.`);
   if (a.xcross) push(a.marks?.cross, 'X-cross', 'good', 'The cross finished with a pair already solved.');
   for (const pair of a.pairs ?? []) {
-    const saved = pairLength(pair) - bestLength(pair);
+    const saved = provenChosen(pair) ? pair.chosenShortest - bestLength(pair) : 0;
     if (pair.better && (saved >= REVIEW_THRESHOLDS.betterPairMinimumMoves || (saved >= 1 && pair.w - pair.better.w >= 6))) push(pair.from, 'Better pair', 'warn', `A verified continuation saves ${saved} move${saved === 1 ? '' : 's'}: ${pair.better.moves}.`, Math.min(3, Math.max(0, saved - 1)));
     if (pair.frame && pair.pseudoSaving >= 1) push(pair.to, 'Pseudo pair', 'good', 'The D offset saved moves for this pair.');
   }
   for (const fix of a.dFixes ?? []) push(typeof fix === 'number' ? fix : fix.i, 'D fix', 'neutral', 'This move resolves a D offset used by a pair.');
+  for (const offset of a.offsets ?? []) {
+    if (offset.stray) push(offset.at, 'Stray offset', 'warn', 'The D layer was turned, but no pair used that frame. One spare move.', 1);
+    if (offset.used && valid(offset.resolvedAt, count)) push(offset.resolvedAt, 'D fix', 'neutral', 'This move resolves a D offset used by a pair.');
+  }
   if (Array.isArray(inferred)) for (const entry of inferred) push(entry.i, entry.label, 'inferred', `Looks like ${entry.label.toLowerCase()}; this label is inferred.`);
   for (let i = 0; i < count; i++) if (!labels[i].length) push(i, 'Fine', 'neutral', 'No verified move evaluation is available at this position.');
   return labels;
@@ -82,6 +95,7 @@ function lossLedger(record) {
     const existing = ledger.slice(from, to + 1).reduce((sum, value) => sum + value, 0);
     ledger[to] += Math.max(0, cancel.waste - existing);
   }
+  for (const offset of a.offsets ?? []) if (offset.stray && valid(offset.at, n)) ledger[offset.at] = Math.max(ledger[offset.at], 1);
   if (hasTimes(record)) for (const pause of a.pauses ?? []) if (valid(pause.i, n)) choice[pause.i] += pauseLoss(pause, a.medianGapMs);
   let rotationLoss = 0;
   for (const rotation of measuredRotations(record)) if (valid(rotation.idx, n)) {
@@ -91,6 +105,12 @@ function lossLedger(record) {
   for (const pair of a.pairs ?? []) if (pair.better && provenChosen(pair) && valid(pair.from, n)) {
     const saving = pair.chosenShortest - bestLength(pair);
     if (saving >= 2) choice[pair.from] += Math.min(3, Math.max(0, saving - 1));
+  }
+  const chosenCrossLength = a.cross?.faces?.[a.face] ?? a.cross?.d0;
+  if (a.crossSource === 'inferred' && a.cross?.startProven === true && a.cross?.faceProven?.[a.face] === true && a.cross?.done === true && valid(0, n)) {
+    const bestAlternative = Object.entries(a.cross.faces ?? {}).filter(([face, length]) => face !== a.face && a.cross.faceProven?.[face] === true && Number.isFinite(length))
+      .reduce((best, [face, length]) => !best || length < best.length ? { face, length } : best, null);
+    if (bestAlternative && chosenCrossLength - bestAlternative.length >= 2) choice[0] += Math.min(3, chosenCrossLength - bestAlternative.length - 1);
   }
   return { values: ledger.map((loss, i) => loss + choice[i]), crossEnd, f2lEnd, n };
 }

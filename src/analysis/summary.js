@@ -26,6 +26,7 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
     v: SUMMARY_VERSION,
     engine: ENGINE_VERSION,
     face: seg.crossFace,
+    crossSource: seg.crossSource,
     solved: seg.solved,
     timed: seg.timing.hasTimes,
     // Milestone move indices in the solve's own frame (null = not reached).
@@ -34,6 +35,7 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
     // Free pairs, x-cross and skips exactly as segmentSolve reports them (idx -1 = true before the first move, not a skip).
     skips: seg.skips.filter(skip => skip.idx >= 0).map(skip => ({ kind: skip.kind, idx: skip.idx, ...(skip.count ? { count: skip.count } : {}), ...(skip.pseudo ? { pseudo: true } : {}) })),
     pseudo: seg.pairs.filter(pair => pair.pseudo).map(pair => pair.n),
+    offsets: seg.offsets.map(offset => ({ at: offset.createdAt, resolvedAt: offset.resolvedAt, used: offset.used, stray: offset.stray })),
     pauses: seg.pauses.slice().sort((a, b) => b.excessMs - a.excessMs).slice(0, MAX_PAUSES)
       .map(pause => ({ i: pause.i, ms: Math.round(pause.gapMs), allow: pause.allowMs, stage: pause.stage, boundary: pause.boundary })).sort((a, b) => a.i - b.i),
     medianGapMs: seg.timing.medianGapMs == null ? null : Math.round(seg.timing.medianGapMs),
@@ -51,6 +53,9 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
       best: text(cross.bestContinuation),
       // Every face's optimal length at move 0 (colour-neutral comparison).
       faces: cross.faceLengths ?? null,
+      faceProven: cross.faceProven ?? null,
+      faceComplete: cross.faceComplete !== false,
+      startProven: cross.startProven === true,
       // The moves that cost something: i = the move index, loss 1 (extra) or 2 (detour), d = moves left before it, best = shortest finish from before it.
       losses: lossy.slice(0, MAX_LOSSES).map(row => ({ i: row.i - 1, move: row.move, loss: row.loss, d: cross.positions[row.i - 1].d, best: text(cross.positions[row.i - 1].best), after: row.d })),
     };

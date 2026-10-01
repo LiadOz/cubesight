@@ -50,6 +50,7 @@ export function cleanRecord(raw) {
     } : null,
     xcross: ['cross', 'xcross', 'xxcross'].includes(r.xcross) ? r.xcross : null,
     rotations: Number.isFinite(r.rotations) ? Math.max(0, Math.floor(r.rotations)) : 0,
+    gyro: r.gyro === true,
     detours: Number.isFinite(r.detours) ? Math.max(0, Math.floor(r.detours)) : 0,
     mistakes: Number.isFinite(r.mistakes) ? Math.max(0, Math.floor(r.mistakes)) : 0,
     pllCase: typeof r.pllCase === 'string' ? r.pllCase : null,

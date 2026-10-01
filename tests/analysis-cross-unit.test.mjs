@@ -39,6 +39,9 @@ test('mock cross (SPEC 4.1): distance curve, losses, first moves, best continuat
   assert.deepEqual(cross.positions[3].best.length, 3);
   // Better cross: lengths of every face at move 0.
   assert.deepEqual(cross.faceLengths, { U: 5, D: 6, F: 5, B: 4, R: 5, L: 6 });
+  assert.equal(cross.startProven, true);
+  assert.deepEqual(cross.faceProven, { U: true, D: true, F: true, B: true, R: true, L: true });
+  assert.equal(cross.faceComplete, true);
 });
 
 test('the best continuation really finishes the cross', () => {
@@ -49,6 +52,21 @@ test('the best continuation really finishes the cross', () => {
     assert.equal(crossSolved(state, 'D'), true, `position ${row.i}`);
     assert.equal(row.best.length, row.d);
   }
+});
+
+test('colour-neutral face evidence keeps per-face proof when one alternate search times out', () => {
+  const seg = mock();
+  const partial = { search(request) {
+    const reply = solver.search(request);
+    return request.scramble === seg.normalized.scramble && request.face === 'F' && reply.status === 0
+      ? { ...reply, status: 1 } : reply;
+  } };
+  const result = evaluateCross({ segmentation: seg, firstMoves: false }, partial);
+  assert.equal(result.startProven, true);
+  assert.equal(result.faceProven.D, true);
+  assert.equal(result.faceProven.F, false);
+  assert.equal(result.faceComplete, false);
+  assert.equal(result.complete, true, 'the chosen-face distance curve remains proven');
 });
 
 test('colour-neutral cross on F: losses are computed in the solve\'s own frame', () => {

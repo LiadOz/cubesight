@@ -18,6 +18,8 @@ test('paste reconstruction validates, persists, opens the review, and steps the 
   await expect(page).toHaveURL(/#\/review\/\d+$/);
   await expect(page.getByText('Solve review · 2 moves')).toBeVisible();
   await expect(page.locator('.sr-moves li')).toHaveCount(2);
+  await expect(page.locator('.sr-label.sr-drill').first()).toHaveAttribute('href', /#\/drills\/(scout|f2l|pll)\?.*setup=review%3A\d+%3A0.*from=review%3A\d+%3A0/);
+  await expect(page.locator('.sr-moves [data-move="0"]')).toHaveAttribute('title', /shortest path|verified move evaluation/i);
   await expect(page.locator('.sr-cube canvas')).toBeVisible();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.sr-step-count')).toHaveText('move 1 / 2');
@@ -92,6 +94,6 @@ test('guided retry runs through the real solve tracker with a replay cube and re
   const attemptCount = await page.evaluate(() => window.__reviewFakePlan.expected.length);
   for (let i = 0; i < attemptCount; i++) await page.evaluate(() => window.__reviewFakeCube.step());
   await expect(fakeRetry.locator('.sr-grade')).toContainText(/Clean retry|Retry complete/);
-  await expect(fakeRetry.locator('.sr-regrade')).toContainText('Shared engine regrade');
+  await expect(fakeRetry.locator('.sr-regrade')).toContainText('Review engine regrade');
   await page.evaluate(() => window.__reviewFakePage.detach());
 });

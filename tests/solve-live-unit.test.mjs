@@ -149,6 +149,7 @@ test('audit s1: wrong turns and a wrong physical double are recovered, then a fu
     h.physical(inv(SCR));
     assert.equal(h.s().phase, 'done');
     assert.equal(h.s().record.moveCount, 6);
+    assert.equal(h.s().record.gyro, true, 'the saved solve records that an actual GAN gyro stream was present');
   } finally { restore(); }
 });
 
@@ -427,6 +428,22 @@ test('rotations are not double-counted for a coalesced double', async () => {
     assert.equal(h.s().rotations, 0);
     h.physical("R' U2 R U");          // the new orientation persists: one rotation
     assert.equal(h.s().rotations, 1);
+  } finally { restore(); }
+});
+
+test('guided retry reaches the endpoint for an imported setup longer than 200 moves', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    let seed = 27;
+    const turns = ['R', 'U', 'F', "D'", 'L2', 'B', "U'", 'R2', 'F2', 'D', 'L', "B'"];
+    const setup = Array.from({ length: 201 }, () => { seed = (seed * 48271) % 2147483647; return turns[seed % turns.length]; });
+    h.live.setInspection({ mode: 'off' });
+    h.live.startGuided(setup.join(' '));
+    assert.equal(h.s().applyTotal, 201);
+    h.physical(setup.join(' '));
+    assert.equal(h.s().phase, 'ready');
+    assert.equal(h.s().applyStep, 201);
   } finally { restore(); }
 });
 

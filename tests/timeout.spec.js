@@ -14,7 +14,7 @@ test('ten-second corner trials pause without logging or changing adaptive pace',
   await page.keyboard.press('w');
   expect(await savedProgress(page)).toEqual(before);
   await expect(page.locator('#exposure-select')).toHaveValue('600');
-  await page.getByRole('button', { name: 'Resume with a fresh case' }).click();
+  await page.getByRole('button', { name: 'resume' }).click();
   await expect(page.locator('#pause-overlay')).toBeHidden();
   await expect(page.locator('#case-number')).toHaveText('case 1');
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');

@@ -53,4 +53,6 @@ test('cleanRecord keeps complete solve, scramble, and timing arrays for long rev
   assert.equal(cleaned.solveMoves.length, 275);
   assert.equal(cleaned.scrambleTurns.length, 275);
   assert.equal(cleaned.moveTimes.length, 275);
+  assert.equal(cleanRecord({ at: 2, gyro: true }).gyro, true);
+  assert.equal(cleanRecord({ at: 3 }).gyro, false);
 });

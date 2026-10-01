@@ -27,9 +27,9 @@ test('trend uses actual date gaps, aligned attempt dots, and inspectable points'
   await expect(page.locator('.rp-trend-readout')).toContainText('median 0.50 s');
   await page.getByRole('combobox', { name: 'Filter trend period' }).selectOption('7days');
   await expect(page.locator('.rp-count')).toHaveText('1');
-  await expect(page.locator('.rp-median')).toHaveText('200ms');
+  await expect(page.locator('.rp-median')).toHaveText('0.20 s');
   await expect(page.locator('.rp-trend-point')).toHaveCount(1);
-  await expect(page.locator('.rp-trend-row')).toContainText('median 200ms');
+  await expect(page.locator('.rp-trend-row')).toContainText('median 0.20 s');
   await page.getByRole('combobox', { name: 'Filter trend period' }).selectOption('today');
   await expect(page.locator('.rp-trend-empty')).toBeVisible();
 });
