@@ -130,6 +130,24 @@ for (const style of STYLES) {
 }
 
 // The site mode: the header button and the Brain's "mode" row are one theme.
+test('opening settings survives a delayed initial style load', async ({ page }) => {
+  let releaseStyle;
+  const styleReady = new Promise(resolve => { releaseStyle = resolve; });
+  await page.route('**/src/brain/styles/orbit/index.js', async route => {
+    await styleReady;
+    await route.continue();
+  });
+  await page.goto('/#/solve', { waitUntil: 'domcontentloaded' });
+  const brain = page.locator('#brain-view .brain');
+  await expect(brain).toBeVisible();
+  await brain.locator('.b-settings > summary').click();
+  await expect(brain.locator('.b-settings-body')).toBeVisible();
+  releaseStyle();
+  await expect(brain).toHaveAttribute('data-brain-style', 'orbit');
+  await expect(brain.locator('.b-settings-body')).toBeVisible();
+  await expect(brain.locator('.b-settings > summary')).toHaveAttribute('aria-expanded', 'true');
+});
+
 test('the mode row, the header button and the system setting share one theme; the icon shows the current mode', async ({ page }) => {
   test.setTimeout(60_000);
   await page.emulateMedia({ colorScheme: 'light' });

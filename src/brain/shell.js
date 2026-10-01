@@ -281,6 +281,13 @@ export function createShell(root, { dispatch }) {
   // --- Events: thin delegation to actions ---------------------------------
   brain.addEventListener('click', event => {
     const target = /** @type {HTMLElement} */ (event.target);
+    // Update the controller before an asynchronous style render can reset a
+    // native details toggle whose event has not been delivered yet.
+    if (target.closest('summary') === parts.settings.querySelector(':scope > summary')) {
+      event.preventDefault();
+      dispatch({ type: 'toggleSettings' });
+      return;
+    }
     // The backdrop behind the settings panel is the <details> element's own ::before.
     if (target === parts.settings && parts.settings.open) { dispatch({ type: 'toggleSettings' }); return; }
     const button = target.closest('button');
