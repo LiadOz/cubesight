@@ -12,7 +12,7 @@ import { createSolveLive } from '../solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from '../solve-coach.js';
 import { openHistory } from '../store/history.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
-import { exportAll, serializeExport, parseImport, importAll, historyFromImport } from '../data-port.js';
+import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport } from '../data-port.js';
 import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnection } from '../smart-cube-diag.js';
 import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
 import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
@@ -648,7 +648,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     try {
       await historyReady;
       await history?.flush();
-      const blob = new Blob([serializeExport(exportAll(globalThis.localStorage, history ? history.records : null))], { type: 'application/json' });
+      await history?.pins.flush();
+      const blob = new Blob([serializeExport(exportAll(globalThis.localStorage, history ? history.records : null, history?.pins.list))], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `cubesight-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -666,6 +667,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       if (history && !history.importRecords(historyFromImport(parsed))) {
         if (history.readOnly) throw new Error('the history is read-only right now');
       }
+      history?.pins.importPins(pinsFromImport(parsed));
       records = history?.records ?? [];
       applySettings(loadSettings(globalThis.localStorage));
       setStatusText('#brain-port-status', 'Imported. Metrics refreshed. Reload to update all trainers.');

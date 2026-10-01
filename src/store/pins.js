@@ -81,6 +81,11 @@ export function createPinStore({ backend, readOnly = () => false, onError = () =
       try { pins = (await backend.getPins()).map(cleanPin).filter(Boolean); } catch (error) { onError(`Your pins could not be read (${error?.message || error}).`); }
       return store;
     },
+    async reload() {
+      await queue;
+      try { pins = (await backend.getPins()).map(cleanPin).filter(Boolean); } catch (error) { onError(`Your pins could not be read (${error?.message || error}).`); }
+      return pins;
+    },
     /** Every pin, oldest first. */
     get list() { return pins; },
     get count() { return pins.length; },
@@ -110,6 +115,15 @@ export function createPinStore({ backend, readOnly = () => false, onError = () =
       const id = pinId(raw?.at, typeof raw?.stage === 'string' ? raw.stage.slice(0, 8) : '', raw?.moveIdx);
       if (store.has(id)) { store.remove(id); return null; }
       return store.add(raw);
+    },
+    /** Merge a backup without duplicating moments; report newly added pins. */
+    importPins(list) {
+      let count = 0;
+      for (const raw of Array.isArray(list) ? list : []) {
+        const pin = cleanPin(raw);
+        if (pin && !store.has(pin.id) && store.add(pin)) count++;
+      }
+      return count;
     },
     /** Resolves when every queued write has reached the backend. */
     flush() { return queue; },

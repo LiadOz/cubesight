@@ -18,6 +18,7 @@
 import { cleanRecord, readStoredBlob } from './solve-store.js';
 import { SOLVE_STORE_KEY } from './solve-metrics.js';
 import { SCHEMA_VERSION } from './store/history.js';
+import { cleanPin } from './store/pins.js';
 
 export const EXPORT_VERSION = 2;
 
@@ -32,7 +33,7 @@ function isOwnedKey(key) {
  * records (history store `.records`) to write a version 2 export that includes
  * the IndexedDB history; without them the export is the version 1 shape.
  */
-export function exportAll(storage, historyRecords = null) {
+export function exportAll(storage, historyRecords = null, pins = null) {
   const data = {};
   const store = storage ?? globalThis.localStorage;
   if (store) {
@@ -42,7 +43,7 @@ export function exportAll(storage, historyRecords = null) {
     }
   }
   if (!historyRecords) return store ? { version: 1, exportedAt: new Date().toISOString(), data } : data;
-  return { version: EXPORT_VERSION, exportedAt: new Date().toISOString(), data, history: { schema: SCHEMA_VERSION, records: historyRecords } };
+  return { version: EXPORT_VERSION, exportedAt: new Date().toISOString(), data, history: { schema: SCHEMA_VERSION, records: historyRecords }, ...(pins ? { pins: pins.map(cleanPin).filter(Boolean) } : {}) };
 }
 
 /** Serialise the export for download. */
@@ -62,6 +63,7 @@ export function parseImport(text) {
   if (parsed.history && parsed.history.schema > SCHEMA_VERSION) {
     throw new Error('This backup was made by a newer version of CubeSight. Update the app first.');
   }
+  if (parsed.pins !== undefined && !Array.isArray(parsed.pins)) throw new Error('Not a valid CubeSight backup file.');
   return parsed;
 }
 
@@ -99,3 +101,6 @@ export function historyFromImport(parsed) {
   if (typeof blob !== 'string') return [];
   return readStoredBlob({ getItem: () => blob })?.records ?? [];
 }
+
+/** Pins remain self-contained even when the original solve has been deleted. */
+export const pinsFromImport = parsed => (parsed?.pins ?? []).map(cleanPin).filter(Boolean);
