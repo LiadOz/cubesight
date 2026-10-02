@@ -10,3 +10,7 @@ playwright-report/
 *.log
 .DS_Store
 .claude/worktrees/
+
+# Local smart-cube recordings (anonymized, but bulky and user-specific)
+/recordings/*
+!/recordings/README.md
