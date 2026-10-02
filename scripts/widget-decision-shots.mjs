@@ -40,12 +40,34 @@ const SETS = {
     ],
   },
 };
+SETS.timecoach = {
+  dir: 'gallery/widgets/2026-10-02-time-and-coach', page: 'tc.html', id: 'TC-00', file: 'TC-00-decide.png',
+  title: 'timer display and coach line: which look?',
+  names: ['quiet: plain digits, a sub line only when needed; the sentence in a rail, a dotted curve to the marker', 'tone: amber/red digits with companions; the sentence at the marker height, a straight dotted line', 'two-line slot: a permanent consequence line; the sentence attached to the label, no line'],
+  shots: [['timer-solve', 'running readout (XL, A-04)', [500, 664, 440, 190]], ['coach-results', '+2 readout and the coach line (A-05)', [20, 560, 900, 275]]],
+  q: [
+    { t: 'Q1  which option?', kind: 'pick' },
+    { t: 'Q2  timer hidden: what does the slot show?', kind: 'thumbs', thumbs: [['hidden-a', 0, 'A  the word "hidden"', [520, 690, 400, 150]], ['hidden-b', 0, 'B  ghost digits –.––', [520, 690, 400, 150]], ['hidden-c', 0, 'C  the stage name only', [520, 690, 400, 150]]] },
+    { t: 'Q3  a crowded ring: how are close markers handled?', kind: 'thumbs', thumbs: [['crowd-a', 0, 'A  count badge, expands in place', [40, 545, 520, 215]], ['crowd-b', 0, 'B  fans out on a second radius', [40, 545, 520, 215]], ['crowd-c', 0, 'C  top marker only, rest in the text', [40, 545, 520, 215]]] },
+  ],
+};
+SETS.progresscharts = {
+  dir: 'gallery/widgets/2026-10-02-progress-and-charts', page: 'pc.html', id: 'PC-00', file: 'PC-00-decide.png',
+  title: 'progress panels, charts and the wipe handle: which look?',
+  names: ['Orbit only: the round and the trend are Orbits (a mini Orbit per session and per round); no line anywhere', 'Orbit + tick dial: the long-term trend is a dial of ticks on an arc; still no line or axes', 'Orbit + one minimal line: the Orbit everywhere, one hairline for the long-term trend (the only chart)'],
+  shots: [['progress', 'the progress page', [0, 60, 1440, 780]], ['drill-end', 'end of a drill round', [0, 60, 1440, 780]]],
+  q: [
+    { t: 'Q1  which option?', kind: 'pick' },
+    { t: 'Q2  the compare wipe handle (W-37)', kind: 'thumbs', thumbs: [['wipe-crop', 1, 'A  ink knob', [0, 0, 560, 340]], ['wipe-crop', 2, 'B  hairline + grabber', [0, 0, 560, 340]], ['wipe-crop', 3, 'C  the Orbit caret', [0, 0, 560, 340]]] },
+    { t: 'Q3  end of a round: arc width = time, or equal arcs?', kind: 'thumbs', thumbs: [['round-width', 0, 'A  width = time spent', [290, 120, 860, 660]], ['round-equal', 0, 'B  equal arcs, time on tap', [290, 120, 860, 660]]] },
+  ],
+};
 const SCALE = Number((process.argv.find((a) => a.startsWith('--scale=')) || '--scale=2').slice(8));
 if (![1, 2, 3].includes(SCALE)) { console.error('--scale must be 1, 2 or 3'); process.exit(2); }
 const SUF = SCALE === 1 ? '' : SCALE === 2 ? '-hd' : `-hd${SCALE}`;
 const CELL = 900;   // CSS px per option column on the sheet (1800 device px at 2x)
 const set = SETS[process.argv[2]];
-if (!set) { console.error('usage: widget-decision-shots.mjs containers|lists'); process.exit(2); }
+if (!set) { console.error('usage: widget-decision-shots.mjs containers|lists|timecoach|progresscharts'); process.exit(2); }
 
 const server = http.createServer((req, res) => {
   const f = path.join(root, decodeURIComponent(req.url.split('?')[0]));
@@ -85,7 +107,7 @@ for (let o = 1; o <= 3; o++) {
 }
 const thumbW = CELL;   // a question column (same width as an option column); two thumbs share it
 const thumbs = {};
-for (const q of set.q) if (q.kind === 'thumbs') for (const [v, o, , c] of q.thumbs) if (v) thumbs[`${v}${o}`] = await frame(v, o, c, need(c[2], (thumbW - 12) / 2));
+for (const q of set.q) if (q.kind === 'thumbs') for (const [v, o, , c] of q.thumbs) if (v) thumbs[`${v}${o}`] = await frame(v, o, c, need(c[2], (thumbW - 12 * (q.thumbs.length - 1)) / q.thumbs.length));
 
 const circ = '①②③';
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -94,7 +116,7 @@ const qs = set.q.map((q) => {
   let body = '';
   if (q.kind === 'pick') body = `<div class="opts">${[0, 1, 2].map((o) => `<span class="chip"><b>${circ[o]}</b></span>`).join('')}</div>`;
   else if (q.kind === 'text') body = `<div class="opts">${q.opts.map((t) => `<span class="chip">${t}</span>`).join('')}</div>`;
-  else body = `<div class="th">${q.thumbs.map(([v, o, l]) => `<figure>${v ? `<img src="${thumbs[v + o].src}">` : '<div class="none">no glyph at the left of the row</div>'}<figcaption>${l}</figcaption></figure>`).join('')}</div>`;
+  else body = `<div class="th" style="grid-template-columns:repeat(${q.thumbs.length},1fr)">${q.thumbs.map(([v, o, l]) => `<figure>${v ? `<img src="${thumbs[v + o].src}">` : '<div class="none">no glyph at the left of the row</div>'}<figcaption>${l}</figcaption></figure>`).join('')}</div>`;
   return `<div class="q"><h3>${q.t}</h3>${body}</div>`;
 }).join('');
 // Sizes are CSS px at 1x of the sheet (the PNG is SCALE times bigger): text stays well above 14 px.

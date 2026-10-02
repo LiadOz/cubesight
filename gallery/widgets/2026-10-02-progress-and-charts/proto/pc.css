@@ -1,0 +1,73 @@
+/* Round/progress panels (W-23), charts (W-24) and the compare wipe handle (W-37): prototype styles. Tokens + approved widgets only. */
+@import url('../../_proto/approved.css');
+
+.abs { position: absolute; }
+.row { display: flex; align-items: center; gap: 12px; }
+.kbar .kbi { display: inline-flex; align-items: center; gap: 9px; }
+.touch .key { display: none; }
+.lab-mono { font: 500 11px var(--b-font-mono); color: var(--b-muted); letter-spacing: .02em; }
+.mono-s { font: 400 11px/1.4 var(--b-font-mono); color: var(--b-muted); }
+.choice { position: relative; }
+.choice__kc { position: absolute; top: -11px; left: 14px; }
+.h1 { font: 600 36px/1.1 var(--b-font-sans); letter-spacing: -.02em; margin: 0; }
+.big { font: 300 var(--bs, 64px)/1 var(--b-font-mono); letter-spacing: -.04em; color: var(--b-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.big small { font: 400 .3em var(--b-font-mono); letter-spacing: 0; color: var(--b-muted); margin-left: .25em; }
+.tl { font: 400 11px var(--b-font-mono); color: var(--b-muted); }
+.sent { font: 400 20px/28px var(--b-font-sans); color: var(--b-ink); margin: 0; }
+.ltxt { font: 400 14px/1.45 var(--b-font-sans); color: var(--b-muted); }
+.srow2 { display: grid; grid-template-columns: 300px 40px 1fr; align-items: center; gap: 0 22px; min-height: 96px; border-bottom: 1px solid var(--b-hairline); padding: 8px 28px; }
+.srow2 .was { display: grid; gap: 6px; justify-items: start; }
+.srow2 .was img { max-width: 300px; max-height: 70px; border-radius: 6px; border: 1px solid var(--b-hairline); }
+.srow2 .id { font: 500 11px var(--b-font-mono); color: var(--b-muted); }
+.srow2 .arrow { font: 400 22px var(--b-font-mono); color: var(--b-faint); text-align: center; }
+.srow2 .now { display: flex; align-items: center; gap: 22px; }
+.srow2 .now .t { font: 400 13px/1.45 var(--b-font-sans); color: var(--b-muted); max-width: 520px; }
+.srow2 .now .t b { color: var(--b-ink); font-weight: 600; }
+.phones { display: flex; gap: 28px; padding: 24px 28px; align-items: flex-start; justify-content: center; }
+.phones .frame.phone { border: 1px solid var(--b-hairline); border-radius: 28px; }
+.cell { position: relative; overflow: hidden; border: 1px solid var(--b-hairline); border-radius: 12px; background: var(--b-bg); }
+.cell-h { position: absolute; top: 0; left: 0; z-index: 6; font: 500 12px var(--b-font-mono); color: var(--b-muted); padding: 10px 12px; }
+
+/* ---- W-37 compare wipe handle ---- */
+.stage { position: relative; overflow: hidden; border-radius: 10px; background: #000; }
+.stage .im { position: absolute; display: block; max-width: none; }
+.hd { position: absolute; top: 0; bottom: 0; width: 0; z-index: 5; color: var(--b-ink); }
+.hd .line { position: absolute; left: -1px; top: 0; bottom: 0; width: 2px; background: var(--b-ink); box-shadow: 0 0 0 1px rgb(0 0 0 / .35); }
+.hd svg { display: block; }
+/* A: ink knob */
+.hd.k1 .knob { position: absolute; left: -22px; top: 50%; margin-top: -22px; width: 44px; height: 44px; border-radius: 50%; background: var(--b-ink); color: var(--b-bg); display: grid; place-items: center; box-shadow: 0 0 0 4px rgb(0 0 0 / .35); }
+.hd.k1.is-hover .knob { box-shadow: 0 0 0 4px rgb(0 0 0 / .35), 0 0 0 10px rgb(236 230 216 / .2); }
+.hd.k1.is-drag .knob { transform: scale(1.08); box-shadow: 0 0 0 4px rgb(0 0 0 / .35), 0 0 0 10px rgb(236 230 216 / .3); }
+.hd.k1.is-drag .line { width: 3px; left: -1.5px; }
+.hd.k1.is-focus .knob { outline: 2px solid var(--b-accent); outline-offset: 4px; }
+.hd.k1.is-locked .line { background: repeating-linear-gradient(var(--b-ink) 0 6px, transparent 6px 11px); box-shadow: none; }
+.hd.k1.is-locked .knob { background: var(--b-surface-2); color: var(--b-muted); box-shadow: 0 0 0 1px var(--b-hairline); }
+/* B: hairline + a grabber on the bottom edge */
+.hd.k2 .line { width: 1px; left: -.5px; }
+.hd.k2 .band { position: absolute; left: -16px; width: 32px; top: 0; bottom: 0; background: var(--b-ink); opacity: 0; }
+.hd.k2.is-hover .band, .hd.k2.is-drag .band { opacity: .1; }
+.hd.k2 .grab { position: absolute; left: -32px; bottom: 16px; width: 64px; height: 24px; border-radius: 12px; background: var(--b-ink); display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 0 0 3px rgb(0 0 0 / .35); }
+.hd.k2 .grab i { width: 4px; height: 4px; border-radius: 50%; background: var(--b-bg); }
+.hd.k2.is-drag .grab { width: 78px; left: -39px; }
+.hd.k2.is-drag .line { width: 2px; left: -1px; }
+.hd.k2.is-focus .grab { outline: 2px solid var(--b-accent); outline-offset: 3px; }
+.hd.k2.is-locked .grab { background: transparent; box-shadow: inset 0 0 0 1.5px var(--b-ink); }
+.hd.k2.is-locked .grab i { background: var(--b-ink); }
+.hd.k2.is-locked .line { opacity: .5; }
+/* C: the Orbit caret (a tick line, ends marked, the live dot with its halo) */
+.hd.k3 .line { width: 1.5px; left: -.75px; background: var(--b-accent); box-shadow: none; }
+.hd.k3 .cap { position: absolute; left: -8px; width: 16px; height: 1.5px; background: var(--b-accent); }
+.hd.k3 .cap.t { top: 0; } .hd.k3 .cap.b { bottom: 0; }
+.hd.k3 .dot { position: absolute; left: -15px; top: 50%; margin-top: -15px; width: 30px; height: 30px; border-radius: 50%; background: color-mix(in srgb, var(--b-accent) 28%, transparent); display: grid; place-items: center; }
+.hd.k3 .dot::after { content: ''; width: 13px; height: 13px; border-radius: 50%; background: var(--b-bg); border: 2.6px solid var(--b-accent); box-sizing: border-box; }
+.hd.k3 .ab { position: absolute; top: 12px; font: 500 11px var(--b-font-mono); color: var(--b-accent-text); text-shadow: 0 0 4px #000; }
+.hd.k3 .ab.a { right: 10px; } .hd.k3 .ab.b { left: 10px; }
+.hd.k3 .pct { position: absolute; left: -22px; width: 44px; text-align: center; top: calc(50% - 44px); font: 500 11px var(--b-font-mono); color: var(--b-accent-text); opacity: 0; text-shadow: 0 0 4px #000; }
+.hd.k3.is-hover .pct, .hd.k3.is-drag .pct { opacity: 1; }
+.hd.k3.is-hover .dot { width: 38px; height: 38px; margin-top: -19px; left: -19px; }
+.hd.k3.is-drag .dot { width: 44px; height: 44px; margin-top: -22px; left: -22px; }
+.hd.k3.is-focus .dot { outline: 2px solid var(--b-accent); outline-offset: 3px; }
+.hd.k3.is-locked .line { background: repeating-linear-gradient(var(--b-accent) 0 6px, transparent 6px 11px); }
+.hd.k3.is-locked .dot { background: transparent; }
+.hd.k3.is-locked .dot::after { border-color: var(--b-muted); }
+.hd.touch-t::after { content: ''; position: absolute; left: -22px; top: 50%; margin-top: -22px; width: 44px; height: 44px; border: 1px dashed var(--b-warn); border-radius: 50%; }
