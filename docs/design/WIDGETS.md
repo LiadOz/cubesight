@@ -49,6 +49,8 @@ Status values: `approved` (the user approved it), `pending` (partly approved), `
 | W-33 | Gallery grid and thumbnail card (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ① image card (thumbnail card + grid). Post widgets-dev-pages. |
 | W-34 | Blog post (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ② two columns with a sticky rail. Post widgets-dev-pages. |
 | W-35 | Compare view (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ③ wipe first (side by side and overlay one click away); reused later by the design lab and "yours vs better". Post widgets-dev-pages. |
+| W-36 | Search field (gallery, history, algs) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02 with inputs ①: filled pill field, placed in the section head. Post widgets-inputs |
+| W-37 | Compare wipe handle | proposed | 3 | (+1 dev) | n/a | 0 | Three forms proposed (A ink knob, B hairline + grabber, C the Orbit caret); pending the user's pick in PC-00 Q2 |
 
 ## How to read the variants
 
