@@ -207,7 +207,8 @@ test('best-next-pair drill shows locally verified weighted choices', async ({ pa
 test('opening help pauses the trial until explicit resume', async ({ page }) => {
   await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'help' }).click();
-  await page.getByRole('button', { name: 'start', exact:true }).click();
+  await expect(page.locator('#help-view')).toBeVisible();
+  await page.getByRole('link', { name: 'return to corner recognition' }).click();
   await expect(page.locator('#pause-overlay')).toBeVisible();
   await page.getByRole('button', { name: 'resume', exact:true }).click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');

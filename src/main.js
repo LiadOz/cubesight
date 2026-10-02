@@ -27,6 +27,7 @@ import { currentDShift } from './solve-tracker.js';
 import { loadSettings } from './brain/settings.js';
 import { renderCube } from './cube-renderer.js';
 import { createPageCube } from './pages/cube-view.js';
+import { createHelpPage } from './help/index.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
@@ -213,7 +214,7 @@ let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', recording: 'recording-view', notfound: 'not-found-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', recording: 'recording-view', help: 'help-view', notfound: 'not-found-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
@@ -236,6 +237,9 @@ let scoutRouteHash = null;
 let smart = null;
 let smartLoad = null;
 let galleryPage = null; // dev only: stays null in a production build
+let helpPage = null;
+let helpReturnHash = '#/solve';
+let helpPausedForReturn = false;
 let galleryLoad = null;
 let brain = null;
 let brainLoad = null;
@@ -443,10 +447,10 @@ document.querySelector('#app').innerHTML = `
     <div id="scout-view" hidden></div>
     <div id="brain-view" hidden></div>
     <div id="smart-view" hidden></div>
+    <div id="help-view" class="cs-host" hidden></div>
     <section class="retention-panel" aria-label="drill progress"><div><span>due</span><strong id="review-due">0 cases</strong></div><p id="review-summary">No cases due. Do a round to build your queue.</p><small>Misses and slow recog return sooner. Accuracy and delayed recall are separate.</small></section>
   </main>
 
-  <footer><span>Cubesight <span class="footer-dot">·</span> solve · see the pattern <button class="build-badge" data-action="check-update">Build <b>${BUILD_LABEL}</b></button></span><span>${MSG.stays}</span></footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="pause-overlay" class="pause-overlay" hidden role="region" aria-label="paused" aria-live="polite"><div><p class="eyebrow">Taking a break?</p><h2>paused</h2><p>This case won't count.</p><button class="primary-button" data-action="resume">resume</button></div></div>
@@ -458,15 +462,7 @@ document.querySelector('#app').innerHTML = `
     <button class="primary-button" data-action="restart-sprint">one more round</button>
     <button class="text-button" data-action="practice-mode">endless</button>
   </dialog>
-  <dialog id="help-dialog" class="help-dialog">
-    <button class="dialog-close" data-action="close-help" aria-label="Close">×</button>
-    <p class="eyebrow">help</p>
-    <h2 id="help-title">Recognize the pattern.</h2>
-    <p id="help-copy">Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.</p>
-    <ol id="help-steps"><li>The cube stays locked during each case, but cases vary slightly left, right, up, and down.</li><li>Use the centers and edges to read the cube, then tap or press a color key.</li><li>In three corners, answer the highlighted corners from left to right.</li></ol>
-    <div class="build-info"><span>Installed build</span><code id="app-build">${BUILD_LABEL}</code><button class="text-button" data-action="check-update">Check for update</button><small id="update-status">The build number identifies exactly which CubeSight release is open.</small></div>
-    <button class="primary-button" data-action="close-help">start</button>
-  </dialog>
+
 `;
 
 const globalHeaderStatus = document.createElement('span');
@@ -1146,7 +1142,6 @@ function setMode(mode) {
   document.querySelector('[data-session="sprint"]').textContent = `${sprintLength}-case round`;
   glancePacing.reset();
   document.querySelectorAll('[data-mode]').forEach((button) => button.classList.toggle('active', button.dataset.mode === mode));
-  updateHelp();
   startCase();
 }
 
@@ -1178,27 +1173,26 @@ let checkingForUpdate = false;
 async function checkForUpdate() {
   if (checkingForUpdate) return;
   checkingForUpdate = true;
-  const status = document.querySelector('#update-status');
-  status.textContent = 'checking the server…';
   try {
     const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const serverRevision = String((await response.json()).revision || '');
     const serverLabel = serverRevision === 'development' ? serverRevision : serverRevision.slice(0, 7);
     if (!serverRevision || serverRevision === BUILD_REVISION) {
-      status.textContent = `Build ${BUILD_LABEL} is current.`;
+      const message = `Build ${BUILD_LABEL} is current.`;
       showToast(`CubeSight build ${BUILD_LABEL} is current`);
-      return;
+      return message;
     }
-    status.textContent = `Build ${serverLabel} is available. Updating…`;
+    const message = `Build ${serverLabel} is available. Updating…`;
     const registration = await navigator.serviceWorker?.getRegistration();
     if (registration) {
       await registration.update();
       registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
     }
     location.reload();
+    return message;
   } catch (error) {
-    status.textContent = `Could not check for an update: ${error.message}`;
+    return `Could not check for an update: ${error.message}`;
   } finally {
     checkingForUpdate = false;
   }
@@ -1401,7 +1395,6 @@ function setF2LDrill(drill) {
   f2lState.scanMisses = 0;
   renderF2LControls();
   newF2LCase();
-  updateHelp();
 }
 
 function renderF2L() {
@@ -1684,40 +1677,6 @@ function handleF2LPiece({ piece }) {
   }
 }
 
-function updateHelp() {
-  if (activeTool === 'corner' && state.mode === 'recall') {
-    document.querySelector('#help-title').textContent = 'One glance. Three answers.';
-    document.querySelector('#help-copy').textContent = 'Remember the missing colors at left, top right, and bottom right. The cube is shown only once per sequence.';
-    document.querySelector('#help-steps').innerHTML = '<li>Look at all three corners during the glance. Answers unlock when the cube is hidden.</li><li>Type or tap the three missing colors in order. Feedback appears after all three answers.</li><li>Check the result, then press space or enter for next case. A paused sequence won’t count. Adaptive glance counts three correct answers as one.</li>';
-    return;
-  }
-  if (activeTool === 'scout') {
-    document.querySelector('#help-title').textContent = 'Inspect your possibilities.';
-    document.querySelector('#help-copy').textContent = 'Cross Scout compares cross, x-cross, and xx-cross plans for the colors you select. Cue labels help you spot useful patterns.';
-    document.querySelector('#help-steps').innerHTML = '<li>Paste a scramble or connect a smart cube. For live tracking, start with a solved cube and sync it. Disconnect to edit the scramble.</li><li>Select cross colors or color neutral (CN) for all six, then find plans. Choose a plan to put its cross on the bottom.</li><li>Step through the plan on screen or on your cube. Moves that follow the plan advance it. A different move returns to the live cube.</li>';
-    return;
-  }
-  if (activeTool === 'pll') {
-    document.querySelector('#help-title').textContent = 'See the pattern, then name it.';
-    document.querySelector('#help-copy').textContent = 'Recognize all 21 PLL cases from the two adjacent sides available in a normal solve view—without rotating the cube.';
-    document.querySelector('#help-steps').innerHTML = '<li>Start with a small PLL family in learn, then mix it with other families.</li><li>Answer before the cue appears. A missed case returns after other cases.</li><li>Adaptive glance shortens after high accuracy. Use random AUF to test new AUFs. Cases due after 24 h return separately.</li>';
-    return;
-  }
-  const f2l = activeTool === 'f2l';
-  const f2lHelp = f2lState.drill === 'scan'
-    ? ['scan before you solve', 'Find as many corner–edge pairs as you can before time runs out.', '<li>Choose a round length and tap start scan above the cube.</li><li>Enable pseudo pairs to use a D offset. Match each corner to the edge in its offset slot, then make a D fix.</li><li>Drag left or right. The back and bottom stay hidden.</li><li>Tap a corner and its pair. Finished cubes advance automatically.</li>']
-    : f2lState.drill === 'planner'
-      ? ['choose the efficient pair', 'Compare verified next-pair algs with a strong penalty for F and B moves.', '<li>Enable D offset to use pseudo pairs.</li><li>U, R, L, D, and wide U count one move each; F and B cost five.</li><li>After answering, check every verified alg. Existing pairs stay solved.</li>']
-      : ['inspect, deduce, match', 'Find every corner–edge pair visible from the allowed inspection arc.', '<li>Drag left or right. The back and bottom stay hidden.</li><li>Select a corner or edge, then its matching piece. Other pieces also accept taps.</li><li>After a miss, check the green outlines. Press space or enter for next case.</li>'];
-  document.querySelector('#help-title').textContent = f2l ? f2lHelp[0] : 'Recognize, don’t calculate.';
-  document.querySelector('#help-copy').textContent = f2l
-    ? f2lHelp[1]
-    : 'Two stickers of each target corner remain visible. Identify its hidden third color across nearby real-world viewing angles.';
-  document.querySelector('#help-steps').innerHTML = f2l
-    ? f2lHelp[2]
-    : '<li>The cube stays still during each case, but new cases vary slightly left, right, up, and down. Hidden faces stay hidden.</li><li>Use centers and edges to read the cube, then tap or press W, Y, G, B, R, or O.</li><li>Correct answers advance when the next view is ready. After a miss, check the revealed color.</li><li>In three corners, answer the highlighted targets from left to right.</li>';
-}
-
 // Hash routes work on static hosts too, without a server-side SPA rewrite.
 // Old hashes and unknown ones are replaced (not pushed) so Back still works.
 const isPhone = () => !(matchMedia('(pointer: fine)').matches || innerWidth >= 900);
@@ -1738,6 +1697,19 @@ function syncRoute(initial = false) {
   setTool(tool, initial || routedHash !== hash);
   routedHash = hash;
   rememberDrill(localStorage, tool, hash);
+}
+
+function openHelp() {
+  if (activeTool === 'help' || location.hash === '#/help') return;
+  if (activeTool !== 'help') {
+    helpReturnHash = location.hash || '#/solve';
+    if (keyScope(activeTool)) {
+      if (!paused) pausePractice('help');
+      helpPausedForReturn = paused;
+    } else helpPausedForReturn = false;
+  }
+  if (helpPage) helpPage.setReturn(helpReturnHash, `return to ${PAGE_TITLES[resolveRoute(helpReturnHash).tool] ?? 'solve'}`);
+  location.hash = '#/help';
 }
 
 function renderRecordingView() {
@@ -1802,15 +1774,27 @@ function setTool(tool, initial = false) {
     recordView('mount', { tool });
   }
   if (tool === 'recording') renderRecordingView();
+  if (tool === 'help' && !helpPage) { helpPage = createHelpPage(document.querySelector('#help-view'), { build: BUILD_LABEL, onCheckUpdate: checkForUpdate }); syncPageTokens(helpPage.element); }
+  if (tool === 'help' && helpPage) helpPage.setReturn(helpReturnHash, `return to ${PAGE_TITLES[resolveRoute(helpReturnHash).tool] ?? 'solve'}`);
   activeTool = tool;
   syncLegacyCubes(tool);
   syncRecordingCube(tool);
   if (tool === 'corner' || tool === 'pll' || tool === 'f2l') syncLegacyDrillStyle();
   document.title = `${PAGE_TITLES[tool] ?? tool} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
-  // Choosing another trainer starts fresh; a corner timeout must not block F2L.
-  paused = false;
-  document.querySelector('#pause-overlay').hidden = true;
+  // Help can temporarily hide a paused drill. Returning to the same drill keeps
+  // its explicit-resume prompt; choosing another route clears the pause.
+  if (tool === 'help') {
+    document.querySelector('#pause-overlay').hidden = true;
+  } else if (previousTool === 'help' && helpPausedForReturn && location.hash === helpReturnHash) {
+    paused = true;
+    document.querySelector('#pause-overlay').hidden = false;
+    placePausePrompt();
+  } else {
+    helpPausedForReturn = false;
+    paused = false;
+    document.querySelector('#pause-overlay').hidden = true;
+  }
   document.querySelectorAll('[data-nav]').forEach((link) => {
     const selected = link.dataset.nav === NAV_FOR_TOOL[tool];
     link.classList.toggle('active', selected);
@@ -1832,7 +1816,10 @@ function setTool(tool, initial = false) {
     return;
   }
   legacyRounds[tool]?.setActive(true);
-  if (tool === 'brain') {
+  if (tool === 'help') {
+    state.locked = true;
+    f2lState.locked = true;
+  } else if (tool === 'brain') {
     state.locked = true;
     f2lState.locked = true;
     if (!brainLoad) {
@@ -1915,7 +1902,6 @@ function setTool(tool, initial = false) {
     });
     legacyRounds[tool].setActive(true);
   }
-  updateHelp();
   updateLearningUI();
 }
 
@@ -2111,12 +2097,6 @@ document.addEventListener('visibilitychange', () => {
   else if (activeTool === 'pll') pll?.setActive(true);
   else if (activeTool === 'oll' || activeTool === 'lookahead') drillPages[activeTool]?.setActive(true);
 });
-document.querySelector('#help-dialog').addEventListener('close', () => {
-  if (activeTool === 'scout' && !document.hidden) scout?.setActive(true);
-  else if (activeTool === 'smart' && !document.hidden) smart?.setActive(true);
-  else if (activeTool === 'brain' && !document.hidden) brain?.setActive(true);
-  else if (activeTool === 'pll' && !document.hidden) pll?.setActive(true);
-});
 document.querySelector('#summary-dialog').addEventListener('cancel', (event) => {
   event.preventDefault();
   document.querySelector('#summary-dialog').close();
@@ -2159,12 +2139,7 @@ document.addEventListener('click', (event) => {
   if (action === 'clear' && confirm('Clear all drill history?')) {
     stats = initialStats(); learning = loadLearning(null); saveLearningState(); saveStats(); updateStatsUI(); startCase();
   }
-  if (action === 'open-help') { pausePractice(); updateHelp(); document.querySelector('#help-dialog').showModal(); }
-  if (action === 'close-help') {
-    document.querySelector('#help-dialog').close();
-    if (activeTool === 'scout') scout?.setActive(true);
-    if (activeTool === 'smart') smart?.setActive(true);
-  }
+  if (action === 'open-help') { openHelp(); return; }
   if (action === 'close-summary') { document.querySelector('#summary-dialog').close(); setSession('practice'); }
   if (action === 'restart-sprint') { document.querySelector('#summary-dialog').close(); resetSession(); startCase(); }
   if (action === 'practice-mode') { document.querySelector('#summary-dialog').close(); setSession('practice'); }
@@ -2207,6 +2182,10 @@ document.querySelector('#planner-shift-d').addEventListener('change', (event) =>
 });
 
 document.addEventListener('keydown', (event) => {
+  if (event.key === '?' && !event.ctrlKey && !event.metaKey && !event.altKey && !document.querySelector('dialog[open]')
+      && !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement || event.target?.isContentEditable)) {
+    event.preventDefault(); openHelp(); return;
+  }
   if (legacyRounds[activeTool]?.handleKey(event)) return;
   // Keys are scoped per route: only the corner and F2L drills use this handler. Every other page
   // (solve, hub, algs, progress, studio, PLL, Scout) owns its keys or has none.
@@ -2260,9 +2239,6 @@ if (import.meta.env.DEV) {
   galleryView.id = 'gallery-view';
   galleryView.hidden = true;
   document.querySelector('#smart-view').after(galleryView);
-  const helpLink = document.createElement('p');
-  helpLink.innerHTML = '<a href="#/dev/gallery" data-testid="open-gallery">dev gallery</a> · design mockups, screenshots and the development blog';
-  document.querySelector('#help-dialog').append(helpLink);
 }
 window.addEventListener('hashchange', () => syncRoute());
 document.addEventListener('cubesight-theme', () => {

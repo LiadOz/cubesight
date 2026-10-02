@@ -25,11 +25,12 @@ export const NAV_FOR_TOOL = Object.freeze({
   notfound: null,
   smart: null,
   recording: null,
+  help: null,
 });
 
 /** Document titles ("<title> · <app name>"). */
 export const PAGE_TITLES = Object.freeze({
   brain: 'solve', drills: 'drills', algs: 'algs', progress: 'progress', history: 'history', timer: 'timer',
   corner: 'corner recognition', f2l: 'F2L deduction', pll: 'PLL recognition', scout: 'cross planning', oll: 'OLL recognition', lookahead: 'lookahead',
-  smart: 'studio', review: 'solve review', recording: 'recording', notfound: 'not found',
+  smart: 'studio', review: 'solve review', recording: 'recording', help: null, notfound: 'not found',
 });

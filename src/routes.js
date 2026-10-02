@@ -23,6 +23,7 @@ export const TOOL_PATHS = Object.freeze({
   review: '/review',
   smart: '/dev/studio',
   recording: '/recording',
+  help: '/help',
 });
 
 /** Old paths that still work. */
