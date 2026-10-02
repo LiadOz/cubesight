@@ -135,17 +135,21 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   let setupState = null, lastCubeMoveSeq = 0;
   const saveLearning = () => { try { storage?.setItem(LEARNING_KEY, JSON.stringify(learning)); } catch { /* Keep the schedule for this tab. */ } };
 
+  function disposeVisuals() {
+    sequencePlayer?.destroy(); sequencePlayer = null;
+    caseOrbit?.destroy(); caseOrbit = null;
+    cubeView?.destroy(); cubeView = null;
+    cubeSessionUnsubscribe?.(); cubeSessionUnsubscribe = null;
+  }
+
   async function render() {
-    if (destroyed) return;
+    if (destroyed || !active) return;
     const thisRender = ++renderId;
     const { set, caseData, drill } = routeSelection();
     const routeKey = `${set ?? ''}/${caseData?.id ?? ''}`;
     if (lastRouteKey !== null && lastRouteKey !== routeKey) window.scrollTo(0, 0);
     lastRouteKey = routeKey;
-    sequencePlayer?.destroy(); sequencePlayer = null;
-    caseOrbit?.destroy(); caseOrbit = null;
-    cubeView?.destroy(); cubeView = null;
-    cubeSessionUnsubscribe?.(); cubeSessionUnsubscribe = null;
+    disposeVisuals();
     const context = parseAlgRouteContext(location.hash);
     root.innerHTML = caseData ? caseDetail(caseData, context) : browser(set);
     const shell = root.querySelector('.alg-page');
@@ -419,11 +423,17 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       });
     },
     setActive(isActive) {
-      active = Boolean(isActive);
+      const next = Boolean(isActive);
+      if (active === next) return;
+      active = next;
       if (active) { cubeSnapshot = smartCube.getSnapshot(); watchCube(); void render(); }
-      else { stopTimer(); sequencePlayer?.setActive(false); session = null; cubeSessionUnsubscribe?.(); cubeSessionUnsubscribe = null; cubeUnsubscribe?.(); cubeUnsubscribe = null; }
+      else {
+        ++renderId;
+        stopTimer(); session = null; disposeVisuals();
+        cubeUnsubscribe?.(); cubeUnsubscribe = null;
+      }
     },
-    destroy() { destroyed = true; stopTimer(); cubeUnsubscribe?.(); cubeSessionUnsubscribe?.(); sequencePlayer?.destroy(); cubeView?.destroy(); root.removeEventListener('click', clickHandler); window.removeEventListener('hashchange', render); root.replaceChildren(); },
+    destroy() { destroyed = true; active = false; ++renderId; stopTimer(); cubeUnsubscribe?.(); cubeUnsubscribe = null; disposeVisuals(); root.removeEventListener('click', clickHandler); window.removeEventListener('hashchange', render); root.replaceChildren(); },
   };
 }
 
