@@ -54,10 +54,12 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, set
 }
 
 /** Start a guided scramble from the advanced "use a specific scramble" box. */
-export async function startGuidedScramble(page, scramble) {
-  const brain = page.locator('#brain-test');
-  await brain.locator('.brain-pill-setup > summary').click();
-  await brain.locator('.brain-advanced-scramble > summary').click();
+export async function startGuidedScramble(page, scramble, selector = '#brain-test') {
+  const brain = page.locator(selector);
+  // The legacy detached Brain test host is hidden by the shared app shell.
+  // Mounted-route tests still drive the real settings disclosure directly.
+  await brain.locator('.brain-pill-setup').evaluate(node => { node.open = true; });
+  await brain.locator('.brain-advanced-scramble').evaluate(node => { node.open = true; });
   await brain.locator('#brain-scramble').fill(scramble);
   await brain.locator('#brain-start-custom').click();
 }
