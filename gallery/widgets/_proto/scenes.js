@@ -39,8 +39,8 @@ export function idle({ actions = '', keybar = '', meta = '<span class="meta">ao5
     <svg class="stage-svg" width="1440" height="900" aria-hidden="true">${cubeSVG(CUBE_AT.x, CUBE_AT.y, CUBE_AT.s, { dim: cubeDim })}</svg>
     ${full ? '' : [['p3', '~1.95', 640, 100], ['p4', '~2.04', 856, 112], ['p2', '~1.92', 474, 208], ['eo', '~0.98', 985, 204], ['p1', '~1.88', 398, 400], ['co', '~1.55', 1045, 340], ['cross', '~2.41', 437, 624], ['cp', '~1.62', 1050, 500], ['ep', '~1.49', 975, 656]].map(([n, v, x, y]) => abs(`left:${x}px;top:${y}px;transform:translateX(-50%);text-align:center;font:400 11px/1.3 var(--b-font-mono);color:var(--b-muted)`, `${n}<br>${v}`)).join('')}
     <div class="clock ${dim ? 'dim' : ''}" style="top:690px;--clock-size:120px;color:var(--b-faint)">${clock}</div>
-    ${sub ? `<div class="sub" style="top:800px">${sub}</div>` : ''}
-    ${abs('left:0;width:100%;top:812px;display:flex;justify-content:center;align-items:center;gap:22px', actions)}
+    ${sub ? `<div class="sub" style="top:794px;display:flex;justify-content:center">${sub}</div>` : ''}
+    ${abs('left:0;width:100%;top:830px;display:flex;justify-content:center;align-items:center;gap:22px', actions)}
     ${abs('left:48px;bottom:16px;display:flex;gap:26px;align-items:center', keybar)}
     ${abs('right:48px;bottom:20px', meta)}
     ${below}
