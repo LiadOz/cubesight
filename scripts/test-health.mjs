@@ -27,15 +27,38 @@ function flattenTests(node, suite = '') {
   return [...(isCase && Number.isFinite(duration) ? [{ name: fullName, durationMs: Math.round(duration), status: node.status ?? 'unknown' }] : []), ...childCases];
 }
 
+function parseNodeTap(output) {
+  const tests = [];
+  const lines = output.split('\n');
+  for (let index = 0; index < lines.length; index += 1) {
+    const heading = lines[index].match(/^(\s*)# Subtest: (.+)$/u);
+    if (!heading || heading[2].startsWith('tests/')) continue;
+    const indent = heading[1].length;
+    let durationMs = null;
+    let status = 'unknown';
+    for (let next = index + 1; next < lines.length; next += 1) {
+      const child = lines[next].match(/^(\s*)# Subtest:/u);
+      if (child && child[1].length <= indent) break;
+      const duration = lines[next].match(/^(\s*)duration_ms: ([\d.]+)/u);
+      if (duration && duration[1].length === indent + 2) durationMs = Number(duration[2]);
+      const result = lines[next].match(/^(\s*)(not ok|ok) \d+ - /u);
+      if (result && result[1].length === indent) status = result[2] === 'ok' ? 'passed' : 'failed';
+    }
+    if (durationMs !== null) tests.push({ name: heading[2], durationMs: Math.round(durationMs), status });
+  }
+  return tests;
+}
+
 const suites = [];
-const unit = execute('node', ['--test', '--test-reporter=json', ...unitFiles]);
+const unit = execute('node', ['--test', '--test-reporter=tap', ...unitFiles]);
 suites.push({ name: 'unit', elapsedMs: unit.elapsedMs, exitCode: unit.status, output: unit.stdout });
 const playwright = execute('npx', ['playwright', 'test', '--reporter=json']);
 suites.push({ name: 'playwright', elapsedMs: playwright.elapsedMs, exitCode: playwright.status, output: playwright.stdout });
 const reports = suites.map((suite) => {
   let parsed;
   try { parsed = JSON.parse(suite.output); } catch { parsed = null; }
-  return { name: suite.name, wallTimeMs: suite.elapsedMs, exitCode: suite.exitCode, tests: parsed ? flattenTests(parsed) : [] };
+  const tests = suite.name === 'unit' ? parseNodeTap(suite.output) : parsed ? flattenTests(parsed) : [];
+  return { name: suite.name, wallTimeMs: suite.elapsedMs, exitCode: suite.exitCode, tests };
 });
 const tests = reports.flatMap((suite) => suite.tests.map((test) => ({ ...test, suite: suite.name })));
 const slowest = [...tests].sort((a, b) => b.durationMs - a.durationMs).slice(0, 20);
@@ -67,7 +90,11 @@ const lines = [
 ];
 await writeFile(path.join(outDir, 'summary.md'), lines.join('\n'));
 console.log(lines.join('\n'));
+if (tests.length === 0) {
+  console.error('No individual test timings were parsed; failing rather than publishing an empty health report.');
+  process.exitCode = 1;
+}
 for (const suite of suites) {
-  if (suite.status !== 0) process.exitCode = suite.status ?? 1;
+  if (suite.exitCode !== 0) process.exitCode = suite.exitCode ?? 1;
 }
 if (overBudget.length) process.exitCode = 1;
