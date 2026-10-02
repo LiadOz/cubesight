@@ -188,7 +188,7 @@ const HELP = {
   'inspection.graceSeconds': 'Extra seconds before the grace penalty applies.',
   'inspection.gracePenalty': 'Penalty after the grace period.',
   'inspection.callouts': 'Judge calls at 8 s and 12 s.',
-  voice: 'Speak the callouts.',
+  voice: 'Speak the callouts with a local device voice.',
   penalties: 'Count +2 and DNF in averages.',
   scramble: 'Guided cues each move. Paste uses your scramble. Free starts from your scramble.',
   coach: 'When coach insights appear.',
