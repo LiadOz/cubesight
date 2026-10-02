@@ -117,8 +117,34 @@ const LJOBS = [{ id: 'L-00', file: 'L-00-compare-parts.png', title: 'the list pa
 for (const o of [1, 2, 3]) LV.forEach(([view, name, title, caption], i) => { const id = `L-${o}${i + 1}`; LJOBS.push({ id, file: `${id}-option${o}-${name}.png`, title: `option ${o}: ${title}`, caption: `${caption} Dark above, light below.`, both: true, theme: 'dark', params: { view, opt: String(o) } }); });
 FAMILIES.lists = { dir: 'gallery/widgets/2026-10-02-lists-data', page: 'lists.html', prefix: 'L', label: 'lists and data', jobs: LJOBS };
 
+
+// dev pages: timeline graph (W-32), thumbnail card (W-33), blog post (W-34), compare view (W-35)
+const DPJ = [
+  ['DP-01', 'shared-pieces', 'shared', 'the shared pieces of every dev page', 'header, tabs, status badge, branch tag, caption, and the two widgets that are not approved yet. Dark above, light below.', true],
+  ['DP-11', 'timeline-1-git-graph', 't1', 'W-32 option 1: the git graph, kept (full page)', 'lanes in one neutral line, the chosen path thick, 44 posts on one page.'],
+  ['DP-12', 'timeline-2-rings', 't2', 'W-32 option 2: every branch is a ring', 'branches as concentric rings, posts as points, the chosen path emphasized.'],
+  ['DP-13', 'timeline-3-spine', 't3', 'W-32 option 3: one spine ring, folded badges', 'the chosen path as the ring; side branches folded into count badges, one cluster expanded.'],
+  ['DP-14', 'timeline-phone', 'tp', 'W-32 on a phone, the three options', 'three 390 px phones side by side.'],
+  ['DP-21', 'card-1-image-card', 'c1', 'W-33 option 1: the image card', 'grid, blog strip and history/alg browsing.'],
+  ['DP-22', 'card-2-contact-tile', 'c2', 'W-33 option 2: the contact tile', 'dense grid, hover and selected states.'],
+  ['DP-23', 'card-3-row-card', 'c3', 'W-33 option 3: the row card', 'picture + words, two per row.'],
+  ['DP-24', 'card-phone', 'cp', 'W-33 on a phone, the three options', 'two, three and one per row.'],
+  ['DP-31', 'post-1-article', 'b1', 'W-34 option 1: one column article', 'meta, title, decision, text, figures, image index, lineage.'],
+  ['DP-32', 'post-2-two-columns', 'b2', 'W-34 option 2: two columns with a sticky rail', 'decision, lineage and image list in the rail; figures inline.'],
+  ['DP-33', 'post-3-pictures-first', 'b3', 'W-34 option 3: pictures first', 'hero stage and filmstrip, then the words.'],
+  ['DP-34', 'post-phone', 'bp', 'W-34 on a phone, the three options', 'three 390 px phones side by side.'],
+  ['DP-41', 'compare-1-side-by-side', 'x1', 'W-35 option 1: toolbar on top, two panes', 'side by side, selects, modes, zoom.'],
+  ['DP-42', 'compare-2-overlay', 'x2', 'W-35 option 2: immersive stage with a dock (overlay)', 'onion skin at 50%.'],
+  ['DP-43', 'compare-2-difference', 'x2d', 'W-35 option 2: difference on', 'identical pixels go black.'],
+  ['DP-44', 'compare-3-wipe', 'x3', 'W-35 option 3: wipe first with a list of changes', 'the wipe handle and the changes list.'],
+  ['DP-45', 'compare-phone', 'xp', 'W-35 on a phone, the three options', 'three 390 px phones side by side.'],
+  ['DP-46', 'compare-reuse', 'xr', 'W-35 reused: design lab, yours vs better, history', 'one stage, three uses.'],
+  ['DP-91', 'light-sheet', 'light', 'light sheet: the recommended option of each family', 'the top screen of W-32 3, W-33 1, W-34 2 and W-35 3 in the light theme.', false, 'light'],
+];
+FAMILIES.devpages = { dir: 'gallery/widgets/2026-10-02-dev-pages', page: 'dev.html', prefix: 'DP', label: 'dev pages', jobs: DPJ.map(([id, name, view, title, caption, both, th]) => ({ id, file: `${id}-${name}.png`, title, caption, both: !!both, theme: th || 'dark', params: { view } })) };
+
 const fam = FAMILIES[process.argv[2]];
-if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves|moves2|pairs|system|containers|lists [--only=text]'); process.exit(2); }
+if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves|moves2|pairs|system|containers|lists|devpages [--only=text]'); process.exit(2); }
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7);
 
 const server = http.createServer((req, res) => {
