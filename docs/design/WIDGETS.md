@@ -33,11 +33,11 @@ Status values: `approved` (the user approved it), `pending` (partly approved), `
 | W-17 | Key hints and keycaps | approved | 8 | 14 | 261 | 0 | APPROVED 2026-10-02: BEVELLED keycap (reads as a physical key). Nothing that is not a keyboard key may be bevelled. Combined keys: form (d) cap – cap (e.g. `[` – `]`, `1` – `4`), chosen 2026-10-02 (post widgets-W-17-keycap-pairs). |
 | W-18 | Badges and tags | approved | 4 | 2 (+3 dev) | 240 | 0 | APPROVED 2026-10-02 (lists & data ①, open rows, the A-07 look): rows carry the mini Orbit glyph (also on alg rows); section-head counts are a PILL; tags as text + symbol. Post widgets-lists-data. |
 | W-19 | Stat blocks and counters | approved | 6 | 4 | 108 | 0 | APPROVED 2026-10-02 (lists & data ①, open rows, the A-07 look): rows carry the mini Orbit glyph (also on alg rows); section-head counts are a PILL; tags as text + symbol. Post widgets-lists-data. |
-| W-20 | Coach line | proposed | 3 | 1 | 52 | 0 | Keep one coach line (A-05) and delete the card-style `b-rev-card`, `b-rev-note` and `b-coach` boxes |
+| W-20 | Coach line | approved | 3 | 1 | 52 | 0 | APPROVED 2026-10-02: coach line ① (A-05 form: one sentence in the rail + a dotted curve to its marker); a crowded ring FANS markers out on a second radius (TC-00 Q3 B). Post widgets-time-coach. |
 | W-21 | Scramble and move display | approved | 13 | 9 | 656 | 0 | APPROVED 2026-10-02: desktop = ① labels on the Orbit; phone = ③ wrapped sequence (two implementations). A SECTION is only extra spacing between points on the Orbit (no brackets/arcs); on phone the undo moves form a spaced section. Must handle long scrambles. See widgets-W-21-moves (+ v2 fixes). |
-| W-22 | Timer display | proposed | 5 | 5 | 32 | 1 | Merge into one timer readout in three sizes (XL solve, L drill, M inline) |
-| W-23 | Round and progress panels | proposed | 8 | 7 | 134 | 4 | Progress bars/lines are to-remove (feedback #1): the Orbit shows progress |
-| W-24 | Charts | proposed | 7 | 3 (+1 dev) | 106 | 1 | Keep at most the shared Orbit-style trend/line chart from F5; all one-off SVG charts are replaced |
+| W-22 | Timer display | approved | 5 | 5 | 32 | 1 | APPROVED 2026-10-02: timer ① plain digits, the sub line only when needed; hidden timer shows the word "hidden". Post widgets-time-coach. |
+| W-23 | Round and progress panels | approved | 8 | 7 | 134 | 4 | APPROVED 2026-10-02 with charts ③: round/progress panels become Orbits; at the end of a round the arc width = TIME SPENT (not equal arcs). Post widgets-progress-charts. |
+| W-24 | Charts | approved | 7 | 3 (+1 dev) | 106 | 1 | APPROVED 2026-10-02: option ③ Orbit + real charts. Charts are NOT all replaced by Orbits: keep a line/graph where a graph reads better (the TPS chart, the long-term ao12 trend, a sparkline of recent solves, split comparisons). Use the Orbit for few, structural items (stages of one solve, a round, moves-vs-efficiency) and a chart for many data points compared against each other. Post widgets-progress-charts. |
 | W-25 | Empty states | approved | 4 | 4 | 30 | 0 | APPROVED 2026-10-02 (lists & data ①, open rows, the A-07 look): rows carry the mini Orbit glyph (also on alg rows); section-head counts are a PILL; tags as text + symbol. Post widgets-lists-data. |
 | W-26 | Links and crumbs | approved | 13 | 18 (+5 dev) | 270 | 0 | APPROVED 2026-10-02: navigation ③ (side rail; arrow links with path crumbs; the cube chip opens a RIGHT DRAWER, consistent with the containers decision). Post widgets-navigation. |
 | W-27 | Device chip and menu | approved | 6 | 1 (+1 dev) | 74 | 3 | APPROVED 2026-10-02: navigation ③ (side rail; arrow links with path crumbs; the cube chip opens a RIGHT DRAWER, consistent with the containers decision). Post widgets-navigation. |
@@ -50,7 +50,7 @@ Status values: `approved` (the user approved it), `pending` (partly approved), `
 | W-34 | Blog post (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ② two columns with a sticky rail. Post widgets-dev-pages. |
 | W-35 | Compare view (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ③ wipe first (side by side and overlay one click away); reused later by the design lab and "yours vs better". Post widgets-dev-pages. |
 | W-36 | Search field (gallery, history, algs) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02 with inputs ①: filled pill field, placed in the section head. Post widgets-inputs |
-| W-37 | Compare wipe handle | proposed | 3 | (+1 dev) | n/a | 0 | Three forms proposed (A ink knob, B hairline + grabber, C the Orbit caret); pending the user's pick in PC-00 Q2 |
+| W-37 | Compare wipe handle | approved | 3 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: C the Orbit caret, PROVIDED the drag affordance is unmistakable (clear grab signifier, ≥44 px touch target, hover/drag states); otherwise fall back to A the ink knob. Post widgets-progress-charts. |
 
 ## How to read the variants
 
@@ -640,3 +640,7 @@ States visited via the fake cube harness on `#/solve`: disconnected, connecting,
 - Navigation ③ side rail + right drawer for the cube chip (fits containers ①: one drawer pattern).
 - Inputs ① filled pill fields.
 - Note (user): the navigation post showed too much already-approved material. Future posts: only genuinely NEW parts, as few images as possible.
+- Timer ① + "hidden"; coach ① with markers fanned on a second radius when crowded.
+- Charts ③: the Orbit does NOT replace real charts. **Principle (user):** an Orbit is good for a FEW structural items; with many data points compared against each other, a line/graph reads better and takes less space. Keep: the TPS chart, the long-term trend, the recent-solves sparkline, and split comparisons as a chart; the splits of ONE solve stay on the Orbit.
+- Round arcs: width = time spent.
+- Wipe handle: the Orbit caret, but only with a strong drag signifier; else the ink knob.
