@@ -1,0 +1,102 @@
+{
+  "W-21v2-11-states-desktop.png": {
+    "id": "W-21v2-11",
+    "title": "desktop: token states, sections as gaps, the Orbit grows",
+    "caption": "every token state, two sections as one wide gap between Orbit points, the undo group, and how the ring grows. Dark."
+  },
+  "W-21v2-12-scramble-desktop.png": {
+    "id": "W-21v2-12",
+    "title": "desktop: mid scramble on the Orbit (1440 x 900)",
+    "caption": "move 13 of 20, the A-02 look. Dark."
+  },
+  "W-21v2-13-wrong-turn-desktop.png": {
+    "id": "W-21v2-13",
+    "title": "desktop: wrong turn, the undo move is a spaced section",
+    "caption": "one undo move inserted; the section is only the wider gaps either side."
+  },
+  "W-21v2-14-wrong-turn-two-undo-desktop.png": {
+    "id": "W-21v2-14",
+    "title": "desktop: two undo moves form one spaced section",
+    "caption": "a group of two amber points between two wide gaps."
+  },
+  "W-21v2-15-alg-triggers-desktop.png": {
+    "id": "W-21v2-15",
+    "title": "desktop: T-perm with its triggers as wide gaps",
+    "caption": "three runs, two gaps; no bracket above the curve."
+  },
+  "W-21v2-16-long-rolling-desktop.png": {
+    "id": "W-21v2-16",
+    "title": "desktop: 45-move scramble, rolling window",
+    "caption": "the long scramble: 22 labels in a window, neighbours alternating between two radii."
+  },
+  "W-21v2-17-long-wrong-turn-desktop.png": {
+    "id": "W-21v2-17",
+    "title": "desktop: long scramble with a wrong turn",
+    "caption": "the undo group as a spaced section inside the window."
+  },
+  "W-21v2-31-states-phone.png": {
+    "id": "W-21v2-31",
+    "title": "phone: wrapped sequence, states and sections as space",
+    "caption": "tokens as words, sections as wider spaces, the undo group."
+  },
+  "W-21v2-34-scramble-wrong-phone.png": {
+    "id": "W-21v2-34",
+    "title": "phone 390 x 844: scramble and wrong turn",
+    "caption": "the wrapped sequence under the cube; the undo move is a spaced section."
+  },
+  "W-21v2-35-alg-undo-phone.png": {
+    "id": "W-21v2-35",
+    "title": "phone 390 x 844: T-perm and an undo group of two",
+    "caption": "sections as extra space, no parentheses."
+  },
+  "W-21v2-36-long-rolling-phone.png": {
+    "id": "W-21v2-36",
+    "title": "phone 390 x 844: 45-move scramble, rolling lines",
+    "caption": "start, mid and a wrong turn on a long scramble."
+  },
+  "W-21v2-91-mini-form-lists.png": {
+    "id": "W-21v2-91",
+    "title": "mini form in list rows (sections = space)",
+    "caption": "history, long scramble, alg, playing and review rows. Dark."
+  },
+  "W-21v2-99-light-sheet.png": {
+    "id": "W-21v2-99",
+    "title": "light sheet: the approved pair in the light theme",
+    "caption": "desktop above, phone below."
+  },
+  "W-21v2-11-states-desktop-hd.png": {
+    "id": "W-21v2-11",
+    "title": "desktop: token states, sections as gaps, the Orbit grows (HD 2x)",
+    "caption": "every token state, two sections as one wide gap between Orbit points, the undo group, and how the ring grows. Dark."
+  },
+  "W-21v2-31-states-phone-hd.png": {
+    "id": "W-21v2-31",
+    "title": "phone: wrapped sequence, states and sections as space (HD 2x)",
+    "caption": "tokens as words, sections as wider spaces, the undo group."
+  },
+  "W-21v2-34-scramble-wrong-phone-hd.png": {
+    "id": "W-21v2-34",
+    "title": "phone 390 x 844: scramble and wrong turn (HD 2x)",
+    "caption": "the wrapped sequence under the cube; the undo move is a spaced section."
+  },
+  "W-21v2-35-alg-undo-phone-hd.png": {
+    "id": "W-21v2-35",
+    "title": "phone 390 x 844: T-perm and an undo group of two (HD 2x)",
+    "caption": "sections as extra space, no parentheses."
+  },
+  "W-21v2-36-long-rolling-phone-hd.png": {
+    "id": "W-21v2-36",
+    "title": "phone 390 x 844: 45-move scramble, rolling lines (HD 2x)",
+    "caption": "start, mid and a wrong turn on a long scramble."
+  },
+  "W-21v2-91-mini-form-lists-hd.png": {
+    "id": "W-21v2-91",
+    "title": "mini form in list rows (sections = space) (HD 2x)",
+    "caption": "history, long scramble, alg, playing and review rows. Dark."
+  },
+  "W-21v2-99-light-sheet-hd.png": {
+    "id": "W-21v2-99",
+    "title": "light sheet: the approved pair in the light theme (HD 2x)",
+    "caption": "desktop above, phone below."
+  }
+}

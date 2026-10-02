@@ -1,0 +1,102 @@
+{
+  "SC-01-solve-settings-desktop.png": {
+    "id": "SC-01",
+    "title": "solve with a scramble ready and settings open (desktop)",
+    "caption": "W-21 labels on the Orbit, the W-04 primary with a bevelled key, ink chips, segmented, switches, a W-16 toast. Dark above, light below."
+  },
+  "SC-02-results-desktop.png": {
+    "id": "SC-02",
+    "title": "results (desktop)",
+    "caption": "the primary and the ink chips on one screen, W-21 mini form, W-16 toast. Dark above, light below."
+  },
+  "SC-03-drill-round-desktop.png": {
+    "id": "SC-03",
+    "title": "a drill round (desktop)",
+    "caption": "ink choices with bevelled number keys, segmented, toast. Dark above, light below."
+  },
+  "SC-04-history-filters-desktop.png": {
+    "id": "SC-04",
+    "title": "history with filters (desktop)",
+    "caption": "ink chips, segmented, select, quiet buttons, W-21 mini form in every row. Dark above, light below."
+  },
+  "SC-05-alg-playback-desktop.png": {
+    "id": "SC-05",
+    "title": "alg playback (desktop)",
+    "caption": "W-21 labels with trigger gaps, ink segmented next to the primary. Dark above, light below."
+  },
+  "SC-11-five-screens-phone.png": {
+    "id": "SC-11",
+    "title": "the five screens on a phone",
+    "caption": "solve + settings, results, drill, history filters, alg playback at 390 x 844. Dark above, light below."
+  },
+  "SC-31-ink-chip-vs-cream-primary.png": {
+    "id": "SC-31",
+    "title": "selected ink chip against the cream primary, and four differentiators",
+    "caption": "side by side in three contexts, with the sizes. Dark above, light below."
+  },
+  "SC-41-in-progress-connecting.png": {
+    "id": "SC-41",
+    "title": "in progress: connecting",
+    "caption": "the whole Orbit travels; no spinner. Dark above, light below."
+  },
+  "SC-42-in-progress-analysing.png": {
+    "id": "SC-42",
+    "title": "in progress: analysing a solve",
+    "caption": "the result Orbit fills in stage by stage. Dark above, light below."
+  },
+  "SC-43-in-progress-searching.png": {
+    "id": "SC-43",
+    "title": "in progress: searching for a better pair",
+    "caption": "one arc per candidate pairing. Dark above, light below."
+  },
+  "SC-01-solve-settings-desktop-hd.png": {
+    "id": "SC-01",
+    "title": "solve with a scramble ready and settings open (desktop) (HD 2x)",
+    "caption": "W-21 labels on the Orbit, the W-04 primary with a bevelled key, ink chips, segmented, switches, a W-16 toast. Dark above, light below."
+  },
+  "SC-02-results-desktop-hd.png": {
+    "id": "SC-02",
+    "title": "results (desktop) (HD 2x)",
+    "caption": "the primary and the ink chips on one screen, W-21 mini form, W-16 toast. Dark above, light below."
+  },
+  "SC-03-drill-round-desktop-hd.png": {
+    "id": "SC-03",
+    "title": "a drill round (desktop) (HD 2x)",
+    "caption": "ink choices with bevelled number keys, segmented, toast. Dark above, light below."
+  },
+  "SC-04-history-filters-desktop-hd.png": {
+    "id": "SC-04",
+    "title": "history with filters (desktop) (HD 2x)",
+    "caption": "ink chips, segmented, select, quiet buttons, W-21 mini form in every row. Dark above, light below."
+  },
+  "SC-05-alg-playback-desktop-hd.png": {
+    "id": "SC-05",
+    "title": "alg playback (desktop) (HD 2x)",
+    "caption": "W-21 labels with trigger gaps, ink segmented next to the primary. Dark above, light below."
+  },
+  "SC-11-five-screens-phone-hd.png": {
+    "id": "SC-11",
+    "title": "the five screens on a phone (HD 2x)",
+    "caption": "solve + settings, results, drill, history filters, alg playback at 390 x 844. Dark above, light below."
+  },
+  "SC-31-ink-chip-vs-cream-primary-hd.png": {
+    "id": "SC-31",
+    "title": "selected ink chip against the cream primary, and four differentiators (HD 2x)",
+    "caption": "side by side in three contexts, with the sizes. Dark above, light below."
+  },
+  "SC-41-in-progress-connecting-hd.png": {
+    "id": "SC-41",
+    "title": "in progress: connecting (HD 2x)",
+    "caption": "the whole Orbit travels; no spinner. Dark above, light below."
+  },
+  "SC-42-in-progress-analysing-hd.png": {
+    "id": "SC-42",
+    "title": "in progress: analysing a solve (HD 2x)",
+    "caption": "the result Orbit fills in stage by stage. Dark above, light below."
+  },
+  "SC-43-in-progress-searching-hd.png": {
+    "id": "SC-43",
+    "title": "in progress: searching for a better pair (HD 2x)",
+    "caption": "one arc per candidate pairing. Dark above, light below."
+  }
+}

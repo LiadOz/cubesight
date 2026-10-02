@@ -1,0 +1,152 @@
+{
+  "I-01-compare-parts-hd.png": {
+    "id": "I-01",
+    "title": "the input parts in the three options (HD 2x)",
+    "caption": "text, number, textarea, file, range and search side by side. Dark above, light below."
+  },
+  "I-11-option1-input-parts-states-hd.png": {
+    "id": "I-11",
+    "title": "option 1: the input parts and their states (HD 2x)",
+    "caption": "text, number, textarea, file picker, range and the search field, with errors and the empty/no-result states. Dark above, light below."
+  },
+  "I-12-option1-settings-drawer-fields-hd.png": {
+    "id": "I-12",
+    "title": "option 1: the settings drawer: number, textarea, text, range (desktop) (HD 2x)",
+    "caption": "custom inspection seconds, a pasted scramble, a cube name and a speed range."
+  },
+  "I-13-option1-import-page-fields-hd.png": {
+    "id": "I-13",
+    "title": "option 1: import: link, textarea in error, file picker (desktop) (HD 2x)",
+    "caption": "a pasted reconstruction with one error line, and a file to open."
+  },
+  "I-14-option1-search-in-algs-hd.png": {
+    "id": "I-14",
+    "title": "option 1: search in the algs list (desktop) (HD 2x)",
+    "caption": "the search field placed as this option does, with a count and the filtered list."
+  },
+  "I-15-option1-phone-settings-import-search-hd.png": {
+    "id": "I-15",
+    "title": "option 1: phone: settings sheet, import and search (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "I-21-option2-input-parts-states-hd.png": {
+    "id": "I-21",
+    "title": "option 2: the input parts and their states (HD 2x)",
+    "caption": "text, number, textarea, file picker, range and the search field, with errors and the empty/no-result states. Dark above, light below."
+  },
+  "I-22-option2-settings-drawer-fields-hd.png": {
+    "id": "I-22",
+    "title": "option 2: the settings drawer: number, textarea, text, range (desktop) (HD 2x)",
+    "caption": "custom inspection seconds, a pasted scramble, a cube name and a speed range."
+  },
+  "I-23-option2-import-page-fields-hd.png": {
+    "id": "I-23",
+    "title": "option 2: import: link, textarea in error, file picker (desktop) (HD 2x)",
+    "caption": "a pasted reconstruction with one error line, and a file to open."
+  },
+  "I-24-option2-search-in-algs-hd.png": {
+    "id": "I-24",
+    "title": "option 2: search in the algs list (desktop) (HD 2x)",
+    "caption": "the search field placed as this option does, with a count and the filtered list."
+  },
+  "I-25-option2-phone-settings-import-search-hd.png": {
+    "id": "I-25",
+    "title": "option 2: phone: settings sheet, import and search (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "I-31-option3-input-parts-states-hd.png": {
+    "id": "I-31",
+    "title": "option 3: the input parts and their states (HD 2x)",
+    "caption": "text, number, textarea, file picker, range and the search field, with errors and the empty/no-result states. Dark above, light below."
+  },
+  "I-32-option3-settings-drawer-fields-hd.png": {
+    "id": "I-32",
+    "title": "option 3: the settings drawer: number, textarea, text, range (desktop) (HD 2x)",
+    "caption": "custom inspection seconds, a pasted scramble, a cube name and a speed range."
+  },
+  "I-33-option3-import-page-fields-hd.png": {
+    "id": "I-33",
+    "title": "option 3: import: link, textarea in error, file picker (desktop) (HD 2x)",
+    "caption": "a pasted reconstruction with one error line, and a file to open."
+  },
+  "I-34-option3-search-in-algs-hd.png": {
+    "id": "I-34",
+    "title": "option 3: search in the algs list (desktop) (HD 2x)",
+    "caption": "the search field placed as this option does, with a count and the filtered list."
+  },
+  "I-35-option3-phone-settings-import-search-hd.png": {
+    "id": "I-35",
+    "title": "option 3: phone: settings sheet, import and search (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "I-00-decide-hd.png": {
+    "id": "I-00",
+    "title": "Inputs: text fields, textarea, number, file picker, range (W-09) and the search field (W-36): the decision image (HD 2x): pick 1, 2 or 3 and answer Q1 to Q3",
+    "caption": "the three options side by side with the questions drawn in."
+  },
+  "I-00-opt1-import-textarea-in-error-file-picker-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt1 import textarea in error file picker",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt1-search-in-the-algs-list-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt1 search in the algs list",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt1-settings-drawer-number-textarea-text-range-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt1 settings drawer number textarea text range",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt2-import-textarea-in-error-file-picker-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt2 import textarea in error file picker",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt2-search-in-the-algs-list-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt2 search in the algs list",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt2-settings-drawer-number-textarea-text-range-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt2 settings drawer number textarea text range",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt3-import-textarea-in-error-file-picker-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt3 import textarea in error file picker",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt3-search-in-the-algs-list-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt3 search in the algs list",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-opt3-settings-drawer-number-textarea-text-range-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): opt3 settings drawer number textarea text range",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-q2-a-plain-field-unit-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): q2 a plain field unit",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-q2-b-with-and-buttons-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): q2 b with and buttons",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-q3-a-button-file-name-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): q3 a button file name",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  },
+  "I-00-q3-b-drop-area-hd.png": {
+    "id": "I-00",
+    "title": "decision image part, full resolution (HD 2x): q3 b drop area",
+    "caption": "a region of the decision image at full resolution, to read the detail."
+  }
+}

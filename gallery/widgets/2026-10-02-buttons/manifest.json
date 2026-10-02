@@ -1,0 +1,117 @@
+{
+  "W-04-01-option1-states.png": {
+    "id": "W-04-01",
+    "title": "option 1: states matrix, dark and light",
+    "caption": "every emphasis x every state, then answer states, sizes and the phone touch sizes. Dark on top, light below."
+  },
+  "W-04-02-option1-results.png": {
+    "id": "W-04-02",
+    "title": "option 1: results actions (A-05)",
+    "caption": "next scramble · review · more… on the results frame."
+  },
+  "W-04-03-option1-settings.png": {
+    "id": "W-04-03",
+    "title": "option 1: settings drawer, light",
+    "caption": "icon close, row-end secondary S, danger text, one primary."
+  },
+  "W-04-04-option1-drill.png": {
+    "id": "W-04-04",
+    "title": "option 1: drill round answers (A-08)",
+    "caption": "answer pills with number keys, skip, and the answered states."
+  },
+  "W-04-05-option1-phone.png": {
+    "id": "W-04-05",
+    "title": "option 1: phone (A-09) touch sizes",
+    "caption": "a drill and the results on a 390 px phone."
+  },
+  "W-04-00-compare-options.png": {
+    "id": "W-04-00",
+    "title": "the three options side by side",
+    "caption": "dark above, light below."
+  },
+  "W-04-06-option2-states.png": {
+    "id": "W-04-06",
+    "title": "option 2: states matrix, dark and light",
+    "caption": "every emphasis x every state, then answer states, sizes and the phone touch sizes. Dark on top, light below."
+  },
+  "W-04-07-option2-results.png": {
+    "id": "W-04-07",
+    "title": "option 2: results actions (A-05)",
+    "caption": "next scramble · review · more… on the results frame."
+  },
+  "W-04-08-option2-settings.png": {
+    "id": "W-04-08",
+    "title": "option 2: settings drawer, light",
+    "caption": "icon close, row-end secondary S, danger text, one primary."
+  },
+  "W-04-09-option2-drill.png": {
+    "id": "W-04-09",
+    "title": "option 2: drill round answers (A-08)",
+    "caption": "answer pills with number keys, skip, and the answered states."
+  },
+  "W-04-10-option2-phone.png": {
+    "id": "W-04-10",
+    "title": "option 2: phone (A-09) touch sizes",
+    "caption": "a drill and the results on a 390 px phone."
+  },
+  "W-04-11-option3-states.png": {
+    "id": "W-04-11",
+    "title": "option 3: states matrix, dark and light",
+    "caption": "every emphasis x every state, then answer states, sizes and the phone touch sizes. Dark on top, light below."
+  },
+  "W-04-12-option3-results.png": {
+    "id": "W-04-12",
+    "title": "option 3: results actions (A-05)",
+    "caption": "next scramble · review · more… on the results frame."
+  },
+  "W-04-13-option3-settings.png": {
+    "id": "W-04-13",
+    "title": "option 3: settings drawer, light",
+    "caption": "icon close, row-end secondary S, danger text, one primary."
+  },
+  "W-04-14-option3-drill.png": {
+    "id": "W-04-14",
+    "title": "option 3: drill round answers (A-08)",
+    "caption": "answer pills with number keys, skip, and the answered states."
+  },
+  "W-04-15-option3-phone.png": {
+    "id": "W-04-15",
+    "title": "option 3: phone (A-09) touch sizes",
+    "caption": "a drill and the results on a 390 px phone."
+  },
+  "W-04-00-compare-options-hd.png": {
+    "id": "W-04-00",
+    "title": "the three options side by side (HD 2x)",
+    "caption": "dark above, light below."
+  },
+  "W-04-01-option1-states-hd.png": {
+    "id": "W-04-01",
+    "title": "option 1: states matrix, dark and light (HD 2x)",
+    "caption": "every emphasis x every state, then answer states, sizes and the phone touch sizes. Dark on top, light below."
+  },
+  "W-04-05-option1-phone-hd.png": {
+    "id": "W-04-05",
+    "title": "option 1: phone (A-09) touch sizes (HD 2x)",
+    "caption": "a drill and the results on a 390 px phone."
+  },
+  "W-04-06-option2-states-hd.png": {
+    "id": "W-04-06",
+    "title": "option 2: states matrix, dark and light (HD 2x)",
+    "caption": "every emphasis x every state, then answer states, sizes and the phone touch sizes. Dark on top, light below."
+  },
+  "W-04-10-option2-phone-hd.png": {
+    "id": "W-04-10",
+    "title": "option 2: phone (A-09) touch sizes (HD 2x)",
+    "caption": "a drill and the results on a 390 px phone."
+  },
+  "W-04-11-option3-states-hd.png": {
+    "id": "W-04-11",
+    "title": "option 3: states matrix, dark and light (HD 2x)",
+    "caption": "every emphasis x every state, then answer states, sizes and the phone touch sizes. Dark on top, light below."
+  },
+  "W-04-15-option3-phone-hd.png": {
+    "id": "W-04-15",
+    "title": "option 3: phone (A-09) touch sizes (HD 2x)",
+    "caption": "a drill and the results on a 390 px phone."
+  }
+}

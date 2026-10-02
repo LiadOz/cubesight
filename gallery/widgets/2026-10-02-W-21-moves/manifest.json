@@ -1,0 +1,112 @@
+{
+  "W-21-11-option1-states.png": {
+    "id": "W-21-11",
+    "title": "option 1: states, dark and light",
+    "caption": "every token state, the section forms and how the Orbit grows. Dark on top, light below."
+  },
+  "W-21-12-option1-scramble-desktop.png": {
+    "id": "W-21-12",
+    "title": "option 1: scramble on the Orbit and cube (desktop 1440 x 900)",
+    "caption": "mid scramble, move 13 of 20, as A-02."
+  },
+  "W-21-13-option1-wrong-turn-desktop.png": {
+    "id": "W-21-13",
+    "title": "option 1: wrong turn, the Orbit grows (desktop)",
+    "caption": "the undo move is inserted and the ring gets a segment, as A-02b."
+  },
+  "W-21-14-option1-phone.png": {
+    "id": "W-21-14",
+    "title": "option 1: phone 390 x 844, scramble and wrong turn",
+    "caption": "the same two states on a phone."
+  },
+  "W-21-15-option1-alg-sections.png": {
+    "id": "W-21-15",
+    "title": "option 1: alg playback with sections (T-perm), light",
+    "caption": "sections with an optional name; playing move 6 of 14."
+  },
+  "W-21-16-option1-long-rolling.png": {
+    "id": "W-21-16",
+    "title": "option 1: long sequence, rolling window (45 moves), light",
+    "caption": "what happens past the lookahead capacity."
+  },
+  "W-21-21-option2-states.png": {
+    "id": "W-21-21",
+    "title": "option 2: states, dark and light",
+    "caption": "every token state, the section forms and how the Orbit grows. Dark on top, light below."
+  },
+  "W-21-22-option2-scramble-desktop.png": {
+    "id": "W-21-22",
+    "title": "option 2: scramble on the Orbit and cube (desktop 1440 x 900)",
+    "caption": "mid scramble, move 13 of 20, as A-02."
+  },
+  "W-21-23-option2-wrong-turn-desktop.png": {
+    "id": "W-21-23",
+    "title": "option 2: wrong turn, the Orbit grows (desktop)",
+    "caption": "the undo move is inserted and the ring gets a segment, as A-02b."
+  },
+  "W-21-24-option2-phone.png": {
+    "id": "W-21-24",
+    "title": "option 2: phone 390 x 844, scramble and wrong turn",
+    "caption": "the same two states on a phone."
+  },
+  "W-21-25-option2-alg-sections.png": {
+    "id": "W-21-25",
+    "title": "option 2: alg playback with sections (T-perm), light",
+    "caption": "sections with an optional name; playing move 6 of 14."
+  },
+  "W-21-26-option2-long-rolling.png": {
+    "id": "W-21-26",
+    "title": "option 2: long sequence, rolling window (45 moves), light",
+    "caption": "what happens past the lookahead capacity."
+  },
+  "W-21-31-option3-states.png": {
+    "id": "W-21-31",
+    "title": "option 3: states, dark and light",
+    "caption": "every token state, the section forms and how the Orbit grows. Dark on top, light below."
+  },
+  "W-21-32-option3-scramble-desktop.png": {
+    "id": "W-21-32",
+    "title": "option 3: scramble on the Orbit and cube (desktop 1440 x 900)",
+    "caption": "mid scramble, move 13 of 20, as A-02."
+  },
+  "W-21-33-option3-wrong-turn-desktop.png": {
+    "id": "W-21-33",
+    "title": "option 3: wrong turn, the Orbit grows (desktop)",
+    "caption": "the undo move is inserted and the ring gets a segment, as A-02b."
+  },
+  "W-21-34-option3-phone.png": {
+    "id": "W-21-34",
+    "title": "option 3: phone 390 x 844, scramble and wrong turn",
+    "caption": "the same two states on a phone."
+  },
+  "W-21-35-option3-alg-sections.png": {
+    "id": "W-21-35",
+    "title": "option 3: alg playback with sections (T-perm), light",
+    "caption": "sections with an optional name; playing move 6 of 14."
+  },
+  "W-21-36-option3-long-rolling.png": {
+    "id": "W-21-36",
+    "title": "option 3: long sequence, rolling window (45 moves), light",
+    "caption": "what happens past the lookahead capacity."
+  },
+  "W-21-01-overview.png": {
+    "id": "W-21-01",
+    "title": "the three options side by side",
+    "caption": "desktop mid scramble above, phone wrong turn below; dark above, light below."
+  },
+  "W-21-91-mini-form-lists.png": {
+    "id": "W-21-91",
+    "title": "mini form in list rows, the three options",
+    "caption": "history, alg, playing and review rows. Dark above, light below."
+  },
+  "W-21-01-overview-hd.png": {
+    "id": "W-21-01",
+    "title": "the three options side by side (HD 2x)",
+    "caption": "desktop mid scramble above, phone wrong turn below; dark above, light below."
+  },
+  "W-21-91-mini-form-lists-hd.png": {
+    "id": "W-21-91",
+    "title": "mini form in list rows, the three options (HD 2x)",
+    "caption": "history, alg, playing and review rows. Dark above, light below."
+  }
+}

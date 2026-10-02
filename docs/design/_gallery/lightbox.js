@@ -40,7 +40,11 @@
     zo.onclick = function () { zoomAt(1 / 1.35); }; zi.onclick = function () { zoomAt(1.35); };
     img.addEventListener('load', function () { natW = img.naturalWidth || 800; natH = img.naturalHeight || 600; fit(); });
     img.addEventListener('error', function () { titleEl.textContent = 'Could not load image'; });
-    root.addEventListener('click', function (e) { if (e.target === stage && !moved) close(); });
+    root.addEventListener('click', function (e) {
+      // pointer capture retargets every click to the stage: close only for a click outside the image itself
+      var r = img.getBoundingClientRect(), onImg = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (e.target === stage && !moved && !onImg) close();
+    });
     stage.addEventListener('wheel', onWheel, { passive: false });
     stage.addEventListener('dblclick', onDbl);
     stage.addEventListener('pointerdown', onDown);
@@ -138,11 +142,13 @@
     updateLoupe(p[0], p[1]);
   }
   function onDbl(e) {
-    var p = local(e), cur = scale;
-    var steps = [fitScale, 1, 2]; // fit -> 100% -> 200% -> fit
+    var p = local(e), cur = scale, dpr = window.devicePixelRatio || 1;
+    // fit -> 1 image pixel per device pixel (crisp HD images on a hi-dpi screen) -> 100% -> 200% -> fit
+    var steps = [fitScale], cand = [1 / dpr, 1, 2];
+    for (var k = 0; k < cand.length; k++) if (cand[k] > steps[steps.length - 1] * 1.02) steps.push(cand[k]);
     var next = steps[0];
-    for (var k = 0; k < steps.length; k++) { if (Math.abs(cur - steps[k]) < 0.02) { next = steps[(k + 1) % steps.length]; break; } if (k === steps.length - 1) next = steps[0]; }
-    if (fitScale >= 1 - 0.02 && Math.abs(cur - fitScale) < 0.02) next = 2;
+    for (var j = 0; j < steps.length - 1; j++) if (Math.abs(cur - steps[j]) < 0.02 * steps[j] + 0.005) { next = steps[j + 1]; break; }
+    if (steps.length === 1) next = 2;
     zoomTo(next, p[0], p[1]);
   }
   function onDown(e) {

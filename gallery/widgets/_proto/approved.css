@@ -1,0 +1,326 @@
+/* The APPROVED widget set as one stylesheet (approved 2026-10-02), for the combined-screens prototypes.
+   Generated once from the proposal prototypes and then kept by hand; prototypes only, no app code.
+   - W-04 buttons option 1 (quiet fill)          - W-17 bevelled keycap (a physical key; ONLY keyboard keys use it)
+   - W-05/06/07/08/28 selection controls, option 3 ink (data-opt="3" on .brain)
+   - W-16 status line and toast, option 1 (bottom-right slot)
+   Tokens: src/brain/css/tokens-orbit.css only. */
+@import url('./common.css');
+
+/* ===== selection controls (W-05..W-08, W-28), ink ===== */
+/* Selection controls prototype: ONE DOM per control, three looks (data-opt 1, 2, 3).
+   Only the real Orbit tokens (src/brain/css/tokens-orbit.css) are used. */
+.brain { font-family: var(--b-font-sans); color: var(--b-ink); background: var(--b-bg); font-size: var(--b-fs-body); }
+.brain *, .brain *::before, .brain *::after { box-sizing: border-box; }
+.brain[data-opt] { --h: 40px; --hc: 32px; --hch: 48px; --t: .16s var(--b-ease); }
+@media (max-width: 720px) { .brain[data-opt] { --hc: 40px; --hch: 52px; } }
+@media (prefers-reduced-motion: reduce) { .brain[data-opt] { --t: 0s linear; } .brain[data-opt] * { transition-duration: 0s !important; } }
+
+/* ---------- option looks (colour roles only; structure is below) ---------- */
+/* 1: tint. Selected = the teal tint of the A-11 speed chips. */
+.brain[data-opt="1"] {
+  --k-bg: transparent; --k-bd: var(--b-hairline); --k-ink: var(--b-muted);
+  --k-bg-h: var(--b-surface-2); --k-ink-h: var(--b-ink); --k-bd-h: var(--b-faint); --k-bg-p: var(--b-surface-2);
+  --s-bg: var(--b-accent-soft); --s-ink: var(--b-accent-text); --s-bd: var(--b-accent); --s-bg-h: var(--b-accent-soft);
+  --g-bg: var(--b-surface-2); --g-thumb: var(--b-accent-soft); --g-thumb-ring: var(--b-accent); --g-ink: var(--b-muted); --g-ink-sel: var(--b-accent-text);
+  --w-off: var(--b-track); --w-off-bd: transparent; --w-thumb: var(--b-muted); --w-on: var(--b-accent); --w-on-bd: transparent; --w-thumb-on: var(--b-on-accent); --w-check: var(--b-accent-text);
+  --e-bg: var(--b-surface-2); --e-bd: var(--b-hairline); --e-bg-h: var(--b-track);
+  --o-bg: var(--b-surface); --o-sel-bg: var(--b-accent-soft); --o-sel-ink: var(--b-accent-text);
+  --c-bg: var(--b-surface); --c-bd: var(--b-hairline); --c-ink: var(--b-ink); --c-bg-h: var(--b-surface-2);
+  --c-sel-bg: var(--b-accent-soft); --c-sel-ink: var(--b-accent-text); --c-sel-bd: var(--b-accent);
+  --cb-bd: var(--b-muted); --cb-on-bg: var(--b-accent); --cb-on-ink: var(--b-on-accent);
+}
+/* 2: underline. Text first, the active one wears the nav's teal underline. */
+.brain[data-opt="2"] {
+  --k-bg: transparent; --k-bd: transparent; --k-ink: var(--b-muted);
+  --k-bg-h: transparent; --k-ink-h: var(--b-ink); --k-bd-h: transparent; --k-bg-p: var(--b-surface);
+  --s-bg: transparent; --s-ink: var(--b-ink); --s-bd: transparent; --s-bg-h: transparent;
+  --g-bg: transparent; --g-thumb: var(--b-accent); --g-thumb-ring: transparent; --g-ink: var(--b-muted); --g-ink-sel: var(--b-ink);
+  --w-off: transparent; --w-off-bd: var(--b-muted); --w-thumb: var(--b-faint); --w-on: transparent; --w-on-bd: var(--b-accent); --w-thumb-on: var(--b-accent); --w-check: var(--b-on-accent);
+  --e-bg: transparent; --e-bd: transparent; --e-bg-h: transparent;
+  --o-bg: var(--b-surface); --o-sel-bg: transparent; --o-sel-ink: var(--b-accent-text);
+  --c-bg: transparent; --c-bd: var(--b-faint); --c-ink: var(--b-ink); --c-bg-h: transparent;
+  --c-sel-bg: transparent; --c-sel-ink: var(--b-accent-text); --c-sel-bd: var(--b-accent);
+  --cb-bd: var(--b-muted); --cb-on-bg: transparent; --cb-on-ink: var(--b-accent);
+}
+/* 3: ink. Filled surfaces; the selected one flips to the page ink. */
+.brain[data-opt="3"] {
+  --k-bg: var(--b-surface-2); --k-bd: transparent; --k-ink: var(--b-ink);
+  --k-bg-h: var(--b-track); --k-ink-h: var(--b-ink); --k-bd-h: transparent; --k-bg-p: var(--b-track);
+  --s-bg: var(--b-fill); --s-ink: var(--b-bg); --s-bd: transparent; --s-bg-h: var(--b-fill);
+  --g-bg: var(--b-surface-2); --g-thumb: var(--b-fill); --g-thumb-ring: transparent; --g-ink: var(--b-muted); --g-ink-sel: var(--b-bg);
+  --w-off: var(--b-track); --w-off-bd: transparent; --w-thumb: var(--b-muted); --w-on: var(--b-fill); --w-on-bd: transparent; --w-thumb-on: var(--b-bg); --w-check: var(--b-fill);
+  --e-bg: var(--b-surface-2); --e-bd: transparent; --e-bg-h: var(--b-track);
+  --o-bg: var(--b-surface-2); --o-sel-bg: var(--b-fill); --o-sel-ink: var(--b-bg);
+  --c-bg: var(--b-surface-2); --c-bd: transparent; --c-ink: var(--b-ink); --c-bg-h: var(--b-track);
+  --c-sel-bg: var(--b-fill); --c-sel-ink: var(--b-bg); --c-sel-bd: transparent;
+  --cb-bd: var(--b-muted); --cb-on-bg: var(--b-fill); --cb-on-ink: var(--b-bg);
+}
+
+/* ---------- chip (W-05) ---------- */
+.chip { appearance: none; position: relative; display: inline-flex; align-items: center; gap: 8px; height: var(--hc); padding: 0 14px;
+  border-radius: var(--b-radius-control); border: 1px solid var(--k-bd); background: var(--k-bg); color: var(--k-ink);
+  font: 500 13px/1 var(--b-font-sans); white-space: nowrap; cursor: pointer;
+  transition: background var(--t), color var(--t), border-color var(--t), transform var(--t); }
+.chip__n { font: 400 12px/1 var(--b-font-mono); opacity: .75; }
+.chip__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--b-warn); }
+.chip:is(:hover, .is-hover) { background: var(--k-bg-h); color: var(--k-ink-h); border-color: var(--k-bd-h); }
+.chip:is(:active, .is-press) { transform: scale(.97); background: var(--k-bg-p); }
+.chip[aria-pressed="true"] { background: var(--s-bg); color: var(--s-ink); border-color: var(--s-bd); font-weight: 600; }
+.chip[aria-pressed="true"]:is(:hover, .is-hover) { background: var(--s-bg-h); }
+.chip:is(:focus-visible, .is-focus) { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+.chip:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.brain[data-opt="2"] .chip { border-radius: 8px; padding: 0 12px; }
+.brain[data-opt="2"] .chip::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: 3px; height: 2px; border-radius: 1px;
+  background: var(--b-accent); transform: scaleX(0); transition: transform .22s var(--b-ease); }
+.brain[data-opt="2"] .chip[aria-pressed="true"]::after { transform: scaleX(1); }
+
+/* ---------- segmented control (W-06) ---------- */
+.seg { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(52px, 1fr); height: var(--h); padding: 0;
+  border-radius: var(--b-radius-control); background: var(--g-bg); }
+.seg__thumb { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(100% / var(--n) - 6px); border-radius: var(--b-radius-control);
+  background: var(--g-thumb); box-shadow: inset 0 0 0 1px var(--g-thumb-ring); transform: translateX(calc((100% + 6px) * var(--i)));
+  transition: transform .22s var(--b-ease); }
+.seg__o { appearance: none; position: relative; z-index: 1; background: none; border: 0; padding: 0 14px; border-radius: var(--b-radius-control);
+  color: var(--g-ink); font: 500 14px/1 var(--b-font-sans); white-space: nowrap; cursor: pointer; transition: color var(--t), background var(--t), transform var(--t); }
+.seg__o:is(:hover, .is-hover) { color: var(--b-ink); }
+.seg__o[aria-checked="true"] { color: var(--g-ink-sel); font-weight: 600; }
+.seg__o:is(:active, .is-press) { transform: scale(.96); }
+.seg__o:is(:focus-visible, .is-focus) { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+.seg__o:disabled, .seg[aria-disabled="true"] .seg__o { opacity: .4; cursor: not-allowed; transform: none; }
+.seg--mono .seg__o { font-family: var(--b-font-mono); font-weight: 400; }
+.seg--mono .seg__o[aria-checked="true"] { font-weight: 500; }
+.brain[data-opt="2"] .seg { border-radius: 0; padding: 0; box-shadow: inset 0 -1px 0 var(--b-hairline); }
+.brain[data-opt="2"] .seg__thumb { top: auto; bottom: 0; left: 0; height: 2px; border-radius: 1px; width: calc(100% / var(--n)); transform: translateX(calc(100% * var(--i))); }
+.brain[data-opt="2"] .seg__o { border-radius: 8px 8px 0 0; }
+.brain[data-opt="2"] .seg__o:is(:active, .is-press) { background: var(--b-surface); }
+.brain[data-opt="2"] .seg__o:is(:focus-visible, .is-focus) { outline-offset: -2px; }
+
+/* ---------- switch (W-07) and the list checkbox ---------- */
+.sw { appearance: none; display: inline-flex; align-items: center; gap: 12px; min-height: var(--h); padding: 0; background: none; border: 0;
+  color: var(--b-ink); font: 500 14px/1.2 var(--b-font-sans); text-align: left; cursor: pointer; }
+.sw--row { display: flex; width: 100%; justify-content: space-between; }
+.sw__txt { display: grid; gap: 2px; }
+.sw__sub { font-size: 12px; font-weight: 400; color: var(--b-muted); }
+.sw__track { position: relative; flex: none; width: 44px; height: 26px; border-radius: var(--b-radius-control); background: var(--w-off);
+  box-shadow: inset 0 0 0 1.5px var(--w-off-bd); transition: background var(--t), box-shadow var(--t); }
+.sw__thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--w-thumb); display: grid; place-items: center;
+  transition: transform .2s var(--b-ease), background var(--t), width .12s var(--b-ease); }
+.sw__thumb svg { width: 12px; height: 12px; stroke: var(--w-check); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity var(--t); }
+.sw[aria-checked="true"] .sw__track { background: var(--w-on); box-shadow: inset 0 0 0 1.5px var(--w-on-bd); }
+.sw[aria-checked="true"] .sw__thumb { transform: translateX(18px); background: var(--w-thumb-on); }
+.sw[aria-checked="true"] .sw__thumb svg { opacity: 1; }
+.sw:is(:hover, .is-hover) .sw__track { box-shadow: inset 0 0 0 1.5px var(--b-muted); }
+.sw[aria-checked="true"]:is(:hover, .is-hover) .sw__track { box-shadow: inset 0 0 0 1.5px var(--w-on-bd); filter: brightness(1.08); }
+.sw:is(:active, .is-press) .sw__thumb { width: 24px; }
+.sw[aria-checked="true"]:is(:active, .is-press) .sw__thumb { transform: translateX(14px); }
+.sw:is(:focus-visible, .is-focus) .sw__track { outline: 2px solid var(--b-accent); outline-offset: 3px; }
+.sw:disabled { opacity: .4; cursor: not-allowed; }
+.brain[data-opt="2"] .sw__track { height: 24px; width: 42px; }
+.brain[data-opt="2"] .sw__thumb { width: 14px; height: 14px; top: 5px; left: 5px; }
+.brain[data-opt="2"] .sw[aria-checked="true"] .sw__thumb { transform: translateX(18px); }
+.brain[data-opt="2"] .sw:is(:active, .is-press) .sw__thumb { width: 18px; }
+.brain[data-opt="2"] .sw__thumb svg { display: none; }
+.cb { appearance: none; display: inline-flex; align-items: center; gap: 12px; min-height: var(--h); padding: 0; background: none; border: 0; color: var(--b-ink);
+  font: 500 14px/1.2 var(--b-font-sans); cursor: pointer; }
+.cb__box { width: 22px; height: 22px; border-radius: 7px; box-shadow: inset 0 0 0 1.5px var(--cb-bd); display: grid; place-items: center; transition: background var(--t), box-shadow var(--t), transform var(--t); }
+.cb__box svg { width: 14px; height: 14px; stroke: var(--cb-on-ink); fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.cb[aria-checked="true"] .cb__box { background: var(--cb-on-bg); box-shadow: inset 0 0 0 1.5px var(--b-accent); }
+.brain[data-opt="3"] .cb[aria-checked="true"] .cb__box { box-shadow: none; }
+.cb[aria-checked="true"] .cb__box svg { opacity: 1; }
+.cb:is(:hover, .is-hover) .cb__box { box-shadow: inset 0 0 0 1.5px var(--b-muted); }
+.cb[aria-checked="true"]:is(:hover, .is-hover) .cb__box { box-shadow: inset 0 0 0 1.5px var(--b-accent); }
+.cb:is(:active, .is-press) .cb__box { transform: scale(.92); }
+.cb:is(:focus-visible, .is-focus) .cb__box { outline: 2px solid var(--b-accent); outline-offset: 3px; }
+.cb:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ---------- select (W-08) ---------- */
+.field { display: grid; gap: 6px; }
+.field__l { font: 500 12px/1 var(--b-font-sans); color: var(--b-muted); letter-spacing: .02em; }
+.sel { position: relative; display: inline-block; }
+.sel__btn { appearance: none; display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-width: 150px; height: var(--h);
+  padding: 0 12px 0 16px; border-radius: var(--b-radius-control); border: 1px solid var(--e-bd); background: var(--e-bg); color: var(--b-ink);
+  font: 500 14px/1 var(--b-font-sans); white-space: nowrap; cursor: pointer; transition: background var(--t), border-color var(--t), transform var(--t); }
+.sel__btn svg { width: 14px; height: 14px; stroke: var(--b-muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s var(--b-ease); }
+.sel__btn:is(:hover, .is-hover) { background: var(--e-bg-h); }
+.sel__btn:is(:active, .is-press) { transform: scale(.98); }
+.sel__btn:is(:focus-visible, .is-focus) { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+.sel.is-open .sel__btn, .sel__btn[aria-expanded="true"] { border-color: var(--b-accent); }
+.sel.is-open .sel__btn svg, .sel__btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.sel__btn:disabled { opacity: .4; cursor: not-allowed; }
+.sel__list { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; min-width: 100%; margin: 0; padding: 6px; list-style: none; display: none;
+  border-radius: 20px; background: var(--b-surface-2); border: 1px solid var(--b-hairline); box-shadow: 0 14px 34px var(--b-cube-shadow); }
+.sel.is-open .sel__list { display: block; }
+.sel__opt { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--h); padding: 0 12px 0 14px; border-radius: 14px; color: var(--b-ink);
+  font: 500 14px/1 var(--b-font-sans); white-space: nowrap; cursor: pointer; }
+.sel__opt svg { width: 14px; height: 14px; stroke: currentcolor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.sel__opt.is-active { background: var(--b-surface); }
+.sel__opt[aria-selected="true"] { color: var(--o-sel-ink); font-weight: 600; }
+.sel__opt[aria-selected="true"] svg { opacity: 1; }
+.brain[data-opt="3"] .sel__opt[aria-selected="true"] { background: var(--o-sel-bg); }
+.sel__opt.is-disabled { opacity: .4; }
+.brain[data-opt="2"] .sel__btn { padding: 0 10px; min-width: 130px; border-width: 0 0 1px; border-color: var(--b-hairline); border-radius: 8px 8px 0 0; }
+.brain[data-opt="2"] .sel.is-open .sel__btn, .brain[data-opt="2"] .sel__btn[aria-expanded="true"] { border-color: var(--b-accent); box-shadow: 0 1px 0 var(--b-accent); }
+.brain[data-opt="2"] .sel__list { border-radius: 12px; background: var(--b-bg); }
+.brain[data-opt="2"] .sel__opt { border-radius: 8px; }
+
+/* ---------- choice button (W-28) ---------- */
+.choice { appearance: none; position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 112px; height: var(--hch);
+  padding: 0 24px; border-radius: var(--b-radius-control); border: 1.5px solid var(--c-bd); background: var(--c-bg); color: var(--c-ink);
+  font: 600 15px/1 var(--b-font-sans); white-space: nowrap; cursor: pointer; transition: background var(--t), border-color var(--t), color var(--t), transform var(--t); }
+.choice__key { position: absolute; top: -9px; left: 14px; padding: 3px 6px; border-radius: 6px; background: var(--b-key-bg); color: var(--b-key-ink);
+  font: 500 11px/1 var(--b-font-mono); }
+@media (max-width: 720px) { .choice__key { display: none; } }
+.choice__sw { width: 20px; height: 20px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .25); }
+.choice__mark { font: 700 14px/1 var(--b-font-sans); }
+.choice:is(:hover, .is-hover) { background: var(--c-bg-h); border-color: var(--b-muted); }
+.choice:is(:active, .is-press) { transform: scale(.97); }
+.choice:is(:focus-visible, .is-focus) { outline: 2px solid var(--b-accent); outline-offset: 3px; }
+.choice[aria-pressed="true"] { background: var(--c-sel-bg); color: var(--c-sel-ink); border-color: var(--c-sel-bd); }
+.choice.is-correct { background: var(--b-accent-soft); color: var(--b-accent-text); border-color: var(--b-accent); }
+.brain[data-opt="3"] .choice.is-correct { background: var(--b-accent); color: var(--b-on-accent); }
+.choice.is-miss { color: var(--b-warn-text); border-color: var(--b-warn); background: transparent; }
+.brain[data-opt="3"] .choice.is-miss { background: var(--b-warn); color: var(--b-bg); }
+.choice.is-reveal { border-style: dashed; border-color: var(--b-accent); color: var(--b-accent-text); background: transparent; }
+.choice.is-dim { opacity: .45; }
+.choice:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.brain[data-opt="2"] .choice:is(:hover, .is-hover) { border-color: var(--b-ink); }
+
+
+.sel--full, .sel--full .sel__btn { display: block; width: 100%; }
+.sel--full .sel__btn { display: flex; }
+.sel--sm .sel__btn { height: var(--hc); min-width: 150px; font-size: 13px; }
+.sel--sm .sel__opt { height: 36px; }
+
+/* ===== buttons (W-04), quiet fill ===== */
+/* W-04 Buttons: three consolidated proposals. One markup, three skins (.o1 .o2 .o3 on the board).
+   Only var(--b-*) tokens. Forced-state classes (.is-hover, .is-active, .is-focus) mirror the real pseudo-classes
+   so the state matrix can show every state at once. */
+
+.btn {
+  --h: 40px; --px: 20px; --fs: 15px;
+  --bg: transparent; --bg-hover: var(--bg); --bg-active: var(--bg); --fg: var(--b-ink); --fg-hover: var(--fg);
+  --edge: none; --edge-hover: var(--edge); --focus: var(--b-accent); --rad: var(--b-radius-control);
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: var(--h); padding: 0 var(--px); border: 0; border-radius: var(--rad);
+  background: var(--bg); color: var(--fg); box-shadow: var(--edge);
+  font: 600 var(--fs)/1 var(--b-font-sans); letter-spacing: -.005em; white-space: nowrap; cursor: pointer;
+  transition: background-color 140ms var(--b-ease), box-shadow 140ms var(--b-ease), color 140ms var(--b-ease), transform 90ms var(--b-ease);
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.btn:hover, .btn.is-hover { background: var(--bg-hover); color: var(--fg-hover); box-shadow: var(--edge-hover); }
+.btn:active, .btn.is-active { background: var(--bg-active); color: var(--fg-hover); transform: scale(.97); }
+.btn:focus-visible, .btn.is-focus { outline: 2px solid var(--focus); outline-offset: 3px; }
+.btn:disabled, .btn.is-disabled { --bg: transparent; background: var(--b-surface); color: var(--b-faint); box-shadow: none; cursor: not-allowed; transform: none; }
+.btn.is-loading { pointer-events: none; cursor: progress; }
+.btn.is-loading .btn-ring { display: inline-block; }
+.btn-ring { display: none; width: 16px; height: 16px; flex: none; animation: btn-spin 1.1s linear infinite; }
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .btn-ring { animation: none; } .btn { transition: none; } }
+
+/* sizes */
+.btn--l { --h: 48px; --px: 26px; --fs: 16px; }
+.btn--s { --h: 32px; --px: 14px; --fs: 13px; gap: 8px; }
+.touch .btn { --h: 44px; }
+.touch .btn--l { --h: 52px; --fs: 17px; }
+.touch .btn--s { --h: 40px; }
+.touch .btn kbd { display: none; }
+
+/* keycap inside a button (the keycap itself is W-17; this is the flat form used by the A frames) */
+.btn kbd { font: 500 11px/1 var(--b-font-mono); height: 22px; min-width: 22px; padding: 0 7px; display: inline-grid; place-items: center; border-radius: var(--b-radius-key); background: var(--kbd-bg, var(--b-key-bg)); color: var(--kbd-fg, var(--b-key-ink)); }
+
+/* icon-only */
+.btn--icon { --px: 0; width: var(--h); gap: 0; --fg: var(--b-muted); --fg-hover: var(--b-ink); }
+.btn--icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+
+/* tones */
+.btn--muted { --fg: var(--b-muted); --fg-hover: var(--b-ink); font-weight: 500; }
+.btn--danger { --fg: var(--b-dnf); --fg-hover: var(--b-dnf); }
+
+/* answer / choice button = a secondary with the number key leading */
+.btn--choice { --h: 48px; --px: 22px; --fs: 17px; min-width: 116px; gap: 12px; }
+.touch .btn--choice { --h: 52px; --px: 12px; }
+.btn--choice kbd { order: -1; }
+.btn .glyph { width: 14px; height: 14px; flex: none; }
+.btn[data-state="good"] { --edge: inset 0 0 0 2px var(--b-good); --edge-hover: var(--edge); --fg: var(--b-ink); }
+.btn[data-state="bad"] { --edge: inset 0 0 0 2px var(--b-warn); --edge-hover: var(--edge); }
+
+.btn--primary { --bg: var(--b-ink); --fg: var(--b-bg); --bg-hover: color-mix(in srgb, var(--b-ink) 88%, var(--b-bg)); --bg-active: color-mix(in srgb, var(--b-ink) 76%, var(--b-bg)); --kbd-bg: var(--b-bg); --kbd-fg: var(--b-ink); }
+.btn--secondary { --bg: var(--b-surface-2); --fg: var(--b-ink); --edge: inset 0 0 0 1px var(--b-hairline); --bg-hover: color-mix(in srgb, var(--b-surface-2) 86%, var(--b-ink)); --bg-active: color-mix(in srgb, var(--b-surface-2) 72%, var(--b-ink)); --kbd-bg: var(--b-bg); --kbd-fg: var(--b-muted); }
+.btn--text { --bg: transparent; --bg-hover: color-mix(in srgb, var(--b-ink) 8%, transparent); --bg-active: color-mix(in srgb, var(--b-ink) 15%, transparent); }
+.btn--icon:hover, .btn--icon.is-hover { background: var(--b-surface-2); }
+
+/* ===== keycaps (W-17), bevelled ===== */
+/* W-17 Keycaps and the key bar: three proposals. One markup (.key, .kbar), three skins (.o1 .o2 .o3).
+   Only var(--b-*) tokens. Forced states (.is-down, .is-held, .is-off) show every state at once. */
+
+.key {
+  --kh: 22px; --k-bg: var(--b-key-bg); --k-fg: var(--b-key-ink); --k-edge: transparent; --k-lip: transparent; --lip: 0px; --dy: 0px;
+  display: inline-grid; place-items: center; height: var(--kh); min-width: var(--kh); padding: 0 7px; flex: none;
+  border-radius: var(--b-radius-key); background: var(--k-bg); color: var(--k-fg);
+  font: 500 11px/1 var(--b-font-mono); letter-spacing: 0; white-space: nowrap; vertical-align: middle;
+  box-shadow: inset 0 0 0 1px var(--k-edge), 0 var(--lip) 0 var(--k-lip); transform: translateY(var(--dy));
+  transition: background-color 90ms var(--b-ease), color 90ms var(--b-ease), box-shadow 90ms var(--b-ease), transform 90ms var(--b-ease);
+  user-select: none;
+}
+.key--s { --kh: 20px; font-size: 10.5px; padding: 0 6px; }
+.key--m { --kh: 24px; font-size: 11.5px; padding: 0 8px; }
+@media (prefers-reduced-motion: reduce) { .key { transition: none; } }
+.key--pair { padding: 0; display: inline-flex; min-width: 0; overflow: hidden; }
+.key--pair i { font-style: normal; display: grid; place-items: center; min-width: calc(var(--kh) - 2px); height: 100%; padding: 0 5px; }
+.key--pair i + i { box-shadow: inset 1px 0 0 var(--k-edge-pair, transparent); }
+.key--pair i.is-down { background: var(--k-down-bg); color: var(--k-down-fg); }
+
+/* contexts: the surface a key sits on decides its colours */
+.on-primary .key { --k-bg: var(--b-bg); --k-fg: var(--b-ink); --k-down-bg: var(--b-accent); --k-down-fg: var(--b-on-accent); }
+.on-secondary .key { --k-bg: var(--b-bg); --k-fg: var(--b-muted); }
+
+.key { --k-edge: var(--b-hairline); --k-lip: var(--b-cube-body); --lip: 2px; }
+.key--s { --lip: 2px; }
+.key.is-down { --dy: 2px; --lip: 0px; --k-bg: var(--b-surface-2); --k-fg: var(--b-ink); }
+.key.is-held { --dy: 2px; --lip: 0px; --k-edge: var(--b-accent); --k-fg: var(--b-accent-text); --k-bg: var(--b-accent-soft); }
+.key.is-off { --k-bg: transparent; --k-fg: var(--b-faint); --k-edge: var(--b-track); --lip: 0px; }
+.on-primary .key { --k-edge: transparent; --k-lip: var(--b-surface-2); }
+.on-secondary .key { --k-lip: var(--b-cube-body); }
+.key--pair { --k-down-bg: var(--b-surface-2); --k-down-fg: var(--b-ink); }
+
+/* ---------- the key bar ---------- */
+.kbar { display: flex; align-items: center; gap: 26px; font: 400 13px/1 var(--b-font-sans); color: var(--b-muted); }
+.kbar > span { display: inline-flex; align-items: center; gap: 9px; }
+.kbar > span.is-off { color: var(--b-faint); }
+
+/* ===== status line and toast (W-16) ===== */
+/* W-16 Status line and toast: three proposals (placement + skin). One markup (.st, .toast), three skins (.o1 .o2 .o3).
+   Only var(--b-*) tokens. Forced lifecycle classes (.is-enter, .is-exit, .is-paused, .is-focus) show every state at once. */
+
+
+/* ---------- the status line: one line of text, never a box ---------- */
+.st { display: inline-flex; align-items: center; gap: 9px; font: 400 13.5px/1.3 var(--b-font-sans); color: var(--b-muted); white-space: nowrap; }
+.st b { font-weight: 600; color: var(--b-ink); }
+.st--mono { font: 400 12px var(--b-font-mono); }
+.st--warn, .st--error { color: var(--b-ink); }
+.g { width: 14px; height: 14px; flex: none; }
+.g-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--b-good); flex: none; margin: 0 3px; }
+.g-spin { animation: g-spin 1.1s linear infinite; }
+@keyframes g-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .g-spin { animation: none; } .toast { transition: none; } }
+.st .act, .toast .act { font: 600 13.5px/1 var(--b-font-sans); color: var(--b-ink); background: none; border: 0; padding: 0 10px; height: 32px; border-radius: var(--b-radius-control); margin: 0 -6px 0 2px; cursor: pointer; }
+.act:hover, .act.is-hover { background: color-mix(in srgb, var(--b-ink) 10%, transparent); }
+.act:focus-visible, .act.is-focus { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+.touch .act { height: 44px; padding: 0 14px; }
+
+/* ---------- the toast: transient, one at a time ---------- */
+.toast {
+  --t-bg: var(--b-surface-2); --t-fg: var(--b-ink); --t-edge: var(--b-hairline);
+  display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px 0 14px; max-width: 460px;
+  border-radius: var(--b-radius-control); background: var(--t-bg); color: var(--t-fg); box-shadow: inset 0 0 0 1px var(--t-edge);
+  font: 500 13.5px/1 var(--b-font-sans); white-space: nowrap;
+  transition: opacity 200ms var(--b-ease), transform 200ms var(--b-ease);
+}
+.toast.has-act { padding-right: 8px; }
+.touch .toast { height: 48px; }
+.toast.is-enter { opacity: .35; transform: translateY(8px); }
+.toast.is-exit { opacity: .3; transform: translateY(4px); transition-duration: 160ms; }
+.toast .act { color: var(--t-act, var(--b-ink)); }
+.toast .g-dot { background: var(--b-good); }
+
+
