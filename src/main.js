@@ -31,6 +31,7 @@ import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
 import { toRenderData, validateSolution } from './cross-cube.js';
+import { Cube } from './ui/cube/index.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from './f2l-planner.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
@@ -431,6 +432,7 @@ document.querySelector('#app').innerHTML = `
       <p class="eyebrow">developer tools</p>
       <h1 id="recording-title">recording</h1>
       <p class="recording-page__intro">CubeSight keeps a bounded local ring of cube input, connection events and page changes. Exported recordings mask device identifiers and coarse browser details.</p>
+      <div id="recording-cube" class="recording-page__cube" aria-label="current smart cube"></div>
       <p class="recording-page__count" id="recording-count" role="status"></p>
       <div class="recording-page__actions"><button class="primary-button" data-action="save-recording">save anonymized recording</button><button class="text-button" data-action="clear-recording">clear recording</button></div>
       <ol class="recording-page__events" id="recording-events" aria-label="recent recorded events"></ol>
@@ -1743,13 +1745,22 @@ function renderRecordingView() {
   const count = document.querySelector('#recording-count');
   const list = document.querySelector('#recording-events');
   if (!count || !list) return;
-  count.textContent = `${recording.events.length.toLocaleString()} events · ${Math.max(0, recording.durationMs / 1000).toFixed(1)} s on this page · local buffer`;
+  count.textContent = `${recording.events.length.toLocaleString()} events · ${Math.max(0, recording.durationMs / 1000).toFixed(1)} s recording duration · local buffer`;
   list.replaceChildren(...recording.events.slice(-12).reverse().map(event => {
     const item = document.createElement('li');
     const kind = document.createElement('strong'); kind.textContent = event.kind;
     const timing = document.createElement('span'); timing.textContent = `+${Math.round(event.t)} ms`;
     item.append(kind, timing); return item;
   }));
+}
+
+let recordingCube = null;
+function syncRecordingCube(tool) {
+  if (tool !== 'recording') { recordingCube?.destroy(); recordingCube = null; return; }
+  if (recordingCube) return;
+  const host = document.querySelector('#recording-cube');
+  recordingCube = new Cube(host, { mode: 'live', size: 'M', label: 'current smart cube recording preview' });
+  recordingCube.bindSession(smartCube);
 }
 
 function setTool(tool, initial = false) {
@@ -1787,6 +1798,7 @@ function setTool(tool, initial = false) {
   if (tool === 'recording') renderRecordingView();
   activeTool = tool;
   syncLegacyCubes(tool);
+  syncRecordingCube(tool);
   if (tool === 'corner' || tool === 'pll' || tool === 'f2l') syncLegacyDrillStyle();
   document.title = `${PAGE_TITLES[tool] ?? tool} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;

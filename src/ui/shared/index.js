@@ -1,6 +1,7 @@
 import './shared.css';
+import { APP_NAME } from '../../copy/nav.js';
 
-export function createHeader(host, { title = 'CubeSight', sections = ['solve', 'drills', 'algs', 'progress', 'history'], active = 'solve', compass = null, session = null, actions = {}, help = null, themeToggle = true, showDevDrawer = true } = {}) {
+export function createHeader(host, { title = APP_NAME, sections = ['solve', 'drills', 'algs', 'progress', 'history'], active = 'solve', compass = null, session = null, actions = {}, help = null, themeToggle = true, showDevDrawer = true } = {}) {
   const header = document.createElement('header'); header.className = 'site-header ui-header';
   const brand = document.createElement('a'); brand.className = 'brand ui-header__brand'; brand.href = '#/'; brand.textContent = title.toLowerCase(); brand.setAttribute('aria-label', `${title} home`);
   const nav = document.createElement('nav'); nav.className = 'main-nav'; nav.setAttribute('aria-label', 'Main');
@@ -90,7 +91,17 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null }
     const x1 = Math.max(0, sentenceBox.right - box.left), y1 = sentenceBox.top + sentenceBox.height / 2 - box.top;
     const x2 = targetBox.left + targetBox.width / 2 - box.left, y2 = targetBox.top + targetBox.height / 2 - box.top;
     connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`);
-    path.setAttribute('d', `M ${x1} ${y1} C ${x1 + (x2 - x1) * .32} ${y1}, ${x1 + (x2 - x1) * .68} ${y2}, ${x2} ${y2}`);
+    const cube = orbit.element.closest('.f0-stage')?.querySelector('.f0-cube canvas') || document.querySelector('.shared-cube canvas');
+    const cubeBox = cube?.getBoundingClientRect();
+    const minX = Math.min(sentenceBox.right, targetBox.left), maxX = Math.max(sentenceBox.right, targetBox.left);
+    const minY = Math.min(sentenceBox.top + sentenceBox.height / 2, targetBox.top + targetBox.height / 2);
+    const maxY = Math.max(sentenceBox.top + sentenceBox.height / 2, targetBox.top + targetBox.height / 2);
+    const crossesCube = cubeBox && minX < cubeBox.right && maxX > cubeBox.left && minY < cubeBox.bottom && maxY > cubeBox.top;
+    if (crossesCube) {
+      const topRoute = cubeBox.top - box.top - 12, bottomRoute = cubeBox.bottom - box.top + 12;
+      const routeY = topRoute > 8 && (topRoute < box.height - 8 || bottomRoute > box.height - 8) ? topRoute : bottomRoute;
+      path.setAttribute('d', `M ${x1} ${y1} L ${x1} ${routeY} L ${x2} ${routeY} L ${x2} ${y2}`);
+    } else path.setAttribute('d', `M ${x1} ${y1} C ${x1 + (x2 - x1) * .32} ${y1}, ${x1 + (x2 - x1) * .68} ${y2}, ${x2} ${y2}`);
     timer = setTimeout(() => wrap.classList.add('is-linked'), 30);
   };
   const link = (nextMarker, nextOrbit = orbit) => {

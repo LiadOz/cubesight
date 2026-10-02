@@ -40,6 +40,170 @@ test('crowded Orbit markers expand by keyboard and preserve exact marker lookup'
   await expect(page.locator('.f0-coach .ui-coach-line__text')).toContainText(/pause|efficient/);
 });
 
+test('phone Orbit markers expose a 40px target and scrollable full-fact details that stay in the viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/src/ui/gallery.html?flow=results');
+  await page.waitForTimeout(420);
+  const cluster = page.locator('.f0-orbit [data-marker-cluster].is-cluster').first();
+  const hit = cluster.locator('.orbit__marker-hit');
+  const target = await hit.evaluate(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; });
+  expect(target.width).toBeGreaterThanOrEqual(40);
+  expect(target.height).toBeGreaterThanOrEqual(40);
+  await cluster.focus();
+  await cluster.evaluate(node => node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
+  const items = page.locator('.orbit__marker-details-item');
+  await expect(items).toHaveCount(2);
+  await expect(page.locator('.orbit__marker-details')).toBeInViewport();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.orbit__marker-details')).toHaveCount(0);
+  await expect(cluster).toBeFocused();
+});
+
+test('phone flow scroller is keyboard focusable and keeps the selected scenario fully visible without moving the page', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/src/ui/gallery.html?flow=results');
+  await page.waitForTimeout(100);
+  const initiallySelected = await page.evaluate(() => {
+    const nav = document.querySelector('.f0-tabs'), active = nav.querySelector('[aria-pressed="true"]');
+    const n = nav.getBoundingClientRect(), a = active.getBoundingClientRect();
+    return { left: a.left >= n.left - 1, right: a.right <= n.right + 1 };
+  });
+  expect(initiallySelected).toEqual({ left: true, right: true });
+  await page.goto('/src/ui/gallery.html?flow=scramble');
+  const nav = page.locator('.f0-tabs');
+  await expect(nav).toHaveAttribute('data-scroll-x', 'true');
+  await expect(nav).toHaveAttribute('tabindex', '0');
+  const scrollY = await page.evaluate(() => window.scrollY);
+  await nav.getByRole('button', { name: 'history' }).click();
+  const state = await page.evaluate(() => {
+    const navElement = document.querySelector('.f0-tabs'), selected = navElement.querySelector('[aria-pressed="true"]');
+    const n = navElement.getBoundingClientRect(), s = selected.getBoundingClientRect();
+    return { overflow: navElement.scrollWidth > navElement.clientWidth, left: s.left >= n.left - 1, right: s.right <= n.right + 1, pageY: window.scrollY };
+  });
+  expect(state).toEqual({ overflow: true, left: true, right: true, pageY: scrollY });
+  await nav.focus();
+  await page.keyboard.press('End');
+  expect(await nav.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
+  const lastTab = await nav.getByRole('button', { name: 'progress' }).boundingBox();
+  const navBox = await nav.boundingBox();
+  expect(lastTab.x).toBeGreaterThanOrEqual(navBox.x);
+  expect(lastTab.x + lastTab.width).toBeLessThanOrEqual(navBox.x + navBox.width);
+});
+
+test('Orbit morph interpolates segment and marker geometry and lays out dense marker facts without overlap', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/src/ui/gallery.html?flow=results');
+  const mid = await page.evaluate(async () => {
+    const orbit = window.__f0Orbit;
+    const beforeLayout = new Map(orbit.displayed.layout.map(part => [part.key, part.mid]));
+    const update = orbit.update({ ...orbit.options, shape: 'full', duration: 420 });
+    const targetLayout = new Map(orbit.current.layout.map(part => [part.key, part.mid]));
+    const key = [...targetLayout.keys()].sort((a, b) => Math.abs(targetLayout.get(b) - beforeLayout.get(b)) - Math.abs(targetLayout.get(a) - beforeLayout.get(a)))[0];
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const before = beforeLayout.get(key), during = orbit.displayed.layout.find(part => part.key === key).mid, target = targetLayout.get(key);
+    await update;
+    const markers = Array.from({ length: 12 }, (_, index) => ({ key: `stress-${index}`, segment: 'pair 3', position: .48 + index * .001,
+      label: `coach fact ${index + 1} with detail`, tone: index % 2 ? 'good' : 'bad' }));
+    await orbit.update({ ...orbit.options, markers, animate: false });
+    const cluster = orbit.element.querySelector('[data-marker-cluster].is-cluster');
+    cluster.focus(); cluster.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const detailItems = [...orbit.element.querySelectorAll('.orbit__marker-details-item')];
+    detailItems[6].focus();
+    const list = orbit.element.querySelector('.orbit__marker-details-list');
+    list.scrollTop = 80;
+    await orbit.update({ ...orbit.options, accent: '#52e0ca', animate: false });
+    const focusedDetail = document.activeElement?.dataset.markerDetailKey;
+    const scrollTop = orbit.element.querySelector('.orbit__marker-details-list').scrollTop;
+    const labelBoxes = [...orbit.element.querySelectorAll('.orbit__marker-details-item')].map(item => { const rect = item.getBoundingClientRect(); return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }; });
+    const overlaps = labelBoxes.some((a, i) => labelBoxes.slice(i + 1).some(b => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height));
+    return { before, during, target, expanded: JSON.parse(cluster.dataset.markerKeys).length, detailItems: detailItems.length, detailText: [...orbit.element.querySelectorAll('.orbit__marker-details-item')].map(item => item.textContent),
+      focusedDetail, scrollTop, panel: orbit.element.querySelector('.orbit__marker-details').getBoundingClientRect().toJSON(), overlaps,
+      duplicateRingLabels: orbit.element.querySelectorAll('.orbit__marker-expanded-label').length };
+  });
+  expect(mid.during).not.toBeCloseTo(mid.before, 1);
+  expect(mid.during).not.toBeCloseTo(mid.target, 1);
+  expect(mid.expanded).toBe(12);
+  expect(mid.detailItems).toBe(12);
+  expect(mid.detailText).toEqual(expect.arrayContaining(['stress-0 · coach fact 1 with detail · pair 3', 'stress-11 · coach fact 12 with detail · pair 3']));
+  expect(mid.focusedDetail).toBe('stress-6');
+  expect(mid.scrollTop).toBeGreaterThan(0);
+  expect(mid.panel.left).toBeGreaterThanOrEqual(0);
+  expect(mid.panel.right).toBeLessThanOrEqual(1280);
+  expect(mid.panel.bottom).toBeLessThanOrEqual(900);
+  expect(mid.duplicateRingLabels).toBe(0);
+  expect(mid.overlaps).toBe(false);
+});
+
+test('stage labels keep names, values and deltas on separate collision-free rows around the centered Cube', async ({ page }) => {
+  for (const flow of ['results', 'progress']) {
+    await page.goto(`/src/ui/gallery.html?flow=${flow}`);
+    const layout = await page.evaluate(() => {
+      const box = node => { const r = node.getBoundingClientRect(); return { left:r.left, right:r.right, top:r.top, bottom:r.bottom }; };
+      const labels = [...document.querySelectorAll('.orbit__label')].flatMap(group => [...group.querySelectorAll(':scope > text')].filter(text => text.textContent.trim()).map(text => ({ text:text.textContent.trim(), box:box(text) })));
+      const markers = [...document.querySelectorAll('[data-marker-cluster]')].map(box);
+      const cube = box(document.querySelector('.f0-cube canvas'));
+      const ring = box(document.querySelector('.f0-orbit .orbit__svg'));
+      return { labels, markers, cube, ring,
+        expectedKeys: window.__f0Orbit.options.segments.map(segment => String(segment.key)),
+        visibleKeys: [...document.querySelectorAll('.orbit__label')].map(label => label.dataset.labelFor),
+        labelKnockouts: document.querySelectorAll('.orbit__label-bg').length };
+    });
+    expect(Math.abs((layout.cube.left + layout.cube.right - layout.ring.left - layout.ring.right) / 2)).toBeLessThan(1);
+    expect(Math.abs((layout.cube.top + layout.cube.bottom - layout.ring.top - layout.ring.bottom) / 2)).toBeLessThan(1);
+    expect(layout.visibleKeys.sort()).toEqual(layout.expectedKeys.sort());
+    expect(layout.labelKnockouts).toBe(layout.expectedKeys.length);
+    for (let i = 0; i < layout.labels.length; i++) for (let j = i + 1; j < layout.labels.length; j++) {
+      const a = layout.labels[i].box, b = layout.labels[j].box;
+      expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top,
+        `${flow}: ${layout.labels[i].text} must not overlap ${layout.labels[j].text}`).toBe(true);
+    }
+    for (const label of layout.labels) {
+      const a = label.box, b = layout.cube;
+      expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top,
+        `${flow}: ${label.text} must stay outside the Cube`).toBe(true);
+      for (const marker of layout.markers) expect(a.right <= marker.left || marker.right <= a.left || a.bottom <= marker.top || marker.bottom <= a.top,
+        `${flow}: ${label.text} must not cover a marker`).toBe(true);
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/src/ui/gallery.html?flow=progress');
+  const phone = await page.evaluate(() => ({
+    expected: window.__f0Orbit.options.segments.map(segment => String(segment.key)).sort(),
+    visible: [...document.querySelectorAll('.orbit__label')].map(label => label.dataset.labelFor).sort(),
+    readableKnockouts: document.querySelectorAll('.orbit__label-bg').length,
+  }));
+  expect(phone.visible).toEqual(phone.expected);
+  expect(phone.readableKnockouts).toBe(phone.expected.length);
+});
+
+test('activating a stage preserves its full label, value and delta in the visible slot detail', async ({ page }) => {
+  await page.goto('/src/ui/gallery.html?flow=results');
+  await expect(page.locator('.f0-orbit .orbit')).not.toHaveClass(/is-morphing/);
+  const segment = page.locator('.f0-orbit [data-segment="pair 3"]');
+  await expect(segment).toBeVisible();
+  await segment.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.f0-slot')).toContainText('pair 3 · 1.52 · -0.33');
+});
+
+test('coach connector routes around the Cube canvas', async ({ page }) => {
+  await page.goto('/src/ui/gallery.html?flow=results');
+  await expect(page.locator('.ui-coach-line.is-linked')).toBeVisible();
+  const intersects = await page.evaluate(() => {
+    const path = document.querySelector('.ui-coach-line__connector path');
+    const cube = document.querySelector('.f0-cube canvas').getBoundingClientRect();
+    if (!path || !path.getTotalLength()) return false;
+    const matrix = path.getScreenCTM();
+    for (let step = 0; step <= 60; step++) {
+      const point = path.getPointAtLength(path.getTotalLength() * step / 60);
+      const screen = new DOMPoint(point.x, point.y).matrixTransform(matrix);
+      if (screen.x > cube.left && screen.x < cube.right && screen.y > cube.top && screen.y < cube.bottom) return true;
+    }
+    return false;
+  });
+  expect(intersects).toBe(false);
+});
+
 test('case playback keeps a stable color-neutral frame, final state, highlights and a single canvas', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/src/ui/gallery.html?flow=alg');
@@ -169,6 +333,9 @@ test('the shared header tracks history and solve routes and opens the dev drawer
     await expect(page.locator('.ui-dev-drawer')).toBeVisible();
     await page.locator('.ui-dev-drawer__close').click();
   }
+  await page.goto('/#/recording');
+  await expect(page.locator('#recording-view canvas')).toHaveCount(1);
+  await expect(page.locator('#recording-count')).toContainText('recording duration');
 });
 
 test('header themes stay readable and recorder survives a fast full-page reload with anonymized export', async ({ page }) => {

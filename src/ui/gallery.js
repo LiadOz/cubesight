@@ -25,12 +25,26 @@ let theme = params.get('theme') === 'light' ? 'light' : 'dark';
 document.documentElement.dataset.theme = theme;
 document.documentElement.style.colorScheme = theme;
 
-root.innerHTML = `<div class="f0-page"><div class="f0-header"></div><nav class="f0-tabs" data-scroll-x="true" tabindex="0" aria-label="Orbit flow"></nav><section class="f0-frame"><div class="f0-stage"><div class="f0-orbit"></div><div class="f0-cube"></div><span class="f0-callout callout-orbit">①</span><span class="f0-callout callout-cube">②</span><span class="f0-callout callout-slot">③</span><div class="f0-slot"></div></div><aside class="f0-copy"><p class="f0-id"></p><h1></h1><p class="f0-note"></p><div class="f0-coach"></div><div class="f0-actions"></div><div class="f0-chips"></div><p class="f0-grow"><button type="button">add undo segment</button><span>dynamic growth</span></p><p class="f0-callout-note">① Orbit · ② Cube · ③ open dial slot · ④ coach, actions and chips</p></aside></section><footer class="f0-keys"></footer></div>`;
+root.innerHTML = `<div class="f0-page"><div class="f0-header"></div><nav class="f0-tabs" data-scroll-x="true" tabindex="0" aria-label="Orbit flow"></nav><section class="f0-frame"><div class="f0-stage"><div class="f0-orbit"></div><div class="f0-cube"></div><div class="f0-slot"></div></div><aside class="f0-copy"><p class="f0-id"></p><h1></h1><p class="f0-note"></p><div class="f0-coach"></div><div class="f0-actions"></div><div class="f0-chips"></div><p class="f0-grow"><button type="button">add undo segment</button><span>dynamic growth</span></p><p class="f0-callout-note">Orbit · centered Cube · open dial slot · coach, actions and chips</p></aside></section><footer class="f0-keys"></footer></div>`;
 const $ = selector => root.querySelector(selector);
+$('.f0-tabs').addEventListener('keydown', event => {
+  if (event.target !== event.currentTarget) return;
+  const tabs = event.currentTarget;
+  if (event.key === 'ArrowRight' || event.key === 'ArrowLeft' || event.key === 'Home' || event.key === 'End') {
+    event.preventDefault();
+    tabs.scrollLeft = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.scrollWidth : tabs.scrollLeft + (event.key === 'ArrowRight' ? 120 : -120);
+  }
+});
 const scrambleState = stateFromScramble('R U F2 L D B2');
 const pllCaseState = stateFromScramble("R U R' U' R' F R2 U' R' U' R U R' F'");
+const cubeClearance = () => {
+  const stage = document.querySelector('.f0-stage').getBoundingClientRect();
+  const cubeWidth = innerWidth <= 800 ? Math.min(innerWidth * .42, 166) : Math.min(innerHeight * .36, stage.width * .58);
+  const orbitDiameter = Math.min(520, stage.width, stage.height);
+  return cubeWidth * 560 / Math.max(1, orbitDiameter) / 2 + 12;
+};
 const cube = new Cube($('.f0-cube'), { mode: 'case', size: 'XL', state: scrambleState, caseSeed: 'F0-gallery', label: 'F0 component gallery cube' });
-const orbit = new Orbit($('.f0-orbit'), { size: 'XL', shape: activeFlow.id === 'inspection' ? 'full' : 'open', gap: 70, direction: 'clockwise', segments: activeFlow.segments, markers: activeFlow.markers || [], sections: activeFlow.sections || [], caret: activeFlow.caret, label: `${activeFlow.title} Orbit`, duration: 360 });
+const orbit = new Orbit($('.f0-orbit'), { size: 'XL', shape: activeFlow.id === 'inspection' ? 'full' : 'open', gap: 70, direction: 'clockwise', segments: activeFlow.segments, markers: activeFlow.markers || [], sections: activeFlow.sections || [], caret: activeFlow.caret, centerClearance: cubeClearance(), label: `${activeFlow.title} Orbit`, duration: 360 });
 let coach;
 function render(flow) {
   activeFlow = flow;
@@ -40,8 +54,21 @@ function render(flow) {
   $('h1').textContent = flow.title;
   $('.f0-note').textContent = flow.note;
   $('.f0-slot').textContent = flow.slot;
-  $('.f0-tabs').replaceChildren(...flows.map(item => { const button = document.createElement('button'); button.textContent = item.title; button.setAttribute('aria-pressed', String(item.id === flow.id)); button.addEventListener('click', () => render(item)); return button; }));
-  void orbit.update({ size: 'XL', shape: flow.id === 'inspection' ? 'full' : 'open', gap: 70, direction: 'clockwise', segments: flow.segments, markers: flow.markers || [], sections: flow.sections || [], caret: flow.caret, label: `${flow.title} Orbit`, duration: 360, onSegment(segment) { $('.f0-slot').textContent = segment.value ?? segment.label ?? segment.key; }, onMarker(marker) { coach?.update({ text: `${marker.label || 'marker'} · ${marker.segment || ''}.`, marker, orbit }); } });
+  const tabs = $('.f0-tabs');
+  tabs.replaceChildren(...flows.map(item => { const button = document.createElement('button'); button.textContent = item.title; button.setAttribute('aria-pressed', String(item.id === flow.id)); button.addEventListener('click', () => render(item)); return button; }));
+  const activeTab = tabs.querySelector('[aria-pressed="true"]');
+  if (activeTab) {
+    const revealActiveTab = () => {
+      if (!activeTab.isConnected) return;
+      const itemLeft = activeTab.offsetLeft, itemRight = itemLeft + activeTab.offsetWidth;
+      if (itemLeft < tabs.scrollLeft) tabs.scrollLeft = itemLeft;
+      else if (itemRight > tabs.scrollLeft + tabs.clientWidth) tabs.scrollLeft = itemRight - tabs.clientWidth;
+    };
+    requestAnimationFrame(() => requestAnimationFrame(revealActiveTab));
+    document.fonts?.ready.then(revealActiveTab);
+  }
+  const clearance = cubeClearance();
+  void orbit.update({ size: 'XL', shape: flow.id === 'inspection' ? 'full' : 'open', gap: 70, direction: 'clockwise', segments: flow.segments, markers: flow.markers || [], sections: flow.sections || [], caret: flow.caret, centerClearance: clearance, label: `${flow.title} Orbit`, duration: 360, onSegment(segment) { $('.f0-slot').textContent = [segment.label, segment.value, segment.delta == null ? '' : `${segment.delta > 0 ? '+' : ''}${Number(segment.delta).toFixed(2)}`].filter(Boolean).join(' · '); }, onMarker(marker) { coach?.update({ text: `${marker.label || 'marker'} · ${marker.segment || ''}.`, marker, orbit }); } });
   $('.f0-chips').replaceChildren(...(flow.id === 'drill' ? ['U', 'R', 'F', 'skip'] : flow.id === 'history' ? ['all sessions', 'speed', 'cube'] : flow.id === 'timer' ? ['inspection', 'solve'] : []).map(label => { const host = document.createElement('span'); createChip(host, { label }); return host.firstElementChild; }));
   $('.f0-actions').replaceChildren(); createActions($('.f0-actions'), flow.actions.map((label,index)=>({label,primary:index===0,onClick:()=>{ if(label==='play') void cube.play(['R','U',"R'","U'"],{fullTurns:true}); if(label==='start') orbit.update({shape:'full'}); } })));
   $('.f0-coach').replaceChildren(); coach = createCoachLine($('.f0-coach'), { text: flow.id === 'results' ? 'Pseudo pair 3 saved about 3 moves.' : 'The cube stays at the center of one Orbit.', marker: flow.markers?.[2], orbit });
@@ -53,6 +80,7 @@ const gallerySession = { getSnapshot: () => gallerySessionSnapshot, subscribe(li
 createHeader($('.f0-header'), { sections: ['solve','drills','algs','progress','history'], active:'solve', session: gallerySession });
 window.__f0Cube = cube;
 window.__f0Orbit = orbit;
+window.addEventListener('resize', () => { void orbit.update({ ...orbit.options, centerClearance: cubeClearance() }, { animate: false }); });
 $('.f0-header #theme-toggle').addEventListener('click', () => {
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = theme;

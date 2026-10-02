@@ -43,7 +43,7 @@ export function ringLayout(segments = [], { gapDeg = 2.5, startDeg = 0, sweepDeg
 }
 
 /** Place labels with a greedy two-sided collision pass, preserving their marker angle. */
-export function placeLabels(anchors, { cx, cy, radius, offset = 28, minGap = 24, top = 12, bottom = 488 } = {}) {
+export function placeLabels(anchors, { cx, cy, radius, offset = 28, minGap = 24, top = 12, bottom = 488, obstacles = [] } = {}) {
   const items = anchors.map(anchor => {
     const angle = ((anchor.angle % 360) + 360) % 360;
     const point = polar(cx, cy, radius + offset, angle);
@@ -59,26 +59,43 @@ export function placeLabels(anchors, { cx, cy, radius, offset = 28, minGap = 24,
     const left = item.anchor === 'start' ? item.x : item.anchor === 'end' ? item.x - item.width : item.x - item.width / 2;
     return { left, right: left + item.width, top: item.y - item.height / 2, bottom: item.y + item.height / 2 };
   };
-  const placed = [];
+  const placed = obstacles.map(obstacle => ({ ...obstacle, anchor: 'start', side: 'obstacle', height: obstacle.bottom - obstacle.top, width: obstacle.right - obstacle.left }));
+  const intersects = item => {
+    const current = box(item);
+    return placed.some(other => {
+      const prior = other.left == null ? box(other) : other;
+      return current.right > prior.left && prior.right > current.left && current.bottom + 2 > prior.top && prior.bottom + 2 > current.top;
+    });
+  };
   for (const item of [...items].sort((a, b) => b.rank - a.rank || a.y - b.y)) {
     const low = top + item.height / 2, high = bottom - item.height / 2;
     const desired = clampLabelY(item.y, low, high);
     const step = Math.max(4, Math.min(12, minGap / 3));
     const candidates = [desired];
     for (let distance = step; distance <= high - low; distance += step) candidates.push(desired - distance, desired + distance);
-    const available = candidates.map(y => clampLabelY(y, low, high)).find(y => {
-      item.y = y;
-      const current = box(item);
-      return placed.every(other => {
-        const prior = box(other);
-        return current.right <= prior.left || prior.right <= current.left || current.bottom + 2 <= prior.top || prior.bottom + 2 <= current.top;
-      });
-    });
-    item.y = available ?? desired;
-    placed.push(item);
+    const original = { x: item.x, anchor: item.anchor, side: item.side };
+    const columns = [original];
+    if (item.side === 'right' || item.side === 'left') {
+      const opposite = item.side === 'right' ? 'left' : 'right';
+      columns.push({ side: opposite, anchor: opposite === 'right' ? 'start' : 'end', x: opposite === 'right' ? widthSafe(item.width) : item.width });
+    } else if (item.side.startsWith('center-')) {
+      columns.push({ side: 'left', anchor: 'end', x: item.width });
+      columns.push({ side: 'right', anchor: 'start', x: widthSafe(item.width) });
+    }
+    let available = false;
+    for (const column of columns) {
+      item.x = column.x; item.anchor = column.anchor; item.side = column.side;
+      const y = candidates.map(value => clampLabelY(value, low, high)).find(value => { item.y = value; return !intersects(item); });
+      if (y != null) { item.y = y; available = true; break; }
+    }
+    if (!available) { item.x = original.x; item.anchor = original.anchor; item.side = original.side; item.y = desired; }
+    item.hidden = !available;
+    if (!item.hidden) placed.push(item);
   }
-  return items.map(({ key, x, y, anchor, side }) => ({ key, x: round(x), y: round(y), anchor, side }));
+  return items.map(({ key, x, y, anchor, side, hidden }) => ({ key, x: round(x), y: round(y), anchor, side, hidden }));
 }
+
+function widthSafe(width) { return 560 - width; }
 
 function clampLabelY(value, low, high) { return Math.max(low, Math.min(high, value)); }
 function clampLabelX(value, width, side) {

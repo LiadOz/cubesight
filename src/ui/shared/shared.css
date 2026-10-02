@@ -36,6 +36,8 @@
 .ui-header-status { max-width:min(32vw,240px); color:var(--orbit-muted,#aaa99f); font:11px/1.35 'DM Mono',monospace; }
 .recording-page { width:min(860px,calc(100% - 32px)); min-height:min(620px,calc(100dvh - 150px)); margin:48px auto; }
 .recording-page__intro { max-width:62ch; color:var(--orbit-muted,#aaa99f); line-height:1.6; }
+.recording-page__cube { width:min(196px,100%); min-height:196px; margin:20px 0; display:grid; place-items:center; }
+.recording-page__cube .shared-cube { width:min(196px,100%); }
 .recording-page__count { margin:28px 0 14px; font:500 .85rem/1.4 'DM Mono',monospace; }
 .recording-page__actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
 .recording-page__events { display:grid; gap:4px; max-height:310px; overflow:auto; margin:24px 0 0; padding:0; list-style:none; }

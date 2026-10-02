@@ -39,6 +39,17 @@ test('Orbit labels remain in bounds and avoid collisions across dense realistic 
     const long = placeLabels([{ key: 'long', angle: 90, width: 220, height: 24 }], { ...viewport, top: 24, bottom: 536 });
     assert.ok(long[0].x >= 0 && long[0].x <= 560);
   }
+  const crowdedFacts = placeLabels(Array.from({ length: 12 }, (_, index) => ({
+    key: `fact-${index}`, angle: 90, width: 175, height: 52, rank: index === 0 ? 20 : 0,
+  })), { cx: 280, cy: 280, radius: 190, offset: 64, minGap: 54, top: 30, bottom: 530 });
+  const visibleFacts = crowdedFacts.filter(label => !label.hidden);
+  assert.ok(visibleFacts.length > 1);
+  assert.equal(visibleFacts[0].key, 'fact-0', 'the highest importance fact gets the first available position');
+  for (let i = 0; i < visibleFacts.length; i++) for (let j = i + 1; j < visibleFacts.length; j++) {
+    const rect = label => ({ left: label.anchor === 'start' ? label.x : label.x - 175, right: label.anchor === 'start' ? label.x + 175 : label.x, top: label.y - 26, bottom: label.y + 26 });
+    const a = rect(visibleFacts[i]), b = rect(visibleFacts[j]);
+    assert.ok(a.right <= b.left || b.right <= a.left || a.bottom + 2 <= b.top || b.bottom + 2 <= a.top, 'visible three-line labels do not overlap');
+  }
 });
 
 test('Orbit marker clustering handles crowded markers and the zero-degree seam', () => {
