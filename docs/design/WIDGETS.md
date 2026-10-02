@@ -46,9 +46,9 @@ Status values: `approved` (the user approved it), `pending` (partly approved), `
 | W-30 | Eyebrows, captions and section heads | approved | 14 | 23 (+6 dev) | 238 | 0 | APPROVED 2026-10-02 (lists & data ①, open rows, the A-07 look): rows carry the mini Orbit glyph (also on alg rows); section-head counts are a PILL; tags as text + symbol. Post widgets-lists-data. |
 | W-31 | Footer | to-remove | 3 | 24 (+1 dev) | 324 | 3 | Remove (feedback #12); the build badge, "stays on this device" and links move to the help page |
 | W-32 | Timeline graph (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02 for now: BOTH ① git graph and ② branches-as-rings, switchable (the user will pick one later). Post widgets-dev-pages. |
-| W-33 | Gallery grid and thumbnail card (dev gallery) | proposed | 1 | (+1 dev) | n/a | 0 | One thumbnail card (the image, the visible ID, the title, copy-link) shared by the gallery, blog strips and alg/history browsing |
-| W-34 | Blog post (dev gallery) | proposed | 1 | (+1 dev) | n/a | 0 | One post layout (the title, date, branch, status, decision line, markdown body, image strip) |
-| W-35 | Compare view (dev gallery) | proposed | 1 | (+1 dev) | n/a | 0 | One side-by-side compare, shared later by the design lab (F10) and history/review "yours vs better" |
+| W-33 | Gallery grid and thumbnail card (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ① image card (thumbnail card + grid). Post widgets-dev-pages. |
+| W-34 | Blog post (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ② two columns with a sticky rail. Post widgets-dev-pages. |
+| W-35 | Compare view (dev gallery) | approved | 1 | (+1 dev) | n/a | 0 | APPROVED 2026-10-02: ③ wipe first (side by side and overlay one click away); reused later by the design lab and "yours vs better". Post widgets-dev-pages. |
 
 ## How to read the variants
 
@@ -634,3 +634,4 @@ States visited via the fake cube harness on `#/solve`: disconnected, connecting,
 - Containers ① frameless for all containers; the review detail = right drawer.
 - Lists & data ① open rows (the user was torn with ② tiles; settled ①); the mini Orbit on alg rows kept; section counts as a pill.
 - Timeline: keep ① and ② both available (a toggle) until the user decides. Q2 (the thumbnail card) and Q3 (compare) of the dev-pages post still open.
+- Dev pages: W-33 ① image card, W-34 ② two columns, W-35 ③ wipe first. The dev gallery/blog stays reachable from the help (?) page (dev builds only); the user is fine with that placement.

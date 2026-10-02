@@ -160,6 +160,7 @@ Deliver a numbered screenshot gallery (lightbox) of every trainer state for the 
 
 ## F14: Help page and footer removal (wave 2, small; owns `src/main.js` footer/help markup + a new `src/help/**`)
 - Remove the footer site-wide (all routes) and reclaim its vertical space.
+- **Priority (user, 2026-10-02): the help (?) page is out of date and must be fully redesigned** in direction A with the approved widgets (frameless sections, the right-drawer/sheet rules from the containers decision, bevelled keycaps for the shortcut list, the approved buttons/links), not just patched. It keeps the dev-only link to the gallery/blog/timeline (dev builds only).
 - A redesigned **help (?) page** (the header's "?" opens it as a page or a large sheet, in the orbit language): a short "how CubeSight works" (solve with a smart cube, drills on the phone, algs, progress), the keyboard shortcuts (generated from the shared key map, per page), the smart-cube connection/troubleshooting tips (including the MAC/Bluetooth notes), offline/privacy ("everything stays on this device"), data backup/export/import, the version/build badge + "check for updates", and credits (algorithm sources per FEATURES #25, the cube-xcross engine licence, fonts).
 - Acceptance: no footer on any route (F8 asserts it); the help page fits one screen per section on desktop, works offline, and screenshots are in the gallery.
 
