@@ -1,6 +1,6 @@
 /* global document */
 // Builds the one-image decision sheets (<ID>-00-decide.png) for the containers and lists posts.
-//   node scripts/widget-decision-shots.mjs containers|lists [--scale=1|2|3]
+//   node scripts/widget-decision-shots.mjs containers|lists|navigation|inputs [--scale=1|2|3]
 // Captures the real prototype frames (dark theme) and lays out 3 options side by side with up to 3 questions
 // (Q1-Q3) drawn inside the image. Serves the repo on a random port (never 5173).
 // Resolution: the sheet is rendered at --scale (default 2). Every region is captured at the device scale it needs to
@@ -40,12 +40,36 @@ const SETS = {
     ],
   },
 };
+
+SETS.navigation = {
+  dir: 'gallery/widgets/2026-10-02-navigation', page: 'nav.html', id: 'N-00', file: 'N-00-decide.png',
+  title: 'navigation: tabs, links and the cube chip, which look?',
+  names: ['underline tabs, teal links with a back link, a text chip (dot, name, battery) with a popover list', 'segmented ink tabs, underlined links with a back button, a battery-ring chip with a popover that leads with the next action', 'a side rail, arrow links with path crumbs, a pill chip with a chevron that opens a right drawer'],
+  shots: [['menu', 'the cube chip and its menu (solve)', [840, 0, 600, 560]], ['tabs', 'tabs on the algs page', [0, 60, 1000, 440]], ['links', 'links and the back link on a case page', [0, 60, 760, 420]]],
+  q: [
+    { t: 'Q1  which option?', kind: 'pick' },
+    { t: 'Q2  the chip on a phone: ring and name, or ring only?', kind: 'thumbs', thumbs: [['q2a', 2, 'A  ring + name', [0, 0, 390, 180]], ['q2b', 2, 'B  ring only (name in the menu)', [0, 0, 390, 180]]] },
+    { t: 'Q3  the menu: popover, popover with the next action, or a drawer?', kind: 'thumbs', thumbs: [['q3a', 1, 'A  popover list (1)', [150, 0, 410, 600]], ['q3b', 1, 'B  popover with the next action (2)', [150, 0, 410, 600]], ['q3c', 1, 'C  right drawer (3)', [150, 0, 410, 600]]] },
+  ],
+};
+
+SETS.inputs = {
+  dir: 'gallery/widgets/2026-10-02-inputs', page: 'inputs.html', id: 'I-00', file: 'I-00-decide.png',
+  title: 'inputs and search: which look?',
+  names: ['filled pill fields: the approved select look; search in the section head', 'underline fields: frameless; search in the page head', 'hairline box fields: a clear frame; search as a full-width box above the list'],
+  shots: [['settings', 'settings drawer: number, textarea, text, range', [960, 60, 480, 620]], ['import', 'import: textarea in error, file picker', [0, 80, 760, 560]], ['search', 'search in the algs list', [0, 80, 1440, 400]]],
+  q: [
+    { t: 'Q1  which option?', kind: 'pick' },
+    { t: 'Q2  a number (seconds): plain field with the unit, or with − / + buttons?', kind: 'thumbs', thumbs: [['q2a', 1, 'A  plain field + unit', [0, 0, 420, 200]], ['q2b', 1, 'B  with − and + buttons', [0, 0, 420, 200]]] },
+    { t: 'Q3  importing a file: a button and the file name, or a drop area?', kind: 'thumbs', thumbs: [['q3a', 1, 'A  button + file name', [0, 0, 420, 200]], ['q3b', 1, 'B  drop area', [0, 0, 420, 200]]] },
+  ],
+};
 const SCALE = Number((process.argv.find((a) => a.startsWith('--scale=')) || '--scale=2').slice(8));
 if (![1, 2, 3].includes(SCALE)) { console.error('--scale must be 1, 2 or 3'); process.exit(2); }
 const SUF = SCALE === 1 ? '' : SCALE === 2 ? '-hd' : `-hd${SCALE}`;
 const CELL = 900;   // CSS px per option column on the sheet (1800 device px at 2x)
 const set = SETS[process.argv[2]];
-if (!set) { console.error('usage: widget-decision-shots.mjs containers|lists'); process.exit(2); }
+if (!set) { console.error('usage: widget-decision-shots.mjs containers|lists|navigation|inputs'); process.exit(2); }
 
 const server = http.createServer((req, res) => {
   const f = path.join(root, decodeURIComponent(req.url.split('?')[0]));
@@ -85,7 +109,7 @@ for (let o = 1; o <= 3; o++) {
 }
 const thumbW = CELL;   // a question column (same width as an option column); two thumbs share it
 const thumbs = {};
-for (const q of set.q) if (q.kind === 'thumbs') for (const [v, o, , c] of q.thumbs) if (v) thumbs[`${v}${o}`] = await frame(v, o, c, need(c[2], (thumbW - 12) / 2));
+for (const q of set.q) if (q.kind === 'thumbs') for (const [v, o, , c] of q.thumbs) if (v) thumbs[`${v}${o}`] = await frame(v, o, c, need(c[2], (thumbW - 12 * (q.thumbs.length - 1)) / q.thumbs.length));
 
 const circ = '①②③';
 const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -94,7 +118,7 @@ const qs = set.q.map((q) => {
   let body = '';
   if (q.kind === 'pick') body = `<div class="opts">${[0, 1, 2].map((o) => `<span class="chip"><b>${circ[o]}</b></span>`).join('')}</div>`;
   else if (q.kind === 'text') body = `<div class="opts">${q.opts.map((t) => `<span class="chip">${t}</span>`).join('')}</div>`;
-  else body = `<div class="th">${q.thumbs.map(([v, o, l]) => `<figure>${v ? `<img src="${thumbs[v + o].src}">` : '<div class="none">no glyph at the left of the row</div>'}<figcaption>${l}</figcaption></figure>`).join('')}</div>`;
+  else body = `<div class="th" style="--nt:${q.thumbs.length}">${q.thumbs.map(([v, o, l]) => `<figure>${v ? `<img src="${thumbs[v + o].src}">` : '<div class="none">no glyph at the left of the row</div>'}<figcaption>${l}</figcaption></figure>`).join('')}</div>`;
   return `<div class="q"><h3>${q.t}</h3>${body}</div>`;
 }).join('');
 // Sizes are CSS px at 1x of the sheet (the PNG is SCALE times bigger): text stays well above 14 px.
@@ -110,7 +134,7 @@ figcaption{font:22px ui-monospace,monospace;color:#9b958a;margin-top:8px}
 .qs{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;padding:30px 40px 44px;border-top:1px solid #2c2a26;background:#1a1916}
 .q h3{margin:0 0 20px;font-size:30px;font-weight:600;color:#ede8dc}
 .opts{display:flex;gap:16px;flex-wrap:wrap}.chip{background:#ede8dc;color:#141311;border-radius:999px;padding:12px 30px;font-weight:600;font-size:28px}
-.th{display:grid;grid-template-columns:1fr 1fr;gap:12px}.none{aspect-ratio:16/10;border:1px dashed #5a564e;border-radius:12px;display:grid;place-items:center;text-align:center;padding:16px;color:#9b958a;font-size:22px}
+.th{display:grid;grid-template-columns:repeat(var(--nt,2),1fr);gap:12px}.none{aspect-ratio:16/10;border:1px dashed #5a564e;border-radius:12px;display:grid;place-items:center;text-align:center;padding:16px;color:#9b958a;font-size:22px}
 </style><body><div id="b"><div class="top"><span class="id">${set.id}</span><h1>${set.title}</h1></div>
 <div class="cols">${cols}</div><div class="qs">${qs}</div></div></body>`;
 const sheetPage = await pageFor(SCALE);
