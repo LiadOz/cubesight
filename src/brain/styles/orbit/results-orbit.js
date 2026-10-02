@@ -4,6 +4,7 @@ import { createReviewPanel } from '../../review/panel.js';
 import { stateAfter } from '../../../review/replay.js';
 import { presentResultsOrbit } from './solve-orbit.js';
 import { resolvePastReviewHref } from './results-navigation.js';
+import '../../css/results-orbit.css';
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
