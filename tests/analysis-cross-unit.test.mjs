@@ -6,6 +6,7 @@ import { segmentSolve } from '../src/analysis/segment.js';
 import { evaluateCross, evaluateCrossAsync } from '../src/analysis/cross-eval.js';
 import { analyzeSolve, analyzeSolveAsync, createAnalysisHandler } from '../src/analysis/index.js';
 import { cachedSolver } from '../src/analysis/wasm-solver.js';
+import { FACE_TO_D } from '../src/analysis/normalize.js';
 import { loadNodeSolver } from '../src/analysis/node-solver.js';
 import { GOLD, MOCK } from './analysis-golden.mjs';
 
@@ -95,6 +96,66 @@ test('a pseudo cross is measured in its own frame (no charge for the pending lay
   assert.equal(cross.totalLoss, cross.userMoves - cross.d0);
   const plain = evaluateCross({ segmentation: seg, frames: 'plain', firstMoves: false, faceLengths: false }, solver);
   assert.equal(plain.positions.at(-1).d, 1, 'in the plain frame one aligning turn is still missing');
+});
+
+test('hand-verified X-cross uses its exact slot-mask target for every face and move loss', () => {
+  const golden = GOLD.xcross;
+  for (const face of ['D', 'U', 'F', 'B', 'R', 'L']) {
+    const inverse = Object.fromEntries(Object.entries(FACE_TO_D[face]).map(([from, to]) => [to, from]));
+    const rotate = text => text.split(/\s+/).filter(Boolean).map(move => `${inverse[move[0]]}${move.slice(1)}`).join(' ');
+    const input = { scramble: rotate(golden.scramble), moves: rotate(golden.moves), crossFace: face };
+    const segmentation = segmentSolve(input);
+    assert.deepEqual(segmentation.xcross, { kind: 'xcross', pairs: 1, pseudo: false, slots: ['FR'] }, `${face}: geometry confirms the same normalized pair target`);
+    const result = evaluateCross({ segmentation, firstMoves: false, faceLengths: false }, solver);
+    assert.equal(result.targetMask, { D: 1, U: 2, F: 1, B: 8, R: 1, L: 2 }[face], `${face}: WASM slot mask matches the normalized FR pair`);
+    assert.deepEqual(result.targetSlots, ['FR']);
+    assert.equal(result.d0, 8, `${face}: the shortest FR X-cross is 8, while its plain cross is 6`);
+    assert.equal(result.userMoves, 8);
+    assert.equal(result.extraMoves, 0);
+    assert.deepEqual(result.positions.slice(1).map(row => row.loss), Array(8).fill(0));
+    assert.equal(result.startProven, true);
+    const continuation = segmentSolve({ scramble: input.scramble, moves: result.bestContinuation, crossFace: face });
+    assert.deepEqual(continuation.xcross, segmentation.xcross, `${face}: best continuation builds the same cross and FR pair`);
+  }
+});
+
+test('hand-verified near-optimal X-cross has a proven eight-move target and one move of loss', () => {
+  const golden = GOLD.xcrossPlusOne;
+  const segmentation = segmentSolve(golden);
+  const result = evaluateCross({ segmentation, firstMoves: false, faceLengths: false }, solver);
+  assert.deepEqual(segmentation.xcross, { kind: 'xcross', pairs: 1, pseudo: false, slots: ['FR'] });
+  assert.equal(result.d0, 8, 'the target optimum is the real WASM-proven 8-move X-cross');
+  assert.equal(result.userMoves, 9);
+  assert.equal(result.extraMoves, 1);
+  assert.equal(result.totalLoss, 1);
+  assert.equal(result.startProven, true);
+  assert.equal(result.complete, true);
+  assert.equal(result.positions.slice(1).reduce((sum, row) => sum + row.loss, 0), 1);
+});
+
+test('a target distance is unproven when one competing pseudo frame times out', () => {
+  const segmentation = segmentSolve(GOLD.pseudoXcross);
+  const timedOutFrame = { search(request) {
+    const reply = solver.search(request);
+    return request.mask === 8 && request.scramble.endsWith(" D'") ? { ...reply, status: 1 } : reply;
+  } };
+  const result = evaluateCross({ segmentation, firstMoves: false, faceLengths: false }, timedOutFrame);
+  assert.equal(result.frames, 'any');
+  assert.equal(result.complete, false);
+  assert.equal(result.startProven, false, 'a successful competing frame cannot hide an unsearched frame');
+});
+
+test('bounded start-plan search reports proven cross-face X-cross opportunities', () => {
+  const segmentation = segmentSolve(GOLD.xcross);
+  const result = evaluateCross({ segmentation, firstMoves: false, startPlan: true }, solver);
+  assert.deepEqual(Object.keys(result.xcrossFaces).sort(), ['B', 'D', 'F', 'L', 'R', 'U']);
+  for (const face of Object.keys(result.xcrossFaces)) {
+    assert.equal(result.xcrossFaces[face].opportunities.length, 4, `${face} includes each pair slot`);
+    assert.ok(result.xcrossFaces[face].opportunities.every(row => ['FR', 'BR', 'BL', 'FL'].includes(row.slot)));
+  }
+  assert.equal(result.xcrossFaces.D.opportunities.find(row => row.slot === 'FR')?.mask, 1);
+  assert.equal(result.xcrossFaces.D.best.proven, true);
+  assert.equal(result.faceProven.D, true);
 });
 
 test('async API matches the sync one, caches, and cancels', async () => {

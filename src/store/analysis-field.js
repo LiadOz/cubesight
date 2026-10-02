@@ -15,7 +15,7 @@ export function cleanRotationMarks(marks) {
 
 /** @returns {Object|null} */
 export function cleanAnalysis(a) {
-  if (!a || typeof a !== 'object' || ![1, 2].includes(a.v)) return null;
+  if (!a || typeof a !== 'object' || ![1, 2, 3].includes(a.v)) return null;
   const marks = a.marks && typeof a.marks === 'object' ? a.marks : {};
   const cross = a.cross && typeof a.cross === 'object' ? a.cross : null;
   const out = {
@@ -101,6 +101,23 @@ export function cleanAnalysis(a) {
       faceProven: cross.faceProven && typeof cross.faceProven === 'object' ? Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].filter(f => cross.faceProven[f] === true).map(f => [f, true])) : null,
       faceComplete: cross.faceComplete !== false,
       startProven: cross.startProven === true,
+      ...(a.v >= 3 ? {
+        target: cross.target && typeof cross.target === 'object' ? {
+          kind: ['cross', 'xcross', 'xxcross'].includes(cross.target.kind) ? cross.target.kind : 'cross',
+          slots: list(cross.target.slots, 2, slot => ['FR', 'BR', 'BL', 'FL'].includes(slot) ? slot : null),
+          mask: int(cross.target.mask, 0, 15) ?? 0,
+        } : { kind: 'cross', slots: [], mask: 0 },
+        xcrossFaces: cross.xcrossFaces && typeof cross.xcrossFaces === 'object'
+          ? Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].filter(face => cross.xcrossFaces[face] && typeof cross.xcrossFaces[face] === 'object').map(face => {
+            const row = cross.xcrossFaces[face];
+            const cleanOpportunity = item => (item && ['FR', 'BR', 'BL', 'FL'].includes(item.slot)
+              ? { slot: item.slot, mask: int(item.mask, 1, 8) ?? 1, length: int(item.length, 0, 60), moves: moveString(item.moves), proven: item.proven === true } : null);
+            return [face, {
+              opportunities: list(row.opportunities, 4, cleanOpportunity),
+              best: cleanOpportunity(row.best), complete: row.complete === true, proven: row.proven === true,
+            }];
+          })) : null,
+      } : {}),
       losses: list(cross.losses, 8, l => (l && Number.isInteger(l.i) && (l.loss === 1 || l.loss === 2)
         ? { i: l.i, move: moveString(l.move), loss: l.loss, d: int(l.d) ?? 0, best: moveString(l.best), after: int(l.after) ?? 0 } : null)),
     };

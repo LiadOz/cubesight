@@ -40,10 +40,10 @@ const TRAINER_OF = key => (key === 'cross' ? 'cross' : /^pair/.test(key) ? 'f2l'
 
 /**
  * @param {{record:Object, stages:{key:string, startAt:number|null, endAt:number|null, ms:number|null, moves:number|null, skipped:boolean, merged:boolean}[],
- *   plan:{key:string,label:string}[], baselines?:Object|null, focus?:string, faceColors?:Object}} input
+ *   plan:{key:string,label:string}[], baselines?:Object|null, focus?:string, faceColors?:Object, crossColor?:string}} input
  * @returns {{markers:Object[], defaultId:string|null, prominentIds:string[]}}
  */
-export function buildMarkers({ record, stages = [], plan = [], baselines = null, focus = 'speed', faceColors = {} }) {
+export function buildMarkers({ record, stages = [], plan = [], baselines = null, focus = 'speed', faceColors = {}, crossColor = 'neutral' }) {
   if (!record) return { markers: [], defaultId: null, prominentIds: [] };
   const a = record.analysis ?? null;
   const moves = record.solveMoves ?? [];
@@ -51,6 +51,8 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
   const count = moves.length || record.moveCount || 0;
   const weights = FOCUS_WEIGHT[focus] ?? FOCUS_WEIGHT.speed;
   const colorOf = face => (faceColors[face] ?? face ?? '').toLowerCase();
+  const selectedCrossFace = crossColor === 'neutral' ? null
+    : Object.entries(faceColors).find(([, color]) => String(color).toLowerCase() === crossColor)?.[0] ?? null;
   const b = baselines?.reliable ? baselines : null;
   const hasKey = key => plan.some(p => p.key === key);
   const firstKey = (...keys) => keys.find(hasKey) ?? keys[0];
@@ -74,12 +76,26 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
 
   if (a) {
     // --- good moments --------------------------------------------------------------------------
+    const cross = a.cross;
+    if (cross?.done && cross.proven && cross.extra != null && cross.extra <= 1) {
+      const x = cross.target?.kind === 'xcross' || cross.target?.kind === 'xxcross';
+      const optimal = cross.extra === 0;
+      const label = `${optimal ? 'optimal' : 'efficient'} ${x ? (cross.target.kind === 'xxcross' ? 'xx-cross' : 'x-cross') : 'cross'}`;
+      push({
+        id: 'cross-praise', kind: optimal ? 'optimal-cross' : 'efficient-cross', tone: 'good', stage: 'cross',
+        idx: a.marks.cross ?? Math.max(0, cross.moves - 1), at: (a.marks.cross ?? Math.max(0, cross.moves - 1)) + 1,
+        tMs: timeOf(a.marks.cross ?? Math.max(0, cross.moves - 1)), cost: optimal ? 2 : 1, label,
+        note: `${cap(label)}: ${cross.moves} move${cross.moves === 1 ? '' : 's'}${optimal ? ' matched' : ' was one over'} the proven ${cross.d0}-move minimum.`,
+        evidenceText: 'proven by the cross search',
+      });
+    }
     if (a.xcross && a.marks.cross != null && a.marks.cross >= 0) {
       const pairs = a.xcross === 'xxcross' ? 2 : 1;
       const label = a.xcross === 'xxcross' ? 'xx-cross' : 'x-cross';
       push({
         id: 'xcross', kind: 'xcross', tone: 'good', stage: 'cross', idx: a.marks.cross, at: a.marks.cross + 1, tMs: timeOf(a.marks.cross),
         cost: pairs * PAIR_SAVED, label,
+        evidenceText: `estimated saving: about ${pairs * PAIR_SAVED} moves for a typical pair insertion`,
         note: `${cap(label)}: ${pairs === 1 ? 'a pair' : 'two pairs'} came with the cross. Estimated saving: about ${pairs * PAIR_SAVED} moves for a typical pair insertion.`,
       });
     }
@@ -89,6 +105,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
         push({
           id: `free-pair-${skip.idx}`, kind: 'free-pair', tone: 'good', stage: stageOfMove(skip.idx), idx: skip.idx, at: skip.idx + 1, tMs: timeOf(skip.idx),
           cost: PAIR_SAVED * Math.max(1, (skip.count ?? 2) - 1), label: 'free pair',
+          evidenceText: `estimated saving: about ${PAIR_SAVED * Math.max(1, (skip.count ?? 2) - 1)} moves for typical pair insertions`,
           note: `Free pair: ${skip.count ?? 2} pairs went in with one move. Estimated saving: about ${PAIR_SAVED} moves for a typical pair insertion.`,
         });
         continue;
@@ -99,6 +116,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       push({
         id: `skip-${skip.kind}`, kind: 'skip', tone: 'good', stage, idx: skip.idx, at: skip.idx + 1, tMs: timeOf(skip.idx),
         cost: saved, label: `${skip.kind} skip`,
+        evidenceText: `estimated saving: about ${saved} moves for a typical ${name} algorithm`,
         note: `${name} skip. That step was done for you. Estimated saving: about ${saved} moves for a typical ${name} algorithm.`,
       });
     }
@@ -108,14 +126,35 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       push({
         id: `pseudo-${n}`, kind: 'pseudo', tone: 'good', stage: `pair${n}`, idx: at, at: at + 1, tMs: timeOf(at),
         cost: PSEUDO_VALUE, label: `pair ${n} pseudo`,
+        evidenceText: 'pseudo pair verified from the recorded cube state',
         note: `Pair ${n} went in pseudo, with the D layer offset. Worth comparing with the plain pair.`,
       });
     }
+    const lastLayer = a.lastLayer;
+    for (const stage of ['oll', 'pll']) {
+      const row = lastLayer?.[stage];
+      const usual = b?.caseRecognitionMs?.[`${stage}/${row?.caseId}`];
+      if (!row || !Number.isFinite(row.recognitionMs) || !Number.isFinite(usual) || row.recognitionMs >= usual) continue;
+      push({
+        id: `fast-recog-${stage}`, kind: 'fast-recognition', tone: 'good', stage, idx: row.from, at: row.from,
+        tMs: timeBefore(row.from), cost: Math.min(3, Math.max(1, (usual - row.recognitionMs) / 250)), label: 'fast recog',
+        note: `${row.name ?? stage.toUpperCase()} recog took ${secs(row.recognitionMs)}; your average for this case is ${secs(usual)}.`,
+        evidenceText: 'compared with your average for this case',
+      });
+    }
+    if (lastLayer?.oll && lastLayer?.pll && !lastLayer.oll.better && !lastLayer.pll.better
+      && lastLayer.oll.used?.stm === lastLayer.oll.best?.stm
+      && lastLayer.pll.used?.coreStm === lastLayer.pll.best?.coreStm) {
+      const idx = lastLayer.pll.to;
+      push({ id: 'clean-ll', kind: 'clean-ll', tone: 'good', stage: 'pll', idx, at: idx + 1, tMs: timeOf(idx), cost: 2,
+        label: 'clean LL', note: 'OLL and PLL matched verified alg lengths.', evidenceText: 'matched verified alg lengths' });
+    }
 
     // --- cross: spare moves and detours ------------------------------------------------------------
-    const cross = a.cross;
     if (cross?.done) {
+      const extendedTarget = cross.target?.kind === 'xcross' || cross.target?.kind === 'xxcross';
       for (const loss of cross.losses) {
+        if (extendedTarget && cross.proven && cross.extra <= 1) continue;
         const remaining = cross.moves - loss.i;   // moves from here to the cross, this one included
         const shortest = loss.d;
         const detour = loss.loss === 2;
@@ -131,22 +170,65 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
         });
       }
       // A cross on another face was clearly shorter.
-      const faces = cross.faces ?? {};
-      const others = Object.entries(faces).filter(([face, length]) => face !== a.face && Number.isFinite(length));
+      const faces = cross.target?.kind === 'cross' ? (cross.faces ?? {}) : {};
+      const others = Object.entries(faces).filter(([face, length]) => face !== a.face && (!selectedCrossFace || face === selectedCrossFace)
+        && Number.isFinite(length) && cross.faceProven?.[face]);
       const best = others.sort((x, y) => x[1] - y[1])[0];
-      if (best && cross.d0 - best[1] >= 2) {
+      if (cross.startProven && cross.faceProven?.[a.face] && best && cross.d0 - best[1] >= 2) {
         push({
           id: 'better-cross', kind: 'better-cross', tone: 'warn', stage: 'cross', idx: 0, at: 0, tMs: 0, cost: Math.min(3, cross.d0 - best[1] - 1) * weights.better, rawCost: Math.min(3, cross.d0 - best[1] - 1),
           label: 'better cross',
-          note: `PB cross: ${colorOf(best[0])}, ${plural(best[1], 'move')}. Your ${colorOf(a.face)} cross took ${cross.moves} moves. Worth a look during inspection.`,
+          note: `Shortest proven cross: ${colorOf(best[0])}, ${plural(best[1], 'move')}. Your ${colorOf(a.face)} cross took ${cross.moves} moves. Worth a look during inspection.`,
+        });
+      }
+      if (cross.target?.kind === 'cross' && cross.done) {
+        const opportunities = cross.xcrossFaces?.[a.face];
+        const missed = opportunities?.best;
+        if (opportunities?.complete && missed?.proven && missed.length <= cross.moves) {
+          push({
+            id: 'missed-xcross', kind: 'missed-xcross', tone: 'warn', stage: 'cross', idx: a.marks.cross ?? 0, at: a.marks.cross == null ? 0 : a.marks.cross + 1,
+            tMs: timeOf(a.marks.cross ?? 0), cost: Math.min(2, Math.max(1, cross.moves - missed.length)), rawCost: Math.min(2, Math.max(1, cross.moves - missed.length)),
+            label: 'missed x-cross', note: `A ${missed.slot} x-cross was proven in ${missed.length} moves on ${colorOf(a.face)}. Your cross took ${cross.moves}.`,
+          });
+        }
+      }
+      if (cross.done && cross.xcrossFaces && ['cross', 'xcross'].includes(cross.target?.kind)) {
+        const targetSize = cross.target.kind === 'xcross' ? cross.target.slots?.length ?? 1 : 1;
+        const otherXcrosses = Object.entries(cross.xcrossFaces).filter(([face, row]) => face !== a.face
+          && (!selectedCrossFace || face === selectedCrossFace) && row?.complete)
+          .flatMap(([face, row]) => (row.opportunities ?? []).filter(item => item.proven && item.length != null
+            && item.length <= cross.moves - 2 && targetSize === 1)
+            .map(item => ({ face, ...item }))).sort((x, y) => x.length - y.length);
+        const opportunity = otherXcrosses[0];
+        if (opportunity) push({
+          id: 'better-xcross', kind: 'better-xcross', tone: 'warn', stage: 'cross', idx: 0, at: 0, tMs: 0,
+          cost: Math.min(2, Math.max(1, cross.moves - opportunity.length - 1)), rawCost: Math.min(2, Math.max(1, cross.moves - opportunity.length - 1)),
+          label: 'better x-cross', note: `A ${opportunity.slot} x-cross was proven on ${colorOf(opportunity.face)} in ${opportunity.length} moves. Your ${colorOf(a.face)} ${cross.target.kind === 'xcross' ? 'x-cross' : 'cross'} took ${cross.moves}.`,
         });
       }
     }
 
     // --- F2L: a shorter pair was there (pairs 1 and 2) ------------------------------------------------
     for (const pair of a.pairs) {
-      if (pair.unsupported || !pair.better) continue;
       const yours = words(pair.yours);
+      if (pair.proven && pair.chosenProven && pair.chosenSlot && pair.chosenSlot === pair.bestSlot) {
+        push({
+          id: `best-pair-${pair.n}`, kind: 'best-pair', tone: 'good', stage: `pair${pair.n}`, idx: pair.from, at: pair.from,
+          // copy-ok: this pair is verified as the shortest available insertion.
+          tMs: timeBefore(pair.from), cost: 2, label: 'best pair chosen',
+          note: `Pair ${pair.n}: ${pair.chosenSlot} was the shortest proven available pair, at ${pair.chosenShortest} moves.`,
+          evidenceText: 'shortest proven pair option',
+        });
+      }
+      if (pair.chosenProven && pair.chosenShortest != null && yours.length <= pair.chosenShortest + 1) {
+        push({
+          id: `efficient-pair-${pair.n}`, kind: 'efficient-pair', tone: 'good', stage: `pair${pair.n}`, idx: pair.from, at: pair.from,
+          tMs: timeBefore(pair.from), cost: Math.max(1, 2 - (yours.length - pair.chosenShortest)), label: 'efficient pair',
+          note: `Pair ${pair.n}: ${yours.length} moves, within one of the proven ${pair.chosenShortest}-move minimum for ${pair.chosenSlot}.`,
+          evidenceText: 'compared with the proven pair minimum',
+        });
+      }
+      if (pair.unsupported || !pair.better) continue;
       const shorter = words(pair.better.moves);
       const diff = yours.length - shorter.length;
       if (diff < 2) continue;

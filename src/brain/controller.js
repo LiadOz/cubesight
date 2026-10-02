@@ -22,6 +22,7 @@ import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as r
 import { attachBrainRecording } from '../brain-recording.js';
 import { MSG } from '../copy/terms.js';
 import { loadSettings, saveSettings, setSetting, parseCommand } from './settings.js';
+import { createVoiceCallouts } from '../goals/voice-callouts.js';
 import { buildStagePlan, xcrossLabel } from './stage-plan.js';
 import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './milestones.js';
 import { buildViewModel, frameState } from './view-model.js';
@@ -64,6 +65,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let toastTimer = 0;
   let optimalCross = null;      // {face, length} from crossSuggestion during inspection
   let pendingSuggestion = null;
+  let suggestionRequest = 0;
   let savedRecord = null;       // the live record already appended to the solve store
   let scrambleText = '';
   let lastScramble = '';
@@ -101,6 +103,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   const NO_PINS = [];
 
   const shell = createShell(root, { dispatch });
+  const voiceCallouts = createVoiceCallouts();
   const $ = selector => root.querySelector(selector);
   const brainEl = () => root.querySelector('.brain') ?? root;
   const theme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
@@ -133,9 +136,12 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       scrambleText, scrambleNumber, settingsOpen, themePreference: getThemePreference(), debugOpen, connectStep, commandOpen, toast,
       reviewUi, pins: history?.pins.list ?? NO_PINS, analysisStatus: analysisState.get(currentAt()) ?? 'none',
     }, vm);
+    const voiceRow = next.settings?.sections.flatMap(section => section.rows).find(row => row.id === 'voice');
+    if (voiceRow) voiceRow.help = `${voiceRow.help} ${voiceCallouts.status()}`;
     commandOpen = false;
     const prev = vm;
     vm = next;
+    voiceCallouts.update({ callout: next.inspection?.callout, enabled: settings.voice, calloutsEnabled: settings.inspection.callouts });
     shell.update(next, prev);
     renderToggles();
     ensureLoop();
@@ -270,14 +276,15 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   // --- Cross suggestion (async, during inspection) -------------------------------------------
   async function suggestCrossFor(scramble) {
+    const request = ++suggestionRequest;
     if (!settings.toggles.crossSuggest || settings.crossHint === 'off' || !scramble) { optimalCross = null; return; }
     pendingSuggestion = scramble;
     try {
-      const result = await crossSuggestion(scramble, { extended: false, timeLimitMs: 1500 });
-      if (pendingSuggestion !== scramble || detached) return;
-      optimalCross = result.best;
+      const result = await crossSuggestion(scramble, { extended: false, timeLimitMs: 1500, color: settings.crossColor });
+      if (request !== suggestionRequest || pendingSuggestion !== scramble || detached) return;
+      optimalCross = result.best ? { ...result.best, best: result.best, bestXcross: result.bestXcross } : null;
       render();
-    } catch { optimalCross = null; }
+    } catch { if (request === suggestionRequest) optimalCross = null; }
   }
 
   // --- Live tracker ---------------------------------------------------------------------------
@@ -444,6 +451,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (next.f2l !== before.f2l) live.setPseudo(next.f2l === 'pseudo');
     if (JSON.stringify(next.inspection) !== JSON.stringify(before.inspection)) live.setInspection(next.inspection);
     if (next.style !== before.style) void applyStyle(next.style);
+    const livePhase = live.getSnapshot().phase;
+    if (livePhase === 'inspecting' && (next.crossColor !== before.crossColor || next.crossHint !== before.crossHint
+      || next.toggles.crossSuggest !== before.toggles.crossSuggest)) void suggestCrossFor(lastScramble);
     if (next.session.gapMin !== before.session.gapMin && history && !isReplaying()) { history.setSessionGapMin(next.session.gapMin); history.regroupSessions(); records = history.records; }
     render();
   }
@@ -866,6 +876,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       if (instantFrame) cancelAnimationFrame(instantFrame);
       clearTimeout(toastTimer);
       live?.cancel();   // stops its inspection interval
+      voiceCallouts.destroy();
       live?.detach();
       shell.setCube?.(null);
       cube?.destroy();  // releases the WebGL context and its render loop

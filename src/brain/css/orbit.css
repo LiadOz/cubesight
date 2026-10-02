@@ -205,6 +205,8 @@
 .b-oinsp-eyebrow { font: 500 14px var(--b-font-mono); letter-spacing: .02em; color: var(--b-accent-text); }
 .b-oinsp-eyebrow.is-warn { color: var(--b-warn-text); }
 .b-oinsp-sentence { margin-top: 14px !important; font-size: 16px; font-weight: 500; color: var(--b-muted); }
+.b-oinsp-best { margin-top: 8px !important; font: 500 13px var(--b-font-mono); color: var(--b-accent-text); }
+.b-oinsp-best.is-hidden { display: none; }
 .b-oinsp-big { display: flex; align-items: baseline; gap: 18px; margin-top: 8px !important; font: 300 var(--b-fs-countdown)/1 var(--b-font-num); letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--b-ink); }
 .b-oinsp-big.is-warn { color: var(--b-warn); }
 .b-oinsp-big.is-error { color: var(--b-dnf); }

@@ -44,3 +44,11 @@
 }
 .progress-filters label { min-width: 0; }
 .progress-filters select { min-width: 0; width: 100%; }
+.progress-goal-row { display: flex; align-items: center; gap: 18px; min-height: 112px; }
+.progress-goal-row [data-goal-orbit] { width: 48px; height: 48px; flex: 0 0 48px; }
+.progress-goal-row strong { font-size: 19px; }
+.progress-goal-row p { color: var(--b-muted); }
+.progress-goals form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.progress-goals label { display: grid; gap: 5px; color: var(--b-muted); }
+.progress-goals input, .progress-goals button, .progress-weekly button { min-height: 40px; padding: 8px 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); color: var(--b-ink); background: var(--b-surface); font: inherit; }
+.progress-weekly button { cursor: pointer; }

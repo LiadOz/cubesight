@@ -10,6 +10,7 @@
 // current segment fill, inspection caret) between emits.
 
 import { FACE_COLORS } from '../cross-cube.js';
+import { FACE_TO_D } from '../analysis/normalize.js';
 import { inverseMove, recoveryMoves } from '../smart-cube-guidance.js';
 import { logConnection } from '../smart-cube-diag.js';
 import { currentDShift } from '../solve-tracker.js';
@@ -44,6 +45,11 @@ export function screenFor(session, live) {
 }
 
 const SOLVING_LABEL = { 'pre-cross': 'cross', cross: 'F2L', 'f2l-0': 'F2L', 'f2l-1': 'F2L', 'f2l-2': 'F2L', 'f2l-3': 'F2L', 'f2l-4': 'F2L', eo: 'EO', co: 'CO', 'co-pending': 'CO', pll: 'PLL', solved: 'solved' };
+const xcrossPairName = ({ face, slot }) => {
+  if (!face || !slot || !FACE_TO_D[face]) return null;
+  const toPhysical = Object.fromEntries(Object.entries(FACE_TO_D[face]).map(([physical, normalized]) => [normalized, physical]));
+  return [...slot].map(normalized => FACE_COLORS[toPhysical[normalized]]).join('-');
+};
 
 /** The v1 #brain-phase-label / #brain-phase-detail strings, byte for byte. */
 export function phaseText(live) {
@@ -189,10 +195,15 @@ export function inspectionState(config, elapsedMs) {
 }
 
 /** @returns {import('./types.js').InspectionVM|null} */
-function inspectionVM(live, now) {
+function inspectionVM(live, now, optimalCross = null) {
   if (live?.phase !== 'inspecting' || !live.inspection) return null;
   const config = { ...live.inspectionConfig };
   const st = inspectionState(config, live.inspection.elapsedMs);
+  const crossHint = optimalCross?.best ?? (optimalCross?.face ? optimalCross : null);
+  // copy-ok: “best” is the proven lowest-move start plan in the bounded search.
+  const bestStart = crossHint
+    ? `${crossHint.proven === false ? 'cross found so far' : 'best cross'}: ${FACE_COLORS[crossHint.face] ?? crossHint.face}, ${crossHint.length}${optimalCross?.bestXcross?.proven ? ` · ${FACE_COLORS[optimalCross.bestXcross.face] ?? optimalCross.bestXcross.face} cross with ${xcrossPairName(optimalCross.bestXcross) ?? optimalCross.bestXcross.slot ?? 'an adjacent'} pair · X-cross possible in ${optimalCross.bestXcross.length}` : ''}`
+    : '';
   return {
     mode: config.mode, overtime: config.overtime,
     limitMs: st.layout.limitMs, elapsedMs: st.elapsedMs, remainingMs: st.remainingMs, overtimeMs: st.overtimeMs,
@@ -201,6 +212,7 @@ function inspectionVM(live, now) {
     ticks: st.layout.ticks.map(t => ({ ...t, passed: st.elapsedMs >= t.atMs })),
     bigText: st.bigText, tone: st.tone, consequence: st.consequence,
     autostartHandoff: config.overtime === 'autostart' && st.remainingMs != null && st.remainingMs <= 1000,
+    bestStart,
     startedAt: now - st.elapsedMs,
   };
 }
@@ -383,7 +395,7 @@ function resultsVM({ live, records, settings, plan, track, optimalCross, reviewU
   const averages = stageAverages(others, plan);
   const pbs = pbSplits(others, plan);
   const { stages, solveStartAt, moveTimes } = recordStages(stored, track, plan);
-  const review = reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus: focusOf(stored), ui: reviewUi, pins, analysisStatus, durationMs: stored.solveMs });
+  const review = reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus: focusOf(stored), crossColor: settings.crossColor, ui: reviewUi, pins, analysisStatus, durationMs: stored.solveMs });
   const prevAo12 = ao12(others);
   const vsAo12 = Number.isFinite(prevAo12) && Number.isFinite(ms) ? { text: fmtDelta(ms - prevAo12), tone: deltaTone(ms - prevAo12) } : null;
   const tpsValues = others.map(r => r.tps).filter(Number.isFinite).sort((a, b) => a - b);
@@ -432,10 +444,10 @@ function resultsVM({ live, records, settings, plan, track, optimalCross, reviewU
 // --- Review: markers on the timeline, the selected note, the detail view -------------------------
 
 /** @returns {import('./types.js').ReviewVM} */
-function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus, ui = {}, pins = [], analysisStatus = 'none', durationMs }) {
+function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus, crossColor = 'neutral', ui = {}, pins = [], analysisStatus = 'none', durationMs }) {
   const baselines = reviewBaselines(others);
   const pending = analysisStatus === 'pending';
-  const { markers, defaultId } = buildMarkers({ record: stored, stages, plan, baselines, focus, faceColors: FACE_COLORS });
+  const { markers, defaultId } = buildMarkers({ record: stored, stages, plan, baselines, focus, faceColors: FACE_COLORS, crossColor });
   const selectedId = markers.some(m => m.id === ui.selectedId) ? ui.selectedId : defaultId;
   // Where each marker sits: inside its stage (by time), so the ring and the lane can place it, and on the time axis.
   const rows = new Map(stages.filter(s => s.startAt != null && s.endAt != null).map(s => [s.key, { from: s.startAt - solveStartAt, to: s.endAt - solveStartAt }]));
@@ -446,7 +458,7 @@ function reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus,
     const frac = row && span > 0 ? Math.min(1, Math.max(0, (m.tMs - row.from) / span)) : 0.5;
     return {
       id: m.id, kind: m.kind, tone: m.tone, label: m.label, stage: m.stage, stageLabel: m.stageLabel, seg: m.stage, frac, tMs: m.tMs, tFrac: Math.min(1, m.tMs / total),
-      prominent: m.prominent, rank: m.rank, selected: m.id === selectedId, at: m.at, costText: m.tone === 'good' ? `estimated saving: ~${Math.round(m.cost)} moves` : `~${Math.max(1, Math.round(m.rawCost ?? m.cost))} lost`,
+      prominent: m.prominent, rank: m.rank, selected: m.id === selectedId, at: m.at, costText: m.evidenceText ?? (m.tone === 'good' ? `estimated saving: ~${Math.round(m.cost)} moves` : `~${Math.max(1, Math.round(m.rawCost ?? m.cost))} lost`),
     };
   });
   const selected = markers.find(m => m.id === selectedId) ?? null;
@@ -565,7 +577,7 @@ export function buildViewModel(input, prev = null) {
     : (screen === 'solving' && settings.f2l === 'pseudo' && session?.state && live?.crossFace ? currentDShift(session.state, live.crossFace) : null);
   const timeline = timelineVM({ screen, settings, plan, averages, pbs, track, live, now, prevTimeline: prev?.timeline, dShift });
   const result = screen === 'results'
-    ? cached('results', [live?.record, sourceRecords, settings.penalties, settings.compare, plan, track?.stamps?.solvedAt, optimalCross, input.reviewUi, input.pins, input.analysisStatus], () => resultsVM({ live, records: sourceRecords, settings, plan, track, optimalCross, reviewUi: input.reviewUi, pins: input.pins ?? [], analysisStatus: input.analysisStatus ?? 'none' }))
+    ? cached('results', [live?.record, sourceRecords, settings.penalties, settings.compare, settings.crossColor, plan, track?.stamps?.solvedAt, optimalCross, input.reviewUi, input.pins, input.analysisStatus], () => resultsVM({ live, records: sourceRecords, settings, plan, track, optimalCross, reviewUi: input.reviewUi, pins: input.pins ?? [], analysisStatus: input.analysisStatus ?? 'none' }))
     : null;
   const device = cached('device', [session?.phase, session?.detail, session?.deviceName, session?.protocol, session?.battery, Boolean(session?.gyro), input.supported ?? true, input.connectStep ?? '', session?.link?.status, live?.phase, live?.interrupted?.canResume], () => deviceFor(session, input.supported ?? true, input.connectStep ?? '', live));
   const themePreference = input.themePreference ?? 'system';
@@ -587,7 +599,7 @@ export function buildViewModel(input, prev = null) {
     settings: settingsPanel,
     scramble: scrambleVM({ live, settings, scrambleText: input.scrambleText, held: input.held, number: input.scrambleNumber }),
     clock: clockVM({ screen, live, settings, now, timeline, result }),
-    inspection: inspectionVM(live, now),
+    inspection: inspectionVM(live, now, optimalCross),
     timeline,
     coach,
     results: result?.vm ?? null,
