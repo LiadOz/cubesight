@@ -169,8 +169,36 @@ Deliver a numbered screenshot gallery (lightbox) of every trainer state for the 
 3. **Publish** the inventory as a gallery post (`gallery/widgets/2026-10-02-inventory/`) with numbered images per family (W-07a, W-07b… for the variants), so the user can review them by ID.
 4. **Then propose** the consolidated design for each family (in the orbit-v3 A language), family by family, as gallery posts the user approves; approved ones become shared components (F0-style) and the duplicates are migrated and deleted.
 
+## F11: Performance and test-suite health, with guards
+The user: the code must run fast, things must look smooth, and the tests must run smoothly, with guards that keep it that way.
+
+**A. App performance: measure, fix, guard.**
+- **Budgets** (desktop reference machine + a throttled "mid phone" profile via Playwright CPU throttling ×4):
+  - **Startup:** first meaningful render of `#/solve` ≤ 1.0 s desktop / ≤ 2.5 s phone-throttled, from the installed PWA cache; the JS for the first route ≤ a set KB budget (measure the current one, set the budget 10% below it after fixes); three.js and the analysis worker lazy-loaded off the critical path.
+  - **Smoothness:** the Cube + Orbit at 60 fps on desktop and ≥ 50 fps phone-throttled during: idle with gyro updates, a live move animation, the open⇄full Orbit morph, the connecting full-ring spin, alg playback, results reveal; no long tasks > 50 ms during animations (PerformanceObserver `longtask`); no layout thrash (forced reflows in rAF).
+  - **Input latency:** a physical cube move → its animation starts ≤ 1 frame later (from the BLE event to the first animated frame); a keypress → visual response ≤ 50 ms.
+  - **Engines:** the worker cold start, the cross/pair search (reuse `scripts/benchmark-pair-search.mjs`), the analysis per solve ≤ budgets measured now; never on the main thread.
+  - **Memory:** no growth > 5 MB across 50 simulated solves, or across 30 route switches (one canvas per page; workers and listeners released).
+- **Tooling:** `npm run perf` (Playwright + `performance` APIs + the Chrome DevTools Protocol traces) producing `test-results/perf/report.json` + a readable report (and a gallery post of the trace screenshots/flame summaries when something is investigated). Deterministic via the fake cube + recordings (`tests/fixtures/*.json`), seeded scrambles, SwiftShader for the cube.
+- **Guards:** `npm run perf:check` compares with `perf/budgets.json` (committed) and fails on a regression beyond a tolerance (e.g. 15%, or an absolute budget breach); it runs in CI on every PR and in the lead's review; budgets only change in a commit that explains why.
+- **Fix what it finds:** profile the slowest screens first (solve results with the analysis, history with many solves, the algs browser, the gallery with 1,000+ images), with before/after numbers in the report.
+
+**B. Test-suite health: fast, smooth, never flaky.**
+- **Runtime budgets:** unit tests ≤ 60 s, the full Playwright suite ≤ 5 min with sharding (8 min today), layout (F8) ≤ 6 min, snapshots (F9) ≤ 8 min, PWA ≤ 2 min; a per-test soft limit (e.g. 20 s) that reports the slowest 20 tests every run; tests over budget get fixed (fake clocks instead of real waits, shared fixtures, no `waitForTimeout` sleeps where an event/condition exists).
+- **Flakiness guard:** a nightly/CI job `npm run test:flaky` runs the suites with `--repeat-each=5` (Playwright) / repeated node runs; any test that fails once is flagged and must be fixed or quarantined with an issue note within the same WP (no silent retries; `retries` stay 0 in CI so flakiness is visible). Known timing-sensitive tests (e.g. the instant-replay budget) use deterministic clocks or generous, documented bounds.
+- **Isolation:** every test uses its own port/storage/IndexedDB and leaves no files in `docs/`, `src/` or the repo root; no test depends on another's order; no network.
+- **Reporting:** `test-results/health/summary.json` + a short markdown (total time per suite, the slowest tests, flaky candidates), shown in the lead's review.
+
+**C. Run only the affected tests while working (the user: 8 minutes per run is too long).**
+- `npm run test:affected [-- <base-ref>]` (default base: the merge-base with `feature/smart-cube-guidance`): (1) unit tests related to the changed files via the ESM import graph (a small script on `es-module-lexer`, or migrate the unit runner to Vitest and use `vitest related`; pick the lighter option and justify it); (2) Playwright specs selected by `--only-changed` (the import graph) PLUS a **coverage-based impact map**: a nightly/explicit job `npm run test:impact-map` records V8 JS coverage per Playwright test (`page.coverage`) and writes `tests/impact-map.json` (source file → tests); the selector unions both; (3) a **safety valve**: changes to shared foundations (the Cube/Orbit components, tokens/CSS, the router, `tests/helpers`, configs, package.json) select the FULL suite.
+- **Tiers:** while working → `test:affected` (target: < 90 s typical); the pre-commit hook → lint + the affected unit tests only (target < 20 s); before every merge (the lead's review), CI and nightly → the FULL suites (unit, Playwright, PWA, layout, snapshots, perf). Selection is never used at a gate, so it can't hide failures.
+- **Faster full runs:** shard the Playwright suite across workers (`--shard`, `fullyParallel`) with a reported wall-clock; reuse a single prebuilt app for PWA/snapshot suites.
+- **Check the selector:** a test that changes one module (e.g. `src/algs/page.js`) and asserts the algs specs are selected and unrelated specs (e.g. the timer) are not; the impact map is regenerated if older than 7 days or when specs change.
+
+Acceptance: the budgets file exists with measured values; `perf:check` and the test-time/flaky guards run in CI and fail on regressions; the first report with before/after numbers is published (gallery post `gallery/perf/<date>-baseline/`).
+
 ## Future tasks (after the waves above; not blocking)
-- **F11 Performance audit:** an agent measures and improves performance everywhere (startup, the three.js/worker cold start, the pair search, rendering FPS on the ring + cube, memory, the bundle size, phone performance), with a benchmark report and regressions guarded in CI.
+- **F11 Performance and test health (promoted: run in wave 2, alongside F1–F5).** See the full section "F11" below.
 - **F12 Cube skins (maybe):** user-customisable cube appearance (sticker colours/shapes, the plastic body, stickerless styles). The user isn't sure yet; first prototype it in the design lab (F10).
 - **F13 Nested-ring demos:** before/after demos in the design lab showing where a ring-inside-a-ring helps (comparisons) vs a single ring, for the user to decide.
 
@@ -178,7 +206,7 @@ Deliver a numbered screenshot gallery (lightbox) of every trainer state for the 
 | Wave | WPs (parallel) | Owns |
 |---|---|---|
 | 1 | **F0** alone (+ F3, F6, **F8** and **F9** in parallel; they don't touch UI components) | F0: `src/ui/orbit/**`, `src/ui/cube/**` (new), the shared pieces, a dev gallery. F3: `src/analysis/**`, `src/brain/coach-lines.js`, the review data. F6: `src/goals/**`, the voice callout module. F8: `tests/layout/**`, the package.json script, CI. F9: `tests/snapshots/**`, `scripts/snapshots-compare.mjs`, the package.json scripts. |
-| 2 | **F1, F2, F4, F5** in parallel after F0 merges; **F10** any time after F0 (doesn't block F1); **F14** any time; **F15** (build directly on the core principles) | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
+| 2 | **F1, F2, F4, F5** in parallel after F0 merges; **F10** any time after F0 (doesn't block F1); **F14** any time; **F15** (build directly on the core principles); **F11** (performance + test health) | F1: `src/brain/**` solve/results; F2: `src/history/**` + routes `#/history/*`; F4: `src/drills/**`, `src/algs/**`, `src/timer/**`; F5: the progress page |
 Shared files (`src/main.js` routes, `types.js`, `tokens-*.css`): additive edits only, coordinate via small commits; the lead resolves merges.
 
 ## How the lead reviews each WP
