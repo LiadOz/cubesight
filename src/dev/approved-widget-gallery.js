@@ -36,7 +36,7 @@ export function mountApprovedWidgetGallery(host) {
   const buttonRow = el('div', 'g-widget-live__row'); buttons.append(buttonRow);
   createButton(buttonRow, { label: 'primary', variant: 'primary' }); createButton(buttonRow, { label: 'secondary', variant: 'secondary' }); createButton(buttonRow, { label: 'text', variant: 'text' });
   const buttonStates = el('div', 'g-widget-live__row'); buttons.append(buttonStates);
-  createButton(buttonStates, { label: 'hover', variant: 'primary' }).classList.add('is-hover'); createButton(buttonStates, { label: 'pressed', variant: 'secondary' }).classList.add('is-active'); createButton(buttonStates, { label: 'disabled', variant: 'primary', disabled: true }); createButton(buttonStates, { label: 'loading', variant: 'secondary', loading: true });
+  createButton(buttonStates, { label: 'hover', variant: 'primary' }).classList.add('is-hover'); createButton(buttonStates, { label: 'focus', variant: 'secondary' }).classList.add('is-focus'); createButton(buttonStates, { label: 'pressed', variant: 'secondary' }).classList.add('is-active'); createButton(buttonStates, { label: 'disabled', variant: 'primary', disabled: true }); createButton(buttonStates, { label: 'loading', variant: 'secondary', loading: true });
 
   const choices = addPanel('W-05–08 · selection controls');
   const chips = el('div', 'g-widget-live__row'); choices.append(chips); createChip(chips, { label: 'all', pressed: true }); createChip(chips, { label: 'PLL', value: 21 }); createChip(chips, { label: 'focus', pressed: true }).classList.add('is-focus'); createChip(chips, { label: 'disabled', disabled: true });
@@ -53,6 +53,7 @@ export function mountApprovedWidgetGallery(host) {
   createFilledInput(inputs, { label: 'validation state', value: '', placeholder: 'name this session', error: /* copy-ok: validation example shows accessible error-state styling */ 'Choose a name to continue.' });
   createTextarea(inputs, { label: 'paste moves', value: "R U R' U'", rows: 2, hint: 'Notation stays on this device.' });
   createRangeInput(inputs, { label: 'playback speed', min: .5, max: 2, step: .25, value: 1, unit: '×' });
+  createRangeInput(inputs, { label: 'disabled range state', min: 0, max: 10, value: 4, disabled: true });
   createFileInput(inputs, { label: 'open a recording', accept: 'application/json,.json' });
   const searchHost = el('div', 'g-widget-live__wide'); inputs.append(searchHost); createSearch(searchHost, { placeholder: 'search cases', count: '2 of 21' });
 

@@ -50,9 +50,9 @@ export function createGroup(host, { label = '' } = {}) {
   host.append(group); return group;
 }
 
-export function createSearch(host, { placeholder = 'search', label = placeholder, value = '', count = null, onSearch = null } = {}) {
+export function createSearch(host, { placeholder = 'search', label = placeholder, name = '', value = '', count = null, onSearch = null } = {}) {
   const wrap = document.createElement('span'); wrap.className = 'ui-input-wrap';
-  const input = document.createElement('input'); input.className = 'ui-input ui-input--search'; input.type = 'search'; input.placeholder = placeholder; input.setAttribute('aria-label', label); input.value = value;
+  const input = document.createElement('input'); input.className = 'ui-input ui-input--search'; input.type = 'search'; input.name = name; input.placeholder = placeholder; input.setAttribute('aria-label', label); input.value = value;
   const icon = svgEl('svg', { class: 'ui-search-icon', viewBox: '0 0 16 16', 'aria-hidden': 'true' }); icon.append(svgEl('circle', { cx: 6.8, cy: 6.8, r: 4.6 }), svgEl('path', { d: 'm10.2 10.2 4 4' }));
   wrap.append(icon, input);
   let countEl = null;
@@ -95,11 +95,12 @@ export function createFilledInput(host, { label = '', value = '', placeholder = 
   } };
 }
 
-export function createFilledSelect(host, { label = '', options = [], value = options[0]?.value, disabled = false, onChange = null } = {}) {
+export function createFilledSelect(host, { label = '', name = '', options = [], value = options[0]?.value, disabled = false, onChange = null } = {}) {
   const field = document.createElement('div'); field.className = 'ui-field';
   if (label) { const caption = document.createElement('span'); caption.className = 'ui-field__label'; caption.textContent = label; field.append(caption); }
   const wrap = document.createElement('span'); wrap.className = 'sel sel--full';
   const select = document.createElement('button'); select.type = 'button'; select.className = 'sel__btn'; select.setAttribute('role', 'combobox'); select.setAttribute('aria-haspopup', 'listbox'); select.setAttribute('aria-expanded', 'false'); select.setAttribute('aria-label', label || 'Choose an option'); select.disabled = disabled || options.length === 0;
+  const formValue = document.createElement('input'); formValue.type = 'hidden'; formValue.name = name; formValue.disabled = disabled;
   const selected = document.createElement('span'); selected.className = 'sel__value';
   const arrow = svgEl('svg', { viewBox: '0 0 14 14', 'aria-hidden': 'true' }); arrow.append(svgEl('path', { d: 'm3 5 4 4 4-4' })); select.append(selected, arrow);
   const listId = `select-options-${++fieldId}`; select.setAttribute('aria-controls', listId);
@@ -131,7 +132,7 @@ export function createFilledSelect(host, { label = '', options = [], value = opt
   };
   const close = (restoreFocus = false) => { wrap.classList.remove('is-open'); select.setAttribute('aria-expanded', 'false'); if (restoreFocus) select.focus(); };
   const open = () => { if (select.disabled) return; wrap.classList.add('is-open'); select.setAttribute('aria-expanded', 'true'); activeIndex = selectedIndex; sync(); items[activeIndex]?.focus(); };
-  const choose = index => { if (!options[index] || options[index].disabled) return; selectedIndex = index; activeIndex = index; sync(); close(); onChange?.(String(options[index].value)); select.focus(); };
+  const choose = index => { if (!options[index] || options[index].disabled) return; selectedIndex = index; activeIndex = index; formValue.value = String(options[index].value); sync(); close(); formValue.dispatchEvent(new Event('change', { bubbles: true })); onChange?.(String(options[index].value)); select.focus(); };
   select.addEventListener('click', () => wrap.classList.contains('is-open') ? close() : open());
   select.addEventListener('keydown', event => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); if (!wrap.classList.contains('is-open')) { open(); return; } activeIndex = nextEnabled(activeIndex, event.key === 'ArrowDown' ? 1 : -1); sync(); items[activeIndex]?.focus(); }
@@ -144,8 +145,8 @@ export function createFilledSelect(host, { label = '', options = [], value = opt
     else if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); activeIndex = event.key === 'Home' ? firstEnabled : lastEnabled; if (activeIndex < 0) activeIndex = selectedIndex; sync(); items[activeIndex]?.focus(); }
   });
   const outside = event => { if (!wrap.contains(event.target)) close(); };
-  document.addEventListener('pointerdown', outside); wrap.append(select, list); field.append(wrap); host.append(field); sync();
-  return { element: field, select, open, close, setValue(next) { const index = options.findIndex(option => String(option.value) === String(next) && !option.disabled); if (index >= 0) { selectedIndex = index; activeIndex = index; sync(); } }, destroy() { document.removeEventListener('pointerdown', outside); field.remove(); } };
+  document.addEventListener('pointerdown', outside); wrap.append(select, list); field.append(wrap, formValue); host.append(field); formValue.value = String(options[selectedIndex]?.value ?? ''); sync();
+  return { element: field, select, input: formValue, open, close, value: () => formValue.value, setValue(next) { const index = options.findIndex(option => String(option.value) === String(next) && !option.disabled); if (index >= 0) { selectedIndex = index; activeIndex = index; formValue.value = String(options[index].value); sync(); } }, destroy() { document.removeEventListener('pointerdown', outside); field.remove(); } };
 }
 
 export function createTextarea(host, { label = '', value = '', placeholder = '', hint = '', rows = 4, disabled = false, onInput = null } = {}) {

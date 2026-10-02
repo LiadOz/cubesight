@@ -17,11 +17,16 @@ test('history filters, replays and edits records without affecting their source'
   await seed(page);
   const list = page.locator('.history-list');
   await expect(list.locator('button')).toHaveCount(2);
-  await page.locator('select[name="source"]').selectOption('manual');
+  await page.getByRole('combobox', { name: 'source', exact: true }).click();
+  await page.getByRole('option', { name: 'manual', exact: true }).click();
   await expect(list.locator('button')).toHaveCount(1);
+  await page.getByRole('searchbox', { name: 'search' }).fill('F2');
+  await expect(list.locator('button')).toHaveCount(1);
+  await page.getByRole('searchbox', { name: 'search' }).fill('');
   await list.locator('button').click();
   await expect(page.locator('.history-detail')).toContainText('No moves were recorded.');
-  await page.locator('select[name="source"]').selectOption('smart');
+  await page.getByRole('combobox', { name: 'source', exact: true }).click();
+  await page.getByRole('option', { name: 'cube', exact: true }).click();
   await list.locator('button').click();
   await expect(page.locator('.history-cube canvas')).toBeVisible();
   await page.getByRole('button', { name: 'Next move', exact: true }).click();

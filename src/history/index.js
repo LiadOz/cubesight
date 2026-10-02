@@ -11,7 +11,7 @@ import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
-import { createListRow } from '../ui/shared/index.js';
+import { createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
 
 export const historyTime = record => {
   return fmt.penalty(record);
@@ -38,10 +38,10 @@ export function initHistory(host) {
   host.innerHTML = `<section class="brain cs-page history-page" data-brain-style="${settings.style}">
     <header><h1>history</h1><p>Solves and saved moments on this device.</p><a href="#/solve">back to solve</a></header>
     <form class="history-filters" aria-label="Filter history">
-      <label>search<input type="search" name="query" placeholder="scramble, case, time" /></label>
+      <div data-history-search></div>
       <label>session<select name="session"><option value="all">all sessions</option></select></label>
-      <label>focus<select name="focus"><option value="all">all foci</option><option>speed</option><option>flow</option><option>learning</option></select></label>
-      <label>source<select name="source"><option value="all">all sources</option><option value="smart">cube</option><option value="manual">manual</option><option value="import">import</option></select></label>
+      <div data-history-focus></div>
+      <div data-history-source></div>
     </form>
     <details class="history-data"><summary>data and sessions</summary><div class="history-actions">
       <button type="button" data-action="backup">export data</button><label class="history-file">import data<input type="file" data-import="backup" accept=".json,application/json" /></label>
@@ -55,6 +55,9 @@ export function initHistory(host) {
   const root = host.firstElementChild;
   syncPageTokens(root);
   const form = root.querySelector('form');
+  createSearch(form.querySelector('[data-history-search]'), { placeholder: 'scramble, case, time', label: 'search', name: 'query' });
+  createFilledSelect(form.querySelector('[data-history-focus]'), { label: 'focus', name: 'focus', value: 'all', options: [{ value: 'all', label: 'all foci' }, { value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }] });
+  createFilledSelect(form.querySelector('[data-history-source]'), { label: 'source', name: 'source', value: 'all', options: [{ value: 'all', label: 'all sources' }, { value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'import', label: 'import' }] });
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
   const report = text => { status.textContent = text; };
