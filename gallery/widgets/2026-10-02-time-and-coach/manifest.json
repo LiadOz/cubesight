@@ -1,0 +1,207 @@
+{
+  "TC-11-option1-timer-solving-desktop-hd.png": {
+    "id": "TC-11",
+    "title": "option 1: W-22: solving, the XL readout in the dial slot (A-04) (HD 2x)",
+    "caption": "the running readout with the stage line; the slot never moves."
+  },
+  "TC-12-option1-timer-inspection-overtime-hd.png": {
+    "id": "TC-12",
+    "title": "option 1: W-22: inspection countdown, overtime +1 +2 and DNF (A-03) (HD 2x)",
+    "caption": "three moments of the same readout and dial."
+  },
+  "TC-13-option1-timer-states-three-sizes-hd.png": {
+    "id": "TC-13",
+    "title": "option 1: W-22: every state in XL, L and M (HD 2x)",
+    "caption": "ready, running, stopped, +2, DNF, inspection, overtime, hidden."
+  },
+  "TC-14-option1-timer-drill-L-and-M-hd.png": {
+    "id": "TC-14",
+    "title": "option 1: W-22: a drill with the L readout and the M inline form (A-08) (HD 2x)",
+    "caption": "case time in the rail, the foot line inline."
+  },
+  "TC-15-option1-timer-phone-hd.png": {
+    "id": "TC-15",
+    "title": "option 1: W-22: phone 390 x 844, running, overtime, +2 result (A-09) (HD 2x)",
+    "caption": "the readout at 76 px in the dial slot."
+  },
+  "TC-16-option1-coach-results-desktop-hd.png": {
+    "id": "TC-16",
+    "title": "option 1: W-20: results with the coach line and its connector (A-05) (HD 2x)",
+    "caption": "the cross detour selected; +2 result in the slot."
+  },
+  "TC-17-option1-coach-praise-and-fix-hd.png": {
+    "id": "TC-17",
+    "title": "option 1: W-20: praise and fix, left and right, the connector in time (HD 2x)",
+    "caption": "four selections and the fade in, held, out."
+  },
+  "TC-18-option1-coach-crowded-ring-hd.png": {
+    "id": "TC-18",
+    "title": "option 1: W-20: a crowded ring, 14 markers in four clusters (HD 2x)",
+    "caption": "cluster handling per option (feedback 8)."
+  },
+  "TC-19-option1-coach-phone-hd.png": {
+    "id": "TC-19",
+    "title": "option 1: W-20: phone 390 x 844, fix, praise and a crowded cluster (HD 2x)",
+    "caption": "the sentence under the time, the connector per option."
+  },
+  "TC-21-option2-timer-solving-desktop-hd.png": {
+    "id": "TC-21",
+    "title": "option 2: W-22: solving, the XL readout in the dial slot (A-04) (HD 2x)",
+    "caption": "the running readout with the stage line; the slot never moves."
+  },
+  "TC-22-option2-timer-inspection-overtime-hd.png": {
+    "id": "TC-22",
+    "title": "option 2: W-22: inspection countdown, overtime +1 +2 and DNF (A-03) (HD 2x)",
+    "caption": "three moments of the same readout and dial."
+  },
+  "TC-23-option2-timer-states-three-sizes-hd.png": {
+    "id": "TC-23",
+    "title": "option 2: W-22: every state in XL, L and M (HD 2x)",
+    "caption": "ready, running, stopped, +2, DNF, inspection, overtime, hidden."
+  },
+  "TC-24-option2-timer-drill-L-and-M-hd.png": {
+    "id": "TC-24",
+    "title": "option 2: W-22: a drill with the L readout and the M inline form (A-08) (HD 2x)",
+    "caption": "case time in the rail, the foot line inline."
+  },
+  "TC-25-option2-timer-phone-hd.png": {
+    "id": "TC-25",
+    "title": "option 2: W-22: phone 390 x 844, running, overtime, +2 result (A-09) (HD 2x)",
+    "caption": "the readout at 76 px in the dial slot."
+  },
+  "TC-26-option2-coach-results-desktop-hd.png": {
+    "id": "TC-26",
+    "title": "option 2: W-20: results with the coach line and its connector (A-05) (HD 2x)",
+    "caption": "the cross detour selected; +2 result in the slot."
+  },
+  "TC-27-option2-coach-praise-and-fix-hd.png": {
+    "id": "TC-27",
+    "title": "option 2: W-20: praise and fix, left and right, the connector in time (HD 2x)",
+    "caption": "four selections and the fade in, held, out."
+  },
+  "TC-28-option2-coach-crowded-ring-hd.png": {
+    "id": "TC-28",
+    "title": "option 2: W-20: a crowded ring, 14 markers in four clusters (HD 2x)",
+    "caption": "cluster handling per option (feedback 8)."
+  },
+  "TC-29-option2-coach-phone-hd.png": {
+    "id": "TC-29",
+    "title": "option 2: W-20: phone 390 x 844, fix, praise and a crowded cluster (HD 2x)",
+    "caption": "the sentence under the time, the connector per option."
+  },
+  "TC-31-option3-timer-solving-desktop-hd.png": {
+    "id": "TC-31",
+    "title": "option 3: W-22: solving, the XL readout in the dial slot (A-04) (HD 2x)",
+    "caption": "the running readout with the stage line; the slot never moves."
+  },
+  "TC-32-option3-timer-inspection-overtime-hd.png": {
+    "id": "TC-32",
+    "title": "option 3: W-22: inspection countdown, overtime +1 +2 and DNF (A-03) (HD 2x)",
+    "caption": "three moments of the same readout and dial."
+  },
+  "TC-33-option3-timer-states-three-sizes-hd.png": {
+    "id": "TC-33",
+    "title": "option 3: W-22: every state in XL, L and M (HD 2x)",
+    "caption": "ready, running, stopped, +2, DNF, inspection, overtime, hidden."
+  },
+  "TC-34-option3-timer-drill-L-and-M-hd.png": {
+    "id": "TC-34",
+    "title": "option 3: W-22: a drill with the L readout and the M inline form (A-08) (HD 2x)",
+    "caption": "case time in the rail, the foot line inline."
+  },
+  "TC-35-option3-timer-phone-hd.png": {
+    "id": "TC-35",
+    "title": "option 3: W-22: phone 390 x 844, running, overtime, +2 result (A-09) (HD 2x)",
+    "caption": "the readout at 76 px in the dial slot."
+  },
+  "TC-36-option3-coach-results-desktop-hd.png": {
+    "id": "TC-36",
+    "title": "option 3: W-20: results with the coach line and its connector (A-05) (HD 2x)",
+    "caption": "the cross detour selected; +2 result in the slot."
+  },
+  "TC-37-option3-coach-praise-and-fix-hd.png": {
+    "id": "TC-37",
+    "title": "option 3: W-20: praise and fix, left and right, the connector in time (HD 2x)",
+    "caption": "four selections and the fade in, held, out."
+  },
+  "TC-38-option3-coach-crowded-ring-hd.png": {
+    "id": "TC-38",
+    "title": "option 3: W-20: a crowded ring, 14 markers in four clusters (HD 2x)",
+    "caption": "cluster handling per option (feedback 8)."
+  },
+  "TC-39-option3-coach-phone-hd.png": {
+    "id": "TC-39",
+    "title": "option 3: W-20: phone 390 x 844, fix, praise and a crowded cluster (HD 2x)",
+    "caption": "the sentence under the time, the connector per option."
+  },
+  "TC-91-light-sheet-hd.png": {
+    "id": "TC-91",
+    "title": "light sheet: the timer and the coach line in the three options (HD 2x)",
+    "caption": "running readout, coach line with connector and the +2 readout, light theme."
+  },
+  "TC-00-decide-hd.png": {
+    "id": "TC-00",
+    "title": "decide: options 1 to 3 and Q1 to Q3",
+    "caption": "the options side by side with the questions drawn in; thumbnails are real crops."
+  },
+  "TC-00-opt1-2-readout-and-the-coach-line-a-05-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: opt1 2 readout and the coach line a 05",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-opt1-running-readout-xl-a-04-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: opt1 running readout xl a 04",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-opt2-2-readout-and-the-coach-line-a-05-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: opt2 2 readout and the coach line a 05",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-opt2-running-readout-xl-a-04-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: opt2 running readout xl a 04",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-opt3-2-readout-and-the-coach-line-a-05-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: opt3 2 readout and the coach line a 05",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-opt3-running-readout-xl-a-04-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: opt3 running readout xl a 04",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-q2-a-the-word-hidden-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: q2 a the word hidden",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-q2-b-ghost-digits-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: q2 b ghost digits",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-q2-c-the-stage-name-only-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: q2 c the stage name only",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-q3-a-count-badge-expands-in-place-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: q3 a count badge expands in place",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-q3-b-fans-out-on-a-second-radius-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: q3 b fans out on a second radius",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "TC-00-q3-c-top-marker-only-rest-in-the-text-hd.png": {
+    "id": "TC-00",
+    "title": "decision detail: q3 c top marker only rest in the text",
+    "caption": "full-resolution region used in the decision image."
+  }
+}

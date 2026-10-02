@@ -79,3 +79,5 @@ The old, pre-blog screenshots are in `gallery/_import/<date>-<source>/`; each ha
 
 ## Post style (user rule)
 Posts are SHORT: a few lines ("3 options" + one line each on what differs). At most 3 questions, asked VISUALLY in one decision image `<ID>-00-decide.png` that shows all options side by side (①②③, Q1–Q3). Put it first in the post's images. No long question lists in the text.
+
+As few images as possible: only genuinely new or undecided parts; never re-show approved widgets except as context. Decision image + at most 2-3 details per option.

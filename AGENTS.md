@@ -26,6 +26,7 @@ While iterating, run `npm run test:affected` (once it exists; F11) instead of th
 ## 5. Show your work: the gallery
 Publish screenshots as a post in the in-app gallery (`gallery/README.md`): `gallery/<branch>/<YYYY-MM-DD>-<slug>/post.md` + ID-prefixed images. Never overwrite or delete images; new iterations go in new posts. Report the link `http://localhost:5173/#/dev/gallery/post/<id>`.
 **Posts are short:** a few lines of text ("3 options" + one line each on what differs); at most 3 questions, asked VISUALLY in one decision image (`<ID>-00-decide.png`) that shows all the options side by side, labelled ①②③ and Q1–Q3. Detail images follow; no long question lists in the text.
+**As few images as possible:** show only what is genuinely NEW or undecided. Never re-show already-approved widgets (check `docs/design/WIDGETS.md` first) except as context inside one frame. Aim for the decision image + at most 2–3 detail images per option; if a family is mostly settled, say so and show one frame.
 
 ## 6. Report
 Commits, files, test results, the gallery link, deviations from the spec, open questions.
