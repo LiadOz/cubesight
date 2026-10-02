@@ -111,8 +111,9 @@ export function placeCallouts() {
       b.className = 'co';
       b.textContent = n;
       const side = el.dataset.coSide || 'tr';
-      const x = side.includes('l') ? r.left - base.left - 10 : r.right - base.left - 12;
-      const y = side.includes('b') ? r.bottom - base.top - 12 : r.top - base.top - 10;
+      const small = r.width < 70 && r.height < 40;   // tiny targets (keycaps): keep the badge clear of them
+      const x = side.includes('l') ? r.left - base.left - 10 : r.right - base.left - (small ? 4 : 12);
+      const y = side.includes('b') ? r.bottom - base.top - 12 : r.top - base.top - (small || side.includes('l') ? 26 : 10);
       b.style.left = `${x}px`; b.style.top = `${y}px`;
       board.appendChild(b);
     }
