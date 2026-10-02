@@ -39,7 +39,7 @@ export function initHistory(host) {
     <header><h1>history</h1><p>Solves and saved moments on this device.</p><a href="#/solve">back to solve</a></header>
     <form class="history-filters" aria-label="Filter history">
       <div data-history-search></div>
-      <label>session<select name="session"><option value="all">all sessions</option></select></label>
+      <div data-history-session></div>
       <div data-history-focus></div>
       <div data-history-source></div>
     </form>
@@ -57,6 +57,7 @@ export function initHistory(host) {
   const form = root.querySelector('form');
   createSearch(form.querySelector('[data-history-search]'), { placeholder: 'scramble, case, time', label: 'search', name: 'query' });
   const filterSelects = [
+    createFilledSelect(form.querySelector('[data-history-session]'), { label: 'session', name: 'session', value: 'all', options: [{ value: 'all', label: 'all sessions' }] }),
     createFilledSelect(form.querySelector('[data-history-focus]'), { label: 'focus', name: 'focus', value: 'all', options: [{ value: 'all', label: 'all foci' }, { value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }] }),
     createFilledSelect(form.querySelector('[data-history-source]'), { label: 'source', name: 'source', value: 'all', options: [{ value: 'all', label: 'all sources' }, { value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'import', label: 'import' }] }),
   ];
@@ -121,14 +122,11 @@ export function initHistory(host) {
     listHost.replaceChildren(...rows.length ? rows : [make('li', 'No solves match. Change a filter or start a solve.')]);
   }
   function refreshSessions() {
-    const select = form.elements.session;
-    const old = select.value;
-    const all = make('option', 'all sessions'); all.value = 'all';
-    select.replaceChildren(all, ...listSessions(store.records).reverse().map(session => {
-      const option = make('option', `${historyDate(session.firstAt)} · ${fmt.count(session.count, 'solve')} · ${session.focus}`);
-      option.value = session.id; return option;
-    }));
-    if ([...select.options].some(option => option.value === old)) select.value = old;
+    const sessionFilter = filterSelects[0];
+    const options = [{ value: 'all', label: 'all sessions' }, ...listSessions(store.records).reverse().map(session => ({
+      value: session.id, label: `${historyDate(session.firstAt)} · ${fmt.count(session.count, 'solve')} · ${session.focus}`,
+    }))];
+    sessionFilter.setOptions(options, sessionFilter.value());
   }
   function showPosition() {
     if (!selected?.solveMoves?.length) return;

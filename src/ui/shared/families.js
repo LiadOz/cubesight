@@ -99,29 +99,33 @@ export function createFilledSelect(host, { label = '', name = '', options = [], 
   const field = document.createElement('div'); field.className = 'ui-field';
   if (label) { const caption = document.createElement('span'); caption.className = 'ui-field__label'; caption.textContent = label; field.append(caption); }
   const wrap = document.createElement('span'); wrap.className = 'sel sel--full';
-  const select = document.createElement('button'); select.type = 'button'; select.className = 'sel__btn'; select.setAttribute('role', 'combobox'); select.setAttribute('aria-haspopup', 'listbox'); select.setAttribute('aria-expanded', 'false'); select.setAttribute('aria-label', label || 'Choose an option'); select.disabled = disabled || options.length === 0;
-  const formValue = document.createElement('input'); formValue.type = 'hidden'; formValue.name = name; formValue.disabled = disabled;
+  const select = document.createElement('button'); select.type = 'button'; select.className = 'sel__btn'; select.setAttribute('role', 'combobox'); select.setAttribute('aria-haspopup', 'listbox'); select.setAttribute('aria-expanded', 'false'); select.setAttribute('aria-label', label || 'Choose an option');
+  const formValue = document.createElement('input'); formValue.type = 'hidden'; formValue.name = name;
   const selected = document.createElement('span'); selected.className = 'sel__value';
   const arrow = svgEl('svg', { viewBox: '0 0 14 14', 'aria-hidden': 'true' }); arrow.append(svgEl('path', { d: 'm3 5 4 4 4-4' })); select.append(selected, arrow);
   const listId = `select-options-${++fieldId}`; select.setAttribute('aria-controls', listId);
   const list = document.createElement('ul'); list.id = listId; list.className = 'sel__list'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', label || 'Options');
-  const firstEnabled = options.findIndex(option => !option.disabled);
-  let lastEnabled = -1; options.forEach((option, index) => { if (!option.disabled) lastEnabled = index; });
+  const firstEnabled = () => options.findIndex(option => !option.disabled);
+  const lastEnabled = () => { for (let index = options.length - 1; index >= 0; index -= 1) if (!options[index].disabled) return index; return -1; };
   let selectedIndex = options.findIndex(option => String(option.value) === String(value));
-  if (selectedIndex < 0 || options[selectedIndex]?.disabled) selectedIndex = Math.max(0, firstEnabled);
-  let activeIndex = selectedIndex;
-  const items = options.map((option, index) => {
-    const item = document.createElement('li'); const choice = document.createElement('button'); choice.type = 'button'; choice.className = 'sel__opt'; choice.id = `${listId}-${index}`; choice.setAttribute('role', 'option'); choice.dataset.value = option.value;
-    const optionLabel = document.createElement('span'); optionLabel.textContent = option.label;
-    const check = svgEl('svg', { viewBox: '0 0 14 14', 'aria-hidden': 'true' }); check.append(svgEl('path', { d: 'm2 7 3.3 3.1L12 3.5' })); choice.append(optionLabel, check);
-    if (option.disabled) { choice.disabled = true; choice.classList.add('is-disabled'); }
-    choice.addEventListener('click', () => choose(index)); item.append(choice); list.append(item); return choice;
-  });
+  if (selectedIndex < 0 || options[selectedIndex]?.disabled) selectedIndex = firstEnabled();
+  let activeIndex = selectedIndex, items = [];
   const sync = () => {
     selected.textContent = options[selectedIndex]?.label ?? '';
     select.dataset.value = String(options[selectedIndex]?.value ?? '');
     select.setAttribute('aria-activedescendant', items[activeIndex]?.id || '');
     items.forEach((item, index) => { item.setAttribute('aria-selected', String(index === selectedIndex)); item.classList.toggle('is-active', index === activeIndex); });
+  };
+  const renderOptions = () => {
+    list.replaceChildren();
+    items = options.map((option, index) => {
+      const item = document.createElement('li'); const choice = document.createElement('button'); choice.type = 'button'; choice.className = 'sel__opt'; choice.id = `${listId}-${index}`; choice.setAttribute('role', 'option'); choice.dataset.value = option.value;
+      const optionLabel = document.createElement('span'); optionLabel.textContent = option.label;
+      const check = svgEl('svg', { viewBox: '0 0 14 14', 'aria-hidden': 'true' }); check.append(svgEl('path', { d: 'm2 7 3.3 3.1L12 3.5' })); choice.append(optionLabel, check);
+      if (option.disabled) { choice.disabled = true; choice.classList.add('is-disabled'); }
+      choice.addEventListener('click', () => choose(index)); item.append(choice); list.append(item); return choice;
+    });
+    sync();
   };
   const nextEnabled = (start, direction) => {
     for (let step = 1; step <= items.length; step += 1) {
@@ -142,11 +146,20 @@ export function createFilledSelect(host, { label = '', name = '', options = [], 
   list.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); close(true); }
     else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); activeIndex = nextEnabled(activeIndex, event.key === 'ArrowDown' ? 1 : -1); sync(); items[activeIndex]?.focus(); }
-    else if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); activeIndex = event.key === 'Home' ? firstEnabled : lastEnabled; if (activeIndex < 0) activeIndex = selectedIndex; sync(); items[activeIndex]?.focus(); }
+    else if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); activeIndex = event.key === 'Home' ? firstEnabled() : lastEnabled(); if (activeIndex < 0) activeIndex = selectedIndex; sync(); items[activeIndex]?.focus(); }
   });
   const outside = event => { if (!wrap.contains(event.target)) close(); };
-  document.addEventListener('pointerdown', outside); wrap.append(select, list); field.append(wrap, formValue); host.append(field); formValue.value = String(options[selectedIndex]?.value ?? ''); sync();
-  return { element: field, select, input: formValue, open, close, value: () => formValue.value, setValue(next) { const index = options.findIndex(option => String(option.value) === String(next) && !option.disabled); if (index >= 0) { selectedIndex = index; activeIndex = index; formValue.value = String(options[index].value); sync(); } }, destroy() { document.removeEventListener('pointerdown', outside); field.remove(); } };
+  document.addEventListener('pointerdown', outside); wrap.append(select, list); field.append(wrap, formValue); host.append(field); formValue.value = String(options[selectedIndex]?.value ?? ''); formValue.disabled = disabled || selectedIndex < 0; select.disabled = disabled || selectedIndex < 0; renderOptions();
+  return { element: field, select, input: formValue, open, close, value: () => formValue.value,
+    setValue(next) { const index = options.findIndex(option => String(option.value) === String(next) && !option.disabled); if (index >= 0) { selectedIndex = index; activeIndex = index; formValue.value = String(options[index].value); sync(); } },
+    setOptions(next, nextValue = formValue.value) {
+      close(); options = Array.isArray(next) ? next : [];
+      const preserved = options.findIndex(option => String(option.value) === String(nextValue) && !option.disabled);
+      selectedIndex = preserved >= 0 ? preserved : firstEnabled(); activeIndex = selectedIndex;
+      formValue.disabled = disabled || selectedIndex < 0; formValue.value = String(options[selectedIndex]?.value ?? '');
+      select.disabled = disabled || selectedIndex < 0; renderOptions();
+    },
+    destroy() { document.removeEventListener('pointerdown', outside); field.remove(); } };
 }
 
 export function createTextarea(host, { label = '', value = '', placeholder = '', hint = '', rows = 4, disabled = false, onInput = null } = {}) {

@@ -17,6 +17,14 @@ test('history filters, replays and edits records without affecting their source'
   await seed(page);
   const list = page.locator('.history-list');
   await expect(list.locator('button')).toHaveCount(2);
+  const session = page.getByRole('combobox', { name: 'session', exact: true });
+  await session.click();
+  expect(await page.getByRole('option').count()).toBeGreaterThan(1);
+  await page.getByRole('option').nth(1).click();
+  await expect(list.locator('button')).toHaveCount(1);
+  await session.click();
+  await page.getByRole('option', { name: 'all sessions', exact: true }).click();
+  await expect(list.locator('button')).toHaveCount(2);
   await page.getByRole('combobox', { name: 'source', exact: true }).click();
   await page.getByRole('option', { name: 'manual', exact: true }).click();
   await expect(list.locator('button')).toHaveCount(1);
