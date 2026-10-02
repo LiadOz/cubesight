@@ -29,6 +29,7 @@ import { resultsCoach } from './coach-lines.js';
 import { buildMarkers } from './review/markers.js';
 import { reviewBaselines } from './review/baselines.js';
 import { buildDetail } from './review/detail.js';
+import { cleanAnalysis } from '../store/analysis-field.js';
 
 const MEMO = new WeakMap();   // vm -> cached inputs/slices for the next build
 
@@ -395,7 +396,7 @@ function methodSummary(record, settings) {
 }
 
 function storedF2lCase(record, stageKey) {
-  const source = record.analysis?.f2lCases ?? record.analysis?.pairs;
+  const source = record.analysis?.caseMetadata?.f2lCases ?? record.analysis?.f2lCases ?? record.analysis?.pairs;
   const match = Array.isArray(source)
     ? source.find((row, index) => (row.stage ?? row.key ?? `pair${index + 1}`) === stageKey)
     : source?.[stageKey];
@@ -412,8 +413,30 @@ function storedF2lCase(record, stageKey) {
  * `record` may be the current live result or any stored solve.
  */
 export function buildResultsViewModel({ record: inputRecord, live = null, records = [], settings, plan, track = null, optimalCross = null, reviewUi = {}, pins = [], analysisStatus = 'none' }) {
-  const record = inputRecord ?? live?.record;
+  const normalizeRecord = value => {
+    if (!value || !value.analysis || typeof value.analysis !== 'object' || Array.isArray(value.analysis)) return value;
+    const version = [1, 2, 3].includes(value.analysis.v) ? value.analysis.v : 1;
+    const analysis = cleanAnalysis({ ...value.analysis, v: version });
+    const caseMetadata = {};
+    if (value.analysis.f2lCases != null) caseMetadata.f2lCases = value.analysis.f2lCases;
+    if (value.analysis.lastLayer && typeof value.analysis.lastLayer === 'object') {
+      caseMetadata.lastLayer = Object.fromEntries(['oll', 'pll'].flatMap(stage => {
+        const row = value.analysis.lastLayer[stage];
+        if (!row || typeof row !== 'object') return [];
+        const safe = {};
+        if (typeof row.caseId === 'string') safe.caseId = row.caseId.slice(0, 40);
+        if (typeof row.name === 'string') safe.name = row.name.slice(0, 80);
+        for (const field of ['recognitionMs', 'executionMs']) if (Number.isFinite(row[field]) && row[field] >= 0) safe[field] = row[field];
+        if (typeof row.used?.id === 'string') safe.usedAlg = row.used.id.slice(0, 100);
+        return Object.keys(safe).length ? [[stage, safe]] : [];
+      }));
+    }
+    if (Object.keys(caseMetadata).length) analysis.caseMetadata = caseMetadata;
+    return { ...value, analysis };
+  };
+  const record = normalizeRecord(inputRecord ?? live?.record);
   if (!record) return null;
+  records = records.map(normalizeRecord);
   const stored = records.find(r => r.at === record.at) ?? record;
   // Comparisons (vs average, vs PB, the strip, the session) stay within this solve's focus.
   records = inFocus(records, focusOf(stored));
@@ -425,13 +448,18 @@ export function buildResultsViewModel({ record: inputRecord, live = null, record
   const pbs = pbSplits(others, plan);
   const recordTrack = live?.record?.at === stored.at ? track : null;
   const { stages, solveStartAt, moveTimes } = recordStages(stored, recordTrack, plan);
-  const review = reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus: focusOf(stored), crossColor: settings.crossColor, ui: reviewUi, pins, analysisStatus, durationMs: stored.solveMs });
-  const lastLayer = stored.analysis?.lastLayer ?? {};
+  const reviewState = {
+    ...reviewUi,
+    variant: reviewUi.variant ?? reviewUi.detail?.variant,
+    cursor: reviewUi.cursor ?? reviewUi.detail?.cursor,
+  };
+  const review = reviewVM({ stored, stages, solveStartAt, plan, averages, others, focus: focusOf(stored), crossColor: settings.crossColor, ui: reviewState, pins, analysisStatus, durationMs: stored.solveMs });
+  const lastLayer = stored.analysis?.caseMetadata?.lastLayer ?? stored.analysis?.lastLayer ?? {};
   const caseLinks = {};
   const oll = lastLayer.oll?.caseId ?? stored.analysis?.ollCase?.id ?? (typeof stored.ollCase === 'string' ? stored.ollCase : stored.ollCase?.id);
   const pll = lastLayer.pll?.caseId ?? stored.analysis?.pllCase?.id ?? (typeof stored.pllCase === 'string' ? stored.pllCase : stored.pllCase?.id);
-  if (oll) caseLinks.oll = { kind: 'oll', id: String(oll).replace(/^oll\//, ''), name: lastLayer.oll?.name ?? String(oll).replace(/^oll\//, ''), recognitionMs: lastLayer.oll?.recognitionMs ?? stored.ollRecognitionMs ?? null, executionMs: lastLayer.oll?.executionMs ?? stored.ollExecutionMs ?? null, usedAlg: lastLayer.oll?.used?.id ?? null };
-  if (pll) caseLinks.pll = { kind: 'pll', id: String(pll).replace(/^pll\//, ''), name: lastLayer.pll?.name ?? String(pll).replace(/^pll\//, ''), recognitionMs: lastLayer.pll?.recognitionMs ?? stored.pllRecognitionMs ?? null, executionMs: lastLayer.pll?.executionMs ?? stored.pllExecutionMs ?? null, usedAlg: lastLayer.pll?.used?.id ?? null };
+  if (oll) caseLinks.oll = { kind: 'oll', id: String(oll).replace(/^oll\//, ''), name: lastLayer.oll?.name ?? String(oll).replace(/^oll\//, ''), recognitionMs: lastLayer.oll?.recognitionMs ?? stored.ollRecognitionMs ?? null, executionMs: lastLayer.oll?.executionMs ?? stored.ollExecutionMs ?? null, usedAlg: lastLayer.oll?.usedAlg ?? lastLayer.oll?.used?.id ?? null };
+  if (pll) caseLinks.pll = { kind: 'pll', id: String(pll).replace(/^pll\//, ''), name: lastLayer.pll?.name ?? String(pll).replace(/^pll\//, ''), recognitionMs: lastLayer.pll?.recognitionMs ?? stored.pllRecognitionMs ?? null, executionMs: lastLayer.pll?.executionMs ?? stored.pllExecutionMs ?? null, usedAlg: lastLayer.pll?.usedAlg ?? lastLayer.pll?.used?.id ?? null };
   for (const stage of plan.filter(item => /^pair\d$/.test(item.key))) {
     const info = storedF2lCase(stored, stage.key);
     if (info) caseLinks[stage.key] = info;
