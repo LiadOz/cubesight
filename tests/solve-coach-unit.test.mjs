@@ -43,6 +43,23 @@ test('selected-color inspection search returns only that face; neutral returns a
   assert.ok(budgets.reduce((sum, budget) => sum + budget, 0) <= 1000, 'neutral search budgets stay within the whole-query budget');
 });
 
+test('tiny neutral budgets never turn a zero share into the solver default timeout', async () => {
+  const requests = [];
+  const search = async request => {
+    requests.push(request);
+    return { results: [{ moves: ['R'], slotMask: 1, optimality: 'proven-for-target' }], complete: true };
+  };
+  const result = await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 11, search });
+  assert.ok(requests.length > 0);
+  assert.ok(requests.every(request => request.timeLimitMs > 0 && request.timeLimitMs <= 11));
+  assert.ok(requests.reduce((sum, request) => sum + request.timeLimitMs, 0) <= 11);
+  assert.equal(result.perFace.length, 6);
+  assert.equal(result.xcrossPerFace.length, 6);
+  requests.length = 0;
+  await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 0, search });
+  assert.equal(requests.length, 0, 'zero budget skips solver calls');
+});
+
 test('f2lNextPairHint returns null when all pairs solved, and a pair when not', () => {
   assert.equal(f2lNextPairHint(createSolvedState(), 'D'), null);
   const s = stateFromScramble("R U R'");

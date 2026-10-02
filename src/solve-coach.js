@@ -35,26 +35,38 @@ export async function crossSuggestion(scramble, { extended = false, timeLimitMs 
   const faces = crossFacesForPreference(color);
   const results = [];
   const opportunities = [];
-  // The search is sequential: each face gets an equal share of the whole
-  // deadline, split between its cross and X-cross query. Keep the sum of all
-  // requested worker budgets within the caller's total budget.
-  const perFaceBudget = faces.length ? Math.floor(timeLimitMs / faces.length) : 0;
-  const queryBudget = Math.floor(perFaceBudget / 2);
-  const xcrossBudget = perFaceBudget - queryBudget;
+  const requested = Number(timeLimitMs);
+  const totalBudget = Number.isFinite(requested) ? Math.max(0, requested) : 1500;
+  const now = () => globalThis.performance?.now?.() ?? Date.now();
+  const deadline = now() + totalBudget;
+  let budgetLeft = totalBudget;
+  let callsRemaining = faces.length * 2;
+  const nextBudget = () => {
+    const remaining = Math.min(deadline - now(), budgetLeft);
+    const budget = remaining > 0 ? Math.floor(remaining / callsRemaining) : 0;
+    budgetLeft -= budget;
+    callsRemaining -= 1;
+    return budget;
+  };
   for (const face of faces) {
+    const queryBudget = nextBudget();
+    let cross = { face, moves: null, length: null, proven: false };
     try {
-      const reply = await search({
-        scramble, face,
-        kind: 'cross', maxResults: 1, maxDepth: 10, timeLimitMs: queryBudget,
-      });
-      const moves = reply.results?.[0]?.moves ?? null;
-      results.push({ face, moves, length: moves ? moves.length : null, proven: reply.complete === true });
+      if (queryBudget > 0) {
+        const reply = await search({ scramble, face, kind: 'cross', maxResults: 1, maxDepth: 10, timeLimitMs: queryBudget });
+        const moves = reply.results?.[0]?.moves ?? null;
+        cross = { face, moves, length: moves ? moves.length : null, proven: reply.complete === true };
+      }
     } catch { /* a single face timing out must not abort the rest */ }
+    results.push(cross);
+    const xcrossBudget = nextBudget();
     try {
-      const reply = await search({ scramble, face, kind: 'xcross', maxResults: 4, maxDepth: 10, timeLimitMs: xcrossBudget });
-      const candidate = reply.results?.filter(row => row.optimality === 'proven-for-target')
-        .sort((a, b) => a.moves.length - b.moves.length)[0];
-      opportunities.push({ face, slot: crossSlotForMask(face, candidate?.slotMask), slotMask: candidate?.slotMask ?? null, moves: candidate?.moves ?? null, length: candidate?.moves?.length ?? null, proven: Boolean(candidate && reply.complete === true), complete: reply.complete === true });
+      if (xcrossBudget > 0) {
+        const reply = await search({ scramble, face, kind: 'xcross', maxResults: 4, maxDepth: 10, timeLimitMs: xcrossBudget });
+        const candidate = reply.results?.filter(row => row.optimality === 'proven-for-target')
+          .sort((a, b) => a.moves.length - b.moves.length)[0];
+        opportunities.push({ face, slot: crossSlotForMask(face, candidate?.slotMask), slotMask: candidate?.slotMask ?? null, moves: candidate?.moves ?? null, length: candidate?.moves?.length ?? null, proven: Boolean(candidate && reply.complete === true), complete: reply.complete === true });
+      } else opportunities.push({ face, slot: null, slotMask: null, moves: null, length: null, proven: false, complete: false });
     } catch { opportunities.push({ face, moves: null, length: null, proven: false, complete: false }); }
   }
   const finite = results.filter(r => r.length != null);

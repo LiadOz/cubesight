@@ -202,7 +202,7 @@ function inspectionVM(live, now, optimalCross = null) {
   const crossHint = optimalCross?.best ?? (optimalCross?.face ? optimalCross : null);
   // copy-ok: “best” is the proven lowest-move start plan in the bounded search.
   const bestStart = crossHint
-    ? `${crossHint.proven === false ? 'cross found so far' : 'best cross'}: ${FACE_COLORS[crossHint.face] ?? crossHint.face}, ${crossHint.length}${optimalCross?.bestXcross?.proven ? ` · ${xcrossPairName(optimalCross.bestXcross) ?? `${FACE_COLORS[optimalCross.bestXcross.face] ?? optimalCross.bestXcross.face} ${optimalCross.bestXcross.slot ?? ''}`} X-cross possible in ${optimalCross.bestXcross.length}` : ''}`
+    ? `${crossHint.proven === false ? 'cross found so far' : 'best cross'}: ${FACE_COLORS[crossHint.face] ?? crossHint.face}, ${crossHint.length}${optimalCross?.bestXcross?.proven ? ` · ${FACE_COLORS[optimalCross.bestXcross.face] ?? optimalCross.bestXcross.face} cross with ${xcrossPairName(optimalCross.bestXcross) ?? optimalCross.bestXcross.slot ?? 'an adjacent'} pair · X-cross possible in ${optimalCross.bestXcross.length}` : ''}`
     : '';
   return {
     mode: config.mode, overtime: config.overtime,

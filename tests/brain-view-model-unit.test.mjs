@@ -95,7 +95,7 @@ test('inspection shows the proven best cross and only a proven X-cross opportuni
   const base = { session: tracking, live, records: [], settings: normalizeSettings(), now: 1000 };
   const proven = buildViewModel({ ...base, optimalCross: { face: 'D', length: 6, proven: true,
     best: { face: 'D', length: 6, proven: true }, bestXcross: { face: 'F', slot: 'FR', length: 8, proven: true } } });
-  assert.equal(proven.inspection.bestStart, 'best cross: yellow, 6 · white-red X-cross possible in 8');
+  assert.equal(proven.inspection.bestStart, 'best cross: yellow, 6 · green cross with white-red pair · X-cross possible in 8');
   const partial = buildViewModel({ ...base, optimalCross: { face: 'D', length: 6, proven: false,
     best: { face: 'D', length: 6, proven: false }, bestXcross: { face: 'F', length: 8, proven: false } } });
   assert.equal(partial.inspection.bestStart, 'cross found so far: yellow, 6');
