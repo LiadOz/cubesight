@@ -301,6 +301,8 @@
 .st--warn, .st--error { color: var(--b-ink); }
 .g { width: 14px; height: 14px; flex: none; }
 .g-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--b-good); flex: none; margin: 0 3px; }
+.g-dot.is-warn, .g-dot.is-warning, .g-dot.is-error { background: var(--b-warn); }
+.g-dot.is-error { background: var(--b-dnf); }
 .g-spin { animation: g-spin 1.1s linear infinite; }
 @keyframes g-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .g-spin { animation: none; } .toast { transition: none; } }
@@ -323,4 +325,5 @@
 .toast.is-exit { opacity: .3; transform: translateY(4px); transition-duration: 160ms; }
 .toast .act { color: var(--t-act, var(--b-ink)); }
 .toast .g-dot { background: var(--b-good); }
-
+.toast.is-warn { --t-edge: var(--b-warn); }
+.toast.is-error { --t-edge: var(--b-dnf); }

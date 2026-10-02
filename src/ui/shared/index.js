@@ -189,15 +189,15 @@ export function createToggle(host, { label, description = '', checked = false, d
 
 export function createStatus(host, { text, tone = 'default', detail = '' } = {}) {
   const status = document.createElement('span'); status.className = `st${tone === 'default' ? '' : ` st--${tone}`}`;
-  const dot = document.createElement('i'); dot.className = 'g-dot'; dot.setAttribute('aria-hidden', 'true');
+  const dot = document.createElement('i'); dot.className = `g-dot${tone === 'default' ? '' : ` is-${tone}`}`; dot.setAttribute('aria-hidden', 'true');
   status.append(dot);
   if (detail) { const strong = document.createElement('b'); strong.textContent = detail; status.append(strong); }
   status.append(document.createTextNode(text)); host.append(status); return status;
 }
 
 export function createToast(host, { text, detail = '', action = null, tone = 'default' } = {}) {
-  const toast = document.createElement('div'); toast.className = `toast${action ? ' has-act' : ''}`; toast.setAttribute('role', tone === 'error' ? 'alert' : 'status');
-  const dot = document.createElement('i'); dot.className = 'g-dot'; dot.setAttribute('aria-hidden', 'true'); toast.append(dot);
+  const toast = document.createElement('div'); toast.className = `toast${action ? ' has-act' : ''}${tone === 'default' ? '' : ` is-${tone}`}`; toast.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+  const dot = document.createElement('i'); dot.className = `g-dot${tone === 'default' ? '' : ` is-${tone}`}`; dot.setAttribute('aria-hidden', 'true'); toast.append(dot);
   toast.append(document.createTextNode(detail ? `${detail} · ${text}` : text));
   if (action) { const button = document.createElement('button'); button.type = 'button'; button.className = 'act'; button.textContent = action.label; button.addEventListener('click', action.onClick); toast.append(button); }
   host.append(toast); return toast;
