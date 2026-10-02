@@ -6,7 +6,7 @@
 // `crawl` needs a running dev server (default http://127.0.0.1:5172) and writes the raw catalogue and
 // one element screenshot per distinct visual variant into WIDGET_RAW (default /tmp/widget-inventory-raw).
 // `build` reads that, groups the variants into families (scripts/widget-families.mjs), names the images
-// with their variant ids, and writes gallery/widgets/<date>-inventory/{inventory.json,*.png} and
+// with their variant ids, and writes gallery/widgets/<date>-inventory/{inventory.json,*.png} (a re-run goes to a NEW dated folder and post, deleting nothing) and
 // docs/design/WIDGETS.md. Re-run `build` after tuning the families; no need to crawl again.
 //
 // Candidates: buttons, links, inputs/selects/checkboxes, ARIA widgets, details/summary/dialog, kbd, svg

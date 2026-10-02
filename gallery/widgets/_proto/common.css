@@ -1,0 +1,56 @@
+/* Shared prototype styles for the widget proposals. Tokens come from src/brain/css/tokens-orbit.css
+   (var(--b-*) only); fonts are the bundled Manrope + DM Mono. No app code is touched. */
+@import url('../../../node_modules/@fontsource-variable/manrope/index.css');
+@import url('../../../node_modules/@fontsource/dm-mono/latin-300.css');
+@import url('../../../node_modules/@fontsource/dm-mono/latin-400.css');
+@import url('../../../node_modules/@fontsource/dm-mono/latin-500.css');
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--b-bg); color: var(--b-ink); font: 400 var(--b-fs-body)/1.35 var(--b-font-sans); -webkit-font-smoothing: antialiased; }
+.brain { background: var(--b-bg); color: var(--b-ink); font-family: var(--b-font-sans); width: max-content; position: relative; }
+button { font: inherit; color: inherit; }
+
+/* ---- page = title strip + the artboard + the legend ---- */
+.board-title { display: flex; align-items: baseline; gap: 14px; padding: 18px 28px 14px; border-bottom: 1px solid var(--b-hairline); }
+.board-id { font: 500 13px var(--b-font-mono); color: var(--b-accent-text); }
+.board-name { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+.board-theme { margin-left: auto; font: 400 12px var(--b-font-mono); color: var(--b-muted); }
+.legend { display: grid; grid-template-columns: repeat(var(--legend-cols, 2), minmax(0, 1fr)); gap: 8px 36px; padding: 16px 28px 20px; border-top: 1px solid var(--b-hairline); font-size: 14px; line-height: 1.4; color: var(--b-muted); }
+.legend b { color: var(--b-ink); font-weight: 600; }
+.legend .n { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; border-radius: 50%; background: var(--b-warn); color: #141311; font: 700 12px var(--b-font-sans); vertical-align: 1px; }
+
+/* callout badge, placed by common.js over [data-co] */
+.co { position: absolute; z-index: 50; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--b-warn); color: #141311; font: 700 13px var(--b-font-sans); box-shadow: 0 0 0 2px var(--b-bg); pointer-events: none; }
+
+/* ---- the A-frame artboard ---- */
+.frame { position: relative; width: 1440px; height: 900px; overflow: hidden; background: var(--b-bg); }
+.frame.phone { width: 390px; height: 844px; }
+.hdr { position: absolute; left: 0; right: 0; top: 0; height: 66px; display: flex; align-items: center; padding: 0 48px; z-index: 2; }
+.hdr .word { font-weight: 800; font-size: 20px; letter-spacing: -.02em; margin-right: 50px; }
+.hdr nav { display: flex; gap: 32px; font-size: 15px; color: var(--b-muted); }
+.hdr nav .on { color: var(--b-ink); font-weight: 600; box-shadow: 0 3px 0 -1px var(--b-accent); padding-bottom: 6px; }
+.hdr .chip-cube { margin-left: auto; font: 400 12px var(--b-font-mono); color: var(--b-muted); display: flex; align-items: center; gap: 10px; }
+.hdr .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--b-good); }
+.hdr .dot.off { background: var(--b-faint); }
+.hdr .dot.warn { background: var(--b-warn); }
+.hdr .dot.err { background: var(--b-dnf); }
+.stage-svg { position: absolute; left: 0; top: 0; }
+.clock { position: absolute; left: 0; width: 100%; text-align: center; font: 300 var(--clock-size, 112px)/1 var(--b-font-mono); letter-spacing: -.04em; color: var(--b-ink); }
+.clock.dim { color: var(--b-faint); }
+.sub { position: absolute; left: 0; width: 100%; text-align: center; font: 400 13px var(--b-font-mono); color: var(--b-muted); }
+.meta { font: 400 12px var(--b-font-mono); color: var(--b-muted); }
+.rail-coach { position: absolute; left: 48px; top: 548px; width: 262px; }
+.rail-coach .tag { display: flex; align-items: center; gap: 8px; font: 400 11px var(--b-font-mono); color: var(--b-warn-text); margin-bottom: 8px; }
+.rail-coach .tag i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--b-warn); display: inline-block; }
+.rail-coach p { margin: 0; font-size: 20px; line-height: 28px; color: var(--b-ink); font-weight: 400; }
+.slot-title { position: absolute; left: 0; width: 100%; text-align: center; font-size: 22px; font-weight: 600; }
+
+/* ---- spec sheet pieces (state matrices) ---- */
+.sheet { padding: 22px 28px 26px; }
+.sheet h3 { margin: 0 0 14px; font: 500 12px var(--b-font-mono); color: var(--b-muted); }
+.matrix { display: grid; align-items: center; gap: 12px 18px; }
+.matrix .colhead, .matrix .rowhead { font: 400 12px var(--b-font-mono); color: var(--b-muted); }
+.matrix .cell { display: flex; align-items: center; min-height: 52px; position: relative; }
+.spacer { height: 14px; }
+.hit { outline: 1px dashed var(--b-warn); outline-offset: 0; }

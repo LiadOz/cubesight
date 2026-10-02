@@ -1,0 +1,67 @@
+{
+  "W-17-00-compare-options.png": {
+    "id": "W-17-00",
+    "title": "the three options side by side",
+    "caption": "dark above, light below."
+  },
+  "W-17-01-option1-states.png": {
+    "id": "W-17-01",
+    "title": "option 1: keycap states, dark and light",
+    "caption": "default, pressed, held, unavailable; sizes; on primary, secondary and plain; the glyph set."
+  },
+  "W-17-02-option1-idle.png": {
+    "id": "W-17-02",
+    "title": "option 1: key bar and start key on solve (A-01)",
+    "caption": "start with the space key inside, the key bar bottom-left."
+  },
+  "W-17-03-option1-button.png": {
+    "id": "W-17-03",
+    "title": "option 1: keycaps inside buttons (A-08)",
+    "caption": "number keys on the answers, skip s, space on the primary."
+  },
+  "W-17-04-option1-results.png": {
+    "id": "W-17-04",
+    "title": "option 1: key bar on results, a key held (A-05)",
+    "caption": "the [ ] pair, one pressed, one resting."
+  },
+  "W-17-05-option2-states.png": {
+    "id": "W-17-05",
+    "title": "option 2: keycap states, dark and light",
+    "caption": "default, pressed, held, unavailable; sizes; on primary, secondary and plain; the glyph set."
+  },
+  "W-17-06-option2-idle.png": {
+    "id": "W-17-06",
+    "title": "option 2: key bar and start key on solve (A-01)",
+    "caption": "start with the space key inside, the key bar bottom-left."
+  },
+  "W-17-07-option2-button.png": {
+    "id": "W-17-07",
+    "title": "option 2: keycaps inside buttons (A-08)",
+    "caption": "number keys on the answers, skip s, space on the primary."
+  },
+  "W-17-08-option2-results.png": {
+    "id": "W-17-08",
+    "title": "option 2: key bar on results, a key held (A-05)",
+    "caption": "the [ ] pair, one pressed, one resting."
+  },
+  "W-17-09-option3-states.png": {
+    "id": "W-17-09",
+    "title": "option 3: keycap states, dark and light",
+    "caption": "default, pressed, held, unavailable; sizes; on primary, secondary and plain; the glyph set."
+  },
+  "W-17-10-option3-idle.png": {
+    "id": "W-17-10",
+    "title": "option 3: key bar and start key on solve (A-01)",
+    "caption": "start with the space key inside, the key bar bottom-left."
+  },
+  "W-17-11-option3-button.png": {
+    "id": "W-17-11",
+    "title": "option 3: keycaps inside buttons (A-08)",
+    "caption": "number keys on the answers, skip s, space on the primary."
+  },
+  "W-17-12-option3-results.png": {
+    "id": "W-17-12",
+    "title": "option 3: key bar on results, a key held (A-05)",
+    "caption": "the [ ] pair, one pressed, one resting."
+  }
+}
