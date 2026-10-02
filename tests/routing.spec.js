@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('exposes the installed build and a network version marker', async ({ page, request }) => {
   await page.goto('/');

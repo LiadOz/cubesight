@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 // The Brain's panels and navigation in a real browser with the real shell: the
 // settings panel (one active tab, closes from every path) and the debug drawer

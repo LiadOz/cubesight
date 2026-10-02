@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import fs from 'node:fs';
 
 // The move guide (plain notation chips) and the 3D cue, through the dev gallery page

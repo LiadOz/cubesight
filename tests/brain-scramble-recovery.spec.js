@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { mountTestBrain, startGuidedScramble } from './helpers/fake-brain.js';
 
 // P0 regression: after a WRONG turn in a guided scramble the cue used to lose the

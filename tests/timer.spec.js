@@ -1,7 +1,7 @@
 // The manual timer (src/timer) on its dev page: keyboard flow, touch flow on a phone, penalty
 // edits, persistence across a reload (IndexedDB) and working offline.
 // TIMER_SHOTS=1 also writes the visual matrix under test-results/timer-screenshots/.
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 

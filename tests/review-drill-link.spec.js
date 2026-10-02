@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('Cross Scout links accept the solve setup and retain a direct review return pill', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });

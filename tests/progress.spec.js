@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('progress scopes solve statistics and preserves legacy drill totals across reload', async ({ page }) => {
   await page.addInitScript(() => {

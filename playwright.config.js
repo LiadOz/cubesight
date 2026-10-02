@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.js',
   timeout: 20_000,
+  retries: 0,
   // These tests share software-rendered WebGL; excessive concurrency can
   // starve short visual feedback assertions and browser animation frames.
   workers: 2,

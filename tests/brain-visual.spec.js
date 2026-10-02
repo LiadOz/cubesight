@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 // Brain v2 visual matrix: every style × site mode × key screen, rendered from
 // the sample view-models through the real shell and style (no cube needed).

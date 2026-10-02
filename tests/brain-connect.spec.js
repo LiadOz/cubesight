@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 // Connecting must look like something is happening: a busy chip and button, the
 // latest step of the attach as a status line (session detail and connection

@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 const records = [
   { at: 1000000, scramble: 'R U', solveMs: 12340, penalty: null, focus: 'speed', source: 'smart', solved: true, solveMoves: ["U'", "R'"], moveCount: 2 },

@@ -2,7 +2,7 @@
 // with the Orbit dev fixtures; the inspection-variants grid uses the style's
 // own harness (src/brain/styles/orbit/_dev.html). Structural assertions plus
 // an attached screenshot per state, for Orbit dark and light, desktop and phone.
-import { expect, test } from 'playwright/test';
+import { expect, test } from './helpers/coverage-test.js';
 
 const HARNESS = '/src/brain/styles/orbit/_dev.html';
 const GALLERY = '/src/brain/_gallery.html';

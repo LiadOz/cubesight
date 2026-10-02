@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { readFileSync } from 'node:fs';
 import { initSync, f2l_case } from '../src/wasm/cubesight_core.js';
 import { createF2LCaseFromWasm, createPseudoScanCase } from '../src/f2l-logic.js';

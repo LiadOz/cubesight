@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('the OLL drill opens the selected canonical case, scores it, and reveals a credited alg', async ({ page }) => {
   await page.goto('/#/drills/oll?cases=oll%2F1');

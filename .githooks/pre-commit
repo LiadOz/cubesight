@@ -5,9 +5,9 @@ set -e
 cd "$(git rev-parse --show-toplevel)"
 echo "pre-commit: npm run lint"
 npm run --silent lint
-echo "pre-commit: npm run test:unit"
-npm run --silent test:unit > /tmp/cubesight-precommit-unit.log 2>&1 || {
+echo "pre-commit: affected unit tests"
+npm run --silent test:affected -- --unit-only > /tmp/cubesight-precommit-unit.log 2>&1 || {
   tail -n 60 /tmp/cubesight-precommit-unit.log
-  echo "pre-commit: unit tests failed (full log: /tmp/cubesight-precommit-unit.log)"
+  echo "pre-commit: affected unit tests failed (full log: /tmp/cubesight-precommit-unit.log)"
   exit 1
 }

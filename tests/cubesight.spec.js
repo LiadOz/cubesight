@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('loads the 3D trainer and Rust engine', async ({ page }) => {
   const errors = [];

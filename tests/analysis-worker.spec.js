@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 const INPUT = {
   scramble: "F R U' R' U R U R2 F' R U R U' R' R U2 R' U' R U' R' F U R U' R' F' U L U' L' U R' U' R U' L' U L U R U' R' D R' D B' D' F' D F",

@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('a correct single-corner answer makes the next case ready without a feedback pause', async ({ page }) => {
   await page.clock.install();

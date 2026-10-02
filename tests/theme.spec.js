@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('follows system theme until an explicit choice, then remembers it', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
