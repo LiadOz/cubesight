@@ -5,7 +5,7 @@
     "caption": "sections, a group, disclosures, the drawer, a toast. Dark above, light below."
   },
   "C-00-ladder-which-container-when.png": {
-    "id": "C-00",
+    "id": "C-00b",
     "title": "the ladder: which container when",
     "caption": "section, group, panel, disclosure, drawer, dialog: when and the rules."
   },
@@ -128,5 +128,10 @@
     "id": "C-38",
     "title": "option 3: phone: settings sheet, confirm dialog, import sheet",
     "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "C-00-decide.png": {
+    "id": "C-00",
+    "title": "decide: the three options and 3 questions",
+    "caption": "settings drawer and delete dialog in each option, Q1 to Q3 drawn in the image."
   }
 }

@@ -42,7 +42,7 @@ const RING = '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" 
 const tg = (kind, text) => `<span class="tg tg-${kind}">${kind === 'g' ? STAR : RING}${text}</span>`;
 const bd = (text, cls = '') => `<span class="bd ${cls}">${text}</span>`;
 const eyebrow = (t) => `<span class="eyebrow">${t}</span>`;
-const shead = (left, end = '', cnt = '', n = 0) => `<div class="shead"><span ${co(n)}>${eyebrow(left)}</span>${cnt ? `<span class="cnt">${cnt}</span>` : ''}${end ? `<span class="end">${end}</span>` : ''}</div>`;
+const shead = (left, end = '', cnt = '', n = 0, side = '') => `<div class="shead"><span ${co(n)} ${side ? `data-co-side="${side}"` : ''}>${eyebrow(left)}</span>${cnt ? `<span class="cnt">${cnt}</span>` : ''}${end ? `<span class="end">${end}</span>` : ''}</div>`;
 const stat = (l, v, d = '', o = {}) => `<div class="stat ${o.sm ? 'sm' : ''}"><span class="l">${l}</span><span class="v ${o.acc ? 'acc' : ''}">${v}</span>${d ? `<span class="d ${d.startsWith('−') ? 'pos' : d.startsWith('+') ? 'neg' : ''}">${d}</span>` : ''}</div>`;
 const empty = (sentence, hint, action, n = 0) => `<div class="empty" ${co(n)}><svg class="glyph" width="64" height="64" viewBox="0 0 40 40" aria-hidden="true"><circle class="e" cx="20" cy="20" r="15"/><circle class="ed" cx="20" cy="5" r="2.2"/></svg><div class="s">${sentence}</div><div class="h">${hint}</div>${action}</div>`;
 
@@ -81,7 +81,7 @@ function vHistory() {
     <div class="row" style="gap:26px;margin:14px 0 14px;align-items:center">${glyph('nnngnwnnnnwgnnnnnwnnnnng', { size: 80, center: '23', cfs: 13 })}
       <div style="display:grid;gap:4px"><span class="eyebrow">today · 2 sessions</span><div class="stats" data-co-side="l" ${co(2)}>${stat('pb', '12.41', '', { acc: true })}${stat('ao12', '15.03')}${stat('ao5', '14.62')}</div></div></div>
     <div class="filters" style="margin-bottom:14px">${sel('sessions', ['all sessions', 'today', 'this week'])}${sel('focus', ['speed', 'flow', 'learning'])}${sel('cube', ['cube', 'GAN 356 i3'])}</div>
-    ${shead('evening · <b>17:33</b> · 14 solves · ao12 15.03', '14 solves', '14 solves', 3)}${list}
+    ${shead('evening · <b>17:33</b> · 14 solves · ao12 15.03', '14 solves', '14 solves', 3, 'l')}${list}
     <div style="height:14px"></div>${shead('morning · <b>08:12</b> · 9 solves · ao12 15.9', '9 solves', '9 solves')}${list2}</div>`;
   const right = `${orbitSVG({ cx: 1110, cy: 330, r: 182, segs: resultsSegs, markers: resultsMarkers })}<svg class="stage-svg" width="1440" height="900" aria-hidden="true">${cubeSVG(1110, 332, 100)}</svg>
     <div class="clock" style="left:880px;width:460px;top:535px;--clock-size:84px">14.07</div><div class="sub" style="left:880px;width:460px;top:632px;font-size:12px">solve 23 · today 17:33 · speed · cube</div>
