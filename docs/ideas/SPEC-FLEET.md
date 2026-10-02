@@ -1,6 +1,6 @@
 # Fleet spec: everything still to build
 
-> **Handing this out:** give each agent this file plus its work-package ID, e.g. "Implement **F0** from `docs/ideas/SPEC-FLEET.md`". Every agent must read: this file in full (the user feedback and ground rules apply to all), `docs/design/orbit-v3/README.md` + the gallery, `docs/design/VOICE.md`, and `docs/ideas/FEATURES.md` for background. **Wave 1:** F0, F3, F6, F8, F9 (in parallel). **Wave 2, after F0 is merged:** F1, F2, F4, F5, F10, F14. The lead reviews and merges every WP.
+> **Handing this out:** give each agent this file plus its work-package ID, e.g. "Implement **F0** from `docs/ideas/SPEC-FLEET.md`". Every agent must read: this file in full (the user feedback and ground rules apply to all), `docs/design/orbit-v3/README.md` + the gallery, `docs/design/VOICE.md`, and `docs/ideas/FEATURES.md` for background. **Wave 1:** F0 (now also builds the whole approved widget set: see `docs/design/WIDGETS.md`), F3, F6, F8, F9 (in parallel). **Wave 2, after F0 is merged:** F1, F2, F4, F5, F10, F14. The lead reviews and merges every WP.
 
 The brief for the next fleet of builder agents, and the checklist the lead reviews against. It consolidates every open item from `ROADMAP.md`, `REVIEW-NEXT-2.md`, `REVIEW-NEXT-3.md`, `FEATURES.md` and the Orbit v3 designs. Where this file and an older doc disagree, **this file wins**.
 
@@ -44,7 +44,14 @@ The brief for the next fleet of builder agents, and the checklist the lead revie
 
 ---
 
-## F0: Foundation: the Cube and Orbit components (must land first)
+## F0: Foundation: the approved widget set, the Cube and the Orbit (must land first)
+**Read `docs/design/WIDGETS.md` first: every widget family now has an APPROVED design (47 decisions, 2026-10-02). F0 builds that set once; nothing is re-designed.** The approved prototypes are real HTML/CSS in `gallery/widgets/<post>/proto/` with the shared kit `gallery/widgets/_proto/approved.css`: port them into the app, don't rebuild them by eye. Build order inside F0:
+1. **Tokens + the shared kit** (one source of truth for colours, type, spacing, radii, motion).
+2. **The Cube and the Orbit** (below) plus the shared pieces (header, key bar, coach line, ≤3 actions, chip).
+3. **The rest of the approved set:** buttons ① quiet fill; selection controls ③ ink with a ✓ on the selected chip; bevelled keycaps with cap–cap ranges (only keyboard keys are bevelled); status/toast ① bottom-right; the move display (Orbit labels on desktop, wrapped on phone, sections = extra spacing); containers ① frameless (one ladder: section → group → panel → disclosure → drawer → dialog; the review detail is a right drawer); lists ① open rows with the mini Orbit and count pills; navigation ③ (side rail, arrow links with crumbs, the cube chip opening a right drawer); inputs ① filled pill fields + search in the section head; timer ① (hidden = the word "hidden"); the coach line ① with the dotted connector, fanning markers onto a second radius when crowded; charts ③ (the Orbit for a few structural items, real charts where many points are compared); the wipe handle = the Orbit caret with an unmistakable drag signifier (else the ink knob).
+Each component ships with its states (hover, focus-visible, pressed, disabled, selected, loading), dark + light, phone touch sizes, and reduced-motion behaviour, and is registered in a dev gallery page so F1–F15 consume it rather than re-styling.
+
+### F0 original brief (the Cube and the Orbit)
 Design: `orbit-v3/00-system-components`, `00-system-pieces`, `00-system-flows`, README §§ design system and motion.
 
 Build:
