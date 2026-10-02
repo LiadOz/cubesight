@@ -151,7 +151,11 @@ export function createButton(host, { label, variant = 'primary', size = '', disa
   control.textContent = label;
   if (href) control.href = href;
   else { control.type = 'button'; if (onClick) control.addEventListener('click', onClick); }
-  if (disabled || loading) { control.setAttribute('aria-disabled', 'true'); if (control instanceof HTMLButtonElement) control.disabled = true; }
+  if (disabled || loading) {
+    control.setAttribute('aria-disabled', 'true');
+    if (control instanceof HTMLButtonElement) control.disabled = true;
+    else { control.tabIndex = -1; control.addEventListener('click', event => event.preventDefault()); }
+  }
   if (loading) { const ring = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); ring.classList.add('btn-ring'); ring.setAttribute('viewBox', '0 0 20 20'); ring.setAttribute('aria-hidden', 'true'); ring.innerHTML = '<circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="22 22" />'; control.prepend(ring); control.setAttribute('aria-busy', 'true'); }
   if (key) { const cap = document.createElement('kbd'); cap.textContent = key; control.append(cap); }
   host.append(control); return control;

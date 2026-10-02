@@ -46,8 +46,10 @@ export function mountApprovedWidgetGallery(host) {
 
   const inputs = addPanel('W-09 / W-36 · filled fields and search');
   createFilledInput(inputs, { label: 'session name', value: 'evening solves', placeholder: 'name this session' });
-  createFilledSelect(inputs, { label: 'filter', value: 'all', options: [{ value: 'all', label: 'all sessions' }, { value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] });
-  createFilledSelect(inputs, { label: 'disabled filter', value: 'recent', disabled: true, options: [{ value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] });
+  const selects = [
+    createFilledSelect(inputs, { label: 'filter', value: 'all', options: [{ value: 'all', label: 'all sessions' }, { value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] }),
+    createFilledSelect(inputs, { label: 'disabled filter', value: 'recent', disabled: true, options: [{ value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] }),
+  ];
   createFilledInput(inputs, { label: 'validation state', value: '', placeholder: 'name this session', error: /* copy-ok: validation example shows accessible error-state styling */ 'Choose a name to continue.' });
   createTextarea(inputs, { label: 'paste moves', value: "R U R' U'", rows: 2, hint: 'Notation stays on this device.' });
   createRangeInput(inputs, { label: 'playback speed', min: .5, max: 2, step: .25, value: 1, unit: '×' });
@@ -102,6 +104,6 @@ export function mountApprovedWidgetGallery(host) {
   const comparison = createWipeComparison(wipeStageHost, { before: el('span', 'g-widget-live__sample', 'your solve · 14.07'), after: el('span', 'g-widget-live__sample', 'reference · 13.85'), value: 54, label: 'Wipe between solve and reference' });
   createSegmented(wipeModes, { label: 'Comparison view', value: 'wipe', options: [{ value: 'wipe', label: 'wipe' }, { value: 'side-by-side', label: 'side by side' }, { value: 'overlay', label: 'overlay' }], onChange: mode => comparison.setMode(mode) });
 
-  host._approvedWidgetGallery = { dialog, drawer, toastSlot, moveDisplay, coach, coachOrbit, roundOrbit, comparison, destroy() { dialog.destroy(); drawer.destroy(); toastSlot.destroy(); moveDisplay.destroy(); coach.destroy(); coachOrbit.destroy(); roundOrbit.destroy(); comparison.destroy(); host.classList.remove('touch'); if (priorTheme == null) delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = priorTheme; document.documentElement.style.colorScheme = priorColorScheme; host.replaceChildren(); } };
+  host._approvedWidgetGallery = { dialog, drawer, toastSlot, moveDisplay, coach, coachOrbit, roundOrbit, comparison, destroy() { dialog.destroy(); drawer.destroy(); toastSlot.destroy(); moveDisplay.destroy(); coach.destroy(); coachOrbit.destroy(); roundOrbit.destroy(); comparison.destroy(); selects.forEach(select => select.destroy()); host.classList.remove('touch'); if (priorTheme == null) delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = priorTheme; document.documentElement.style.colorScheme = priorColorScheme; host.replaceChildren(); } };
   return host._approvedWidgetGallery;
 }
