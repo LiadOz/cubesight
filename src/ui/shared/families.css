@@ -97,6 +97,7 @@
 .ui-chart__label { fill:var(--b-muted); font:11px var(--b-font-mono); }
 .ui-wipe { position:relative; overflow:hidden; min-height:180px; background:var(--b-surface); touch-action:pan-y; }
 .ui-wipe__side { position:absolute; inset:0; display:grid; place-items:center; padding:24px; }
+.ui-wipe__side img { width:100%; height:100%; object-fit:cover; object-position:top left; }
 .ui-wipe__side--before { right:auto; overflow:hidden; width:50%; background:var(--b-canvas); }
 .ui-wipe__handle { position:absolute; z-index:2; top:0; bottom:0; left:50%; width:48px; margin-left:-24px; border:0; padding:0; background:transparent; color:var(--b-accent); cursor:ew-resize; touch-action:none; }
 .ui-wipe__handle::before { content:''; position:absolute; left:23px; top:0; bottom:0; width:2px; background:currentColor; box-shadow:0 0 0 1px color-mix(in srgb,var(--b-bg) 55%,transparent); }
