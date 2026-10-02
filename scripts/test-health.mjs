@@ -6,6 +6,7 @@ import path from 'node:path';
 const root = process.cwd();
 const outDir = path.join(root, 'test-results/health');
 const slowLimitMs = 20_000;
+const suiteBudgetsMs = { unit: 60_000, playwright: 5 * 60_000, pwa: 2 * 60_000 };
 const unitFiles = (await readdir(path.join(root, 'tests')))
   .filter((name) => name.endsWith('-unit.test.mjs'))
   .map((name) => `tests/${name}`);
@@ -54,6 +55,8 @@ const unit = execute('node', ['--test', '--test-reporter=tap', ...unitFiles]);
 suites.push({ name: 'unit', elapsedMs: unit.elapsedMs, exitCode: unit.status, output: unit.stdout });
 const playwright = execute('npx', ['playwright', 'test', '--reporter=json']);
 suites.push({ name: 'playwright', elapsedMs: playwright.elapsedMs, exitCode: playwright.status, output: playwright.stdout });
+const pwa = execute('npx', ['playwright', 'test', '--config=playwright.pwa.config.js', '--reporter=json']);
+suites.push({ name: 'pwa', elapsedMs: pwa.elapsedMs, exitCode: pwa.status, output: pwa.stdout });
 const reports = suites.map((suite) => {
   let parsed;
   try { parsed = JSON.parse(suite.output); } catch { parsed = null; }
@@ -66,7 +69,8 @@ const overBudget = tests.filter((test) => test.durationMs > slowLimitMs);
 const result = {
   generatedAt: new Date().toISOString(),
   softLimitMs: slowLimitMs,
-  suites: reports.map(({ name, wallTimeMs, exitCode }) => ({ name, wallTimeMs, exitCode })),
+  suiteBudgetsMs,
+  suites: reports.map(({ name, wallTimeMs, exitCode }) => ({ name, wallTimeMs, exitCode, budgetMs: suiteBudgetsMs[name], overBudget: wallTimeMs > suiteBudgetsMs[name] })),
   testsObserved: tests.length,
   slowestTests: slowest,
   testsOverSoftLimit: overBudget,
@@ -79,7 +83,7 @@ const lines = [
   '',
   `Generated ${result.generatedAt}. Soft per-test limit: ${slowLimitMs / 1000}s.`,
   '',
-  ...reports.map((suite) => `- ${suite.name}: ${(suite.wallTimeMs / 1000).toFixed(1)}s wall time; exit ${suite.exitCode}; ${suite.tests.length} test timings parsed.`),
+  ...reports.map((suite) => `- ${suite.name}: ${(suite.wallTimeMs / 1000).toFixed(1)}s wall time / ${(suiteBudgetsMs[suite.name] / 1000).toFixed(0)}s budget; exit ${suite.exitCode}; ${suite.tests.length} test timings parsed.`),
   '',
   '## Slowest tests',
   '',
@@ -97,4 +101,4 @@ if (tests.length === 0) {
 for (const suite of suites) {
   if (suite.exitCode !== 0) process.exitCode = suite.exitCode ?? 1;
 }
-if (overBudget.length) process.exitCode = 1;
+if (overBudget.length || reports.some((suite) => suite.wallTimeMs > suiteBudgetsMs[suite.name])) process.exitCode = 1;

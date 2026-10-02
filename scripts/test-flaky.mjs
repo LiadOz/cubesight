@@ -9,6 +9,7 @@ const files = (await readdir(path.join(root, 'tests'))).filter((name) => name.en
 await mkdir(dir, { recursive: true });
 const runs = [
   ['playwright', 'npx', ['playwright', 'test', '--repeat-each=5', '--reporter=line']],
+  ['pwa', 'npx', ['playwright', 'test', '--config=playwright.pwa.config.js', '--repeat-each=5', '--reporter=line']],
 ];
 const results = [];
 for (let repeat = 1; repeat <= 5; repeat += 1) {
@@ -32,7 +33,7 @@ for (const [name, command, args] of runs) {
   results.push({ name, durationMs, exitCode: run.status, failures });
   console.log(`${name}: ${durationMs} ms, exit ${run.status}, ${failures.length} failure lines`);
 }
-const report = { generatedAt: new Date().toISOString(), unitRepeats: 5, playwrightRepeats: 5, retries: 0, runs: results };
+const report = { generatedAt: new Date().toISOString(), unitRepeats: 5, playwrightRepeats: 5, pwaRepeats: 5, retries: 0, runs: results };
 await writeFile(path.join(dir, 'summary.json'), `${JSON.stringify(report, null, 2)}\n`);
 const notes = [
   '# Repeated test run', '',
