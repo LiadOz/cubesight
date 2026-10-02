@@ -1,4 +1,5 @@
 import './shared.css';
+import './approved-widgets.css';
 import { APP_NAME } from '../../copy/nav.js';
 
 export function createHeader(host, { title = APP_NAME, sections = ['solve', 'drills', 'algs', 'progress', 'history'], active = 'solve', compass = null, session = null, actions = {}, help = null, themeToggle = true, showDevDrawer = true } = {}) {
@@ -119,11 +120,11 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null }
 
 export function createActions(host, actions = []) {
   const row = document.createElement('div'); row.className = 'ui-actions';
-  actions.slice(0, 3).forEach(({ label, onClick, href, primary = false }) => { const control = href ? document.createElement('a') : document.createElement('button'); control.className = `ui-action${primary ? ' is-primary' : ''}`; control.textContent = label; if (href) control.href = href; else { control.type = 'button'; control.addEventListener('click', onClick); } row.append(control); });
+  actions.slice(0, 3).forEach(({ label, onClick, href, primary = false }) => { const control = href ? document.createElement('a') : document.createElement('button'); control.className = `btn ${primary ? 'btn--primary' : 'btn--text'}`; control.textContent = label; if (href) control.href = href; else { control.type = 'button'; control.addEventListener('click', onClick); } row.append(control); });
   host.append(row); return row;
 }
 
 export function createChip(host, { label, value = null, pressed = null, onClick = null } = {}) {
-  const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'ui-chip'; chip.textContent = value == null ? label : `${label} · ${value}`;
+  const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'chip'; chip.textContent = value == null ? label : `${label} · ${value}`;
   if (pressed != null) chip.setAttribute('aria-pressed', String(pressed)); if (onClick) chip.addEventListener('click', onClick); host.append(chip); return chip;
 }
