@@ -87,6 +87,13 @@ test('the approved widget gallery keeps select, field and right-drawer states ac
   const describedBy = await field.getAttribute('aria-describedby');
   await expect(page.locator(`#${describedBy.split(' ').at(-1)}`)).toHaveText('Choose a name to continue.');
 
+  const moveDisplay = page.locator('.ui-move-display');
+  await expect(moveDisplay.locator('.ui-move')).toHaveCount(9);
+  await expect(moveDisplay.locator('.orbit__segment')).toHaveCount(8);
+  await page.getByRole('button', { name: 'next move' }).click();
+  await expect(moveDisplay.locator('.ui-move')).toHaveCount(7);
+  await expect(moveDisplay.locator('.orbit__segment')).toHaveCount(7);
+
   await page.getByRole('button', { name: 'open right drawer' }).click();
   const drawer = page.getByRole('dialog', { name: 'Review detail' });
   await expect(drawer).toBeVisible();

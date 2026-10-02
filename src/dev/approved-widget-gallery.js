@@ -86,7 +86,10 @@ export function mountApprovedWidgetGallery(host) {
   const timeMove = addPanel('W-20 / W-21 / W-22 · coach, moves and timer');
   const timerRow = el('div', 'g-widget-live__row'); timeMove.append(timerRow); const timer = createTimerReadout(timerRow, { value: '14.07', subtitle: 'solve time' }); createTimerReadout(timerRow, { value: '12.00', hidden: true, subtitle: 't to show' });
   const timerButton = createButton(timerRow, { label: 'hide timer', variant: 'text', size: 's' }); let isHidden = false; timerButton.addEventListener('click', () => { isHidden = !isHidden; timer.setHidden(isHidden); timerButton.textContent = isHidden ? 'show timer' : 'hide timer'; });
-  const moveHost = el('div', 'g-widget-live__wide'); timeMove.append(moveHost); const moveDisplay = createMoveDisplay(moveHost, { moves: ['R', 'U', "R′", "U′", 'F', 'R2', "U′"], current: 3, sections: [{ start: 4 }] });
+  const moveHost = el('div', 'g-widget-live__wide'); timeMove.append(moveHost); const moveSequence = ['R', 'U', "R′", "U′", 'F', 'R2', "U′"];
+  let currentMove = 3;
+  const moveDisplay = createMoveDisplay(moveHost, { moves: moveSequence, current: currentMove, sections: [{ start: 4 }], wrong: 'F', undo: ["F′"] });
+  createButton(timeMove, { label: 'next move', variant: 'text', size: 's' }).addEventListener('click', () => { currentMove = (currentMove + 1) % moveSequence.length; moveDisplay.setCurrent(currentMove); });
   const coachExample = el('div', 'g-widget-live__coach-example'); timeMove.append(coachExample);
   const coachHost = el('div', 'g-widget-live__coach'); coachExample.append(coachHost);
   const coachOrbitHost = el('div', 'g-widget-live__coach-orbit'); coachExample.append(coachOrbitHost);

@@ -267,35 +267,38 @@ export function createMoveDisplay(host, { moves = [], current = -1, sections = [
   const orbitHost = document.createElement('div'); orbitHost.className = 'ui-move-display__orbit';
   const phoneWindow = document.createElement('div'); phoneWindow.className = 'ui-move-display__phone-window';
   const phone = document.createElement('div'); phone.className = 'ui-move-display__phone'; phoneWindow.append(phone);
+  let currentWrong = wrong, undoMoves = [...undo];
   const sectionDefs = sections.map(section => typeof section === 'number' ? { sourceStart: section } : { ...section, sourceStart: Number(section.start ?? section.from) }).filter(section => Number.isFinite(section.sourceStart));
   const sectionStarts = new Set(sectionDefs.map(section => section.sourceStart));
   const buildItems = () => {
     const result = [];
     moves.forEach((move, index) => {
-      if (index === current && undo.length) {
-        if (wrong) result.push({ move: wrong, index, kind: 'wrong', count: false });
-        undo.forEach((undoMove, undoIndex) => result.push({ move: undoMove, index, kind: undoIndex === 0 ? 'undo-current' : 'undo', count: true }));
+      if (index === current && undoMoves.length) {
+        if (currentWrong) result.push({ move: currentWrong, index, kind: 'wrong', count: false });
+        undoMoves.forEach((undoMove, undoIndex) => result.push({ move: undoMove, index, kind: undoIndex === 0 ? 'undo-current' : 'undo', count: true }));
       }
-      result.push({ move, index, kind: index === current && !undo.length ? 'current' : index < current ? 'done' : 'future', count: true });
+      result.push({ move, index, kind: index === current && !undoMoves.length ? 'current' : index < current ? 'done' : 'future', count: true });
     });
     return result;
   };
   let items = buildItems();
-  const activeAt = () => { const found = items.findIndex(item => item.kind === 'current' || item.kind === 'undo-current'); return found < 0 ? Math.max(0, current) : found; };
+  const ringItems = () => items.map((item, index) => ({ item, index })).filter(entry => entry.item.kind !== 'wrong');
+  const activeAt = () => { const ring = ringItems(), found = ring.findIndex(({ item }) => item.kind === 'current' || item.kind === 'undo-current'); return found < 0 ? Math.max(0, ring.findIndex(({ item }) => item.index >= current)) : found; };
   const tokenState = item => item.kind === 'done' ? 'done' : item.kind === 'current' ? 'current' : item.kind === 'wrong' || item.kind.startsWith('undo') ? 'wrong' : 'future';
   const sectionStartFor = item => item.kind.startsWith('undo') || item.kind === 'wrong' ? `undo-${item.index}` : [...sectionStarts].filter(start => start <= item.index).at(-1) ?? -1;
   const ringSections = () => {
-    const starts = sectionDefs.map(section => items.findIndex(item => item.index >= section.sourceStart && !item.kind.startsWith('undo') && item.kind !== 'wrong')).filter(index => index >= 0);
-    const undoStart = items.findIndex(item => item.kind === 'undo-current' || item.kind === 'wrong');
+    const ring = ringItems();
+    const starts = sectionDefs.map(section => ring.findIndex(({ item }) => item.index >= section.sourceStart && !item.kind.startsWith('undo'))).filter(index => index >= 0);
+    const undoStart = ring.findIndex(({ item }) => item.kind === 'undo-current');
     if (undoStart >= 0) starts.push(undoStart);
     return [...new Set(starts)].sort((a, b) => a - b).map(start => ({ start }));
   };
   const buildSegments = () => {
-    const active = activeAt(), left = Math.max(0, Math.min(active - 7, items.length - 22)), right = Math.min(items.length, left + 22);
+    const ring = ringItems(), active = activeAt(), left = Math.max(0, Math.min(active - 7, ring.length - 22)), right = Math.min(ring.length, left + 22);
     beforeCount.textContent = left ? `‹ ${left}` : '';
-    afterCount.textContent = items.length > right ? `${items.length - right} ›` : '';
-    return items.map((item, index) => {
-      const visible = index >= left && index < right;
+    afterCount.textContent = ring.length > right ? `${ring.length - right} ›` : '';
+    return ring.map(({ item, index }, ringIndex) => {
+      const visible = ringIndex >= left && ringIndex < right;
       return { key: `move-${index}`, label: visible ? item.move : '', ariaLabel: `Move ${item.index + 1}: ${item.move}, ${item.kind}`, weight: 1, state: tokenState(item), fill: item.kind === 'done' ? 1 : 0, section: sectionStartFor(item) };
     });
   };
@@ -314,13 +317,19 @@ export function createMoveDisplay(host, { moves = [], current = -1, sections = [
     });
   };
   renderPhone(); root.append(overflow, orbitHost, phoneWindow); host.append(root);
+  const phoneActiveAt = () => { const found = items.findIndex(item => item.kind === 'current' || item.kind === 'undo-current'); return found < 0 ? Math.max(0, current) : found; };
   const rollPhone = () => {
-    const active = phoneItems[activeAt()];
+    const active = phoneItems[phoneActiveAt()];
     if (active) phoneWindow.scrollTop = Math.max(0, active.offsetTop - phoneWindow.offsetTop - 36);
   };
   rollPhone();
-  return { element: root, orbit, setCurrent(index) {
-    current = Math.max(-1, Math.min(moves.length - 1, Number(index))); items = buildItems();
+  return { element: root, orbit, setCurrent(index, state = {}) {
+    const nextCurrent = Math.max(-1, Math.min(moves.length - 1, Number(index)));
+    if (Object.hasOwn(state, 'wrong')) currentWrong = state.wrong;
+    else if (nextCurrent !== current) currentWrong = null;
+    if (Object.hasOwn(state, 'undo')) undoMoves = [...state.undo];
+    else if (nextCurrent !== current) undoMoves = [];
+    current = nextCurrent; items = buildItems();
     const next = buildSegments(); void orbit.update({ segments: next, sections: ringSections() });
     renderPhone(); rollPhone();
   }, destroy() { orbit.destroy(); root.remove(); } };

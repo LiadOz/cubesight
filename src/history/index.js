@@ -56,8 +56,10 @@ export function initHistory(host) {
   syncPageTokens(root);
   const form = root.querySelector('form');
   createSearch(form.querySelector('[data-history-search]'), { placeholder: 'scramble, case, time', label: 'search', name: 'query' });
-  createFilledSelect(form.querySelector('[data-history-focus]'), { label: 'focus', name: 'focus', value: 'all', options: [{ value: 'all', label: 'all foci' }, { value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }] });
-  createFilledSelect(form.querySelector('[data-history-source]'), { label: 'source', name: 'source', value: 'all', options: [{ value: 'all', label: 'all sources' }, { value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'import', label: 'import' }] });
+  const filterSelects = [
+    createFilledSelect(form.querySelector('[data-history-focus]'), { label: 'focus', name: 'focus', value: 'all', options: [{ value: 'all', label: 'all foci' }, { value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }] }),
+    createFilledSelect(form.querySelector('[data-history-source]'), { label: 'source', name: 'source', value: 'all', options: [{ value: 'all', label: 'all sources' }, { value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'import', label: 'import' }] }),
+  ];
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
   const report = text => { status.textContent = text; };
@@ -240,6 +242,6 @@ export function initHistory(host) {
         else { selected = null; detail.replaceChildren(make('p', 'This solve was deleted. Select another solve.')); }
       }
     },
-    detach() { active = false; stopPlayback(); destroyReplay(); document.removeEventListener('cubesight-theme', retheme); host.replaceChildren(); },
+    detach() { active = false; stopPlayback(); destroyReplay(); filterSelects.forEach(filter => filter.destroy()); document.removeEventListener('cubesight-theme', retheme); host.replaceChildren(); },
   };
 }
