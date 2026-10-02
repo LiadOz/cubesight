@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSnapshotBridge } from '../src/ui/shared/snapshot-bridge.js';
+import { brainFixtures, FIXTURE_NAMES } from '../src/brain/fixtures.js';
 
 test('snapshot bridge returns the active mounted owner and combines the shared shell', () => {
   const bridge = createSnapshotBridge();
@@ -35,4 +36,27 @@ test('snapshot bridge rejects non-JSON owner state instead of silently dropping 
   const bridge = createSnapshotBridge();
   bridge.mount({ owner: 'F1', route: '/solve', handle: { getViewModel: () => ({ state: 'active', action() {} }) } });
   assert.throws(() => bridge.getViewModel(), /JSON-safe/);
+});
+
+test('snapshot bridge tags legitimate non-finite solve values without changing the owner model', () => {
+  const viewModel = brainFixtures().resultsDnf;
+  assert.equal(viewModel.clock.ms, Infinity, 'the renderer model retains its numeric DNF sentinel');
+  const bridge = createSnapshotBridge();
+  bridge.mount({ owner: 'F1', route: '/brain', handle: { getViewModel: () => viewModel } });
+
+  const snapshot = bridge.getViewModel();
+  assert.deepEqual(snapshot.viewModel.clock.ms, { $number: 'Infinity' });
+  assert.deepEqual(JSON.parse(JSON.stringify(snapshot)), snapshot, 'JSON round-trip preserves the tagged value');
+  assert.equal(viewModel.clock.ms, Infinity, 'capturing does not mutate the rendered owner model');
+});
+
+test('snapshot bridge can serialize every real Brain fixture', () => {
+  const fixtures = brainFixtures();
+  assert.equal(FIXTURE_NAMES.length, 47);
+  const bridge = createSnapshotBridge();
+  for (const name of FIXTURE_NAMES) {
+    const viewModel = fixtures[name];
+    bridge.mount({ owner: 'F1', route: '/brain', handle: { getViewModel: () => viewModel } });
+    assert.doesNotThrow(() => JSON.stringify(bridge.getViewModel()), name);
+  }
 });

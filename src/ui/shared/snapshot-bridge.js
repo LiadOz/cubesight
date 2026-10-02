@@ -1,7 +1,10 @@
 /** Runtime bridge for the mounted page owner; clearing it prevents stale route state. */
 function cloneJsonSafe(value, path = 'snapshot', seen = new WeakSet()) {
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'number') {
+    if (Number.isFinite(value)) return value;
+    return { $number: Number.isNaN(value) ? 'NaN' : value > 0 ? 'Infinity' : '-Infinity' };
+  }
   if (Array.isArray(value)) {
     if (seen.has(value)) throw new TypeError(`${path} cannot contain cycles`);
     seen.add(value);
