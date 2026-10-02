@@ -499,7 +499,8 @@ export function createShell(root, { dispatch }) {
       parts.guideTools.hidden = true;
       return;
     }
-    setText(parts.scrambleHead, `scramble · ${Math.min(scramble.step + 1, scramble.total)} / ${scramble.total}`);
+    const progress = `scramble · ${Math.min(scramble.step + 1, scramble.total)} / ${scramble.total}`;
+    setText(parts.scrambleHead, scramble.pendingDouble ? `${progress} · half-turn in progress` : progress);
     const done = scramble.moves.filter(m => m.state === 'done').length;
     const started = scramble.moves.some(m => m.state !== 'todo');
     const way = scramble.recovery?.length ? scramble.recovery.map(m => m.text) : null;

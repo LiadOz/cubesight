@@ -344,6 +344,7 @@ function scrambleVM({ live, settings, scrambleText, held, number }) {
     moves: moves.map((m, i) => ({ key: `s${i}`, text: m, state: !applying ? 'todo' : i < step ? 'done' : i === step ? 'current' : 'todo' })),
     recovery,
     wrongTurn: detour.length ? detour[0] : null,
+    pendingDouble: applying ? live.applyPendingDouble : null,
     held: held ? { bottom: held.bottom, front: held.front } : null,
     step,
     total: applying ? live.applyTotal : moves.length,

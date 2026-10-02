@@ -104,6 +104,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   let applyStep = 0;
   let applyDetour = [];
   let applyBefore = null;      // { step, detour } before the last processed turn (for coalesced doubles)
+  let applyPendingDouble = null; // expected half-turn after its first physical quarter
   let scrambleTurns = [];      // turns the user made while scrambling (doubles coalesced)
   let solveStartAt = 0;
   let crossFace = null;
@@ -187,6 +188,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     maybeAutostart();
     return {
       mode, phase, scrambleStr, applyStep, applyTotal: scrambleMoves.length, applyDetour: [...applyDetour],
+      applyPendingDouble: applyPendingDouble ? { ...applyPendingDouble } : null,
       scrambleTurns: [...scrambleTurns],
       solveMoves: [...solveMoves], solveMoveCount: solveMoves.length,
       elapsedMs: phase === 'solving' && solveStartAt != null ? Math.max(0, now() - solveStartAt) : phase === 'interrupted' ? interrupted?.elapsedMs ?? null : null,
@@ -250,7 +252,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     scrambleMoves = planMoves;
     planStates = states;
     scrambledState = target;
-    applyStep = 0; applyDetour = []; applyBefore = null; scrambleTurns = [];
+    applyStep = 0; applyDetour = []; applyBefore = null; applyPendingDouble = null; scrambleTurns = [];
     syncSeq(snap);
     resetSolve();
     phase = 'applying';
@@ -268,7 +270,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     notice = null;
     mode = 'free';
     scrambleStr = null; scrambleMoves = []; planStates = []; scrambledState = snap.state;
-    applyStep = 0; applyDetour = []; applyBefore = null;
+    applyStep = 0; applyDetour = []; applyBefore = null; applyPendingDouble = null;
     // The session history restarts at every solved state, so it is exactly the
     // user's scramble.
     scrambleTurns = [...snap.moves];
@@ -281,7 +283,7 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
   function cancel(reason = null) {
     notice = typeof reason === 'string' ? reason : null;
     mode = null; phase = 'idle'; scrambleStr = null; scrambleMoves = []; planStates = [];
-    scrambledState = null; applyStep = 0; applyDetour = []; applyBefore = null; scrambleTurns = [];
+    scrambledState = null; applyStep = 0; applyDetour = []; applyBefore = null; applyPendingDouble = null; scrambleTurns = [];
     stopInspectionTimer();
     resetSolve();
     emit();
@@ -293,8 +295,32 @@ export function createSolveLive(session, { getOrientation = () => ({ bottom: 'D'
     // A coalesced double replaces the previous quarter: re-evaluate it from the
     // plan position before that quarter.
     const from = replaces && applyBefore ? applyBefore : { step: applyStep, detour: applyDetour };
-    applyBefore = from;
-    const result = followPlanTurn(planStates, from.step, from.detour, state, move);
+    const expected = scrambleMoves[from.step];
+    // A physical half-turn may arrive as two separate quarter MOVE events. The
+    // first quarter is a real intermediate cube state, not a wrong turn: hold
+    // the expected move until the second quarter (either direction) completes
+    // it. This is state-based, with no timing grace period, and only applies
+    // when the current guided move is a double on that same face.
+    if (!replaces && !applyPendingDouble && !from.detour.length && expected?.endsWith('2')
+        && move[0] === expected[0] && !move.endsWith('2')
+        && sameCubeState(state, applyMoves(planStates[from.step], [move]))) {
+      applyPendingDouble = { move: expected, quarter: move };
+      applyBefore = from;
+      scrambleTurns = pushMove(scrambleTurns, move, replaces);
+      emit();
+      return;
+    }
+    let result = followPlanTurn(planStates, from.step, from.detour, state, move);
+    if (applyPendingDouble) {
+      if (!result.onPlan) {
+        // The next move changed the pending half-turn into an actual detour.
+        // Include the first quarter so recovery leads back from the real cube.
+        const beforePendingMove = { step: from.step, detour: [...from.detour, applyPendingDouble.quarter] };
+        applyBefore = beforePendingMove;
+        result = followPlanTurn(planStates, beforePendingMove.step, beforePendingMove.detour, state, move);
+      }
+      applyPendingDouble = null;
+    } else applyBefore = from;
     applyStep = result.step;
     applyDetour = result.detour;
     scrambleTurns = pushMove(scrambleTurns, move, replaces);

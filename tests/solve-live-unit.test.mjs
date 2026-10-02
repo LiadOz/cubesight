@@ -124,6 +124,86 @@ test('slow doubles (two separate quarters) are two moves', async () => {
   } finally { restore(); }
 });
 
+test('an expected physical half-turn stays pending after its first matching quarter', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    const rawMoves = [];
+    h.session.subscribeEvents(event => { if (event.type === 'MOVE') rawMoves.push(event.move); });
+    h.live.startGuided('U2 R');
+    h.move('U');
+    assert.equal(h.s().applyStep, 0, 'the half-turn is not complete yet');
+    assert.deepEqual(h.s().applyDetour, [], 'the first quarter is not reported as a wrong turn');
+    assert.deepEqual(h.s().applyPendingDouble, { move: 'U2', quarter: 'U' });
+
+    // GAN exposes both raw quarters to event subscribers, while the tracked
+    // move history coalesces them and the guided plan advances once.
+    h.move('U', { gap: 20 });
+    assert.equal(h.s().applyStep, 1);
+    assert.deepEqual(h.s().applyDetour, []);
+    assert.equal(h.s().applyPendingDouble, null);
+    assert.deepEqual(rawMoves, ['U', 'U']);
+    assert.deepEqual(h.s().scrambleTurns, ['U2']);
+  } finally { restore(); }
+});
+
+test('either quarter direction can start a guided half-turn without a grace timer', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    h.live.startGuided('U2');
+    h.move("U'");
+    assert.equal(h.s().applyStep, 0);
+    assert.deepEqual(h.s().applyDetour, []);
+    assert.equal(h.s().applyPendingDouble.move, 'U2');
+    h.tick(5000);
+    assert.equal(h.s().applyStep, 0, 'elapsed time alone does not classify a quarter as wrong');
+    h.move("U'", { gap: 20 });
+    assert.equal(h.s().phase, 'inspecting');
+    assert.deepEqual(h.s().scrambleTurns, ['U2']);
+  } finally { restore(); }
+});
+
+test('pending half-turn becomes a real detour if the next turn changes face', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    h.live.startGuided('U2 R');
+    h.move('U');
+    h.move('F');
+    assert.equal(h.s().applyStep, 0);
+    assert.deepEqual(h.s().applyDetour, ['U', 'F']);
+    assert.equal(h.s().applyPendingDouble, null);
+    assert.deepEqual(recoveryMoves(h.s().applyDetour), ["F'", "U'"]);
+  } finally { restore(); }
+});
+
+test('an expected quarter turn advances immediately without waiting for another event', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    h.live.startGuided('U R');
+    h.move('U');
+    assert.equal(h.s().applyStep, 1);
+    assert.equal(h.s().applyPendingDouble, null);
+    assert.deepEqual(h.s().applyDetour, []);
+  } finally { restore(); }
+});
+
+test('two intentional guided U quarter moves remain separate expected steps', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    h.live.startGuided('U U');
+    h.move('U');
+    assert.equal(h.s().applyStep, 1);
+    assert.equal(h.s().applyPendingDouble, null);
+    h.move('U');
+    assert.equal(h.s().phase, 'inspecting');
+    assert.deepEqual(h.s().scrambleTurns, ['U', 'U']);
+  } finally { restore(); }
+});
+
 test('audit s1: wrong turns and a wrong physical double are recovered, then a full solve', async () => {
   const restore = quiet();
   try {

@@ -149,6 +149,50 @@ test('controller: guided scramble, inspection, solve, splits, penalties and keys
   expect(errors).toEqual([]);
 });
 
+test('controller: next scramble generates a fresh guided sequence after a solve', async ({ page }) => {
+  test.setTimeout(60_000);
+  await mountController(page);
+  await expect.poll(async () => (await vm(page)).screen).toBe('idle');
+  await page.evaluate(() => {
+    window.stubDispatch({ type: 'setSetting', path: 'inspection', value: { mode: 'off' } });
+    window.stubDispatch({ type: 'start' });
+  });
+  await expect.poll(async () => (await vm(page)).screen).toBe('scramble');
+  const first = (await vm(page)).scramble.text;
+  expect(first.split(/\s+/).length).toBeGreaterThan(0);
+  await page.evaluate(s => window.testBrain.emitTurns(s), first);
+  await page.evaluate(s => window.testBrain.emitTurns(s), inverse(first));
+  await expect.poll(async () => (await vm(page)).screen).toBe('results');
+
+  await page.keyboard.press('Space');
+  await expect.poll(async () => (await vm(page)).screen).toBe('scramble');
+  const next = (await vm(page)).scramble.text;
+  expect(next).not.toBe(first);
+  expect((await vm(page)).scramble.number).toBe(2);
+  await page.evaluate(() => window.testBrain.view.detach());
+});
+
+test('controller: guided U2 shows a pending half-turn after the first BLE quarter', async ({ page }) => {
+  await mountController(page);
+  await expect.poll(async () => (await vm(page)).screen).toBe('idle');
+  await page.evaluate(() => {
+    window.stubDispatch({ type: 'setSetting', path: 'inspection', value: { mode: 'off' } });
+    window.stubDispatch({ type: 'setScrambleText', text: 'U2 R' });
+    window.stubDispatch({ type: 'start' });
+    window.testBrain.emitTurns('U');
+  });
+  let current = await vm(page);
+  expect(current.screen).toBe('scramble');
+  expect(current.scramble.pendingDouble).toEqual({ move: 'U2', quarter: 'U' });
+  expect(current.scramble.wrongTurn).toBe(null);
+  await page.evaluate(() => window.testBrain.emitTurns('U'));
+  current = await vm(page);
+  expect(current.scramble.pendingDouble).toBe(null);
+  expect(current.scramble.moves[0].state).toBe('done');
+  expect(current.scramble.wrongTurn).toBe(null);
+  await page.evaluate(() => window.testBrain.view.detach());
+});
+
 test('controller: the solving clock runs per frame and a hidden timer is reported', async ({ page }) => {
   test.setTimeout(60_000);
   await mountController(page);
