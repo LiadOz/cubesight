@@ -6,7 +6,7 @@ Gallery post with every image: `gallery/widgets/2026-10-02-inventory` (http://lo
 
 **Dev pages are first-class:** the gallery, blog, timeline, compare, studio and the design lab are evaluated and approved like any other page; their widgets are in this registry (W-32 onwards plus their uses of the shared families).
 
-Status values: `approved` (the user approved it), `pending` (partly approved), `proposed` (a consolidated design is still to be proposed, then approved), `to-remove` (breaks a binding rule; delete once its replacement exists). Individual variants that break a binding rule are flagged `to-remove` in their family table even when the family itself is `proposed`. **Only W-01 Header, W-02 Orbit and W-03 Cube are approved**; W-27 (the cube menu) is pending. The current implementation of every other family stays unchanged until its consolidated design is approved (no ad-hoc restyling).
+Status values: `approved` (the user approved it), `pending` (partly approved), `proposed` (a consolidated design is still to be proposed, then approved), `to-remove` (breaks a binding rule; delete once its replacement exists). Individual variants that break a binding rule are flagged `to-remove` in their family table even when the family itself is `proposed`. **Approved: W-01 Header, W-02 Orbit, W-03 Cube, W-04 Buttons, W-05/06/07/08/28 selection controls, W-16 Status/toast, W-17 Keycaps, W-21 Move display (2026-10-02)**; W-27 (the cube menu) is pending. The current implementation of every other family stays unchanged until its consolidated design is approved (no ad-hoc restyling).
 
 ## Summary
 
@@ -17,11 +17,11 @@ Status values: `approved` (the user approved it), `pending` (partly approved), `
 | W-01 | Header | approved | 6 | 24 (+6 dev) | 1180 | 0 | Keep: the approved A-frame header, built once by F0 |
 | W-02 | Orbit | approved | 2 | 8 | 70 | 0 | Keep: approved |
 | W-03 | Cube | approved | 8 | 18 (+1 dev) | 110 | 0 | Keep: approved |
-| W-04 | Buttons | proposed | 23 | 21 (+6 dev) | 2002 | 0 | Merge into one button with three emphases (primary, secondary, text) and an icon/close form; at most 3 actions per screen (ground rule 3) |
-| W-05 | Chips and pills | proposed | 8 | 3 (+2 dev) | 126 | 0 | Merge into one chip (the review marker chip `b-rev-chip` is closest to the A frames), selected/unselected states only |
-| W-06 | Segmented controls | proposed | 6 | 5 | 221 | 0 | Merge into one segmented control (legacy `.segmented`, PLL `.pll-segmented`, brain `.b-opt`, timer `.tm-opt` all do the same job with 4 different looks) |
-| W-07 | Toggles and checkboxes | proposed | 10 | 4 (+1 dev) | 536 | 0 | Merge into one switch (a pill switch with a label) and drop the native checkbox look and the `b-cfg` text toggles |
-| W-08 | Selects | proposed | 14 | 12 | 142 | 0 | Merge into one select; replace short fixed lists (the 0.5x/1x/2x/4x speed select alone appears in four different styles) with the segmented control (W-06) |
+| W-04 | Buttons | approved | 23 | 21 (+6 dev) | 2002 | 0 | APPROVED 2026-10-02: option ① quiet fill (cream primary pill with the keycap, surface-fill secondary, text buttons; teal reserved for good/on). See gallery post widgets-W-04-buttons. |
+| W-05 | Chips and pills | approved | 8 | 3 (+2 dev) | 126 | 0 | APPROVED 2026-10-02 as part of the selection-controls system, option ③ ink: one consistent look everywhere (no separate settings style); selected = cream ink (teal stays for good/on). See widgets-selection-controls. |
+| W-06 | Segmented controls | approved | 6 | 5 | 221 | 0 | APPROVED 2026-10-02 as part of the selection-controls system, option ③ ink: one consistent look everywhere (no separate settings style); selected = cream ink (teal stays for good/on). See widgets-selection-controls. |
+| W-07 | Toggles and checkboxes | approved | 10 | 4 (+1 dev) | 536 | 0 | APPROVED 2026-10-02 as part of the selection-controls system, option ③ ink: one consistent look everywhere (no separate settings style); selected = cream ink (teal stays for good/on). See widgets-selection-controls. |
+| W-08 | Selects | approved | 14 | 12 | 142 | 0 | APPROVED 2026-10-02 as part of the selection-controls system, option ③ ink: one consistent look everywhere (no separate settings style); selected = cream ink (teal stays for good/on). See widgets-selection-controls. |
 | W-09 | Text inputs | proposed | 10 | 5 (+3 dev) | 146 | 0 | Merge into one text field (+ textarea, + file picker, + range); the input look differs on every page that has one |
 | W-10 | Cards and panels | proposed | 9 | 8 (+5 dev) | 4432 | 0 | Merge into one panel (the Orbit look is mostly frameless: keep frames for lists and settings only) |
 | W-11 | List rows | proposed | 8 | 5 | 284 | 0 | Merge into one list row with an optional mini Orbit glyph at the left (feedback #2: browsing lists use the mini ring) |
@@ -29,19 +29,19 @@ Status values: `approved` (the user approved it), `pending` (partly approved), `
 | W-13 | Tabs and sub-nav | proposed | 7 | 5 (+6 dev) | 292 | 3 | Merge into one sub-nav (underline tabs) |
 | W-14 | Drawers and side panels | proposed | 2 | 1 | 6 | 0 | Keep one drawer (right side on desktop, bottom sheet on phone) shared by debug, settings and the review detail |
 | W-15 | Dialogs and sheets | proposed | 5 | 7 (+1 dev) | 45 | 0 | Merge into one dialog |
-| W-16 | Toasts and status lines | proposed | 20 | 11 (+2 dev) | 174 | 0 | Merge into one status line (and a toast for transient messages) |
-| W-17 | Key hints and keycaps | proposed | 8 | 14 | 261 | 0 | Merge into one keycap (kbd) and the one key bar from F0; the `kbd` looks differ in size, colour and radius per page |
+| W-16 | Toasts and status lines | approved | 20 | 11 (+2 dev) | 174 | 0 | APPROVED 2026-10-02: option ① bottom-right slot. Errors persist until fixed/dismissed; a toast may carry detail ("Solve saved · 12.41 PB") + one action; anything in progress ("working…") is shown with the Orbit, never a spinner/bar. |
+| W-17 | Key hints and keycaps | approved | 8 | 14 | 261 | 0 | APPROVED 2026-10-02: BEVELLED keycap (reads as a physical key). Nothing that is not a keyboard key may be bevelled. Combined caps (`[ ]`, `1–4`) still open: more examples requested. |
 | W-18 | Badges and tags | proposed | 4 | 2 (+3 dev) | 240 | 0 | Merge into one badge; separate from chips (W-05) by being non-interactive |
 | W-19 | Stat blocks and counters | proposed | 6 | 4 | 108 | 0 | Merge into one stat block (value + label + optional delta) |
 | W-20 | Coach line | proposed | 3 | 1 | 52 | 0 | Keep one coach line (A-05) and delete the card-style `b-rev-card`, `b-rev-note` and `b-coach` boxes |
-| W-21 | Scramble and move display | proposed | 13 | 9 | 656 | 0 | Merge into the one move strip (`mg-strip`, move-guide) used by the Orbit lookahead (feedback #4); remove the separate move chip rows |
+| W-21 | Scramble and move display | approved | 13 | 9 | 656 | 0 | APPROVED 2026-10-02: desktop = ① labels on the Orbit; phone = ③ wrapped sequence (two implementations). A SECTION is only extra spacing between points on the Orbit (no brackets/arcs); on phone the undo moves form a spaced section. Must handle long scrambles. See widgets-W-21-moves (+ v2 fixes). |
 | W-22 | Timer display | proposed | 5 | 5 | 32 | 1 | Merge into one timer readout in three sizes (XL solve, L drill, M inline) |
 | W-23 | Round and progress panels | proposed | 8 | 7 | 134 | 4 | Progress bars/lines are to-remove (feedback #1): the Orbit shows progress |
 | W-24 | Charts | proposed | 7 | 3 (+1 dev) | 106 | 1 | Keep at most the shared Orbit-style trend/line chart from F5; all one-off SVG charts are replaced |
 | W-25 | Empty states | proposed | 4 | 4 | 30 | 0 | Merge into one empty state (one sentence + one action) |
 | W-26 | Links and crumbs | proposed | 13 | 18 (+5 dev) | 270 | 0 | Merge into one link style plus one back link; the eyebrow breadcrumbs (`drills / OLL`) become the header nav |
 | W-27 | Device chip and menu | pending | 6 | 1 (+1 dev) | 74 | 3 | Keep one: the header cube chip with its menu (feedback #14) |
-| W-28 | Answer and choice buttons | proposed | 5 | 5 | 90 | 0 | Merge into one choice button (large pill with a keycap hint); colour, PLL and face pickers differ only by content |
+| W-28 | Answer and choice buttons | approved | 5 | 5 | 90 | 0 | APPROVED 2026-10-02 as part of the selection-controls system, option ③ ink: one consistent look everywhere (no separate settings style); selected = cream ink (teal stays for good/on). See widgets-selection-controls. |
 | W-29 | Disclosures (details/summary) | proposed | 7 | 10 | 116 | 0 | Merge into one disclosure row; most settings move to the drawer (W-14) |
 | W-30 | Eyebrows, captions and section heads | proposed | 14 | 23 (+6 dev) | 238 | 0 | Merge into one eyebrow and one section head; there are at least 8 different eyebrow classes |
 | W-31 | Footer | to-remove | 3 | 24 (+1 dev) | 324 | 3 | Remove (feedback #12); the build badge, "stays on this device" and links move to the help page |
