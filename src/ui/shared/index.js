@@ -3,7 +3,7 @@ import './approved-widgets.css';
 import './families.css';
 import { APP_NAME } from '../../copy/nav.js';
 import { createToastSlot as mountToastSlot } from './families.js';
-export { createBreadcrumbs, createCountPill, createDialog, createDisclosure, createFileInput, createFilledInput, createFilledSelect, createLineChart, createListRow, createMoveDisplay, createNavigationRail, createPanel, createRangeInput, createRightDrawer, createSection, createSectionHeader, createSearch, createTextarea, createTimerReadout, createWipeComparison } from './families.js';
+export { createBreadcrumbs, createCountPill, createDialog, createDisclosure, createFileInput, createFilledInput, createFilledSelect, createGroup, createLineChart, createListRow, createMoveDisplay, createNavigationRail, createPanel, createRangeInput, createRightDrawer, createSection, createSectionHeader, createSearch, createTextarea, createTimerReadout, createWipeComparison } from './families.js';
 
 export function createHeader(host, { title = APP_NAME, sections = ['solve', 'drills', 'algs', 'progress', 'history'], active = 'solve', compass = null, session = null, actions = {}, help = null, themeToggle = true, showDevDrawer = true } = {}) {
   const header = document.createElement('header'); header.className = 'site-header ui-header';
@@ -157,9 +157,9 @@ export function createButton(host, { label, variant = 'primary', size = '', disa
   host.append(control); return control;
 }
 
-export function createChip(host, { label, value = null, pressed = null, onClick = null } = {}) {
+export function createChip(host, { label, value = null, pressed = null, disabled = false, onClick = null } = {}) {
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'chip'; chip.textContent = value == null ? label : `${label} · ${value}`;
-  if (pressed != null) chip.setAttribute('aria-pressed', String(pressed)); if (onClick) chip.addEventListener('click', onClick); host.append(chip); return chip;
+  if (pressed != null) chip.setAttribute('aria-pressed', String(pressed)); chip.disabled = disabled; if (onClick) chip.addEventListener('click', onClick); host.append(chip); return chip;
 }
 
 export function createSegmented(host, { label, options = [], value = options[0]?.value, onChange = null } = {}) {
@@ -168,20 +168,27 @@ export function createSegmented(host, { label, options = [], value = options[0]?
   const thumb = document.createElement('span'); thumb.className = 'seg__thumb'; thumb.setAttribute('aria-hidden', 'true'); group.append(thumb);
   const controls = options.map((option, index) => {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'seg__o'; button.setAttribute('role', 'radio'); button.dataset.value = String(option.value); button.textContent = option.label;
-    button.addEventListener('click', () => choose(index)); group.append(button); return button;
+    button.disabled = Boolean(option.disabled); button.addEventListener('click', () => choose(index)); group.append(button); return button;
   });
-  let selected = Math.max(0, options.findIndex(option => option.value === value));
-  const choose = index => {
+  let selected = options.findIndex(option => option.value === value && !option.disabled);
+  if (selected < 0) selected = options.findIndex(option => !option.disabled);
+  const choose = (index, notify = true) => {
+    if (!options[index] || options[index].disabled) return;
     selected = index; group.style.setProperty('--i', String(index));
     controls.forEach((button, position) => { button.setAttribute('aria-checked', String(position === selected)); button.tabIndex = position === selected ? 0 : -1; });
-    onChange?.(options[index]?.value);
+    if (notify) onChange?.(options[index].value);
   };
   group.addEventListener('keydown', event => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    event.preventDefault(); const next = event.key === 'Home' ? 0 : event.key === 'End' ? controls.length - 1 : (selected + (event.key === 'ArrowRight' ? 1 : -1) + controls.length) % controls.length;
+    event.preventDefault();
+    const enabled = options.map((option, index) => option.disabled ? -1 : index).filter(index => index >= 0);
+    if (!enabled.length) return;
+    const position = enabled.indexOf(selected);
+    const next = event.key === 'Home' ? enabled[0] : event.key === 'End' ? enabled.at(-1) : enabled[(Math.max(0, position) + (event.key === 'ArrowRight' ? 1 : -1) + enabled.length) % enabled.length];
     choose(next); controls[next]?.focus();
   });
-  choose(selected); host.append(group); return { element: group, value: () => options[selected]?.value, setValue(next) { const index = options.findIndex(option => option.value === next); if (index >= 0) choose(index); } };
+  if (selected >= 0) choose(selected, false);
+  host.append(group); return { element: group, value: () => options[selected]?.value, setValue(next) { const index = options.findIndex(option => option.value === next && !option.disabled); if (index >= 0) choose(index); } };
 }
 
 export function createToggle(host, { label, description = '', checked = false, disabled = false, onChange = null } = {}) {

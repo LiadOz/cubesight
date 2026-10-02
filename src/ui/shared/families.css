@@ -1,7 +1,7 @@
 /* App-facing port of the approved container, list, input, navigation, timer, move,
    chart, and wipe prototypes. Kept under ui-* names to avoid styling legacy screens. */
 .ui-section { display:grid; gap:10px; align-content:start; }
-.ui-section + .ui-section, .ui-section + .ui-group, .ui-group + .ui-section { margin-top:22px; }
+.ui-section + .ui-section, .ui-section + .ui-group, .ui-group + .ui-section, .ui-group + .ui-group, .ui-section + .ui-disclosure, .ui-disclosure + .ui-section { margin-top:22px; }
 .ui-group { display:grid; background:transparent; }
 .ui-group > * + * { border-top:1px solid var(--b-hairline); }
 .ui-panel { display:grid; padding:6px 18px; border-radius:20px; background:var(--b-surface); }
@@ -17,6 +17,7 @@
 .ui-input:hover { background:var(--b-track); }
 .ui-input:focus-visible { outline:2px solid var(--b-accent); outline-offset:2px; }
 .ui-input:disabled { background:var(--b-surface); color:var(--b-faint); cursor:not-allowed; }
+.ui-input.is-error { box-shadow:inset 0 0 0 2px var(--b-dnf); }
 .ui-select-wrap { position:relative; display:block; }
 .ui-select-wrap::after { content:'⌄'; position:absolute; top:50%; right:16px; transform:translateY(-55%); color:var(--b-muted); pointer-events:none; }
 .ui-select { appearance:none; padding-right:42px; cursor:pointer; }
@@ -28,6 +29,7 @@
 .ui-range input::-moz-range-track { height:4px; border-radius:2px; background:var(--b-track); }
 .ui-range input::-moz-range-thumb { width:20px; height:20px; border:0; border-radius:50%; background:var(--b-fill); box-shadow:0 0 0 4px var(--b-bg); }
 .ui-range input:focus-visible { outline:2px solid var(--b-accent); outline-offset:4px; }
+.ui-range input:disabled { opacity:.45; cursor:not-allowed; }
 .ui-range output { min-width:52px; color:var(--b-ink); font:400 13px var(--b-font-mono); text-align:right; }
 .ui-file { position:relative; display:flex; align-items:center; gap:14px; min-height:44px; cursor:pointer; }
 .ui-file input { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
@@ -83,12 +85,15 @@
 .ui-timer.is-hidden { color:var(--b-faint); font-weight:400; }
 .ui-timer--m { font-size:28px; }
 .ui-move-display { position:relative; min-width:0; }
+.ui-move-overflow { display:flex; justify-content:space-between; min-height:18px; color:var(--b-faint); font:400 11px var(--b-font-mono); }
 .ui-move-display__orbit { width:min(100%,560px); margin:auto; }
-.ui-move-display__phone { display:none; flex-wrap:wrap; align-items:center; gap:8px 10px; }
+.ui-move-display__phone-window { display:none; }
+.ui-move-display__phone { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
 .ui-move { display:inline-flex; align-items:center; min-height:32px; color:var(--b-muted); font:500 13px/1 var(--b-font-mono); }
 .ui-move.is-done { opacity:.56; }
 .ui-move.is-current { padding:0 10px; border-radius:999px; background:var(--b-fill); color:var(--b-bg); }
-.ui-move.is-wrong { color:var(--b-warn-text); }
+.ui-move.is-wrong, .ui-move.is-undo-current { color:var(--b-warn-text); }
+.ui-move.is-undo { color:var(--b-muted); text-decoration:underline dotted; text-underline-offset:3px; }
 .ui-move-section { flex-basis:100%; height:0; }
 .ui-chart { display:block; width:100%; overflow:visible; color:var(--b-accent); }
 .ui-chart__grid { stroke:var(--b-hairline); stroke-width:1; }
@@ -123,6 +128,7 @@
   .ui-toast-slot { right:12px; bottom:12px; left:12px; justify-items:stretch; }
   .ui-toast-slot .toast { width:100%; max-width:none; }
   .ui-move-display__orbit { display:none; }
-  .ui-move-display__phone { display:flex; }
+  .ui-move-overflow { display:none; }
+  .ui-move-display__phone-window { display:block; max-height:196px; overflow:hidden; mask-image:linear-gradient(180deg,transparent,#000 18%,#000 82%,transparent); }
 }
 @media (prefers-reduced-motion:reduce) { .ui-input, .ui-disclosure > summary::after { transition:none; } }

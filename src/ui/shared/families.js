@@ -44,6 +44,12 @@ export function createSection(host, { title = '', eyebrow = '', count = null, la
   host.append(section); return section;
 }
 
+export function createGroup(host, { label = '' } = {}) {
+  const group = document.createElement('div'); group.className = 'ui-group';
+  if (label) group.setAttribute('aria-label', label);
+  host.append(group); return group;
+}
+
 export function createSearch(host, { placeholder = 'search', label = placeholder, value = '', count = null, onSearch = null } = {}) {
   const wrap = document.createElement('span'); wrap.className = 'ui-input-wrap';
   const input = document.createElement('input'); input.className = 'ui-input ui-input--search'; input.type = 'search'; input.placeholder = placeholder; input.setAttribute('aria-label', label); input.value = value;
@@ -68,39 +74,92 @@ export function createSectionHeader(host, { title, eyebrow = '', count = null, s
 }
 
 export function createFilledInput(host, { label = '', value = '', placeholder = '', type = 'text', hint = '', error = '', disabled = false, onInput = null } = {}) {
-  const field = document.createElement('label'); field.className = 'ui-field';
-  if (label) { const caption = document.createElement('span'); caption.className = 'ui-field__label'; caption.textContent = label; field.append(caption); }
-  const input = document.createElement('input'); input.className = `ui-input${error ? ' is-error' : ''}`; input.type = type; input.value = value; input.placeholder = placeholder; input.disabled = disabled; input.setAttribute('aria-invalid', String(Boolean(error)));
-  if (error) input.setAttribute('aria-describedby', `field-error-${++fieldId}`);
+  const field = document.createElement('div'); field.className = 'ui-field';
+  const inputId = `field-control-${++fieldId}`, errorId = `field-error-${fieldId}`;
+  if (label) { const caption = document.createElement('label'); caption.className = 'ui-field__label'; caption.htmlFor = inputId; caption.textContent = label; field.append(caption); }
+  const input = document.createElement('input'); input.id = inputId; input.className = `ui-input${error ? ' is-error' : ''}`; input.type = type; input.value = value; input.placeholder = placeholder; input.disabled = disabled; input.setAttribute('aria-invalid', String(Boolean(error)));
+  const describedBy = [];
+  let errorNode = null;
   if (hint) input.setAttribute('aria-description', hint);
   input.addEventListener('input', () => onInput?.(input.value)); field.append(input);
-  if (hint) { const help = document.createElement('span'); help.className = 'ui-field__hint'; help.textContent = hint; field.append(help); }
-  if (error) { const message = document.createElement('span'); message.className = 'ui-field__error'; message.id = input.getAttribute('aria-describedby'); message.textContent = error; field.append(message); }
-  host.append(field); return { element: field, input, setError(message = '') { input.classList.toggle('is-error', Boolean(message)); input.setAttribute('aria-invalid', String(Boolean(message))); } };
+  if (hint) { const help = document.createElement('span'); help.className = 'ui-field__hint'; help.textContent = hint; help.id = `field-hint-${++fieldId}`; describedBy.push(help.id); field.append(help); }
+  if (error) { errorNode = document.createElement('span'); errorNode.className = 'ui-field__error'; errorNode.id = errorId; errorNode.textContent = error; describedBy.push(errorId); field.append(errorNode); }
+  const syncDescription = () => { if (describedBy.length) input.setAttribute('aria-describedby', describedBy.join(' ')); else input.removeAttribute('aria-describedby'); };
+  syncDescription(); host.append(field);
+  return { element: field, input, setError(message = '') {
+    input.classList.toggle('is-error', Boolean(message)); input.setAttribute('aria-invalid', String(Boolean(message)));
+    if (message && !errorNode) { errorNode = document.createElement('span'); errorNode.className = 'ui-field__error'; errorNode.id = errorId; field.append(errorNode); describedBy.push(errorId); }
+    if (errorNode) { errorNode.textContent = String(message); errorNode.hidden = !message; }
+    if (!message && errorNode) { errorNode.remove(); errorNode = null; const index = describedBy.indexOf(errorId); if (index >= 0) describedBy.splice(index, 1); }
+    syncDescription();
+  } };
 }
 
 export function createFilledSelect(host, { label = '', options = [], value = options[0]?.value, disabled = false, onChange = null } = {}) {
-  const field = document.createElement('label'); field.className = 'ui-field';
+  const field = document.createElement('div'); field.className = 'ui-field';
   if (label) { const caption = document.createElement('span'); caption.className = 'ui-field__label'; caption.textContent = label; field.append(caption); }
-  const wrap = document.createElement('span'); wrap.className = 'ui-select-wrap';
-  const select = document.createElement('select'); select.className = 'ui-input ui-select'; select.disabled = disabled;
-  options.forEach(option => { const item = document.createElement('option'); item.value = option.value; item.textContent = option.label; item.selected = option.value === value; select.append(item); });
-  select.addEventListener('change', () => onChange?.(select.value)); wrap.append(select); field.append(wrap); host.append(field);
-  return { element: field, select, setValue(next) { select.value = next; } };
+  const wrap = document.createElement('span'); wrap.className = 'sel sel--full';
+  const select = document.createElement('button'); select.type = 'button'; select.className = 'sel__btn'; select.setAttribute('role', 'combobox'); select.setAttribute('aria-haspopup', 'listbox'); select.setAttribute('aria-expanded', 'false'); select.setAttribute('aria-label', label || 'Choose an option'); select.disabled = disabled || options.length === 0;
+  const selected = document.createElement('span'); selected.className = 'sel__value';
+  const arrow = svgEl('svg', { viewBox: '0 0 14 14', 'aria-hidden': 'true' }); arrow.append(svgEl('path', { d: 'm3 5 4 4 4-4' })); select.append(selected, arrow);
+  const listId = `select-options-${++fieldId}`; select.setAttribute('aria-controls', listId);
+  const list = document.createElement('ul'); list.id = listId; list.className = 'sel__list'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', label || 'Options');
+  const firstEnabled = options.findIndex(option => !option.disabled);
+  let lastEnabled = -1; options.forEach((option, index) => { if (!option.disabled) lastEnabled = index; });
+  let selectedIndex = options.findIndex(option => String(option.value) === String(value));
+  if (selectedIndex < 0 || options[selectedIndex]?.disabled) selectedIndex = Math.max(0, firstEnabled);
+  let activeIndex = selectedIndex;
+  const items = options.map((option, index) => {
+    const item = document.createElement('li'); const choice = document.createElement('button'); choice.type = 'button'; choice.className = 'sel__opt'; choice.id = `${listId}-${index}`; choice.setAttribute('role', 'option'); choice.dataset.value = option.value;
+    const optionLabel = document.createElement('span'); optionLabel.textContent = option.label;
+    const check = svgEl('svg', { viewBox: '0 0 14 14', 'aria-hidden': 'true' }); check.append(svgEl('path', { d: 'm2 7 3.3 3.1L12 3.5' })); choice.append(optionLabel, check);
+    if (option.disabled) { choice.disabled = true; choice.classList.add('is-disabled'); }
+    choice.addEventListener('click', () => choose(index)); item.append(choice); list.append(item); return choice;
+  });
+  const sync = () => {
+    selected.textContent = options[selectedIndex]?.label ?? '';
+    select.dataset.value = String(options[selectedIndex]?.value ?? '');
+    select.setAttribute('aria-activedescendant', items[activeIndex]?.id || '');
+    items.forEach((item, index) => { item.setAttribute('aria-selected', String(index === selectedIndex)); item.classList.toggle('is-active', index === activeIndex); });
+  };
+  const nextEnabled = (start, direction) => {
+    for (let step = 1; step <= items.length; step += 1) {
+      const index = (start + direction * step + items.length * 2) % items.length;
+      if (!options[index]?.disabled) return index;
+    }
+    return start;
+  };
+  const close = (restoreFocus = false) => { wrap.classList.remove('is-open'); select.setAttribute('aria-expanded', 'false'); if (restoreFocus) select.focus(); };
+  const open = () => { if (select.disabled) return; wrap.classList.add('is-open'); select.setAttribute('aria-expanded', 'true'); activeIndex = selectedIndex; sync(); items[activeIndex]?.focus(); };
+  const choose = index => { if (!options[index] || options[index].disabled) return; selectedIndex = index; activeIndex = index; sync(); close(); onChange?.(String(options[index].value)); select.focus(); };
+  select.addEventListener('click', () => wrap.classList.contains('is-open') ? close() : open());
+  select.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); if (!wrap.classList.contains('is-open')) { open(); return; } activeIndex = nextEnabled(activeIndex, event.key === 'ArrowDown' ? 1 : -1); sync(); items[activeIndex]?.focus(); }
+    else if (event.key === 'Escape' && wrap.classList.contains('is-open')) close(true);
+    else if ((event.key === 'Enter' || event.key === ' ') && wrap.classList.contains('is-open')) { event.preventDefault(); choose(activeIndex); }
+  });
+  list.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); close(true); }
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); activeIndex = nextEnabled(activeIndex, event.key === 'ArrowDown' ? 1 : -1); sync(); items[activeIndex]?.focus(); }
+    else if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); activeIndex = event.key === 'Home' ? firstEnabled : lastEnabled; if (activeIndex < 0) activeIndex = selectedIndex; sync(); items[activeIndex]?.focus(); }
+  });
+  const outside = event => { if (!wrap.contains(event.target)) close(); };
+  document.addEventListener('pointerdown', outside); wrap.append(select, list); field.append(wrap); host.append(field); sync();
+  return { element: field, select, open, close, setValue(next) { const index = options.findIndex(option => String(option.value) === String(next) && !option.disabled); if (index >= 0) { selectedIndex = index; activeIndex = index; sync(); } }, destroy() { document.removeEventListener('pointerdown', outside); field.remove(); } };
 }
 
 export function createTextarea(host, { label = '', value = '', placeholder = '', hint = '', rows = 4, disabled = false, onInput = null } = {}) {
-  const field = document.createElement('label'); field.className = 'ui-field';
-  if (label) { const caption = document.createElement('span'); caption.className = 'ui-field__label'; caption.textContent = label; field.append(caption); }
-  const area = document.createElement('textarea'); area.className = 'ui-input ui-textarea'; area.value = value; area.placeholder = placeholder; area.rows = rows; area.disabled = disabled; area.addEventListener('input', () => onInput?.(area.value)); field.append(area);
-  if (hint) { const help = document.createElement('span'); help.className = 'ui-field__hint'; help.textContent = hint; field.append(help); }
+  const field = document.createElement('div'); field.className = 'ui-field'; const id = `field-control-${++fieldId}`;
+  if (label) { const caption = document.createElement('label'); caption.className = 'ui-field__label'; caption.htmlFor = id; caption.textContent = label; field.append(caption); }
+  const area = document.createElement('textarea'); area.id = id; area.className = 'ui-input ui-textarea'; area.value = value; area.placeholder = placeholder; area.rows = rows; area.disabled = disabled; area.addEventListener('input', () => onInput?.(area.value)); field.append(area);
+  if (hint) { const help = document.createElement('span'); help.className = 'ui-field__hint'; help.textContent = hint; help.id = `field-hint-${++fieldId}`; area.setAttribute('aria-describedby', help.id); field.append(help); }
   host.append(field); return { element: field, textarea: area };
 }
 
-export function createRangeInput(host, { label = '', min = 0, max = 100, step = 1, value = min, unit = '', onInput = null } = {}) {
+export function createRangeInput(host, { label = '', min = 0, max = 100, step = 1, value = min, unit = '', disabled = false, onInput = null } = {}) {
   const field = document.createElement('label'); field.className = 'ui-field';
   if (label) { const caption = document.createElement('span'); caption.className = 'ui-field__label'; caption.textContent = label; field.append(caption); }
-  const row = document.createElement('span'); row.className = 'ui-range'; const input = document.createElement('input'); input.type = 'range'; input.min = String(min); input.max = String(max); input.step = String(step); input.value = String(value);
+  const row = document.createElement('span'); row.className = 'ui-range'; const input = document.createElement('input'); input.type = 'range'; input.min = String(min); input.max = String(max); input.step = String(step); input.value = String(value); input.disabled = disabled;
   const output = document.createElement('output'); output.textContent = `${value}${unit}`; input.addEventListener('input', () => { output.textContent = `${input.value}${unit}`; onInput?.(Number(input.value)); }); row.append(input, output); field.append(row); host.append(field); return { element: field, input, output };
 }
 
@@ -132,7 +191,11 @@ export function createRightDrawer(host, { title = '', subtitle = '', onClose = n
   const close = document.createElement('button'); close.type = 'button'; close.className = 'ui-cube-menu__close'; close.textContent = 'close'; close.addEventListener('click', () => drawer.close());
   head.append(heading, close); drawer.append(head);
   if (subtitle) { const sub = document.createElement('p'); sub.className = 'ui-header-status'; sub.textContent = subtitle; drawer.append(sub); }
-  drawer.addEventListener('click', event => { if (event.target === drawer) drawer.close(); });
+  drawer.addEventListener('click', event => {
+    if (event.target !== drawer) return;
+    const box = drawer.getBoundingClientRect();
+    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) drawer.close();
+  });
   drawer.addEventListener('close', () => onClose?.()); host.append(drawer);
   return { element: drawer, body: drawer, open() { if (!drawer.open) drawer.showModal(); }, close() { drawer.close(); }, destroy() { drawer.close(); drawer.remove(); } };
 }
@@ -186,19 +249,70 @@ export function createTimerReadout(host, { value = '0.00', subtitle = '', hidden
   host.append(readout); return { element: readout, setValue(next) { currentValue = String(next); digits.textContent = hidden ? 'hidden' : currentValue; }, setHidden(next) { hidden = Boolean(next); readout.classList.toggle('is-hidden', hidden); digits.textContent = hidden ? 'hidden' : currentValue; }, setSubtitle(next) { if (!readout.querySelector('.ui-timer__sub')) { const sub = document.createElement('span'); sub.className = 'ui-timer__sub'; readout.append(sub); } readout.querySelector('.ui-timer__sub').textContent = next; } };
 }
 
-export function createMoveDisplay(host, { moves = [], current = -1, sections = [], onMove = null } = {}) {
+export function createMoveDisplay(host, { moves = [], current = -1, sections = [], wrong = null, undo = [], onMove = null } = {}) {
   const root = document.createElement('div'); root.className = 'ui-move-display';
-  const orbitHost = document.createElement('div'); orbitHost.className = 'ui-move-display__orbit'; const phone = document.createElement('div'); phone.className = 'ui-move-display__phone';
-  const sectionStarts = new Set(sections.map(section => Number(typeof section === 'number' ? section : section.start)));
-  const stateAt = index => index < current ? 'done' : index === current ? 'current' : 'future';
-  const segments = moves.map((move, index) => ({ key: `move-${index}`, label: move, weight: 1, state: stateAt(index), fill: index < current ? 1 : 0 }));
-  const orbit = new Orbit(orbitHost, { size: 'L', shape: 'open', gap: 70, segments, sections: sections.map(section => typeof section === 'number' ? { start: section } : section), label: 'Move sequence', onSegment: segment => onMove?.(moves[Number(segment.key.slice(5))]) });
-  moves.forEach((move, index) => {
-    if (sectionStarts.has(index)) { const spacer = document.createElement('span'); spacer.className = 'ui-move-section'; spacer.setAttribute('aria-hidden', 'true'); phone.append(spacer); }
-    const item = document.createElement('button'); item.type = 'button'; item.className = `ui-move is-${stateAt(index)}`; item.textContent = move; item.setAttribute('aria-label', `Move ${index + 1}: ${move}${index === current ? ', current move' : ''}`); item.addEventListener('click', () => onMove?.(move)); phone.append(item);
-  });
-  root.append(orbitHost, phone); host.append(root);
-  return { element: root, orbit, setCurrent(index) { current = index; void orbit.update({ segments: moves.map((move, i) => ({ key: `move-${i}`, label: move, weight: 1, state: stateAt(i), fill: i < current ? 1 : 0 })) }); phone.querySelectorAll('.ui-move').forEach((item, i) => { item.className = `ui-move is-${stateAt(i)}`; }); }, destroy() { orbit.destroy(); root.remove(); } };
+  const overflow = document.createElement('div'); overflow.className = 'ui-move-overflow';
+  const beforeCount = document.createElement('span'); const afterCount = document.createElement('span'); overflow.append(beforeCount, afterCount);
+  const orbitHost = document.createElement('div'); orbitHost.className = 'ui-move-display__orbit';
+  const phoneWindow = document.createElement('div'); phoneWindow.className = 'ui-move-display__phone-window';
+  const phone = document.createElement('div'); phone.className = 'ui-move-display__phone'; phoneWindow.append(phone);
+  const sectionDefs = sections.map(section => typeof section === 'number' ? { sourceStart: section } : { ...section, sourceStart: Number(section.start ?? section.from) }).filter(section => Number.isFinite(section.sourceStart));
+  const sectionStarts = new Set(sectionDefs.map(section => section.sourceStart));
+  const buildItems = () => {
+    const result = [];
+    moves.forEach((move, index) => {
+      if (index === current && undo.length) {
+        if (wrong) result.push({ move: wrong, index, kind: 'wrong', count: false });
+        undo.forEach((undoMove, undoIndex) => result.push({ move: undoMove, index, kind: undoIndex === 0 ? 'undo-current' : 'undo', count: true }));
+      }
+      result.push({ move, index, kind: index === current && !undo.length ? 'current' : index < current ? 'done' : 'future', count: true });
+    });
+    return result;
+  };
+  let items = buildItems();
+  const activeAt = () => { const found = items.findIndex(item => item.kind === 'current' || item.kind === 'undo-current'); return found < 0 ? Math.max(0, current) : found; };
+  const tokenState = item => item.kind === 'done' ? 'done' : item.kind === 'current' ? 'current' : item.kind === 'wrong' || item.kind.startsWith('undo') ? 'wrong' : 'future';
+  const sectionStartFor = item => item.kind.startsWith('undo') || item.kind === 'wrong' ? `undo-${item.index}` : [...sectionStarts].filter(start => start <= item.index).at(-1) ?? -1;
+  const ringSections = () => {
+    const starts = sectionDefs.map(section => items.findIndex(item => item.index >= section.sourceStart && !item.kind.startsWith('undo') && item.kind !== 'wrong')).filter(index => index >= 0);
+    const undoStart = items.findIndex(item => item.kind === 'undo-current' || item.kind === 'wrong');
+    if (undoStart >= 0) starts.push(undoStart);
+    return [...new Set(starts)].sort((a, b) => a - b).map(start => ({ start }));
+  };
+  const buildSegments = () => {
+    const active = activeAt(), left = Math.max(0, Math.min(active - 7, items.length - 22)), right = Math.min(items.length, left + 22);
+    beforeCount.textContent = left ? `‹ ${left}` : '';
+    afterCount.textContent = items.length > right ? `${items.length - right} ›` : '';
+    return items.map((item, index) => {
+      const visible = index >= left && index < right;
+      return { key: `move-${index}`, label: visible ? item.move : '', ariaLabel: `Move ${item.index + 1}: ${item.move}, ${item.kind}`, weight: 1, state: tokenState(item), fill: item.kind === 'done' ? 1 : 0, section: sectionStartFor(item) };
+    });
+  };
+  const segments = buildSegments();
+  const orbit = new Orbit(orbitHost, { size: 'L', shape: 'open', gap: 70, segments, sections: ringSections(), label: 'Move sequence', onSegment: segment => { const item = items[Number(segment.key.slice(5))]; if (item) onMove?.(item.move, item.index); } });
+  let phoneItems = [];
+  const renderPhone = () => {
+    phone.replaceChildren(); phoneItems = [];
+    items.forEach(item => {
+      if (sectionStarts.has(item.index) && item.kind !== 'wrong' && !item.kind.startsWith('undo')) { const spacer = document.createElement('span'); spacer.className = 'ui-move-section'; spacer.setAttribute('aria-hidden', 'true'); phone.append(spacer); }
+      if (item.kind === 'undo-current' || item.kind === 'undo') { const spacer = document.createElement('span'); spacer.className = 'ui-move-section'; spacer.setAttribute('aria-hidden', 'true'); phone.append(spacer); }
+      const control = document.createElement('button'); control.type = 'button'; control.className = `ui-move is-${item.kind}`; control.textContent = item.move;
+      control.setAttribute('aria-label', `Move ${item.index + 1}: ${item.move}${item.kind === 'current' || item.kind === 'undo-current' ? ', current move' : item.kind === 'wrong' ? ', wrong turn' : item.kind.startsWith('undo') ? ', undo move' : ''}`);
+      if (item.kind === 'current' || item.kind === 'undo-current') control.setAttribute('aria-current', 'step');
+      control.addEventListener('click', () => onMove?.(item.move, item.index)); phone.append(control); phoneItems.push(control);
+    });
+  };
+  renderPhone(); root.append(overflow, orbitHost, phoneWindow); host.append(root);
+  const rollPhone = () => {
+    const active = phoneItems[activeAt()];
+    if (active) phoneWindow.scrollTop = Math.max(0, active.offsetTop - phoneWindow.offsetTop - 36);
+  };
+  rollPhone();
+  return { element: root, orbit, setCurrent(index) {
+    current = Math.max(-1, Math.min(moves.length - 1, Number(index))); items = buildItems();
+    const next = buildSegments(); void orbit.update({ segments: next, sections: ringSections() });
+    renderPhone(); rollPhone();
+  }, destroy() { orbit.destroy(); root.remove(); } };
 }
 
 export function createLineChart(host, { series = [], label = 'Trend chart', width = 560, height = 220 } = {}) {

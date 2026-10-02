@@ -1,6 +1,6 @@
 import {
   createBreadcrumbs, createButton, createChip, createCoachLine, createDialog, createDisclosure,
-  createFileInput, createFilledInput, createFilledSelect, createKeyBar, createLineChart, createListRow,
+  createFileInput, createFilledInput, createFilledSelect, createGroup, createKeyBar, createLineChart, createListRow,
   createMoveDisplay, createNavigationRail, createPanel, createRangeInput, createRightDrawer, createSection,
   createSearch, createSegmented, createStatus, createTextarea, createTimerReadout, createToastSlot, createToggle, createWipeComparison,
 } from '../ui/shared/index.js';
@@ -39,14 +39,16 @@ export function mountApprovedWidgetGallery(host) {
   createButton(buttonStates, { label: 'hover', variant: 'primary' }).classList.add('is-hover'); createButton(buttonStates, { label: 'pressed', variant: 'secondary' }).classList.add('is-active'); createButton(buttonStates, { label: 'disabled', variant: 'primary', disabled: true }); createButton(buttonStates, { label: 'loading', variant: 'secondary', loading: true });
 
   const choices = addPanel('W-05–08 · selection controls');
-  const chips = el('div', 'g-widget-live__row'); choices.append(chips); createChip(chips, { label: 'all', pressed: true }); createChip(chips, { label: 'PLL', value: 21 }); createChip(chips, { label: 'selected', pressed: true });
+  const chips = el('div', 'g-widget-live__row'); choices.append(chips); createChip(chips, { label: 'all', pressed: true }); createChip(chips, { label: 'PLL', value: 21 }); createChip(chips, { label: 'focus', pressed: true }).classList.add('is-focus'); createChip(chips, { label: 'disabled', disabled: true });
   const segmented = el('div', 'g-widget-live__row'); choices.append(segmented); createSegmented(segmented, { label: 'Chart period', value: '12', options: [{ value: '5', label: 'ao5' }, { value: '12', label: 'ao12' }, { value: '50', label: '50 solves' }] });
-  createToggle(choices, { label: 'inspection', description: '15 seconds', checked: true });
+  createToggle(choices, { label: 'inspection', description: '15 seconds', checked: true }); createToggle(choices, { label: 'sync cube', disabled: true });
   const answerRow = el('div', 'g-widget-live__row'); choices.append(answerRow); ['U', 'R', 'F'].forEach((label, i) => { const choice = createButton(answerRow, { label, variant: 'secondary' }); choice.classList.add('btn--choice'); if (i === 1) choice.dataset.state = 'good'; });
 
   const inputs = addPanel('W-09 / W-36 · filled fields and search');
   createFilledInput(inputs, { label: 'session name', value: 'evening solves', placeholder: 'name this session' });
   createFilledSelect(inputs, { label: 'filter', value: 'all', options: [{ value: 'all', label: 'all sessions' }, { value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] });
+  createFilledSelect(inputs, { label: 'disabled filter', value: 'recent', disabled: true, options: [{ value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] });
+  createFilledInput(inputs, { label: 'validation state', value: '', placeholder: 'name this session', error: /* copy-ok: validation example shows accessible error-state styling */ 'Choose a name to continue.' });
   createTextarea(inputs, { label: 'paste moves', value: "R U R' U'", rows: 2, hint: 'Notation stays on this device.' });
   createRangeInput(inputs, { label: 'playback speed', min: .5, max: 2, step: .25, value: 1, unit: '×' });
   createFileInput(inputs, { label: 'open a recording', accept: 'application/json,.json' });
@@ -54,6 +56,7 @@ export function mountApprovedWidgetGallery(host) {
 
   const containers = addPanel('W-10 / W-14 / W-15 / W-29 · container ladder');
   const disclosure = createDisclosure(containers, { title: 'advanced details', detail: 'rarely needed', open: true }); disclosure.body.append(el('p', 'g-widget-live__copy', 'Sections use space and a heading. The list and log variants get a panel.'));
+  const group = createGroup(containers, { label: 'group of settings' }); group.append(el('p', 'g-widget-live__copy', 'Groups stay frameless and add space between related controls.'));
   const listGroup = createPanel(containers, { kind: 'list', label: 'example list panel' });
   createListRow(listGroup, { title: 'Cross Scout', detail: 'last practiced · today', value: '1.42', selected: true, orbit: { segments: segmentFixtures('scout') } });
   const dialogHost = el('div', 'g-widget-live__row'); containers.append(dialogHost); const dialog = createDialog(document.body, { title: 'One decision', description: 'A compact dialog for one choice.', actions: [{ label: 'cancel', close: true }, { label: 'continue', primary: true }] });
