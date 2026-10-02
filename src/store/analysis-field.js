@@ -15,7 +15,7 @@ export function cleanRotationMarks(marks) {
 
 /** @returns {Object|null} */
 export function cleanAnalysis(a) {
-  if (!a || typeof a !== 'object' || ![1, 2, 3].includes(a.v)) return null;
+  if (!a || typeof a !== 'object' || ![1, 2, 3, 4].includes(a.v)) return null;
   const marks = a.marks && typeof a.marks === 'object' ? a.marks : {};
   const cross = a.cross && typeof a.cross === 'object' ? a.cross : null;
   const out = {
@@ -84,6 +84,15 @@ export function cleanAnalysis(a) {
     lastLayerReference: Number.isFinite(a.lastLayerReference) ? Math.max(0, a.lastLayerReference) : null,
     lastLayer: null,
   };
+  if (a.f2lCases && typeof a.f2lCases === 'object' && !Array.isArray(a.f2lCases)) {
+    const cases = {};
+    for (let n = 1; n <= 4; n++) {
+      const row = a.f2lCases[`pair${n}`];
+      if (!row || typeof row.caseId !== 'string' || !/^f2l\/\d{1,2}$/.test(row.caseId) || !['FR', 'FL', 'BR', 'BL'].includes(row.targetPair)) continue;
+      cases[`pair${n}`] = { caseId: row.caseId, targetPair: row.targetPair };
+    }
+    if (Object.keys(cases).length) out.f2lCases = cases;
+  }
   for (const field of (a.v >= 2 ? ['ollCase', 'pllCase'] : [])) {
     const item = a[field];
     if (item && typeof item.id === 'string') out[field] = {

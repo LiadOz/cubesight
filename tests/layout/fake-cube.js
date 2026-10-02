@@ -10,7 +10,7 @@ export async function installBrainSnapshotHook(page) {
     if (!source.includes(anchor)) throw new Error('F9 could not attach the view-model capture hook to the shared Brain controller.');
     await route.fulfill({
       response,
-      body: source.replace(anchor, `${anchor}\n    if (globalThis.testBrain) globalThis.testBrain.handle = { getViewModel: () => view?.getViewModel() ?? null };`),
+      body: source.replace(anchor, `${anchor}\n    if (globalThis.testBrain) globalThis.testBrain.handle = { getViewModel: () => view?.getViewModel() ?? null, getCubeState: () => view?.getCubeState?.() ?? null };`),
     });
   });
 }

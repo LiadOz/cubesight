@@ -834,6 +834,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   return {
     /** @returns {import('./types.js').BrainVM|null} */
     getViewModel: () => vm,
+    /** A read-only snapshot of the one Cube mounted by this Brain controller. */
+    getCubeState: () => (cube?.mode === 'case' ? cube.displayState : cube?.state) ?? null,
     dispatch,
     /** Resolves once the history is open and every queued write has reached IndexedDB (tests, export). */
     async flushHistory() { await historyReady; await history?.flush(); },

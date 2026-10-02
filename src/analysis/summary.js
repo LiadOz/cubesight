@@ -10,13 +10,40 @@
 import { ENGINE_VERSION } from './segment.js';
 import { canonicalizeReconstruction, tokenizeReconstruction } from '../review/import-parser.js';
 import { unrelabelMoves } from './normalize.js';
+import { applyMoves, stateFromScramble } from '../cross-cube.js';
+import { f2lSetupSignature } from '../algs/drill/cube.js';
+import { getCases } from '../algs/seed/cases.js';
 
-export const SUMMARY_VERSION = 3;
+export const SUMMARY_VERSION = 4;
 const MAX_LOSSES = 8;
 const MAX_PAUSES = 8;
 const MAX_CANCELS = 8;
 
 const text = moves => (moves ?? []).join(' ');
+
+function identifyF2lCases(segmentation, pairs) {
+  const normalized = segmentation.normalized;
+  if (!normalized?.scramble || !Array.isArray(normalized.moves)) return {};
+  let initial;
+  try { initial = stateFromScramble(normalized.scramble); }
+  catch { return {}; }
+  const identified = {};
+  for (const pair of pairs ?? []) {
+    // Pair evaluation records labels in the solve's original frame; the replay
+    // below uses cross-on-D moves. Resolve the canonical frame's actual slot
+    // from segmentation so colour-neutral cross rotations cannot mislabel it.
+    const observed = segmentation.pairs?.find(item => item.n === pair.n);
+    const slot = observed?.slot;
+    if (!Number.isInteger(pair.from) || !['FR', 'FL', 'BR', 'BL'].includes(slot)) continue;
+    try {
+      const atStart = applyMoves(initial, normalized.moves.slice(0, pair.from));
+      const signature = f2lSetupSignature(atStart, slot);
+      const row = signature && getCases('f2l').find(candidate => candidate.targetPair === slot && candidate.signature === signature);
+      if (row) identified[`pair${pair.n}`] = { caseId: row.id, targetPair: row.targetPair };
+    } catch { /* Unsupported recording formats simply have no F2L case link. */ }
+  }
+  return identified;
+}
 
 /**
  * @param {{segmentation:Object, cross?:Object|null, pairs?:Object[]|null}} analysis  analyzeSolve* result
@@ -54,6 +81,8 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
     } : null,
     lastLayerReference: Number.isFinite(lastLayer?.lastLayerReference) ? lastLayer.lastLayerReference : null,
   };
+  const f2lCases = identifyF2lCases(seg, pairs);
+  if (Object.keys(f2lCases).length) out.f2lCases = f2lCases;
   if (cross) {
     const lossy = cross.positions.filter(row => row.loss > 0);
     out.cross = {

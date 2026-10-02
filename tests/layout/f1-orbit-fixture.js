@@ -4,6 +4,9 @@
 import { mountFakeCube, completeScramble, solveReverse } from './fake-cube.js';
 import { getCase } from '../../src/algs/seed/cases.js';
 import { invertAlg } from '../../src/algs/notation.js';
+import { applyMoves, stateFromScramble } from '../../src/cross-cube.js';
+
+const cubeKey = state => JSON.stringify(state?.cubies?.map(({ id, position, stickers }) => [id, position, stickers]) ?? null);
 
 const SCRAMBLE = "R2 D' F2 U B2 L' U2 F";
 
@@ -21,6 +24,9 @@ async function requireView(page, screen) {
 async function startF1(page, { delayed = false } = {}) {
   await mountFakeCube(page, { delayed });
   await page.waitForFunction(() => Boolean(window.__cubesightSnapshot?.getViewModel?.()?.viewModel));
+  // Brain loads the Orbit style asynchronously after first mount. Do not begin
+  // interacting while that swap can still replace the settings controls.
+  await page.waitForFunction(() => document.querySelector('#brain-view .brain')?.dataset.brainStyle === 'orbit');
 }
 
 async function startGuided(page, scramble = SCRAMBLE) {
@@ -41,10 +47,10 @@ async function finishInspection(page, scramble = SCRAMBLE) {
 }
 
 async function finishSolve(page, scramble = SCRAMBLE) {
+  await startGuided(page, scramble);
   await finishInspection(page, scramble);
   await solveReverse(page, scramble);
   await page.waitForFunction(() => window.__cubesightSnapshot?.getViewModel?.()?.viewModel?.screen === 'results');
-  await page.waitForFunction(() => window.__cubesightSnapshot?.getViewModel?.()?.viewModel?.results?.review?.status !== 'pending', null, { timeout: 30_000 });
 }
 
 function caseSolveMoves() {
@@ -96,34 +102,60 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
     if (f1State === 'live-results') return;
     if (f1State === 'case-choices') {
       const cases = vm.results?.caseLinks ?? {};
-      if (cases.oll?.id !== '1' || cases.pll?.id !== 'T' || !Object.values(cases).some(item => item.kind === 'f2l' && item.id === 'FR')) throw new Error('real completed solve did not produce the required OLL 1 / PLL T / F2L FR case-link model');
-      const segment = page.locator('#brain-view [data-segment="oll"], #brain-view [data-segment="co"]').first();
-      if (!(await segment.count())) throw new Error('results Orbit has no real OLL segment to open its case choices');
-      await segment.click();
-      const prompt = page.locator('#brain-view .f1-results__case-prompt');
-      if (!(await prompt.isVisible())) throw new Error('selecting the OLL segment did not expose its case prompt');
-      await prompt.click();
-      const links = await page.locator('#brain-view .f1-results__case-links a').evaluateAll(nodes => nodes.map(node => node.getAttribute('href')));
-      if (links.length !== 2 || !links.some(href => href.startsWith('#/algs/oll/1?')) || !links.some(href => href.startsWith('#/drills/oll?'))) throw new Error('case prompt must expose algorithm and drill destinations with local source context');
+      if (cases.oll?.id !== '1' || cases.pll?.id !== 'T' || !Object.values(cases).some(item => item.kind === 'f2l' && item.id === '4' && item.targetPair === 'FR')) throw new Error('real completed solve did not produce canonical OLL 1 / PLL T / F2L case 4 for the FR slot');
+      const caseChecks = [
+        { stage: 'co', kind: 'oll', id: '1' },
+        { stage: 'ep', kind: 'pll', id: 'T' },
+        { stage: 'pair1', kind: 'f2l', id: '4' },
+      ];
+      for (const item of caseChecks) {
+        const segment = page.locator(`#brain-view [data-segment="${item.stage}"]`).first();
+        if (!(await segment.count())) throw new Error(`results Orbit has no real ${item.stage} stage`);
+        await segment.evaluate(node => {
+          node.focus();
+          node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        });
+        const prompt = page.locator('#brain-view .f1-results__case-prompt');
+        if (!(await prompt.isVisible())) throw new Error(`selecting the ${item.stage} segment did not expose its case prompt`);
+        if (!(await prompt.evaluate(node => node.closest('details')?.open))) await prompt.click();
+        const links = await page.locator('#brain-view .f1-results__case-links a').evaluateAll(nodes => nodes.map(node => node.getAttribute('href')));
+        const algorithm = `#/algs/${item.kind}/${item.id}?`;
+        const drill = item.kind === 'pll' ? '#/drills/pll?cases=T&' : `#/drills/${item.kind}?cases=${item.id}&`;
+        if (links.length !== 2 || !links.some(href => href.startsWith(algorithm)) || !links.some(href => href.startsWith(drill))) throw new Error(`${item.stage} case prompt must expose exactly its algorithm and case-specific drill routes`);
+        if (links.some(href => !href.includes('from=%23%2Fsolve'))) throw new Error(`${item.stage} case links must preserve the exact source route`);
+        if (item.kind !== 'f2l' && links.some(href => !href.includes('recognitionMs=') || !href.includes('executionMs='))) throw new Error(`${item.stage} case links must preserve finite recognition/execution timings`);
+      }
       return;
     }
     if (f1State === 'staged-detail-comparison') {
-      const marker = page.locator('#brain-view [data-marker]').first();
-      if (!(await marker.count())) throw new Error('real Orbit has no review marker');
-      await marker.click();
+      const segment = page.locator('#brain-view [data-segment="cross"]');
+      if (!(await segment.count())) throw new Error('real Orbit has no cross stage for the proven comparison fixture');
+      await segment.evaluate(node => { node.focus(); node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
+      await page.waitForFunction(() => window.__cubesightSnapshot.getViewModel().viewModel.results?.review?.detail?.stageKey === 'cross');
+      const initial = await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.results.record);
+      const compare = await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.results.review.detail.compare);
+      if (compare.status !== 'better' || !compare.better.length || compare.better.length >= compare.yours.length) throw new Error('actual cross analysis did not prove a shorter comparison for the real solve');
       const yours = page.locator('#brain-view .b-rev-variant[data-variant="yours"]');
       const better = page.locator('#brain-view .b-rev-variant[data-variant="better"]');
-      if (!(await yours.isVisible()) || !(await better.isVisible())) throw new Error('selected marker has no yours/better comparison controls');
+      if (!(await yours.isVisible()) || !(await better.isVisible())) throw new Error('selected cross stage has no yours/better comparison controls');
+      const expectedYours = cubeKey(applyMoves(stateFromScramble(initial.scramble), initial.solveMoves.slice(0, compare.from).concat(compare.yours)));
       await yours.click();
       await page.waitForFunction(() => window.__cubesightSnapshot.getViewModel().viewModel.results?.review?.detail?.variant === 'yours');
-      const yoursState = await page.locator('#brain-view canvas').first().evaluate(canvas => canvas.toDataURL());
+      await page.waitForFunction(expected => {
+        const state = window.testBrain?.handle?.getCubeState?.();
+        return JSON.stringify(state?.cubies?.map(({ id, position, stickers }) => [id, position, stickers]) ?? null) === expected;
+      }, expectedYours, { timeout: 10_000 });
+      const expectedBetter = cubeKey(applyMoves(stateFromScramble(initial.scramble), initial.solveMoves.slice(0, compare.from).concat(compare.better)));
       await better.click();
       await page.waitForFunction(() => window.__cubesightSnapshot.getViewModel().viewModel.results?.review?.detail?.variant === 'better');
-      const betterState = await page.locator('#brain-view canvas').first().evaluate(canvas => canvas.toDataURL());
-      if (yoursState === betterState) throw new Error('review variants did not move the rendered shared Cube to distinct frames');
+      await page.waitForFunction(expected => {
+        const state = window.testBrain?.handle?.getCubeState?.();
+        return JSON.stringify(state?.cubies?.map(({ id, position, stickers }) => [id, position, stickers]) ?? null) === expected;
+      }, expectedBetter, { timeout: 10_000 });
+      if (expectedYours === expectedBetter) throw new Error('the proven review variants do not lead to distinct cube states');
       return;
     }
-    const marker = page.locator('#brain-view [data-marker-keys], #brain-view [data-marker-cluster], #brain-view [data-marker-detail-key]').first();
+    const marker = page.locator('#brain-view .orbit__marker-cluster, #brain-view [data-marker-detail-key]').first();
     if (f1State === 'marker-detail') {
       if (!(await marker.count())) throw new Error('actual results Orbit did not render any review marker');
       await marker.click();
@@ -135,7 +167,10 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
     if (!href || !href.startsWith('#/review/')) throw new Error('live results review link is not a local deep link');
     await review.click();
     await page.waitForFunction(() => location.hash.startsWith('#/review/'));
+    await page.waitForFunction(() => Boolean(document.querySelector('#review-view .solve-review-page .sr-layout')), null, { timeout: 45_000 });
     if (!page.url().includes('#/review/')) throw new Error('review deep link did not navigate from actual live results');
+    const reviewModel = await page.evaluate(() => ({ mounted: Boolean(document.querySelector('#review-view .solve-review-page .sr-layout')), hasMoves: Boolean(document.querySelector('#review-view .solve-review-page .sr-moves li')), route: location.hash }));
+    if (!reviewModel.mounted || !reviewModel.hasMoves) throw new Error(`deep review route did not render the selected solve: ${JSON.stringify(reviewModel)}`);
     return;
   }
 

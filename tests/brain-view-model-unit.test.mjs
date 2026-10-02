@@ -217,8 +217,8 @@ test('stored results builder returns the shared Orbit, case, and review data', (
   const settings = normalizeSettings();
   const record = {
     ...EXAMPLE_RECORD,
-    analysis: { ...EXAMPLE_RECORD.analysis, f2lCases: { pair1: { caseId: 'f2l/FR', name: 'front right' } }, lastLayer: {
-      oll: { caseId: 'oll/1', name: '1', from: 32, to: 45, recognitionMs: 840, executionMs: 1210, used: { id: 'oll/1/sune' } },
+    analysis: { ...EXAMPLE_RECORD.analysis, f2lCases: { pair1: { caseId: 'f2l/1' } }, lastLayer: {
+      oll: { caseId: 'OLL 1 Dot', name: 'Runway, Blank', from: 32, to: 45, recognitionMs: 840, executionMs: 1210, used: { id: 'oll/1/sune' } },
       pll: { caseId: 'pll/Jb', name: 'Jb', from: 45, to: 61, recognitionMs: 620, executionMs: 1720, used: { id: 'pll/Jb/standard' } },
     } },
   };
@@ -228,11 +228,33 @@ test('stored results builder returns the shared Orbit, case, and review data', (
   assert.equal(result.vm.caseLinks.pll.id, 'Jb');
   assert.equal(result.vm.caseLinks.pll.usedAlg, 'pll/Jb/standard');
   assert.equal(result.vm.caseLinks.pair1.kind, 'f2l');
-  assert.equal(result.vm.caseLinks.pair1.id, 'FR');
+  assert.equal(result.vm.caseLinks.pair1.id, '1');
+  assert.equal(result.vm.caseLinks.pair1.targetPair, 'FR');
+  assert.equal(result.vm.caseLinks.oll.recognitionMs, 840);
+  assert.equal(result.vm.caseLinks.oll.executionMs, 1210);
   assert.equal(result.vm.timeline.segments.find(segment => segment.key === 'pair1').caseKey, 'pair1');
   assert.equal(result.vm.timeline.segments.length, buildStagePlan(settings).length);
   assert.ok(result.vm.timeline.segments.some(segment => segment.key === 'ep' && segment.state === 'done'));
   assert.equal(result.vm.timeline.markers, result.vm.review.markers);
+});
+
+test('case links use canonical library IDs and never turn F2L slots or arbitrary OLL labels into routes', () => {
+  const settings = normalizeSettings();
+  const plan = buildStagePlan(settings);
+  const record = {
+    ...EXAMPLE_RECORD,
+    analysis: { ...EXAMPLE_RECORD.analysis, v: 3,
+      f2lCases: { pair1: { caseId: 'FR', name: 'front right slot' } },
+      ollCase: { id: 'OLL 1 Dot', recognitionMs: 900, executionMs: 1200 },
+      pllCase: { id: 'not-a-pll-case' },
+    },
+  };
+  const result = buildResultsViewModel({ record, records: [record], settings, plan });
+  assert.equal(result.vm.caseLinks.oll.id, '1');
+  assert.equal(result.vm.caseLinks.oll.recognitionMs, 900);
+  assert.equal(result.vm.caseLinks.oll.executionMs, 1200);
+  assert.equal(result.vm.caseLinks.pll, undefined);
+  assert.equal(result.vm.caseLinks.pair1, undefined, 'FR is the slot, not a canonical algorithm case ID');
 });
 
 test('stored results tolerate partial legacy analysis while retaining valid pauses', () => {

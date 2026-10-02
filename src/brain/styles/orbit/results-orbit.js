@@ -15,6 +15,19 @@ const el = (tag, className, text) => {
 
 const hrefWith = (path, params) => `${path}?${new URLSearchParams(params)}`;
 
+function caseForStage(results, detail) {
+  const stage = detail?.stage ?? detail?.stageKey ?? detail?.key;
+  if (!stage) return null;
+  const links = results?.caseLinks ?? {};
+  const direct = links[stage];
+  if (direct) return direct;
+  const timelineCase = results?.timeline?.segments?.find(segment => segment.key === stage)?.caseKey;
+  if (timelineCase && links[timelineCase]) return links[timelineCase];
+  if (stage === 'oll' || stage === 'co') return links.oll ?? null;
+  if (stage === 'pll' || stage === 'ep') return links.pll ?? null;
+  return null;
+}
+
 /** The shared solve result rail used by live results and history past solves. */
 export function createOrbitResults(host, ctx = {}) {
   const root = el('section', 'f1-results is-hidden');
@@ -23,14 +36,12 @@ export function createOrbitResults(host, ctx = {}) {
   const time = el('div', 'f1-results__time');
   time.append(el('span', 'f1-results__eyebrow', 'time'), el('strong', 'f1-results__number'), el('p', 'f1-results__compare'));
   const coachHost = el('div', 'f1-results__coach');
-  const casePrompt = el('button', 'ui-action f1-results__case-prompt', 'open case');
-  casePrompt.type = 'button'; casePrompt.hidden = true; casePrompt.dataset.action = 'case';
+  const casePrompt = el('summary', 'ui-action f1-results__case-prompt', 'open case');
   const detailHost = el('div', 'f1-results__detail-host');
-  const caseMenu = el('div', 'f1-results__case-menu');
+  const caseMenu = document.createElement('details'); caseMenu.className = 'f1-results__case-menu';
   caseMenu.hidden = true;
-  const caseTitle = el('p', 'f1-results__case-title');
   const caseLinks = el('div', 'f1-results__case-links');
-  caseMenu.append(caseTitle, caseLinks);
+  caseMenu.append(casePrompt, caseLinks);
   const actions = el('div', 'f1-results__actions');
   const actionRow = createActions(actions, [
     { label: 'next scramble', primary: true, onClick: () => mode === 'past' ? ctx.onReplay?.() : ctx.dispatch?.({ type: 'next' }) },
@@ -46,7 +57,7 @@ export function createOrbitResults(host, ctx = {}) {
   moreBody.append(penalty, retry); more.append(moreBody);
   actions.append(more);
   const keysHost = el('div', 'f1-results__keys');
-  root.append(historyNav, time, coachHost, casePrompt, caseMenu, detailHost, actions, keysHost);
+  root.append(historyNav, time, coachHost, caseMenu, detailHost, actions, keysHost);
   host.append(root);
 
   const coach = createCoachLine(coachHost, { orbit: ctx.resultsOrbit });
@@ -71,7 +82,7 @@ export function createOrbitResults(host, ctx = {}) {
   }
   function showCase(info) {
     if (!info) return;
-    caseTitle.textContent = `${info.kind.toUpperCase()} · ${info.name}`;
+    casePrompt.textContent = `open ${info.name} case`;
     caseLinks.replaceChildren();
     const algorithms = el('a', 'ui-action', `${info.name} algorithms`);
     algorithms.href = caseHref(info, true);
@@ -79,14 +90,13 @@ export function createOrbitResults(host, ctx = {}) {
     drill.href = caseHref(info, false);
     caseLinks.append(algorithms, drill);
     caseMenu.hidden = false;
+    caseMenu.open = true;
   }
-
   root.addEventListener('click', event => {
     const button = event.target.closest?.('[data-action]');
     if (!button || !root.contains(button)) return;
     if (button.dataset.action === 'retry') ctx.dispatch?.({ type: 'retry' });
     if (button.dataset.action === 'penalty') ctx.dispatch?.({ type: 'togglePenalty', penalty: currentRecord?.penalty === '+2' ? null : '+2' });
-    if (button.dataset.action === 'case' && selectedCase) showCase(selectedCase);
   });
   root.addEventListener('keydown', event => { if (event.key === 'Escape' && !caseMenu.hidden) caseMenu.hidden = true; });
 
@@ -139,13 +149,14 @@ export function createOrbitResults(host, ctx = {}) {
     keyBar.remove();
     const liveKeys = mode === 'past' ? [{ key: '[ ]', label: 'markers' }] : [{ key: 'space', label: 'next scramble' }, { key: '[ ]', label: 'markers' }];
     keyBar = createKeyBar(keysHost, liveKeys);
+    caseMenu.open = false;
     if (page?.caseChoice) showCase(r.caseLinks?.[page.caseChoice]);
     else caseMenu.hidden = true;
     const detail = r.review.detail;
-    selectedCase = r.caseLinks?.[detail?.stage] ?? (detail?.stage === 'oll' || detail?.stage === 'co' ? r.caseLinks?.oll : detail?.stage === 'pll' || detail?.stage === 'ep' ? r.caseLinks?.pll : null);
-    casePrompt.hidden = !selectedCase;
-    if (selectedCase) casePrompt.textContent = `open ${selectedCase.name} case`;
-    if (detail) {
+    selectedCase = caseForStage(r, detail);
+    caseMenu.hidden = !selectedCase;
+    if (selectedCase) showCase(selectedCase);
+    else if (detail) {
       const caseInfo = detail.caseId ? (r.caseLinks?.[detail.stage] ?? (detail.stage?.includes('pll') ? r.caseLinks?.pll : r.caseLinks?.oll)) : null;
       if (caseInfo) showCase(caseInfo);
     }
