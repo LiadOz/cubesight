@@ -98,7 +98,7 @@ export function mountGalleryPage(host) {
 
   const tabs = view => {
     const items = [
-      ['folders', 'Folders', hashFor('')], ['blog', 'Blog', hashFor('blog')], ['timeline', 'Timeline', hashFor('timeline')],
+      ['folders', 'Folders', hashFor('')], ['blog', 'Blog', hashFor('blog')], ['timeline', 'Timeline', hashFor('timeline')], ['widgets', 'Widgets', hashFor('widgets')],
     ];
     const current = view === 'group' ? 'folders' : view === 'post' || view === 'compare' ? 'blog' : view;
     return `<nav class="g-tabs" aria-label="Gallery">${items.map(([id, label, href]) => `<a href="${href}" ${id === current ? 'aria-current="page"' : ''}>${label}</a>`).join('')}
@@ -136,6 +136,28 @@ export function mountGalleryPage(host) {
     }
     return `${head('folders', 'Gallery', 'Every design mockup and agent screenshot, newest folders first.')}
       <div class="g-toolbar">${search('Search title, file or folder')}${chips('kind', kinds, kind)}</div>${body}`;
+  }
+
+  function widgetsView() {
+    const families = [
+      ['widgets-W-04-buttons', 'Buttons · quiet fill', 'Cream primary, surface secondary, text actions; keyboard shortcuts stay flat inside buttons.'],
+      ['widgets-selection-controls', 'Selection controls · ink', 'Selected chips, segmented choices, toggles, selects and answer choices share one ink system with a check.'],
+      ['widgets-inputs', 'Inputs · filled pills', 'Filled pill fields, search in the section head, and the approved range thumb.'],
+      ['widgets-containers', 'Containers · frameless', 'Sections, groups, panels, disclosures, drawers and dialogs use one ladder.'],
+      ['widgets-lists-data', 'Lists · open rows', 'Mini Orbit rows, count pills, text tags and empty states.'],
+      ['widgets-navigation', 'Navigation · side rail', 'Side rail, arrow links with crumbs and the global cube chip drawer.'],
+      ['widgets-W-16-status', 'Status · bottom right', 'One-line status and a bottom-right toast; work in progress uses the Orbit.'],
+      ['widgets-W-17-keycaps', 'Keycaps · bevelled', 'Only keyboard keys are bevelled; paired keys use cap–cap form.'],
+      ['widgets-W-21-moves-v2', 'Move display · Orbit and phone wrap', 'Move labels sit on the desktop Orbit and wrap on phones; sections are spacing only.'],
+      ['widgets-time-coach', 'Timer and coach', 'Plain timer digits, the word “hidden”, praise-first coach copy and the dotted marker connector.'],
+      ['widgets-progress-charts', 'Progress and charts', 'Orbit for a few structural parts, real charts for many data points, plus the approved wipe caret.'],
+      ['widgets-dev-pages', 'Development pages', 'Timeline graph, gallery image cards, two-column post and wipe comparison.'],
+      ['widgets-system-check', 'System check', 'The chosen widgets together across solve, results, drills, history, alg playback and phone.'],
+    ];
+    const core = `<a class="g-widget-card" href="${hashFor('docs/design/orbit-v3')}"><b>Cube and Orbit · shared foundation</b><span>One Cube, one Orbit, the A-frame header and nine flow fixtures.</span><i>open the Cube and Orbit gallery →</i></a>`;
+    const cards = families.map(([id, title, description]) => `<a class="g-widget-card" href="${hashFor(`post/${id}`)}"><b>${esc(title)}</b><span>${esc(description)}</span><i>view approved prototype and states →</i></a>`).join('');
+    return `${head('widgets', 'Approved widgets', 'The complete approved set is registered here. Each prototype post records its states and exact chosen option.')}
+      <p class="g-count">47 decisions · 37 widget families · prototype detail opens from each row</p><div class="g-widget-grid">${core}${cards}</div>`;
   }
 
   function groupView(path) {
@@ -282,6 +304,7 @@ export function mountGalleryPage(host) {
       case 'post': html = postView(route.id); break;
       case 'compare': html = compareView(route.params); break;
       case 'group': html = groupView(route.group); break;
+      case 'widgets': html = widgetsView(); break;
       default: html = foldersView();
     }
     const warn = data.warnings?.length ? `<details class="g-warn"><summary>${data.warnings.length} gallery warning${data.warnings.length === 1 ? '' : 's'}</summary><ul>${data.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></details>` : '';
