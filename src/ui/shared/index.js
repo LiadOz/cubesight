@@ -1,5 +1,6 @@
 import './shared.css';
 import { APP_NAME } from '../../copy/nav.js';
+import { buildSharedViewModel } from './snapshot-model.js';
 
 export function createHeader(host, { title = APP_NAME, sections = ['solve', 'drills', 'algs', 'progress', 'history'], active = 'solve', compass = null, session = null, actions = {}, help = null, themeToggle = true, showDevDrawer = true } = {}) {
   const header = document.createElement('header'); header.className = 'site-header ui-header';
@@ -40,25 +41,14 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   header.append(brand, nav, controls); if (compass) header.querySelector('.ui-header__brand').after(compass);
   host.append(header);
   const applySnapshot = snapshot => {
-    const phase = snapshot?.phase || 'disconnected';
-    const names = { disconnected: 'disconnected', connecting: 'connecting', 'awaiting-solved': 'syncing', tracking: 'connected', desynced: 'desynced', interrupted: 'interrupted' };
-    const interrupted = phase === 'interrupted' || (phase === 'disconnected' && snapshot?.link?.status === 'lost');
-    const statusPhase = interrupted ? 'interrupted' : phase;
-    const text = names[statusPhase] || statusPhase;
-    const name = snapshot?.deviceName || (snapshot?.protocol?.startsWith('GAN') ? 'GAN cube' : 'cube');
-    const batteryText = Number.isFinite(snapshot?.battery) ? `${Math.round(snapshot.battery)}%` : '';
-    description.textContent = name; description.title = text; battery.textContent = batteryText; cubeMenu.dataset.phase = statusPhase;
-    summary.setAttribute('aria-label', `${name}, ${text}${batteryText ? `, battery ${batteryText}` : ''}; open cube and recording actions`);
-    dot.className = `ui-cube-chip__dot is-${statusPhase}`;
-    const canSync = snapshot?.canSync ?? phase === 'tracking';
-    const canDisconnect = snapshot?.canDisconnect ?? phase === 'tracking';
-    for (const button of menu.querySelectorAll('[data-cube-action]')) {
-      const id = button.dataset.cubeAction;
-      button.disabled = id === 'connect' ? !(phase === 'disconnected' || (phase === 'interrupted' && !snapshot?.canDisconnect))
-        : id === 'sync' ? !canSync
-          : id === 'recenter' || id === 'disconnect' ? !canDisconnect
-            : id === 'forget' ? !actions.forgetAvailable?.() : false;
-    }
+    const model = buildSharedViewModel({ connection: snapshot, theme: document.documentElement.dataset.theme,
+      activeRoute: nav.querySelector('[aria-current="page"]')?.dataset.nav, connectionMenuOpen: cubeMenu.open,
+      developerDrawerAvailable: showDevDrawer, developerDrawerOpen: Boolean(drawer?.open), forgetAvailable: actions.forgetAvailable?.() });
+    const connection = model.header.connection;
+    description.textContent = connection.name; description.title = connection.statusText; battery.textContent = connection.batteryPercent == null ? '' : `${connection.batteryPercent}%`; cubeMenu.dataset.phase = connection.phase;
+    summary.setAttribute('aria-label', `${connection.name}, ${connection.statusText}${connection.batteryPercent == null ? '' : `, battery ${connection.batteryPercent}%`}; open cube and recording actions`);
+    dot.className = `ui-cube-chip__dot is-${connection.phase}`;
+    for (const button of menu.querySelectorAll('[data-cube-action]')) button.disabled = !model.connectionMenu.actions.find(item => item.id === button.dataset.cubeAction)?.enabled;
     const setupName = themeButton.querySelector('.theme-label'); if (setupName) setupName.textContent = document.documentElement.dataset.theme || 'dark';
   };
   const unsubscribe = session?.subscribe?.(applySnapshot);
@@ -66,6 +56,12 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   header.destroy = () => { header.dispatchEvent(new Event('cube-header-destroy')); unsubscribe?.(); themeObserver.disconnect(); drawer?.remove(); header.remove(); };
   header.openDeveloperDrawer = openDrawer;
+  header.getViewModel = ({ route = '/', recording = null } = {}) => buildSharedViewModel({
+    route, title, activeRoute: nav.querySelector('[aria-current="page"]')?.dataset.nav,
+    theme: document.documentElement.dataset.theme, connection: session?.getSnapshot?.() || {},
+    connectionMenuOpen: cubeMenu.open, developerDrawerAvailable: showDevDrawer,
+    developerDrawerOpen: Boolean(drawer?.open), forgetAvailable: actions.forgetAvailable?.(), recording,
+  });
   return header;
 }
 
