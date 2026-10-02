@@ -178,6 +178,40 @@ test('pending half-turn becomes a real detour if the next turn changes face', as
   } finally { restore(); }
 });
 
+test('cancelling the first quarter leaves the guided half-turn current without a false detour', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    h.live.startGuided('U2');
+    h.move('U');
+    h.move("U'");
+    assert.equal(h.s().applyStep, 0);
+    assert.deepEqual(h.s().applyDetour, []);
+    assert.equal(h.s().applyPendingDouble, null);
+    assert.equal(h.s().phase, 'applying');
+    h.move("U'");
+    h.move("U'");
+    assert.equal(h.s().phase, 'inspecting');
+  } finally { restore(); }
+});
+
+test('opposite-face detour recovers to the pending guided half-turn', async () => {
+  const restore = quiet();
+  try {
+    const h = await rig();
+    h.live.startGuided('U2 R');
+    h.move('U');
+    h.move('D');
+    assert.deepEqual(h.s().applyDetour, ['U', 'D']);
+    for (const move of recoveryMoves(h.s().applyDetour)) h.move(move);
+    assert.equal(h.s().applyStep, 0);
+    assert.deepEqual(h.s().applyDetour, []);
+    h.move('U');
+    h.move('U');
+    assert.equal(h.s().applyStep, 1);
+  } finally { restore(); }
+});
+
 test('an expected quarter turn advances immediately without waiting for another event', async () => {
   const restore = quiet();
   try {
