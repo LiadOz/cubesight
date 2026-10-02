@@ -49,15 +49,30 @@ test('tiny neutral budgets never turn a zero share into the solver default timeo
     requests.push(request);
     return { results: [{ moves: ['R'], slotMask: 1, optimality: 'proven-for-target' }], complete: true };
   };
-  const result = await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 11, search });
+  const result = await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 11, search, now: () => 100 });
   assert.ok(requests.length > 0);
   assert.ok(requests.every(request => request.timeLimitMs > 0 && request.timeLimitMs <= 11));
   assert.ok(requests.reduce((sum, request) => sum + request.timeLimitMs, 0) <= 11);
   assert.equal(result.perFace.length, 6);
   assert.equal(result.xcrossPerFace.length, 6);
   requests.length = 0;
-  await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 0, search });
+  await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 0, search, now: () => 100 });
   assert.equal(requests.length, 0, 'zero budget skips solver calls');
+});
+
+test('neutral inspection search skips every call when its absolute deadline has passed', async () => {
+  let ticks = 0;
+  const requests = [];
+  const result = await crossSuggestion('R U R\'', {
+    color: 'neutral', timeLimitMs: 11,
+    now: () => ticks++ === 0 ? 100 : 112,
+    search: async request => { requests.push(request); return { results: [], complete: false }; },
+  });
+  assert.equal(requests.length, 0);
+  assert.equal(result.perFace.length, 6);
+  assert.equal(result.xcrossPerFace.length, 6);
+  assert.equal(result.best, null);
+  assert.equal(result.bestXcross, null);
 });
 
 test('f2lNextPairHint returns null when all pairs solved, and a pair when not', () => {

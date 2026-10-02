@@ -31,13 +31,14 @@ export function crossFacesForPreference(color = 'neutral') {
   return selected ? [selected] : [];
 }
 
-export async function crossSuggestion(scramble, { extended = false, timeLimitMs = 1500, color = 'neutral', search = solveCross } = {}) {
+const monotonicNow = () => globalThis.performance?.now?.() ?? Date.now();
+
+export async function crossSuggestion(scramble, { extended = false, timeLimitMs = 1500, color = 'neutral', search = solveCross, now = monotonicNow } = {}) {
   const faces = crossFacesForPreference(color);
   const results = [];
   const opportunities = [];
   const requested = Number(timeLimitMs);
   const totalBudget = Number.isFinite(requested) ? Math.max(0, requested) : 1500;
-  const now = () => globalThis.performance?.now?.() ?? Date.now();
   const deadline = now() + totalBudget;
   let budgetLeft = totalBudget;
   let callsRemaining = faces.length * 2;
