@@ -133,5 +133,30 @@
     "id": "C-00",
     "title": "decide: the three options and 3 questions",
     "caption": "settings drawer and delete dialog in each option, Q1 to Q3 drawn in the image."
+  },
+  "C-00-ladder-which-container-when-hd.png": {
+    "id": "C-00",
+    "title": "the ladder: which container when (HD 2x)",
+    "caption": "section, group, panel, disclosure, drawer, dialog: when and the rules."
+  },
+  "C-01-compare-settings-drawer-hd.png": {
+    "id": "C-01",
+    "title": "the settings drawer in the three options (HD 2x)",
+    "caption": "frameless, soft panels, hairline rules. Dark above, light below."
+  },
+  "C-18-option1-phone-sheets-hd.png": {
+    "id": "C-18",
+    "title": "option 1: phone: settings sheet, confirm dialog, import sheet (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "C-28-option2-phone-sheets-hd.png": {
+    "id": "C-28",
+    "title": "option 2: phone: settings sheet, confirm dialog, import sheet (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "C-38-option3-phone-sheets-hd.png": {
+    "id": "C-38",
+    "title": "option 3: phone: settings sheet, confirm dialog, import sheet (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
   }
 }

@@ -7,6 +7,7 @@ parent: widget-inventory
 status: exploring
 author: widget design agent
 decision: pending user choice
+images: [W-16-00-compare-options-hd.png, W-16-01-option1-states-hd.png, W-16-05-option1-phone-hd.png, W-16-06-option2-states-hd.png, W-16-10-option2-phone-hd.png, W-16-11-option3-states-hd.png, W-16-15-option3-phone-hd.png]
 ---
 **What is there today.** 20 variants of one-line text across 11 pages: hint paragraphs at 10 to 21 px (`cp-hint`, `oll-hint`, `lookahead-hint`), mono captions at 9 and 10 px (`cube-caption`, `p@corner-view`), notes at 12 px (`rp-note`, `rp-trend-note`), an amber connect error (`Connection failed: GATT server busy`, exception text on the main line), a 16 px idle line (`b-idle-status`), and a bold 20 px prompt used as a status. Colour is the only tone cue, there is no toast at all, and the position varies per page. The A frames have exactly three kinds of text near the edges: a mono readout under the clock (`−0.96 vs ao12 …`, `case 13 of 20`), the stats line bottom-right (`solve 23 · today 17:33`), and the coach line in the left rail (A-05), which this post does not touch.
 

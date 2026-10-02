@@ -63,5 +63,40 @@
     "id": "W-21v2-99",
     "title": "light sheet: the approved pair in the light theme",
     "caption": "desktop above, phone below."
+  },
+  "W-21v2-11-states-desktop-hd.png": {
+    "id": "W-21v2-11",
+    "title": "desktop: token states, sections as gaps, the Orbit grows (HD 2x)",
+    "caption": "every token state, two sections as one wide gap between Orbit points, the undo group, and how the ring grows. Dark."
+  },
+  "W-21v2-31-states-phone-hd.png": {
+    "id": "W-21v2-31",
+    "title": "phone: wrapped sequence, states and sections as space (HD 2x)",
+    "caption": "tokens as words, sections as wider spaces, the undo group."
+  },
+  "W-21v2-34-scramble-wrong-phone-hd.png": {
+    "id": "W-21v2-34",
+    "title": "phone 390 x 844: scramble and wrong turn (HD 2x)",
+    "caption": "the wrapped sequence under the cube; the undo move is a spaced section."
+  },
+  "W-21v2-35-alg-undo-phone-hd.png": {
+    "id": "W-21v2-35",
+    "title": "phone 390 x 844: T-perm and an undo group of two (HD 2x)",
+    "caption": "sections as extra space, no parentheses."
+  },
+  "W-21v2-36-long-rolling-phone-hd.png": {
+    "id": "W-21v2-36",
+    "title": "phone 390 x 844: 45-move scramble, rolling lines (HD 2x)",
+    "caption": "start, mid and a wrong turn on a long scramble."
+  },
+  "W-21v2-91-mini-form-lists-hd.png": {
+    "id": "W-21v2-91",
+    "title": "mini form in list rows (sections = space) (HD 2x)",
+    "caption": "history, long scramble, alg, playing and review rows. Dark."
+  },
+  "W-21v2-99-light-sheet-hd.png": {
+    "id": "W-21v2-99",
+    "title": "light sheet: the approved pair in the light theme (HD 2x)",
+    "caption": "desktop above, phone below."
   }
 }

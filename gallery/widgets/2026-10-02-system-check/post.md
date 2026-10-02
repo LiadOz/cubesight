@@ -7,6 +7,7 @@ parent: [widgets-W-21-moves-v2, widgets-W-17-keycap-pairs]
 status: exploring
 author: widget design agent
 decision: pending user review (finding: ink chips and the cream primary can be confused; proposed fix B, a check mark in the selected chip)
+images: [SC-01-solve-settings-desktop-hd.png, SC-02-results-desktop-hd.png, SC-03-drill-round-desktop-hd.png, SC-04-history-filters-desktop-hd.png, SC-05-alg-playback-desktop-hd.png, SC-11-five-screens-phone-hd.png, SC-31-ink-chip-vs-cream-primary-hd.png, SC-41-in-progress-connecting-hd.png, SC-42-in-progress-analysing-hd.png, SC-43-in-progress-searching-hd.png]
 ---
 **What this is.** One stylesheet of the approved set (W-04 quiet-fill buttons, W-05 to W-08 and W-28 ink selection controls, W-17 bevelled keycaps, W-16 bottom-right status and toast, W-21 labels on the Orbit on desktop and the wrapped sequence on a phone) used together on five screens. Every image is dark above and light below. Nothing in `src/` changed.
 

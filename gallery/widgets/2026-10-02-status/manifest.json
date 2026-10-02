@@ -78,5 +78,40 @@
     "id": "W-16-15",
     "title": "option 3: phone (A-09)",
     "caption": "status line and toast on a 390 px phone."
+  },
+  "W-16-00-compare-options-hd.png": {
+    "id": "W-16-00",
+    "title": "the three options side by side (HD 2x)",
+    "caption": "dark above, light below."
+  },
+  "W-16-01-option1-states-hd.png": {
+    "id": "W-16-01",
+    "title": "option 1: status line and toast states, dark and light (HD 2x)",
+    "caption": "tones, working, toast life cycle and the placement of each."
+  },
+  "W-16-05-option1-phone-hd.png": {
+    "id": "W-16-05",
+    "title": "option 1: phone (A-09) (HD 2x)",
+    "caption": "status line and toast on a 390 px phone."
+  },
+  "W-16-06-option2-states-hd.png": {
+    "id": "W-16-06",
+    "title": "option 2: status line and toast states, dark and light (HD 2x)",
+    "caption": "tones, working, toast life cycle and the placement of each."
+  },
+  "W-16-10-option2-phone-hd.png": {
+    "id": "W-16-10",
+    "title": "option 2: phone (A-09) (HD 2x)",
+    "caption": "status line and toast on a 390 px phone."
+  },
+  "W-16-11-option3-states-hd.png": {
+    "id": "W-16-11",
+    "title": "option 3: status line and toast states, dark and light (HD 2x)",
+    "caption": "tones, working, toast life cycle and the placement of each."
+  },
+  "W-16-15-option3-phone-hd.png": {
+    "id": "W-16-15",
+    "title": "option 3: phone (A-09) (HD 2x)",
+    "caption": "status line and toast on a 390 px phone."
   }
 }

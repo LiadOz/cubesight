@@ -1,9 +1,12 @@
 /* global document */
 // Renders the widget-proposal prototypes (gallery/widgets/<date>-<family>/proto/*.html) to numbered PNGs.
-//   node scripts/widget-proposal-shots.mjs buttons|keycaps|status [--only=<substring>]
+//   node scripts/widget-proposal-shots.mjs buttons|keycaps|status [--only=<a,b>] [--scale=1|2|3]
+// --scale (default 2) is the device scale factor. At 2 or 3 the files are written NEW as <name>-hd.png / <name>-hd3.png
+// next to the originals (never overwritten: an existing target is skipped). --scale=1 writes the original names.
+// --only takes comma-separated substrings matched against the file name.
 // It serves the repo root on a random local port (never 5173), loads each prototype view with Playwright,
 // stitches dark + light where a view asks for both, and writes <ID>-<name>.png plus manifest.json (IDs, captions)
-// into the post folder. Existing files are overwritten only when this script re-renders its own output.
+// into the post folder. Existing files are never overwritten.
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -122,6 +125,8 @@ FAMILIES.lists = { dir: 'gallery/widgets/2026-10-02-lists-data', page: 'lists.ht
 // dev pages: timeline graph (W-32), thumbnail card (W-33), blog post (W-34), compare view (W-35)
 const DPJ = [
   ['DP-00', 'decide', 'decide', 'decide: pick ①②③ for Q1, Q2 and Q3', 'every option side by side; my pick is marked; the blog post needs no answer.'],
+  ...[['q1', 'timeline-', ['git-graph', 'rings', 'spine']], ['q2', 'card-', ['image-card', 'contact-tile', 'row-card']], ['q3', 'compare-', ['two-panes', 'stage-dock', 'wipe-first']], ['b1', 'post-', ['article', 'two-columns', 'pictures-first']]]
+    .flatMap(([q, label, names]) => names.map((n, i) => ["DP-00", `${q}-option${i + 1}-${label}${n}`, `${q}o${i + 1}`, `decision ${q === 'b1' ? '(blog post, no question)' : q.toUpperCase()}, option ${'①②③'[i]} at full size`, 'the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00.'])),
   ['DP-01', 'shared-pieces', 'shared', 'the shared pieces of every dev page', 'header, tabs, status badge, branch tag, caption, and the two widgets that are not approved yet. Dark above, light below.', true],
   ['DP-11', 'timeline-1-git-graph', 't1', 'W-32 option 1: the git graph, kept (full page)', 'lanes in one neutral line, the chosen path thick, 44 posts on one page.'],
   ['DP-12', 'timeline-2-rings', 't2', 'W-32 option 2: every branch is a ring', 'branches as concentric rings, posts as points, the chosen path emphasized.'],
@@ -147,7 +152,10 @@ FAMILIES.devpages = { dir: 'gallery/widgets/2026-10-02-dev-pages', page: 'dev.ht
 
 const fam = FAMILIES[process.argv[2]];
 if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves|moves2|pairs|system|containers|lists|devpages [--only=text]'); process.exit(2); }
-const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7);
+const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
+const scale = Number((process.argv.find(a => a.startsWith('--scale=')) || '--scale=2').slice(8));
+if (![1, 2, 3].includes(scale)) { console.error('--scale must be 1, 2 or 3'); process.exit(2); }
+const hdSuffix = scale === 1 ? '' : scale === 2 ? '-hd' : `-hd${scale}`;
 
 const server = http.createServer((req, res) => {
   const rel = decodeURIComponent(req.url.split('?')[0]);
@@ -161,7 +169,7 @@ const base = `http://127.0.0.1:${server.address().port}/${fam.dir}/proto/${fam.p
 const outDir = path.join(root, fam.dir);
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1480, height: 1000 }, deviceScaleFactor: 1 });
+const ctx = await browser.newContext({ viewport: { width: 1480, height: 1000 }, deviceScaleFactor: scale });
 const page = await ctx.newPage();
 page.on('pageerror', e => console.error('page error:', e.message));
 
@@ -171,9 +179,11 @@ async function shot(params) {
   await page.waitForTimeout(150);
   return page.locator('#board').screenshot({ animations: 'disabled' });
 }
+const pngWidth = buf => buf.readUInt32BE(16);
 async function stitch(a, b) {
   const p = await ctx.newPage();
-  await p.setContent(`<body style="margin:0;background:#888"><div id="wrap" style="width:max-content"><img id="a" src="data:image/png;base64,${a.toString('base64')}" style="display:block"><img id="b" src="data:image/png;base64,${b.toString('base64')}" style="display:block"></div></body>`);
+  const w = Math.round(pngWidth(a) / scale);   // CSS px, so the 2x pixels are kept 1:1
+  await p.setContent(`<body style="margin:0;background:#888"><div id="wrap" style="width:max-content"><img id="a" src="data:image/png;base64,${a.toString('base64')}" style="display:block;width:${w}px"><img id="b" src="data:image/png;base64,${b.toString('base64')}" style="display:block;width:${w}px"></div></body>`);
   await p.waitForFunction(() => [...document.images].every(i => i.complete));
   const buf = await p.locator('#wrap').screenshot();
   await p.close();
@@ -193,7 +203,9 @@ for (const opt of fam.jobs ? [] : [1, 2, 3]) {
   }
 }
 for (const j of jobs) {
-  if (only && !j.file.includes(only)) continue;
+  if (only.length && !only.some(o => j.file.includes(o))) continue;
+  const outFile = j.file.replace(/\.png$/, `${hdSuffix}.png`);
+  if (fs.existsSync(path.join(outDir, outFile))) { console.log('exists, skipped', outFile); continue; }
   const common = { ...j.params, id: j.id };
   let buf;
   if (j.both) {
@@ -203,9 +215,9 @@ for (const j of jobs) {
   } else {
     buf = await shot({ ...common, theme: j.theme || 'dark' });
   }
-  fs.writeFileSync(path.join(outDir, j.file), buf);
-  manifest[j.file] = { id: j.id, title: j.title, caption: j.caption };
-  console.log('wrote', j.file);
+  fs.writeFileSync(path.join(outDir, outFile), buf);
+  manifest[outFile] = { id: j.id, title: hdSuffix ? `${j.title} (HD ${scale}x)` : j.title, caption: j.caption };
+  console.log('wrote', outFile);
 }
 fs.writeFileSync(path.join(outDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 await browser.close();

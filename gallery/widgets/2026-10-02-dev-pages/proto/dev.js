@@ -49,22 +49,39 @@ function light() {
 
 
 /* ---------------------------------------------------------------- the one decision image: every option side by side, Q1 to Q3 */
+// Each option is a 1440 x 900 screen shown at CELL px wide (CELL = 900 CSS px => 1800 px at 2x). The browser
+// rasterizes the scaled screen at device resolution, so nothing is a downscaled bitmap.
+const CELL = 900;
+const DECIDE_ROWS = () => [
+  ['Q1', 'timeline graph (W-32)', 'which one? ① git graph kept · ② branches as rings · ③ one spine ring, branches folded', [tl1, tl2, tl3], 2],
+  ['Q2', 'thumbnail card (W-33)', 'which one? ① image card · ② contact tile · ③ row card', [(p) => cards(1, p), (p) => cards(2, p), (p) => cards(3, p)], 0],
+  ['Q3', 'compare view (W-35)', 'which one? ① two panes · ② stage + dock · ③ wipe first (all have side by side, overlay, wipe)', [(p) => compare('x1', p), (p) => compare('x2', p), (p) => compare('x3', p)], 2],
+  ['', 'blog post (W-34)', 'no question: I build ② two columns unless you object', [(p) => post(1, p), (p) => post(2, p), (p) => post(3, p)], 1],
+];
+const strip = (html) => html.replace(/ data-co(-side)?="[^"]*"/g, '');
 function decide() {
   const CIRC = ['①', '②', '③'];
-  const prev = (html, label, pick) => `<div style="position:relative"><div style="width:440px;height:275px;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px var(--b-hairline);background:var(--b-bg)"><div style="transform:scale(.3055);transform-origin:top left;width:1440px;height:900px;overflow:hidden">${html.replace(/ data-co(-side)?="[^"]*"/g, '')}</div></div>
-    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:10px;display:flex;gap:8px;align-items:center"><span style="display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--b-warn);color:#141311;font:700 17px var(--b-font-sans)">${label}</span>${pick ? '<span class="sb sb--built" style="height:24px">my pick</span>' : ''}</div></div>`;
-  const row = (q, title, line, htmls, pick) => `<div style="display:grid;gap:10px"><div class="row" style="gap:14px;align-items:baseline">${q ? `<span style="display:inline-grid;place-items:center;min-width:44px;height:28px;padding:0 10px;border-radius:14px;background:var(--b-ink);color:var(--b-bg);font:600 14px var(--b-font-mono)">${q}</span>` : '<span class="sub-m" style="min-width:44px">no Q</span>'}<b style="font-size:19px">${title}</b><span class="sub-m">${line}</span></div>
-    <div style="display:grid;grid-template-columns:repeat(3,440px);gap:20px">${htmls.map((h, i) => prev(h, CIRC[i], pick === i)).join('')}</div></div>`;
-  const frame = `<div style="padding:26px 40px 30px;display:grid;gap:24px">
-    ${row('Q1', 'timeline graph (W-32)', 'which one? ① git graph kept · ② branches as rings · ③ one spine ring, branches folded', [tl1(false), tl2(false), tl3(false)], 2)}
-    ${row('Q2', 'thumbnail card (W-33)', 'which one? ① image card · ② contact tile · ③ row card', [cards(1, false), cards(2, false), cards(3, false)], 0)}
-    ${row('Q3', 'compare view (W-35)', 'which one? ① two panes · ② stage + dock · ③ wipe first (all have side by side, overlay, wipe)', [compare('x1', false), compare('x2', false), compare('x3', false)], 2)}
-    ${row('', 'blog post (W-34)', 'no question: I build ② two columns unless you object', [post(1, false), post(2, false), post(3, false)], 1)}</div>`;
-  M('decide: pick ①②③ for Q1, Q2 and Q3', frame, [], 1440, 1);
+  const k = CELL / 1440;
+  const prev = (html, label, pick) => `<div style="position:relative"><div style="width:${CELL}px;height:${Math.round(900 * k)}px;overflow:hidden;border-radius:14px;box-shadow:0 0 0 1px var(--b-hairline);background:var(--b-bg)"><div style="transform:scale(${k});transform-origin:top left;width:1440px;height:900px;overflow:hidden">${strip(html)}</div></div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:16px;display:flex;gap:12px;align-items:center"><span style="display:inline-grid;place-items:center;width:52px;height:52px;border-radius:50%;background:var(--b-warn);color:#141311;font:700 30px var(--b-font-sans)">${label}</span>${pick ? '<span class="sb sb--built" style="height:36px;font-size:20px;padding:0 16px">my pick</span>' : ''}</div></div>`;
+  const row = (q, title, line, htmls, pick) => `<div style="display:grid;gap:14px"><div class="row" style="gap:20px;align-items:baseline">${q ? `<span style="display:inline-grid;place-items:center;min-width:64px;height:40px;padding:0 14px;border-radius:20px;background:var(--b-ink);color:var(--b-bg);font:600 22px var(--b-font-mono)">${q}</span>` : '<span class="sub-m" style="min-width:64px;font-size:18px">no Q</span>'}<b style="font-size:30px">${title}</b><span class="sub-m" style="font-size:20px">${line}</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,${CELL}px);gap:40px">${htmls.map((h, i) => prev(h, CIRC[i], pick === i)).join('')}</div></div>`;
+  const frame = `<div style="padding:40px 50px 50px;display:grid;gap:40px">${DECIDE_ROWS().map(([q, t, l, fns, pick]) => row(q, t, l, fns.map((f) => f(false)), pick)).join('')}</div>`;
+  M('decide: pick ①②③ for Q1, Q2 and Q3', frame, [], 3 * CELL + 2 * 40 + 100, 1);
 }
+
+/* one option at full size (1440 x 900 top screen): the images that follow the decision image in the post */
+const decideOpt = (row, o) => () => {
+  const [q, title, , fns] = DECIDE_ROWS()[row];
+  M(`${q || 'no Q'} ${title}: option ${o + 1} (1440 x 900, top screen)`, `<div style="width:1440px;height:900px;overflow:hidden;position:relative">${strip(fns[o](false))}</div>`, [], 1440, 1);
+};
 
 const V = {
   decide,
+  q1o1: decideOpt(0, 0), q1o2: decideOpt(0, 1), q1o3: decideOpt(0, 2),
+  q2o1: decideOpt(1, 0), q2o2: decideOpt(1, 1), q2o3: decideOpt(1, 2),
+  q3o1: decideOpt(2, 0), q3o2: decideOpt(2, 1), q3o3: decideOpt(2, 2),
+  b1o1: decideOpt(3, 0), b1o2: decideOpt(3, 1), b1o3: decideOpt(3, 2),
   shared,
   light,
   t1: () => M('W-32 option 1: the git graph, kept (full page, 44 posts)', tl1(false), L(

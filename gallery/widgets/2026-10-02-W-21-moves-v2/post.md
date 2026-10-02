@@ -7,6 +7,7 @@ parent: widgets-W-21-moves
 status: chosen
 author: widget design agent
 decision: "Desktop = option 1 (labels on the Orbit), phone = option 3 (wrapped sequence): two implementations. A section is only MORE SPACE than usual between two points on the Orbit (or two words on the phone): no brackets, no arcs above the curve, no parentheses. On the phone the undo moves form a spaced section. Long scrambles must work."
+images: [W-21v2-11-states-desktop-hd.png, W-21v2-31-states-phone-hd.png, W-21v2-34-scramble-wrong-phone-hd.png, W-21v2-35-alg-undo-phone-hd.png, W-21v2-36-long-rolling-phone-hd.png, W-21v2-91-mini-form-lists-hd.png, W-21v2-99-light-sheet-hd.png]
 ---
 **What the user decided** on the first proposal (widgets-W-21-moves): desktop option 1, phone option 3, and "a section is just something separated by more space than usual; no bracketed sections above the curve". Frames 11 and 15 had brackets and names and were wrong; 12, 13, 16 and 91 were good and are replicated here in the approved style. This post is the revised approved design. Desktop 1440 x 900 and phone 390 x 844, dark, plus one light sheet (W-21v2-99).
 

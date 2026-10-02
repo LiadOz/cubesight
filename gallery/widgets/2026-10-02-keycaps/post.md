@@ -7,6 +7,7 @@ parent: widget-inventory
 status: exploring
 author: widget design agent
 decision: pending user choice
+images: [W-17-00-compare-options-hd.png, W-17-01-option1-states-hd.png, W-17-05-option2-states-hd.png, W-17-09-option3-states-hd.png]
 ---
 **What is there today.** 8 `kbd` / key-hint variants on 14 pages: 160 instances of the `b-key` button (cap plus verb), caps inside buttons (`r`, `s`), tiny 9 px answer keys with a blue fill, the `space` inside the start pill, an outlined `enter`, `esc` in the review close. They differ in size (9 to 12 px), radius (4 or 6), fill (dark, blue, none, cream) and edge colour. The A frames use one thing: a small dark cap and one lowercase verb (`space next scramble · [ ] markers · esc back`), at most three, bottom-left, and a cap inside the cream primary.
 

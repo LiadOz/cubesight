@@ -7,6 +7,7 @@ parent: widget-inventory
 status: exploring
 author: widget design agent
 decision: pending user choice
+images: [W-21-01-overview-hd.png, W-21-91-mini-form-lists-hd.png]
 ---
 **What is there today.** 13 variants on 9 pages (the W-21 images in the inventory post). The main one is `mg-strip` (W-21a, 544 uses): a row of boxed DM Mono tokens with the current one ringed in teal, used for the scramble and for algs. Around it live a second copy (`mg-guide`), a "21 / 21" counter (W-21c), small bordered buttons for review moves (W-21d), plain text lines in history (W-21e), a "move 2 · Cross complete" chip (W-21f), a scramble head and recovery cue (W-21h, W-21j, W-21k) and screen-reader variants. They disagree on box size, border, font size and on how a wrong turn looks, and none is tied to the Orbit.
 

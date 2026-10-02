@@ -63,5 +63,25 @@
     "id": "W-17-12",
     "title": "option 3: key bar on results, a key held (A-05)",
     "caption": "the [ ] pair, one pressed, one resting."
+  },
+  "W-17-00-compare-options-hd.png": {
+    "id": "W-17-00",
+    "title": "the three options side by side (HD 2x)",
+    "caption": "dark above, light below."
+  },
+  "W-17-01-option1-states-hd.png": {
+    "id": "W-17-01",
+    "title": "option 1: keycap states, dark and light (HD 2x)",
+    "caption": "default, pressed, held, unavailable; sizes; on primary, secondary and plain; the glyph set."
+  },
+  "W-17-05-option2-states-hd.png": {
+    "id": "W-17-05",
+    "title": "option 2: keycap states, dark and light (HD 2x)",
+    "caption": "default, pressed, held, unavailable; sizes; on primary, secondary and plain; the glyph set."
+  },
+  "W-17-09-option3-states-hd.png": {
+    "id": "W-17-09",
+    "title": "option 3: keycap states, dark and light (HD 2x)",
+    "caption": "default, pressed, held, unavailable; sizes; on primary, secondary and plain; the glyph set."
   }
 }
