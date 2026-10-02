@@ -10,6 +10,7 @@
 // current segment fill, inspection caret) between emits.
 
 import { FACE_COLORS } from '../cross-cube.js';
+import { FACE_TO_D } from '../analysis/normalize.js';
 import { inverseMove, recoveryMoves } from '../smart-cube-guidance.js';
 import { logConnection } from '../smart-cube-diag.js';
 import { currentDShift } from '../solve-tracker.js';
@@ -44,6 +45,11 @@ export function screenFor(session, live) {
 }
 
 const SOLVING_LABEL = { 'pre-cross': 'cross', cross: 'F2L', 'f2l-0': 'F2L', 'f2l-1': 'F2L', 'f2l-2': 'F2L', 'f2l-3': 'F2L', 'f2l-4': 'F2L', eo: 'EO', co: 'CO', 'co-pending': 'CO', pll: 'PLL', solved: 'solved' };
+const xcrossPairName = ({ face, slot }) => {
+  if (!face || !slot || !FACE_TO_D[face]) return null;
+  const toPhysical = Object.fromEntries(Object.entries(FACE_TO_D[face]).map(([physical, normalized]) => [normalized, physical]));
+  return [...slot].map(normalized => FACE_COLORS[toPhysical[normalized]]).join('-');
+};
 
 /** The v1 #brain-phase-label / #brain-phase-detail strings, byte for byte. */
 export function phaseText(live) {
@@ -196,7 +202,7 @@ function inspectionVM(live, now, optimalCross = null) {
   const crossHint = optimalCross?.best ?? (optimalCross?.face ? optimalCross : null);
   // copy-ok: “best” is the proven lowest-move start plan in the bounded search.
   const bestStart = crossHint
-    ? `${crossHint.proven === false ? 'cross found so far' : 'best cross'}: ${FACE_COLORS[crossHint.face] ?? crossHint.face}, ${crossHint.length}${optimalCross?.bestXcross?.proven ? ` · x-cross possible in ${optimalCross.bestXcross.length}` : ''}`
+    ? `${crossHint.proven === false ? 'cross found so far' : 'best cross'}: ${FACE_COLORS[crossHint.face] ?? crossHint.face}, ${crossHint.length}${optimalCross?.bestXcross?.proven ? ` · ${xcrossPairName(optimalCross.bestXcross) ?? `${FACE_COLORS[optimalCross.bestXcross.face] ?? optimalCross.bestXcross.face} ${optimalCross.bestXcross.slot ?? ''}`} X-cross possible in ${optimalCross.bestXcross.length}` : ''}`
     : '';
   return {
     mode: config.mode, overtime: config.overtime,

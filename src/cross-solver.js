@@ -36,7 +36,7 @@ function forceBudgetEnd(){
 export function solveCross(request,{signal,onProgress}={}) {
   if(signal?.aborted)return Promise.reject(abortError());
   if(pending)return Promise.reject(new Error('A search is already running.'));
-  const budget=Math.min(15000,Math.max(100,Number(request.timeLimitMs)||2500));
+  const budget=Math.min(15000,Math.max(1,Number(request.timeLimitMs)||2500));
   return new Promise((resolve,reject)=>{
     const w=getWorker(),id=++nextId;
     const cancel=()=>{worker?.terminate();worker=null;finish(null,abortError());};

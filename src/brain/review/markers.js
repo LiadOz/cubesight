@@ -178,7 +178,7 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
         push({
           id: 'better-cross', kind: 'better-cross', tone: 'warn', stage: 'cross', idx: 0, at: 0, tMs: 0, cost: Math.min(3, cross.d0 - best[1] - 1) * weights.better, rawCost: Math.min(3, cross.d0 - best[1] - 1),
           label: 'better cross',
-          note: `PB cross: ${colorOf(best[0])}, ${plural(best[1], 'move')}. Your ${colorOf(a.face)} cross took ${cross.moves} moves. Worth a look during inspection.`,
+          note: `Shortest proven cross: ${colorOf(best[0])}, ${plural(best[1], 'move')}. Your ${colorOf(a.face)} cross took ${cross.moves} moves. Worth a look during inspection.`,
         });
       }
       if (cross.target?.kind === 'cross' && cross.done) {

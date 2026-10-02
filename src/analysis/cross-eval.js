@@ -31,6 +31,7 @@ const SLOT_MASK_BY_FACE = Object.freeze({
 const MASK_SLOT_BY_FACE = Object.fromEntries(Object.entries(SLOT_MASK_BY_FACE).map(([face, slots]) => [
   face, Object.fromEntries(Object.entries(slots).map(([slot, mask]) => [mask, slot])),
 ]));
+export const crossSlotForMask = (face, mask) => MASK_SLOT_BY_FACE[face]?.[mask] ?? null;
 const TARGET_DEPTH = 10;
 
 const join = (scramble, moves) => [scramble, ...moves].filter(Boolean).join(' ');

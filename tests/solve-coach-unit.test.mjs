@@ -24,18 +24,23 @@ test('cross search preference selects one face or all six colour-neutral faces',
 
 test('selected-color inspection search returns only that face; neutral returns all six', async () => {
   const faces = [];
+  const budgets = [];
   const search = async request => {
     faces.push(request.face);
-    return { results: [{ moves: ['R'], optimality: 'proven-for-target' }], complete: true };
+    budgets.push(request.timeLimitMs);
+    return { results: [{ moves: ['R'], slotMask: 1, optimality: 'proven-for-target' }], complete: true };
   };
   const selected = await crossSuggestion('R U R\'', { color: 'yellow', timeLimitMs: 1000, search });
   assert.deepEqual(selected.perFace.map(row => row.face), ['D']);
   assert.equal(selected.best.face, 'D');
+  assert.equal(selected.bestXcross.slot, 'FR');
   assert.deepEqual(faces, ['D', 'D']);
   faces.length = 0;
+  budgets.length = 0;
   const neutral = await crossSuggestion('R U R\'', { color: 'neutral', timeLimitMs: 1000, search });
   assert.deepEqual(neutral.perFace.map(row => row.face), ['U', 'D', 'F', 'B', 'R', 'L']);
   assert.equal(faces.length, 12);
+  assert.ok(budgets.reduce((sum, budget) => sum + budget, 0) <= 1000, 'neutral search budgets stay within the whole-query budget');
 });
 
 test('f2lNextPairHint returns null when all pairs solved, and a pair when not', () => {

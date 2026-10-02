@@ -92,10 +92,9 @@ test('a proven optimal target and proven pair choices produce praise with eviden
 });
 
 test('a proven one-move-over X-cross gets praise without a plain extra-move warning', async () => {
-  const nearOptimal = GOLD.xcross.moves.replace("R D'", "R2 R' D'");
-  const moves = nearOptimal.split(' ');
+  const moves = GOLD.xcrossPlusOne.moves.split(' ');
   const record = await analysed({
-    at: 2100, scramble: GOLD.xcross.scramble, solveMoves: moves, moveCount: moves.length,
+    at: 2100, scramble: GOLD.xcrossPlusOne.scramble, solveMoves: moves, moveCount: moves.length,
     solved: true, crossFace: 'D', tps: 4, rotations: 0, moveTimes: timesFor(moves.length),
   });
   assert.equal(record.analysis.cross.target.kind, 'xcross');
@@ -116,6 +115,8 @@ test('review alternatives respect the selected cross color while neutral review 
   record.analysis = { ...record.analysis, face: 'L', cross };
   const neutral = buildMarkers({ record, stages: crossRows, plan: PLAN, faceColors: FACE_COLORS }).markers.find(marker => marker.kind === 'better-cross');
   const yellow = buildMarkers({ record, stages: crossRows, plan: PLAN, faceColors: FACE_COLORS, crossColor: 'yellow' }).markers.find(marker => marker.kind === 'better-cross');
+  assert.match(neutral.note, /^Shortest proven cross:/);
+  assert.doesNotMatch(neutral.note, /PB cross/);
   assert.match(neutral.note, /white, 3 moves/);
   assert.match(yellow.note, /yellow, 6 moves/);
 });

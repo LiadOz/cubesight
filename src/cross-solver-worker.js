@@ -31,7 +31,7 @@ self.onmessage=async({data})=>{
       tablesReady=true;
     }
     self.postMessage({id:data.id,type:'ready'});
-    const budget=Math.min(15000,Math.max(100,Number(data.timeLimitMs)||2500));
+    const budget=Math.min(15000,Math.max(1,Number(data.timeLimitMs)||2500));
     const deadline=performance.now()+budget;
     const maxResults=Math.min(8,Math.max(1,Number(data.maxResults)||3));
     const maxDepth=Math.min(14,Math.max(0,Number(data.maxDepth??(data.kind==='cross'?8:12))));

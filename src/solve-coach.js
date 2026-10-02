@@ -16,6 +16,7 @@ import { solveCross } from './cross-solver.js';
 import { canonicalizeForRecognition, f2lPairSlots, pairSolved, pairReadiness } from './solve-tracker.js';
 import { identifyPllCase, isPllState } from './pll-logic.js';
 import { FACE_COLORS } from './cross-cube.js';
+import { crossSlotForMask } from './analysis/cross-eval.js';
 
 // --- Cross lens ---------------------------------------------------------------
 
@@ -34,8 +35,12 @@ export async function crossSuggestion(scramble, { extended = false, timeLimitMs 
   const faces = crossFacesForPreference(color);
   const results = [];
   const opportunities = [];
-  const queryBudget = Math.max(100, Math.floor(timeLimitMs / (faces.length * 2)));
-  const xcrossBudget = Math.max(400, Math.floor(timeLimitMs / faces.length));
+  // The search is sequential: each face gets an equal share of the whole
+  // deadline, split between its cross and X-cross query. Keep the sum of all
+  // requested worker budgets within the caller's total budget.
+  const perFaceBudget = faces.length ? Math.floor(timeLimitMs / faces.length) : 0;
+  const queryBudget = Math.floor(perFaceBudget / 2);
+  const xcrossBudget = perFaceBudget - queryBudget;
   for (const face of faces) {
     try {
       const reply = await search({
@@ -49,7 +54,7 @@ export async function crossSuggestion(scramble, { extended = false, timeLimitMs 
       const reply = await search({ scramble, face, kind: 'xcross', maxResults: 4, maxDepth: 10, timeLimitMs: xcrossBudget });
       const candidate = reply.results?.filter(row => row.optimality === 'proven-for-target')
         .sort((a, b) => a.moves.length - b.moves.length)[0];
-      opportunities.push({ face, moves: candidate?.moves ?? null, length: candidate?.moves?.length ?? null, proven: Boolean(candidate && reply.complete === true), complete: reply.complete === true });
+      opportunities.push({ face, slot: crossSlotForMask(face, candidate?.slotMask), slotMask: candidate?.slotMask ?? null, moves: candidate?.moves ?? null, length: candidate?.moves?.length ?? null, proven: Boolean(candidate && reply.complete === true), complete: reply.complete === true });
     } catch { opportunities.push({ face, moves: null, length: null, proven: false, complete: false }); }
   }
   const finite = results.filter(r => r.length != null);

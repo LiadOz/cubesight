@@ -119,6 +119,20 @@ test('hand-verified X-cross uses its exact slot-mask target for every face and m
   }
 });
 
+test('hand-verified near-optimal X-cross has a proven eight-move target and one move of loss', () => {
+  const golden = GOLD.xcrossPlusOne;
+  const segmentation = segmentSolve(golden);
+  const result = evaluateCross({ segmentation, firstMoves: false, faceLengths: false }, solver);
+  assert.deepEqual(segmentation.xcross, { kind: 'xcross', pairs: 1, pseudo: false, slots: ['FR'] });
+  assert.equal(result.d0, 8, 'the target optimum is the real WASM-proven 8-move X-cross');
+  assert.equal(result.userMoves, 9);
+  assert.equal(result.extraMoves, 1);
+  assert.equal(result.totalLoss, 1);
+  assert.equal(result.startProven, true);
+  assert.equal(result.complete, true);
+  assert.equal(result.positions.slice(1).reduce((sum, row) => sum + row.loss, 0), 1);
+});
+
 test('a target distance is unproven when one competing pseudo frame times out', () => {
   const segmentation = segmentSolve(GOLD.pseudoXcross);
   const timedOutFrame = { search(request) {
