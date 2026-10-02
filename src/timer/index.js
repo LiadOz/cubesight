@@ -81,6 +81,9 @@ export function createTimer(root, {
   let cubeView = null;
   let sequencePlayer = null;
   let previewLoadToken = 0;
+  let previewMountToken = 0;
+  let previewMountPromise = null;
+  let activationToken = 0;
   let previousBusy = false;
 
   const machine = createTimerMachine({
@@ -108,8 +111,8 @@ export function createTimer(root, {
   const nextBtn = el('button', 'tm-textbtn', 'new scramble'); nextBtn.type = 'button'; nextBtn.dataset.action = 'new-scramble';
   scrambleRow.append(scrambleText, nextBtn);
 
-  // The preview owns one cube for the lifetime of this page. Timer renders only
-  // update its visibility; the shared sequence player owns the cue, chips and controls.
+  // The preview cube is mounted only while this route is active. The shared sequence player
+  // owns its cue, chips and controls and is torn down with the cube on route deactivation.
   const preview = el('section', 'tm-preview');
   preview.dataset.testid = 'scramble-preview';
   preview.setAttribute('aria-label', '3D cube scramble preview');
@@ -195,19 +198,43 @@ export function createTimer(root, {
   }
 
   async function mountPreview() {
-    const [cubeModule, playerModule] = await Promise.all([
-      import('../pages/cube-view.js'), import('../moves/sequence-player.js'),
-    ]);
-    if (detached) return;
-    cubeView = await cubeModule.createPageCube(previewCube, { state: createSolvedState(), mode: 'corner' });
-    if (detached) { cubeView?.destroy?.(); cubeView = null; return; }
-    sequencePlayer = playerModule.createSequencePlayer(previewTools, {
-      cube3d: cubeView, startState: createSolvedState(), moves: [], label: 'scramble',
-      onChange: snapshot => paintPreview(snapshot),
-    });
-    sequencePlayer.setActive(active && !machine.snapshot().hold && machine.snapshot().phase === 'idle');
-    if (scrambleState === 'ready') await loadPreviewSequence(currentScramble);
-    else paintPreview();
+    if (!active || detached || cubeView || sequencePlayer) return;
+    if (previewMountPromise) {
+      await previewMountPromise;
+      if (active && !detached && !cubeView && !sequencePlayer) return mountPreview();
+      return;
+    }
+    const token = ++previewMountToken;
+    const task = (async () => {
+      const [cubeModule, playerModule] = await Promise.all([
+        import('../pages/cube-view.js'), import('../moves/sequence-player.js'),
+      ]);
+      if (token !== previewMountToken || !active || detached) return;
+      const mountedCube = await cubeModule.createPageCube(previewCube, { state: createSolvedState(), mode: 'corner' });
+      if (token !== previewMountToken || !active || detached) { mountedCube?.destroy?.(); return; }
+      cubeView = mountedCube;
+      sequencePlayer = playerModule.createSequencePlayer(previewTools, {
+        cube3d: mountedCube, startState: createSolvedState(), moves: [], label: 'scramble',
+        onChange: snapshot => paintPreview(snapshot),
+      });
+      sequencePlayer.setActive(active && !machine.snapshot().hold && machine.snapshot().phase === 'idle');
+      if (scrambleState === 'ready') await loadPreviewSequence(currentScramble);
+      else paintPreview();
+    })();
+    previewMountPromise = task;
+    try { await task; }
+    finally { if (previewMountPromise === task) previewMountPromise = null; }
+  }
+
+  function unmountPreview() {
+    previewMountToken++;
+    previewLoadToken++;
+    sequencePlayer?.destroy();
+    sequencePlayer = null;
+    cubeView?.destroy?.();
+    cubeView = null;
+    previewCube.replaceChildren();
+    previewTools.replaceChildren();
   }
 
   // --- saving and editing ---------------------------------------------------------------------
@@ -582,16 +609,19 @@ export function createTimer(root, {
     machine,
     getPreviewSnapshot: () => sequencePlayer?.getSnapshot?.() ?? null,
     async setActive(next) {
+      const token = ++activationToken;
       active = Boolean(next);
-      if (!active) { refreshingHistory = false; machine.cancel(); keyHeld = false; activePointer = null; sequencePlayer?.setActive(false); wake(false); }
+      if (!active) { refreshingHistory = false; machine.cancel(); keyHeld = false; activePointer = null; unmountPreview(); wake(false); }
       else {
         refreshingHistory = true;
         render();
         await store.reload().catch(() => {});
-        if (!active || detached) return;
+        if (token !== activationToken || !active || detached) return;
         refreshingHistory = false;
         settings = loadSettings(storage);
         machine.setInspection(settings.inspection);
+        await mountPreview();
+        if (!active || detached) return;
         sequencePlayer?.setActive(machine.snapshot().phase === 'idle' && !machine.snapshot().hold);
         const nextStyle = BRAIN_STYLES.includes(styleOption) ? styleOption : settings.style;
         if (nextStyle !== styleId) { styleId = nextStyle; void mountStyle(); }
@@ -602,6 +632,7 @@ export function createTimer(root, {
       detached = true;
       active = false;
       previewLoadToken++;
+      previewMountToken++;
       if (raf) cancelAnimationFrame(raf);
       wake(false);
       sequencePlayer?.destroy();
