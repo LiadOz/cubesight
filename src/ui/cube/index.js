@@ -116,8 +116,11 @@ export class Cube {
   bindSession(session) {
     this.liveUnsubscribe?.();
     if (!session?.subscribe) throw new TypeError('A live cube session with subscribe() is required.');
-    let lastMoveSeq = null;
+    const initial = session.getSnapshot?.();
+    let lastMoveSeq = initial?.moveEvent?.seq ?? null;
     this.mode = 'live'; this.element.dataset.mode = 'live';
+    if (initial?.gyro) this.cube.setGyroOrientation(initial.gyro);
+    if (initial?.state?.cubies) this.setState(initial.state);
     this.liveUnsubscribe = session.subscribe(snapshot => {
       if (snapshot.gyro) this.cube.setGyroOrientation(snapshot.gyro);
       if (snapshot.state?.cubies) {
@@ -134,6 +137,8 @@ export class Cube {
     });
     return () => { this.liveUnsubscribe?.(); this.liveUnsubscribe = null; };
   }
+
+  setGyroOrientation(gyro) { this.cube?.setGyroOrientation?.(gyro); return this; }
 
   cue(move) { this.cube.setCue(move, { loop: !reducedMotion() }); return this; }
   clearCue() { this.cube.clearCue(); return this; }

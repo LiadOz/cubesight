@@ -30,6 +30,8 @@ import { generateWcaScramble } from '../scramble.js';
 import { openHistory } from '../store/history.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { createSolvedState } from '../cross-cube.js';
+import { Cube } from '../ui/cube/index.js';
+import { readCaseColorSetting } from '../ui/cube/case-color.js';
 
 const STYLES = {
   orbit: () => import('../brain/styles/orbit/index.js'),
@@ -206,12 +208,11 @@ export function createTimer(root, {
     }
     const token = ++previewMountToken;
     const task = (async () => {
-      const [cubeModule, playerModule] = await Promise.all([
-        import('../pages/cube-view.js'), import('../moves/sequence-player.js'),
-      ]);
+      const playerModule = await import('../moves/sequence-player.js');
       if (token !== previewMountToken || !active || detached) return;
-      const mountedCube = await cubeModule.createPageCube(previewCube, { state: createSolvedState(), mode: 'corner' });
-      if (token !== previewMountToken || !active || detached) { mountedCube?.destroy?.(); return; }
+      const mountedCube = new Cube(previewCube, { state: createSolvedState(), mode: 'case', size: 'L',
+        label: 'scramble case', caseColorSetting: readCaseColorSetting(), caseSeed: 'timer-scramble' });
+      if (token !== previewMountToken || !active || detached) { mountedCube.destroy(); return; }
       cubeView = mountedCube;
       sequencePlayer = playerModule.createSequencePlayer(previewTools, {
         cube3d: mountedCube, startState: createSolvedState(), moves: [], label: 'scramble',
