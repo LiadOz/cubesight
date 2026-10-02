@@ -162,8 +162,38 @@ const IJOBS = [{ id: 'I-01', file: 'I-01-compare-parts.png', title: 'the input p
 for (const o of [1, 2, 3]) IV.forEach(([view, name, title, caption, both], i) => { const id = `I-${o}${i + 1}`; IJOBS.push({ id, file: `${id}-option${o}-${name}.png`, title: `option ${o}: ${title}`, caption: both ? `${caption} Dark above, light below.` : caption, both: !!both, theme: 'dark', params: { view, opt: String(o) } }); });
 FAMILIES.inputs = { dir: 'gallery/widgets/2026-10-02-inputs', page: 'inputs.html', prefix: 'I', label: 'inputs', jobs: IJOBS };
 
+// time and coach: W-22 timer display and W-20 coach line, three options each
+const TCV = [
+  ['timer-solve', 'timer-solving-desktop', 'W-22: solving, the XL readout in the dial slot (A-04)', 'the running readout with the stage line; the slot never moves.'],
+  ['timer-inspect', 'timer-inspection-overtime', 'W-22: inspection countdown, overtime +1 +2 and DNF (A-03)', 'three moments of the same readout and dial.'],
+  ['timer-states', 'timer-states-three-sizes', 'W-22: every state in XL, L and M', 'ready, running, stopped, +2, DNF, inspection, overtime, hidden.'],
+  ['timer-drill', 'timer-drill-L-and-M', 'W-22: a drill with the L readout and the M inline form (A-08)', 'case time in the rail, the foot line inline.'],
+  ['timer-phone', 'timer-phone', 'W-22: phone 390 x 844, running, overtime, +2 result (A-09)', 'the readout at 76 px in the dial slot.'],
+  ['coach-results', 'coach-results-desktop', 'W-20: results with the coach line and its connector (A-05)', 'the cross detour selected; +2 result in the slot.'],
+  ['coach-tones', 'coach-praise-and-fix', 'W-20: praise and fix, left and right, the connector in time', 'four selections and the fade in, held, out.'],
+  ['coach-crowded', 'coach-crowded-ring', 'W-20: a crowded ring, 14 markers in four clusters', 'cluster handling per option (feedback 8).'],
+  ['coach-phone', 'coach-phone', 'W-20: phone 390 x 844, fix, praise and a crowded cluster', 'the sentence under the time, the connector per option.'],
+];
+const TCJOBS = [];
+for (const o of [1, 2, 3]) TCV.forEach(([view, name, title, caption], i) => { const id = `TC-${o}${i + 1}`; TCJOBS.push({ id, file: `${id}-option${o}-${name}.png`, title: `option ${o}: ${title}`, caption, theme: 'dark', params: { view, opt: String(o) } }); });
+TCJOBS.push({ id: 'TC-91', file: 'TC-91-light-sheet.png', title: 'light sheet: the timer and the coach line in the three options', caption: 'running readout, coach line with connector and the +2 readout, light theme.', theme: 'light', params: { view: 'light' } });
+FAMILIES.timecoach = { dir: 'gallery/widgets/2026-10-02-time-and-coach', page: 'tc.html', prefix: 'TC', label: 'time and coach', jobs: TCJOBS };
+
+// progress and charts: W-23 round/progress panels, W-24 charts (3 options) and W-37 the compare wipe handle (3 forms)
+const PCJOBS = [
+  { id: 'PC-01', file: 'PC-01-what-replaces-what.png', title: 'W-23 / W-24: what every bar, panel and chart becomes', caption: 'inventory image on the left, the Orbit form on the right.', theme: 'dark', params: { view: 'replace' } },
+  { id: 'PC-02', file: 'PC-02-drill-round-orbit.png', title: 'W-23: a drill round in progress (A-08), shared by all options', caption: 'the Orbit is the round panel and the progress track.', theme: 'dark', params: { view: 'drill-round' } },
+];
+const PCV = [['drill-end', 'end-of-round', 'end of a drill round (A-08)', 'the round as re-weighted Orbit arcs and the recent-rounds element.'], ['progress', 'progress-page', 'the progress page', 'the stage-average Orbit and the long-term trend.'], ['phone', 'phone', 'phone 390 x 844: the round, the end of the round and progress', 'the same elements on a phone.']];
+for (const o of [1, 2, 3]) PCV.forEach(([view, name, title, caption], i) => { const id = `PC-${o}${i + 1}`; PCJOBS.push({ id, file: `${id}-option${o}-${name}.png`, title: `option ${o} (${['Orbit only', 'Orbit + tick dial', 'Orbit + one trend line'][o - 1]}): ${title}`, caption, theme: 'dark', params: { view, opt: String(o) } }); });
+PCJOBS.push({ id: 'PC-41', file: 'PC-41-W-37-handles-in-five-states.png', title: 'W-37: the three wipe handles in five states', caption: 'rest, hover, dragging, keyboard focus, locked.', theme: 'dark', params: { view: 'wipe-states' } });
+for (const o of [1, 2, 3]) PCJOBS.push({ id: `PC-4${o + 1}`, file: `PC-4${o + 1}-W-37-handle-${'abc'[o - 1]}-compare-stage.png`, title: `W-37 handle ${'ABC'[o - 1]}: ${['ink knob', 'hairline + bottom grabber', 'the Orbit caret'][o - 1]} on the compare stage`, caption: 'the dev compare page at 1440 x 900, wipe mode.', theme: 'dark', params: { view: 'wipe-stage', opt: String(o) } });
+PCJOBS.push({ id: 'PC-45', file: 'PC-45-W-37-handles-phone.png', title: 'W-37 on a phone: the 44 px touch target', caption: 'three 390 px phones, dragging at 46 %.', theme: 'dark', params: { view: 'wipe-phone' } });
+PCJOBS.push({ id: 'PC-91', file: 'PC-91-light-sheet.png', title: 'light sheet: the trend forms and the three wipe handles', caption: 'progress trend (top) and handles at rest (bottom).', theme: 'light', params: { view: 'light' } });
+FAMILIES.progresscharts = { dir: 'gallery/widgets/2026-10-02-progress-and-charts', page: 'pc.html', prefix: 'PC', label: 'progress and charts', jobs: PCJOBS };
+
 const fam = FAMILIES[process.argv[2]];
-if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves|moves2|pairs|system|containers|lists|devpages|navigation|inputs [--only=text]'); process.exit(2); }
+if (!fam) { console.error(`usage: widget-proposal-shots.mjs ${Object.keys(FAMILIES).join('|')} [--only=text]`); process.exit(2); }
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
 const scale = Number((process.argv.find(a => a.startsWith('--scale=')) || '--scale=2').slice(8));
 if (![1, 2, 3].includes(scale)) { console.error('--scale must be 1, 2 or 3'); process.exit(2); }

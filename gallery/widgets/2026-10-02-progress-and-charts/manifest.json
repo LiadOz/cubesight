@@ -1,0 +1,147 @@
+{
+  "PC-01-what-replaces-what-hd.png": {
+    "id": "PC-01",
+    "title": "W-23 / W-24: what every bar, panel and chart becomes (HD 2x)",
+    "caption": "inventory image on the left, the Orbit form on the right."
+  },
+  "PC-02-drill-round-orbit-hd.png": {
+    "id": "PC-02",
+    "title": "W-23: a drill round in progress (A-08), shared by all options (HD 2x)",
+    "caption": "the Orbit is the round panel and the progress track."
+  },
+  "PC-11-option1-end-of-round-hd.png": {
+    "id": "PC-11",
+    "title": "option 1 (Orbit only): end of a drill round (A-08) (HD 2x)",
+    "caption": "the round as re-weighted Orbit arcs and the recent-rounds element."
+  },
+  "PC-12-option1-progress-page-hd.png": {
+    "id": "PC-12",
+    "title": "option 1 (Orbit only): the progress page (HD 2x)",
+    "caption": "the stage-average Orbit and the long-term trend."
+  },
+  "PC-13-option1-phone-hd.png": {
+    "id": "PC-13",
+    "title": "option 1 (Orbit only): phone 390 x 844: the round, the end of the round and progress (HD 2x)",
+    "caption": "the same elements on a phone."
+  },
+  "PC-21-option2-end-of-round-hd.png": {
+    "id": "PC-21",
+    "title": "option 2 (Orbit + tick dial): end of a drill round (A-08) (HD 2x)",
+    "caption": "the round as re-weighted Orbit arcs and the recent-rounds element."
+  },
+  "PC-22-option2-progress-page-hd.png": {
+    "id": "PC-22",
+    "title": "option 2 (Orbit + tick dial): the progress page (HD 2x)",
+    "caption": "the stage-average Orbit and the long-term trend."
+  },
+  "PC-23-option2-phone-hd.png": {
+    "id": "PC-23",
+    "title": "option 2 (Orbit + tick dial): phone 390 x 844: the round, the end of the round and progress (HD 2x)",
+    "caption": "the same elements on a phone."
+  },
+  "PC-31-option3-end-of-round-hd.png": {
+    "id": "PC-31",
+    "title": "option 3 (Orbit + one trend line): end of a drill round (A-08) (HD 2x)",
+    "caption": "the round as re-weighted Orbit arcs and the recent-rounds element."
+  },
+  "PC-32-option3-progress-page-hd.png": {
+    "id": "PC-32",
+    "title": "option 3 (Orbit + one trend line): the progress page (HD 2x)",
+    "caption": "the stage-average Orbit and the long-term trend."
+  },
+  "PC-33-option3-phone-hd.png": {
+    "id": "PC-33",
+    "title": "option 3 (Orbit + one trend line): phone 390 x 844: the round, the end of the round and progress (HD 2x)",
+    "caption": "the same elements on a phone."
+  },
+  "PC-41-W-37-handles-in-five-states-hd.png": {
+    "id": "PC-41",
+    "title": "W-37: the three wipe handles in five states (HD 2x)",
+    "caption": "rest, hover, dragging, keyboard focus, locked."
+  },
+  "PC-42-W-37-handle-a-compare-stage-hd.png": {
+    "id": "PC-42",
+    "title": "W-37 handle A: ink knob on the compare stage (HD 2x)",
+    "caption": "the dev compare page at 1440 x 900, wipe mode."
+  },
+  "PC-43-W-37-handle-b-compare-stage-hd.png": {
+    "id": "PC-43",
+    "title": "W-37 handle B: hairline + bottom grabber on the compare stage (HD 2x)",
+    "caption": "the dev compare page at 1440 x 900, wipe mode."
+  },
+  "PC-44-W-37-handle-c-compare-stage-hd.png": {
+    "id": "PC-44",
+    "title": "W-37 handle C: the Orbit caret on the compare stage (HD 2x)",
+    "caption": "the dev compare page at 1440 x 900, wipe mode."
+  },
+  "PC-45-W-37-handles-phone-hd.png": {
+    "id": "PC-45",
+    "title": "W-37 on a phone: the 44 px touch target (HD 2x)",
+    "caption": "three 390 px phones, dragging at 46 %."
+  },
+  "PC-91-light-sheet-hd.png": {
+    "id": "PC-91",
+    "title": "light sheet: the trend forms and the three wipe handles (HD 2x)",
+    "caption": "progress trend (top) and handles at rest (bottom)."
+  },
+  "PC-00-decide-hd.png": {
+    "id": "PC-00",
+    "title": "decide: options 1 to 3 and Q1 to Q3",
+    "caption": "the options side by side with the questions drawn in; thumbnails are real crops."
+  },
+  "PC-00-opt1-end-of-a-drill-round-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: opt1 end of a drill round",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-opt1-the-progress-page-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: opt1 the progress page",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-opt2-end-of-a-drill-round-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: opt2 end of a drill round",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-opt2-the-progress-page-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: opt2 the progress page",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-opt3-end-of-a-drill-round-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: opt3 end of a drill round",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-opt3-the-progress-page-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: opt3 the progress page",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-q2-a-ink-knob-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: q2 a ink knob",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-q2-b-hairline-grabber-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: q2 b hairline grabber",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-q2-c-the-orbit-caret-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: q2 c the orbit caret",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-q3-a-width-time-spent-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: q3 a width time spent",
+    "caption": "full-resolution region used in the decision image."
+  },
+  "PC-00-q3-b-equal-arcs-time-on-tap-hd.png": {
+    "id": "PC-00",
+    "title": "decision detail: q3 b equal arcs time on tap",
+    "caption": "full-resolution region used in the decision image."
+  }
+}
