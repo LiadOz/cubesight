@@ -1,0 +1,113 @@
+/* Inputs proposals: W-09 text inputs (text, textarea, number, file picker, range) and W-36 the search field.
+   Three skins on one DOM: data-f = 1 filled pill | 2 underline | 3 hairline box. Approved set from approved.css and lists.css.
+   Only var(--b-*) tokens. Prototype only. */
+@import url('../../_proto/approved.css');
+@import url('../../2026-10-02-lists-data/proto/lists.css');
+
+.page { position: absolute; left: 48px; top: 94px; }
+.fld { display: grid; gap: 7px; align-content: start; }
+.fld__l { font: 500 12px/1 var(--b-font-sans); color: var(--b-muted); letter-spacing: .02em; display: flex; justify-content: space-between; }
+.fld__l i { font-style: normal; font-weight: 400; color: var(--b-faint); }
+.fld__h { font: 400 12.5px/1.4 var(--b-font-sans); color: var(--b-muted); }
+.fld__e { display: flex; gap: 8px; align-items: flex-start; font: 500 12.5px/1.4 var(--b-font-sans); color: var(--b-ink); }
+.fld__e svg { width: 14px; height: 14px; flex: none; margin-top: 1px; fill: none; stroke: var(--b-dnf); stroke-width: 1.6; stroke-linecap: round; }
+
+/* ------------------------------------------------------------------ the control (shared structure, three skins) */
+.in, .ta { appearance: none; width: 100%; font: 500 14px/1.3 var(--b-font-sans); color: var(--b-ink); caret-color: var(--b-accent); outline: none;
+  transition: background .16s var(--b-ease), box-shadow .16s var(--b-ease), border-color .16s var(--b-ease); }
+.in { height: 40px; padding: 0 16px; }
+.ta { min-height: 104px; padding: 12px 16px; font: 400 13.5px/1.55 var(--b-font-mono); resize: none; display: block; }
+.in::placeholder, .ta::placeholder { color: var(--b-faint); opacity: 1; }
+.touch .in { height: 48px; font-size: 16px; }
+.touch .ta { font-size: 14px; }
+.mono { font-family: var(--b-font-mono); }
+
+/* 1: filled pill (the approved select look) */
+[data-f="1"] .in { border: 0; border-radius: 999px; background: var(--b-surface-2); }
+[data-f="1"] .ta { border: 0; border-radius: 20px; background: var(--b-surface-2); }
+[data-f="1"] .in:is(:hover, .is-hover), [data-f="1"] .ta:is(:hover, .is-hover) { background: var(--b-track); }
+[data-f="1"] .in:is(:focus-visible, :focus, .is-focus), [data-f="1"] .ta:is(:focus-visible, :focus, .is-focus) { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+[data-f="1"] .is-err { box-shadow: inset 0 0 0 2px var(--b-dnf); }
+[data-f="1"] .in:disabled, [data-f="1"] .ta:disabled, [data-f="1"] .is-dis { background: var(--b-surface); color: var(--b-faint); cursor: not-allowed; }
+/* 2: underline, frameless (matches containers 1) */
+[data-f="2"] .in, [data-f="2"] .ta { border: 0; border-radius: 0; background: transparent; padding-left: 2px; padding-right: 2px; box-shadow: inset 0 -1px 0 var(--b-faint); }
+[data-f="2"] .ta { box-shadow: inset 0 -1px 0 var(--b-faint); background: color-mix(in srgb, var(--b-ink) 4%, transparent); padding: 12px 12px; border-radius: 10px 10px 0 0; }
+[data-f="2"] .in:is(:hover, .is-hover), [data-f="2"] .ta:is(:hover, .is-hover) { box-shadow: inset 0 -1px 0 var(--b-muted); }
+[data-f="2"] .in:is(:focus-visible, :focus, .is-focus), [data-f="2"] .ta:is(:focus-visible, :focus, .is-focus) { box-shadow: inset 0 -2px 0 var(--b-accent); }
+[data-f="2"] .is-err { box-shadow: inset 0 -2px 0 var(--b-dnf); }
+[data-f="2"] .in:disabled, [data-f="2"] .ta:disabled, [data-f="2"] .is-dis { color: var(--b-faint); box-shadow: inset 0 -1px 0 var(--b-track); border-bottom-style: dashed; cursor: not-allowed; }
+/* 3: hairline box */
+[data-f="3"] .in, [data-f="3"] .ta { border: 1px solid var(--b-hairline); border-radius: 12px; background: var(--b-bg); }
+[data-f="3"] .in:is(:hover, .is-hover), [data-f="3"] .ta:is(:hover, .is-hover) { border-color: var(--b-faint); }
+[data-f="3"] .in:is(:focus-visible, :focus, .is-focus), [data-f="3"] .ta:is(:focus-visible, :focus, .is-focus) { border-color: var(--b-accent); box-shadow: 0 0 0 1px var(--b-accent); }
+[data-f="3"] .is-err { border-color: var(--b-dnf); box-shadow: 0 0 0 1px var(--b-dnf); }
+[data-f="3"] .in:disabled, [data-f="3"] .ta:disabled, [data-f="3"] .is-dis { background: var(--b-surface); color: var(--b-faint); cursor: not-allowed; }
+
+/* number: a unit inside the field; optional stepper (question 2) */
+.inw { position: relative; display: inline-block; }
+.inw .in { text-align: right; padding-right: 34px; font-family: var(--b-font-mono); font-weight: 400; }
+.inw .unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font: 400 13px var(--b-font-mono); color: var(--b-muted); pointer-events: none; }
+[data-f="2"] .inw .unit { right: 4px; }
+.stp { display: inline-flex; align-items: center; gap: 8px; }
+.stp .btn { --h: 40px; --px: 0; width: 40px; padding: 0; font-size: 18px; }
+.touch .stp .btn { --h: 48px; width: 48px; }
+
+/* file picker: a secondary button + the file name (default); a drop area (question 3) */
+.file { display: flex; align-items: center; gap: 14px; min-height: 40px; }
+.file .nm { font: 400 13px var(--b-font-mono); color: var(--b-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file .nm b { color: var(--b-ink); font-weight: 400; }
+.file .x { appearance: none; border: 0; background: none; color: var(--b-muted); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
+.file .x:hover { background: var(--b-surface-2); color: var(--b-ink); }
+.file .x svg { width: 12px; height: 12px; stroke: currentcolor; stroke-width: 2; fill: none; stroke-linecap: round; }
+.drop { display: grid; justify-items: center; gap: 12px; padding: 26px 20px; border-radius: 20px; border: 1.5px dashed var(--b-faint); text-align: center; font: 400 14px var(--b-font-sans); color: var(--b-muted); }
+.drop.is-over { border-color: var(--b-accent); background: var(--b-accent-soft); color: var(--b-ink); }
+
+/* range: track and thumb only (no fill, so it can never read as a progress bar, feedback 1) */
+.rng { display: flex; align-items: center; gap: 16px; }
+.rng input { appearance: none; -webkit-appearance: none; flex: 1; height: 28px; background: none; margin: 0; cursor: pointer; }
+.rng input::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--b-track); }
+.rng input::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -8px; border-radius: 50%; background: var(--b-fill); box-shadow: 0 0 0 4px var(--b-bg); border: 0; }
+.rng input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--b-accent); outline-offset: 3px; }
+.rng output { font: 400 13px var(--b-font-mono); color: var(--b-ink); min-width: 52px; text-align: right; }
+
+/* ------------------------------------------------------------------ W-36 the search field */
+.srch { position: relative; display: block; }
+.srch .in { padding-left: 42px; padding-right: 74px; }
+[data-f="2"] .srch .in { padding-left: 28px; padding-right: 74px; }
+.srch .mg { position: absolute; left: 15px; top: 50%; width: 15px; height: 15px; transform: translateY(-50%); stroke: var(--b-muted); fill: none; stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
+[data-f="2"] .srch .mg { left: 2px; }
+.srch .tail { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; }
+[data-f="2"] .srch .tail { right: 0; }
+.srch .cnt { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--b-surface); font: 500 11px var(--b-font-mono); color: var(--b-muted); box-shadow: inset 0 0 0 1px var(--b-hairline); white-space: nowrap; }
+.srch .cnt.none { color: var(--b-warn-text); }
+.srch .clr { appearance: none; border: 0; background: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--b-muted); cursor: pointer; }
+.srch .clr:hover { background: var(--b-track); color: var(--b-ink); }
+.srch .clr svg { width: 11px; height: 11px; stroke: currentcolor; stroke-width: 2; fill: none; stroke-linecap: round; }
+.srch.w260 { width: 260px; }
+.srch.w300 { width: 300px; }
+.srch.w100 { width: 100%; }
+.nores { font: 400 14px var(--b-font-sans); color: var(--b-muted); margin: 6px 2px; }
+.nores b { color: var(--b-ink); font-weight: 600; }
+
+/* ------------------------------------------------------------------ sheets and frames */
+.kit2 { display: grid; grid-template-columns: 1fr 1fr; gap: 34px 64px; padding: 26px 28px 30px; width: 1440px; }
+.sp { display: grid; gap: 18px; align-content: start; }
+.sp h4 { margin: 0; font: 500 11px var(--b-font-mono); color: var(--b-muted); letter-spacing: .02em; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 28px; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 24px; }
+.dr { position: absolute; right: 0; top: 0; bottom: 0; width: 460px; padding: 28px 30px; background: var(--b-bg); box-shadow: -24px 0 60px rgb(0 0 0 / .3); z-index: 20; display: flex; flex-direction: column; gap: 22px; }
+[data-theme="light"] .dr { box-shadow: -24px 0 60px rgb(28 27 24 / .12); }
+.dr h2 { margin: 0; font: 600 22px var(--b-font-sans); display: flex; justify-content: space-between; align-items: baseline; }
+.dr .sec { display: grid; gap: 14px; }
+.dr .sec > .eyebrow { margin-bottom: 0; }
+.scrim { position: absolute; inset: 0; background: var(--b-canvas); opacity: .5; z-index: 5; }
+.sheet2 { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 20px 22px; background: var(--b-bg); border-radius: 26px 26px 0 0; box-shadow: 0 -20px 50px rgb(0 0 0 / .3); z-index: 20; display: grid; gap: 16px; }
+.sheet2 .grab { width: 40px; height: 4px; border-radius: 2px; background: var(--b-faint); margin: 0 auto 2px; }
+.sheet2 h2 { margin: 0; font: 600 20px var(--b-font-sans); }
+.nphones { display: flex; gap: 28px; align-items: flex-start; padding: 20px; width: max-content; }
+.nphones .frame { border-radius: 36px; box-shadow: 0 0 0 1px var(--b-hairline); }
+.ncmp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px; padding: 26px 28px 30px; width: 1440px; }
+.ncmp-h { font: 600 15px var(--b-font-sans); margin-bottom: 14px; }
+.nblk { display: grid; gap: 16px; padding: 16px 0 20px; border-top: 1px solid var(--b-hairline); }
+.eyebrow { font: 500 11px var(--b-font-mono); color: var(--b-muted); letter-spacing: .02em; white-space: nowrap; }
+.g2 > .srch { align-self: start; }
