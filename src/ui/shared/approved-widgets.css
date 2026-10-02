@@ -66,6 +66,7 @@
 .chip:is(:hover, .is-hover) { background: var(--k-bg-h); color: var(--k-ink-h); border-color: var(--k-bd-h); }
 .chip:is(:active, .is-press) { transform: scale(.97); background: var(--k-bg-p); }
 .chip[aria-pressed="true"] { background: var(--s-bg); color: var(--s-ink); border-color: var(--s-bd); font-weight: 600; }
+.chip[aria-pressed="true"]::after { content: '✓'; font: 700 12px/1 var(--b-font-sans); }
 .chip[aria-pressed="true"]:is(:hover, .is-hover) { background: var(--s-bg-h); }
 .chip:is(:focus-visible, .is-focus) { outline: 2px solid var(--b-accent); outline-offset: 2px; }
 .chip:disabled { opacity: .4; cursor: not-allowed; transform: none; }
@@ -322,5 +323,4 @@
 .toast.is-exit { opacity: .3; transform: translateY(4px); transition-duration: 160ms; }
 .toast .act { color: var(--t-act, var(--b-ink)); }
 .toast .g-dot { background: var(--b-good); }
-
 
