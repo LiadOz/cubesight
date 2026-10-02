@@ -74,7 +74,7 @@ test.describe('phone', () => {
     await expect(nav).toHaveAttribute('data-scroll-x', 'true');
     await nav.evaluate(node => { node.scrollLeft = node.scrollWidth; });
     const navBox = await nav.boundingBox();
-    const last = await page.getByRole('link', { name: 'history', exact: true }).boundingBox();
+    const last = await nav.getByRole('link', { name: 'history', exact: true }).boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(last.x).toBeGreaterThanOrEqual(navBox.x);
     expect(last.x + last.width).toBeLessThanOrEqual(navBox.x + navBox.width);
