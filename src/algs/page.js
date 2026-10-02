@@ -163,7 +163,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       try {
         const mount = root.querySelector('[data-alg-cube]');
         if (mount) {
-          const created = new createCube(mount, { state: setupState, mode: 'case', size: 'L', label: `${caseData.name} case` });
+          const created = createCube(mount, { state: setupState, mode: 'case', size: 'L', label: `${caseData.name} case` });
           if (destroyed || !active || thisRender !== renderId || !root.isConnected) { created.destroy(); return; }
           cubeView = created;
           cubeView.setCaseOrientation(caseColorSetting, { seed: caseData.id });
