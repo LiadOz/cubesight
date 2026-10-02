@@ -95,7 +95,7 @@ export function mount({ id, name, frame, legend = [], cols = 2, width }) {
   document.body.innerHTML = `<div class="brain" data-brain-style="orbit" id="board" style="width:${width || 1440}px">
     <div class="board-title"><span class="board-id">${id}</span><span class="board-name">${name}</span><span class="board-theme">orbit ${theme}</span></div>
     ${frame}
-    ${legend.length ? `<div class="legend" style="--legend-cols:${cols}">${items}</div>` : ''}
+    ${legend.length && q.get('legend') !== '0' ? `<div class="legend" style="--legend-cols:${cols}">${items}</div>` : ''}
   </div>`;
   document.fonts.ready.then(() => requestAnimationFrame(() => { placeCallouts(); document.body.dataset.ready = '1'; }));
 }

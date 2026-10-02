@@ -1,0 +1,132 @@
+{
+  "C-12-option1-settings-drawer.png": {
+    "id": "C-12",
+    "title": "option 1: the settings drawer over solve (desktop)",
+    "caption": "sections, a group, disclosures, the drawer, a toast. Dark above, light below."
+  },
+  "C-00-ladder-which-container-when.png": {
+    "id": "C-00",
+    "title": "the ladder: which container when",
+    "caption": "section, group, panel, disclosure, drawer, dialog: when and the rules."
+  },
+  "C-01-compare-settings-drawer.png": {
+    "id": "C-01",
+    "title": "the settings drawer in the three options",
+    "caption": "frameless, soft panels, hairline rules. Dark above, light below."
+  },
+  "C-11-option1-kit-five-containers.png": {
+    "id": "C-11",
+    "title": "option 1: the five containers (section, group/panel, disclosure, drawer, dialog)",
+    "caption": "each container with its one-line rule. Dark above, light below."
+  },
+  "C-13-option1-debug-drawer.png": {
+    "id": "C-13",
+    "title": "option 1: the debug drawer (the ` key)",
+    "caption": "key/value group, event log panel, disclosures. Dark above, light below."
+  },
+  "C-14-option1-help-page.png": {
+    "id": "C-14",
+    "title": "option 1: the help page",
+    "caption": "sections, a key list, build info, disclosures. Dark above, light below."
+  },
+  "C-15-option1-review-detail.png": {
+    "id": "C-15",
+    "title": "option 1: the review detail panel on results",
+    "caption": "the detail next to the Orbit. Dark above, light below."
+  },
+  "C-16-option1-confirm-dialog-delete.png": {
+    "id": "C-16",
+    "title": "option 1: confirm dialog: delete a solve",
+    "caption": "one decision, safe default. Dark above, light below."
+  },
+  "C-17-option1-import-sheet.png": {
+    "id": "C-17",
+    "title": "option 1: import sheet (desktop)",
+    "caption": "a few fields in one dialog. Dark above, light below."
+  },
+  "C-18-option1-phone-sheets.png": {
+    "id": "C-18",
+    "title": "option 1: phone: settings sheet, confirm dialog, import sheet",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "C-21-option2-kit-five-containers.png": {
+    "id": "C-21",
+    "title": "option 2: the five containers (section, group/panel, disclosure, drawer, dialog)",
+    "caption": "each container with its one-line rule. Dark above, light below."
+  },
+  "C-22-option2-settings-drawer.png": {
+    "id": "C-22",
+    "title": "option 2: the settings drawer over solve (desktop)",
+    "caption": "sections, a group, disclosures, the drawer, a toast. Dark above, light below."
+  },
+  "C-23-option2-debug-drawer.png": {
+    "id": "C-23",
+    "title": "option 2: the debug drawer (the ` key)",
+    "caption": "key/value group, event log panel, disclosures. Dark above, light below."
+  },
+  "C-24-option2-help-page.png": {
+    "id": "C-24",
+    "title": "option 2: the help page",
+    "caption": "sections, a key list, build info, disclosures. Dark above, light below."
+  },
+  "C-25-option2-review-detail.png": {
+    "id": "C-25",
+    "title": "option 2: the review detail panel on results",
+    "caption": "the detail next to the Orbit. Dark above, light below."
+  },
+  "C-26-option2-confirm-dialog-delete.png": {
+    "id": "C-26",
+    "title": "option 2: confirm dialog: delete a solve",
+    "caption": "one decision, safe default. Dark above, light below."
+  },
+  "C-27-option2-import-sheet.png": {
+    "id": "C-27",
+    "title": "option 2: import sheet (desktop)",
+    "caption": "a few fields in one dialog. Dark above, light below."
+  },
+  "C-28-option2-phone-sheets.png": {
+    "id": "C-28",
+    "title": "option 2: phone: settings sheet, confirm dialog, import sheet",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "C-31-option3-kit-five-containers.png": {
+    "id": "C-31",
+    "title": "option 3: the five containers (section, group/panel, disclosure, drawer, dialog)",
+    "caption": "each container with its one-line rule. Dark above, light below."
+  },
+  "C-32-option3-settings-drawer.png": {
+    "id": "C-32",
+    "title": "option 3: the settings drawer over solve (desktop)",
+    "caption": "sections, a group, disclosures, the drawer, a toast. Dark above, light below."
+  },
+  "C-33-option3-debug-drawer.png": {
+    "id": "C-33",
+    "title": "option 3: the debug drawer (the ` key)",
+    "caption": "key/value group, event log panel, disclosures. Dark above, light below."
+  },
+  "C-34-option3-help-page.png": {
+    "id": "C-34",
+    "title": "option 3: the help page",
+    "caption": "sections, a key list, build info, disclosures. Dark above, light below."
+  },
+  "C-35-option3-review-detail.png": {
+    "id": "C-35",
+    "title": "option 3: the review detail panel on results",
+    "caption": "the detail next to the Orbit. Dark above, light below."
+  },
+  "C-36-option3-confirm-dialog-delete.png": {
+    "id": "C-36",
+    "title": "option 3: confirm dialog: delete a solve",
+    "caption": "one decision, safe default. Dark above, light below."
+  },
+  "C-37-option3-import-sheet.png": {
+    "id": "C-37",
+    "title": "option 3: import sheet (desktop)",
+    "caption": "a few fields in one dialog. Dark above, light below."
+  },
+  "C-38-option3-phone-sheets.png": {
+    "id": "C-38",
+    "title": "option 3: phone: settings sheet, confirm dialog, import sheet",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  }
+}
