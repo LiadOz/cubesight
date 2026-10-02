@@ -16,7 +16,8 @@
     "lint": "npm run lint:js && npm run lint:css",
     "lint:js": "eslint .",
     "lint:css": "stylelint \"src/**/*.css\"",
-    "check": "npm run lint && npm run test:unit && npm run build",
+    "gallery:coverage": "node scripts/gallery-coverage.mjs",
+    "check": "npm run lint && npm run test:unit && npm run build && node scripts/check-no-dev-gallery.mjs && npm run gallery:coverage",
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "devDependencies": {

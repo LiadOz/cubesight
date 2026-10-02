@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execFileSync } from 'node:child_process';
+import { galleryPlugin } from './scripts/gallery-index.mjs';
 import fs from 'node:fs';
 import { APP_NAME } from './src/copy/nav.js';
 
@@ -98,6 +99,8 @@ export default defineConfig({
   },
   plugins: [
     buildInfoPlugin,
+    // Dev server only (apply: 'serve'): the image gallery's /__gallery listing. Never part of a build.
+    galleryPlugin(),
     researchBoundaryPlugin,
     appNamePlugin,
     devLogPlugin,

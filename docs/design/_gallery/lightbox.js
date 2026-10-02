@@ -4,7 +4,7 @@
   if (window.__lightbox) return;
   var LOUPE = 2.5, MIN = 0.05, MAX = 16;
   var root, stage, img, loupe, titleEl, countEl, openLink, prevB, nextB, loupeB, closeB;
-  var list = [], idx = -1, lastFocus = null;
+  var list = [], idx = -1, lastFocus = null, scope = null; // scope: optional element limiting browsing to the images inside it
   var natW = 0, natH = 0, scale = 1, tx = 0, ty = 0, fitScale = 1, loupeOn = false;
   var pointers = new Map(), pinch = null, panStart = null, swipe = null, moved = false;
 
@@ -54,7 +54,7 @@
   function isOpen() { return root && root.classList.contains('lb-open'); }
 
   function collect() {
-    return Array.prototype.filter.call(document.querySelectorAll('img'), function (i) { return !root || !root.contains(i); });
+    return Array.prototype.filter.call(document.querySelectorAll('img'), function (i) { return (!root || !root.contains(i)) && (!scope || scope.contains(i)); });
   }
   function srcFor(i) {
     var a = i.closest('a[href]');
@@ -243,5 +243,5 @@
     e.preventDefault(); open(i);
   });
 
-  window.__lightbox = { open: open, close: close };
+  window.__lightbox = { open: open, close: close, setScope: function (el) { scope = el || null; } };
 })();
