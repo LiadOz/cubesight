@@ -75,3 +75,7 @@ image IDs (for example "A-05 (2): the dotted connector").
    `http://localhost:5173/#/dev/gallery/post/<id>` (the post).
 
 The old, pre-blog screenshots are in `gallery/_import/<date>-<source>/`; each has a post in place.
+
+
+## Post style (user rule)
+Posts are SHORT: a few lines ("3 options" + one line each on what differs). At most 3 questions, asked VISUALLY in one decision image `<ID>-00-decide.png` that shows all options side by side (①②③, Q1–Q3). Put it first in the post's images. No long question lists in the text.
