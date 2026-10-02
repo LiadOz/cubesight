@@ -5,8 +5,8 @@
 .history-page h1, .history-page h2 { font-weight: 500; }
 .history-page p { color: var(--b-muted); }
 .history-page a { color: var(--b-accent-text); }
-.history-page :is(button, input, select, summary) { font: inherit; color: var(--b-ink); }
-.history-page :is(button, input, select):not(.ui-list-row):not(.ui-input):not(.sel__btn) { padding: 10px 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); background: var(--b-surface); }
+.history-page :is(button, input, select, summary):not(.btn) { font: inherit; color: var(--b-ink); }
+.history-page :is(button, input, select):not(.btn):not(.ui-list-row):not(.ui-input):not(.sel__btn) { padding: 10px 12px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-key); background: var(--b-surface); }
 .history-page button, .history-page summary { cursor: pointer; }
 .history-page :focus-visible { outline: 2px solid var(--b-accent); outline-offset: 3px; }
 .history-filters, .history-actions { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 20px 0; }
@@ -15,14 +15,15 @@
 .history-filters [data-history-search] .ui-input-wrap { min-width:180px; }
 .history-filters input:not([type="hidden"]) { min-width:160px; }
 .history-data { padding: 16px 0; border-block: 1px solid var(--b-hairline); }
-.history-file { max-width: 220px; }
-.history-file input { width: 100%; box-sizing: border-box; }
+.history-actions [data-history-imports] { display:flex; flex-wrap:wrap; align-items:end; gap:12px; }
+.history-actions [data-history-gap] { min-width:180px; }
+.history-actions .ui-file { flex-direction:row; }
 .history-status { min-height: 1.5em; }
 .history-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
 .history-list { list-style: none; padding: 0; max-height: 65vh; overflow-y: auto; }
 .history-list li { margin-bottom: 8px; }
 .history-list .ui-list-row { width:100%; padding:4px 12px; border:0; border-radius:14px; background:transparent; text-align:left; }
-.history-list .ui-list-row[aria-pressed="true"] { box-shadow:inset 0 0 0 1px var(--b-accent); background:var(--b-accent-soft); }
+.history-list .ui-list-row[aria-pressed="true"] { background:var(--b-surface); }
 .history-detail { min-width: 0; border-left: 1px solid var(--b-hairline); padding-left: 24px; }
 .history-cube { width: 100%; height: 300px; }
 .history-playback { min-width: 0; margin: 12px 0; }

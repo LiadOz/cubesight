@@ -73,11 +73,11 @@ export function createSectionHeader(host, { title, eyebrow = '', count = null, s
   host.append(head); return { element: head, search };
 }
 
-export function createFilledInput(host, { label = '', value = '', placeholder = '', type = 'text', hint = '', error = '', disabled = false, onInput = null } = {}) {
+export function createFilledInput(host, { label = '', name = '', value = '', placeholder = '', type = 'text', hint = '', error = '', disabled = false, onInput = null } = {}) {
   const field = document.createElement('div'); field.className = 'ui-field';
   const inputId = `field-control-${++fieldId}`, errorId = `field-error-${fieldId}`;
   if (label) { const caption = document.createElement('label'); caption.className = 'ui-field__label'; caption.htmlFor = inputId; caption.textContent = label; field.append(caption); }
-  const input = document.createElement('input'); input.id = inputId; input.className = `ui-input${error ? ' is-error' : ''}`; input.type = type; input.value = value; input.placeholder = placeholder; input.disabled = disabled; input.setAttribute('aria-invalid', String(Boolean(error)));
+  const input = document.createElement('input'); input.id = inputId; input.className = `ui-input${error ? ' is-error' : ''}`; input.name = name; input.type = type; input.value = value; input.placeholder = placeholder; input.disabled = disabled; input.setAttribute('aria-invalid', String(Boolean(error)));
   const describedBy = [];
   let errorNode = null;
   if (hint) input.setAttribute('aria-description', hint);

@@ -11,7 +11,7 @@ import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
-import { createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
+import { createButton, createFileInput, createFilledInput, createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
 
 export const historyTime = record => {
   return fmt.penalty(record);
@@ -44,9 +44,7 @@ export function initHistory(host) {
       <div data-history-source></div>
     </form>
     <details class="history-data"><summary>data and sessions</summary><div class="history-actions">
-      <button type="button" data-action="backup">export data</button><label class="history-file">import data<input type="file" data-import="backup" accept=".json,application/json" /></label>
-      <button type="button" data-action="cstimer">export csTimer</button><label class="history-file">import csTimer<input type="file" data-import="cstimer" accept=".json,application/json" /></label>
-      <label>session gap (minutes)<input type="number" name="gap" min="1" max="1440" value="${settings.session.gapMin}" /></label>
+      <span data-history-export-actions></span><div data-history-imports></div><div data-history-gap></div>
     </div><p>Changing the gap starts future sessions after that idle time.</p></details>
     <p class="history-status" role="status" aria-live="polite"></p>
     <div class="history-layout"><div><p class="history-count"></p><ol class="history-list" aria-label="Solves"></ol></div>
@@ -63,6 +61,13 @@ export function initHistory(host) {
   ];
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
+  const exportActions = root.querySelector('[data-history-export-actions]');
+  createButton(exportActions, { label: 'export data', variant: 'secondary' }).dataset.action = 'backup';
+  createButton(exportActions, { label: 'export csTimer', variant: 'secondary' }).dataset.action = 'cstimer';
+  const backupFile = createFileInput(root.querySelector('[data-history-imports]'), { label: 'import data', accept: '.json,application/json' }); backupFile.input.dataset.import = 'backup';
+  const csTimerFile = createFileInput(root.querySelector('[data-history-imports]'), { label: 'import csTimer', accept: '.json,application/json' }); csTimerFile.input.dataset.import = 'cstimer';
+  const gapInput = createFilledInput(root.querySelector('[data-history-gap]'), { label: 'session gap (minutes)', name: 'gap', type: 'number', value: settings.session.gapMin });
+  gapInput.input.min = '1'; gapInput.input.max = '1440'; gapInput.input.step = '1';
   const report = text => { status.textContent = text; };
   const stopPlayback = () => player?.pause();
   function destroyReplay() {
@@ -156,7 +161,7 @@ export function initHistory(host) {
     if (pins.length) detail.append(make('p', `${pins.length} saved moments`));
     const actions = make('div', undefined, 'history-actions');
     for (const [action, text] of [['none', 'clear penalty'], ['plus2', '+2'], ['dnf', 'DNF'], ['delete', 'delete']]) {
-      const button = make('button', text); button.type = 'button'; button.dataset.action = action; actions.append(button);
+      const button = createButton(actions, { label: text, variant: action === 'delete' ? 'text' : 'secondary' }); button.dataset.action = action;
     }
     detail.append(actions); renderList();
   }
@@ -184,7 +189,7 @@ export function initHistory(host) {
       await store.flush();
       destroyReplay(); selected = null;
       detail.replaceChildren(make('p', 'Solve deleted.'));
-      const undo = make('button', 'undo'); undo.type = 'button'; undo.dataset.action = 'undo'; detail.append(undo); refreshSessions(); renderList();
+      const undo = createButton(detail, { label: 'undo', variant: 'secondary' }); undo.dataset.action = 'undo'; refreshSessions(); renderList();
     } else if (['none', 'plus2', 'dnf'].includes(action)) {
       const record = store.setPenalty(selected.at, action === 'none' ? null : action === 'plus2' ? '+2' : 'DNF'); await store.flush(); if (record) showRecord(record);
     }
