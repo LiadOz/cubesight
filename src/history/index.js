@@ -11,6 +11,7 @@ import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
+import { createListRow } from '../ui/shared/index.js';
 
 export const historyTime = record => {
   return fmt.penalty(record);
@@ -95,12 +96,24 @@ export function initHistory(host) {
     root.querySelector('.history-count').textContent = `${list.length} solves · ${store.pins.count} pins`;
     const rows = list.map(record => {
       const row = make('li');
-      const button = make('button', `${historyTime(record)} · ${historyDate(record.at)} · ${record.focus} · ${record.source === 'manual' ? 'manual' : record.source === 'import' ? 'import' : 'cube'}`);
-      button.type = 'button'; button.dataset.at = String(record.at);
-      button.setAttribute('aria-pressed', String(record.at === selected?.at));
-      row.append(button); return row;
+      const source = record.source === 'manual' ? 'manual' : record.source === 'import' ? 'import' : 'cube';
+      const moves = Array.isArray(record.solveMoves) ? record.solveMoves : [];
+      const durations = Array.isArray(record.moveTimes) ? record.moveTimes : [];
+      const segments = moves.map((move, index) => {
+        const duration = Number(durations[index]);
+        return { key: `move-${index}`, label: fmt.move(move), weight: Number.isFinite(duration) && duration > 0 ? duration : 1, state: 'done', fill: 1 };
+      });
+      const button = createListRow(row, {
+        title: historyTime(record), detail: `${historyDate(record.at)} · ${record.focus} · ${source}`,
+        selected: record.at === selected?.at, ariaPressed: record.at === selected?.at, interactive: true,
+        orbit: { segments, label: `Solve ${historyTime(record)} by move timing` },
+      });
+      button.dataset.at = String(record.at);
+      return row;
     });
-    root.querySelector('.history-list').replaceChildren(...rows.length ? rows : [make('li', 'No solves match. Change a filter or start a solve.')]);
+    const listHost = root.querySelector('.history-list');
+    listHost.querySelectorAll('.ui-list-row').forEach(row => row.destroy?.());
+    listHost.replaceChildren(...rows.length ? rows : [make('li', 'No solves match. Change a filter or start a solve.')]);
   }
   function refreshSessions() {
     const select = form.elements.session;

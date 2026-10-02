@@ -69,3 +69,34 @@ test('search and the root filter narrow the list; no horizontal scroll at 390 px
   await expect(page.locator('[data-testid=timeline-node]').first()).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test('the approved widget gallery keeps select, field and right-drawer states accessible', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/#/dev/gallery/widgets');
+  const filter = page.getByRole('combobox', { name: 'filter', exact: true });
+  await filter.focus();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(filter).toHaveAttribute('data-value', 'recent');
+  await expect(page.getByRole('combobox', { name: 'disabled filter' })).toBeDisabled();
+
+  const field = page.getByLabel('validation state');
+  await expect(field).toHaveAttribute('aria-invalid', 'true');
+  const describedBy = await field.getAttribute('aria-describedby');
+  await expect(page.locator(`#${describedBy.split(' ').at(-1)}`)).toHaveText('Choose a name to continue.');
+
+  await page.getByRole('button', { name: 'open right drawer' }).click();
+  const drawer = page.getByRole('dialog', { name: 'Review detail' });
+  await expect(drawer).toBeVisible();
+  const bounds = await drawer.boundingBox();
+  await page.mouse.click(bounds.x + 8, bounds.y + bounds.height - 10);
+  await expect(drawer).toBeVisible();
+  await page.mouse.click(5, 5);
+  await expect(drawer).toBeHidden();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});

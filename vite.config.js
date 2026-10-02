@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execFileSync } from 'node:child_process';
 import { galleryPlugin } from './scripts/gallery-index.mjs';
@@ -152,7 +152,7 @@ export default defineConfig({
   },
   // CUBESIGHT_NO_WATCH=1: dev mode without file watching. The page never changes
   // under you while agents edit code; restart the server to pick up changes.
-  server: { hmr: false, host: true, allowedHost: true, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]test-results[\\/]/] } },
+  server: { hmr: false, host: true, allowedHost: true, fs: { allow: [searchForWorkspaceRoot(process.cwd()), fs.realpathSync('./node_modules')] }, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]test-results[\\/]/] } },
   // Only crawl the app's own entry for dependency pre-bundling; agent worktrees
   // under .claude/ contain their own index.html and build output.
   optimizeDeps: { entries: ['index.html'], exclude: ['cubing'] },

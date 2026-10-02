@@ -212,10 +212,12 @@ export function createDialog(host, { title = '', description = '', actions = [] 
   host.append(dialog); return { element: dialog, open: () => dialog.showModal(), close: () => dialog.close(), destroy: () => dialog.remove() };
 }
 
-export function createListRow(host, { title, detail = '', value = '', selected = false, href = null, tags = [], orbit = {} } = {}) {
-  const row = document.createElement(href ? 'a' : 'div'); row.className = `ui-list-row${selected ? ' is-selected' : ''}`;
+export function createListRow(host, { title, detail = '', value = '', selected = false, href = null, onClick = null, interactive = false, ariaPressed = null, tags = [], orbit = {} } = {}) {
+  const row = document.createElement(href ? 'a' : onClick || interactive ? 'button' : 'div'); row.className = `ui-list-row${selected ? ' is-selected' : ''}`;
+  if (row instanceof HTMLButtonElement) { row.type = 'button'; if (onClick) row.addEventListener('click', onClick); }
   if (href) row.href = href;
   if (selected) row.setAttribute('aria-current', 'true');
+  if (ariaPressed != null) row.setAttribute('aria-pressed', String(ariaPressed));
   const glyphHost = document.createElement('span'); glyphHost.className = 'ui-mini-orbit'; row.append(glyphHost);
   const main = document.createElement('span'); main.className = 'ui-list-row__main';
   const name = document.createElement('span'); name.className = 'ui-list-row__title'; name.textContent = title; main.append(name);
@@ -224,8 +226,16 @@ export function createListRow(host, { title, detail = '', value = '', selected =
   row.append(main);
   if (value !== '') { const number = document.createElement('span'); number.className = 'ui-list-row__value'; number.textContent = value; row.append(number); }
   host.append(row);
-  const mini = new Orbit(glyphHost, { size: 'mini', glyphSize: 38, label: `${title} Orbit`, ...orbit });
-  row.destroy = () => { mini.destroy(); row.remove(); };
+  let mini = null, observer = null;
+  const mountMini = () => { if (!mini && row.isConnected) mini = new Orbit(glyphHost, { size: 'mini', glyphSize: 38, label: `${title} Orbit`, ...orbit }); };
+  if (typeof IntersectionObserver === 'function') {
+    observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      mountMini(); observer?.disconnect(); observer = null;
+    }, { root: host.closest('.history-list') || null, rootMargin: '80px' });
+    observer.observe(glyphHost);
+  } else mountMini();
+  row.destroy = () => { observer?.disconnect(); mini?.destroy(); row.remove(); };
   return row;
 }
 
