@@ -1,0 +1,7 @@
+/* The bundled fonts, straight from node_modules (the same files the app ships). */
+@font-face { font-family: 'Manrope Variable'; font-style: normal; font-display: block; font-weight: 200 800;
+  src: url('../../../../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2') format('woff2-variations'); }
+@font-face { font-family: 'DM Mono'; font-style: normal; font-display: block; font-weight: 400;
+  src: url('../../../../node_modules/@fontsource/dm-mono/files/dm-mono-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'DM Mono'; font-style: normal; font-display: block; font-weight: 500;
+  src: url('../../../../node_modules/@fontsource/dm-mono/files/dm-mono-latin-500-normal.woff2') format('woff2'); }

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selection controls prototype (?opt=1|2|3&amp;theme=dark|light&amp;scene=states|drawer|phone|speed|history|drill|phone-drill)</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="../../../../src/brain/css/tokens-orbit.css">
+<link rel="stylesheet" href="sel.css">
+<style>
+  html, body { margin: 0; }
+  .sel--full, .sel--full .sel__btn { display: block; width: 100%; }
+  .sel--full .sel__btn { display: flex; }
+  .sel--sm .sel__btn { height: var(--hc); min-width: 150px; font-size: 13px; }
+  .sel--sm .sel__opt { height: 36px; }
+</style>
+</head>
+<body>
+<div class="brain" data-brain-style="orbit"></div>
+<script src="ui.js"></script>
+<script src="scenes.js"></script>
+</body>
+</html>

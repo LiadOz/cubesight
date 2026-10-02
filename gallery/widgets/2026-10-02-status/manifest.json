@@ -1,0 +1,82 @@
+{
+  "W-16-00-compare-options.png": {
+    "id": "W-16-00",
+    "title": "the three options side by side",
+    "caption": "dark above, light below."
+  },
+  "W-16-01-option1-states.png": {
+    "id": "W-16-01",
+    "title": "option 1: status line and toast states, dark and light",
+    "caption": "tones, working, toast life cycle and the placement of each."
+  },
+  "W-16-02-option1-connecting.png": {
+    "id": "W-16-02",
+    "title": "option 1: connecting (A-01, full orbit)",
+    "caption": "the status while the full orbit spins."
+  },
+  "W-16-03-option1-error.png": {
+    "id": "W-16-03",
+    "title": "option 1: an error (connect failed)",
+    "caption": "the error line with its one recovery action."
+  },
+  "W-16-04-option1-toast.png": {
+    "id": "W-16-04",
+    "title": "option 1: a saved toast over results (A-05)",
+    "caption": "the toast next to the coach line, not on it."
+  },
+  "W-16-05-option1-phone.png": {
+    "id": "W-16-05",
+    "title": "option 1: phone (A-09)",
+    "caption": "status line and toast on a 390 px phone."
+  },
+  "W-16-06-option2-states.png": {
+    "id": "W-16-06",
+    "title": "option 2: status line and toast states, dark and light",
+    "caption": "tones, working, toast life cycle and the placement of each."
+  },
+  "W-16-07-option2-connecting.png": {
+    "id": "W-16-07",
+    "title": "option 2: connecting (A-01, full orbit)",
+    "caption": "the status while the full orbit spins."
+  },
+  "W-16-08-option2-error.png": {
+    "id": "W-16-08",
+    "title": "option 2: an error (connect failed)",
+    "caption": "the error line with its one recovery action."
+  },
+  "W-16-09-option2-toast.png": {
+    "id": "W-16-09",
+    "title": "option 2: a saved toast over results (A-05)",
+    "caption": "the toast next to the coach line, not on it."
+  },
+  "W-16-10-option2-phone.png": {
+    "id": "W-16-10",
+    "title": "option 2: phone (A-09)",
+    "caption": "status line and toast on a 390 px phone."
+  },
+  "W-16-11-option3-states.png": {
+    "id": "W-16-11",
+    "title": "option 3: status line and toast states, dark and light",
+    "caption": "tones, working, toast life cycle and the placement of each."
+  },
+  "W-16-12-option3-connecting.png": {
+    "id": "W-16-12",
+    "title": "option 3: connecting (A-01, full orbit)",
+    "caption": "the status while the full orbit spins."
+  },
+  "W-16-13-option3-error.png": {
+    "id": "W-16-13",
+    "title": "option 3: an error (connect failed)",
+    "caption": "the error line with its one recovery action."
+  },
+  "W-16-14-option3-toast.png": {
+    "id": "W-16-14",
+    "title": "option 3: a saved toast over results (A-05)",
+    "caption": "the toast next to the coach line, not on it."
+  },
+  "W-16-15-option3-phone.png": {
+    "id": "W-16-15",
+    "title": "option 3: phone (A-09)",
+    "caption": "status line and toast on a 390 px phone."
+  }
+}

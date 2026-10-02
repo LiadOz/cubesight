@@ -1,0 +1,162 @@
+/* Lists and data: W-11 list rows (with the mini Orbit glyph at the left), W-19 stat blocks, W-18 badges/tags,
+   W-25 empty states, W-30 eyebrows / section heads. Three skins on one DOM: data-l = 1 open rows | 2 banded rows | 3 hairline list.
+   Approved set (ink controls, quiet buttons, keycaps, status) comes from approved.css. Only var(--b-*) tokens. Prototype only. */
+@import url('../../_proto/approved.css');
+
+.abs { position: absolute; }
+.row { display: flex; align-items: center; gap: 12px; }
+.kbar .kbi { display: inline-flex; align-items: center; gap: 9px; }
+.kp { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+.touch .key { display: none; }
+.mono { font-family: var(--b-font-mono); }
+.pos { color: var(--b-good); }
+.neg { color: var(--b-warn-text); }
+
+/* ------------------------------------------------------------------ W-30 eyebrow and section head */
+.eyebrow { font: 500 11px var(--b-font-mono); color: var(--b-muted); letter-spacing: .02em; white-space: nowrap; }
+.shead { display: flex; align-items: center; gap: 14px; margin: 0 0 8px; }
+.shead .eyebrow b { color: var(--b-ink); font-weight: 500; }
+.shead .end { margin-left: auto; font: 400 11px var(--b-font-mono); color: var(--b-muted); }
+[data-l="2"] .shead .cnt { display: inline-flex; }
+.shead .cnt { display: none; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; background: var(--b-surface-2); font: 500 11px var(--b-font-mono); color: var(--b-muted); box-shadow: inset 0 0 0 1px var(--b-hairline); }
+[data-l="3"] .shead::after { content: ''; flex: 1; height: 1px; background: var(--b-hairline); order: 2; }
+[data-l="3"] .shead .end { order: 3; }
+.phead { display: grid; gap: 6px; }
+.phead h1 { margin: 0; font: 600 30px/1.1 var(--b-font-sans); }
+.phead .eyebrow { margin-bottom: 2px; }
+.phead .sub { font-size: 14px; color: var(--b-muted); }
+
+/* ------------------------------------------------------------------ mini Orbit glyph (W-02 mini form) */
+.glyph { display: block; flex: none; }
+.glyph .t { fill: none; stroke: var(--b-track); stroke-width: 3; stroke-linecap: round; }
+.glyph .n { fill: none; stroke: var(--b-fill); stroke-width: 3.5; stroke-linecap: round; opacity: .85; }
+.glyph .g { fill: none; stroke: var(--b-good); stroke-width: 3.5; stroke-linecap: round; }
+.glyph .w { fill: none; stroke: var(--b-warn); stroke-width: 3.5; stroke-linecap: round; }
+.glyph .f { fill: none; stroke: var(--b-track); stroke-width: 3; stroke-linecap: round; }
+.glyph .c { fill: var(--b-ink); font: 500 11px var(--b-font-mono); text-anchor: middle; }
+.glyph .dg { fill: var(--b-good); } .glyph .dw { fill: var(--b-warn); }
+
+/* ------------------------------------------------------------------ W-18 badges and tags */
+.tg { display: inline-flex; align-items: center; gap: 6px; font: 400 12px var(--b-font-mono); color: var(--b-muted); white-space: nowrap; }
+.tg svg { width: 11px; height: 11px; flex: none; }
+.tg-g { color: var(--b-accent-text); } .tg-w { color: var(--b-warn-text); }
+.tg-g svg { fill: currentColor; } .tg-w svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.bd { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font: 500 11px var(--b-font-mono); background: var(--b-surface-2); color: var(--b-ink); box-shadow: inset 0 0 0 1px var(--b-hairline); white-space: nowrap; }
+.bd-pb { background: var(--b-accent-soft); color: var(--b-accent-text); box-shadow: none; }
+.bd-due { background: var(--b-plus2-soft); color: var(--b-warn-text); box-shadow: none; }
+.bd-ok { background: var(--b-accent-soft); color: var(--b-accent-text); box-shadow: none; }
+/* option 1: tags are plain text with their symbol; only PB and status keep a pill */
+[data-l="1"] .bd:not(.bd-pb, .bd-due, .bd-ok) { background: transparent; box-shadow: none; padding: 0; color: var(--b-muted); font-weight: 400; }
+/* option 2: every tag is a pill */
+[data-l="2"] .tg { height: 24px; padding: 0 10px; border-radius: 999px; background: var(--b-surface-2); box-shadow: inset 0 0 0 1px var(--b-hairline); color: var(--b-ink); }
+[data-l="2"] .tg-g { background: var(--b-accent-soft); color: var(--b-accent-text); box-shadow: none; }
+[data-l="2"] .tg-w { background: var(--b-plus2-soft); color: var(--b-warn-text); box-shadow: none; }
+/* option 3: text only; PB / status as an outline, no fill */
+[data-l="3"] .bd { background: transparent; box-shadow: inset 0 0 0 1px var(--b-faint); color: var(--b-muted); }
+[data-l="3"] .bd-pb, [data-l="3"] .bd-ok { box-shadow: inset 0 0 0 1px var(--b-accent); color: var(--b-accent-text); background: transparent; }
+[data-l="3"] .bd-due { box-shadow: inset 0 0 0 1px var(--b-warn); color: var(--b-warn-text); background: transparent; }
+
+/* ------------------------------------------------------------------ W-11 list rows */
+.list { display: grid; align-content: start; }
+.lrow { --cols: 30px 44px 168px minmax(0, 1fr) 64px; display: grid; grid-template-columns: var(--cols); align-items: center; gap: 0 14px; min-height: 54px; padding: 4px 12px; position: relative; color: var(--b-ink); }
+.lrow .no { font: 400 12px var(--b-font-mono); color: var(--b-faint); }
+.lrow .tm { display: flex; align-items: baseline; gap: 10px; font: 400 24px/1 var(--b-font-mono); letter-spacing: -.02em; }
+.lrow .tm small { font: 400 12px var(--b-font-mono); letter-spacing: 0; }
+.lrow .nm { font: 600 16px var(--b-font-sans); }
+.lrow .nm small { display: block; margin-top: 2px; font: 400 11px var(--b-font-mono); color: var(--b-muted); }
+.lrow .tags { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; min-width: 0; }
+.lrow .when { font: 400 12px var(--b-font-mono); color: var(--b-muted); text-align: right; }
+.lrow .alg { font: 400 13px var(--b-font-mono); color: var(--b-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lrow .num { font: 400 15px var(--b-font-mono); text-align: right; }
+.lrow .num small { display: block; font: 400 10.5px var(--b-font-mono); color: var(--b-muted); }
+.lrow.is-dim { opacity: .45; }
+.lrow:is(:hover, .is-hover) { background: color-mix(in srgb, var(--b-ink) 6%, transparent); }
+.lrow.is-sel .tm, .lrow.is-sel .nm { color: var(--b-ink); }
+.lrow.head { min-height: 28px; font: 400 11px var(--b-font-mono); color: var(--b-faint); }
+.lrow.head:hover { background: none; }
+.lrow .go { display: none; font: 500 12px var(--b-font-mono); color: var(--b-accent-text); text-align: right; }
+
+/* option 1: open rows. Only the selected row has a fill (the A-07 look) */
+[data-l="1"] .lrow { border-radius: 14px; }
+[data-l="1"] .lrow.is-sel { background: var(--b-surface); }
+/* option 2: banded rows, each row a soft block */
+[data-l="2"] .list { gap: 5px; }
+[data-l="2"] .lrow { background: var(--b-surface); border-radius: 16px; min-height: 52px; }
+[data-l="2"] .lrow.head { background: none; }
+[data-l="2"] .lrow:hover:not(.head), [data-l="2"] .lrow.is-hover { background: var(--b-surface-2); }
+[data-l="2"] .lrow.is-sel { background: var(--b-surface-2); box-shadow: inset 0 0 0 1.5px var(--b-faint); }
+/* option 3: a hairline list; the selected row shows its action */
+[data-l="3"] .lrow { border-radius: 0; box-shadow: inset 0 -1px 0 var(--b-hairline); padding-left: 4px; padding-right: 4px; }
+[data-l="3"] .lrow.head { box-shadow: inset 0 -1px 0 var(--b-faint); }
+[data-l="3"] .lrow:hover:not(.head), [data-l="3"] .lrow.is-hover { background: transparent; }
+[data-l="3"] .lrow:hover:not(.head) .tm { color: var(--b-accent-text); }
+[data-l="3"] .lrow.is-sel .tm { color: var(--b-accent-text); }
+[data-l="3"] .lrow.is-sel .go { display: block; }
+[data-l="3"] .lrow.is-sel .when { display: none; }
+[data-l="3"] .lrow .when-go { display: grid; }
+.lrow .endcell { display: grid; justify-items: end; }
+
+/* ------------------------------------------------------------------ W-19 stat blocks */
+.stats { display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap; }
+.stat { display: grid; gap: 4px; }
+.stat .l { font: 500 11px var(--b-font-mono); color: var(--b-muted); letter-spacing: .02em; }
+.stat .v { font: 300 30px/1 var(--b-font-mono); letter-spacing: -.03em; color: var(--b-ink); }
+.stat .v.acc { color: var(--b-accent-text); }
+.stat .d { font: 400 12px var(--b-font-mono); color: var(--b-muted); }
+.stat .d.pos { color: var(--b-good); } .stat .d.neg { color: var(--b-warn-text); }
+.stat.sm .v { font-size: 22px; }
+/* option 2: each stat sits in a soft block */
+[data-l="2"] .stats { gap: 10px; }
+[data-l="2"] .stat { background: var(--b-surface); border-radius: 18px; padding: 14px 20px 14px; min-width: 132px; box-shadow: inset 0 0 0 1px var(--b-hairline); }
+/* option 3: the stats read as one line of text */
+[data-l="3"] .stats { gap: 0; align-items: baseline; }
+[data-l="3"] .stat { display: inline-flex; align-items: baseline; gap: 8px; }
+[data-l="3"] .stat + .stat::before { content: '·'; color: var(--b-faint); margin: 0 14px; font: 400 16px var(--b-font-mono); }
+[data-l="3"] .stat .l { order: 1; }
+[data-l="3"] .stat .v { order: 2; font-size: 22px; font-weight: 400; }
+[data-l="3"] .stat .d { order: 3; }
+
+/* ------------------------------------------------------------------ W-25 empty states */
+.empty { display: grid; justify-items: center; align-content: center; gap: 12px; text-align: center; padding: 40px 24px; }
+.empty .s { font: 500 18px/1.3 var(--b-font-sans); color: var(--b-ink); max-width: 340px; }
+.empty .h { font-size: 14px; line-height: 1.5; color: var(--b-muted); max-width: 340px; }
+.empty .glyph .e { fill: none; stroke: var(--b-track); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 7; }
+.empty .glyph .ed { fill: var(--b-accent); }
+[data-l="2"] .empty { background: var(--b-surface); border-radius: 26px; box-shadow: inset 0 0 0 1px var(--b-hairline); padding: 48px 28px; }
+[data-l="3"] .empty { justify-items: start; text-align: left; padding: 22px 0 0; border-top: 1px solid var(--b-hairline); }
+[data-l="3"] .empty .glyph { display: none; }
+
+/* ------------------------------------------------------------------ page furniture */
+.filters { display: flex; align-items: center; gap: 10px; }
+.page { position: absolute; left: 48px; top: 94px; }
+.divider { height: 1px; background: var(--b-hairline); }
+
+/* kit specimens */
+.kit { display: grid; grid-template-columns: repeat(5, 1fr); width: 1440px; }
+.spec { position: relative; padding: 24px 24px 26px; min-height: 420px; display: flex; flex-direction: column; gap: 16px; }
+.spec + .spec { border-left: 1px solid var(--b-hairline); }
+.spec h4 { margin: 0; font: 600 14px var(--b-font-sans); color: var(--b-accent-text); }
+.spec .cap { font: 400 12px/1.5 var(--b-font-mono); color: var(--b-muted); margin-top: auto; }
+.spec .cap b { color: var(--b-ink); font-weight: 500; }
+.spec .lrow { --cols: 40px 1fr auto; }
+.cmp { display: grid; grid-template-columns: repeat(3, 1fr); width: 1440px; }
+.cmp > div { padding: 0 22px 24px; }
+.cmp > div + div { border-left: 1px solid var(--b-hairline); }
+.cmp .cmp-h { margin: 0 -22px 20px; padding: 14px 22px; font: 500 12px var(--b-font-mono); color: var(--b-accent-text); border-bottom: 1px solid var(--b-hairline); }
+.cmp .blk { margin-bottom: 26px; }
+.cmp .lrow { --cols: 40px 1fr auto; }
+.phones { display: flex; gap: 28px; padding: 28px; width: max-content; }
+.pane { position: relative; }
+
+[data-l="2"] .shead .end { display: none; }
+
+.phead .sub { position: static; width: auto; text-align: left; font: 400 14px var(--b-font-sans); color: var(--b-muted); }
+
+.phone .stats { flex-wrap: nowrap; gap: 18px; }
+[data-l="2"] .phone .stats { gap: 8px; }
+.phone .stat { min-width: 0 !important; }
+[data-l="2"] .phone .stat { padding: 10px 12px !important; border-radius: 14px; }
+[data-l="3"] .empty { border-top: 0; padding-top: 14px; }
+[data-l="2"] .phone .stat { padding: 8px 9px !important; }
+[data-l="2"] .phone .stat.sm .v { font-size: 18px; }
+[data-l="2"] .phone .stats { gap: 6px; }

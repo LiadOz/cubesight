@@ -1,0 +1,69 @@
+/* W-17 Keycaps and the key bar: three proposals. One markup (.key, .kbar), three skins (.o1 .o2 .o3).
+   Only var(--b-*) tokens. Forced states (.is-down, .is-held, .is-off) show every state at once. */
+@import url('../../_proto/common.css');
+
+.key {
+  --kh: 22px; --k-bg: var(--b-key-bg); --k-fg: var(--b-key-ink); --k-edge: transparent; --k-lip: transparent; --lip: 0px; --dy: 0px;
+  display: inline-grid; place-items: center; height: var(--kh); min-width: var(--kh); padding: 0 7px; flex: none;
+  border-radius: var(--b-radius-key); background: var(--k-bg); color: var(--k-fg);
+  font: 500 11px/1 var(--b-font-mono); letter-spacing: 0; white-space: nowrap; vertical-align: middle;
+  box-shadow: inset 0 0 0 1px var(--k-edge), 0 var(--lip) 0 var(--k-lip); transform: translateY(var(--dy));
+  transition: background-color 90ms var(--b-ease), color 90ms var(--b-ease), box-shadow 90ms var(--b-ease), transform 90ms var(--b-ease);
+  user-select: none;
+}
+.key--s { --kh: 20px; font-size: 10.5px; padding: 0 6px; }
+.key--m { --kh: 24px; font-size: 11.5px; padding: 0 8px; }
+@media (prefers-reduced-motion: reduce) { .key { transition: none; } }
+.key--pair { padding: 0; display: inline-flex; min-width: 0; overflow: hidden; }
+.key--pair i { font-style: normal; display: grid; place-items: center; min-width: calc(var(--kh) - 2px); height: 100%; padding: 0 5px; }
+.key--pair i + i { box-shadow: inset 1px 0 0 var(--k-edge-pair, transparent); }
+.key--pair i.is-down { background: var(--k-down-bg); color: var(--k-down-fg); }
+
+/* contexts: the surface a key sits on decides its colours */
+.on-primary .key { --k-bg: var(--b-bg); --k-fg: var(--b-ink); --k-down-bg: var(--b-accent); --k-down-fg: var(--b-on-accent); }
+.on-secondary .key { --k-bg: var(--b-bg); --k-fg: var(--b-muted); }
+
+/* ---------- option 1: flat ---------- */
+.o1 .key.is-down { --k-bg: var(--b-ink); --k-fg: var(--b-bg); }
+.o1 .key.is-held { --k-bg: var(--b-accent); --k-fg: var(--b-on-accent); }
+.o1 .key.is-off { --k-bg: transparent; --k-fg: var(--b-faint); --k-edge: var(--b-hairline); }
+.o1 .key--pair { --k-down-bg: var(--b-ink); --k-down-fg: var(--b-bg); }
+.o1 .on-primary .key.is-down { --k-bg: var(--b-accent); --k-fg: var(--b-on-accent); }
+
+/* ---------- option 2: bevel (a physical cap) ---------- */
+.o2 .key { --k-edge: var(--b-hairline); --k-lip: var(--b-cube-body); --lip: 2px; }
+.o2 .key--s { --lip: 2px; }
+.o2 .key.is-down { --dy: 2px; --lip: 0px; --k-bg: var(--b-surface-2); --k-fg: var(--b-ink); }
+.o2 .key.is-held { --dy: 2px; --lip: 0px; --k-edge: var(--b-accent); --k-fg: var(--b-accent-text); --k-bg: var(--b-accent-soft); }
+.o2 .key.is-off { --k-bg: transparent; --k-fg: var(--b-faint); --k-edge: var(--b-track); --lip: 0px; }
+.o2 .on-primary .key { --k-edge: transparent; --k-lip: var(--b-surface-2); }
+.o2 .on-secondary .key { --k-lip: var(--b-cube-body); }
+.o2 .key--pair { --k-down-bg: var(--b-surface-2); --k-down-fg: var(--b-ink); }
+
+/* ---------- option 3: outline (monkeytype-like) ---------- */
+.o3 .key { --k-bg: transparent; --k-fg: var(--b-muted); --k-edge: var(--b-faint); }
+.o3 .key.is-down { --k-bg: var(--b-ink); --k-fg: var(--b-bg); --k-edge: var(--b-ink); }
+.o3 .key.is-held { --k-bg: var(--b-accent-soft); --k-fg: var(--b-accent-text); --k-edge: var(--b-accent); }
+.o3 .key.is-off { --k-fg: var(--b-faint); --k-edge: var(--b-track); }
+.o3 .key--pair { --k-down-bg: var(--b-ink); --k-down-fg: var(--b-bg); --k-edge-pair: var(--b-faint); }
+.o3 .on-primary .key { --k-bg: transparent; --k-fg: var(--b-bg); --k-edge: color-mix(in srgb, var(--b-bg) 50%, transparent); }
+.o3 .on-primary .key.is-down { --k-bg: var(--b-bg); --k-fg: var(--b-ink); --k-edge: var(--b-bg); }
+.o3 .on-primary .key.is-held { --k-bg: var(--b-accent); --k-fg: var(--b-on-accent); --k-edge: var(--b-accent); }
+.o3 .on-secondary .key { --k-bg: transparent; --k-fg: var(--b-muted); --k-edge: var(--b-faint); }
+
+/* ---------- the key bar ---------- */
+.kbar { display: flex; align-items: center; gap: 26px; font: 400 13px/1 var(--b-font-sans); color: var(--b-muted); }
+.kbar > span { display: inline-flex; align-items: center; gap: 9px; }
+.kbar > span.is-off { color: var(--b-faint); }
+
+/* ---------- a minimal button for the contexts (option 1 of W-04) ---------- */
+.pill { display: inline-flex; align-items: center; gap: 12px; height: 48px; padding: 0 24px; border-radius: var(--b-radius-control); border: 0; font: 600 16px/1 var(--b-font-sans); white-space: nowrap; }
+.pill.primary { background: var(--b-ink); color: var(--b-bg); }
+.pill.primary.is-down { background: color-mix(in srgb, var(--b-ink) 76%, var(--b-bg)); transform: scale(.97); }
+.pill.sec { background: var(--b-surface-2); color: var(--b-ink); box-shadow: inset 0 0 0 1px var(--b-hairline); padding: 0 22px 0 14px; font-size: 17px; }
+.pill.sec .key { order: -1; }
+.pill.txt { background: transparent; color: var(--b-muted); font-weight: 500; font-size: 15px; height: 40px; padding: 0 14px; }
+.pill.txt.ink { color: var(--b-ink); font-weight: 700; }
+.pill.is-off { background: var(--b-surface); color: var(--b-faint); box-shadow: none; }
+
+.glyphs { display: flex; flex-wrap: wrap; gap: 14px 12px; align-items: center; }
