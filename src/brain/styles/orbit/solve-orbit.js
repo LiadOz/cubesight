@@ -44,6 +44,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
     onMarker: marker => dispatch({ type: 'selectMarker', id: marker.key }),
   });
   let lastScreen = '';
+  let lastInspection = null;
 
   function model(vm) {
     const connecting = vm.device?.phase === 'connecting' || vm.device?.phase === 'syncing';
@@ -83,14 +84,16 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
     update(vm) {
       const next = model(vm);
       lastScreen = vm.screen;
+      lastInspection = vm.screen === 'inspection' ? vm.inspection : null;
       void orbit.update({ ...next, label: vm.screen === 'inspection' ? 'Inspection' : vm.screen === 'results' ? 'Solve results' : 'Solve progress' }, { animate: true });
     },
     frame(frameState) {
-      if (frameState?.inspection) {
+      if (frameState?.inspection && lastScreen === 'inspection' && lastInspection) {
         const inspection = frameState.inspection;
-        const segments = orbit.options.segments.map(segment => segment.key === 'inspection'
-          ? { ...segment, fill: Math.min(1, inspection.elapsedMs / Math.max(1, inspection.remainingMs + inspection.elapsedMs)) }
-          : segment);
+        // Recompute every WCA zone from the live elapsed time. The initial VM
+        // is emitted only on state changes; without this frame refinement the
+        // +2 and DNF arcs stayed visually empty after the normal zone expired.
+        const segments = inspectionSegments({ ...lastInspection, elapsedMs: inspection.elapsedMs });
         void orbit.update({ segments, caret: 180 - (inspection.caret ?? 0) * 360 }, { animate: false });
       } else if (frameState?.currentFill != null && lastScreen === 'solving') {
         const segments = orbit.options.segments.map(segment => segment.state === 'current' ? { ...segment, fill: frameState.currentFill } : segment);
