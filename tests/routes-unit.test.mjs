@@ -56,6 +56,13 @@ test('resolveRoute: canonical hashes stay, old hashes redirect and keep their qu
   for (const [hash, tool, expected] of cases) assert.deepEqual(resolveRoute(hash), { tool, hash: expected }, hash);
 });
 
+test('history past-solve, replay, and marker routes retain their full path', () => {
+  assert.deepEqual(resolveRoute('#/history/1790000000000'), { tool: 'history', hash: '#/history/1790000000000' });
+  assert.deepEqual(resolveRoute('#/history/1790000000000/replay'), { tool: 'history', hash: '#/history/1790000000000/replay' });
+  assert.deepEqual(resolveRoute('#/history/1790000000000/review/pause%3Apair4'), { tool: 'history', hash: '#/history/1790000000000/review/pause%3Apair4' });
+  assert.equal(resolveRoute('#/history/nope').tool, 'notfound');
+});
+
 test('resolveRoute: only the empty home hash is context-sensitive; unknown paths use not found', () => {
   for (const hash of ['', '#', '#/']) {
     assert.equal(resolveRoute(hash, { isPhone: false, cubeConnected: false }).hash, '#/solve', hash);

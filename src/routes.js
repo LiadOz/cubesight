@@ -60,6 +60,7 @@ const PATH_TOOLS = Object.fromEntries(Object.entries(TOOL_PATHS).map(([tool, pat
 // Keep this list declarative so adding an alg page/drill does not alter the
 // base hash parser or collapse the selected case back to its section root.
 const DYNAMIC_ROUTES = [
+  { tool: 'history', match: path => /^\/history\/\d+(?:\/(?:replay|review\/[^/]+))?$/.test(path) },
   { tool: 'review', match: path => path === '/review/import' || /^\/review\/\d+(?:\/retry)?$/.test(path) },
   { tool: 'algs', match: path => /^\/algs\/(?:pll|oll|oll2|f2l)(?:\/[a-z0-9-]+(?:\/drill)?)?$/i.test(path) },
 ];

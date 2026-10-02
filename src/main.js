@@ -1764,6 +1764,12 @@ function syncRecordingCube(tool) {
 }
 
 function setTool(tool, initial = false) {
+  // History owns several nested routes without changing the active tool.
+  // Keep its page mounted and let it update the selected solve/replay state.
+  if (tool === 'history' && tool === activeTool && !initial) {
+    historyPage?.setRoute?.(location.hash);
+    return;
+  }
   if (!isKnownTool(tool) || (tool === activeTool && !initial && tool !== 'review')) return;
   if ((tool === 'oll' || tool === 'lookahead') && drillPages[tool] && drillPageHashes[tool] !== location.hash) {
     drillPages[tool].detach();
@@ -1945,10 +1951,11 @@ function mountPage(tool) {
     return;
   }
   if (tool === 'history') {
-    if (historyPage) { historyPage.setActive(true); return; }
+    if (historyPage) { historyPage.setRoute?.(location.hash); historyPage.setActive(true); return; }
     if (!historyPageLoad) {
       const load = import('./history/index.js').then(({ initHistory }) => {
         const page = initHistory(root);
+        page.setRoute?.(location.hash);
         if (activeTool !== 'history') {
           page.detach?.();
           if (historyPageLoad === load) historyPageLoad = null;
