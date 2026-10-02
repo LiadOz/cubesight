@@ -139,7 +139,66 @@ export function createActions(host, actions = []) {
   host.append(row); return row;
 }
 
+export function createButton(host, { label, variant = 'primary', size = '', disabled = false, loading = false, key = null, onClick = null, href = null } = {}) {
+  const control = href ? document.createElement('a') : document.createElement('button');
+  control.className = `btn btn--${variant}${size ? ` btn--${size}` : ''}${loading ? ' is-loading' : ''}`;
+  control.textContent = label;
+  if (href) control.href = href;
+  else { control.type = 'button'; if (onClick) control.addEventListener('click', onClick); }
+  if (disabled || loading) { control.setAttribute('aria-disabled', 'true'); if (control instanceof HTMLButtonElement) control.disabled = true; }
+  if (loading) { const ring = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); ring.classList.add('btn-ring'); ring.setAttribute('viewBox', '0 0 20 20'); ring.setAttribute('aria-hidden', 'true'); ring.innerHTML = '<circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="22 22" />'; control.prepend(ring); control.setAttribute('aria-busy', 'true'); }
+  if (key) { const cap = document.createElement('kbd'); cap.textContent = key; control.append(cap); }
+  host.append(control); return control;
+}
+
 export function createChip(host, { label, value = null, pressed = null, onClick = null } = {}) {
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'chip'; chip.textContent = value == null ? label : `${label} · ${value}`;
   if (pressed != null) chip.setAttribute('aria-pressed', String(pressed)); if (onClick) chip.addEventListener('click', onClick); host.append(chip); return chip;
+}
+
+export function createSegmented(host, { label, options = [], value = options[0]?.value, onChange = null } = {}) {
+  const group = document.createElement('div'); group.className = 'seg'; group.setAttribute('role', 'radiogroup'); group.setAttribute('aria-label', label);
+  group.style.setProperty('--n', String(options.length));
+  const thumb = document.createElement('span'); thumb.className = 'seg__thumb'; thumb.setAttribute('aria-hidden', 'true'); group.append(thumb);
+  const controls = options.map((option, index) => {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'seg__o'; button.setAttribute('role', 'radio'); button.dataset.value = String(option.value); button.textContent = option.label;
+    button.addEventListener('click', () => choose(index)); group.append(button); return button;
+  });
+  let selected = Math.max(0, options.findIndex(option => option.value === value));
+  const choose = index => {
+    selected = index; group.style.setProperty('--i', String(index));
+    controls.forEach((button, position) => { button.setAttribute('aria-checked', String(position === selected)); button.tabIndex = position === selected ? 0 : -1; });
+    onChange?.(options[index]?.value);
+  };
+  group.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault(); const next = event.key === 'Home' ? 0 : event.key === 'End' ? controls.length - 1 : (selected + (event.key === 'ArrowRight' ? 1 : -1) + controls.length) % controls.length;
+    choose(next); controls[next]?.focus();
+  });
+  choose(selected); host.append(group); return { element: group, value: () => options[selected]?.value, setValue(next) { const index = options.findIndex(option => option.value === next); if (index >= 0) choose(index); } };
+}
+
+export function createToggle(host, { label, description = '', checked = false, disabled = false, onChange = null } = {}) {
+  const button = document.createElement('button'); button.type = 'button'; button.className = 'sw'; button.setAttribute('role', 'switch'); button.setAttribute('aria-checked', String(checked));
+  const text = document.createElement('span'); text.className = 'sw__txt'; const title = document.createElement('span'); title.textContent = label; text.append(title);
+  if (description) { const sub = document.createElement('span'); sub.className = 'sw__sub'; sub.textContent = description; text.append(sub); }
+  const track = document.createElement('span'); track.className = 'sw__track'; const thumb = document.createElement('span'); thumb.className = 'sw__thumb';
+  thumb.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="m2 6 2.4 2.4L10 3"/></svg>'; track.append(thumb); button.append(text, track);
+  button.disabled = disabled; button.addEventListener('click', () => { if (disabled) return; checked = !checked; button.setAttribute('aria-checked', String(checked)); onChange?.(checked); }); host.append(button); return button;
+}
+
+export function createStatus(host, { text, tone = 'default', detail = '' } = {}) {
+  const status = document.createElement('span'); status.className = `st${tone === 'default' ? '' : ` st--${tone}`}`;
+  const dot = document.createElement('i'); dot.className = 'g-dot'; dot.setAttribute('aria-hidden', 'true');
+  status.append(dot);
+  if (detail) { const strong = document.createElement('b'); strong.textContent = detail; status.append(strong); }
+  status.append(document.createTextNode(text)); host.append(status); return status;
+}
+
+export function createToast(host, { text, detail = '', action = null, tone = 'default' } = {}) {
+  const toast = document.createElement('div'); toast.className = `toast${action ? ' has-act' : ''}`; toast.setAttribute('role', tone === 'error' ? 'alert' : 'status');
+  const dot = document.createElement('i'); dot.className = 'g-dot'; dot.setAttribute('aria-hidden', 'true'); toast.append(dot);
+  toast.append(document.createTextNode(detail ? `${detail} · ${text}` : text));
+  if (action) { const button = document.createElement('button'); button.type = 'button'; button.className = 'act'; button.textContent = action.label; button.addEventListener('click', action.onClick); toast.append(button); }
+  host.append(toast); return toast;
 }
