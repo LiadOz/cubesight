@@ -48,8 +48,16 @@ const FAMILIES = {
   },
 };
 
+// W-21 moves: a hand-numbered job list (explicit IDs per option and view)
+const MV = [['option', 'states', 'states, dark and light', 'every token state, the section forms and how the Orbit grows. Dark on top, light below.', true], ['option', 'solve', 'scramble on the Orbit and cube (desktop 1440 x 900)', 'mid scramble, move 13 of 20, as A-02.'], ['option', 'wrong', 'wrong turn, the Orbit grows (desktop)', 'the undo move is inserted and the ring gets a segment, as A-02b.'], ['option', 'phone', 'phone 390 x 844, scramble and wrong turn', 'the same two states on a phone.'], ['option', 'alg', 'alg playback with sections (T-perm), light', 'sections with an optional name; playing move 6 of 14.', false, 'light'], ['option', 'long', 'long sequence, rolling window (45 moves), light', 'what happens past the lookahead capacity.', false, 'light']];
+const FAM_MOVES = { dir: 'gallery/widgets/2026-10-02-W-21-moves', page: 'moves.html', prefix: 'W-21', label: 'W-21 moves', jobs: [] };
+FAM_MOVES.jobs.push({ id: 'W-21-01', file: 'W-21-01-overview.png', title: 'the three options side by side', caption: 'desktop mid scramble above, phone wrong turn below; dark above, light below.', both: true, params: { view: 'compare' } });
+for (const o of [1, 2, 3]) MV.forEach(([, key, title, caption, both, th], i) => { const id = `W-21-${o}${i + 1}`; FAM_MOVES.jobs.push({ id, file: `${id}-option${o}-${key === 'solve' ? 'scramble-desktop' : key === 'wrong' ? 'wrong-turn-desktop' : key === 'phone' ? 'phone' : key === 'alg' ? 'alg-sections' : key === 'long' ? 'long-rolling' : key}.png`, title: `option ${o}: ${title}`, caption, both: !!both, theme: th || 'dark', params: { view: key, opt: String(o) } }); });
+FAM_MOVES.jobs.push({ id: 'W-21-91', file: 'W-21-91-mini-form-lists.png', title: 'mini form in list rows, the three options', caption: 'history, alg, playing and review rows. Dark above, light below.', both: true, params: { view: 'mini' } });
+FAMILIES.moves = FAM_MOVES;
+
 const fam = FAMILIES[process.argv[2]];
-if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status [--only=text]'); process.exit(2); }
+if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves [--only=text]'); process.exit(2); }
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7);
 
 const server = http.createServer((req, res) => {
@@ -85,10 +93,10 @@ async function stitch(a, b) {
 
 const manifest = fs.existsSync(path.join(outDir, 'manifest.json')) ? JSON.parse(fs.readFileSync(path.join(outDir, 'manifest.json'), 'utf8')) : {};
 const pad = n => String(n).padStart(2, '0');
-const jobs = [];
+const jobs = fam.jobs ? [...fam.jobs] : [];
 let n = 0;
-jobs.push({ ...fam.compare, id: `${fam.prefix}-${pad(n)}`, file: `${fam.prefix}-${pad(n)}-${fam.compare.name}.png`, params: { view: 'compare' } });
-for (const opt of [1, 2, 3]) {
+if (!fam.jobs) jobs.push({ ...fam.compare, id: `${fam.prefix}-${pad(n)}`, file: `${fam.prefix}-${pad(n)}-${fam.compare.name}.png`, params: { view: 'compare' } });
+for (const opt of fam.jobs ? [] : [1, 2, 3]) {
   for (const v of fam.views) {
     n++;
     const id = `${fam.prefix}-${pad(n)}`;
