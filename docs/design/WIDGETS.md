@@ -630,7 +630,7 @@ States visited via the fake cube harness on `#/solve`: disconnected, connecting,
 - Selected ink chip carries a ✓ (SC-31 B).
 - Connecting state: keep the CURRENT app look (the uniform single-colour ring sweep around the cube). The system-check frame SC-41 (a full Orbit with differently coloured segments) is rejected: the Orbit while connecting must be uniform in colour.
 - The rest of the system check (SC-*) is accepted as consistent.
-- Open: one W-21 element the user wants dropped ("…of the section can be dropped"); awaiting clarification.
+- W-21: the open "…of the section can be dropped" remark is closed by the user (2026-10-02): keep the W-21 v2 design as it is.
 - Containers ① frameless for all containers; the review detail = right drawer.
 - Lists & data ① open rows (the user was torn with ② tiles; settled ①); the mini Orbit on alg rows kept; section counts as a pill.
 - Timeline: keep ① and ② both available (a toggle) until the user decides. Q2 (the thumbnail card) and Q3 (compare) of the dev-pages post still open.
