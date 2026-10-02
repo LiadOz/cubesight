@@ -118,5 +118,30 @@
     "id": "L-00",
     "title": "decide: the three options and 3 questions",
     "caption": "history and a drill case list in each option, Q1 to Q3 drawn in the image."
+  },
+  "L-00-compare-parts-hd.png": {
+    "id": "L-00",
+    "title": "the list parts in the three options (HD 2x)",
+    "caption": "rows, glyphs, stats, tags and an empty state side by side. Dark above, light below."
+  },
+  "L-17-option1-phone-lists-hd.png": {
+    "id": "L-17",
+    "title": "option 1: phone: history, algs, empty pins (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "L-27-option2-phone-lists-hd.png": {
+    "id": "L-27",
+    "title": "option 2: phone: history, algs, empty pins (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "L-37-option3-phone-lists-hd.png": {
+    "id": "L-37",
+    "title": "option 3: phone: history, algs, empty pins (HD 2x)",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "L-12b-option1-history-sessions-solves-callout-fixed-hd.png": {
+    "id": "L-12b",
+    "title": "option 1: history, callout 3 moved off the ao12 figure (HD 2x)",
+    "caption": "same as L-12; the numbered callout 3 now sits left of the session head instead of covering ao12 15.03. Dark above, light below."
   }
 }

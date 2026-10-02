@@ -103,5 +103,105 @@
     "id": "DP-00",
     "title": "decide: pick ①②③ for Q1, Q2 and Q3",
     "caption": "every option side by side; my pick is marked; the blog post needs no answer."
+  },
+  "DP-00-decide-hd.png": {
+    "id": "DP-00",
+    "title": "decide: pick ①②③ for Q1, Q2 and Q3 (HD 2x)",
+    "caption": "every option side by side; my pick is marked; the blog post needs no answer."
+  },
+  "DP-00-q1-option1-timeline-git-graph-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q1, option ① at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q1-option2-timeline-rings-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q1, option ② at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q1-option3-timeline-spine-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q1, option ③ at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q2-option1-card-image-card-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q2, option ① at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q2-option2-card-contact-tile-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q2, option ② at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q2-option3-card-row-card-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q2, option ③ at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q3-option1-compare-two-panes-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q3, option ① at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q3-option2-compare-stage-dock-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q3, option ② at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-q3-option3-compare-wipe-first-hd.png": {
+    "id": "DP-00",
+    "title": "decision Q3, option ③ at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-b1-option1-post-article-hd.png": {
+    "id": "DP-00",
+    "title": "decision (blog post, no question), option ① at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-b1-option2-post-two-columns-hd.png": {
+    "id": "DP-00",
+    "title": "decision (blog post, no question), option ② at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-00-b1-option3-post-pictures-first-hd.png": {
+    "id": "DP-00",
+    "title": "decision (blog post, no question), option ③ at full size (HD 2x)",
+    "caption": "the 1440 x 900 top screen of this option, unscaled; the same screen as in DP-00."
+  },
+  "DP-01-shared-pieces-hd.png": {
+    "id": "DP-01",
+    "title": "the shared pieces of every dev page (HD 2x)",
+    "caption": "header, tabs, status badge, branch tag, caption, and the two widgets that are not approved yet. Dark above, light below."
+  },
+  "DP-14-timeline-phone-hd.png": {
+    "id": "DP-14",
+    "title": "W-32 on a phone, the three options (HD 2x)",
+    "caption": "three 390 px phones side by side."
+  },
+  "DP-24-card-phone-hd.png": {
+    "id": "DP-24",
+    "title": "W-33 on a phone, the three options (HD 2x)",
+    "caption": "two, three and one per row."
+  },
+  "DP-34-post-phone-hd.png": {
+    "id": "DP-34",
+    "title": "W-34 on a phone, the three options (HD 2x)",
+    "caption": "three 390 px phones side by side."
+  },
+  "DP-45-compare-phone-hd.png": {
+    "id": "DP-45",
+    "title": "W-35 on a phone, the three options (HD 2x)",
+    "caption": "three 390 px phones side by side."
+  },
+  "DP-46-compare-reuse-hd.png": {
+    "id": "DP-46",
+    "title": "W-35 reused: design lab, yours vs better, history (HD 2x)",
+    "caption": "one stage, three uses."
+  },
+  "DP-91-light-sheet-hd.png": {
+    "id": "DP-91",
+    "title": "light sheet: the recommended option of each family (HD 2x)",
+    "caption": "the top screen of W-32 3, W-33 1, W-34 2 and W-35 3 in the light theme."
   }
 }

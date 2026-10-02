@@ -7,7 +7,7 @@ parent: widget-inventory
 status: exploring
 author: widget design agent
 decision: pending user choice
-images: [W-SEL-01-overview-three-options.png, W-SEL-11-option1-states.png, W-SEL-21-option2-states.png, W-SEL-31-option3-states.png]
+images: [W-SEL-01-overview-three-options-hd.png, W-SEL-11-option1-states-hd.png, W-SEL-12-option1-states-light-hd.png, W-SEL-21-option2-states-hd.png, W-SEL-22-option2-states-light-hd.png, W-SEL-31-option3-states-hd.png, W-SEL-32-option3-states-light-hd.png, W-SEL-01-overview-three-options.png, W-SEL-11-option1-states.png, W-SEL-21-option2-states.png, W-SEL-31-option3-states.png]
 ---
 Five families that all do one job, "let the user pick", and today do it in 5 to 14 looks each. This post proposes them as **one system**: the same anatomy, the same heights, the same focus ring, the same selected state, in three possible looks. Pick a look (①②③) and the whole family follows. Nothing in `src/` was changed; the prototypes are real HTML and CSS using only the Orbit tokens (`src/brain/css/tokens-orbit.css`), Manrope and DM Mono, in `proto/` next to this post (`proto.html?opt=1&theme=dark&scene=states`).
 

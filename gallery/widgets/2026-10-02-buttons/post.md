@@ -7,6 +7,7 @@ parent: widget-inventory
 status: exploring
 author: widget design agent
 decision: pending user choice
+images: [W-04-00-compare-options-hd.png, W-04-01-option1-states-hd.png, W-04-05-option1-phone-hd.png, W-04-06-option2-states-hd.png, W-04-10-option2-phone-hd.png, W-04-11-option3-states-hd.png, W-04-15-option3-phone-hd.png]
 ---
 **What is there today.** 23 button variants on 21 pages (see the W-04 images in the inventory post). They differ in fill (teal in six of them, cream, dark surface, outline, none), shape (pill, 6 px, 8 px, 12 px), height (25 to 48 px), type (11 to 18 px, weight 400 to 700) and in whether the key hint is inside. The classless ones (reset, start, round presets) drift the most. The look in the A frames is much simpler: **one cream pill with the key inside, then two quiet text actions** (`next scramble · review · more…`), and dark pills with a number key for the drill answers.
 

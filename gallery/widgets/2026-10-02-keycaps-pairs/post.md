@@ -7,6 +7,7 @@ parent: widgets-W-17-keycaps
 status: exploring
 author: widget design agent
 decision: pending user choice (the bevelled keycap is approved; only keyboard keys are bevelled; combined keys need more examples before a decision)
+images: [W-17p-01-matrix-all-contexts-hd.png, W-17p-21-not-keys-stay-flat-hd.png]
 ---
 **Settled.** The keycap is bevelled (a fill, a hairline edge and a 2 px lip, so it reads as a real key). Nothing that is not a keyboard key may be bevelled. The user asked for more examples of combined keys before deciding.
 
