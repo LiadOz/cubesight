@@ -48,7 +48,7 @@ export function initHistory(host) {
   host.innerHTML = `<section class="brain cs-page history-page" data-brain-style="${settings.style}">
     <div class="history-heading"><h1>history</h1><p class="history-context" aria-live="polite"></p></div>
     <form class="history-filters" aria-label="Filter history">
-      <details class="history-data" open><summary>filters & data…</summary><div class="history-filters__fields">
+      <details class="history-data"><summary>filters & data…</summary><div class="history-filters__fields">
         <label class="history-search">search<input type="search" name="query" placeholder="scramble, case, time" /></label>
         <label>session<select name="session"><option value="all">all sessions</option></select></label>
         <label>focus<select name="focus"><option value="all">all foci</option><option value="speed">speed</option><option value="flow">flow</option><option value="learning">learning</option></select></label>
@@ -368,7 +368,6 @@ export function initHistory(host) {
   }
   function renderList(vm, record) {
     root.dataset.view = 'list';
-    root.querySelector('.history-data').open = true;
     listHost.hidden = false; resultsHost.hidden = true; replayHost.hidden = true;
     renderSessions(vm);
     focusHost.classList.remove('is-replay', 'is-past');

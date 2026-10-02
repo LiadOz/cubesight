@@ -15,6 +15,7 @@ async function seed(page, style = 'orbit') {
 
 test('history filters, opens past solves, replays and edits stored records', async ({ page }) => {
   await seed(page);
+  await page.locator('.history-data summary').click();
   await page.locator('select[name="statsSource"]').selectOption('manual');
   await expect(page.locator('.history-context')).toContainText('PB 17.00+');
   const rows = page.locator('.history-solve a');
@@ -37,6 +38,7 @@ test('history filters, opens past solves, replays and edits stored records', asy
   await expect(page).toHaveURL(/#\/history\/1100000$/);
 
   await page.goto('/#/history');
+  await page.locator('.history-data summary').click();
   await expect(page.locator('select[name="statsSource"]')).toHaveValue('manual');
   await page.locator('select[name="source"]').selectOption('smart');
   await page.goto('/#/history/1000000/replay');
@@ -63,6 +65,73 @@ test('history filters, opens past solves, replays and edits stored records', asy
   await expect(page.locator('select[name="statsSource"]')).toHaveValue('manual');
   await expect(page.locator('.history-count')).toContainText('2 solves');
 });
+
+for (const viewport of [
+  { name: 'desktop dark', width: 1280, height: 900, theme: 'dark' },
+  { name: 'desktop light', width: 1280, height: 900, theme: 'light' },
+  { name: 'phone dark', width: 390, height: 844, theme: 'dark' },
+  { name: 'phone light', width: 390, height: 844, theme: 'light' },
+]) {
+  test(`history list keeps the selected solve visible while rows scroll (${viewport.name})`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    const longHistory = Array.from({ length: 24 }, (_, index) => ({
+      at: 1700000000000 + index * 60_000,
+      scramble: 'R U', solveMs: 12340 + index * 10, penalty: null,
+      focus: 'speed', source: 'smart', solved: true, solveMoves: ["U'", "R'"], moveCount: 2,
+    }));
+    await page.addInitScript(({ records: seeded, theme }) => {
+      localStorage.setItem('cubesight-solves-v1', JSON.stringify({ version: 1, records: seeded }));
+      localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: 'orbit' }));
+      localStorage.setItem('cubesight-theme', theme);
+    }, { records: longHistory, theme: viewport.theme });
+    await page.goto('/#/history');
+
+    const historyPage = page.locator('.history-page');
+    const details = page.locator('.history-data');
+    const stage = page.locator('.history-stage');
+    const solveLinks = page.locator('.history-solve a');
+    const list = page.locator('.history-list');
+    const openSolve = page.getByRole('link', { name: 'open this solve' });
+    await expect(historyPage).toHaveAttribute('data-view', 'list');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', viewport.theme);
+    await expect(details).not.toHaveAttribute('open', '');
+    await expect(solveLinks).toHaveCount(24);
+    await expect(stage).toBeInViewport();
+    await expect(stage.locator('.history-stage__cube canvas')).toBeVisible();
+    await expect(solveLinks.first()).toBeInViewport();
+    await expect(openSolve).toBeInViewport();
+
+    for (const scroll of [0, 0.5, 1]) {
+      await list.evaluate((node, fraction) => { node.scrollTop = (node.scrollHeight - node.clientHeight) * fraction; }, scroll);
+      await page.evaluate(fraction => {
+        const documentScroller = document.scrollingElement;
+        documentScroller.scrollTop = (documentScroller.scrollHeight - documentScroller.clientHeight) * fraction;
+      }, scroll);
+      await page.waitForTimeout(50);
+      const geometry = await page.evaluate(() => {
+        const rect = node => {
+          const { top, right, bottom, left } = node.getBoundingClientRect();
+          return { top, right, bottom, left };
+        };
+        const viewport = { width: innerWidth, height: innerHeight };
+        const header = rect(document.querySelector('.site-header'));
+        const stage = rect(document.querySelector('.history-stage'));
+        const list = rect(document.querySelector('.history-list'));
+        const rows = [...document.querySelectorAll('.history-solve a')].map(rect)
+          .filter(row => row.bottom > Math.max(header.bottom, list.top, 0) && row.top < Math.min(viewport.height, list.bottom));
+        return { viewport, header, stage, list, rows };
+      });
+      expect(geometry.rows.length, `visible solve rows at scroll ${scroll}`).toBeGreaterThan(0);
+      if (geometry.header.bottom > 0) expect(geometry.stage.top).toBeGreaterThanOrEqual(geometry.header.bottom - 1);
+      expect(geometry.stage.bottom).toBeLessThanOrEqual(geometry.viewport.height + 1);
+      expect(geometry.rows.some(row => row.left < geometry.stage.right && row.right > geometry.stage.left
+        && row.top < geometry.stage.bottom && row.bottom > geometry.stage.top)).toBe(false);
+    }
+    await page.evaluate(() => { document.scrollingElement.scrollTop = 0; document.querySelector('.history-list').scrollTop = 0; });
+    const screen = viewport.name.startsWith('phone') ? '390' : '1280';
+    await page.screenshot({ path: `test-results/F2-0${screen === '390' ? (viewport.theme === 'dark' ? 1 : 2) : (viewport.theme === 'dark' ? 3 : 4)}-history-${viewport.theme}-${screen}.png` });
+  });
+}
 
 test('history imports csTimer atomically and exports it; gap setting persists', async ({ page }) => {
   await seed(page);
