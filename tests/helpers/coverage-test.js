@@ -5,12 +5,19 @@ import { test as base, expect } from 'playwright/test';
 
 export const test = base.extend({
   page: async ({ page }, use, testInfo) => {
-    const enabled = process.env.CUBESIGHT_IMPACT_COVERAGE === '1' && typeof page.coverage?.startJSCoverage === 'function';
-    if (enabled) await page.coverage.startJSCoverage({ resetOnNavigation: false, reportAnonymousScripts: false });
+    const enabled = process.env.CUBESIGHT_IMPACT_COVERAGE === '1';
+    let devtools;
+    if (enabled) {
+      devtools = await page.context().newCDPSession(page);
+      await devtools.send('Profiler.enable');
+      await devtools.send('Profiler.startPreciseCoverage', { callCount: false, detailed: true });
+    }
     await use(page);
     if (!enabled) return;
 
-    const coverage = await page.coverage.stopJSCoverage();
+    const { result: coverage } = await devtools.send('Profiler.takePreciseCoverage');
+    await devtools.send('Profiler.stopPreciseCoverage');
+    await devtools.detach();
     const data = {
       testId: testInfo.testId,
       title: testInfo.titlePath.join(' › '),
