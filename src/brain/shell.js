@@ -112,13 +112,7 @@ const TEMPLATE = `
       </div>
     </div>
     <section class="brain-review b-slot-results" id="brain-review" hidden aria-live="polite">
-      <label class="b-results-source">solve source
-        <select id="brain-results-source" aria-label="Solve source">
-          <option value="smart">smart cube</option><option value="manual">manual timer</option><option value="all">all</option>
-        </select>
-      </label>
       <div class="b-slot b-results-host" data-slot="results"></div>
-      <div class="b-results-actions"><button class="b-textbtn" id="brain-review-close" type="button">next</button></div>
     </section>
   </main>
   <div class="b-foot">
@@ -163,7 +157,6 @@ const CLICK_ACTIONS = {
   'brain-rebuild-view': { type: 'rebuildView' },
   'brain-start': { type: 'start' },
   'brain-stop': { type: 'cancel' },
-  'brain-review-close': { type: 'dismissResults' },
   'brain-generate': { type: 'generateScramble' },
   'brain-start-custom': { type: 'startCustom' },
   'brain-export': { type: 'export' },
@@ -329,7 +322,6 @@ export function createShell(root, { dispatch }) {
     const target = /** @type {HTMLInputElement} */ (event.target);
     if (target.id === 'brain-pseudo') dispatch({ type: 'setSetting', path: 'f2l', value: target.checked ? 'pseudo' : 'standard' });
     else if (target.id === 'brain-inspection') dispatch({ type: 'setSetting', path: 'inspection', value: { enabled: target.checked } });
-    else if (target.id === 'brain-results-source') dispatch({ type: 'setSetting', path: 'stats.source', value: target.value });
     else if (target.id === 'brain-import-file' && target.files?.[0]) { dispatch({ type: 'import', file: target.files[0] }); target.value = ''; }
     else if (target.dataset.settingNumber) dispatch({ type: 'setSetting', path: target.dataset.settingNumber, value: Number(target.value) });
   });
@@ -596,8 +588,6 @@ export function createShell(root, { dispatch }) {
     updateDevice(vm.device, p?.device);
     updateConfigBar(vm.configBar, p?.configBar);
     updateSettings(vm.settings, p?.settings);
-    const statsSource = vm.settings.sections.flatMap(section => section.rows).find(row => row.id === 'stats.source')?.options.find(option => option.active)?.value;
-    if (statsSource) $('#brain-results-source').value = statsSource;
     updateScramble(vm.scramble, p?.scramble);
     updateClock(vm.clock, p?.clock);
     updateCoach(vm.coach, p?.coach);
@@ -651,11 +641,10 @@ export function createShell(root, { dispatch }) {
     const asides = mod.asides ?? {};
     slots.inspectionAside.hidden = !asides.inspection;
     slots.timelineAside.hidden = !asides.timeline;
-    components = {
-      timeline: mod.timeline(slots.timeline, { dispatch, aside: asides.timeline ? slots.timelineAside : undefined }),
-      inspection: mod.inspection(slots.inspection, { dispatch, aside: asides.inspection ? slots.inspectionAside : undefined }),
-      results: mod.results(slots.results, { dispatch }),
-    };
+    const timeline = mod.timeline(slots.timeline, { dispatch, aside: asides.timeline ? slots.timelineAside : undefined });
+    const inspection = mod.inspection(slots.inspection, { dispatch, aside: asides.inspection ? slots.inspectionAside : undefined });
+    const results = mod.results(slots.results, { dispatch, resultsOrbit: timeline?.orbit ?? null, resultsCube: cube3d });
+    components = { timeline, inspection, results };
     if (last) {
       const vm = last;
       last = null;
@@ -675,8 +664,11 @@ export function createShell(root, { dispatch }) {
   /** The live 3D cube (or null): the move guide cues the current move on it. */
   function setCube(cube) {
     cube3d = cube;
+    components?.results?.setCube?.(cube);
     if (!cube) { planGuide?.update({ cube3d: null }); recoveryGuide?.update({ cube3d: null }); }
     else if (last) update(last, null);
+    planGuide?.update({ cube3d: cube?.cube ?? cube });
+    recoveryGuide?.update({ cube3d: cube?.cube ?? cube });
   }
 
   return { root: brain, slots, update, frame, setStyle: setStyleModule, setCube, destroy };

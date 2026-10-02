@@ -1,12 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildViewModel, frameState, screenFor, phaseText, deviceFor, brainDetail, inspectionLayout, inspectionState } from '../src/brain/view-model.js';
-import { brainFixtures, FIXTURE_NAMES, EXAMPLE_RECORD } from '../src/brain/fixtures.js';
+import { buildViewModel, buildResultsViewModel, frameState, screenFor, phaseText, deviceFor, brainDetail, inspectionLayout, inspectionState } from '../src/brain/view-model.js';
+import { brainFixtures, FIXTURE_NAMES, EXAMPLE_RECORD, EXAMPLE_HISTORY } from '../src/brain/fixtures.js';
 import { coachLines, resultsCoach } from '../src/brain/coach-lines.js';
 import { normalizeSettings } from '../src/brain/settings.js';
 import { DEFAULT_INSPECTION } from '../src/solve-live.js';
+import { buildStagePlan } from '../src/brain/stage-plan.js';
+import { resolvePastReviewHref } from '../src/brain/styles/orbit/results-navigation.js';
 
 const tracking = { phase: 'tracking', detail: 'Live cube updated.', deviceName: 'GAN', protocol: 'GAN Gen4', gyro: null };
+
+test('past results review href invokes the history route callback for the selected marker', () => {
+  let received;
+  const href = resolvePastReviewHref({ reviewHref: marker => {
+    received = marker;
+    return `#/history/1700000000000/review/${encodeURIComponent(marker)}`;
+  } }, 'pair3', '#/review/fallback');
+  assert.equal(received, 'pair3');
+  assert.equal(href, '#/history/1700000000000/review/pair3');
+  assert.equal(resolvePastReviewHref({ reviewHref: () => null }, 'eo', '#/review/fallback'), '#/review/fallback');
+});
 
 test('screens for every session and live phase', () => {
   assert.equal(screenFor({ phase: 'disconnected' }, { phase: 'idle' }), 'disconnected');
@@ -34,6 +47,18 @@ test('phase text follows the shared stage words and time format', () => {
   assert.equal(phaseText({ phase: 'solving', solveMoveCount: 1, elapsedMs: 0, progress: { phase: 'pre-cross' } }).detail, '1 move · 0.00 TPS · 0.00 s');
   assert.equal(phaseText({ phase: 'solving', progress: { phase: 'co-pending', f2lDone: true } }).label, 'CO');
   assert.deepEqual(phaseText({ phase: 'done', record: { moveCount: 40, solveMs: 10000 }, progress: { f2lDone: true } }), { label: 'solved', detail: '40 moves · 4.00 TPS · 10.00 s · 4/4' });
+});
+
+test('guided scramble exposes the current glyph, move position, and spoken turn description', () => {
+  const vm = buildViewModel({
+    session: tracking,
+    live: { phase: 'applying', scrambleStr: "R' U", applyStep: 0, applyTotal: 2 },
+    records: [], settings: normalizeSettings(), held: { bottom: 'D', front: 'F' }, now: 0,
+  });
+  assert.equal(vm.screen, 'scramble');
+  assert.equal(vm.clock.stepTitle, 'R′');
+  assert.equal(vm.clock.stepLine[0].text, 'move 1 of 2');
+  assert.match(vm.clock.stepLine[1].text, /right face.*counterclockwise/i);
 });
 
 test('device view: actions, gyro and unsupported browsers', () => {
@@ -186,6 +211,28 @@ test('penalties can be ignored by setting; stored penalties win over the live re
   assert.equal(vm.results.time.penalty, null);
   const applied = buildViewModel({ session: tracking, live, records, settings: normalizeSettings(), now: 0 });
   assert.equal(applied.results.time.penalty, '+2');
+});
+
+test('stored results builder returns the shared Orbit, case, and review data', () => {
+  const settings = normalizeSettings();
+  const record = {
+    ...EXAMPLE_RECORD,
+    analysis: { ...EXAMPLE_RECORD.analysis, f2lCases: { pair1: { caseId: 'f2l/FR', name: 'front right' } }, lastLayer: {
+      oll: { caseId: 'oll/1', name: '1', recognitionMs: 840, executionMs: 1210, used: { id: 'oll/1/sune' } },
+      pll: { caseId: 'pll/Jb', name: 'Jb', recognitionMs: 620, executionMs: 1720, used: { id: 'pll/Jb/standard' } },
+    } },
+  };
+  const result = buildResultsViewModel({ record, records: [...EXAMPLE_HISTORY, record], settings, plan: buildStagePlan(settings) });
+  assert.equal(result.vm.record.at, record.at);
+  assert.equal(result.vm.caseLinks.oll.id, '1');
+  assert.equal(result.vm.caseLinks.pll.id, 'Jb');
+  assert.equal(result.vm.caseLinks.pll.usedAlg, 'pll/Jb/standard');
+  assert.equal(result.vm.caseLinks.pair1.kind, 'f2l');
+  assert.equal(result.vm.caseLinks.pair1.id, 'FR');
+  assert.equal(result.vm.timeline.segments.find(segment => segment.key === 'pair1').caseKey, 'pair1');
+  assert.equal(result.vm.timeline.segments.length, buildStagePlan(settings).length);
+  assert.ok(result.vm.timeline.segments.some(segment => segment.key === 'ep' && segment.state === 'done'));
+  assert.equal(result.vm.timeline.markers, result.vm.review.markers);
 });
 
 test('unchanged slices keep their identity between builds', () => {
