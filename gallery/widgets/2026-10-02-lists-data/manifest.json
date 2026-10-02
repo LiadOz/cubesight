@@ -7,7 +7,7 @@
   "L-12-option1-history-sessions-solves.png": {
     "id": "L-12",
     "title": "option 1: history: sessions and solves (desktop)",
-    "caption": "the A-07 screen: session ring, stats, rows with the mini Orbit. Dark above, light below."
+    "caption": "the A-07 screen: session ring, stats, rows with the mini Orbit. Dark above, light below. Callout 3 covers ao12 here: see L-12b."
   },
   "L-13-option1-algs-case-list.png": {
     "id": "L-13",
@@ -35,7 +35,7 @@
     "caption": "three phones at 390 x 844. Dark above, light below."
   },
   "L-00-compare-parts.png": {
-    "id": "L-00",
+    "id": "L-00b",
     "title": "the list parts in the three options",
     "caption": "rows, glyphs, stats, tags and an empty state side by side. Dark above, light below."
   },
@@ -108,5 +108,15 @@
     "id": "L-37",
     "title": "option 3: phone: history, algs, empty pins",
     "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "L-12b-option1-history-sessions-solves-callout-fixed.png": {
+    "id": "L-12b",
+    "title": "option 1: history, callout 3 moved off the ao12 figure",
+    "caption": "same as L-12; the numbered callout 3 now sits left of the session head instead of covering ao12 15.03. Dark above, light below."
+  },
+  "L-00-decide.png": {
+    "id": "L-00",
+    "title": "decide: the three options and 3 questions",
+    "caption": "history and a drill case list in each option, Q1 to Q3 drawn in the image."
   }
 }
