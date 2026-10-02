@@ -1,0 +1,112 @@
+{
+  "L-11-option1-kit-five-parts.png": {
+    "id": "L-11",
+    "title": "option 1: the five list parts (row, glyph, stat, badge/tag, head + empty)",
+    "caption": "each part with its states. Dark above, light below."
+  },
+  "L-12-option1-history-sessions-solves.png": {
+    "id": "L-12",
+    "title": "option 1: history: sessions and solves (desktop)",
+    "caption": "the A-07 screen: session ring, stats, rows with the mini Orbit. Dark above, light below."
+  },
+  "L-13-option1-algs-case-list.png": {
+    "id": "L-13",
+    "title": "option 1: algs: the case list (desktop)",
+    "caption": "glyph = the alg, with trigger gaps. Dark above, light below."
+  },
+  "L-14-option1-drill-case-list.png": {
+    "id": "L-14",
+    "title": "option 1: a drill: stats and the case list (desktop)",
+    "caption": "glyph = the last 8 answers. Dark above, light below."
+  },
+  "L-15-option1-progress-stats.png": {
+    "id": "L-15",
+    "title": "option 1: progress: stat blocks and two lists (desktop)",
+    "caption": "numbers and glyphs only, no bars. Dark above, light below."
+  },
+  "L-16-option1-empty-states.png": {
+    "id": "L-16",
+    "title": "option 1: empty states: history, pins, due cases (desktop)",
+    "caption": "one sentence, one action, three sizes. Dark above, light below."
+  },
+  "L-17-option1-phone-lists.png": {
+    "id": "L-17",
+    "title": "option 1: phone: history, algs, empty pins",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "L-00-compare-parts.png": {
+    "id": "L-00",
+    "title": "the list parts in the three options",
+    "caption": "rows, glyphs, stats, tags and an empty state side by side. Dark above, light below."
+  },
+  "L-21-option2-kit-five-parts.png": {
+    "id": "L-21",
+    "title": "option 2: the five list parts (row, glyph, stat, badge/tag, head + empty)",
+    "caption": "each part with its states. Dark above, light below."
+  },
+  "L-22-option2-history-sessions-solves.png": {
+    "id": "L-22",
+    "title": "option 2: history: sessions and solves (desktop)",
+    "caption": "the A-07 screen: session ring, stats, rows with the mini Orbit. Dark above, light below."
+  },
+  "L-23-option2-algs-case-list.png": {
+    "id": "L-23",
+    "title": "option 2: algs: the case list (desktop)",
+    "caption": "glyph = the alg, with trigger gaps. Dark above, light below."
+  },
+  "L-24-option2-drill-case-list.png": {
+    "id": "L-24",
+    "title": "option 2: a drill: stats and the case list (desktop)",
+    "caption": "glyph = the last 8 answers. Dark above, light below."
+  },
+  "L-25-option2-progress-stats.png": {
+    "id": "L-25",
+    "title": "option 2: progress: stat blocks and two lists (desktop)",
+    "caption": "numbers and glyphs only, no bars. Dark above, light below."
+  },
+  "L-26-option2-empty-states.png": {
+    "id": "L-26",
+    "title": "option 2: empty states: history, pins, due cases (desktop)",
+    "caption": "one sentence, one action, three sizes. Dark above, light below."
+  },
+  "L-27-option2-phone-lists.png": {
+    "id": "L-27",
+    "title": "option 2: phone: history, algs, empty pins",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  },
+  "L-31-option3-kit-five-parts.png": {
+    "id": "L-31",
+    "title": "option 3: the five list parts (row, glyph, stat, badge/tag, head + empty)",
+    "caption": "each part with its states. Dark above, light below."
+  },
+  "L-32-option3-history-sessions-solves.png": {
+    "id": "L-32",
+    "title": "option 3: history: sessions and solves (desktop)",
+    "caption": "the A-07 screen: session ring, stats, rows with the mini Orbit. Dark above, light below."
+  },
+  "L-33-option3-algs-case-list.png": {
+    "id": "L-33",
+    "title": "option 3: algs: the case list (desktop)",
+    "caption": "glyph = the alg, with trigger gaps. Dark above, light below."
+  },
+  "L-34-option3-drill-case-list.png": {
+    "id": "L-34",
+    "title": "option 3: a drill: stats and the case list (desktop)",
+    "caption": "glyph = the last 8 answers. Dark above, light below."
+  },
+  "L-35-option3-progress-stats.png": {
+    "id": "L-35",
+    "title": "option 3: progress: stat blocks and two lists (desktop)",
+    "caption": "numbers and glyphs only, no bars. Dark above, light below."
+  },
+  "L-36-option3-empty-states.png": {
+    "id": "L-36",
+    "title": "option 3: empty states: history, pins, due cases (desktop)",
+    "caption": "one sentence, one action, three sizes. Dark above, light below."
+  },
+  "L-37-option3-phone-lists.png": {
+    "id": "L-37",
+    "title": "option 3: phone: history, algs, empty pins",
+    "caption": "three phones at 390 x 844. Dark above, light below."
+  }
+}

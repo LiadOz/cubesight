@@ -102,8 +102,23 @@ const SYS = [
 ];
 FAMILIES.system = { dir: 'gallery/widgets/2026-10-02-system-check', page: 'sys.html', prefix: 'SC', label: 'system check', jobs: SYS.map(([id, name, view, title, caption]) => ({ id, file: `${id}-${name}.png`, title, caption, both: true, theme: 'dark', params: { view } })) };
 
+// containers (W-10 / W-14 / W-15 / W-29 as one system): the ladder, the side-by-side, then 8 contexts per option
+const CV = [['kit', 'kit-five-containers', 'the five containers (section, group/panel, disclosure, drawer, dialog)', 'each container with its one-line rule.'], ['settings', 'settings-drawer', 'the settings drawer over solve (desktop)', 'sections, a group, disclosures, the drawer, a toast.'], ['debug', 'debug-drawer', 'the debug drawer (the ` key)', 'key/value group, event log panel, disclosures.'], ['help', 'help-page', 'the help page', 'sections, a key list, build info, disclosures.'], ['review', 'review-detail', 'the review detail panel on results', 'the detail next to the Orbit.'], ['confirm', 'confirm-dialog-delete', 'confirm dialog: delete a solve', 'one decision, safe default.'], ['import', 'import-sheet', 'import sheet (desktop)', 'a few fields in one dialog.'], ['phone', 'phone-sheets', 'phone: settings sheet, confirm dialog, import sheet', 'three phones at 390 x 844.']];
+const CJOBS = [
+  { id: 'C-00', file: 'C-00-ladder-which-container-when.png', title: 'the ladder: which container when', caption: 'section, group, panel, disclosure, drawer, dialog: when and the rules.', both: false, theme: 'dark', params: { view: 'rules' } },
+  { id: 'C-01', file: 'C-01-compare-settings-drawer.png', title: 'the settings drawer in the three options', caption: 'frameless, soft panels, hairline rules. Dark above, light below.', both: true, theme: 'dark', params: { view: 'compare' } },
+];
+for (const o of [1, 2, 3]) CV.forEach(([view, name, title, caption], i) => { const id = `C-${o}${i + 1}`; CJOBS.push({ id, file: `${id}-option${o}-${name}.png`, title: `option ${o}: ${title}`, caption: `${caption} Dark above, light below.`, both: true, theme: 'dark', params: { view, opt: String(o) } }); });
+FAMILIES.containers = { dir: 'gallery/widgets/2026-10-02-containers', page: 'containers.html', prefix: 'C', label: 'containers', jobs: CJOBS };
+
+// lists and data (W-11 rows + mini Orbit glyph, W-19 stats, W-18 badges, W-25 empty states, W-30 eyebrows): six contexts + the kit per option
+const LV = [['kit', 'kit-five-parts', 'the five list parts (row, glyph, stat, badge/tag, head + empty)', 'each part with its states.'], ['history', 'history-sessions-solves', 'history: sessions and solves (desktop)', 'the A-07 screen: session ring, stats, rows with the mini Orbit.'], ['algs', 'algs-case-list', 'algs: the case list (desktop)', 'glyph = the alg, with trigger gaps.'], ['drill', 'drill-case-list', 'a drill: stats and the case list (desktop)', 'glyph = the last 8 answers.'], ['progress', 'progress-stats', 'progress: stat blocks and two lists (desktop)', 'numbers and glyphs only, no bars.'], ['empty', 'empty-states', 'empty states: history, pins, due cases (desktop)', 'one sentence, one action, three sizes.'], ['phone', 'phone-lists', 'phone: history, algs, empty pins', 'three phones at 390 x 844.']];
+const LJOBS = [{ id: 'L-00', file: 'L-00-compare-parts.png', title: 'the list parts in the three options', caption: 'rows, glyphs, stats, tags and an empty state side by side. Dark above, light below.', both: true, theme: 'dark', params: { view: 'compare' } }];
+for (const o of [1, 2, 3]) LV.forEach(([view, name, title, caption], i) => { const id = `L-${o}${i + 1}`; LJOBS.push({ id, file: `${id}-option${o}-${name}.png`, title: `option ${o}: ${title}`, caption: `${caption} Dark above, light below.`, both: true, theme: 'dark', params: { view, opt: String(o) } }); });
+FAMILIES.lists = { dir: 'gallery/widgets/2026-10-02-lists-data', page: 'lists.html', prefix: 'L', label: 'lists and data', jobs: LJOBS };
+
 const fam = FAMILIES[process.argv[2]];
-if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves|moves2|pairs|system [--only=text]'); process.exit(2); }
+if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves|moves2|pairs|system|containers|lists [--only=text]'); process.exit(2); }
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7);
 
 const server = http.createServer((req, res) => {
