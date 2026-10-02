@@ -1,0 +1,55 @@
+/* System check: ONE stylesheet of approved widgets (kit) + the approved W-21 move display, on full screens. Prototype only. */
+@import url('../../_proto/approved.css');
+@import url('../../2026-10-02-W-21-moves-v2/proto/moves.css');
+
+.abs { position: absolute; }
+.row { display: flex; align-items: center; gap: 12px; }
+.kbar .kbi { display: inline-flex; align-items: center; gap: 9px; }
+.kp { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+.touch .key, .touch .choice__kc { display: none; }
+.lab-mono { font: 500 11px var(--b-font-mono); color: var(--b-muted); letter-spacing: .02em; }
+.lab-mono + .row, .lab-mono + div { margin-top: 8px; }
+
+/* answer choices (ink selection control) carry a bevelled number key */
+.choice { position: relative; }
+.choice__kc { position: absolute; top: -11px; left: 14px; }
+
+/* the settings drawer / sheet */
+.drawer { position: absolute; right: 0; top: 0; width: 392px; height: 900px; background: var(--b-bg); box-shadow: -1px 0 0 var(--b-hairline), -24px 0 60px rgb(0 0 0 / .25); padding: 26px 28px; display: grid; align-content: start; gap: 20px; z-index: 6; }
+.drawer h2 { margin: 0; font: 600 22px var(--b-font-sans); display: flex; align-items: baseline; justify-content: space-between; }
+.drawer h2 small { font: 400 11px var(--b-font-mono); color: var(--b-muted); }
+.sheet-b { position: absolute; left: 0; right: 0; bottom: 0; background: var(--b-bg); border-radius: 24px 24px 0 0; box-shadow: 0 -1px 0 var(--b-hairline), 0 -20px 50px rgb(0 0 0 / .25); padding: 14px 20px 20px; display: grid; gap: 14px; z-index: 6; }
+.sheet-b .grab { width: 40px; height: 4px; border-radius: 2px; background: var(--b-faint); margin: 0 auto 2px; }
+.scrim { position: absolute; background: var(--b-canvas); opacity: .42; z-index: 5; }
+.slot { position: absolute; bottom: 18px; z-index: 7; }
+
+/* history list */
+.hrow { display: grid; grid-template-columns: 54px 84px minmax(0, 1fr) 150px 96px; gap: 14px; align-items: center; height: 46px; padding: 0 18px; border-radius: 14px; font-size: 14px; }
+.hrow:nth-child(odd) { background: var(--b-surface); }
+.hrow .t { font: 500 16px var(--b-font-mono); }
+.hrow .n, .hrow .d { font: 400 12px var(--b-font-mono); color: var(--b-muted); }
+.hrow .d { text-align: right; }
+.hrow.head { height: 30px; background: none !important; font: 400 11px var(--b-font-mono); color: var(--b-faint); }
+.hrow .mini { gap: 3px; }
+.badge { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font: 500 11px var(--b-font-mono); background: var(--b-surface-2); color: var(--b-ink); box-shadow: inset 0 0 0 1px var(--b-hairline); }
+.badge--pb { background: var(--b-accent-soft); color: var(--b-accent-text); box-shadow: none; }
+
+/* the Orbit in progress: a live arc whose tail fades (static image of a moving arc) */
+.legend code { font-family: var(--b-font-mono); font-size: 13px; color: var(--b-ink); }
+
+/* the confusion study */
+.cf { display: grid; gap: 0; padding: 6px 28px 10px; }
+.cf-row { display: grid; grid-template-columns: 200px repeat(4, minmax(0, 1fr)); gap: 0 20px; border-bottom: 1px solid var(--b-hairline); padding: 18px 0; align-items: center; position: relative; }
+.cf-row > .rh { font: 500 12px/1.35 var(--b-font-mono); color: var(--b-muted); display: block; }
+.cf-row > .rh b { display: block; font: 600 14px var(--b-font-sans); color: var(--b-ink); margin-bottom: 3px; }
+.cf-row.head { padding: 16px 0 10px; font: 600 14px var(--b-font-sans); color: var(--b-accent-text); }
+.cf-row.head small { display: block; font: 400 11px var(--b-font-mono); color: var(--b-muted); margin-top: 4px; }
+.cf-cell { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; }
+.dim-line { position: relative; }
+.dim { font: 400 10.5px var(--b-font-mono); color: var(--b-faint); display: block; margin-top: 6px; }
+
+/* the candidate differentiators for a selected ink chip */
+.d-b .chip[aria-pressed="true"]::before { content: ''; width: 12px; height: 12px; margin-left: -2px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.d-c .chip { border-radius: 9px; }
+.d-e .chip[aria-pressed="true"] { background: var(--b-ink); box-shadow: inset 0 0 0 2px var(--b-accent); }
+.seg[data-full] { display: grid; width: 100%; }

@@ -1,0 +1,113 @@
+/* W-21 v2 move display: approved desktop = labels on the Orbit (.o1), phone = wrapped sequence (.o3).
+   A SECTION IS ONLY EXTRA SPACE (a wider gap between two Orbit points / two words); no brackets, arcs or parentheses.
+   (v1 header follows.) W-21 move display: three proposals on one token model. Only var(--b-*) tokens and the bundled fonts.
+   .o1 = labels on the Orbit, .o2 = a tape under the cube, .o3 = a wrapped sequence block (typing-test-like).
+   Forced-state classes (.is-hover .is-active .is-focus) mirror the real pseudo-classes for the state sheet. */
+@import url('../../_proto/common.css');
+
+.abs { position: absolute; }
+.keybar { display: flex; gap: 26px; align-items: center; font-size: 13px; color: var(--b-muted); }
+.keybar kbd { font: 500 11px/1 var(--b-font-mono); height: 22px; min-width: 22px; padding: 0 7px; display: inline-grid; place-items: center; border-radius: var(--b-radius-key); background: var(--b-key-bg); color: var(--b-key-ink); margin-right: 8px; box-shadow: inset 0 0 0 1px var(--b-hairline), 0 2px 0 var(--b-cube-body); /* W-17 bevelled keycap */ }
+.keybar kbd + kbd { margin-left: -4px; }
+.glow { position: absolute; border-radius: 50%; background: var(--b-cube-glow); }
+.tag { font: 400 11px var(--b-font-mono); color: var(--b-muted); }
+
+/* ---- the token ---- */
+.mv { display: inline-flex; align-items: center; justify-content: center; gap: 5px; position: relative; margin: 0; padding: 0; border: 0; background: transparent; color: var(--b-ink);
+  font: 400 var(--mv-fs, 22px)/1 var(--b-font-mono); letter-spacing: 0; white-space: nowrap; border-radius: var(--b-radius-control);
+  transition: background-color 140ms var(--b-ease), box-shadow 140ms var(--b-ease), color 140ms var(--b-ease), transform 90ms var(--b-ease); -webkit-tap-highlight-color: transparent; }
+button.mv { cursor: pointer; }
+.mv.is-done { color: var(--b-faint); }
+.mv.is-next { color: var(--b-ink); }
+.mv.is-cur { color: var(--b-accent-text); }
+.mv.is-wrong, .mv.is-undo, .mv.is-ucur { color: var(--b-warn-text); }
+.mv.is-disabled, .mv:disabled { color: var(--b-faint); opacity: .5; cursor: not-allowed; }
+button.mv:not(:disabled):hover, .mv.is-hover { background: color-mix(in srgb, var(--b-ink) 9%, transparent); }
+button.mv:not(:disabled):active, .mv.is-active { background: color-mix(in srgb, var(--b-ink) 16%, transparent); transform: scale(.96); }
+.mv:focus-visible, .mv.is-focus { outline: 2px solid var(--b-accent); outline-offset: 3px; }
+.mv svg { flex: none; }
+.mv .bang { width: 13px; height: 13px; }
+
+/* sections: grouped runs */
+.sec { position: relative; display: inline-flex; align-items: center; --sec: var(--b-muted); }
+.sec.u { --sec: var(--b-warn); }
+
+/* ---- option 1: bare labels on the Orbit, the current one in an outlined pill (A-02) ---- */
+.o1 .mv { --mv-fs: 15px; min-width: 44px; height: 34px; padding: 0 8px; }
+.o1 .mv.is-cur { background: var(--b-accent-soft); box-shadow: inset 0 0 0 1.5px var(--b-accent); }
+.o1 .mv.is-ucur { background: var(--b-plus2-soft); box-shadow: inset 0 0 0 1.5px var(--b-warn); }
+.o1 .mv.is-undo { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--b-warn) 60%, transparent); }
+.o1 .lab { position: absolute; transform: translate(-50%, -50%); min-width: 0; padding: 0 5px; height: 26px; }
+.o1 .lab.is-cur, .o1 .lab.is-ucur { min-width: 54px; height: 34px; --mv-fs: 18px; }
+.o1 .states-row .mv { --mv-fs: 18px; }
+.o1 .states-row .mv.is-cur, .o1 .states-row .mv.is-ucur { min-width: 54px; height: 38px; }
+
+
+/* ---- option 3: a wrapped sequence, like the text in a typing test ---- */
+.o3 .mv { --mv-fs: 22px; padding: 6px 8px; border-radius: 8px; line-height: 1; }
+.o3 .mv.is-cur { background: var(--b-accent-soft); }
+.o3 .mv.is-ucur { background: var(--b-plus2-soft); }
+.o3 .mv.is-undo { text-decoration: underline dotted var(--b-warn); text-underline-offset: 6px; text-decoration-thickness: 2px; }
+.o3 .para { position: absolute; overflow: hidden; }
+.o3 .para-in { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; row-gap: 12px; column-gap: 2px; padding-top: 14px; }
+.o3 .para.roll { -webkit-mask-image: linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent); mask-image: linear-gradient(180deg, transparent, #000 24%, #000 76%, transparent); }
+.o3 .phone .mv { --mv-fs: 20px; padding: 5px 6px; }
+
+/* ---- centre text under the cube ---- */
+.big { position: absolute; left: 0; width: 100%; text-align: center; font: 600 var(--big, 92px)/1 var(--b-font-sans); letter-spacing: -.02em; color: var(--b-accent-text); display: flex; justify-content: center; align-items: center; gap: 12px; }
+.big.warn { color: var(--b-warn-text); }
+.cap { position: absolute; left: 0; width: 100%; text-align: center; font-size: 18px; color: var(--b-muted); }
+.cap.warn { color: var(--b-warn-text); font-weight: 600; }
+.pos { position: absolute; left: 0; width: 100%; text-align: center; font: 400 13px var(--b-font-mono); color: var(--b-muted); }
+.foot-r { position: absolute; right: 48px; bottom: 20px; font: 400 12px var(--b-font-mono); color: var(--b-muted); }
+.ptitle { position: absolute; left: 0; width: 100%; text-align: center; top: 86px; font-size: 22px; font-weight: 600; }
+.phone .hdr { padding: 0 24px; height: 60px; }
+
+/* ---- state sheet ---- */
+.srow { display: grid; grid-template-columns: 170px 1fr; gap: 12px 18px; padding: 16px 0; border-bottom: 1px solid var(--b-hairline); align-items: start; }
+.srow:last-child { border-bottom: 0; }
+.srow .rh { font-size: 14px; font-weight: 600; }
+.srow .rh small { display: block; font: 400 11px/1.4 var(--b-font-mono); color: var(--b-muted); margin-top: 4px; }
+.cells { display: flex; flex-wrap: wrap; gap: 18px 30px; align-items: flex-end; }
+.cell { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; position: relative; justify-content: flex-end; }
+.cell .tag { white-space: nowrap; }
+.rings { display: flex; gap: 40px; align-items: center; }
+
+/* ---- mini form in list rows ---- */
+.page { padding: 20px 28px 26px; display: grid; gap: 26px; }
+.page h4 { margin: 0 0 8px; font: 500 12px var(--b-font-mono); color: var(--b-accent-text); }
+.lrow { display: grid; grid-template-columns: 120px 1fr 64px; gap: 14px; align-items: center; height: 40px; padding: 0 14px; border-radius: 10px; background: var(--b-surface); }
+.lrow + .lrow { margin-top: 6px; }
+.lrow .meta { text-align: right; }
+.lname { font-size: 13px; color: var(--b-muted); }
+.mini { display: flex; align-items: center; gap: 4px; font: 400 13px/1 var(--b-font-mono); min-width: 0; white-space: nowrap; overflow: hidden; }
+.mini .mv { --mv-fs: 13px; min-width: 0; height: auto; padding: 2px 3px; box-shadow: none; background: none; border-radius: 4px; }
+.mini .mv.is-cur { color: var(--b-accent-text); background: var(--b-accent-soft); box-shadow: none; }
+.mini .mv.is-ucur { background: var(--b-plus2-soft); box-shadow: none; }
+.mini .mv.is-undo, .mini .mv.is-wrong { box-shadow: none; background: none; text-decoration: none; }
+.mini .rest { color: var(--b-faint); margin-left: 6px; }
+.o1 .mini .mv { padding: 2px 5px; border-radius: 999px; }
+.o1 .mini .mv.is-cur { box-shadow: inset 0 0 0 1px var(--b-accent); }
+
+/* ---- overview ---- */
+.cmp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; padding: 22px 28px; }
+.cmp h4 { margin: 0 0 10px; font: 500 13px var(--b-font-mono); color: var(--b-accent-text); }
+.cmp .shrink { zoom: .43; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 3px var(--b-hairline); }
+
+
+.big .pr { font-weight: 400; font-size: .6em; position: relative; top: -.2em; margin-left: .02em; }
+
+
+
+/* ---- v2: sections are spacing only ---- */
+.mv.gp { margin-left: var(--gp, 22px); }
+.o3 .mv.gp { --gp: 24px; }
+.mini .mv.gp { --gp: 14px; }
+.states-row .mv.gp { --gp: 18px; }
+.o1 .lab.zig { }
+.gapmark { position: absolute; }
+.lwin { position: absolute; font: 400 11px var(--b-font-mono); color: var(--b-faint); white-space: nowrap; }
+.o3 .states-row .mv { --mv-fs: 22px; }
+.cmp3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding: 22px 28px; }
+.cmp3 h4 { margin: 0 0 10px; font: 500 13px var(--b-font-mono); color: var(--b-accent-text); }
+.shrink { zoom: .43; border-radius: 22px; overflow: hidden; box-shadow: 0 0 0 3px var(--b-hairline); }

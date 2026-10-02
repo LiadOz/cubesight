@@ -56,8 +56,54 @@ for (const o of [1, 2, 3]) MV.forEach(([, key, title, caption, both, th], i) => 
 FAM_MOVES.jobs.push({ id: 'W-21-91', file: 'W-21-91-mini-form-lists.png', title: 'mini form in list rows, the three options', caption: 'history, alg, playing and review rows. Dark above, light below.', both: true, params: { view: 'mini' } });
 FAMILIES.moves = FAM_MOVES;
 
+// W-21 v2 (approved: desktop = labels on the Orbit, phone = wrapped sequence; sections = spacing only)
+const V2 = [
+  ['W-21v2-11', 'states-desktop', 'states', 'desktop: token states, sections as gaps, the Orbit grows', 'every token state, two sections as one wide gap between Orbit points, the undo group, and how the ring grows. Dark.'],
+  ['W-21v2-12', 'scramble-desktop', 'solve', 'desktop: mid scramble on the Orbit (1440 x 900)', 'move 13 of 20, the A-02 look. Dark.'],
+  ['W-21v2-13', 'wrong-turn-desktop', 'wrong', 'desktop: wrong turn, the undo move is a spaced section', 'one undo move inserted; the section is only the wider gaps either side.'],
+  ['W-21v2-14', 'wrong-turn-two-undo-desktop', 'wrong2', 'desktop: two undo moves form one spaced section', 'a group of two amber points between two wide gaps.'],
+  ['W-21v2-15', 'alg-triggers-desktop', 'alg', 'desktop: T-perm with its triggers as wide gaps', 'three runs, two gaps; no bracket above the curve.'],
+  ['W-21v2-16', 'long-rolling-desktop', 'long', 'desktop: 45-move scramble, rolling window', 'the long scramble: 22 labels in a window, neighbours alternating between two radii.'],
+  ['W-21v2-17', 'long-wrong-turn-desktop', 'long-wrong', 'desktop: long scramble with a wrong turn', 'the undo group as a spaced section inside the window.'],
+  ['W-21v2-31', 'states-phone', 'p-states', 'phone: wrapped sequence, states and sections as space', 'tokens as words, sections as wider spaces, the undo group.'],
+  ['W-21v2-34', 'scramble-wrong-phone', 'p-solve', 'phone 390 x 844: scramble and wrong turn', 'the wrapped sequence under the cube; the undo move is a spaced section.'],
+  ['W-21v2-35', 'alg-undo-phone', 'p-alg', 'phone 390 x 844: T-perm and an undo group of two', 'sections as extra space, no parentheses.'],
+  ['W-21v2-36', 'long-rolling-phone', 'p-long', 'phone 390 x 844: 45-move scramble, rolling lines', 'start, mid and a wrong turn on a long scramble.'],
+  ['W-21v2-91', 'mini-form-lists', 'mini', 'mini form in list rows (sections = space)', 'history, long scramble, alg, playing and review rows. Dark.'],
+  ['W-21v2-99', 'light-sheet', 'light', 'light sheet: the approved pair in the light theme', 'desktop above, phone below.', 'light'],
+];
+const FAM_MOVES2 = { dir: 'gallery/widgets/2026-10-02-W-21-moves-v2', page: 'moves.html', prefix: 'W-21v2', label: 'W-21 v2', jobs: V2.map(([id, name, view, title, caption, th]) => ({ id, file: `${id}-${name}.png`, title, caption, theme: th || 'dark', params: { view } })) };
+FAMILIES.moves2 = FAM_MOVES2;
+
+// W-17 keycap pairs (the bevelled cap is approved; four ways to write a combined key)
+const PAIRS = [
+  ['W-17p-01', 'matrix-all-contexts', 'matrix', 'combined keys: the four ways in every context, dark and light', 'a pair, a range, arrows and a chord in the key bar, in buttons and pressed. Dark above, light below.', true],
+  ['W-17p-11', 'a-one-cap', 'a', '(a) one cap holding both glyphs, in real contexts', 'results bottom, drill bottom, the help list and buttons.'],
+  ['W-17p-12', 'b-two-caps', 'b', '(b) two caps side by side, in real contexts', 'the same four contexts.'],
+  ['W-17p-13', 'c-joined', 'c', '(c) two caps joined by a connector, in real contexts', 'the same four contexts.'],
+  ['W-17p-14', 'd-cap-dash-cap', 'd', '(d) cap + separator + cap, in real contexts', 'ranges with a dash, chords with a plus; pairs stay two caps.'],
+  ['W-17p-21', 'not-keys-stay-flat', 'notkeys', 'what is not a keyboard key stays flat, dark and light', 'chips, badges, tags, buttons and the toast next to keycaps; right column shows the forbidden bevelled look. Dark above, light below.', true],
+];
+FAMILIES.pairs = { dir: 'gallery/widgets/2026-10-02-keycaps-pairs', page: 'pairs.html', prefix: 'W-17p', label: 'W-17 pairs', jobs: PAIRS.map(([id, name, view, title, caption, both]) => ({ id, file: `${id}-${name}.png`, title, caption, both: !!both, theme: 'dark', params: { view } })) };
+
+
+// system check: the approved set together, on the same screens (dark above, light below in every image)
+const SYS = [
+  ['SC-01', 'solve-settings-desktop', 'd1', 'solve with a scramble ready and settings open (desktop)', 'W-21 labels on the Orbit, the W-04 primary with a bevelled key, ink chips, segmented, switches, a W-16 toast. Dark above, light below.'],
+  ['SC-02', 'results-desktop', 'd2', 'results (desktop)', 'the primary and the ink chips on one screen, W-21 mini form, W-16 toast. Dark above, light below.'],
+  ['SC-03', 'drill-round-desktop', 'd3', 'a drill round (desktop)', 'ink choices with bevelled number keys, segmented, toast. Dark above, light below.'],
+  ['SC-04', 'history-filters-desktop', 'd4', 'history with filters (desktop)', 'ink chips, segmented, select, quiet buttons, W-21 mini form in every row. Dark above, light below.'],
+  ['SC-05', 'alg-playback-desktop', 'd5', 'alg playback (desktop)', 'W-21 labels with trigger gaps, ink segmented next to the primary. Dark above, light below.'],
+  ['SC-11', 'five-screens-phone', 'phones', 'the five screens on a phone', 'solve + settings, results, drill, history filters, alg playback at 390 x 844. Dark above, light below.'],
+  ['SC-31', 'ink-chip-vs-cream-primary', 'confuse', 'selected ink chip against the cream primary, and four differentiators', 'side by side in three contexts, with the sizes. Dark above, light below.'],
+  ['SC-41', 'in-progress-connecting', 'connect', 'in progress: connecting', 'the whole Orbit travels; no spinner. Dark above, light below.'],
+  ['SC-42', 'in-progress-analysing', 'analyse', 'in progress: analysing a solve', 'the result Orbit fills in stage by stage. Dark above, light below.'],
+  ['SC-43', 'in-progress-searching', 'search', 'in progress: searching for a better pair', 'one arc per candidate pairing. Dark above, light below.'],
+];
+FAMILIES.system = { dir: 'gallery/widgets/2026-10-02-system-check', page: 'sys.html', prefix: 'SC', label: 'system check', jobs: SYS.map(([id, name, view, title, caption]) => ({ id, file: `${id}-${name}.png`, title, caption, both: true, theme: 'dark', params: { view } })) };
+
 const fam = FAMILIES[process.argv[2]];
-if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves [--only=text]'); process.exit(2); }
+if (!fam) { console.error('usage: widget-proposal-shots.mjs buttons|keycaps|status|moves|moves2|pairs|system [--only=text]'); process.exit(2); }
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7);
 
 const server = http.createServer((req, res) => {
