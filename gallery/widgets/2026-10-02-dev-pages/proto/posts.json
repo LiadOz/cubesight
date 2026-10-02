@@ -1,0 +1,717 @@
+[
+ {
+  "id": "earlier-session",
+  "title": "Earlier session: studio and guide screens",
+  "date": "2026-09-27",
+  "branch": "solve",
+  "parent": [],
+  "status": "built",
+  "decision": "Studio debug and review, the turn guide on phone and desktop, algs in both themes at 390.",
+  "n": 12,
+  "dir": "gallery/_import/2026-09-27-earlier-session",
+  "img": [
+   "cubesight-algs-mono-dark-390.png",
+   "cubesight-algs-mono-light-390.png",
+   "cubesight-algs-orbit-dark-390.png",
+   "cubesight-algs-orbit-light-390.png"
+  ]
+ },
+ {
+  "id": "first-sketches",
+  "title": "First idea sketches B to F",
+  "date": "2026-09-29",
+  "branch": "design",
+  "parent": [],
+  "status": "superseded",
+  "decision": "Cards, glass pill, side rails, floating chips and the dot-timeline were all dropped.",
+  "n": 0,
+  "dir": "gallery/design/2026-09-29-first-sketches",
+  "img": []
+ },
+ {
+  "id": "brain-v2-built",
+  "title": "Brain v2 live with both themes",
+  "date": "2026-09-30",
+  "branch": "solve",
+  "parent": [
+   "wp2-mono-built",
+   "wp3-orbit-built"
+  ],
+  "status": "built",
+  "decision": "Both themes merged into the live app and previewed next to the design gallery.",
+  "n": 2,
+  "dir": "gallery/_import/2026-09-30-brain-v2-live",
+  "img": [
+   "live-brain.png",
+   "preview-gallery.png"
+  ]
+ },
+ {
+  "id": "brain-v2-directions",
+  "title": "Brain v2: three directions",
+  "date": "2026-09-30",
+  "branch": "design",
+  "parent": [
+   "first-sketches"
+  ],
+  "status": "chosen",
+  "decision": "B rejected. The user loved C but could not choose, so A (Mono) and C (Orbit) were both kept as two switchable themes, dark first.",
+  "n": 0,
+  "dir": "gallery/design/2026-09-30-brain-v2-directions",
+  "img": []
+ },
+ {
+  "id": "brain-v2-mono",
+  "title": "Direction A: Mono",
+  "date": "2026-09-30",
+  "branch": "mono",
+  "parent": [
+   "brain-v2-directions"
+  ],
+  "status": "superseded",
+  "decision": "Kept as a theme on 09-30; superseded on 10-01 when the Orbit became the direction that drives decisions.",
+  "n": 0,
+  "dir": "gallery/mono/2026-09-30-brain-v2-mono",
+  "img": []
+ },
+ {
+  "id": "brain-v2-orbit",
+  "title": "Direction C: Orbit",
+  "date": "2026-09-30",
+  "branch": "orbit",
+  "parent": [
+   "brain-v2-directions"
+  ],
+  "status": "chosen",
+  "decision": "The one the user loved. Kept as a theme, dark first.",
+  "n": 0,
+  "dir": "gallery/orbit/2026-09-30-brain-v2-orbit",
+  "img": []
+ },
+ {
+  "id": "brain-v2-pitwall",
+  "title": "Direction B: Pit wall",
+  "date": "2026-09-30",
+  "branch": "pitwall",
+  "parent": [
+   "brain-v2-directions"
+  ],
+  "status": "rejected",
+  "decision": "Rejected: too dense; it reads as a dashboard, not a solve.",
+  "n": 0,
+  "dir": "gallery/pitwall/2026-09-30-brain-v2-pitwall",
+  "img": []
+ },
+ {
+  "id": "brain-v2-themes",
+  "title": "Brain v2: both themes, dark and light, plus tokens",
+  "date": "2026-09-30",
+  "branch": "design",
+  "parent": [
+   "brain-v2-mono",
+   "brain-v2-orbit"
+  ],
+  "status": "chosen",
+  "decision": "Mono and Orbit become two switchable themes, each in dark and light; the shared tokens are in brain-v2/tokens.md.",
+  "n": 0,
+  "dir": "gallery/design/2026-09-30-brain-v2-themes",
+  "img": []
+ },
+ {
+  "id": "misc-screens",
+  "title": "Screens of the app before the redesign",
+  "date": "2026-09-30",
+  "branch": "qa",
+  "parent": [],
+  "status": "built",
+  "decision": "Reference: how the existing pages looked (brain, corners, cross scout, F2L, PLL, debug), plus viewport sweeps of both themes.",
+  "n": 25,
+  "dir": "gallery/_import/2026-09-30-misc-screens",
+  "img": [
+   "brain-dark.png",
+   "brain-light.png",
+   "corners-dark.png",
+   "corners-light.png"
+  ]
+ },
+ {
+  "id": "moves-explore",
+  "title": "Move guide: arrows, ghost, chips, net",
+  "date": "2026-09-30",
+  "branch": "moves",
+  "parent": [
+   "brain-v2-themes"
+  ],
+  "status": "superseded",
+  "decision": "Recommended chips plus arrows; later superseded by the cue-only decision.",
+  "n": 0,
+  "dir": "gallery/moves/2026-09-30-move-guide-explore",
+  "img": []
+ },
+ {
+  "id": "review-design",
+  "title": "Solve review, chess.com style",
+  "date": "2026-09-30",
+  "branch": "review",
+  "parent": [
+   "brain-v2-themes"
+  ],
+  "status": "chosen",
+  "decision": "Review grades each move and stage, says what the best move was, and lets you retry the moment. Friendly coach, cubing words.",
+  "n": 0,
+  "dir": "gallery/review/2026-09-30-review-design",
+  "img": []
+ },
+ {
+  "id": "timeline-stages-built",
+  "title": "Timeline stages, built",
+  "date": "2026-09-30",
+  "branch": "solve",
+  "parent": [
+   "brain-v2-built"
+  ],
+  "status": "built",
+  "decision": "Stage timeline shown in order: inspection, pre-cross, after cross, after F2L, after OLL, solved.",
+  "n": 7,
+  "dir": "gallery/_import/2026-09-30-timeline-stages-built",
+  "img": [
+   "1-inspection.png",
+   "2-pre-cross.png",
+   "3-after-cross.png",
+   "4-after-f2l.png"
+  ]
+ },
+ {
+  "id": "timer-design",
+  "title": "Timer designs",
+  "date": "2026-09-30",
+  "branch": "solve",
+  "parent": [
+   "brain-v2-themes"
+  ],
+  "status": "chosen",
+  "decision": "The standalone timer shares the solve screen: same clock, same inspection states.",
+  "n": 0,
+  "dir": "gallery/solve/2026-09-30-timer-design",
+  "img": []
+ },
+ {
+  "id": "timer-wip",
+  "title": "Timer, work in progress",
+  "date": "2026-09-30",
+  "branch": "solve",
+  "parent": [
+   "timer-design"
+  ],
+  "status": "built",
+  "decision": "Mono and Orbit timer states: idle, inspection, overtime.",
+  "n": 5,
+  "dir": "gallery/_import/2026-09-30-timer-wip",
+  "img": [
+   "t-mono-dark-overtime.png",
+   "t-mono-light-idle.png",
+   "t-mono-light-insp.png",
+   "t-orbit-dark-idle.png"
+  ]
+ },
+ {
+  "id": "trainers-ia",
+  "title": "Trainers and site structure",
+  "date": "2026-09-30",
+  "branch": "trainers",
+  "parent": [
+   "brain-v2-themes"
+  ],
+  "status": "chosen",
+  "decision": "Two front doors on one shell: Brain for the desk (smart cube), Drills for the phone. One progress page.",
+  "n": 0,
+  "dir": "gallery/trainers/2026-09-30-trainers-ia",
+  "img": []
+ },
+ {
+  "id": "wp2-mono-built",
+  "title": "WP2: Mono built",
+  "date": "2026-09-30",
+  "branch": "solve",
+  "parent": [
+   "brain-v2-mono"
+  ],
+  "status": "built",
+  "decision": "Mono theme implemented in the real app: desktop and phone, dark and light, every state.",
+  "n": 32,
+  "dir": "gallery/_import/2026-09-30-wp2-mono-built",
+  "img": [
+   "dark-desktop-disconnected.png",
+   "dark-desktop-idle.png",
+   "dark-desktop-inspection.png",
+   "dark-desktop-inspectionAutostart.png"
+  ]
+ },
+ {
+  "id": "wp3-orbit-built",
+  "title": "WP3: Orbit built",
+  "date": "2026-09-30",
+  "branch": "solve",
+  "parent": [
+   "brain-v2-orbit"
+  ],
+  "status": "built",
+  "decision": "Orbit theme implemented, dark and light, desktop 1440 and phone 390.",
+  "n": 19,
+  "dir": "gallery/_import/2026-09-30-wp3-orbit-built",
+  "img": [
+   "charts-mono-dark-1440.png",
+   "idle-dark-1440.png",
+   "idle-light-1440.png",
+   "inspection-dark-1440.png"
+  ]
+ },
+ {
+  "id": "algs-design",
+  "title": "Algs browser and drill",
+  "date": "2026-10-01",
+  "branch": "algs",
+  "parent": [
+   "brain-v2-themes"
+  ],
+  "status": "chosen",
+  "decision": "Browser, no-cube drill, results, top solves, mobile and the link from a review.",
+  "n": 0,
+  "dir": "gallery/algs/2026-10-01-algs-design",
+  "img": []
+ },
+ {
+  "id": "lead-review-r1-cubes",
+  "title": "Lead review, round 1: cubes",
+  "date": "2026-10-01",
+  "branch": "qa",
+  "parent": [],
+  "status": "built",
+  "decision": "Review of the cube rendering across the algs, cross plan, drills, OLL drill and timer.",
+  "n": 6,
+  "dir": "gallery/_import/2026-10-01-lead-review-r1-cubes",
+  "img": [
+   "r1-algs-case.png",
+   "r1-algs-f2l.png",
+   "r1-cross-plan.png",
+   "r1-drills.png"
+  ]
+ },
+ {
+  "id": "lead-review-spec-next",
+  "title": "Lead review: screens for the next spec",
+  "date": "2026-10-01",
+  "branch": "qa",
+  "parent": [
+   "lead-review-r1-cubes"
+  ],
+  "status": "built",
+  "decision": "Algs, PLL algs, drills, progress, solve and timer as they were when the next spec was written.",
+  "n": 6,
+  "dir": "gallery/_import/2026-10-01-lead-review-spec-next",
+  "img": [
+   "rv-algs-pll.png",
+   "rv-algs.png",
+   "rv-drills.png",
+   "rv-progress.png"
+  ]
+ },
+ {
+  "id": "mono-retired",
+  "title": "Mono stops driving decisions",
+  "date": "2026-10-01",
+  "branch": "mono",
+  "parent": [
+   "brain-v2-mono"
+  ],
+  "status": "superseded",
+  "decision": "Mono lane ends here. The theme still ships; new design work is Orbit only.",
+  "n": 0,
+  "dir": "gallery/mono/2026-10-01-mono-retired",
+  "img": []
+ },
+ {
+  "id": "move-cue-only",
+  "title": "Move guide: cue only",
+  "date": "2026-10-01",
+  "branch": "moves",
+  "parent": [
+   "moves-built"
+  ],
+  "status": "chosen",
+  "decision": "Decision: only the cue on the cube. No chips and no arrows; wrong-turn recovery shown the same way.",
+  "n": 1,
+  "dir": "gallery/_import/2026-10-01-move-guide-recovery",
+  "img": [
+   "brain-recovery.png"
+  ]
+ },
+ {
+  "id": "moves-built",
+  "title": "Move guide built (chips and arrows)",
+  "date": "2026-10-01",
+  "branch": "moves",
+  "parent": [
+   "moves-explore"
+  ],
+  "status": "superseded",
+  "decision": "Built, then superseded by the cue-only decision.",
+  "n": 0,
+  "dir": "gallery/moves/2026-10-01-move-guide-built",
+  "img": []
+ },
+ {
+  "id": "orbit-v3",
+  "title": "Orbit v3: one Cube + one Orbit",
+  "date": "2026-10-01",
+  "branch": "orbit",
+  "parent": [
+   "orbit-wins"
+  ],
+  "status": "chosen",
+  "decision": "Direction A chosen: the cube as the centrepiece. A-05 (the coach to marker connector) and A-10 loved. B and C kept as reference.",
+  "n": 0,
+  "dir": "gallery/orbit/2026-10-01-orbit-v3",
+  "img": []
+ },
+ {
+  "id": "orbit-wins",
+  "title": "Orbit wins",
+  "date": "2026-10-01",
+  "branch": "design",
+  "parent": [
+   "brain-v2-themes"
+  ],
+  "status": "chosen",
+  "decision": "The orbit around the cube is the centre of everything. Orbit dark first; Mono no longer drives design decisions.",
+  "n": 0,
+  "dir": "gallery/design/2026-10-01-orbit-wins",
+  "img": []
+ },
+ {
+  "id": "review-built",
+  "title": "Solve review built",
+  "date": "2026-10-01",
+  "branch": "review",
+  "parent": [
+   "review-design"
+  ],
+  "status": "built",
+  "decision": "Review implemented in Mono and Orbit, dark and phone.",
+  "n": 0,
+  "dir": "gallery/review/2026-10-01-review-built",
+  "img": []
+ },
+ {
+  "id": "trainers-built",
+  "title": "Trainers built",
+  "date": "2026-10-01",
+  "branch": "trainers",
+  "parent": [
+   "trainers-ia"
+  ],
+  "status": "built",
+  "decision": "Hub, drill header and algs in the real app (Orbit dark, light and phone).",
+  "n": 0,
+  "dir": "gallery/trainers/2026-10-01-trainers-built",
+  "img": []
+ },
+ {
+  "id": "ui-polish-after",
+  "title": "UI polish: after",
+  "date": "2026-10-01",
+  "branch": "polish",
+  "parent": [
+   "ui-polish-before"
+  ],
+  "status": "built",
+  "decision": "Every state in both themes after the polish pass.",
+  "n": 59,
+  "dir": "gallery/_import/2026-10-01-ui-polish-after",
+  "img": [
+   "mono-dark-connecting-d.png",
+   "mono-dark-connecting-m.png",
+   "mono-dark-idle-d.png",
+   "mono-dark-idle-m.png"
+  ]
+ },
+ {
+  "id": "ui-polish-before",
+  "title": "UI polish: before",
+  "date": "2026-10-01",
+  "branch": "polish",
+  "parent": [],
+  "status": "superseded",
+  "decision": "Baseline of idle, solving and results before the polish pass (desktop d and mobile m).",
+  "n": 24,
+  "dir": "gallery/_import/2026-10-01-ui-polish-before",
+  "img": [
+   "mono-dark-idle-d.png",
+   "mono-dark-idle-m.png",
+   "mono-dark-results-d.png",
+   "mono-dark-results-m.png"
+  ]
+ },
+ {
+  "id": "ui-polish-merge-check",
+  "title": "UI polish: merge check",
+  "date": "2026-10-01",
+  "branch": "polish",
+  "parent": [
+   "ui-polish-real-app"
+  ],
+  "status": "built",
+  "decision": "Spot check after merging: connecting, idle, scramble wrong turn, solving, results and phone results.",
+  "n": 8,
+  "dir": "gallery/_import/2026-10-01-ui-polish-merge-check",
+  "img": [
+   "mono-light-results.png",
+   "mono-light-solving.png",
+   "orbit-dark-connecting.png",
+   "orbit-dark-idle.png"
+  ]
+ },
+ {
+  "id": "ui-polish-real-app",
+  "title": "UI polish: the real app",
+  "date": "2026-10-01",
+  "branch": "polish",
+  "parent": [
+   "ui-polish-after"
+  ],
+  "status": "built",
+  "decision": "Captured from the running app, not from the design harness.",
+  "n": 35,
+  "dir": "gallery/_import/2026-10-01-ui-polish-real-app",
+  "img": [
+   "real-mono-dark-connecting-d.png",
+   "real-mono-dark-idle-d.png",
+   "real-mono-dark-idle-m.png",
+   "real-mono-dark-inspection-d.png"
+  ]
+ },
+ {
+  "id": "visual-baselines",
+  "title": "Visual test baselines",
+  "date": "2026-10-01",
+  "branch": "solve",
+  "parent": [
+   "brain-v2-built"
+  ],
+  "status": "built",
+  "decision": "The 16 Playwright baselines for the solve screen (Mono and Orbit, dark and light).",
+  "n": 0,
+  "dir": "gallery/solve/2026-10-01-visual-baselines",
+  "img": []
+ },
+ {
+  "id": "dev-gallery",
+  "title": "The in-app gallery and development blog",
+  "date": "2026-10-02",
+  "branch": "qa",
+  "parent": [
+   "gallery-lightbox"
+  ],
+  "status": "built",
+  "decision": "Gallery at",
+  "n": 8,
+  "dir": "gallery/dev-gallery",
+  "img": [
+   "DG-01-folders.png",
+   "DG-02-group-grid.png",
+   "DG-03-lightbox.png",
+   "DG-04-timeline.png"
+  ]
+ },
+ {
+  "id": "gallery-lightbox",
+  "title": "The shared lightbox",
+  "date": "2026-10-02",
+  "branch": "qa",
+  "parent": [
+   "orbit-v3"
+  ],
+  "status": "built",
+  "decision": "Zoom and loupe on the brain-v2 and orbit-v3 galleries.",
+  "n": 4,
+  "dir": "gallery/_import/2026-10-02-lightbox",
+  "img": [
+   "lightbox-brain-v2-loupe.png",
+   "lightbox-brain-v2-zoom.png",
+   "lightbox-orbit-v3-loupe.png",
+   "lightbox-orbit-v3-zoom.png"
+  ]
+ },
+ {
+  "id": "widget-inventory",
+  "title": "Widget inventory: every UI widget in the app, grouped into families",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "orbit-v3"
+  ],
+  "status": "exploring",
+  "decision": "Awaiting review. Only the Header (W-01), the Orbit (W-02) and the Cube (W-03) are approved; every other family waits for a consolidated design proposal.",
+  "n": 311,
+  "dir": "gallery/widgets/2026-10-02-inventory",
+  "img": [
+   "W-01a-header-nav-link-2.png",
+   "W-01a-header-nav-link-3.png",
+   "W-01a-header-nav-link.png",
+   "W-01b-header-header-button-2.png"
+  ]
+ },
+ {
+  "id": "widgets-selection-controls",
+  "title": "Selection controls as one system: chips, segmented, switch, select, choice button (W-05, W-06, W-07, W-08, W-28)",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widget-inventory"
+  ],
+  "status": "exploring",
+  "decision": "pending user choice",
+  "n": 25,
+  "dir": "gallery/widgets/2026-10-02-selection-controls",
+  "img": [
+   "W-SEL-01-overview-three-options.png",
+   "W-SEL-11-option1-states.png",
+   "W-SEL-12-option1-states-light.png",
+   "W-SEL-13-option1-drawer.png"
+  ]
+ },
+ {
+  "id": "widgets-system-check",
+  "title": "System check: the approved widgets together on the same screens",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widgets-W-21-moves-v2",
+   "widgets-W-17-keycap-pairs"
+  ],
+  "status": "exploring",
+  "decision": "pending user review (finding: ink chips and the cream primary can be confused; proposed fix B, a check mark in the selected chip)",
+  "n": 10,
+  "dir": "gallery/widgets/2026-10-02-system-check",
+  "img": [
+   "SC-01-solve-settings-desktop.png",
+   "SC-02-results-desktop.png",
+   "SC-03-drill-round-desktop.png",
+   "SC-04-history-filters-desktop.png"
+  ]
+ },
+ {
+  "id": "widgets-W-04-buttons",
+  "title": "W-04 Buttons: three consolidated designs (23 variants become 3 emphases)",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widget-inventory"
+  ],
+  "status": "exploring",
+  "decision": "pending user choice",
+  "n": 16,
+  "dir": "gallery/widgets/2026-10-02-buttons",
+  "img": [
+   "W-04-00-compare-options.png",
+   "W-04-01-option1-states.png",
+   "W-04-02-option1-results.png",
+   "W-04-03-option1-settings.png"
+  ]
+ },
+ {
+  "id": "widgets-W-16-status",
+  "title": "W-16 Status lines and toast: three consolidated designs (20 variants become a status line and a toast)",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widget-inventory"
+  ],
+  "status": "exploring",
+  "decision": "pending user choice",
+  "n": 16,
+  "dir": "gallery/widgets/2026-10-02-status",
+  "img": [
+   "W-16-00-compare-options.png",
+   "W-16-01-option1-states.png",
+   "W-16-02-option1-connecting.png",
+   "W-16-03-option1-error.png"
+  ]
+ },
+ {
+  "id": "widgets-W-17-keycap-pairs",
+  "title": "W-17 Keycap pairs: four ways to write a combined key on the bevelled cap",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widgets-W-17-keycaps"
+  ],
+  "status": "exploring",
+  "decision": "pending user choice (the bevelled keycap is approved; only keyboard keys are bevelled; combined keys need more examples before a decision)",
+  "n": 6,
+  "dir": "gallery/widgets/2026-10-02-keycaps-pairs",
+  "img": [
+   "W-17p-01-matrix-all-contexts.png",
+   "W-17p-11-a-one-cap.png",
+   "W-17p-12-b-two-caps.png",
+   "W-17p-13-c-joined.png"
+  ]
+ },
+ {
+  "id": "widgets-W-17-keycaps",
+  "title": "W-17 Keycaps and the key bar: three consolidated designs (8 variants become one cap)",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widget-inventory"
+  ],
+  "status": "exploring",
+  "decision": "pending user choice",
+  "n": 13,
+  "dir": "gallery/widgets/2026-10-02-keycaps",
+  "img": [
+   "W-17-00-compare-options.png",
+   "W-17-01-option1-states.png",
+   "W-17-02-option1-idle.png",
+   "W-17-03-option1-button.png"
+  ]
+ },
+ {
+  "id": "widgets-W-21-moves",
+  "title": "W-21 Scramble and move display: three ways to pair one move strip with the Orbit (13 variants become 1)",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widget-inventory"
+  ],
+  "status": "exploring",
+  "decision": "pending user choice",
+  "n": 20,
+  "dir": "gallery/widgets/2026-10-02-W-21-moves",
+  "img": [
+   "W-21-01-overview.png",
+   "W-21-11-option1-states.png",
+   "W-21-12-option1-scramble-desktop.png",
+   "W-21-13-option1-wrong-turn-desktop.png"
+  ]
+ },
+ {
+  "id": "widgets-W-21-moves-v2",
+  "title": "W-21 Move display v2: desktop labels on the Orbit, phone wrapped sequence, a section is only extra space",
+  "date": "2026-10-02",
+  "branch": "widgets",
+  "parent": [
+   "widgets-W-21-moves"
+  ],
+  "status": "chosen",
+  "decision": "Desktop = option 1 (labels on the Orbit), phone = option 3 (wrapped sequence): two implementations. A section is only MORE SPACE than usual between two points on the Orbit (or two words on the phone): no brackets, no arcs above the curve, no parentheses. On the phone the undo moves form a spaced section. Long scrambles must work.",
+  "n": 13,
+  "dir": "gallery/widgets/2026-10-02-W-21-moves-v2",
+  "img": [
+   "W-21v2-11-states-desktop.png",
+   "W-21v2-12-scramble-desktop.png",
+   "W-21v2-13-wrong-turn-desktop.png",
+   "W-21v2-14-wrong-turn-two-undo-desktop.png"
+  ]
+ }
+]
