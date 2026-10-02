@@ -1,6 +1,9 @@
 import './shared.css';
 import './approved-widgets.css';
+import './families.css';
 import { APP_NAME } from '../../copy/nav.js';
+import { createToastSlot as mountToastSlot } from './families.js';
+export { createBreadcrumbs, createCountPill, createDialog, createDisclosure, createFileInput, createFilledInput, createFilledSelect, createLineChart, createListRow, createMoveDisplay, createNavigationRail, createPanel, createRangeInput, createRightDrawer, createSection, createSectionHeader, createSearch, createTextarea, createTimerReadout, createWipeComparison } from './families.js';
 
 export function createHeader(host, { title = APP_NAME, sections = ['solve', 'drills', 'algs', 'progress', 'history'], active = 'solve', compass = null, session = null, actions = {}, help = null, themeToggle = true, showDevDrawer = true } = {}) {
   const header = document.createElement('header'); header.className = 'site-header ui-header';
@@ -92,21 +95,24 @@ export function createKeyBar(host, keys = []) {
 }
 
 /** Coach sentence with the A-05 dotted connector to a selected Orbit marker. */
-export function createCoachLine(host, { text = '', marker = null, orbit = null } = {}) {
+export function createCoachLine(host, { text = '', marker = null, orbit = null, connectorHost = host } = {}) {
   const wrap = document.createElement('div'); wrap.className = 'ui-coach-line';
   const sentence = document.createElement('p'); sentence.className = 'ui-coach-line__text'; sentence.textContent = text;
   const connector = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); connector.classList.add('ui-coach-line__connector'); connector.setAttribute('aria-hidden', 'true');
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); connector.append(path); wrap.append(connector, sentence); host.append(wrap);
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); connector.append(path); wrap.append(sentence); host.append(wrap);
+  const restorePosition = connectorHost.style.position;
+  if (getComputedStyle(connectorHost).position === 'static') connectorHost.style.position = 'relative';
+  connectorHost.prepend(connector);
   let timer;
   const repaint = () => {
     if (!marker || !orbit) return;
-    wrap.classList.remove('is-linked'); clearTimeout(timer);
+    connector.classList.remove('is-linked'); clearTimeout(timer);
     const target = orbit.getMarkerElement?.(marker);
     if (!target) return;
-    const sentenceBox = sentence.getBoundingClientRect(), targetBox = target.getBoundingClientRect(), box = wrap.getBoundingClientRect();
+    const sentenceBox = sentence.getBoundingClientRect(), targetBox = target.getBoundingClientRect(), box = connectorHost.getBoundingClientRect();
     const x1 = Math.max(0, sentenceBox.right - box.left), y1 = sentenceBox.top + sentenceBox.height / 2 - box.top;
     const x2 = targetBox.left + targetBox.width / 2 - box.left, y2 = targetBox.top + targetBox.height / 2 - box.top;
-    connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`);
+    connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`); connector.setAttribute('width', String(Math.max(1, box.width))); connector.setAttribute('height', String(Math.max(1, box.height)));
     const cube = orbit.element.closest('.f0-stage')?.querySelector('.f0-cube canvas') || document.querySelector('.shared-cube canvas');
     const cubeBox = cube?.getBoundingClientRect();
     const minX = Math.min(sentenceBox.right, targetBox.left), maxX = Math.max(sentenceBox.right, targetBox.left);
@@ -118,10 +124,10 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null }
       const routeY = topRoute > 8 && (topRoute < box.height - 8 || bottomRoute > box.height - 8) ? topRoute : bottomRoute;
       path.setAttribute('d', `M ${x1} ${y1} L ${x1} ${routeY} L ${x2} ${routeY} L ${x2} ${y2}`);
     } else path.setAttribute('d', `M ${x1} ${y1} C ${x1 + (x2 - x1) * .32} ${y1}, ${x1 + (x2 - x1) * .68} ${y2}, ${x2} ${y2}`);
-    timer = setTimeout(() => wrap.classList.add('is-linked'), 30);
+    timer = setTimeout(() => connector.classList.add('is-linked'), 30);
   };
   const link = (nextMarker, nextOrbit = orbit) => {
-    marker = nextMarker; orbit = nextOrbit; wrap.classList.remove('is-linked'); clearTimeout(timer);
+    marker = nextMarker; orbit = nextOrbit; connector.classList.remove('is-linked'); clearTimeout(timer);
     if (!marker || !orbit) return;
     requestAnimationFrame(repaint);
   };
@@ -130,7 +136,7 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null }
   const subscribe = orbit?.element;
   subscribe?.addEventListener('orbitchange', follow);
   if (marker) requestAnimationFrame(() => link(marker, orbit));
-  return { element: wrap, sentence, link, update({ text: nextText, marker: nextMarker, orbit: nextOrbit } = {}) { if (nextText != null) sentence.textContent = nextText; if (nextMarker !== undefined) link(nextMarker, nextOrbit ?? orbit); else follow(); }, destroy() { clearTimeout(timer); window.removeEventListener('resize', follow); window.removeEventListener('scroll', follow, true); subscribe?.removeEventListener('orbitchange', follow); wrap.remove(); } };
+  return { element: wrap, sentence, connector, link, update({ text: nextText, marker: nextMarker, orbit: nextOrbit } = {}) { if (nextText != null) sentence.textContent = nextText; if (nextMarker !== undefined) link(nextMarker, nextOrbit ?? orbit); else follow(); }, destroy() { clearTimeout(timer); window.removeEventListener('resize', follow); window.removeEventListener('scroll', follow, true); subscribe?.removeEventListener('orbitchange', follow); connector.remove(); wrap.remove(); connectorHost.style.position = restorePosition; } };
 }
 
 export function createActions(host, actions = []) {
@@ -202,3 +208,5 @@ export function createToast(host, { text, detail = '', action = null, tone = 'de
   if (action) { const button = document.createElement('button'); button.type = 'button'; button.className = 'act'; button.textContent = action.label; button.addEventListener('click', action.onClick); toast.append(button); }
   host.append(toast); return toast;
 }
+
+export function createToastSlot(host = document.body) { return mountToastSlot(host, createToast); }

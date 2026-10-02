@@ -5,6 +5,7 @@ import '../pages/page.css';
 import '../../docs/design/_gallery/lightbox.css';
 import '../../docs/design/_gallery/lightbox.js';
 import './gallery.css';
+import { mountApprovedWidgetGallery } from './approved-widget-gallery.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { renderMarkdown } from './gallery-markdown.js';
 import {
@@ -37,6 +38,7 @@ export function mountGalleryPage(host) {
   const page = document.createElement('section');
   page.className = 'cs-page brain g-page';
   page.dataset.brainStyle = 'orbit';
+  page.dataset.opt = '3';
   page.dataset.testid = 'gallery-page';
   host.classList.add('cs-host');
   host.textContent = '';
@@ -54,6 +56,7 @@ export function mountGalleryPage(host) {
   let observer = null;
   let lastRouteKey = '';
   let branchOrder = [];
+  let widgetGallery = null;
   const lightbox = () => window.__lightbox;
 
   // ------------------------------------------------------------ data
@@ -157,7 +160,7 @@ export function mountGalleryPage(host) {
     const core = `<a class="g-widget-card" href="${hashFor('docs/design/orbit-v3')}"><b>Cube and Orbit · shared foundation</b><span>One Cube, one Orbit, the A-frame header and nine flow fixtures.</span><i>open the Cube and Orbit gallery →</i></a>`;
     const cards = families.map(([id, title, description]) => `<a class="g-widget-card" href="${hashFor(`post/${id}`)}"><b>${esc(title)}</b><span>${esc(description)}</span><i>view approved prototype and states →</i></a>`).join('');
     return `${head('widgets', 'Approved widgets', 'The complete approved set is registered here. Each prototype post records its states and exact chosen option.')}
-      <p class="g-count">47 decisions · 37 widget families · prototype detail opens from each row</p><div class="g-widget-grid">${core}${cards}</div>`;
+      <div data-approved-widget-gallery></div><p class="g-count">47 decisions · 37 widget families · prototype detail opens from each row</p><div class="g-widget-grid">${core}${cards}</div>`;
   }
 
   function groupView(path) {
@@ -290,6 +293,7 @@ export function mountGalleryPage(host) {
 
   function render() {
     if (!data) return;
+    widgetGallery?.destroy(); widgetGallery = null;
     const route = parseGalleryRoute(location.hash);
     const scrollKey = `${route.view}:${route.group || route.id || ''}`;
     const keepScroll = scrollKey === lastRouteKey;
@@ -309,6 +313,7 @@ export function mountGalleryPage(host) {
     }
     const warn = data.warnings?.length ? `<details class="g-warn"><summary>${data.warnings.length} gallery warning${data.warnings.length === 1 ? '' : 's'}</summary><ul>${data.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></details>` : '';
     page.innerHTML = html + warn;
+    if (route.view === 'widgets') widgetGallery = mountApprovedWidgetGallery(page.querySelector('[data-approved-widget-gallery]'));
     document.title = `gallery · CubeSight`;
     syncPageTokens(page);
     lightbox()?.setScope(null);
