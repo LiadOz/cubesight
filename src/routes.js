@@ -42,6 +42,15 @@ export const REDIRECTS = Object.freeze({
 
 /** Only the legacy drills own the global drill keys. */
 const KEY_SCOPES = Object.freeze({ corner: 'corner', f2l: 'f2l' });
+/**
+ * Dev-only route families (the image gallery), registered from main.js inside an
+ * `import.meta.env.DEV` block so a production build contains none of them.
+ * @type {Array<{ tool: string, match: (path: string) => boolean }>}
+ */
+const DEV_ROUTES = [];
+export function registerDevRoute(route) { DEV_ROUTES.push(route); }
+export const isKnownTool = tool => Object.hasOwn(TOOL_PATHS, tool) || DEV_ROUTES.some(route => route.tool === tool);
+
 /** 'corner' | 'f2l' for the routes whose keys main.js handles; null anywhere else. */
 export const keyScope = tool => KEY_SCOPES[tool] ?? null;
 
@@ -81,11 +90,13 @@ export function resolveRoute(hash, context = {}) {
   const { path, query } = parseHash(hash);
   let tool = PATH_TOOLS[path];
   if (!tool) tool = DYNAMIC_ROUTES.find(route => route.match(path))?.tool;
+  if (!tool) tool = DEV_ROUTES.find(route => route.match(path))?.tool;
   if (!tool && Object.hasOwn(REDIRECTS, path)) tool = PATH_TOOLS[REDIRECTS[path]];
   // Only the empty home hash is context-sensitive. Preserve unknown route and
   // query text so a not-found view does not hide the address the user entered.
   if (!tool && (path === '' || path === '/')) tool = PATH_TOOLS[chooseHome(context)];
   if (!tool) return { tool: 'notfound', hash: `#${path}${query}` };
-  const keepDynamicPath = DYNAMIC_ROUTES.some(route => route.tool === tool && route.match(path));
+  const keepDynamicPath = DYNAMIC_ROUTES.some(route => route.tool === tool && route.match(path))
+    || DEV_ROUTES.some(route => route.tool === tool && route.match(path));
   return { tool, hash: `#${keepDynamicPath ? path : TOOL_PATHS[tool]}${query}` };
 }

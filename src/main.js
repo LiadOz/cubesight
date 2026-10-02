@@ -10,7 +10,7 @@ import './not-found.css';
 import { setupTheme } from './theme.js';
 import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
 import { T, MSG, fmt, KEYS } from './copy/terms.js';
-import { TOOL_PATHS, resolveRoute, keyScope, parseHash } from './routes.js';
+import { isKnownTool, resolveRoute, keyScope, parseHash, registerDevRoute } from './routes.js';
 import { rememberDrill } from './drills/catalog.js';
 import { createRoundPanel } from './drills/round-panel.js';
 import { syncPageTokens } from './pages/tokens.js';
@@ -230,6 +230,8 @@ let scoutLoad = null;
 let scoutRouteHash = null;
 let smart = null;
 let smartLoad = null;
+let galleryPage = null; // dev only: stays null in a production build
+let galleryLoad = null;
 let brain = null;
 let brainLoad = null;
 let pll = null;
@@ -1709,7 +1711,7 @@ function syncRoute(initial = false) {
 }
 
 function setTool(tool, initial = false) {
-  if (!Object.hasOwn(TOOL_PATHS, tool) || (tool === activeTool && !initial && tool !== 'review')) return;
+  if (!isKnownTool(tool) || (tool === activeTool && !initial && tool !== 'review')) return;
   if ((tool === 'oll' || tool === 'lookahead') && drillPages[tool] && drillPageHashes[tool] !== location.hash) {
     drillPages[tool].detach();
     delete drillPages[tool];
@@ -1721,6 +1723,7 @@ function setTool(tool, initial = false) {
   document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
   scout?.setActive(false);
   smart?.setActive(false);
+  galleryPage?.setActive(false);
   pll?.setActive(false);
   brain?.setActive(false);
   drillsHub?.setActive(false);
@@ -1737,7 +1740,7 @@ function setTool(tool, initial = false) {
   activeTool = tool;
   syncLegacyCubes(tool);
   if (tool === 'corner' || tool === 'pll' || tool === 'f2l') syncLegacyDrillStyle();
-  document.title = `${PAGE_TITLES[tool]} · ${APP_NAME}`;
+  document.title = `${PAGE_TITLES[tool] ?? tool} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
   // Choosing another trainer starts fresh; a corner timeout must not block F2L.
   paused = false;
@@ -1793,6 +1796,8 @@ function setTool(tool, initial = false) {
         smartLoad = null;
       });
     } else smart?.setActive(true);
+  } else if (import.meta.env.DEV && tool === 'gallery') {
+    showDevGallery();
   } else if (tool === 'scout') {
     state.locked = true;
     f2lState.locked = true;
@@ -1853,6 +1858,19 @@ const PLACEHOLDERS = {
   algs: { title: 'algs', blurb: 'cases, algs and the ones you pick.', next: { label: 'drill what you know', href: '#/drills' } },
   progress: { title: 'progress', blurb: 'your solves and drills in one place.', next: { label: 'back to solve', href: '#/solve' } },
 };
+function showDevGallery() {
+  state.locked = true;
+  f2lState.locked = true;
+  const root = document.querySelector('#gallery-view');
+  if (galleryPage) { galleryPage.setActive(true); return; }
+  if (galleryLoad) return;
+  root.textContent = 'loading gallery…';
+  galleryLoad = import('./dev/gallery.js').then(({ mountGalleryPage }) => {
+    galleryPage = mountGalleryPage(root);
+    galleryPage.setActive(activeTool === 'gallery');
+  }).catch(() => { root.textContent = MSG.loadFailed('gallery'); galleryLoad = null; });
+}
+
 function mountPage(tool) {
   const root = document.querySelector(`#${TOOL_VIEWS[tool]}`);
   const failed = (_error) => { root.textContent = MSG.loadFailed('this page'); };
@@ -2162,6 +2180,18 @@ function syncLegacyCubes(tool) {
 updateStatsUI();
 updateSprintUI();
 updateLearningUI();
+if (import.meta.env.DEV) {
+  // Dev-only image gallery (#/dev/gallery): registered here so a production build has no trace of it.
+  registerDevRoute({ tool: 'gallery', match: path => /^\/dev\/gallery(?:\/.*)?$/.test(path) });
+  TOOL_VIEWS.gallery = 'gallery-view';
+  const galleryView = document.createElement('div');
+  galleryView.id = 'gallery-view';
+  galleryView.hidden = true;
+  document.querySelector('#smart-view').after(galleryView);
+  const helpLink = document.createElement('p');
+  helpLink.innerHTML = '<a href="#/dev/gallery" data-testid="open-gallery">dev gallery</a> · design mockups, screenshots and the development blog';
+  document.querySelector('#help-dialog').append(helpLink);
+}
 window.addEventListener('hashchange', () => syncRoute());
 document.addEventListener('cubesight-theme', () => {
   if (activeTool === 'notfound') syncPageTokens(document.querySelector('#not-found-view'));

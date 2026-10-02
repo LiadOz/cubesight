@@ -1,0 +1,442 @@
+// Dev-only image gallery and development blog at #/dev/gallery (see gallery/README.md).
+// Loaded by main.js only inside `import.meta.env.DEV`; the data comes from the Vite dev plugin at /__gallery.
+// Reuses the shared design-gallery lightbox (docs/design/_gallery/lightbox.js) for zoom, loupe and arrow browsing.
+import '../pages/page.css';
+import '../../docs/design/_gallery/lightbox.css';
+import '../../docs/design/_gallery/lightbox.js';
+import './gallery.css';
+import { syncPageTokens } from '../pages/tokens.js';
+import { renderMarkdown } from './gallery-markdown.js';
+import {
+  GALLERY_BASE, filterGroups, galleryHash, layoutTimeline, matchesQuery, parseGalleryRoute, searchImages, statusLabel,
+} from './gallery-model.js';
+
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const BRANCH_COLORS = ['#3dbfad', '#e0a13a', '#6aa6ff', '#d878b8', '#9acd5a', '#b08cf0', '#ef7b6b', '#7ac7d8'];
+const branchColor = lane => BRANCH_COLORS[lane % BRANCH_COLORS.length];
+const MAX_FLAT = 400;
+const STALE_MS = 8000;
+
+function ago(ms) {
+  const minutes = (Date.now() - ms) / 60000;
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${Math.round(minutes)} min ago`;
+  if (minutes < 60 * 36) return `${Math.round(minutes / 60)} h ago`;
+  if (minutes < 60 * 24 * 14) return `${Math.round(minutes / 60 / 24)} d ago`;
+  return new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+const fullDate = ms => new Date(ms).toLocaleString();
+const niceDate = iso => {
+  const d = new Date(`${iso}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+};
+const kindLabel = kind => (kind === 'designs' ? 'design' : kind === 'screenshots' ? 'agent screenshots' : kind);
+const labelOf = image => [image.id, image.title].filter(Boolean).join(' · ');
+
+export function mountGalleryPage(host) {
+  const page = document.createElement('section');
+  page.className = 'cs-page brain g-page';
+  page.dataset.brainStyle = 'orbit';
+  page.dataset.testid = 'gallery-page';
+  host.classList.add('cs-host');
+  host.textContent = '';
+  host.append(page);
+
+  let data = null;
+  let loading = null;
+  let fetchedAt = 0;
+  let signature = '';
+  let active = false;
+  let query = '';
+  let kind = 'all';
+  let branch = 'all';
+  let compareSel = [];
+  let observer = null;
+  let lastRouteKey = '';
+  let branchOrder = [];
+  const lightbox = () => window.__lightbox;
+
+  // ------------------------------------------------------------ data
+
+  async function load(force = false) {
+    if (loading) return loading;
+    if (!force && data && Date.now() - fetchedAt < STALE_MS) return null;
+    loading = fetch('/__gallery', { cache: 'no-store' })
+      .then(response => { if (!response.ok) throw new Error(`/__gallery ${response.status}`); return response.json(); })
+      .then(next => {
+        const nextSig = `${next.groups.length}:${next.posts.length}:${next.groups.reduce((n, g) => n + g.count + g.mtime, 0)}:${next.posts.reduce((n, p) => n + p.mtime, 0)}`;
+        const changed = nextSig !== signature;
+        data = next; signature = nextSig; fetchedAt = Date.now();
+        return changed;
+      })
+      .catch(error => { page.innerHTML = `<p class="g-error" role="alert">Could not load the gallery index: ${esc(error.message)}. It only exists on the Vite dev server.</p>`; throw error; })
+      .finally(() => { loading = null; });
+    return loading;
+  }
+
+  const postById = id => data.posts.find(post => post.id === id);
+  const groupByPath = path => data.groups.find(group => group.path === path);
+  const hashFor = (sub, q) => galleryHash(sub, q);
+  const absLink = hash => `${location.origin}${location.pathname}${hash}`;
+
+  // ------------------------------------------------------------ pieces
+
+  const statusBadge = status => `<span class="g-status g-status-${esc(status)}">${esc(statusLabel(status))}</span>`;
+
+  function card(image, { link, sub = '' }) {
+    const label = labelOf(image) || image.file;
+    return `<figure class="g-card" data-file="${esc(image.file)}">
+      <a class="g-thumb" href="${esc(image.path)}" data-file="${esc(image.file)}" data-path="${esc(image.path)}" aria-label="${esc(label)}"><img loading="lazy" decoding="async" src="${esc(image.path)}" alt="${esc(label)}" data-file="${esc(image.file)}" data-path="${esc(image.path)}"></a>
+      <figcaption>
+        <span class="g-id">${esc(image.id || '')}</span>
+        <span class="g-title" title="${esc(image.file)}">${esc(image.title)}</span>
+        ${sub ? `<span class="g-sub">${esc(sub)}</span>` : ''}
+        <button type="button" class="g-copy" data-copy="${esc(link)}" aria-label="Copy link to ${esc(label)}">copy link</button>
+      </figcaption>
+    </figure>`;
+  }
+
+  const tabs = view => {
+    const items = [
+      ['folders', 'Folders', hashFor('')], ['blog', 'Blog', hashFor('blog')], ['timeline', 'Timeline', hashFor('timeline')],
+    ];
+    const current = view === 'group' ? 'folders' : view === 'post' || view === 'compare' ? 'blog' : view;
+    return `<nav class="g-tabs" aria-label="Gallery">${items.map(([id, label, href]) => `<a href="${href}" ${id === current ? 'aria-current="page"' : ''}>${label}</a>`).join('')}
+      <button type="button" class="g-refresh" data-refresh title="Reload the index">refresh</button></nav>`;
+  };
+
+  const chips = (name, options, current) => `<div class="g-chips" role="group" aria-label="${esc(name)}">${options
+    .map(([value, label]) => `<button type="button" class="g-chip" data-chip="${esc(name)}" data-value="${esc(value)}" aria-pressed="${value === current}">${esc(label)}</button>`).join('')}</div>`;
+
+  const search = placeholder => `<input type="search" class="g-search" data-search placeholder="${esc(placeholder)}" value="${esc(query)}" aria-label="${esc(placeholder)}" autocomplete="off">`;
+
+  const head = (view, title, sub) => `<header class="cs-head g-head"><p class="g-eyebrow">dev / gallery</p><h1>${title}</h1>${sub ? `<p class="cs-sub">${sub}</p>` : ''}${tabs(view)}</header>`;
+
+  // ------------------------------------------------------------ views
+
+  function foldersView() {
+    const kinds = [['all', 'all'], ['designs', 'designs'], ['screenshots', 'agent screenshots']];
+    let body;
+    if (query.trim()) {
+      const hits = searchImages(data.groups, query, kind);
+      const shown = hits.slice(0, MAX_FLAT);
+      body = `<p class="g-count">${hits.length} image${hits.length === 1 ? '' : 's'} match</p>
+        <div class="g-grid" data-lb-scope data-scope-id="search">${shown.map(({ group, image }) => card(image, { link: absLink(hashFor(group.path, { img: image.file })), sub: group.path.replace(/^docs\/design\//, '') })).join('')}</div>
+        ${hits.length > shown.length ? `<p class="g-count">Showing the first ${MAX_FLAT}. Narrow the search to see the rest.</p>` : ''}`;
+    } else {
+      const groups = filterGroups(data.groups, { kind });
+      body = `<div class="g-groups">${groups.map(group => `<a class="g-group" href="${hashFor(group.path)}" data-testid="group-card" data-group="${esc(group.path)}">
+          <span class="g-thumbs">${group.images.slice(0, 3).map(image => `<img loading="lazy" decoding="async" src="${esc(image.path)}" alt="">`).join('')}</span>
+          <span class="g-group-body">
+            <span class="g-group-title">${esc(group.title)}</span>
+            <span class="g-group-path">${esc(group.path)}</span>
+            ${group.description ? `<span class="g-group-desc">${esc(group.description)}</span>` : ''}
+            <span class="g-group-meta"><span class="g-kind">${esc(kindLabel(group.kind))}</span> ${group.count} image${group.count === 1 ? '' : 's'} · updated <time title="${esc(fullDate(group.mtime))}">${esc(ago(group.mtime))}</time></span>
+          </span></a>`).join('') || '<p class="g-empty">No folders match.</p>'}</div>`;
+    }
+    return `${head('folders', 'Gallery', 'Every design mockup and agent screenshot, newest folders first.')}
+      <div class="g-toolbar">${search('Search title, file or folder')}${chips('kind', kinds, kind)}</div>${body}`;
+  }
+
+  function groupView(path) {
+    const group = groupByPath(path);
+    if (!group) return `${head('group', 'Folder not found', '')}<p class="g-empty">No images under <code>${esc(path)}</code>. <a href="${hashFor('')}">All folders</a></p>`;
+    const images = query.trim() ? group.images.filter(image => matchesQuery(query, image.title, image.file, image.id, image.caption)) : group.images;
+    const posts = data.posts.filter(post => post.images.some(image => decodeURIComponent(image.path).startsWith(`/${group.path}/`)));
+    return `${head('group', esc(group.title), esc(group.description))}
+      <p class="g-crumbs"><a href="${hashFor('')}">all folders</a> / <code>${esc(group.path)}</code> · <span class="g-kind">${esc(kindLabel(group.kind))}</span> ${group.count} images · updated <time title="${esc(fullDate(group.mtime))}">${esc(ago(group.mtime))}</time>
+        ${group.index ? ` · <a href="${esc(group.index)}" target="_blank" rel="noopener">static page</a>` : ''}
+        ${posts.map(post => ` · <a href="${hashFor(`post/${post.id}`)}">post: ${esc(post.title)}</a>`).join('')}</p>
+      <div class="g-toolbar">${search('Filter this folder')}</div>
+      <div class="g-grid" data-lb-scope data-scope-id="${esc(group.path)}">${images.map(image => card(image, { link: absLink(hashFor(group.path, { img: image.file })) })).join('') || '<p class="g-empty">Nothing matches.</p>'}</div>`;
+  }
+
+  // Markdown: relative image names resolve against the post's folder; '/x' is a project path.
+  const resolver = post => (name, role) => {
+    if (/^(?:https?:|#|\/)/i.test(name)) return name;
+    if (role === 'link' && !/\.(?:png|jpe?g|webp|svg)$/i.test(name)) return name;
+    return post.base + name.split('/').map(encodeURIComponent).join('/');
+  };
+
+  function postArticle(post, { full }) {
+    const children = data.posts.filter(other => other.parent.includes(post.id));
+    const link = image => absLink(hashFor(`post/${post.id}`, { img: image.file }));
+    const images = post.images;
+    return `<article class="g-post" id="post-${esc(post.id)}" data-post="${esc(post.id)}" data-testid="post" data-lb-scope data-scope-id="${esc(post.id)}">
+      <header>
+        <p class="g-meta"><time datetime="${esc(post.date)}">${esc(niceDate(post.date))}</time><span class="g-branch" style="--lane:${branchColor(Math.max(0, branchOrder.indexOf(post.branch)))}">${esc(post.branch)}</span>${statusBadge(post.status)}${post.author ? `<span class="g-author">${esc(post.author)}</span>` : ''}</p>
+        <h2>${full ? esc(post.title) : `<a href="${hashFor(`post/${post.id}`)}">${esc(post.title)}</a>`}</h2>
+        ${post.decision ? `<p class="g-decision">${esc(post.decision)}</p>` : ''}
+      </header>
+      <div class="g-md">${renderMarkdown(post.body, resolver(post))}</div>
+      ${images.length ? `<div class="${full ? 'g-grid' : 'g-strip'}">${images.map(image => card(image, { link: link(image) })).join('')}</div>` : ''}
+      <footer class="g-post-foot">
+        ${post.parent.length ? `<span>from ${post.parent.map(id => postById(id) ? `<a href="${hashFor(`post/${id}`)}">${esc(postById(id).title)}</a>` : esc(id)).join(', ')}</span>` : ''}
+        ${children.length ? `<span>led to ${children.map(child => `<a href="${hashFor(`post/${child.id}`)}">${esc(child.title)}</a>`).join(', ')}</span>` : ''}
+        <span>${images.length} image${images.length === 1 ? '' : 's'}</span>
+        ${post.parent[0] && postById(post.parent[0]) ? `<a href="${hashFor('compare', { a: post.parent[0], b: post.id })}">compare with parent</a>` : ''}
+        <button type="button" class="g-copy" data-copy="${esc(absLink(hashFor(`post/${post.id}`)))}">copy link</button>
+      </footer>
+    </article>`;
+  }
+
+  function blogView() {
+    const branches = ['all', ...new Set(data.posts.map(post => post.branch))];
+    const posts = data.posts.filter(post => (branch === 'all' || post.branch === branch)
+      && matchesQuery(query, post.title, post.id, post.branch, post.status, post.decision, post.body, post.author));
+    return `${head('blog', 'Development blog', 'One post per exploration or iteration, newest first. Branches are lanes on the timeline.')}
+      <div class="g-toolbar">${search('Search posts')}${chips('branch', branches.map(b => [b, b]), branch)}</div>
+      <div class="g-posts">${posts.map(post => postArticle(post, { full: false })).join('') || '<p class="g-empty">No posts match.</p>'}</div>`;
+  }
+
+  function postView(id) {
+    const post = postById(id);
+    if (!post) return `${head('post', 'Post not found', '')}<p class="g-empty">No post with id <code>${esc(id)}</code>. <a href="${hashFor('blog')}">All posts</a></p>`;
+    return `${head('post', 'Post', '')}<p class="g-crumbs"><a href="${hashFor('blog')}">blog</a> / <code>${esc(post.id)}</code></p>${postArticle(post, { full: true })}`;
+  }
+
+  const laneWidth = lanes => (lanes > 7 ? 13 : 18);
+  const NODE_Y = 30;
+  function graphSvg(row, laneCount) {
+    const width = laneCount * laneWidth(laneCount) + 8;
+    const x = lane => 10 + lane * laneWidth(laneCount);
+    const parts = row.segments.map(segment => {
+      const color = branchColor(segment.color);
+      if (segment.kind === 'through') return `<line x1="${x(segment.lane)}" y1="0" x2="${x(segment.lane)}" y2="100%" stroke="${color}" stroke-width="2"/>`;
+      if (segment.kind === 'up') return `<line x1="${x(segment.lane)}" y1="0" x2="${x(segment.lane)}" y2="${NODE_Y}" stroke="${color}" stroke-width="2"/>`;
+      if (segment.kind === 'down') return `<line x1="${x(segment.lane)}" y1="${NODE_Y}" x2="${x(segment.lane)}" y2="100%" stroke="${color}" stroke-width="2"/>`;
+      const fromX = x(segment.from); const toX = x(segment.to); const endY = NODE_Y + 34;
+      return `<path d="M${fromX} ${NODE_Y} C${fromX} ${NODE_Y + 20} ${toX} ${endY - 20} ${toX} ${endY}" fill="none" stroke="${color}" stroke-width="2"/>
+        <line x1="${toX}" y1="${endY}" x2="${toX}" y2="100%" stroke="${color}" stroke-width="2"/>`;
+    }).join('');
+    const color = branchColor(row.lane);
+    const hollow = row.post.status === 'rejected' || row.post.status === 'superseded';
+    const node = `<circle class="g-node g-node-${esc(row.post.status)}" cx="${x(row.lane)}" cy="${NODE_Y}" r="6.5" fill="${hollow ? 'var(--b-bg)' : color}" stroke="${color}" stroke-width="2.5"/>`
+      + (row.post.status === 'built' ? `<circle cx="${x(row.lane)}" cy="${NODE_Y}" r="2.2" fill="var(--b-bg)"/>` : '');
+    return `<svg class="g-graph" width="${width}" aria-hidden="true">${parts}${node}</svg>`;
+  }
+
+  function timelineView() {
+    const layout = layoutTimeline(data.posts);
+    const lanes = Math.max(1, layout.branches.length);
+    const rows = layout.rows.map(row => {
+      const post = row.post;
+      const thumbs = post.images.slice(0, 4);
+      const note = post.decision || (post.body.replace(/[#*`>\-\d.[\]()!]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160));
+      return `<li class="g-trow" data-post="${esc(post.id)}" data-testid="timeline-node">
+        <div class="g-gcell" style="width:${lanes * laneWidth(lanes) + 8}px">${graphSvg(row, lanes)}</div>
+        <div class="g-tcard">
+          <p class="g-meta"><time datetime="${esc(post.date)}">${esc(niceDate(post.date))}</time><span class="g-branch" style="--lane:${branchColor(row.lane)}">${esc(post.branch)}</span>${statusBadge(post.status)}</p>
+          <h3><a href="${hashFor(`post/${post.id}`)}">${esc(post.title)}</a></h3>
+          ${note ? `<p class="g-note">${esc(note)}</p>` : ''}
+          ${thumbs.length ? `<a class="g-tthumbs" href="${hashFor(`post/${post.id}`)}" aria-label="Open ${esc(post.title)}">${thumbs.map(image => `<img loading="lazy" decoding="async" src="${esc(image.path)}" alt="">`).join('')}<span>${post.images.length}</span></a>` : ''}
+          <label class="g-cmp"><input type="checkbox" data-cmp="${esc(post.id)}" ${compareSel.includes(post.id) ? 'checked' : ''}> compare</label>
+        </div>
+      </li>`;
+    }).join('');
+    const legend = layout.branches.map((name, lane) => `<span class="g-legend-item"><i style="background:${branchColor(lane)}"></i>${esc(name)}</span>`).join('');
+    return `${head('timeline', 'Timeline', 'Explorations as a branching history: lanes are branches, lines point from a post to the post it grew out of.')}
+      <div class="g-legend">${legend}</div>
+      <div class="g-compare-bar" data-compare-bar ${compareSel.length === 2 ? '' : 'hidden'}>
+        ${compareSel.length === 2 ? `<a class="g-btn" href="${hashFor('compare', { a: compareSel[0], b: compareSel[1] })}" data-testid="compare-go">Compare ${esc(compareSel[0])} with ${esc(compareSel[1])}</a>` : ''}
+      </div>
+      <ol class="g-timeline">${rows || '<li class="g-empty">No posts yet.</li>'}</ol>`;
+  }
+
+  function comparePane(side, id, file) {
+    const post = postById(id) || data.posts[0];
+    const images = post?.images || [];
+    const image = images.find(item => item.file === file) || images[0];
+    return `<section class="g-pane" data-lb-scope data-scope-id="compare-${side}">
+      <select class="g-select" data-cmp-post="${side}" aria-label="Post ${side.toUpperCase()}">${data.posts.map(item => `<option value="${esc(item.id)}" ${item.id === post.id ? 'selected' : ''}>${esc(item.date)} · ${esc(item.title)}</option>`).join('')}</select>
+      ${post ? `<p class="g-meta"><time>${esc(niceDate(post.date))}</time><span class="g-branch">${esc(post.branch)}</span>${statusBadge(post.status)}</p>
+        <p class="g-decision">${esc(post.decision)}</p>
+        <select class="g-select" data-cmp-image="${side}" aria-label="Image ${side.toUpperCase()}">${images.map(item => `<option value="${esc(item.file)}" ${image && item.file === image.file ? 'selected' : ''}>${esc(labelOf(item) || item.file)}</option>`).join('')}</select>
+        ${image ? `<img class="g-big" src="${esc(image.path)}" alt="${esc(labelOf(image))}" data-file="${esc(image.file)}">` : '<p class="g-empty">This post has no images.</p>'}` : ''}
+    </section>`;
+  }
+
+  function compareView(params) {
+    const a = params.get('a') || data.posts[1]?.id || data.posts[0]?.id;
+    const b = params.get('b') || data.posts[0]?.id;
+    return `${head('compare', 'Compare', 'Two explorations side by side. Pick any post and image on each side; click an image to zoom.')}
+      <p class="g-crumbs"><a href="${hashFor('timeline')}">timeline</a> / compare</p>
+      <div class="g-compare">${comparePane('a', a, params.get('ai'))}${comparePane('b', b, params.get('bi'))}</div>`;
+  }
+
+  // ------------------------------------------------------------ render and deep links
+
+  function render() {
+    if (!data) return;
+    const route = parseGalleryRoute(location.hash);
+    const scrollKey = `${route.view}:${route.group || route.id || ''}`;
+    const keepScroll = scrollKey === lastRouteKey;
+    lastRouteKey = scrollKey;
+    branchOrder = layoutTimeline(data.posts).branches;
+    const focused = document.activeElement?.matches?.('[data-search]');
+    const y = window.scrollY;
+    let html;
+    switch (route.view) {
+      case 'blog': html = blogView(); break;
+      case 'timeline': html = timelineView(); break;
+      case 'post': html = postView(route.id); break;
+      case 'compare': html = compareView(route.params); break;
+      case 'group': html = groupView(route.group); break;
+      default: html = foldersView();
+    }
+    const warn = data.warnings?.length ? `<details class="g-warn"><summary>${data.warnings.length} gallery warning${data.warnings.length === 1 ? '' : 's'}</summary><ul>${data.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></details>` : '';
+    page.innerHTML = html + warn;
+    document.title = `gallery · CubeSight`;
+    syncPageTokens(page);
+    lightbox()?.setScope(null);
+    if (focused) { const input = page.querySelector('[data-search]'); input?.focus(); input?.setSelectionRange(input.value.length, input.value.length); }
+    window.scrollTo(0, keepScroll ? y : 0);
+    openFromUrl(route);
+  }
+
+  function scopeFor(route) {
+    const wanted = route.params.get('post');
+    const scopes = [...page.querySelectorAll('[data-lb-scope]')];
+    return scopes.find(scope => wanted && scope.dataset.scopeId === wanted) || scopes[0] || null;
+  }
+
+  function openFromUrl(route) {
+    const file = route.params.get('img');
+    if (!file) { if (lightbox() && document.querySelector('.lb-root.lb-open')) lightbox().close(); return; }
+    const scope = scopeFor(route);
+    const image = scope && [...scope.querySelectorAll('img[data-file]')].find(img => img.dataset.file === file || img.dataset.path === file);
+    if (!image) return;
+    lastScope = scope;
+    lightbox().setScope(scope);
+    image.scrollIntoView({ block: 'center' });
+    attachObserver();
+    lightbox().open(image);
+  }
+
+  // Keep ?img= in the address bar in step with the lightbox (replaceState: no hashchange, no re-render).
+  function attachObserver() {
+    const root = document.querySelector('.lb-root');
+    if (!root || observer?.root === root) return;
+    observer?.disconnect();
+    const watcher = new MutationObserver(syncUrlWithLightbox);
+    watcher.observe(root, { attributes: true, childList: true, subtree: true, characterData: true });
+    observer = watcher;
+    observer.root = root;
+  }
+
+  function syncUrlWithLightbox() {
+    if (!active) return;
+    const root = document.querySelector('.lb-root');
+    const route = parseGalleryRoute(location.hash);
+    const params = new URLSearchParams(route.params);
+    if (root?.classList.contains('lb-open')) {
+      const [n] = (root.querySelector('.lb-count')?.textContent || '').split('/').map(part => parseInt(part, 10));
+      const scope = lastScope;
+      const imgs = scope ? [...document.querySelectorAll('img')].filter(img => scope.contains(img)) : [];
+      const current = imgs[n - 1];
+      if (!current?.dataset.file) return;
+      params.set('img', current.dataset.file);
+      if (scope.dataset.scopeId && route.view === 'blog') params.set('post', scope.dataset.scopeId);
+    } else { params.delete('img'); params.delete('post'); }
+    const sub = location.hash.slice(1).split('?')[0].replace(GALLERY_BASE, '').replace(/^\//, '');
+    const next = galleryHash(decodeURIComponent(sub), Object.fromEntries(params));
+    if (next !== location.hash) history.replaceState(null, '', `${location.pathname}${location.search}${next}`);
+  }
+
+  // ------------------------------------------------------------ events
+
+  let lastScope = null;
+  async function copy(text, button) {
+    try { await navigator.clipboard.writeText(text); } catch {
+      const area = document.createElement('textarea');
+      area.value = text; area.style.position = 'fixed'; area.style.opacity = '0';
+      document.body.append(area); area.select();
+      try { document.execCommand('copy'); } catch { /* nothing more to try */ }
+      area.remove();
+    }
+    const old = button.textContent;
+    button.textContent = 'copied';
+    button.classList.add('is-copied');
+    setTimeout(() => { button.textContent = old; button.classList.remove('is-copied'); }, 1200);
+  }
+
+  page.addEventListener('click', event => {
+    const target = event.target;
+    const copyButton = target.closest('[data-copy]');
+    if (copyButton) { event.preventDefault(); copy(copyButton.dataset.copy, copyButton); return; }
+    if (target.closest('[data-refresh]')) { load(true).then(() => render()).catch(() => {}); return; }
+    const chip = target.closest('[data-chip]');
+    if (chip) {
+      if (chip.dataset.chip === 'kind') kind = chip.dataset.value; else branch = chip.dataset.value;
+      render();
+      return;
+    }
+    // Navigation links that wrap thumbnails must not be taken over by the lightbox's global image click handler.
+    const nav = target.closest('a[href^="#"]');
+    if (nav) { event.preventDefault(); location.hash = nav.getAttribute('href'); return; }
+    // Image clicks: browse within the nearest scope (a group grid, a post, a compare pane).
+    const scope = target.closest('[data-lb-scope]');
+    if (target.closest('img, a.g-thumb') && scope) {
+      lastScope = scope;
+      lightbox()?.setScope(scope);
+      queueMicrotask(attachObserver);
+      setTimeout(() => { attachObserver(); syncUrlWithLightbox(); }, 0);
+    } else if (target.closest('img')) {
+      event.preventDefault(); // a thumbnail outside any scope: do not open a one-image lightbox
+    }
+  });
+
+  page.addEventListener('input', event => {
+    if (!event.target.matches('[data-search]')) return;
+    query = event.target.value;
+    render();
+  });
+
+  page.addEventListener('change', event => {
+    const input = event.target;
+    if (input.matches('[data-cmp]')) {
+      const id = input.dataset.cmp;
+      compareSel = compareSel.filter(item => item !== id);
+      if (input.checked) compareSel.push(id);
+      if (compareSel.length > 2) compareSel = compareSel.slice(-2);
+      page.querySelectorAll('[data-cmp]').forEach(box => { box.checked = compareSel.includes(box.dataset.cmp); });
+      const bar = page.querySelector('[data-compare-bar]');
+      bar.hidden = compareSel.length !== 2;
+      bar.innerHTML = compareSel.length === 2 ? `<a class="g-btn" href="${hashFor('compare', { a: compareSel[0], b: compareSel[1] })}" data-testid="compare-go">Compare ${esc(compareSel[0])} with ${esc(compareSel[1])}</a>` : '';
+      return;
+    }
+    if (input.matches('[data-cmp-post], [data-cmp-image]')) {
+      const params = new URLSearchParams(parseGalleryRoute(location.hash).params);
+      const side = input.dataset.cmpPost || input.dataset.cmpImage;
+      if (input.dataset.cmpPost) { params.set(side, input.value); params.delete(`${side}i`); } else params.set(`${side}i`, input.value);
+      location.hash = galleryHash('compare', Object.fromEntries(params));
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (!active || event.key !== '/' || event.target.closest?.('input, textarea, select')) return;
+    const input = page.querySelector('[data-search]');
+    if (input) { event.preventDefault(); input.focus(); }
+  });
+
+  // ------------------------------------------------------------ lifecycle
+
+  async function activate() {
+    active = true;
+    host.hidden = false;
+    if (!data) page.textContent = 'loading gallery…';
+    try {
+      await load();
+      if (active) render();
+    } catch { /* load() already showed the error */ }
+  }
+
+  return {
+    setActive(on) {
+      if (on) { activate(); return; }
+      active = false;
+      lightbox()?.setScope(null);
+      if (document.querySelector('.lb-root.lb-open')) lightbox()?.close();
+    },
+  };
+}
