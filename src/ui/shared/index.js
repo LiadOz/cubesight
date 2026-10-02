@@ -16,14 +16,21 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const controls = document.createElement('div'); controls.className = 'header-actions ui-header__actions';
   const themeButton = document.createElement('button'); themeButton.id = 'theme-toggle'; themeButton.type = 'button'; themeButton.className = 'header-button theme-button'; themeButton.setAttribute('aria-label', 'theme'); themeButton.innerHTML = '<svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></svg><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span class="theme-label" aria-hidden="true">dark</span>';
   if (themeToggle) controls.append(themeButton);
-  const cubeMenu = document.createElement('details'); cubeMenu.className = 'ui-cube-menu';
-  const summary = document.createElement('summary'); summary.className = 'ui-cube-chip'; summary.setAttribute('aria-label', 'cube connection and recording');
+  const cubeMenu = document.createElement('div'); cubeMenu.className = 'ui-cube-menu';
+  const summary = document.createElement('button'); summary.type = 'button'; summary.className = 'ui-cube-chip'; summary.setAttribute('aria-label', 'cube connection and recording');
   const dot = document.createElement('i'); dot.className = 'ui-cube-chip__dot'; const description = document.createElement('span'); description.className = 'ui-cube-chip__name'; const battery = document.createElement('span'); battery.className = 'ui-cube-chip__battery';
   summary.append(dot, description, battery, document.createTextNode('⌄'));
-  const menu = document.createElement('div'); menu.className = 'ui-cube-menu__items'; menu.setAttribute('role', 'menu');
+  const menu = document.createElement('dialog'); menu.className = 'ui-cube-menu__drawer'; menu.setAttribute('aria-label', 'Cube and recording actions');
+  const menuHead = document.createElement('div'); menuHead.className = 'ui-cube-menu__head';
+  const menuTitle = document.createElement('h2'); menuTitle.textContent = 'cube and recording';
+  const menuClose = document.createElement('button'); menuClose.type = 'button'; menuClose.className = 'ui-cube-menu__close'; menuClose.textContent = 'close'; menuClose.addEventListener('click', () => menu.close());
+  menuHead.append(menuTitle, menuClose);
+  const menuItems = document.createElement('div'); menuItems.className = 'ui-cube-menu__items'; menuItems.setAttribute('role', 'menu');
   const actionsForMenu = [['connect', 'connect'], ['sync', 'sync solved cube'], ['recenter', 'recenter'], ['disconnect', 'disconnect'], ['forget', 'forget saved cube'], ['save-recording', 'save recording'], ['report-problem', 'report a problem']];
-  actionsForMenu.forEach(([id, label]) => { const button = document.createElement('button'); button.type = 'button'; button.dataset.cubeAction = id; button.textContent = label; button.setAttribute('role', 'menuitem'); button.addEventListener('click', () => { cubeMenu.open = false; actions[id]?.(); }); menu.append(button); });
-  cubeMenu.append(summary, menu); controls.append(cubeMenu);
+  actionsForMenu.forEach(([id, label]) => { const button = document.createElement('button'); button.type = 'button'; button.dataset.cubeAction = id; button.textContent = label; button.setAttribute('role', 'menuitem'); button.addEventListener('click', () => { menu.close(); actions[id]?.(); }); menuItems.append(button); });
+  menu.append(menuHead, menuItems);
+  summary.addEventListener('click', () => { if (!menu.open) menu.showModal(); });
+  cubeMenu.append(summary); controls.append(cubeMenu); document.body.append(menu);
   const helpButton = document.createElement('button'); helpButton.type = 'button'; helpButton.className = 'header-button help-button'; helpButton.dataset.action = 'open-help'; helpButton.setAttribute('aria-label', 'help'); helpButton.textContent = '?'; helpButton.addEventListener('click', () => help?.()); controls.append(helpButton);
   let drawer = null;
   const openDrawer = () => { if (!showDevDrawer) return; if (!drawer) {
@@ -65,14 +72,21 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const unsubscribe = session?.subscribe?.(applySnapshot);
   const themeObserver = new MutationObserver(() => applySnapshot(session?.getSnapshot?.() || {}));
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  header.destroy = () => { header.dispatchEvent(new Event('cube-header-destroy')); unsubscribe?.(); themeObserver.disconnect(); drawer?.remove(); header.remove(); };
+  header.destroy = () => { header.dispatchEvent(new Event('cube-header-destroy')); unsubscribe?.(); themeObserver.disconnect(); drawer?.remove(); menu.remove(); header.remove(); };
   header.openDeveloperDrawer = openDrawer;
   return header;
 }
 
 export function createKeyBar(host, keys = []) {
   const bar = document.createElement('div'); bar.className = 'ui-key-bar'; bar.setAttribute('aria-label', 'keyboard shortcuts');
-  keys.slice(0, 3).forEach(({ key, label }) => { const item = document.createElement('span'); const kbd = document.createElement('kbd'); kbd.textContent = key; const text = document.createElement('span'); text.textContent = label; item.append(kbd, text); bar.append(item); });
+  keys.slice(0, 3).forEach(({ key, label }) => {
+    const item = document.createElement('span');
+    const pair = Array.isArray(key) ? key : (typeof key === 'string' && key.includes('–') ? key.split('–').map(part => part.trim()) : null);
+    const kbd = document.createElement('kbd'); kbd.className = `key${pair?.length === 2 ? ' key--pair' : ''}`;
+    if (pair?.length === 2) pair.forEach(part => { const cap = document.createElement('i'); cap.textContent = part; kbd.append(cap); });
+    else kbd.textContent = String(key);
+    const text = document.createElement('span'); text.textContent = label; item.append(kbd, text); bar.append(item);
+  });
   host.append(bar); return bar;
 }
 
