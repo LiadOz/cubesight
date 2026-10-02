@@ -30,7 +30,7 @@ function drillMeta(row) {
 
 export function createProgressPage(host, { storage = globalThis.localStorage } = {}) {
   const page = document.createElement('section'); page.className = 'brain cs-page progress-page';
-  let active = false, detached = false, history = null, algorithms = [], refreshId = 0;
+  let active = false, detached = false, history = null, algorithms = [], refreshId = 0, lifecycleGeneration = 0;
   let cube = null, cubeLoad = null, orbit = null, viewModel = null, miniOrbits = [];
   let selectedView = readGoal(storage) ? 'goal' : 'splits';
   let goalFormError = '', shareStatus = 'share latest solve · PNG';
@@ -58,16 +58,22 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   host.replaceChildren(page);
 
   function mountCube() {
-    if (cubeLoad || cube || detached) return;
-    cubeLoad = import('../ui/cube/index.js').then(({ createCube }) => {
-      if (detached || !cubeMount.isConnected) return null;
-      cube = createCube(cubeMount, { state: createSolvedState(), mode: 'case', size: 'M', label: '3D cube at the center of the progress Orbit' });
-      if (detached || !cubeMount.isConnected) { cube.destroy(); cube = null; return null; }
-      return cube;
+    if (cubeLoad || cube || detached || !active) return;
+    const generation = lifecycleGeneration;
+    const pending = import('../ui/cube/index.js').then(({ createCube }) => {
+      if (detached || !active || generation !== lifecycleGeneration || !cubeMount.isConnected) return null;
+      const mountedCube = createCube(cubeMount, { state: createSolvedState(), mode: 'case', size: 'M', label: '3D cube at the center of the progress Orbit' });
+      if (detached || !active || generation !== lifecycleGeneration || !cubeMount.isConnected) { mountedCube.destroy(); return null; }
+      cube = mountedCube;
+      return mountedCube;
     }).catch(() => {
-      if (!detached && cubeMount.isConnected) cubeMount.textContent = '3D cube preview unavailable.';
+      if (!detached && active && generation === lifecycleGeneration && cubeMount.isConnected) cubeMount.textContent = '3D cube preview unavailable.';
       return null;
+    }).finally(() => {
+      if (cubeLoad === pending) cubeLoad = null;
+      if (active && !detached && !cube && generation !== lifecycleGeneration) mountCube();
     });
+    cubeLoad = pending;
   }
 
   const historyReady = openHistory().then(store => { history = store; }).catch(() => {});
@@ -169,9 +175,25 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   return {
     get ready() { return Promise.all([ready, cubeLoad ?? Promise.resolve(null)]); },
     getViewModel() { return viewModel; },
-    setActive(value) { active = Boolean(value); if (active) { render(); mountCube(); void (history ? history.reload().catch(() => {}) : historyReady).then(() => { if (active && !detached) return refresh(); }); } },
+    setActive(value) {
+      if (detached) return;
+      const next = Boolean(value);
+      if (next === active) return;
+      active = next;
+      lifecycleGeneration++;
+      if (!active) {
+        refreshId++;
+        cube?.destroy?.(); cube = null;
+        return;
+      }
+      render(); mountCube();
+      const generation = lifecycleGeneration;
+      void (history ? history.reload().catch(() => {}) : historyReady).then(() => {
+        if (active && !detached && generation === lifecycleGeneration) return refresh();
+      });
+    },
     detach() {
-      detached = true; active = false; refreshId++;
+      detached = true; active = false; lifecycleGeneration++; refreshId++;
       document.removeEventListener('cubesight-theme', onTheme);
       cube?.destroy?.(); cube = null;
       orbit?.destroy(); orbit = null;
