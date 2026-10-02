@@ -120,6 +120,7 @@ FAMILIES.lists = { dir: 'gallery/widgets/2026-10-02-lists-data', page: 'lists.ht
 
 // dev pages: timeline graph (W-32), thumbnail card (W-33), blog post (W-34), compare view (W-35)
 const DPJ = [
+  ['DP-00', 'decide', 'decide', 'decide: pick ①②③ for Q1, Q2 and Q3', 'every option side by side; my pick is marked; the blog post needs no answer.'],
   ['DP-01', 'shared-pieces', 'shared', 'the shared pieces of every dev page', 'header, tabs, status badge, branch tag, caption, and the two widgets that are not approved yet. Dark above, light below.', true],
   ['DP-11', 'timeline-1-git-graph', 't1', 'W-32 option 1: the git graph, kept (full page)', 'lanes in one neutral line, the chosen path thick, 44 posts on one page.'],
   ['DP-12', 'timeline-2-rings', 't2', 'W-32 option 2: every branch is a ring', 'branches as concentric rings, posts as points, the chosen path emphasized.'],

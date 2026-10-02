@@ -98,5 +98,10 @@
     "id": "DP-91",
     "title": "light sheet: the recommended option of each family",
     "caption": "the top screen of W-32 3, W-33 1, W-34 2 and W-35 3 in the light theme."
+  },
+  "DP-00-decide.png": {
+    "id": "DP-00",
+    "title": "decide: pick ①②③ for Q1, Q2 and Q3",
+    "caption": "every option side by side; my pick is marked; the blog post needs no answer."
   }
 }

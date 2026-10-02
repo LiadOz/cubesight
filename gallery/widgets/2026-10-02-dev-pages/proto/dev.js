@@ -47,7 +47,24 @@ function light() {
   ), 1440, 2);
 }
 
+
+/* ---------------------------------------------------------------- the one decision image: every option side by side, Q1 to Q3 */
+function decide() {
+  const CIRC = ['①', '②', '③'];
+  const prev = (html, label, pick) => `<div style="position:relative"><div style="width:440px;height:275px;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px var(--b-hairline);background:var(--b-bg)"><div style="transform:scale(.3055);transform-origin:top left;width:1440px;height:900px;overflow:hidden">${html.replace(/ data-co(-side)?="[^"]*"/g, '')}</div></div>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:10px;display:flex;gap:8px;align-items:center"><span style="display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--b-warn);color:#141311;font:700 17px var(--b-font-sans)">${label}</span>${pick ? '<span class="sb sb--built" style="height:24px">my pick</span>' : ''}</div></div>`;
+  const row = (q, title, line, htmls, pick) => `<div style="display:grid;gap:10px"><div class="row" style="gap:14px;align-items:baseline">${q ? `<span style="display:inline-grid;place-items:center;min-width:44px;height:28px;padding:0 10px;border-radius:14px;background:var(--b-ink);color:var(--b-bg);font:600 14px var(--b-font-mono)">${q}</span>` : '<span class="sub-m" style="min-width:44px">no Q</span>'}<b style="font-size:19px">${title}</b><span class="sub-m">${line}</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,440px);gap:20px">${htmls.map((h, i) => prev(h, CIRC[i], pick === i)).join('')}</div></div>`;
+  const frame = `<div style="padding:26px 40px 30px;display:grid;gap:24px">
+    ${row('Q1', 'timeline graph (W-32)', 'which one? ① git graph kept · ② branches as rings · ③ one spine ring, branches folded', [tl1(false), tl2(false), tl3(false)], 2)}
+    ${row('Q2', 'thumbnail card (W-33)', 'which one? ① image card · ② contact tile · ③ row card', [cards(1, false), cards(2, false), cards(3, false)], 0)}
+    ${row('Q3', 'compare view (W-35)', 'which one? ① two panes · ② stage + dock · ③ wipe first (all have side by side, overlay, wipe)', [compare('x1', false), compare('x2', false), compare('x3', false)], 2)}
+    ${row('', 'blog post (W-34)', 'no question: I build ② two columns unless you object', [post(1, false), post(2, false), post(3, false)], 1)}</div>`;
+  M('decide: pick ①②③ for Q1, Q2 and Q3', frame, [], 1440, 1);
+}
+
 const V = {
+  decide,
   shared,
   light,
   t1: () => M('W-32 option 1: the git graph, kept (full page, 44 posts)', tl1(false), L(
