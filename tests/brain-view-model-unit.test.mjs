@@ -218,8 +218,8 @@ test('stored results builder returns the shared Orbit, case, and review data', (
   const record = {
     ...EXAMPLE_RECORD,
     analysis: { ...EXAMPLE_RECORD.analysis, f2lCases: { pair1: { caseId: 'f2l/FR', name: 'front right' } }, lastLayer: {
-      oll: { caseId: 'oll/1', name: '1', recognitionMs: 840, executionMs: 1210, used: { id: 'oll/1/sune' } },
-      pll: { caseId: 'pll/Jb', name: 'Jb', recognitionMs: 620, executionMs: 1720, used: { id: 'pll/Jb/standard' } },
+      oll: { caseId: 'oll/1', name: '1', from: 32, to: 45, recognitionMs: 840, executionMs: 1210, used: { id: 'oll/1/sune' } },
+      pll: { caseId: 'pll/Jb', name: 'Jb', from: 45, to: 61, recognitionMs: 620, executionMs: 1720, used: { id: 'pll/Jb/standard' } },
     } },
   };
   const result = buildResultsViewModel({ record, records: [...EXAMPLE_HISTORY, record], settings, plan: buildStagePlan(settings) });
@@ -233,6 +233,40 @@ test('stored results builder returns the shared Orbit, case, and review data', (
   assert.equal(result.vm.timeline.segments.length, buildStagePlan(settings).length);
   assert.ok(result.vm.timeline.segments.some(segment => segment.key === 'ep' && segment.state === 'done'));
   assert.equal(result.vm.timeline.markers, result.vm.review.markers);
+});
+
+test('stored results tolerate partial legacy analysis while retaining valid pauses', () => {
+  const settings = normalizeSettings();
+  const plan = buildStagePlan(settings);
+  for (const analysis of [
+    { pauses: [{ i: 1, ms: 2100, allow: 500, boundary: 'f2l-f2l' }] },
+    { v: 1, marks: {}, pauses: [{ i: 1, ms: 2100, allow: 500, boundary: 'f2l-f2l' }] },
+  ]) {
+    const record = { at: 123, solveMs: 12340, moveCount: 2, solveMoves: ["U'", "R'"], analysis };
+    const result = buildResultsViewModel({ record, records: [record], settings, plan });
+    const pause = result.vm.review.markers.find(marker => marker.kind === 'pause');
+    assert.ok(pause, 'valid partial pause evidence is retained');
+    assert.deepEqual(result.record.analysis.skips, []);
+    assert.deepEqual(result.record.analysis.pseudo, []);
+    assert.deepEqual(result.record.analysis.cancels, []);
+  }
+});
+
+test('stored review builder applies top-level variant and cursor to stage detail', () => {
+  const settings = normalizeSettings();
+  const plan = buildStagePlan(settings);
+  const record = {
+    at: 124, scramble: 'R U', solveMs: 5000, moveCount: 3, solveMoves: ['R', 'U', "R'"],
+    splits: [{ key: 'cross', ms: 1000, moves: 1 }, { key: 'pair1', ms: 4000, moves: 2 }],
+    analysis: { v: 2, pairs: [{ n: 1, from: 0, to: 3, yours: 'R U R', better: { slot: 'FR', moves: 'U' } }] },
+  };
+  const result = buildResultsViewModel({
+    record, records: [record], settings, plan,
+    reviewUi: { detail: { kind: 'stage', key: 'pair1' }, variant: 'better', cursor: 2 },
+  });
+  assert.equal(result.vm.review.detail.compare.status, 'better');
+  assert.equal(result.vm.review.detail.variant, 'better');
+  assert.equal(result.vm.review.detail.cursor, 2);
 });
 
 test('unchanged slices keep their identity between builds', () => {
