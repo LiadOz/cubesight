@@ -106,7 +106,7 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null, 
   let timer;
   const repaint = () => {
     if (!marker || !orbit) return;
-    connector.classList.remove('is-linked'); clearTimeout(timer);
+    connector.classList.remove('is-linked'); wrap.classList.remove('is-linked'); clearTimeout(timer);
     const target = orbit.getMarkerElement?.(marker);
     if (!target) return;
     const sentenceBox = sentence.getBoundingClientRect(), targetBox = target.getBoundingClientRect(), box = connectorHost.getBoundingClientRect();
@@ -124,10 +124,10 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null, 
       const routeY = topRoute > 8 && (topRoute < box.height - 8 || bottomRoute > box.height - 8) ? topRoute : bottomRoute;
       path.setAttribute('d', `M ${x1} ${y1} L ${x1} ${routeY} L ${x2} ${routeY} L ${x2} ${y2}`);
     } else path.setAttribute('d', `M ${x1} ${y1} C ${x1 + (x2 - x1) * .32} ${y1}, ${x1 + (x2 - x1) * .68} ${y2}, ${x2} ${y2}`);
-    timer = setTimeout(() => connector.classList.add('is-linked'), 30);
+    timer = setTimeout(() => { connector.classList.add('is-linked'); wrap.classList.add('is-linked'); }, 30);
   };
   const link = (nextMarker, nextOrbit = orbit) => {
-    marker = nextMarker; orbit = nextOrbit; connector.classList.remove('is-linked'); clearTimeout(timer);
+    marker = nextMarker; orbit = nextOrbit; connector.classList.remove('is-linked'); wrap.classList.remove('is-linked'); clearTimeout(timer);
     if (!marker || !orbit) return;
     requestAnimationFrame(repaint);
   };

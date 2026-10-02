@@ -51,7 +51,7 @@ test('blog, post, timeline and compare views render from the posts', async ({ pa
   await page.getByTestId('compare-go').click();
   await expect(page).toHaveURL(/#\/dev\/gallery\/compare\?a=brain-v2-orbit&b=orbit-v3/);
   await expect(page.locator('.g-pane')).toHaveCount(2);
-  await expect(page.locator('.g-big')).toHaveCount(2);
+  await expect(page.locator('.g-pane .g-big')).toHaveCount(2);
 });
 
 test('search and the root filter narrow the list; no horizontal scroll at 390 px', async ({ page }) => {
