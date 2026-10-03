@@ -334,7 +334,7 @@ export function mountGalleryPage(host) {
     const hostEl = page.querySelector('[data-compare-wipe]');
     const modeHost = page.querySelector('[data-compare-modes]');
     const images = [...page.querySelectorAll('.g-pane img.g-big')];
-    if (!hostEl || !modeHost || images.length !== 2) return;
+    if (!hostEl || !modeHost) return;
     const routeCompareParams = parseGalleryRoute(location.hash).params;
     for (const side of ['a', 'b']) {
       const postHost = page.querySelector(`[data-cmp-post-host="${side}"]`);
@@ -343,11 +343,20 @@ export function mountGalleryPage(host) {
       const postSelect = createFilledSelect(postHost, { label: `post ${side.toUpperCase()}`, name: `post-${side}`, value: selectedPost, options: data.posts.map(item => ({ value: item.id, label: `${item.date} · ${item.title}` })) });
       compareSelects.push(postSelect);
       postSelect.input.dataset.cmpPost = side;
-      const activePost = postById(selectedPost) || data.posts[0];
+      const activePost = postById(postSelect.value()) || data.posts[0];
       const activeImage = routeCompareParams.get(`${side}i`);
-      const imageSelect = createFilledSelect(imageHost, { label: `image ${side.toUpperCase()}`, name: `image-${side}`, value: activeImage || activePost.images[0]?.file, options: activePost.images.map(item => ({ value: item.file, label: labelOf(item) || item.file })) });
+      const availableImages = activePost?.images || [];
+      const imageSelect = createFilledSelect(imageHost, { label: `image ${side.toUpperCase()}`, name: `image-${side}`, value: activeImage || availableImages[0]?.file, options: availableImages.map(item => ({ value: item.file, label: labelOf(item) || item.file })), disabled: availableImages.length === 0 });
       compareSelects.push(imageSelect);
       imageSelect.input.dataset.cmpImage = side;
+    }
+    if (images.length !== 2) {
+      modeHost.hidden = true;
+      hostEl.replaceChildren();
+      const empty = document.createElement('p'); empty.className = 'g-empty';
+      empty.textContent = 'Choose posts with images on both sides to compare them.';
+      hostEl.append(empty);
+      return;
     }
     const before = images[0].cloneNode(); const after = images[1].cloneNode();
     before.alt = 'left comparison image'; after.alt = 'right comparison image';
