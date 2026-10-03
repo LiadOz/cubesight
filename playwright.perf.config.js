@@ -10,6 +10,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4176',
     viewport: { width: 1280, height: 900 },
+    actionTimeout: 5_000,
     serviceWorkers: 'allow',
     launchOptions: { args: ['--enable-precise-memory-info', '--use-gl=angle', '--use-angle=swiftshader'] },
   },
