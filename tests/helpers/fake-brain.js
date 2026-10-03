@@ -5,6 +5,9 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, set
   await page.goto(route ? '/#/brain' : '/');
   if (route) await page.waitForSelector('#brain-view .brain', { state: 'attached' });
   await page.evaluate(async ({ style, route, settings, keepStorage, connectDelayMs, awaitConnect }) => {
+    // The fixture can be remounted on the same SPA route; stop its previous
+    // RAF, WebGL renderer, and session subscription before replacing its DOM.
+    window.testBrain?.handle?.detach?.();
     if (!keepStorage) localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
     const { createBrain } = await import('/src/brain.js');
