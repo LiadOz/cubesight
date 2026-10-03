@@ -50,7 +50,15 @@ export function mountApprovedWidgetGallery(host) {
     createFilledSelect(inputs, { label: 'filter', value: 'all', options: [{ value: 'all', label: 'all sessions' }, { value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] }),
     createFilledSelect(inputs, { label: 'disabled filter', value: 'recent', disabled: true, options: [{ value: 'recent', label: 'recent' }, { value: 'pinned', label: 'pinned' }] }),
   ];
-  createFilledInput(inputs, { label: 'validation state', value: '', placeholder: 'name this session', error: /* copy-ok: validation example shows accessible error-state styling */ 'Choose a name to continue.' });
+  const validationMessage = /* copy-ok: validation example shows accessible error-state styling */ 'Choose a name to continue.';
+  const validationField = createFilledInput(inputs, { label: 'validation state', value: '', placeholder: 'name this session', error: validationMessage });
+  const validationToggle = createButton(inputs, { label: 'clear validation error', variant: 'text', size: 's' });
+  let validationVisible = true;
+  validationToggle.addEventListener('click', () => {
+    validationVisible = !validationVisible;
+    validationField.setError(validationVisible ? validationMessage : '');
+    validationToggle.textContent = validationVisible ? 'clear validation error' : 'show validation error';
+  });
   createTextarea(inputs, { label: 'paste moves', value: "R U R' U'", rows: 2, hint: 'Notation stays on this device.' });
   createRangeInput(inputs, { label: 'playback speed', min: .5, max: 2, step: .25, value: 1, unit: '×' });
   createRangeInput(inputs, { label: 'disabled range state', min: 0, max: 10, value: 4, disabled: true });

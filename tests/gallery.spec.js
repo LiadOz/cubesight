@@ -115,6 +115,13 @@ test('the approved widget gallery keeps select, field and right-drawer states ac
   await expect(field).toHaveAttribute('aria-invalid', 'true');
   const describedBy = await field.getAttribute('aria-describedby');
   await expect(page.locator(`#${describedBy.split(' ').at(-1)}`)).toHaveText('Choose a name to continue.');
+  await page.getByRole('button', { name: 'clear validation error' }).click();
+  await expect(field).toHaveAttribute('aria-invalid', 'false');
+  await expect(field).not.toHaveAttribute('aria-describedby');
+  await page.getByRole('button', { name: 'show validation error' }).click();
+  await expect(field).toHaveAttribute('aria-invalid', 'true');
+  const restoredDescription = await field.getAttribute('aria-describedby');
+  await expect(page.locator(`#${restoredDescription.split(' ').at(-1)}`)).toHaveText('Choose a name to continue.');
 
   const moveDisplay = page.locator('.ui-move-display');
   await expect(moveDisplay.locator('.ui-move')).toHaveCount(9);
@@ -122,6 +129,7 @@ test('the approved widget gallery keeps select, field and right-drawer states ac
   await page.getByRole('button', { name: 'next move' }).click();
   await expect(moveDisplay.locator('.ui-move')).toHaveCount(7);
   await expect(moveDisplay.locator('.orbit__segment')).toHaveCount(7);
+  await expect(moveDisplay.locator('[aria-current="step"]')).toHaveAttribute('aria-label', 'Move 5: F, current move');
 
   await page.getByRole('button', { name: 'open right drawer' }).click();
   const drawer = page.getByRole('dialog', { name: 'Review detail' });
