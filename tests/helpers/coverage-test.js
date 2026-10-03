@@ -17,6 +17,8 @@ export async function beginCoverage(page, testInfo) {
       retry: testInfo.retry,
       workerIndex: testInfo.workerIndex,
       title: testInfo.titlePath.join(' › '),
+      grepTitle: testInfo.titlePath.join(' '),
+      titlePath: testInfo.titlePath,
       spec: path.relative(process.cwd(), testInfo.file).replaceAll('\\', '/'),
       files: coverage.flatMap((entry) => {
         if (!entry.url.startsWith('http://127.0.0.1:') && !entry.url.startsWith('http://localhost:')) return [];

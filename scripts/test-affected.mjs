@@ -4,6 +4,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { init, parse } from 'es-module-lexer';
+import { buildPlaywrightSelection, changedTestInputs, fingerprintTestInputs, grepPatternForCases } from './test-selection.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit' });
@@ -78,39 +79,63 @@ if (changed.length === 0) {
 
 const allFiles = [...await filesUnder('src'), ...await filesUnder('tests')];
 const edges = await importGraph(allFiles);
-const impacted = reverseClosure(edges, changed.filter((file) => edges.has(file)));
 const impactMapPath = path.join(root, 'tests/impact-map.json');
 let impactMap;
 try { impactMap = JSON.parse(await readFile(impactMapPath, 'utf8')); } catch { impactMap = null; }
-const mapInvalidated = changed.some((file) => /^tests\/(?:.*\.spec\.js|helpers\/)/u.test(file)
-  || /^playwright(?:\.[^/]+)?\.config\.[cm]?js$/u.test(file));
 const mapAgeMs = impactMap?.generatedAt ? Date.now() - Date.parse(impactMap.generatedAt) : Infinity;
-const refreshImpactMap = !unitOnly && (mapAgeMs > 7 * 24 * 60 * 60 * 1000 || mapInvalidated) && dryRunIndex < 0;
+const inputChanges = changedTestInputs(impactMap?.inputFingerprints, await fingerprintTestInputs(root));
+const refreshImpactMap = !unitOnly && (mapAgeMs > 7 * 24 * 60 * 60 * 1000 || inputChanges.length > 0) && dryRunIndex < 0;
+const full = changed.some(safetyValve);
+let fullBrowserAlreadyRan = false;
 if (refreshImpactMap) {
-  console.log('The Playwright impact map is missing, older than 7 days, or affected specs changed; refreshing it.');
+  console.log(`The Playwright impact map is missing, older than 7 days, or test inputs changed (${inputChanges.join(', ')}); refreshing it with one full coverage run.`);
   const result = run('node', ['scripts/test-impact-map.mjs']);
   if (result.status !== 0) process.exit(result.status ?? 1);
+  fullBrowserAlreadyRan = true;
   try { impactMap = JSON.parse(await readFile(impactMapPath, 'utf8')); } catch { impactMap = null; }
 }
-for (const file of changed) {
-  for (const entry of impactMap?.sourceToTests?.[file] ?? []) {
-    impacted.add(typeof entry === 'string' ? entry : entry.spec);
+const mappedEntries = [];
+for (const file of changed) mappedEntries.push(...(impactMap?.sourceToTests?.[file] ?? []));
+const impacted = new Set();
+const changedTestSpecs = new Set(changed.filter((file) => /^tests\/.*\.spec\.js$/u.test(file)));
+for (const spec of changedTestSpecs) impacted.add(spec);
+for (const file of changed.filter((candidate) => candidate.startsWith('src/'))) {
+  const entries = impactMap?.sourceToTests?.[file] ?? [];
+  if (entries.length) continue;
+  // Preserve static import-graph safety whenever runtime coverage has no
+  // observation for this source module.
+  for (const candidate of reverseClosure(edges, edges.has(file) ? [file] : [])) {
+    if (/^tests\/.*\.spec\.js$/u.test(candidate)) impacted.add(candidate);
   }
-  // If no recent browser map exists, select a conservative route-family seed.
-  // Runtime coverage remains the source of truth for cross-family dependencies.
-  const parts = file.split('/');
-  const area = parts[0] === 'src' ? parts[1] : '';
-  const family = area === 'drills' ? 'drill' : area === 'brain' ? 'brain' : area;
-  if (family) {
-    for (const spec of allFiles.filter((candidate) => /^tests\/.*\.spec\.js$/u.test(candidate))) {
+  if (impactMap?.version < 3) {
+    const parts = file.split('/');
+    const area = parts[0] === 'src' ? parts[1] : '';
+    const family = area === 'drills' ? 'drill' : area === 'brain' ? 'brain' : area;
+    if (family) for (const spec of allFiles.filter((candidate) => /^tests\/.*\.spec\.js$/u.test(candidate))) {
       const basename = path.posix.basename(spec).toLowerCase();
       if (basename.includes(family) || (family === 'algs' && basename.includes('alg'))) impacted.add(spec);
     }
   }
 }
+for (const file of changed) {
+  const entries = impactMap?.sourceToTests?.[file] ?? [];
+  for (const entry of entries) {
+    if (typeof entry === 'string' && impactMap.version < 3) impacted.add(entry);
+  }
+}
+const selection = buildPlaywrightSelection({ wholeSpecs: [...impacted], coverageEntries: mappedEntries, testCases: impactMap?.testCases ?? {} });
+if (selection.unresolvedCoverage && impactMap?.version >= 3) {
+  console.warn('Some impact-map test IDs are missing metadata; falling back to complete imported specs.');
+  for (const changedFile of changed.filter((file) => file.startsWith('src/'))) {
+    for (const file of reverseClosure(edges, edges.has(changedFile) ? [changedFile] : [])) {
+      if (/^tests\/.*\.spec\.js$/u.test(file)) selection.wholeSpecs.push(file);
+    }
+  }
+  selection.wholeSpecs = [...new Set(selection.wholeSpecs)].sort();
+  selection.casesBySpec.clear();
+}
 const unit = [...impacted].filter((file) => /^tests\/.*-unit\.test\.mjs$/u.test(file)).sort();
-const playwright = [...impacted].filter((file) => /^tests\/.*\.spec\.js$/u.test(file)).sort();
-const full = changed.some(safetyValve);
+const playwright = selection.wholeSpecs;
 
 console.log(`Affected-test selection against ${base}`);
 console.log(`Changed: ${changed.join(', ')}`);
@@ -118,7 +143,7 @@ if (full) {
   console.log(`Shared foundation/configuration change: running the full${unitOnly ? ' unit' : ''} suite${unitOnly ? '' : 's'}.`);
   if (dryRunIndex >= 0) process.exit(0);
   const commands = unitOnly ? [['npm', ['run', 'test:unit']]] : [
-    ['npm', ['run', 'test:unit']], ['npx', ['playwright', 'test', '--output=test-results/affected']], ['npm', ['run', 'test:pwa']],
+    ['npm', ['run', 'test:unit']], ...(fullBrowserAlreadyRan ? [] : [['npx', ['playwright', 'test', '--output=test-results/affected']]]), ['npm', ['run', 'test:pwa']],
   ];
   for (const [command, args] of commands) {
     const result = run(command, args);
@@ -126,7 +151,8 @@ if (full) {
   }
 } else {
 console.log(`Unit tests (${unit.length}): ${unit.join(', ') || 'none'}`);
-console.log(`Playwright specs (${playwright.length}): ${playwright.join(', ') || 'none'}`);
+console.log(`Playwright full specs (${playwright.length}): ${playwright.join(', ') || 'none'}`);
+console.log(`Playwright selected cases (${[...selection.casesBySpec.values()].reduce((sum, cases) => sum + cases.size, 0)}): ${[...selection.casesBySpec.keys()].join(', ') || 'none'}`);
 console.log(`V8 impact map: ${impactMap?.sourceCount ?? 0} modules, generated ${impactMap?.generatedAt ?? 'not yet'}`);
 if (dryRunIndex >= 0) process.exit(0);
   if (unit.length) {
@@ -135,6 +161,11 @@ if (dryRunIndex >= 0) process.exit(0);
   }
   if (playwright.length && !unitOnly) {
     const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...playwright]);
+    if (result.status !== 0) process.exit(result.status ?? 1);
+  }
+  if (!unitOnly) for (const [spec, cases] of selection.casesBySpec) {
+    const grep = grepPatternForCases([...cases.values()]);
+    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', spec, `--grep=${grep}`]);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
 }
