@@ -98,7 +98,10 @@ for (const fixture of STATE_FIXTURES) {
     } catch (error) {
       driverFailure = error?.stack || error?.message || String(error);
     }
-    await page.keyboard.press('Tab');
+    if (driverFailure) throw new Error(`F8 state driver ${fixture.id} failed before layout checks:\n${driverFailure}`);
+    // Tab is the Brain settings toggle while focus remains on its summary.
+    // Keep the driver-selected open-settings state intact for invariant checks.
+    if (!['settings-open', 'f1-settings-open'].includes(fixture.id)) await page.keyboard.press('Tab');
     const failures = [];
     const cells = [[1280, 720, 'dark'], ...THEMES.flatMap(theme => VIEWPORTS.map(([width, height]) => [width, height, theme])).filter(([width, height, theme]) => width !== 1280 || height !== 720 || theme !== 'dark')];
     for (const [width, height, theme] of cells) {
@@ -125,6 +128,9 @@ for (const fixture of STATE_FIXTURES) {
 
 for (const route of ROUTES) {
   test(`route ${route.id} · ${route.path}`, async ({ page }, testInfo) => {
+    // The 16-cell/theme matrix plus evidence screenshots can exceed Playwright's
+    // 20-second default even when a route is healthy.
+    test.setTimeout(180_000);
     await installShiftObserver(page);
     await page.addInitScript(history => {
       localStorage.setItem('cubesight-theme', 'dark');

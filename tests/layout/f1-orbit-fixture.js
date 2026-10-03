@@ -30,12 +30,8 @@ async function startF1(page, { delayed = false } = {}) {
 }
 
 async function startGuided(page, scramble = SCRAMBLE) {
-  await page.evaluate(() => {
-    const root = document.querySelector('#brain-view .brain');
-    if (!root) throw new Error('real Brain route is not mounted');
-    root.querySelector('.brain-pill-setup').open = true;
-    root.querySelector('.brain-advanced-scramble').open = true;
-  });
+  await page.locator('#brain-view .brain-pill-setup > summary').click();
+  await page.locator('#brain-view .brain-advanced-scramble > summary').click();
   await page.locator('#brain-scramble').fill(scramble);
   await page.locator('#brain-start-custom').click();
   await page.waitForFunction(() => window.__cubesightSnapshot?.getViewModel?.()?.viewModel?.screen === 'scramble');
@@ -91,7 +87,10 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
   }
   if (f1State === 'idle' || f1State === 'settings-open') {
     await requireView(page, 'idle');
-    if (f1State === 'settings-open') await page.locator('.brain-pill-setup').evaluate(node => { node.open = true; });
+    if (f1State === 'settings-open') {
+      await page.locator('.brain-pill-setup > summary').click();
+      await page.waitForFunction(() => window.testBrain?.handle?.getViewModel()?.settings?.open === true);
+    }
     return;
   }
 

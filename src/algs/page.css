@@ -101,6 +101,12 @@
   .alg-cube { width: min(100%, 420px); }
   .alg-cube-actions { align-items: stretch; flex-direction: column; }
   .alg-metric-stats { grid-template-columns: repeat(2, 1fr); }
+  .alg-case-back { display: inline-flex; align-items: center; min-height: 40px; }
+  #alg-demo-input { min-height: 40px; }
+  .alg-case-rail .alg-entry__actions button,
+  .alg-case-rail .alg-detail__tools button,
+  .alg-case-rail .alg-add-own button { min-height: 40px; }
+  .alg-case-rail .alg-add-own > summary { min-height: 40px; display: flex; align-items: center; }
 }
 .alg-demo-import { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 16px; }
 .alg-demo-import label { color: var(--b-muted); font-size: 12px; }

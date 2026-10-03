@@ -5,6 +5,7 @@ import { CROWDED_MARKERS, validateCrowdedMarkerFixture } from './fixtures/crowde
 import { mountFakeCube, startScramble, completeScramble, solveReverse } from './fake-cube.js';
 import { mountTestBrain, playSolve } from '../helpers/fake-brain.js';
 import { GOLD } from '../analysis-golden.mjs';
+import { registerF1OrbitFixture } from './f1-orbit-fixture.js';
 
 const SCRAMBLE = "R2 D' F2 U B2 L' U2 F";
 const BRAIN = '#brain-view';
@@ -55,13 +56,14 @@ registerLayoutDriver('fake-cube', async (page, { id }) => {
 
 registerLayoutDriver('fake-cube-settings', async page => {
   await mountFakeCube(page);
-  const setup = page.locator('.b-settings').first();
-  if (await setup.count()) await setup.evaluate(el => { el.open = true; });
+  const summary = page.locator('.b-settings > summary').first();
+  if (await summary.count()) await summary.click();
   else {
     const toggle = page.locator('[data-open-settings], [aria-label*="settings" i]').first();
     if (!(await toggle.count())) throw new Error('settings drawer has no opening control');
     await toggle.click();
   }
+  await expect.poll(() => page.evaluate(() => window.testBrain?.handle?.getViewModel()?.settings?.open)).toBe(true);
 });
 
 registerLayoutDriver('fake-cube-debug', async page => {
@@ -197,3 +199,5 @@ registerLayoutDriver('orbit-fixture', async page => {
     expect(overlap, `${result.labels[i].text} overlaps ${result.labels[j].text}`).toBe(false);
   }
 });
+
+registerF1OrbitFixture(registerLayoutDriver);
