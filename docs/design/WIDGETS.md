@@ -6,11 +6,11 @@ Gallery post with every image: `gallery/widgets/2026-10-02-inventory` (http://lo
 
 **Dev pages are first-class:** the gallery, blog, timeline, compare, studio and the design lab are evaluated and approved like any other page; their widgets are in this registry (W-32 onwards plus their uses of the shared families).
 
-Status values: `approved` (the user approved it), `pending` (partly approved), `proposed` (a consolidated design is still to be proposed, then approved), `to-remove` (breaks a binding rule; delete once its replacement exists). Individual variants that break a binding rule are flagged `to-remove` in their family table even when the family itself is `proposed`. **Approved: W-01 Header, W-02 Orbit, W-03 Cube, W-04 Buttons, W-05/06/07/08/28 selection controls, W-16 Status/toast, W-17 Keycaps, W-21 Move display (2026-10-02)**; W-27 (the cube menu) is pending. The current implementation of every other family stays unchanged until its consolidated design is approved (no ad-hoc restyling).
+Status values: `approved` (the user approved it), `pending` (partly approved), `proposed` (a consolidated design is still to be proposed, then approved), `to-remove` (breaks a binding rule; delete once its replacement exists). Individual variants that break a binding rule are flagged `to-remove` in their family table. The 47 widget decisions recorded on 2026-10-02 approve W-01 through W-11 and W-13 through W-26, W-28 through W-30, and W-32 through W-35. W-12 (tables) remains proposed; W-27 (the device menu) remains pending; W-31 (the footer) is to-remove. Family headings below follow those statuses. The summary table records the chosen designs; builders port those prototypes unchanged rather than restyling them ad hoc.
 
 ## Summary
 
-31 families, 252 variants (by class and look), 520 distinct style signatures seen, 208 redundant variants (variants beyond the first in each non-approved family), 18 variants that violate a binding rule. "Pages" counts distinct routes the family appeared on (app routes; dev-only routes in brackets); 24 app routes were crawled.
+The 2026-10-02 inventory crawl recorded 31 core families, 252 variants (by class and look), 520 distinct style signatures, and 18 variants that violate a binding rule across 24 app routes. These are pre-consolidation crawl counts; W-32 through W-35 were added as separate approved dev-page decisions and are not included in those counts. "Pages" counts distinct routes the family appeared on (app routes; dev-only routes in brackets).
 
 | ID | Family | Status | Variants | Pages | Instances | Rule violations | Recommendation |
 |---|---|---|---|---|---|---|---|
@@ -40,7 +40,7 @@ Status values: `approved` (the user approved it), `pending` (partly approved), `
 | W-24 | Charts | approved | 7 | 3 (+1 dev) | 106 | 1 | APPROVED 2026-10-02: option ③ Orbit + real charts. Charts are NOT all replaced by Orbits: keep a line/graph where a graph reads better (the TPS chart, the long-term ao12 trend, a sparkline of recent solves, split comparisons). Use the Orbit for few, structural items (stages of one solve, a round, moves-vs-efficiency) and a chart for many data points compared against each other. Post widgets-progress-charts. |
 | W-25 | Empty states | approved | 4 | 4 | 30 | 0 | APPROVED 2026-10-02 (lists & data ①, open rows, the A-07 look): rows carry the mini Orbit glyph (also on alg rows); section-head counts are a PILL; tags as text + symbol. Post widgets-lists-data. |
 | W-26 | Links and crumbs | approved | 13 | 18 (+5 dev) | 270 | 0 | APPROVED 2026-10-02: navigation ③ (side rail; arrow links with path crumbs; the cube chip opens a RIGHT DRAWER, consistent with the containers decision). Post widgets-navigation. |
-| W-27 | Device chip and menu | approved | 6 | 1 (+1 dev) | 74 | 3 | APPROVED 2026-10-02: navigation ③ (side rail; arrow links with path crumbs; the cube chip opens a RIGHT DRAWER, consistent with the containers decision). Post widgets-navigation. |
+| W-27 | Device chip and menu | pending | 6 | 1 (+1 dev) | 74 | 3 | The chip and right-drawer placement are approved; menu contents and behavior remain partly pending. Post widgets-navigation. |
 | W-28 | Answer and choice buttons | approved | 5 | 5 | 90 | 0 | APPROVED 2026-10-02 as part of the selection-controls system, option ③ ink: one consistent look everywhere (no separate settings style); selected = cream ink with a ✓ check mark inside the selected chip (differentiates it from the cream primary button; system check SC-31 option B); teal stays for good/on. See widgets-selection-controls + widgets-system-check. |
 | W-29 | Disclosures (details/summary) | approved | 7 | 10 | 116 | 0 | APPROVED 2026-10-02 (containers ①, frameless, ONE option for all containers): sections = space + a head; only lists/logs get a panel; the ladder C-00b decides which container when; the review detail is a RIGHT drawer. Post widgets-containers. |
 | W-30 | Eyebrows, captions and section heads | approved | 14 | 23 (+6 dev) | 238 | 0 | APPROVED 2026-10-02 (lists & data ①, open rows, the A-07 look): rows carry the mini Orbit glyph (also on alg rows); section-head counts are a PILL; tags as text + symbol. Post widgets-lists-data. |
@@ -104,7 +104,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-04 Buttons
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Actions: primary, secondary, text/ghost, icon, dismiss.
 - **Found:** 23 variants, 2002 instances, 21 app pages (+6 dev)
 - **Recommendation:** Merge into one button with three emphases (primary, secondary, text) and an icon/close form; at most 3 actions per screen (ground rule 3). The classless buttons (reset, start, round presets) are the biggest source of drift. Starting point: W-04a (`button@sequence-controls`, the most widely used).
@@ -137,7 +137,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-05 Chips and pills
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Small pill-shaped selectable or tappable tokens (filters, markers, quick actions).
 - **Found:** 8 variants, 126 instances, 3 app pages (+2 dev)
 - **Recommendation:** Merge into one chip (the review marker chip `b-rev-chip` is closest to the A frames), selected/unselected states only. Starting point: W-05a (`g-chip`, the most widely used).
@@ -155,7 +155,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-06 Segmented controls
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Pick one of 2-6 options in place.
 - **Found:** 6 variants, 221 instances, 5 app pages
 - **Recommendation:** Merge into one segmented control (legacy `.segmented`, PLL `.pll-segmented`, brain `.b-opt`, timer `.tm-opt` all do the same job with 4 different looks). Starting point: W-06a (`segment`, the most widely used).
@@ -171,7 +171,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-07 Toggles and checkboxes
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** On/off settings: native checkboxes, labelled toggles, text-toggle chips.
 - **Found:** 10 variants, 536 instances, 4 app pages (+1 dev)
 - **Recommendation:** Merge into one switch (a pill switch with a label) and drop the native checkbox look and the `b-cfg` text toggles. Starting point: W-07a (`g-cmp`, the most widely used).
@@ -191,7 +191,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-08 Selects
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Dropdown choice of one value.
 - **Found:** 14 variants, 142 instances, 12 app pages
 - **Recommendation:** Merge into one select; replace short fixed lists (the 0.5x/1x/2x/4x speed select alone appears in four different styles) with the segmented control (W-06). Starting point: W-08a (`select@label`, the most widely used).
@@ -215,7 +215,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-09 Text inputs
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Free text, search, file, range and textarea fields.
 - **Found:** 10 variants, 146 instances, 5 app pages (+3 dev)
 - **Recommendation:** Merge into one text field (+ textarea, + file picker, + range); the input look differs on every page that has one. Starting point: W-09a (`input@label`, the most widely used).
@@ -235,7 +235,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-10 Cards and panels
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Framed containers that group content.
 - **Found:** 9 variants, 4432 instances, 8 app pages (+5 dev)
 - **Recommendation:** Merge into one panel (the Orbit look is mostly frameless: keep frames for lists and settings only). Alg case cards, gallery cards and progress cards are different looks for one idea. Starting point: W-10a (`alg-case-card`, the most widely used).
@@ -254,7 +254,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-11 List rows
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** One item per line: drill hub rows, history rows, settings rows, case rows.
 - **Found:** 8 variants, 284 instances, 5 app pages
 - **Recommendation:** Merge into one list row with an optional mini Orbit glyph at the left (feedback #2: browsing lists use the mini ring). Starting point: W-11a (`b-row-help`, the most widely used).
@@ -290,7 +290,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-13 Tabs and sub-nav
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Switch between views of one page; section sub-navigation.
 - **Found:** 7 variants, 292 instances, 5 app pages (+6 dev)
 - **Recommendation:** Merge into one sub-nav (underline tabs). Remove the brain page tab bar (it repeats the header nav). Starting point: W-13a (`g-tabs`, the most widely used).
@@ -307,7 +307,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-14 Drawers and side panels
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Slide-in panels (the debug drawer; the review detail panel).
 - **Found:** 2 variants, 6 instances, 1 app pages
 - **Recommendation:** Keep one drawer (right side on desktop, bottom sheet on phone) shared by debug, settings and the review detail. Starting point: W-14a (`b-debug`, the most widely used).
@@ -319,7 +319,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-15 Dialogs and sheets
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Modal overlays: help dialog, lightbox.
 - **Found:** 5 variants, 45 instances, 7 app pages (+1 dev)
 - **Recommendation:** Merge into one dialog. The help dialog becomes the help page (feedback #12); the lightbox is dev-only. Starting point: W-15a (`dialog-close`, the most widely used).
@@ -334,7 +334,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-16 Toasts and status lines
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** One-line feedback and hints: status text, hint lines, captions.
 - **Found:** 20 variants, 174 instances, 11 app pages (+2 dev)
 - **Recommendation:** Merge into one status line (and a toast for transient messages). There are about a dozen one-off hint/caption paragraphs. Starting point: W-16a (`p@cs-page`, the most widely used).
@@ -364,7 +364,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-17 Key hints and keycaps
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Keyboard shortcut hints.
 - **Found:** 8 variants, 261 instances, 14 app pages
 - **Recommendation:** Merge into one keycap (kbd) and the one key bar from F0; the `kbd` looks differ in size, colour and radius per page. Starting point: W-17a (`kbd@button`, the most widely used).
@@ -382,7 +382,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-18 Badges and tags
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Small non-interactive labels: status, tag, counts.
 - **Found:** 4 variants, 240 instances, 2 app pages (+3 dev)
 - **Recommendation:** Merge into one badge; separate from chips (W-05) by being non-interactive. Starting point: W-18a (`g-status`, the most widely used).
@@ -396,7 +396,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-19 Stat blocks and counters
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** A number with a label: metrics, counters, recent times, deltas.
 - **Found:** 6 variants, 108 instances, 4 app pages
 - **Recommendation:** Merge into one stat block (value + label + optional delta). Starting point: W-19a (`retention-panel`, the most widely used).
@@ -412,7 +412,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-20 Coach line
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** The sentence that explains what happened, with the A-05 connector to its marker.
 - **Found:** 3 variants, 52 instances, 1 app pages
 - **Recommendation:** Keep one coach line (A-05) and delete the card-style `b-rev-card`, `b-rev-note` and `b-coach` boxes. Starting point: W-20a (`b-coach`, the most widely used).
@@ -425,7 +425,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-21 Scramble and move display
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Move sequences: scramble, alg, recovery, move chips and counters.
 - **Found:** 13 variants, 656 instances, 9 app pages
 - **Recommendation:** Merge into the one move strip (`mg-strip`, move-guide) used by the Orbit lookahead (feedback #4); remove the separate move chip rows. Starting point: W-21a (`mg-strip`, the most widely used).
@@ -448,7 +448,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-22 Timer display
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Big running/stopped time readouts.
 - **Found:** 5 variants, 32 instances, 5 app pages
 - **Recommendation:** Merge into one timer readout in three sizes (XL solve, L drill, M inline). Starting point: W-22a (`alg-drill__timer`, the most widely used).
@@ -463,7 +463,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-23 Round and progress panels
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Round selection, in-round answer stages, progress bars and lines.
 - **Found:** 8 variants, 134 instances, 7 app pages
 - **Recommendation:** Progress bars/lines are to-remove (feedback #1): the Orbit shows progress. Keep one round panel (quick-round) and one answer stage; the rest merge. Starting point: W-23a (`answer-stage`, the most widely used).
@@ -481,7 +481,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-24 Charts
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** SVG charts: TPS line, trend, graphs, sparkline.
 - **Found:** 7 variants, 106 instances, 3 app pages (+1 dev)
 - **Recommendation:** Keep at most the shared Orbit-style trend/line chart from F5; all one-off SVG charts are replaced. Starting point: W-24a (`g-graph`, the most widely used).
@@ -498,7 +498,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-25 Empty states
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** What a list/chart/page shows with no data.
 - **Found:** 4 variants, 30 instances, 4 app pages
 - **Recommendation:** Merge into one empty state (one sentence + one action). Starting point: W-25a (`history-detail`, the most widely used).
@@ -512,7 +512,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-26 Links and crumbs
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Text links, back links, "see more >" links, breadcrumbs.
 - **Found:** 13 variants, 270 instances, 18 app pages (+5 dev)
 - **Recommendation:** Merge into one link style plus one back link; the eyebrow breadcrumbs (`drills / OLL`) become the header nav. Starting point: W-26a (`a@p`, the most widely used).
@@ -551,7 +551,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-28 Answer and choice buttons
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Pick the answer in a drill: colours, PLL cases, faces, move chips.
 - **Found:** 5 variants, 90 instances, 5 app pages
 - **Recommendation:** Merge into one choice button (large pill with a keycap hint); colour, PLL and face pickers differ only by content. Starting point: W-28a (`answer-button`, the most widely used).
@@ -566,7 +566,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-29 Disclosures (details/summary)
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Collapsible sections: settings, data, advanced options.
 - **Found:** 7 variants, 116 instances, 10 app pages
 - **Recommendation:** Merge into one disclosure row; most settings move to the drawer (W-14). Starting point: W-29a (`history-data`, the most widely used).
@@ -583,7 +583,7 @@ A variant is one class (state classes such as `is-active` folded in; classless e
 
 ## W-30 Eyebrows, captions and section heads
 
-- **Status:** proposed
+- **Status:** approved
 - **Purpose:** Small uppercase labels and page/section head blocks.
 - **Found:** 14 variants, 238 instances, 23 app pages (+6 dev)
 - **Recommendation:** Merge into one eyebrow and one section head; there are at least 8 different eyebrow classes. Starting point: W-30a (`eyebrow`, the most widely used).
