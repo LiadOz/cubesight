@@ -19,7 +19,7 @@ export function findPlaywrightFailureCandidates(report) {
     const parts = node.title ? [...parent, node.title] : parent;
     if (node.expectedStatus && Array.isArray(node.results)) {
       for (const result of node.results) {
-        if (!['failed', 'timedOut', 'interrupted'].includes(result.status)) continue;
+        if (!['failed', 'timedOut', 'interrupted'].includes(result.status) || result.status === node.expectedStatus) continue;
         candidates.push({ title: parts.join(' › '), status: result.status, durationMs: Math.round(result.duration ?? 0) });
       }
       return;
@@ -32,19 +32,40 @@ export function findPlaywrightFailureCandidates(report) {
   return candidates;
 }
 
+export function expectedCoverageRuns(shards) {
+  return shards.flatMap((shard) => {
+    const runs = [];
+    function visit(node) {
+      if (!node || typeof node !== 'object') return;
+      for (const spec of node.specs ?? []) {
+        for (const test of spec.tests ?? []) {
+          for (const result of test.results ?? []) {
+            if (['passed', 'failed', 'timedOut', 'interrupted'].includes(result.status)) {
+              runs.push({ testId: spec.id, retry: result.retry ?? 0 });
+            }
+          }
+        }
+      }
+      for (const suite of node.suites ?? []) visit(suite);
+    }
+    for (const suite of shard.playwright?.suites ?? []) visit(suite);
+    return runs;
+  });
+}
+
 export async function loadPlaywrightShards(directory, expectedCount, now = Date.now(), expectedCommit = process.env.GITHUB_SHA ?? null) {
   const names = (await readdir(directory).catch(() => []))
     .filter((name) => /^\d+-of-\d+\.json$/u.test(name)).sort();
   const errors = [];
   if (!names.length) {
-    return { shards: [], tests: [], errors: ['No shard reports found. Run all Playwright shards before test health.'], wallTimeMs: 0, sumShardWallTimeMs: 0 };
+    return { shards: [], tests: [], errors: ['No shard reports found. Run all Playwright shards before test health.'], wallTimeMs: 0, executorWallTimeMs: 0 };
   }
   const shards = [];
   for (const name of names) {
     try { shards.push(JSON.parse(await readFile(path.join(directory, name), 'utf8'))); }
     catch { errors.push(`Shard report ${name} is not valid JSON.`); }
   }
-  if (!shards.length) return { shards: [], tests: [], errors, wallTimeMs: 0 };
+  if (!shards.length) return { shards: [], tests: [], errors, wallTimeMs: 0, executorWallTimeMs: 0 };
   const total = shards[0].totalShards;
   const indexes = new Set(shards.map((shard) => shard.shard));
   if (total !== expectedCount) errors.push(`Shard set declares ${total} shards; expected ${expectedCount}.`);
@@ -61,11 +82,19 @@ export async function loadPlaywrightShards(directory, expectedCount, now = Date.
     if (!Number.isFinite(generatedMs) || generatedMs > now || now - generatedMs > 24 * 60 * 60 * 1000) {
       errors.push(`Shard ${shard.shard} report is missing a fresh generation timestamp.`);
     }
+    const startedMs = Date.parse(shard.startedAt ?? '');
+    if (!Number.isFinite(startedMs) || !Number.isFinite(generatedMs) || startedMs > generatedMs) {
+      errors.push(`Shard ${shard.shard} report is missing a valid start timestamp.`);
+    }
   }
+  const startedTimes = shards.map((shard) => Date.parse(shard.startedAt ?? '')).filter(Number.isFinite);
+  const finishedTimes = shards.map((shard) => Date.parse(shard.generatedAt ?? '')).filter(Number.isFinite);
   return {
-    shards: shards.map(({ shard, totalShards, generatedAt, wallTimeMs, exitCode }) => ({ shard, totalShards, generatedAt, wallTimeMs, exitCode })),
+    shards: shards.map(({ shard, totalShards, startedAt, generatedAt, wallTimeMs, exitCode }) => ({ shard, totalShards, startedAt, generatedAt, wallTimeMs, exitCode })),
     tests: shards.flatMap((shard) => flattenTests(shard.playwright)),
+    coverageRuns: expectedCoverageRuns(shards),
     errors,
     wallTimeMs: Math.max(0, ...shards.map((shard) => shard.wallTimeMs ?? 0)),
+    executorWallTimeMs: startedTimes.length && finishedTimes.length ? Math.max(...finishedTimes) - Math.min(...startedTimes) : 0,
   };
 }

@@ -48,6 +48,7 @@ async function loadShardedPlaywrightReport() {
     elapsedMs: report.wallTimeMs,
     exitCode: report.errors.length ? 1 : 0,
     tests: report.tests,
+    executorWallTimeMs: report.executorWallTimeMs,
     shardErrors: report.errors,
     shards: report.shards,
   };
@@ -64,7 +65,7 @@ const reports = suites.map((suite) => {
   let parsed;
   try { parsed = JSON.parse(suite.output); } catch { parsed = null; }
   const tests = suite.tests ?? (suite.name === 'unit' ? parseNodeTap(suite.output) : parsed ? flattenTests(parsed) : []);
-  return { name: suite.name, wallTimeMs: suite.elapsedMs, exitCode: suite.exitCode, tests, ...(suite.shards === undefined ? {} : { shards: suite.shards, shardErrors: suite.shardErrors }) };
+  return { name: suite.name, wallTimeMs: suite.elapsedMs, exitCode: suite.exitCode, tests, ...(suite.shards === undefined ? {} : { shards: suite.shards, shardErrors: suite.shardErrors, executorWallTimeMs: suite.executorWallTimeMs }) };
 });
 const tests = reports.flatMap((suite) => suite.tests.map((test) => ({ ...test, suite: suite.name })));
 const slowest = [...tests].sort((a, b) => b.durationMs - a.durationMs).slice(0, 20);
@@ -73,7 +74,7 @@ const result = {
   generatedAt: new Date().toISOString(),
   softLimitMs: slowLimitMs,
   suiteBudgetsMs,
-  suites: reports.map(({ name, wallTimeMs, exitCode, shards, shardErrors }) => ({ name, wallTimeMs, ...(shards === undefined ? {} : { criticalPathWallTimeMs: wallTimeMs, shards, shardErrors }), exitCode, budgetMs: suiteBudgetsMs[name], overBudget: wallTimeMs > suiteBudgetsMs[name] })),
+  suites: reports.map(({ name, wallTimeMs, exitCode, shards, shardErrors, executorWallTimeMs }) => ({ name, wallTimeMs, ...(shards === undefined ? {} : { criticalPathWallTimeMs: wallTimeMs, executorWallTimeMs, shards, shardErrors }), exitCode, budgetMs: suiteBudgetsMs[name], overBudget: wallTimeMs > suiteBudgetsMs[name] })),
   testsObserved: tests.length,
   slowestTests: slowest,
   testsOverSoftLimit: overBudget,
@@ -87,6 +88,7 @@ const lines = [
   `Generated ${result.generatedAt}. Soft per-test limit: ${slowLimitMs / 1000}s.`,
   '',
   ...reports.map((suite) => `- ${suite.name}: ${(suite.wallTimeMs / 1000).toFixed(1)}s wall time / ${(suiteBudgetsMs[suite.name] / 1000).toFixed(0)}s budget; exit ${suite.exitCode}; ${suite.tests.length} test timings parsed.`),
+  ...(reports.find((suite) => suite.name === 'playwright') ? [`- Playwright executor envelope: ${(reports.find((suite) => suite.name === 'playwright').executorWallTimeMs / 1000).toFixed(1)}s across shard start/finish times; wall time above is the slowest individual shard.`] : []),
   ...(reports.find((suite) => suite.name === 'playwright')?.shards ?? []).map((shard) => `- Playwright shard ${shard.shard}/${shard.totalShards}: ${(shard.wallTimeMs / 1000).toFixed(1)}s wall time; exit ${shard.exitCode}.`),
   ...((reports.find((suite) => suite.name === 'playwright')?.shardErrors ?? []).map((error) => `- Playwright shard report: ${error}`)),
   '',
