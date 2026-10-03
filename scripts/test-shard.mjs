@@ -5,11 +5,13 @@ import path from 'node:path';
 
 const index = Number(process.env.PLAYWRIGHT_SHARD_INDEX ?? 1);
 const total = Number(process.env.PLAYWRIGHT_SHARD_COUNT ?? 1);
+const workers = process.env.PLAYWRIGHT_WORKERS;
+const config = process.env.PLAYWRIGHT_CONFIG;
 if (!Number.isInteger(index) || !Number.isInteger(total) || total < 1 || index < 1 || index > total) {
   throw new Error('Set PLAYWRIGHT_SHARD_INDEX and PLAYWRIGHT_SHARD_COUNT to a valid 1-based shard.');
 }
 const started = performance.now();
-const run = spawnSync('npx', ['playwright', 'test', `--shard=${index}/${total}`, '--reporter=json'], {
+const run = spawnSync('npx', ['playwright', 'test', `--shard=${index}/${total}`, '--reporter=json', ...(workers ? [`--workers=${workers}`] : []), ...(config ? [`--config=${config}`] : [])], {
   cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
 });
 const wallTimeMs = Math.round(performance.now() - started);
