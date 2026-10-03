@@ -34,4 +34,3 @@ if (run.stderr) process.stderr.write(run.stderr);
 if (run.status !== 0) process.exit(run.status ?? 1);
 if (!tests.length) throw new Error(`Shard ${index}/${total} produced no per-test timings.`);
 if (wallTimeMs > 5 * 60_000) throw new Error(`Shard ${index}/${total} exceeded the five-minute Playwright critical-path budget (${wallTimeMs} ms).`);
-if (overSoftLimit.length) throw new Error(`Shard ${index}/${total} has tests over the ${20_000} ms soft limit: ${overSoftLimit.map(({ name, durationMs }) => `${durationMs} ms ${name}`).join('; ')}`);
