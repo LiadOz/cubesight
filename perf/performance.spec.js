@@ -72,18 +72,19 @@ async function captureMorphFps(page, trigger) {
 async function keyboardResponseMs(page) {
   return page.evaluate(async () => {
     const brain = document.querySelector('#brain-view .brain');
-    const previous = brain?.getAttribute('data-timer-hidden');
+    const settings = brain?.querySelector('.b-settings');
     if (!brain) throw new Error('Keyboard sample requires the mounted Brain view.');
+    if (!settings || settings.open) throw new Error('Keyboard sample requires the settings drawer to start closed.');
     return new Promise((resolve, reject) => {
       const startedAt = performance.now();
       const observer = new MutationObserver(() => {
-        if (brain.getAttribute('data-timer-hidden') === previous) return;
+        if (!settings.open) return;
         observer.disconnect();
         requestAnimationFrame(time => resolve(time - startedAt));
       });
-      observer.observe(brain, { attributes: true, attributeFilter: ['data-timer-hidden'] });
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 't', bubbles: true }));
-      setTimeout(() => { observer.disconnect(); reject(new Error('Keyboard shortcut did not produce a visible timer state change.')); }, 2000);
+      observer.observe(settings, { attributes: true, attributeFilter: ['open'] });
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: ',', bubbles: true }));
+      setTimeout(() => { observer.disconnect(); reject(new Error('Keyboard shortcut did not open the visible settings drawer.')); }, 2000);
     });
   });
 }
