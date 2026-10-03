@@ -12,6 +12,11 @@ export function flattenTests(node, suite = '') {
   return [...(isCase && Number.isFinite(duration) ? [{ name: fullName, durationMs: Math.round(duration), status: node.status ?? 'unknown' }] : []), ...childCases];
 }
 
+export function summarizeTestTimings(tests, softLimitMs = 20_000, count = 20) {
+  const slowest = [...tests].sort((a, b) => b.durationMs - a.durationMs || a.name.localeCompare(b.name)).slice(0, count);
+  return { slowest, overSoftLimit: tests.filter((test) => test.durationMs > softLimitMs) };
+}
+
 export function findPlaywrightFailureCandidates(report) {
   const candidates = [];
   function visit(node, parent = []) {
