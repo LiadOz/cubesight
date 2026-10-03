@@ -4,7 +4,7 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, set
   // route: mount into the real #brain-view on the Brain route (so the page-level theme rules apply).
   await page.goto(route ? '/#/brain' : '/');
   if (route) await page.waitForSelector('#brain-view .brain', { state: 'attached' });
-  await page.evaluate(async ({ style, route, settings, keepStorage }) => {
+  await page.evaluate(async ({ style, route, settings, keepStorage, connectDelayMs, awaitConnect }) => {
     if (!keepStorage) localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
     const { createBrain } = await import('/src/brain.js');
