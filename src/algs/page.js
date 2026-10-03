@@ -138,13 +138,14 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   const db = database ?? algDatabase;
   const learning = loadLearning(storage);
   let session = null, tick = null, destroyed = false, renderId = 0, active = true, lastRouteKey = null;
-  let cubeView = null, sequencePlayer = null, caseOrbit = null, selectedAlgId = null, cubeSnapshot = smartCube.getSnapshot(), cubeUnsubscribe = null, cubeSessionUnsubscribe = null, repaintRound = null, repaintReady = false;
+  let cubeView = null, sequencePlayer = null, caseOrbit = null, caseGeometryObserver = null, selectedAlgId = null, cubeSnapshot = smartCube.getSnapshot(), cubeUnsubscribe = null, cubeSessionUnsubscribe = null, repaintRound = null, repaintReady = false;
   let displayMode = 'case', displayModeWidget = null, caseColorSetting = readCaseColorSetting(storage);
   let setupState = null, lastCubeMoveSeq = 0;
   const saveLearning = () => { try { storage?.setItem(LEARNING_KEY, JSON.stringify(learning)); } catch { /* Keep the schedule for this tab. */ } };
 
   function disposeVisuals() {
     sequencePlayer?.destroy(); sequencePlayer = null;
+    caseGeometryObserver?.disconnect(); caseGeometryObserver = null;
     caseOrbit?.destroy(); caseOrbit = null;
     cubeView?.destroy(); cubeView = null;
     cubeSessionUnsubscribe?.(); cubeSessionUnsubscribe = null;
@@ -191,6 +192,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       const cubeMount = root.querySelector('[data-alg-cube]');
       const cubeWidth = cubeMount?.getBoundingClientRect().width || 250;
       const orbitWidth = orbitHost?.getBoundingClientRect().width || 340;
+      const clearanceForGeometry = () => Math.ceil(((cubeMount?.getBoundingClientRect().width || 250) / Math.max(1, orbitHost?.getBoundingClientRect().width || 340)) * 280 + 14);
       const centerClearance = Math.ceil((cubeWidth / orbitWidth) * 280 + 14);
       if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, centerClearance, label: `${caseData.name} algorithm progress`, segments: [] });
       if (!supportsVirtualRepaint(caseData)) repaintReady = false;
@@ -204,6 +206,18 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
           cubeView = created;
           cubeView.setCaseOrientation(caseColorSetting, { seed: caseData.id });
           cubeView.highlight(caseData.set === 'f2l' ? { slot: caseData.targetPair } : { pieces: setupState.cubies.filter(cubie => cubie.id.includes('U')).map(cubie => cubie.id) });
+          if (orbitHost) {
+            let priorClearance = centerClearance;
+            caseGeometryObserver = new ResizeObserver(() => {
+              if (destroyed || thisRender !== renderId || !caseOrbit) return;
+              const nextClearance = clearanceForGeometry();
+              if (nextClearance === priorClearance) return;
+              priorClearance = nextClearance;
+              caseOrbit.update({ centerClearance: nextClearance }, { animate: false });
+            });
+            caseGeometryObserver.observe(orbitHost);
+            caseGeometryObserver.observe(cubeMount);
+          }
         }
       } catch { const mount = root.querySelector('[data-alg-cube]'); if (mount) mount.textContent = 'Virtual cube view is unavailable in this browser.'; }
       const [pick, usage, storedAlgs] = await Promise.all([db.getPick(caseData.id), db.usageFor(caseData.id), db.listAlgs(caseData.id)]);
