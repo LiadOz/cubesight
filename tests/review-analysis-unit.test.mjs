@@ -144,14 +144,14 @@ test('the analysis client loads the worker lazily, runs one at a time, caches pe
   let worker;
   const client = createAnalysisClient({ idleMs: 20, createWorker: () => { created++; return worker = fakeWorker((m, send) => send({ type: 'result', id: m.id, result: { v: 1, marker: m.input.scramble } })); } });
   assert.equal(created, 0, 'nothing loads until the first analysis');
-  const a = { at: 1, scramble: 'R U', solveMoves: ['R'], moveCount: 1, solved: true };
+  const a = { at: 1, scramble: 'R U', solveMoves: ['R'], moveCount: 1, solved: true, config: { oll: '2look', pll: '1look' } }
   const b = { ...a, at: 2, scramble: 'F' };
   const [ra, rb] = await Promise.all([client.analyze(a), client.analyze(b)]);
   assert.deepEqual([ra.marker, rb.marker], ['R U', 'F']);
   assert.equal(created, 1);
   assert.equal(worker.posted.length, 2);
   assert.equal(worker.posted[0].summary, true);
-  assert.deepEqual(worker.posted[0].options, { pairs: true, startPlan: true });
+  assert.deepEqual(worker.posted[0].options, { pairs: true, startPlan: true, config: { oll: '2look', pll: '1look' } });
   assert.equal((await client.analyze(a)).marker, 'R U');
   assert.equal(worker.posted.length, 2, 'cached per record `at`');
   assert.equal(await client.analyze({ ...a, at: 3, solveMoves: [], moveCount: 0 }), null, 'not analysable');

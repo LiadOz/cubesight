@@ -257,6 +257,23 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
       });
     }
 
+    // --- last-layer re-recognition: only the corroborated catalog transitions -----------------
+    for (const key of ['oll', 'pll']) {
+      const stage = a.lastLayer?.[key];
+      if (!stage?.extraLook) continue;
+      for (const look of (stage.looks ?? []).filter(row => ['pause', 'known-alg-prefix'].includes(row.evidence))) {
+        const alg = look.recognizedAlgMoves ? fmtMoves(look.recognizedAlgMoves) : null;
+        const source = look.evidence === 'pause' ? 'after a pause' : `after ${alg ?? 'a catalog alg prefix'}`;
+        push({
+          id: `${key}-extra-look-${look.at}`, kind: 'extra-look', tone: 'warn', stage: key,
+          idx: look.at, at: look.at + 1, tMs: timeOf(look.at), cost: 4 * weights.better, rawCost: 4,
+          label: `${key.toUpperCase()} extra look`, caseId: stage.caseId, nextCaseId: look.caseId,
+          caseName: stage.name, nextCaseName: look.name, recognizedAlg: look.recognizedAlg ?? null,
+          note: `${key.toUpperCase()} ${stage.name} → ${look.name}. You reached another catalog case ${source} and continued.`,
+        });
+      }
+    }
+
     // --- cancellations -------------------------------------------------------------------------------------
     for (const run of a.cancels) {
       const text = slice(run.from, run.to).join(' ');

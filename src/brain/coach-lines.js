@@ -4,6 +4,8 @@
 // unchanged lines keep their DOM node, running counters use a fixed key.
 
 // 'pair 1' -> 'Pair 1'; step codes stay upper case ('eo' -> 'EO').
+import { fmtMoves } from './format.js';
+
 const skipName = name => (/^(eo|co|cp|ep|oll|pll|cmll|l6e)$/.test(name) ? name.toUpperCase() : name[0].toUpperCase() + name.slice(1));
 const title = color => (color ? color[0].toUpperCase() + color.slice(1) : '');
 const seconds = ms => (ms == null ? '—' : !Number.isFinite(ms) ? 'DNF' : `${(ms / 1000).toFixed(2)}s`);
@@ -91,6 +93,19 @@ export function resultsCoach({ record, optimalCross, stages = [], plan = [], ave
   }
   for (const s of stages.filter(s => s.pseudo)) out.push({ key: `pseudo-${s.key}`, tag: 'pseudo pair', tone: 'info', text: `${title(label(s.key))} used a pseudo pair (D offset).` });
   for (const s of stages.filter(s => s.skipped && s.key !== 'cross')) out.push({ key: `skip-${s.key}`, tag: `${label(s.key)} skip`, tone: 'good', text: `${skipName(label(s.key))} skip.` });
+  for (const key of ['oll', 'pll']) {
+    const lastLayer = record.analysis?.lastLayer?.[key];
+    const look = lastLayer?.extraLook && lastLayer.looks?.find(row => ['pause', 'known-alg-prefix'].includes(row.evidence));
+    if (!look) continue;
+    const caseLabel = id => {
+      const number = String(id ?? '').split('/')[1];
+      return `${key.toUpperCase()} ${number || lastLayer.name}`;
+    };
+    const story = look.recognizedAlgMoves ? `${fmtMoves(look.recognizedAlgMoves)} first (→ ${caseLabel(look.caseId)})` : `a pause led to ${caseLabel(look.caseId)}`;
+    out.push({ key: `extra-look-${key}`, tag: `${key.toUpperCase()} · ${lastLayer.looksTaken} looks`, tone: 'warn',
+      text: `${caseLabel(lastLayer.caseId)} · ${lastLayer.looksTaken} looks: ${story}, then continued. Drill ${caseLabel(look.caseId)} next.` });
+    break;
+  }
   if (record.rotations > 2) out.push({ key: 'rotations', tag: 'rotations', tone: 'warn', text: `${record.rotations} rotation${record.rotations === 1 ? '' : 's'}. Fewer often saves time.` });
   return out;
 }

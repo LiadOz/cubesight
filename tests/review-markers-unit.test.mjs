@@ -168,3 +168,19 @@ test('without an analysis (a free solve, an old record) only the recorded rotati
   assert.equal(defaultId, markers[0].id);
   assert.deepEqual(buildMarkers({ record: null }).markers, []);
 });
+
+test('confirmed last-layer looks create a case-specific ring marker', () => {
+  const record = {
+    solveMoves: Array(20).fill('R'), moveCount: 20, solveMs: 5000,
+    analysis: {
+      marks: { cross: 0, pairs: [1, 2, 3, 4] }, xcross: null, skips: [], pseudo: [], cross: null, pairs: [], pauses: [], cancels: [],
+      lastLayer: { oll: { caseId: 'oll/10', name: 'Corner Case', extraLook: true, looksTaken: 2,
+        looks: [{ caseId: 'oll/34', name: 'Fish', at: 12, evidence: 'pause', pauseMs: 1200 }] } },
+    },
+  };
+  const marker = buildMarkers({ record, stages: fullRows(), plan: PLAN }).markers.find(row => row.kind === 'extra-look');
+  assert.equal(marker.stage, 'oll');
+  assert.equal(marker.caseId, 'oll/10');
+  assert.equal(marker.nextCaseId, 'oll/34');
+  assert.match(marker.note, /OLL Corner Case → Fish/);
+});

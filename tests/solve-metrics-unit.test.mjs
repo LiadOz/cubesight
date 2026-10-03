@@ -85,6 +85,18 @@ test('aggregateByCase and weakCases rank lowest accuracy then slowest', () => {
   assert.equal(weak[0].accuracy, 0);
 });
 
+test('a catalog-backed extra look outranks slower cases in the weak-case queue', () => {
+  const rs = [
+    rec(20000, 60, { ollCase: 'OLL 34' }),
+    rec(20000, 60, { ollCase: 'OLL 34' }),
+    Object.assign(rec(9000, 60, { ollCase: 'OLL 27' }), { analysis: { lastLayer: { oll: { extraLook: true } } } }),
+    rec(9000, 60, { ollCase: 'OLL 27' }),
+  ];
+  const weak = weakCases(rs, 'ollCase', 6, 2);
+  assert.equal(weak[0].case, 'OLL 27');
+  assert.equal(weak[0].extraLooks, 1);
+});
+
 test('rollingTrend produces a trailing mean of tps over time', () => {
   const rs = [rec(10000, 50), rec(9000, 50), rec(8000, 50), rec(7000, 50)];
   const t = rollingTrend(rs, 'tps', 2);

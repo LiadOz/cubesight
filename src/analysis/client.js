@@ -51,7 +51,7 @@ export function createAnalysisClient({
     return worker;
   }
 
-  function run(input, onProgress, signal) {
+  function run(input, onProgress, signal, recordConfig) {
     return new Promise((resolve, reject) => {
       const id = ++nextId;
       clearTimeout(idleTimer);
@@ -61,7 +61,7 @@ export function createAnalysisClient({
       if (signal?.aborted) { clearTimeout(timer); resolve(null); return; }
       signal?.addEventListener('abort', cancel, { once: true });
       pending.set(id, { resolve, reject, timer, onProgress, signal, cleanup: () => signal?.removeEventListener('abort', cancel) });
-      w.postMessage({ type: 'analyze', id, input, summary: true, options: { pairs: true, startPlan: true } });
+      w.postMessage({ type: 'analyze', id, input, summary: true, options: { pairs: true, startPlan: true, config: recordConfig } });
     }).finally(() => {
       if (!pending.size) { clearTimeout(idleTimer); idleTimer = setTimeout(() => drop(), idleMs); }
     });
@@ -79,8 +79,9 @@ export function createAnalysisClient({
       const { input } = analysisInputFromRecord(record);
       if (!input) return Promise.resolve(null);
       const key = String(record.at);
+      const recordConfig = record?.config && typeof record.config === 'object' ? { oll: record.config.oll, pll: record.config.pll } : null;
       if (cache.has(key)) return cache.get(key);
-      const job = (chain = chain.then(() => run(input, onProgress, signal), () => run(input, onProgress, signal)))
+      const job = (chain = chain.then(() => run(input, onProgress, signal, recordConfig), () => run(input, onProgress, signal, recordConfig)))
         .then(result => { if (result === null) cache.delete(key); return result; })
         .catch(() => { cache.delete(key); return null; });
       cache.set(key, job);

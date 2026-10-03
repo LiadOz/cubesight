@@ -24,14 +24,14 @@ export function analyzeSolve(input, solver, { pairs: withPairs = false, ...optio
 }
 
 // Same, for an async solver (e.g. a worker round trip). Supports AbortSignal.
-export async function analyzeSolveAsync(input, solver, { signal, onProgress, pairs: withPairs = false, ...options } = {}) {
+export async function analyzeSolveAsync(input, solver, { signal, onProgress, pairs: withPairs = false, config = null, ...options } = {}) {
   const segmentation = segmentSolve(input);
   const cross = solver ? await evaluateCrossAsync({ segmentation, ...options }, solver, { signal }) : null;
   const pairs = withPairs && solver ? await evaluatePairsAsync(segmentation, solver, {
     ...options, signal, onProgress: progressPairs => onProgress?.({ segmentation, cross, pairs: progressPairs }),
   }) : null;
   let lastLayer = null;
-  try { lastLayer = await evaluateLastLayer(segmentation); }
+  try { lastLayer = await evaluateLastLayer(segmentation, { config }); }
   catch (error) { if (signal?.aborted) throw error; }
   return { segmentation, cross, ...(pairs ? { pairs } : {}), ...(lastLayer ? { lastLayer } : {}) };
 }

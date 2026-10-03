@@ -22,7 +22,7 @@ export const STAGES = Object.freeze(['cross', 'pair1', 'pair2', 'pair3', 'pair4'
 export const STAGE_GROUP = Object.freeze({
   cross: 'cross', pair1: 'f2l', pair2: 'f2l', pair3: 'f2l', pair4: 'f2l', eo: 'oll', co: 'oll', cp: 'pll', ep: 'pll',
 });
-export const ENGINE_VERSION = 4;
+export const ENGINE_VERSION = 5;
 
 // Pause allowances (ms) by the boundary a gap sits on (SPEC 5.3).
 export const PAUSE_ALLOW_MS = Object.freeze({

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { resultsCoach } from '../src/brain/coach-lines.js';
 import {
   crossFacesForPreference, crossSuggestion, crossHindsight, f2lNextPairHint, betterInsertionHindsight,
   ollStage, pllLens, efficiencyScore,
@@ -124,4 +125,14 @@ test('efficiencyScore does not compare an X-cross count with a plain-cross minim
   const xcross = efficiencyScore({ userCrossMoves: 8, optimalCrossMoves: 6, crossTarget: 'xcross' });
   const noComparison = efficiencyScore({ userCrossMoves: 8, optimalCrossMoves: null });
   assert.equal(xcross, noComparison);
+});
+
+
+test('results coach names a corroborated extra last-layer look and its drill case', () => {
+  const insights = resultsCoach({ record: { analysis: { lastLayer: { oll: {
+    caseId: 'oll/10', name: 'Corner Case', number: 10, looksTaken: 2, extraLook: true,
+    looks: [{ caseId: 'oll/34', name: 'Fish', at: 12, evidence: 'pause' }],
+  } } } }, optimalCross: null });
+  assert.match(insights[0].text, /OLL 10 · 2 looks: a pause led to OLL 34, then continued/);
+  assert.match(insights[0].text, /Drill OLL 34 next/);
 });
