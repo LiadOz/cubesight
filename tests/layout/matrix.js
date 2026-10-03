@@ -11,6 +11,8 @@ export const ROUTES = [
   { id: 'oll-drill', path: '/drills/oll', page: 'drills' },
   { id: 'lookahead', path: '/drills/lookahead', page: 'drills' },
   { id: 'algs', path: '/algs', page: 'algs' },
+  { id: 'demo', path: '/demo?title=Snapshot%20pair&setup=R%20U&alg=R%27%20U%27&highlight=pair%3AFR&case=f2l/1&color=white%20top', page: 'demo' },
+  { id: 'demo-format', path: '/demo/format', page: 'demo' },
   { id: 'help', path: '/help', page: 'scroll' },
   { id: 'alg-case-pll', path: '/algs/pll/T', page: 'algs' },
   { id: 'alg-case-oll', path: '/algs/oll/1', page: 'algs' },
@@ -98,6 +100,7 @@ export const STATE_FIXTURES = [
   { id: 'f1-marker-detail', route: '/solve', driver: 'f1-orbit-fixture', owner: 'F1', f1State: 'marker-detail' },
   { id: 'f1-settings-open', route: '/solve', driver: 'f1-orbit-fixture', owner: 'F1', f1State: 'settings-open' },
   { id: 'f1-past-results-review-deeplink', route: '/solve', driver: 'f1-orbit-fixture', owner: 'F1', f1State: 'past-results-review-deeplink' },
+  { id: 'demo-playback-midway', route: '/demo?title=Lesson&setup=R%20U&alg=F%20R%20U%27&highlight=pair%3AFR&case=f2l/1&color=white%20top', driver: 'demo-fixture', owner: 'F17' },
 ];
 
 const LAYOUT_DRIVERS = new Map();

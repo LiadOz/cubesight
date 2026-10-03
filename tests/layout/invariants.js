@@ -125,7 +125,7 @@ export async function inspectLayout(page, cell) {
 
     const canvases = [...document.querySelectorAll('canvas')];
     if (canvases.length !== expectedCanvasCount) add('canvas-count', canvases[0] || document.querySelector('main'), `expected ${expectedCanvasCount} page canvas(es), found ${canvases.length} (${canvases.filter(isVisible).length} visible)`);
-    const coreNoScroll = ['solve', 'drills', 'algs', 'timer'].includes(routeFamily);
+    const coreNoScroll = ['solve', 'drills', 'algs', 'timer', 'demo'].includes(routeFamily);
     if (coreNoScroll && width >= 1280 && height >= 720 && scrolling.scrollHeight > innerHeight + 2) {
       add('vertical-scroll-main-page', scrolling, `scrollHeight ${scrolling.scrollHeight} > ${innerHeight} + 2`);
     }

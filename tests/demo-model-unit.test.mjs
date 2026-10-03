@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSolvedState, sameCubeState } from '../src/cross-cube.js';
-import { applyDemoMove, parseDemoHash, parseDemoPaste, serializeDemo } from '../src/demo/model.js';
+import { applyMoves, createSolvedState, sameCubeState } from '../src/cross-cube.js';
+import { applyDemoMove, parseDemoHash, parseDemoPaste, serializeDemo, setupState } from '../src/demo/model.js';
+import { buildDemoViewModel } from '../src/demo/view-model.js';
+import { CASE_COLORS, caseDisplayState } from '../src/ui/cube/orientation.js';
 
 test('published single and multipart demo links round-trip readable notation and author notes', () => {
   const single = parseDemoHash("#/demo?title=pair&setup=R%20U%20R%E2%80%B2&alg=U%E2%80%B2%20R%20U%20R%E2%80%B2&step1.moves=U'&step1.note=keep%20the%20edge%3B%20then%20match&step2.moves=R%20U%20R'&step2.note=insert&highlight=pair%3AFR&case=f2l/1&color=white%20top&future=x");
@@ -44,6 +46,43 @@ test('move playback model applies whole-cube rotations and keeps physical moves 
   const moved = applyDemoMove(solved, 'R');
   assert.equal(sameCubeState(moved, solved), false);
   assert.equal(sameCubeState(applyDemoMove(moved, "R'"), solved), true);
+  const wideAndSlices = ['Rw', 'r', "M'", 'E2', 'S'];
+  const demoState = wideAndSlices.reduce((state, move) => applyDemoMove(state, move), solved);
+  assert.equal(sameCubeState(demoState, applyMoves(solved, wideAndSlices)), true);
+  for (const [rotation, inverse] of [['x', "x'"], ['y', "y'"], ['z', "z'"]]) {
+    assert.equal(sameCubeState(applyDemoMove(applyDemoMove(solved, rotation), inverse), createSolvedState()), true);
+  }
+});
+
+test('every published case-colour setting loads and all fixed face colours orient to the top', () => {
+  for (const colorSetting of CASE_COLORS) {
+    const link = serializeDemo(parseDemoHash(`#/demo?alg=R&color=${encodeURIComponent(colorSetting)}`));
+    const parsed = parseDemoHash(link).parts[0];
+    assert.equal(parsed.colorSetting, colorSetting);
+    const display = caseDisplayState(createSolvedState(), colorSetting, 'stable-demo-seed');
+    if (colorSetting.startsWith('fixed: ')) assert.equal(display.topColor, colorSetting.slice('fixed: '.length));
+    else assert.ok(display.allowedColors.includes(display.topColor));
+  }
+});
+
+test('F9 demo snapshots contain committed lesson state and treat the format page as zero-canvas', () => {
+  const hash = '#/demo?title=Lesson&part1.title=first&part1.setup=R%20U&part1.alg=F%20R&part1.color=any%20colour&part2.title=second&part2.setup=F&part2.alg=U';
+  const snapshot = buildDemoViewModel({ hash, partIndex: 0, moveIndex: 1, playing: true });
+  assert.equal(snapshot.kind, 'demo');
+  assert.equal(snapshot.title, 'Lesson');
+  assert.equal(snapshot.part.title, 'first');
+  assert.equal(snapshot.partIndex, 0);
+  assert.equal(snapshot.partCount, 2);
+  assert.equal(snapshot.moveIndex, 1);
+  assert.equal(snapshot.playing, true);
+  assert.deepEqual(snapshot.displayState, caseDisplayState(applyDemoMove(setupState(['R', 'U']), 'F'), 'any colour', 'Lesson:1:first').state);
+  assert.doesNotMatch(JSON.stringify(snapshot), /outerHTML|innerHTML|canvas/);
+  const second = buildDemoViewModel({ hash, partIndex: 1 });
+  assert.equal(second.part.title, 'second');
+  assert.equal(second.moveIndex, 0);
+  const format = buildDemoViewModel({ hash: '#/demo/format' });
+  assert.equal(format.kind, 'format');
+  assert.equal(Object.hasOwn(format, 'displayState'), false);
 });
 
 test('invalid steps cannot silently mislabel an alg and link limits are enforced', () => {

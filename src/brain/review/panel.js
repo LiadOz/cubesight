@@ -31,6 +31,7 @@ const TEMPLATE = `
     <div class="b-rev-actions">
       <span class="b-rev-better"></span>
       <button class="b-rev-open" type="button" data-act="open" hidden>show on the cube</button>
+      <button class="b-rev-share-coach btn btn--secondary btn--s" type="button" data-act="copy-coach-demo" hidden>copy coach demo link</button>
       <button class="b-rev-pin" type="button" data-act="pin" aria-pressed="false">pin</button>
     </div>
   </div>
@@ -72,6 +73,16 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     if (!target || !root.contains(target)) return;
     if (target.dataset.marker) dispatch({ type: 'selectMarker', id: target.dataset.marker });
     else if (target.dataset.at != null) dispatch({ type: 'jumpTo', at: Number(target.dataset.at) });
+    else if (target.dataset.act === 'copy-coach-demo' && shown?.coach.markerId) {
+      dispatch({ type: 'selectMarker', id: shown.coach.markerId });
+      const compare = shown?.detail?.compare;
+      const moves = compare?.status === 'better' && compare.better.length ? compare.better : compare?.yours;
+      if (!moves?.length || typeof compare.demoHref !== 'function') return;
+      const href = compare.demoHref(moves);
+      const copy = navigator.clipboard?.writeText?.(`${location.origin}${location.pathname}${location.search}${href}`);
+      if (copy) copy.then(() => { target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
+      else location.hash = href;
+    }
     else if (target.dataset.act === 'copy-demo' && shown?.detail?.compare?.demoHref) {
       const moves = target.dataset.variant === 'better' ? shown.detail.compare.better : shown.detail.compare.yours;
       if (!moves?.length) return;
@@ -175,6 +186,7 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
       setText($('.b-rev-note'), review.coach.text);
       setText($('.b-rev-better'), review.coach.better ?? '');
       $('.b-rev-open').hidden = !review.coach.markerId || Boolean(review.detail && review.detail.key === review.coach.markerId);
+      $('.b-rev-share-coach').hidden = !review.coach.markerId;
       for (const node of root.querySelectorAll('.b-rev-pin')) {
         node.hidden = !review.pin.available || (node.classList.contains('b-rev-pin-detail') ? !review.detail : Boolean(review.detail));
         setText(node, review.pin.pinned ? 'pinned · unpin' : 'pin');

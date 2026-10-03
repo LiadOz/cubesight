@@ -6,6 +6,7 @@ import { createFilledSelect, createTextarea } from '../ui/shared/index.js';
 import { loadSettings } from '../brain/settings.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { applyDemoMove, parseDemoHash, parseDemoPaste, serializeDemo, setupState } from './model.js';
+import { buildDemoViewModel } from './view-model.js';
 import './demo.css';
 
 const el = (tag, text = '', className = '') => {
@@ -20,10 +21,16 @@ const button = (label, action, variant = 'secondary') => {
   return node;
 };
 const safeParse = () => { try { return parseDemoHash(location.hash); } catch (error) { return { error: error.message, parts: [] }; } };
+const speedOptions = speed => {
+  const options = [.25, .5, .75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4].map(value => ({ value: String(value), label: `${value}×` }));
+  if (!options.some(option => option.value === String(speed))) options.push({ value: String(speed), label: `${speed}× · link` });
+  return options;
+};
+const partSeed = (demo, index) => `${demo.title}:${index + 1}:${demo.parts[index]?.title || `case ${index + 1}`}`;
 
 export function createDemoPage(root) {
   if (!root) throw new Error('A demo page root is required.');
-  let demo = null, partIndex = 0, moveIndex = 0, cube = null, orbit = null, speedControl = null, playing = false, generation = 0, view = {}, renderedHash = '';
+  let demo = null, partIndex = 0, moveIndex = 0, cube = null, orbit = null, speedControl = null, playing = false, inFlight = false, generation = 0, view = {}, renderedHash = '';
   let active = true;
   root.className = 'cs-host demo-root';
 
@@ -62,7 +69,14 @@ export function createDemoPage(root) {
   };
 
   function dispose() { cube?.destroy(); cube = null; orbit?.destroy(); orbit = null; speedControl?.destroy(); speedControl = null; }
-  function stop() { generation++; playing = false; cube?.stop(); }
+  function stop() {
+    generation++; playing = false; inFlight = false; cube?.stop();
+    const part = demo?.parts?.[partIndex];
+    if (cube && part) {
+      const committed = part.alg.slice(0, moveIndex).reduce((state, move) => applyDemoMove(state, move), setupState(part.setup));
+      cube.setState(committed);
+    }
+  }
 
   function renderDemo(parsed) {
     stop(); dispose(); demo = parsed; partIndex = 0; moveIndex = 0; root.replaceChildren();
@@ -103,22 +117,21 @@ export function createDemoPage(root) {
     const paste = pasteForm();
     const copy = button('copy demo link', 'copy-link');
     const copyStatus = el('span', '', 'demo-copy-status'); copyStatus.setAttribute('role', 'status');
-    const links = el('div', '', 'demo-tools'); links.append(copy, copyStatus);
-    if (parsed.parts.some(part => part.caseId)) {
-      const caseLink = el('a', 'open case page', 'demo-case-link'); caseLink.href = `#/algs/${parsed.parts[0].caseId}`; links.append(caseLink);
-    }
+    const links = el('div', '', 'demo-tools');
+    const caseLink = el('a', 'open case page', 'demo-case-link');
+    links.append(copy, copyStatus, caseLink);
     page.append(header, lessonNav, stage, coach, links, paste.form);
     root.append(page);
-    view = { heading, partTitle, previousPart, partCount, nextPart, restart, prev, playButton, next, moveDescription, authorNote };
+    view = { heading, partTitle, previousPart, partCount, nextPart, restart, prev, playButton, next, moveDescription, authorNote, caseLink };
     const part = demo.parts[0];
     const setup = setupState(part.setup);
-    cube = new Cube(cubeHost, { state: setup, mode: 'case', caseColorSetting: part.colorSetting, size: 'L', label: `${demo.title} demonstration` });
+    cube = new Cube(cubeHost, { state: setup, mode: 'case', caseColorSetting: part.colorSetting, caseSeed: partSeed(demo, 0), size: 'L', label: `${demo.title} demonstration` });
     const highlight = part.highlight.length
       ? { pieces: part.highlight.filter(piece => !piece.startsWith('pair:')), slot: part.highlight.find(piece => piece.startsWith('pair:')) || null, dimOthers: true }
       : defaultHighlight(part.caseId, setup);
     cube.highlight(highlight);
     orbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 72, label: `${demo.title} move sequence`, sections: [], segments: [] });
-    speedControl = createFilledSelect(speedHost, { label: 'speed', value: String(part.speed), options: [['0.5', '0.5×'], ['1', '1×'], ['1.5', '1.5×'], ['2', '2×']].map(([value, label]) => ({ value, label })), onChange: () => { if (playing) stop(); renderState(); } });
+    speedControl = createFilledSelect(speedHost, { label: 'speed', value: String(part.speed), options: speedOptions(part.speed), onChange: value => { demo.parts[partIndex].speed = Number(value); if (playing) stop(); renderState(); } });
     previousPart.disabled = true;
     nextPart.disabled = parsed.parts.length < 2;
     previousPart.addEventListener('click', () => switchPart(-1));
@@ -169,7 +182,8 @@ export function createDemoPage(root) {
     nextPart.disabled = partIndex === demo.parts.length - 1;
     partCount.textContent = demo.parts.length > 1 ? `case ${partIndex + 1} of ${demo.parts.length}` : '';
     playButton.textContent = playing ? 'pause' : moveIndex >= part.alg.length ? 'play again' : 'play';
-    prev.disabled = moveIndex === 0; next.disabled = moveIndex >= part.alg.length;
+    playButton.disabled = inFlight && !playing;
+    prev.disabled = moveIndex === 0; next.disabled = moveIndex >= part.alg.length || playing || inFlight;
     restart.disabled = moveIndex === 0 && !playing;
     describePosition();
     const heldMoves = expandToHeld(part.alg);
@@ -182,13 +196,18 @@ export function createDemoPage(root) {
     cube?.setState(state); renderState();
   }
   async function advance() {
+    if (inFlight) return;
     const currentGeneration = generation;
     const part = demo.parts[partIndex];
     if (moveIndex >= part.alg.length) return;
+    inFlight = true;
+    renderState();
     const move = part.alg[moveIndex];
     const nextState = applyDemoMove(cube.state, move);
-    await cube.animateMove(move, nextState, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260 / Math.max(.25, Number(speedControl.value()) || 1));
+    try { await cube.animateMove(move, nextState, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260 / Math.max(.25, Number(speedControl.value()) || 1)); }
+    catch (error) { if (currentGeneration === generation) { inFlight = false; playing = false; renderState(); } throw error; }
     if (currentGeneration !== generation) return;
+    inFlight = false;
     moveIndex++; renderState();
   }
   async function play() {
@@ -201,12 +220,15 @@ export function createDemoPage(root) {
     stop(); partIndex = Math.max(0, Math.min(demo.parts.length - 1, partIndex + delta)); moveIndex = 0;
     const part = demo.parts[partIndex];
     cube?.setState(setupState(part.setup));
-    cube?.setCaseOrientation(part.colorSetting);
+    cube?.setCaseOrientation(part.colorSetting, { seed: partSeed(demo, partIndex) });
     cube?.highlight(part.highlight.length ? { pieces: part.highlight.filter(piece => !piece.startsWith('pair:')), slot: part.highlight.find(piece => piece.startsWith('pair:')) || null, dimOthers: true } : defaultHighlight(part.caseId, setupState(part.setup)));
-    speedControl.setValue(String(part.speed)); renderPart();
+    speedControl.setOptions(speedOptions(part.speed), String(part.speed)); renderPart();
   }
   function renderPart() {
-    view.partTitle.textContent = demo.parts[partIndex].title || (demo.parts.length > 1 ? `case ${partIndex + 1}` : '');
+    const part = demo.parts[partIndex];
+    view.partTitle.textContent = part.title || (demo.parts.length > 1 ? `case ${partIndex + 1}` : '');
+    view.caseLink.hidden = !part.caseId;
+    if (part.caseId) view.caseLink.href = `#/algs/${part.caseId}`;
     renderState();
   }
 
@@ -216,6 +238,7 @@ export function createDemoPage(root) {
   onRoute();
   return {
     element: root,
+    getViewModel() { return buildDemoViewModel({ hash: location.hash, partIndex, moveIndex, playing }); },
     setActive(value) { active = Boolean(value); if (!active) stop(); else onRoute(); },
     destroy() { active = false; stop(); dispose(); window.removeEventListener('hashchange', onRoute); root.replaceChildren(); },
   };

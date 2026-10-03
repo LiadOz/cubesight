@@ -1697,13 +1697,14 @@ const SNAPSHOT_OWNER = {
   oll: { owner: 'F4', dataOwner: 'F4' },
   lookahead: { owner: 'F4', dataOwner: 'F4' },
   progress: { owner: 'F5', dataOwner: 'F6' },
+  demo: { owner: 'F17', dataOwner: 'F17' },
   review: { owner: 'F1', dataOwner: 'F1' },
   recording: { owner: 'F0', dataOwner: 'F0' },
 };
 const recordingSnapshotHandle = { getViewModel: () => recordingViewModel };
 function activeSnapshotHandle(tool) {
   return ({ brain, history: historyPage, drills: drillsHub, algs: algsPage, timer: timerPage,
-    progress: progressPage, review: reviewPage, recording: recordingSnapshotHandle, oll: drillPages.oll, lookahead: drillPages.lookahead })[tool] || null;
+    progress: progressPage, review: reviewPage, recording: recordingSnapshotHandle, demo: demoPage, oll: drillPages.oll, lookahead: drillPages.lookahead })[tool] || null;
 }
 function mountSnapshotPage(tool, handle = activeSnapshotHandle(tool)) {
   const owner = SNAPSHOT_OWNER[tool];
