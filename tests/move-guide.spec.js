@@ -242,6 +242,33 @@ test('the cue pref turns the cue off and animateMove still works on all kinds', 
   expect(done).toBe(true);
 });
 
+test('move animation cancellation, reduced motion, and destroy settle their promises', async ({ page }) => {
+  await gallery(page, 'orbit', 'dark');
+  const cancelled = await page.evaluate(async () => {
+    const cube = window.gallery.cube;
+    const animation = cube.animateMove('R', null, 1000);
+    cube.update({});
+    return Promise.race([animation.then(() => true), new Promise(resolve => setTimeout(() => resolve(false), 300))]);
+  });
+  expect(cancelled).toBe(true);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const reducedMotion = await page.evaluate(async () => {
+    const started = performance.now();
+    await window.gallery.cube.animateMove('U', null, 1000);
+    return performance.now() - started;
+  });
+  expect(reducedMotion).toBeLessThan(200);
+
+  const destroyed = await page.evaluate(async () => {
+    const cube = window.gallery.cube;
+    const animation = cube.animateMove('F', null, 1000);
+    cube.destroy();
+    return Promise.race([animation.then(() => true), new Promise(resolve => setTimeout(() => resolve(false), 300))]);
+  });
+  expect(destroyed).toBe(true);
+});
+
 // Screenshots of the cue at rest, mid-turn and at its peak for the moves the brief asks
 // about, in both priority looks. Read them to check the directions against notation.
 for (const [style, theme] of LOOKS) {

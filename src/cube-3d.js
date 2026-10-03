@@ -524,6 +524,7 @@ export function createCube3D(container, options = {}) {
   function frame() {
     if (stopped) return;
     animationFrame = requestAnimationFrame(frame);
+    moveAnimation?.tick(performance.now());
     if (document.hidden || !container.clientWidth || !container.clientHeight) return;
     if (interactionMode === 'scout') tumbleControls.update();
     else controls.update();
@@ -646,7 +647,7 @@ export function createCube3D(container, options = {}) {
         ? `Interactive Cross Scout cube showing all stickers. ${bottomFace} is held on the bottom and ${frontFace} in front.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
       : `Three-dimensional corner-recognition cube in a locked ${lockedViewOffset.label} solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
     // Present the new case immediately rather than waiting for the next loop.
-    renderer.render(scene, camera);
+    if (!applyingAnimationUpdate) renderer.render(scene, camera);
   }
 
   // Animate a layer turn for scout playback. The caller supplies the state
@@ -680,7 +681,6 @@ export function createCube3D(container, options = {}) {
     tumbleControls.enabled = false;
     let settled = false;
     let started = performance.now();
-    let frameId;
     const restore = () => {
       snapshots.forEach(({ object, position, quaternion, scale }) => {
         cubeGroup.attach(object);
@@ -694,7 +694,6 @@ export function createCube3D(container, options = {}) {
       const finish = (applyState) => {
         if (settled) return;
         settled = true;
-        cancelAnimationFrame(frameId);
         restore();
         delete renderer.domElement.dataset.turningFace;
         moveAnimation = null;
@@ -705,7 +704,7 @@ export function createCube3D(container, options = {}) {
         }
         resolve();
       };
-      moveAnimation = { cancel: () => finish(false) };
+      moveAnimation = { cancel: () => finish(false), tick: null };
       const duration = reducedMotion.matches ? 0 : durationMs;
       const tick = (now) => {
         if (settled) return;
@@ -715,11 +714,9 @@ export function createCube3D(container, options = {}) {
         // readable at slow speeds without a sudden first-frame jump.
         const eased = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
         layer.rotateOnAxis(axis, angle * eased);
-        renderer.render(scene, camera);
         if (progress >= 1) finish(true);
-        else frameId = requestAnimationFrame(tick);
       };
-      frameId = requestAnimationFrame(tick);
+      moveAnimation.tick = tick;
     });
   }
 
