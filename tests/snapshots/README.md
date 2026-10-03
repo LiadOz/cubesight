@@ -6,9 +6,9 @@ Brain view-model fixture set. These specs are also part of the regular
 algs, history, past-solve, replay, history review, progress, timer, representative
 fake-cube states, colour-neutral case settings, all four goal-progress states,
 the shared recording route, and the recorded rotation-cross replay at 390×844
-and 1280×720 in both themes. Fourteen additional F1 Orbit states are registered
-in `tests/layout/F1-FIXTURES.md`; they fail with a named missing-driver error
-until F1 supplies the concrete fixture API.
+and 1280×720 in both themes. Its fixture list is checked against every state
+registered in `tests/layout/matrix.js`; missing drivers fail with a named error.
+The matrix currently includes the F1 Orbit states and F17 demo playback route.
 
 ## Baselines
 

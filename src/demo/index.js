@@ -30,7 +30,7 @@ const partSeed = (demo, index) => `${demo.title}:${index + 1}:${demo.parts[index
 
 export function createDemoPage(root) {
   if (!root) throw new Error('A demo page root is required.');
-  let demo = null, partIndex = 0, moveIndex = 0, cube = null, orbit = null, speedControl = null, playing = false, inFlight = false, generation = 0, view = {}, renderedHash = '';
+  let demo = null, partIndex = 0, moveIndex = 0, cube = null, orbit = null, orbitResizeObserver = null, speedControl = null, playing = false, inFlight = false, generation = 0, view = {}, renderedHash = '';
   let active = true;
   root.className = 'cs-host demo-root';
 
@@ -56,6 +56,7 @@ export function createDemoPage(root) {
     const input = createTextarea(form, { label: 'Paste a demo link or setup + alg', rows: 3, placeholder: 'Paste a link, or write setup: R U\nalg: R′ U′' }).textarea;
     input.id = 'demo-paste-input'; input.name = 'demo';
     const submit = button('open demo', 'open-demo', 'primary');
+    submit.type = 'submit';
     const status = el('p', '', 'demo-status'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
     form.append(submit, status);
     form.addEventListener('submit', event => {
@@ -68,7 +69,7 @@ export function createDemoPage(root) {
     return { form, input, status };
   };
 
-  function dispose() { cube?.destroy(); cube = null; orbit?.destroy(); orbit = null; speedControl?.destroy(); speedControl = null; }
+  function dispose() { orbitResizeObserver?.disconnect(); orbitResizeObserver = null; cube?.destroy(); cube = null; orbit?.destroy(); orbit = null; speedControl?.destroy(); speedControl = null; }
   function stop() {
     generation++; playing = false; inFlight = false; cube?.stop();
     const part = demo?.parts?.[partIndex];
@@ -130,7 +131,14 @@ export function createDemoPage(root) {
       ? { pieces: part.highlight.filter(piece => !piece.startsWith('pair:')), slot: part.highlight.find(piece => piece.startsWith('pair:')) || null, dimOthers: true }
       : defaultHighlight(part.caseId, setup);
     cube.highlight(highlight);
-    orbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 72, label: `${demo.title} move sequence`, sections: [], segments: [] });
+    const orbitClearance = () => {
+      const orbitWidth = orbitHost.getBoundingClientRect().width;
+      const cubeWidth = cubeHost.getBoundingClientRect().width;
+      return orbitWidth > 0 ? Math.ceil((cubeWidth / orbitWidth) * 280 + (18 / orbitWidth) * 560) : 220;
+    };
+    orbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 72, centerClearance: orbitClearance(), label: `${demo.title} move sequence`, sections: [], segments: [] });
+    orbitResizeObserver = new ResizeObserver(() => orbit?.update({ centerClearance: orbitClearance() }, { animate: false }));
+    orbitResizeObserver.observe(orbitHost); orbitResizeObserver.observe(cubeHost);
     speedControl = createFilledSelect(speedHost, { label: 'speed', value: String(part.speed), options: speedOptions(part.speed), onChange: value => { demo.parts[partIndex].speed = Number(value); if (playing) stop(); renderState(); } });
     previousPart.disabled = true;
     nextPart.disabled = parsed.parts.length < 2;
@@ -187,7 +195,7 @@ export function createDemoPage(root) {
     restart.disabled = moveIndex === 0 && !playing;
     describePosition();
     const heldMoves = expandToHeld(part.alg);
-    orbit?.update({ sections: part.steps.map(step => ({ start: part.steps.slice(0, part.steps.indexOf(step)).reduce((n, item) => n + item.moves.length, 0) })), segments: part.alg.map((move, index) => ({ key: String(index), label: move, state: index === moveIndex ? 'current' : index < moveIndex ? 'done' : 'future', fill: index < moveIndex ? 1 : index === moveIndex ? .35 : 0, ariaLabel: `${move} · ${describeMove(move, heldMoves[index].held).text}` })) });
+    orbit?.update({ sections: part.steps.map(step => ({ start: part.steps.slice(0, part.steps.indexOf(step)).reduce((n, item) => n + item.moves.length, 0) })), segments: part.alg.map((move, index) => ({ key: String(index), label: move, state: index === moveIndex ? 'current' : index < moveIndex ? 'done' : 'future', fill: index < moveIndex ? 1 : index === moveIndex ? .35 : 0, ariaLabel: `${move} · ${describeMove(move, heldMoves[index].held).text}` })) }, { animate: false });
   }
   function seek(index) {
     stop();
