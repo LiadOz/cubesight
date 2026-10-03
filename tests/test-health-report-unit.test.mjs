@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { expectedCoverageRuns, findPlaywrightFailureCandidates, loadPlaywrightShards } from '../scripts/test-health-report.mjs';
+import { expectedCoverageRuns, findPlaywrightFailureCandidates, loadPlaywrightShards, summarizeTestTimings } from '../scripts/test-health-report.mjs';
 
 const now = Date.parse('2026-10-03T12:00:00.000Z');
 
@@ -81,6 +81,17 @@ test('repeat-run report names each test with any failed or timed-out repetition'
   assert.deepEqual(findPlaywrightFailureCandidates(report), [
     { title: 'tests/sample.spec.js › flaky test', status: 'failed', durationMs: 400 },
   ]);
+});
+
+test('runtime summary reports the slowest cases and every case over the soft limit', () => {
+  const tests = [
+    { name: 'short', durationMs: 500 },
+    { name: 'slow', durationMs: 20_001 },
+    { name: 'slowest', durationMs: 30_000 },
+  ];
+  const summary = summarizeTestTimings(tests, 20_000, 2);
+  assert.deepEqual(summary.slowest.map(({ name }) => name), ['slowest', 'slow']);
+  assert.deepEqual(summary.overSoftLimit.map(({ name }) => name), ['slow', 'slowest']);
 });
 
 test('coverage completeness counts executed attempts and ignores skipped tests', () => {

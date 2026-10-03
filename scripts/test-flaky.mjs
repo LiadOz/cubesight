@@ -9,8 +9,8 @@ const dir = path.join(root, 'test-results/health/repeat');
 const files = (await readdir(path.join(root, 'tests'))).filter((name) => name.endsWith('-unit.test.mjs')).map((name) => `tests/${name}`);
 await mkdir(dir, { recursive: true });
 const runs = [
-  ['playwright', 'npx', ['playwright', 'test', '--output=test-results/health/repeat/playwright-output', '--repeat-each=5', '--reporter=json']],
-  ['pwa', 'npx', ['playwright', 'test', '--config=playwright.pwa.config.js', '--output=test-results/health/repeat/pwa-output', '--repeat-each=5', '--reporter=json']],
+  ['playwright', 'npx', ['playwright', 'test', '--output=test-results/health/repeat/playwright-output', '--repeat-each=5', '--retries=0', '--reporter=json']],
+  ['pwa', 'npx', ['playwright', 'test', '--config=playwright.pwa.config.js', '--output=test-results/health/repeat/pwa-output', '--repeat-each=5', '--retries=0', '--reporter=json']],
 ];
 const results = [];
 for (let repeat = 1; repeat <= 5; repeat += 1) {

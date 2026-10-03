@@ -2,6 +2,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { flattenTests, summarizeTestTimings } from './test-health-report.mjs';
 
 const index = Number(process.env.PLAYWRIGHT_SHARD_INDEX ?? 1);
 const total = Number(process.env.PLAYWRIGHT_SHARD_COUNT ?? 1);
@@ -19,9 +20,17 @@ const run = spawnSync('npx', ['playwright', 'test', `--shard=${index}/${total}`,
 const wallTimeMs = Math.round(performance.now() - started);
 const report = { shard: index, totalShards: total, commit, startedAt, generatedAt: new Date().toISOString(), wallTimeMs, exitCode: run.status };
 try { report.playwright = JSON.parse(run.stdout); } catch { report.reportParseError = true; }
+const tests = flattenTests(report.playwright);
+const { slowest, overSoftLimit } = summarizeTestTimings(tests);
+report.testCount = tests.length;
+report.slowestTests = slowest;
+report.testsOverSoftLimit = overSoftLimit;
 const output = path.resolve(`test-results/shards/${index}-of-${total}.json`);
 await mkdir(path.dirname(output), { recursive: true });
 await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
 console.log(`Playwright shard ${index}/${total}: ${(wallTimeMs / 1000).toFixed(1)}s wall time; report ${output}`);
+console.log(`Slowest tests: ${slowest.map(({ durationMs, name }) => `${durationMs}ms ${name}`).join('; ') || 'no timings parsed'}.`);
 if (run.stderr) process.stderr.write(run.stderr);
 if (run.status !== 0) process.exit(run.status ?? 1);
+if (!tests.length) throw new Error(`Shard ${index}/${total} produced no per-test timings.`);
+if (wallTimeMs > 5 * 60_000) throw new Error(`Shard ${index}/${total} exceeded the five-minute Playwright critical-path budget (${wallTimeMs} ms).`);
