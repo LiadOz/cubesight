@@ -405,23 +405,27 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   window.addEventListener('hashchange', render);
   watchCube();
   void db.ready().then(render);
+  const getViewModel = () => {
+    const { set, caseData } = routeSelection();
+    const playback = sequencePlayer?.getSnapshot?.() ?? {};
+    const context = parseAlgRouteContext(location.hash);
+    const display = setupState ? caseDisplayState(setupState, caseColorSetting, caseData?.id ?? '') : null;
+    const drill = session?.state;
+    return buildAlgViewModel({
+      route: location.hash, set, caseId: caseData?.id ?? null,
+      displayMode, caseColor: caseColorSetting, topColor: display?.topColor ?? null,
+      cubeState: cubeView ? (cubeView.mode === 'case' ? cubeView.displayState : cubeView.state) : null,
+      gyro: cubeSnapshot.gyro,
+      selectedAlg: selectedAlgId,
+      algorithms: caseData?.algs ?? [], context,
+      playback: { index: playback.index, moveCount: playback.moves?.length, playing: playback.playing, speed: playback.speed,
+        groups: groupMoves(playback.moves ?? []).map(([start, end, label]) => ({ start, end, label })) },
+      drill: drill ? { mode: drill.mode, phase: drill.phase, attempt: drill.attempt, moveCount: drill.moves?.length, match: drill.match, executionMs: drill.lastAttempt?.executionMs } : null,
+    });
+  };
   return {
-    getSnapshot() {
-      const { set, caseData } = routeSelection();
-      const playback = sequencePlayer?.getSnapshot?.() ?? {};
-      const context = parseAlgRouteContext(location.hash);
-      const display = setupState ? caseDisplayState(setupState, caseColorSetting, caseData?.id ?? '') : null;
-      const drill = session?.state;
-      return buildAlgViewModel({
-        route: location.hash, set, caseId: caseData?.id ?? null,
-        displayMode, caseColor: caseColorSetting, topColor: display?.topColor ?? null,
-        selectedAlg: selectedAlgId,
-        algorithms: caseData?.algs ?? [], context,
-        playback: { index: playback.index, moveCount: playback.moves?.length, playing: playback.playing, speed: playback.speed,
-          groups: groupMoves(playback.moves ?? []).map(([start, end, label]) => ({ start, end, label })) },
-        drill: drill ? { mode: drill.mode, phase: drill.phase, attempt: drill.attempt, moveCount: drill.moves?.length, match: drill.match, executionMs: drill.lastAttempt?.executionMs } : null,
-      });
-    },
+    getSnapshot: getViewModel,
+    getViewModel,
     setActive(isActive) {
       const next = Boolean(isActive);
       if (active === next) return;

@@ -30,6 +30,8 @@ export function buildAlgViewModel(input = {}) {
       mode: input.displayMode === 'your cube' ? 'your cube' : 'case',
       caseColor: input.caseColor ?? readCaseColorSetting(),
       topColor: input.topColor ?? 'yellow',
+      cubeState: input.cubeState ? JSON.parse(JSON.stringify(input.cubeState)) : null,
+      gyro: input.displayMode === 'your cube' && input.gyro ? { ...input.gyro } : null,
     },
     selectedAlg: input.selectedAlg ?? null,
     algorithms: Array.isArray(input.algorithms) ? input.algorithms.map(row => ({ id: row.id, moves: row.moves, verified: row.verified === true })) : [],

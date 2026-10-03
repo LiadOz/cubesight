@@ -59,6 +59,10 @@ export class Cube {
     this.cube.update(themedRender(data, readStickerPalette(this.element)));
   }
 
+  syncDisplayState(state = this.state) {
+    this.displayState = this.mode === 'case' ? caseDisplayState(state, this.caseColorSetting, this.caseSeed).state : state;
+  }
+
   renderData(state, highlight = this.lastHighlight) {
     const ids = Array.isArray(highlight?.pieces) ? highlight.pieces : [];
     const display = this.mode === 'case' ? caseDisplayState(state, this.caseColorSetting, this.caseSeed).state : state;
@@ -67,10 +71,6 @@ export class Cube {
     data.dimOthers = Boolean(highlight?.dimOthers);
     data.highlightedPieces = ids;
     return data;
-  }
-
-  syncDisplayState(state = this.state) {
-    this.displayState = this.mode === 'case' ? caseDisplayState(state, this.caseColorSetting, this.caseSeed).state : state;
   }
 
   setMode(mode) {

@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-02",
+  "worktree": "/home/loz/projects/cubesight-fleet-f4",
+  "branch": "fleet/f4",
+  "base": "98f96e0",
+  "focusedFixture": "tests/fixtures/algs-page-gan-session.json",
+  "events": { "MOVE": 16, "GYRO": 176 },
+  "viewport": { "desktop": "1280x720", "phone": "390x844" },
+  "result": {
+    "distinctMoveSequenceIds": 16,
+    "midpointViewModelMatchesSessionState": true,
+    "finalViewModelMatchesSessionState": true,
+    "gyroFollow": true,
+    "gyroTargetAndPoseObserved": true,
+    "algPlayback": "PLL H, 7 of 7",
+    "playbackStateMatchesCaseSetupPlusAlgorithm": true,
+    "documentCanvasCount": 1,
+    "pageErrors": 0
+  },
+  "openAcceptance": [
+    "Run tests/algs-live-cube.spec.js in the shared browser runner; it additionally asserts a changed gyro pose.",
+    "The algorithm case page still scrolls at 1280x720.",
+    "Timer and drill pages still need focused visual capture and browser acceptance."
+  ]
+}
