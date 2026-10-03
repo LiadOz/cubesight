@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/coverage-test.js';
+import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 import { readFileSync } from 'node:fs';
 import { initSync, f2l_case } from '../src/wasm/cubesight_core.js';
 import { createF2LCaseFromWasm, createPseudoScanCase } from '../src/f2l-logic.js';
@@ -159,21 +159,24 @@ test('timed F2L scan scores matching pieces and keeps the limited camera', async
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
 });
 
-test('timed scan accepts real touch taps on a phone-sized canvas', async ({ browser, baseURL }) => {
+test('timed scan accepts real touch taps on a phone-sized canvas', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
+  const finishCoverage = await beginCoverage(page, testInfo);
   await prepareF2L(page);
   await page.locator('#f2l-view summary').tap();
   await page.locator('[data-f2l-drill="scan"]').click();
   await page.locator('#f2l-scan-start').tap();
   for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
   await expect(page.locator('#f2l-found')).toHaveText('1');
+  await finishCoverage();
   await context.close();
 });
 
-test('timed scan scores a pseudo pair with phone taps under a visible D offset', async ({ browser, baseURL }) => {
+test('timed scan scores a pseudo pair with phone taps under a visible D offset', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
+  const finishCoverage = await beginCoverage(page, testInfo);
   await prepareF2L(page, pseudoFixture);
   await page.locator('#f2l-view summary').tap();
   await page.locator('[data-f2l-drill="scan"]').tap();
@@ -187,6 +190,7 @@ test('timed scan scores a pseudo pair with phone taps under a visible D offset',
   await clickPiece(page, pair.edgePiece);
   await expect(page.locator('#f2l-found')).toHaveText('1');
   await expect(page.locator('#f2l-status')).toContainText('Pseudo pair!');
+  await finishCoverage();
   await context.close();
 });
 

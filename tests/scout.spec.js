@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/coverage-test.js';
+import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 
 test.setTimeout(60_000);
 async function openScout(page){
@@ -153,9 +153,10 @@ test('scout can tumble past its poles and has no corner timeout or scoring',asyn
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-rotation','locked');
 });
 
-test('mobile can switch from page scrolling to unrestricted touch rotation',async({browser})=>{
+test('mobile can switch from page scrolling to unrestricted touch rotation',async({browser},testInfo)=>{
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   const page=await context.newPage();
+  const finishCoverage=await beginCoverage(page,testInfo);
   await page.goto('/#/drills/scout?mode=explore');
   const canvas=page.locator('#scout-cube canvas');
   await expect(canvas).toBeVisible();
@@ -176,5 +177,6 @@ test('mobile can switch from page scrolling to unrestricted touch rotation',asyn
   expect(await page.evaluate(()=>scrollY)).toBe(beforeScroll);
   await page.locator('#scout-touch-mode').click();
   await expect(canvas).toHaveCSS('touch-action','pan-y');
+  await finishCoverage();
   await context.close();
 });

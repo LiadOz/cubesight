@@ -11,12 +11,13 @@ const commit = process.env.GITHUB_SHA ?? execFileSync('git', ['rev-parse', 'HEAD
 if (!Number.isInteger(index) || !Number.isInteger(total) || total < 1 || index < 1 || index > total) {
   throw new Error('Set PLAYWRIGHT_SHARD_INDEX and PLAYWRIGHT_SHARD_COUNT to a valid 1-based shard.');
 }
+const startedAt = new Date().toISOString();
 const started = performance.now();
 const run = spawnSync('npx', ['playwright', 'test', `--shard=${index}/${total}`, `--output=test-results/playwright-shard-${index}`, '--reporter=json', ...(workers ? [`--workers=${workers}`] : []), ...(config ? [`--config=${config}`] : [])], {
   cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
 });
 const wallTimeMs = Math.round(performance.now() - started);
-const report = { shard: index, totalShards: total, commit, generatedAt: new Date().toISOString(), wallTimeMs, exitCode: run.status };
+const report = { shard: index, totalShards: total, commit, startedAt, generatedAt: new Date().toISOString(), wallTimeMs, exitCode: run.status };
 try { report.playwright = JSON.parse(run.stdout); } catch { report.reportParseError = true; }
 const output = path.resolve(`test-results/shards/${index}-of-${total}.json`);
 await mkdir(path.dirname(output), { recursive: true });

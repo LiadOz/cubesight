@@ -3,18 +3,12 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { test as base, expect } from 'playwright/test';
 
-export const test = base.extend({
-  page: async ({ page }, use, testInfo) => {
-    const enabled = process.env.CUBESIGHT_IMPACT_COVERAGE === '1';
-    let devtools;
-    if (enabled) {
-      devtools = await page.context().newCDPSession(page);
-      await devtools.send('Profiler.enable');
-      await devtools.send('Profiler.startPreciseCoverage', { callCount: false, detailed: true });
-    }
-    await use(page);
-    if (!enabled) return;
-
+export async function beginCoverage(page, testInfo) {
+  if (process.env.CUBESIGHT_IMPACT_COVERAGE !== '1') return async () => {};
+  const devtools = await page.context().newCDPSession(page);
+  await devtools.send('Profiler.enable');
+  await devtools.send('Profiler.startPreciseCoverage', { callCount: false, detailed: true });
+  return async () => {
     const { result: coverage } = await devtools.send('Profiler.takePreciseCoverage');
     await devtools.send('Profiler.stopPreciseCoverage');
     await devtools.detach();
@@ -36,6 +30,14 @@ export const test = base.extend({
     const directory = path.resolve('test-results/impact-map/raw');
     await mkdir(directory, { recursive: true });
     await writeFile(path.join(directory, `${name}.json`), `${JSON.stringify(data)}\n`);
+  };
+}
+
+export const test = base.extend({
+  page: async ({ page }, use, testInfo) => {
+    const finishCoverage = await beginCoverage(page, testInfo);
+    await use(page);
+    await finishCoverage();
   },
 });
 

@@ -1,4 +1,4 @@
-import { test, expect } from './helpers/coverage-test.js';
+import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 
 test('loads the 3D trainer and Rust engine', async ({ page }) => {
   const errors = [];
@@ -84,9 +84,10 @@ test('corner cases use stable, bounded viewing angles that vary between cases', 
   await expect(cube).toHaveAttribute('aria-label', /locked .* solve view/);
 });
 
-test('a vertical touch that begins on a cube scrolls the page', async ({ browser }) => {
+test('a vertical touch that begins on a cube scrolls the page', async ({ browser }, testInfo) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 600 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
+  const finishCoverage = await beginCoverage(page, testInfo);
   await page.goto('/#/drills/pll');
   const cube = page.locator('#pll-cube canvas');
   await expect(cube).toBeVisible();
@@ -102,5 +103,6 @@ test('a vertical touch that begins on a cube scrolls the page', async ({ browser
   }
   await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(50);
+  await finishCoverage();
   await context.close();
 });

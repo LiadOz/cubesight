@@ -17,9 +17,9 @@ async function makeShardDirectory(t, reports) {
   return directory;
 }
 
-function shard({ shard, wallTimeMs, exitCode = 0, commit = process.env.GITHUB_SHA ?? 'abc123', generatedAt = new Date(now).toISOString(), title = `test-${shard}` }) {
+function shard({ shard, wallTimeMs, exitCode = 0, commit = process.env.GITHUB_SHA ?? 'abc123', startedAt = new Date(now - wallTimeMs).toISOString(), generatedAt = new Date(now).toISOString(), title = `test-${shard}` }) {
   return {
-    shard, totalShards: 2, commit, wallTimeMs, exitCode, generatedAt,
+    shard, totalShards: 2, commit, wallTimeMs, exitCode, startedAt, generatedAt,
     playwright: { suites: [{ title: `tests/${title}.spec.js`, specs: [{ title, tests: [{ expectedStatus: 'passed', results: [{ status: 'passed', duration: wallTimeMs / 2 }] }] }] }] },
   };
 }
@@ -33,6 +33,16 @@ test('sharded health wall time uses the slowest shard and retains individual tes
     { name: 'tests/test-2.spec.js › test-2', durationMs: 120 },
   ]);
   assert.deepEqual(report.errors, []);
+});
+
+test('sharded health keeps executor envelope distinct from critical path', async (t) => {
+  const directory = await makeShardDirectory(t, [
+    shard({ shard: 1, wallTimeMs: 30_000, startedAt: '2026-10-03T11:58:00.000Z', generatedAt: '2026-10-03T11:58:30.000Z' }),
+    shard({ shard: 2, wallTimeMs: 40_000, startedAt: '2026-10-03T11:59:20.000Z', generatedAt: '2026-10-03T12:00:00.000Z' }),
+  ]);
+  const report = await loadPlaywrightShards(directory, 2, now);
+  assert.equal(report.wallTimeMs, 40_000);
+  assert.equal(report.executorWallTimeMs, 120_000);
 });
 
 test('incomplete, stale, or failed shard sets cannot yield a green health report', async (t) => {

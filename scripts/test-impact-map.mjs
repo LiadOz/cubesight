@@ -12,7 +12,7 @@ const fromRaw = process.argv.includes('--from-raw');
 const started = performance.now();
 if (!fromRaw) {
   await rm(rawDirectory, { recursive: true, force: true });
-  const result = spawnSync('npx', ['playwright', 'test', '--reporter=line'], {
+  const result = spawnSync('npx', ['playwright', 'test', '--output=test-results/impact-map/playwright', '--reporter=line'], {
     cwd: root,
     env: { ...process.env, CUBESIGHT_IMPACT_COVERAGE: '1' },
     stdio: 'inherit',
@@ -34,7 +34,7 @@ for (const file of rawFiles) {
   observedCoverageRuns.push(`${coverage.testId}:${coverage.retry}`);
   for (const source of new Set(coverage.files)) {
     sourceToTests[source] ??= [];
-    sourceToTests[source].push({ id: coverage.testId, title: coverage.title, spec: coverage.spec });
+    sourceToTests[source].push(coverage.spec);
   }
 }
 if (shardedReport) {
@@ -44,9 +44,9 @@ if (shardedReport) {
     throw new Error(`Coverage is incomplete: reports contain ${observed.length} test executions; Playwright reported ${expected.length}.`);
   }
 }
-for (const tests of Object.values(sourceToTests)) tests.sort((a, b) => a.id.localeCompare(b.id));
+for (const [source, specs] of Object.entries(sourceToTests)) sourceToTests[source] = [...new Set(specs)].sort();
 const report = {
-  version: 1,
+  version: 2,
   generatedAt: new Date().toISOString(),
   runner: 'Playwright Chromium page.coverage',
   durationMs: fromRaw ? shardedReport.wallTimeMs : Math.round(performance.now() - started),

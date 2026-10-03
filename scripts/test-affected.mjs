@@ -94,7 +94,7 @@ if (refreshImpactMap) {
 }
 for (const file of changed) {
   for (const entry of impactMap?.sourceToTests?.[file] ?? []) {
-    impacted.add(entry.spec);
+    impacted.add(typeof entry === 'string' ? entry : entry.spec);
   }
   // If no recent browser map exists, select a conservative route-family seed.
   // Runtime coverage remains the source of truth for cross-family dependencies.
@@ -118,7 +118,7 @@ if (full) {
   console.log(`Shared foundation/configuration change: running the full${unitOnly ? ' unit' : ''} suite${unitOnly ? '' : 's'}.`);
   if (dryRunIndex >= 0) process.exit(0);
   const commands = unitOnly ? [['npm', ['run', 'test:unit']]] : [
-    ['npm', ['run', 'test:unit']], ['npx', ['playwright', 'test']], ['npm', ['run', 'test:pwa']],
+    ['npm', ['run', 'test:unit']], ['npx', ['playwright', 'test', '--output=test-results/affected']], ['npm', ['run', 'test:pwa']],
   ];
   for (const [command, args] of commands) {
     const result = run(command, args);
@@ -134,7 +134,7 @@ if (dryRunIndex >= 0) process.exit(0);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
   if (playwright.length && !unitOnly) {
-    const result = run('npx', ['playwright', 'test', ...playwright]);
+    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...playwright]);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
 }
