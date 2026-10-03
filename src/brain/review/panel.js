@@ -68,21 +68,29 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
   const $ = selector => root.querySelector(selector);
   let shown = null;
 
+  function copyCoachDemo(target = null) {
+    const markerId = shown?.coach.markerId;
+    if (!markerId) return false;
+    // Selecting the coach moment builds the comparison from its recorded position.
+    // The controller dispatch renders synchronously, so `shown` now has that detail.
+    dispatch({ type: 'selectMarker', id: markerId });
+    const compare = shown?.detail?.compare;
+    const moves = compare?.status === 'better' && compare.better.length ? compare.better : compare?.yours;
+    if (!moves?.length || typeof compare.demoHref !== 'function') return false;
+    const href = compare.demoHref(moves);
+    const link = `${location.origin}${location.pathname}${location.search}${href}`;
+    const copy = navigator.clipboard?.writeText?.(link);
+    if (copy) copy.then(() => { if (target) target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
+    else location.hash = href;
+    return true;
+  }
+
   root.addEventListener('click', event => {
     const target = /** @type {HTMLElement} */ (event.target).closest('button');
     if (!target || !root.contains(target)) return;
     if (target.dataset.marker) dispatch({ type: 'selectMarker', id: target.dataset.marker });
     else if (target.dataset.at != null) dispatch({ type: 'jumpTo', at: Number(target.dataset.at) });
-    else if (target.dataset.act === 'copy-coach-demo' && shown?.coach.markerId) {
-      dispatch({ type: 'selectMarker', id: shown.coach.markerId });
-      const compare = shown?.detail?.compare;
-      const moves = compare?.status === 'better' && compare.better.length ? compare.better : compare?.yours;
-      if (!moves?.length || typeof compare.demoHref !== 'function') return;
-      const href = compare.demoHref(moves);
-      const copy = navigator.clipboard?.writeText?.(`${location.origin}${location.pathname}${location.search}${href}`);
-      if (copy) copy.then(() => { target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
-      else location.hash = href;
-    }
+    else if (target.dataset.act === 'copy-coach-demo') copyCoachDemo(target);
     else if (target.dataset.act === 'copy-demo' && shown?.detail?.compare?.demoHref) {
       const moves = target.dataset.variant === 'better' ? shown.detail.compare.better : shown.detail.compare.yours;
       if (!moves?.length) return;
@@ -198,5 +206,6 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
       toggleClass(root, 'has-detail', Boolean(review.detail));
     },
     destroy() { root.remove(); },
+    copyCoachDemo,
   };
 }

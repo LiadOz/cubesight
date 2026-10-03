@@ -54,9 +54,10 @@ export function createOrbitResults(host, ctx = {}) {
   next.dataset.action = 'next';
   const more = document.createElement('details'); more.className = 'f1-results__more';
   const moreBody = el('div', 'f1-results__more-body');
+  const coachDemo = el('button', 'ui-action f1-results__coach-demo', 'copy coach demo link'); coachDemo.type = 'button'; coachDemo.dataset.action = 'coach-demo'; coachDemo.hidden = true;
   const penalty = el('button', 'ui-action', 'edit +2 / DNF'); penalty.type = 'button'; penalty.dataset.action = 'penalty';
   const retry = el('button', 'ui-action', 'retry scramble'); retry.type = 'button'; retry.dataset.action = 'retry';
-  moreBody.append(penalty, retry); more.append(moreBody);
+  moreBody.append(coachDemo, penalty, retry); more.append(moreBody);
   actions.append(more);
   const keysHost = el('div', 'f1-results__keys');
   root.append(historyNav, time, coachHost, casePrompt, caseMenu, detailHost, actions, keysHost);
@@ -98,6 +99,7 @@ export function createOrbitResults(host, ctx = {}) {
     if (!button || !root.contains(button)) return;
     if (button.dataset.action === 'retry') ctx.dispatch?.({ type: 'retry' });
     if (button.dataset.action === 'penalty') ctx.dispatch?.({ type: 'togglePenalty', penalty: currentRecord?.penalty === '+2' ? null : '+2' });
+    if (button.dataset.action === 'coach-demo') review.copyCoachDemo(button);
     if (button.dataset.action === 'case' && selectedCase) showCase(selectedCase);
   });
   root.addEventListener('keydown', event => { if (event.key === 'Escape' && !caseMenu.hidden) caseMenu.hidden = true; });
@@ -131,6 +133,7 @@ export function createOrbitResults(host, ctx = {}) {
     root.querySelector('.f1-results__time').dataset.tone = r.time.tone;
     coach.update({ text: r.review.coach.text, marker: r.review.selectedId, orbit: ctx.resultsOrbit });
     review.update(r.review);
+    coachDemo.hidden = mode === 'past' || !r.review.coach.markerId;
     if (mode === 'past') {
       presentResultsOrbit(ctx.resultsOrbit, r, { dispatch: action => ctx.dispatch?.(action) });
       if (r.review.detail?.replayable && r.review.detail.variant !== 'better' && typeof externalCube?.setState === 'function') {
