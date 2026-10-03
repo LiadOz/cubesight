@@ -1,6 +1,6 @@
 // Shared by the Brain specs that drive a fake GAN cube: mounts the real Brain on
 // a scripted smart-cube connection and exposes window.testBrain.emitTurns().
-export async function mountTestBrain(page, style = 'orbit', { route = false, settings = {}, keepStorage = false } = {}) {
+export async function mountTestBrain(page, style = 'orbit', { route = false, settings = {}, keepStorage = false, connectDelayMs = 0, awaitConnect = true } = {}) {
   // route: mount into the real #brain-view on the Brain route (so the page-level theme rules apply).
   await page.goto(route ? '/#/brain' : '/');
   if (route) await page.waitForSelector('#brain-view .brain', { state: 'attached' });
@@ -19,7 +19,10 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, set
       async sendCommand() { queueMicrotask(() => observer?.next({ type: 'FACELETS', facelets: solved })); },
       async disconnect() {},
     };
-    const session = createSmartCubeSession(() => Promise.resolve(connection));
+    const session = createSmartCubeSession(async () => {
+      if (connectDelayMs > 0) await new Promise(resolve => setTimeout(resolve, connectDelayMs));
+      return connection;
+    });
     // A double is two quarter-turn MOVE events a few cube ticks apart; separate turns are far apart.
     const emitTurn = raw => {
       const move = raw.replace('2', '');
@@ -44,13 +47,31 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, set
         } else { tick += gap; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick }); }
       }
     };
-    window.testBrain = { session, emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn), emitTimed };
+    const emitGyroBurst = async (durationMs = 1000, intervalMs = 16) => {
+      const started = performance.now();
+      let sample = 0;
+      while (performance.now() - started < durationMs) {
+        const angle = sample++ / 25;
+        observer?.next({ type: 'GYRO', quaternion: { x: 0, y: Math.sin(angle / 2), z: 0, w: Math.cos(angle / 2) } });
+        await new Promise(resolve => setTimeout(resolve, intervalMs));
+      }
+      return sample;
+    };
+    const emitMeasuredTurn = async raw => {
+      const eventAt = performance.now();
+      emitTurn(raw);
+      const frameAt = await new Promise(resolve => requestAnimationFrame(resolve));
+      return { eventToFrameMs: frameAt - eventAt, frameAt };
+    };
+    window.testBrain = { session, emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn), emitTimed, emitGyroBurst, emitMeasuredTurn };
     const root = route ? document.querySelector('#brain-view') : document.createElement('div');
     if (route) root.replaceChildren(); else { root.id = 'brain-test'; document.body.append(root); }
     window.testBrain.handle = createBrain(root, session);
     await window.testBrain.handle.ready;
-    await session.connect();
-  }, { style, route, settings, keepStorage });
+    const connecting = session.connect();
+    window.testBrain.connecting = connecting;
+    if (awaitConnect) await connecting;
+  }, { style, route, settings, keepStorage, connectDelayMs, awaitConnect });
 }
 
 /** Start a guided scramble from the advanced "use a specific scramble" box. */
