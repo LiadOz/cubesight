@@ -12,6 +12,12 @@
 .f1-results__compare { margin: 4px 0 0; color: var(--b-muted); font: 500 13px var(--b-font-mono); }
 .f1-results__coach { min-height: 36px; }
 .f1-results__case-links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.f1-results__more { position: relative; }
+.f1-results__more > summary { display: grid; min-height: 40px; place-items: center; padding: 0 12px; color: var(--b-muted); cursor: pointer; list-style: none; }
+.f1-results__more > summary::-webkit-details-marker { display: none; }
+.f1-results__more-body { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 7; display: grid; gap: 6px; min-width: 180px; padding: 8px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); background: var(--b-surface); box-shadow: 0 8px 24px #0005; }
+.f1-results__case-menu { display: grid; gap: 8px; }
+.f1-results__case-title { margin: 0; color: var(--b-muted); font: 500 12px var(--b-font-mono); text-transform: uppercase; }
 .f1-results__case-menu[hidden] { display: none; }
 .f1-results__detail-host:empty { display: none; }
 .f1-results .b-rev.is-compact > :is(.b-rev-head, .b-rev-card, .b-rev-chips) { display: none; }

@@ -28,7 +28,8 @@ test('theme switch preserves the current cube and its sticker colors', async ({ 
   await page.goto('/#/drills/f2l');
   await expect(page.locator('#f2l-cube canvas')).toBeVisible();
   await page.getByRole('button', { name: 'help' }).click();
-  await expect(page.locator('#help-dialog')).toHaveCSS('background-color', 'rgb(25, 36, 47)');
+  await expect(page.locator('#help-view')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'one cube, one orbit' })).toBeVisible();
 });
 
 test('theme toggle fits and responds to touch on a narrow phone', async ({ browser }) => {

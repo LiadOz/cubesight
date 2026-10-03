@@ -179,10 +179,6 @@ h2 { margin: 0; font-size: 23px; letter-spacing: -.6px; }
 .f2l-info-grid article { padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: white; }
 .f2l-info-grid h3 { margin: 16px 0 10px; font-size: 15px; }
 .f2l-info-grid article > p:last-child { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; min-height: 80px; padding: 24px max(28px,calc((100% - 1200px) / 2)); border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
-.footer-dot { padding: 0 8px; }
-.build-badge { margin-left:10px; padding:4px 7px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--muted); font:9px var(--mono); }
-.build-badge b { color:var(--ink); font-weight:500; }
 .build-info { display:grid; grid-template-columns:1fr auto; align-items:center; gap:7px 14px; margin:0 0 22px; padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--paper); }
 .build-info > span { color:var(--muted); font-size:10px; font-weight:700; }
 .build-info code { font:12px var(--mono); }
@@ -192,9 +188,6 @@ dialog { width: min(500px,calc(100% - 32px)); max-height: calc(100dvh - 32px); p
 dialog::backdrop { background: #102333bb; backdrop-filter: blur(6px); }
 .dialog-close { position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #f0f3f6; font-size: 24px; }
 dialog h2 { margin-bottom: 24px; font-size: 28px; }
-.help-dialog > p:not(.eyebrow), .help-dialog li { color: var(--muted); font-size: 13px; line-height: 1.7; }
-.help-dialog ol { padding-left: 18px; margin: 20px 0 26px; }
-.help-dialog li { padding-left: 6px; margin: 8px 0; }
 .primary-button { width: 100%; min-height: 46px; border: 0; border-radius: 8px; background: var(--accent); color: white; font-weight: 700; }
 .summary-dialog > .text-button { display: block; margin: 18px auto 0; }
 .summary-metrics { display: grid; grid-template-columns: repeat(3,1fr); margin: 26px 0; border: 1px solid var(--line); border-radius: 10px; }
@@ -248,7 +241,6 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
   .selected-piece-card { padding: 10px 12px; } .f2l-timings { font-size: 9px; min-height: 20px; margin-top: 8px; }
   .f2l-progress { padding-top: 10px; } .f2l-progress i { height: 18px; font-size: 8px; } .f2l-footer-actions { margin-top: 10px; padding-top: 4px; font-size: 8px; }
   .f2l-info-grid { grid-template-columns: 1fr; gap: 10px; } .f2l-info-grid article { padding: 18px; } .f2l-info-grid h3 { margin-top: 12px; }
-  footer { padding: 20px 16px max(20px,env(safe-area-inset-bottom)); min-height: 70px; font-size: 10px; } footer > span:last-child { display: none; } .build-badge { margin:8px 0 0; display:block; min-height:36px; }
   dialog { padding: 36px 22px 24px; } dialog h2 { font-size: 25px; }
 }
 @media (max-width:370px) { .answer-button { font-size: 9px; gap: 5px; } .answer-button > i { width: 18px; } .metric-card strong { font-size: 19px; } .training-settings summary small { font-size: 8px; } }

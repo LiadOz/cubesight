@@ -9,6 +9,7 @@ import './cube.css';
 const SIZES = { XS: 72, S: 128, M: 196, L: 300, XL: 460 };
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const caseStateSeed = state => JSON.stringify(state?.cubies?.map(cubie => [cubie.id, cubie.position, cubie.stickers]) || []);
+const copyModel = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
 /** Stable wrapper over the site's single WebGL cube. Model states use cross-cube.js states. */
 export class Cube {
@@ -23,6 +24,9 @@ export class Cube {
     this.explicitCaseSeed = Boolean(caseSeed);
     this.destroyed = false;
     this.lastHighlight = null;
+    this.lastRenderData = null;
+    this.lastRenderDataRuntime = null;
+    this.customRenderData = false;
     this.playGeneration = 0;
     this.element = document.createElement('div');
     this.element.className = `shared-cube shared-cube--${size.toLowerCase()}`;
@@ -33,7 +37,9 @@ export class Cube {
     host.append(this.element);
     this.cube = createCube3D(this.element, { mode: 'scout', ...cubeOptions });
     this.paint();
-    this.retheme = () => this.paint();
+    this.retheme = () => this.customRenderData
+      ? this.cube.update(themedRender(this.lastRenderDataRuntime, readStickerPalette(this.element)))
+      : this.paint();
     document.addEventListener('cubesight-theme', this.retheme);
     this.recenter = () => { if (this.element.isConnected && !this.element.closest('[hidden]')) this.cube.recenterGyro?.(); };
     document.addEventListener('cubesight-recenter', this.recenter);
@@ -46,7 +52,10 @@ export class Cube {
     if (this.destroyed || !this.state) return;
     this.lastHighlight = highlight;
     const data = this.renderData(this.state, highlight);
-    this.displayState = this.mode === 'case' ? caseDisplayState(this.state, this.caseColorSetting, this.caseSeed).state : this.state;
+    this.syncDisplayState();
+    this.lastRenderData = copyModel(data);
+    this.lastRenderDataRuntime = data;
+    this.customRenderData = false;
     this.cube.update(themedRender(data, readStickerPalette(this.element)));
   }
 
@@ -58,6 +67,10 @@ export class Cube {
     data.dimOthers = Boolean(highlight?.dimOthers);
     data.highlightedPieces = ids;
     return data;
+  }
+
+  syncDisplayState(state = this.state) {
+    this.displayState = this.mode === 'case' ? caseDisplayState(state, this.caseColorSetting, this.caseSeed).state : state;
   }
 
   setMode(mode) {
@@ -101,23 +114,40 @@ export class Cube {
 
   mount(host) { if (!host) throw new Error('Cube mount needs a host element.'); host.append(this.element); this.host = host; return this; }
 
-  update(data) { if (!this.destroyed) this.cube.update(themedRender(data, readStickerPalette(this.element))); return this; }
+  update(data) {
+    if (!this.destroyed && data) {
+      this.lastRenderData = copyModel(data);
+      this.lastRenderDataRuntime = data;
+      this.customRenderData = true;
+      this.cube.update(themedRender(data, readStickerPalette(this.element)));
+    }
+    return this;
+  }
+  getSnapshot() {
+    return { mode: this.mode, state: this.customRenderData ? null : copyModel(this.state), displayState: this.customRenderData ? null : copyModel(this.displayState),
+      caseColorSetting: this.caseColorSetting, caseSeed: this.caseSeed, highlight: copyModel(this.lastHighlight), renderData: copyModel(this.lastRenderData) };
+  }
   animateMove(move, state, duration) {
-    if (state?.cubies) this.state = state;
+    if (state?.cubies) { this.state = state; this.syncDisplayState(state); }
     const data = state?.cubies ? this.renderData(state) : state;
+    if (data) { this.lastRenderData = copyModel(data); this.lastRenderDataRuntime = data; this.customRenderData = !state?.cubies; }
     return this.cube.animateMove(move, data ? themedRender(data, readStickerPalette(this.element)) : data, duration);
   }
   queueLiveMove(move, state, options) {
-    if (state?.cubies) this.state = state;
+    if (state?.cubies) { this.state = state; this.syncDisplayState(state); }
     const data = state?.cubies ? this.renderData(state) : state;
+    if (data) { this.lastRenderData = copyModel(data); this.lastRenderDataRuntime = data; this.customRenderData = !state?.cubies; }
     this.cube.queueLiveMove(move, data ? themedRender(data, readStickerPalette(this.element)) : data, options);
   }
 
   bindSession(session) {
     this.liveUnsubscribe?.();
     if (!session?.subscribe) throw new TypeError('A live cube session with subscribe() is required.');
-    let lastMoveSeq = null;
+    const initial = session.getSnapshot?.();
+    let lastMoveSeq = initial?.moveEvent?.seq ?? null;
     this.mode = 'live'; this.element.dataset.mode = 'live';
+    if (initial?.gyro) this.cube.setGyroOrientation(initial.gyro);
+    if (initial?.state?.cubies) this.setState(initial.state);
     this.liveUnsubscribe = session.subscribe(snapshot => {
       if (snapshot.gyro) this.cube.setGyroOrientation(snapshot.gyro);
       if (snapshot.state?.cubies) {
@@ -125,7 +155,11 @@ export class Cube {
         if (event && event.seq !== lastMoveSeq) {
           lastMoveSeq = event.seq;
           this.state = snapshot.state;
-          const data = themedRender(toRenderData(this.state, this.lastHighlight?.pieces || []), readStickerPalette(this.element));
+          const raw = toRenderData(this.state, this.lastHighlight?.pieces || []);
+          this.lastRenderDataRuntime = raw;
+          this.lastRenderData = copyModel(raw);
+          this.customRenderData = false;
+          const data = themedRender(raw, readStickerPalette(this.element));
           if (event.replaces || !event.move) this.cube.update(data);
           else this.cube.queueLiveMove(event.move, data);
         } else if (!event || !snapshot.lastMove) this.setState(snapshot.state);
@@ -134,6 +168,8 @@ export class Cube {
     });
     return () => { this.liveUnsubscribe?.(); this.liveUnsubscribe = null; };
   }
+
+  setGyroOrientation(gyro) { this.cube?.setGyroOrientation?.(gyro); return this; }
 
   cue(move) { this.cube.setCue(move, { loop: !reducedMotion() }); return this; }
   clearCue() { this.cube.clearCue(); return this; }

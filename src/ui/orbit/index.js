@@ -189,7 +189,9 @@ export class Orbit {
     const labelObstacles = [...cubeLabelSafeArea(cx, cy, options.centerClearance), ...markerSafeAreas(cx, cy, radius, markers, hitRadius)];
     const labelPositions = mini || sideLabels ? new Map() : new Map(placeLabels(segments.map((segment, index) => ({ key: String(segment.key ?? index), angle: layoutByKey.get(String(segment.key ?? index))?.mid ?? layout[index].mid, width: labelWidth(segment) * fontScale, height: labelHeight(segment) * fontScale, rank: Math.max(Number(segment.importance) || 0, segment.selected ? 1000 : 0, segment.state === 'current' ? 500 : 0, String(segment.key ?? index) === activeKey ? 2000 : 0) })), { cx, cy, radius, offset: 82, minGap: 24, top: 18, bottom: 542, obstacles: labelObstacles }).map(label => [label.key, label]));
     const root = svg('svg', { class: `orbit__svg${mini ? ' orbit__svg--mini' : ''}`, viewBox: '0 0 560 560', role: 'list', 'aria-label': options.label || 'orbit segments', preserveAspectRatio: 'xMidYMid meet', focusable: 'false' });
-    root.style.width = `${width}px`; root.style.height = `${width}px`;
+    // Fit the SVG to the host box as well as the Orbit frame so a constrained
+    // stage keeps the ring centered instead of painting it low in the slot.
+    root.style.width = `${renderWidth}px`; root.style.height = `${renderWidth}px`;
     const track = svg('path', { class: 'orbit__track', d: arcPath(cx, cy, radius, startAngle, startAngle + dir * sweep, model.direction) });
     root.append(track);
     const parts = [];

@@ -12,14 +12,14 @@ const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Indexed playback on a page's single existing cube; the page owns the cube. */
 export function createSequencePlayer(host, options = {}) {
-  const { cube3d, label = 'Move playback', onChange = () => {} } = options;
+  const { cube3d, label = 'Move playback', onChange = () => {}, timelineEnabled = true, guideEnabled = true } = options;
   let states = [], moves = [], index = 0, playing = false, active = true;
   let destroyed = false, generation = 0, speed = 1, timeline = null, style = null;
   const api = { load, play, pause, step, reset, setActive, setSpeed, destroy, getSnapshot };
   host.classList.add('sequence-player');
   host.innerHTML = '<div class="sequence-progress" data-sequence-progress></div><div data-sequence-guide></div><div class="sequence-controls"><button type="button" data-sequence="reset">reset <kbd>r</kbd></button><button type="button" data-sequence="back" aria-label="Previous move">←</button><button type="button" data-sequence="play">play <kbd>space</kbd></button><button type="button" data-sequence="next" aria-label="Next move">→</button><label>speed<select data-sequence-speed aria-label="Playback speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label><span data-sequence-position role="status"></span></div>';
   host.setAttribute('aria-label', label);
-  const guide = createMoveGuide(host.querySelector('[data-sequence-guide]'), { cube3d, label });
+  const guide = guideEnabled ? createMoveGuide(host.querySelector('[data-sequence-guide]'), { cube3d, label }) : null;
   const progressHost = host.querySelector('[data-sequence-progress]');
   const page = host.closest('.brain');
   const observer = new MutationObserver(render);
@@ -34,7 +34,7 @@ export function createSequencePlayer(host, options = {}) {
   function render() {
     if (destroyed) return;
     const nextStyle = page?.dataset.brainStyle === 'mono' ? 'mono' : 'orbit';
-    if (style !== nextStyle) {
+    if (timelineEnabled && style !== nextStyle) {
       timeline?.destroy();
       style = nextStyle;
       cube3d?.host?.classList.toggle('has-sequence-ring', style === 'orbit');
@@ -49,8 +49,8 @@ export function createSequencePlayer(host, options = {}) {
         state: index >= to ? 'done' : index >= from ? 'current' : 'future', fill: Math.max(0, Math.min(1, (index - from) / (to - from))),
         tags: [], splitText: '', splitMs: null, avgMs: 0, delta: null };
     });
-    timeline.update({ screen: 'solving', timeline: { planKey: moves.join(' '), visible: active && Boolean(moves.length), ghost: false, segments, groups: [], currentIndex: segments.findIndex(s => s.state === 'current') } }, null);
-    guide.update({ moves, index, cube3d: active && !playing ? cube3d : null });
+    if (timeline) timeline.update({ screen: 'solving', timeline: { planKey: moves.join(' '), visible: active && Boolean(moves.length), ghost: false, segments, groups: [], currentIndex: segments.findIndex(s => s.state === 'current') } }, null);
+    guide?.update({ moves, index, cube3d: active && !playing ? cube3d : null });
     host.dataset.sequenceIndex = String(index);
     host.dataset.sequencePlaying = String(playing);
     host.querySelector('[data-sequence="play"]').firstChild.textContent = playing ? 'pause ' : 'play ';
@@ -60,7 +60,11 @@ export function createSequencePlayer(host, options = {}) {
     host.querySelector('[data-sequence="play"]').disabled = !active || !moves.length;
     onChange(getSnapshot());
   }
-  function draw() { if (states[index]) cube3d?.update(toRenderData(states[index])); }
+  function draw() {
+    if (!states[index]) return;
+    if (cube3d?.setState) cube3d.setState(states[index]);
+    else cube3d?.update(toRenderData(states[index]));
+  }
   function pause() {
     generation++;
     playing = false;
@@ -93,7 +97,7 @@ export function createSequencePlayer(host, options = {}) {
     const token = ++generation;
     render();
     while (index < moves.length && token === generation && active && !destroyed) {
-      await cube3d?.animateMove(moves[index], toRenderData(states[index + 1]), 320 / speed);
+      await cube3d?.animateMove(moves[index], cube3d?.setState ? states[index + 1] : toRenderData(states[index + 1]), 320 / speed);
       if (token !== generation || !active || destroyed) return;
       index++;
       render();
@@ -127,7 +131,7 @@ export function createSequencePlayer(host, options = {}) {
   function destroy() {
     if (destroyed) return;
     pause(); destroyed = true;
-    observer.disconnect(); guide.destroy(); timeline?.destroy();
+    observer.disconnect(); guide?.destroy(); timeline?.destroy();
     cube3d?.host?.classList.remove('has-sequence-ring'); progressHost.remove();
     host.removeEventListener('click', onClick); host.removeEventListener('change', onSpeed); host.removeEventListener('keydown', onKey);
     host.replaceChildren(); host.classList.remove('sequence-player');
