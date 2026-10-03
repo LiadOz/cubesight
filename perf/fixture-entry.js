@@ -28,4 +28,24 @@ window.cancelAnimationFrame = id => {
 };
 window.__f11PendingAnimationFrames = () => pendingFrames.size;
 
+window.__f11Workers = [];
+const NativeWorker = window.Worker;
+window.Worker = class extends NativeWorker {
+  constructor(url, options) {
+    const createdAt = performance.now();
+    super(url, options);
+    const sample = { url: String(url), createdAt, firstReplyAt: null, resultAt: null, errorAt: null, errorMessage: null, terminatedAt: null };
+    window.__f11Workers.push(sample);
+    this.addEventListener('message', event => {
+      const time = performance.now();
+      sample.firstReplyAt ??= time;
+      if (event.data?.type === 'result') sample.resultAt ??= time;
+      if (event.data?.type === 'error') { sample.errorAt ??= time; sample.errorMessage ??= event.data.message ?? 'worker error reply'; }
+    });
+    this.addEventListener('error', event => { sample.errorAt ??= performance.now(); sample.errorMessage ??= event.message || 'worker error event'; });
+    const terminate = this.terminate.bind(this);
+    this.terminate = () => { sample.terminatedAt = performance.now(); terminate(); };
+  }
+};
+
 setupTheme();
