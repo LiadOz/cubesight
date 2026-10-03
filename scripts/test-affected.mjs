@@ -163,9 +163,11 @@ if (dryRunIndex >= 0) process.exit(0);
     const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...playwright]);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
-  if (!unitOnly) for (const [spec, cases] of selection.casesBySpec) {
-    const grep = grepPatternForCases([...cases.values()]);
-    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', spec, `--grep=${grep}`]);
+  if (!unitOnly && selection.casesBySpec.size) {
+    const specs = [...selection.casesBySpec.keys()];
+    const cases = [...selection.casesBySpec.values()].flatMap((selected) => [...selected.values()]);
+    const grep = grepPatternForCases(cases);
+    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...specs, `--grep=${grep}`]);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
 }
