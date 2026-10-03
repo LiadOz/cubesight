@@ -82,7 +82,8 @@ const edges = await importGraph(allFiles);
 const impactMapPath = path.join(root, 'tests/impact-map.json');
 let impactMap;
 try { impactMap = JSON.parse(await readFile(impactMapPath, 'utf8')); } catch { impactMap = null; }
-const mapAgeMs = impactMap?.generatedAt ? Date.now() - Date.parse(impactMap.generatedAt) : Infinity;
+const generatedAt = impactMap?.generatedAt ? Date.parse(impactMap.generatedAt) : NaN;
+const mapAgeMs = Number.isFinite(generatedAt) ? Date.now() - generatedAt : Infinity;
 const inputChanges = changedTestInputs(impactMap?.inputFingerprints, await fingerprintTestInputs(root));
 const refreshImpactMap = !unitOnly && (mapAgeMs > 7 * 24 * 60 * 60 * 1000 || inputChanges.length > 0) && dryRunIndex < 0;
 const full = changed.some(safetyValve);
