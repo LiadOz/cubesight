@@ -39,7 +39,7 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const helpButton = document.createElement('button'); helpButton.type = 'button'; helpButton.className = 'header-button help-button'; helpButton.dataset.action = 'open-help'; helpButton.setAttribute('aria-label', 'help'); helpButton.textContent = '?'; helpButton.addEventListener('click', () => help?.()); controls.append(helpButton);
   let drawer = null;
   const openDrawer = () => { if (!showDevDrawer) return; if (!drawer) {
-    drawer = document.createElement('dialog'); drawer.className = 'ui-dev-drawer'; drawer.setAttribute('aria-label', 'developer drawer');
+    drawer = document.createElement('dialog'); drawer.className = 'ui-dev-drawer'; drawer.dataset.globalDevDrawer = 'true'; drawer.setAttribute('aria-label', 'developer drawer');
     const heading = document.createElement('h2'); heading.textContent = 'developer drawer'; const close = document.createElement('button'); close.type = 'button'; close.className = 'ui-dev-drawer__close'; close.textContent = 'close'; close.addEventListener('click', () => drawer.close());
     const save = document.createElement('button'); save.type = 'button'; save.textContent = 'save recording'; save.addEventListener('click', () => actions['save-recording']?.());
     const status = document.createElement('p'); status.className = 'ui-dev-drawer__status'; status.textContent = 'The local recording buffer is always on.';

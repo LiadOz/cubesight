@@ -58,7 +58,7 @@ export async function inspectLayout(page, cell) {
     if (expectedBrainStyle && document.querySelector('#brain-view .brain')?.dataset.brainStyle !== expectedBrainStyle) add('brain-style-mismatch', document.querySelector('#brain-view .brain') || document.querySelector('#brain-view'), `expected ${expectedBrainStyle} Orbit skin`);
     if (document.querySelector('footer, .site-footer, [data-site-footer]')) add('site-footer-present', document.querySelector('footer, .site-footer, [data-site-footer]'), 'the site has no footer');
     if (expectDebugDrawer && ![...document.querySelectorAll('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]')].some(isVisible)) add('debug-drawer-shortcut', document.querySelector('.site-header'), 'backtick must open the shared dev drawer on every page');
-    if (expectDebugDrawer && !/save recording/i.test(document.querySelector('[data-global-dev-drawer], #brain-debug')?.textContent || '')) add('dev-drawer-recording-action', document.querySelector('[data-global-dev-drawer], #brain-debug'), 'dev drawer needs save recording');
+    if (expectDebugDrawer && !/save recording/i.test(document.querySelector('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]')?.textContent || '')) add('dev-drawer-recording-action', document.querySelector('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]'), 'dev drawer needs save recording');
     if (expectSettingsDrawer && ![...document.querySelectorAll('.b-settings[open], [data-settings-drawer][open], [role="dialog"][aria-label*="settings" i]')].some(isVisible)) add('settings-drawer-closed', document.querySelector('#brain-view'), 'settings state did not open the settings drawer');
     if (expectConnectionMenu) {
       const menu = [...document.querySelectorAll('[data-global-cube-menu], [role="menu"], [role="dialog"][aria-label*="cube" i]')].find(isVisible);
@@ -156,8 +156,16 @@ export async function inspectLayout(page, cell) {
 
   for (const selector of result.scrollers) {
     const scroller = page.locator(selector).first();
-    const before = await scroller.evaluate(el => ({ left: el.scrollLeft, max: el.scrollWidth - el.clientWidth }));
-    if (before.max <= 1) continue;
+    const before = await scroller.evaluate(el => {
+      const original = el.scrollLeft;
+      el.scrollLeft = 0;
+      window.__layoutPreviousFocus = document.activeElement;
+      return { left: el.scrollLeft, max: el.scrollWidth - el.clientWidth, original };
+    });
+    if (before.max <= 1) {
+      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); delete window.__layoutPreviousFocus; }, before.original);
+      continue;
+    }
     await scroller.focus();
     await scroller.press('End');
     const after = await scroller.evaluate(el => el.scrollLeft);
@@ -165,6 +173,7 @@ export async function inspectLayout(page, cell) {
       const box = await scroller.boundingBox();
       result.errors.push({ kind: 'scroller-not-keyboard-scrollable', selector, box, detail: 'End did not move the horizontal scroller' });
     }
+    await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); delete window.__layoutPreviousFocus; }, before.original);
   }
 
   const sticky = await page.evaluate(async ({ routeFamily }) => {

@@ -10,6 +10,23 @@ const gallery = (page, style = 'orbit', theme = 'dark', extra = '') => page.goto
 const cueState = page => page.evaluate(() => window.gallery.cube.getCueState());
 const cueAngle = page => cueState(page).then(state => state?.angle ?? 0);
 
+test('overflowing move strips scroll with Home, End, and arrow keys', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await gallery(page, 'orbit', 'dark');
+  const strip = page.locator('[data-example="scramble"] .mg-strip');
+  await strip.evaluate(el => { el.scrollLeft = 0; });
+  await strip.focus();
+  const max = await strip.evaluate(el => el.scrollWidth - el.clientWidth);
+  expect(max).toBeGreaterThan(0);
+  await strip.press('End');
+  await expect.poll(() => strip.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+  await strip.press('ArrowLeft');
+  const afterArrow = await strip.evaluate(el => el.scrollLeft);
+  expect(afterArrow).toBeLessThan(max);
+  await strip.press('Home');
+  await expect.poll(() => strip.evaluate(el => el.scrollLeft)).toBe(0);
+});
+
 for (const [style, theme] of LOOKS) {
   test(`chips are plain notation: done dimmed, current highlighted (${style}-${theme})`, async ({ page }) => {
     fs.mkdirSync(SHOTS, { recursive: true });

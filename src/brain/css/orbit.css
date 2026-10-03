@@ -35,7 +35,7 @@
   background: none;
   font: 500 13px var(--b-font-mono);
 }
-.brain[data-brain-style="orbit"] .b-configbar-copy { background: none; font: 500 14px var(--b-font-mono); }
+.brain[data-brain-style="orbit"] .b-configbar-copy { box-sizing: border-box; width: 100%; min-width: 0; flex-wrap: wrap; justify-content: flex-start; background: none; font: 500 14px var(--b-font-mono); }
 .brain[data-brain-style="orbit"] .b-sep { color: var(--b-hairline); }
 .brain[data-brain-style="orbit"] .brain-body {
   display: grid;

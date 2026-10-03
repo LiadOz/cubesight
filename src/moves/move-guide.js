@@ -54,6 +54,13 @@ export function createMoveGuide(host, options = {}) {
   strip.setAttribute('data-scroll-x', 'true');
   strip.tabIndex = 0;
   strip.setAttribute('aria-label', `Moves for ${state.label}`);
+  strip.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || strip.scrollWidth <= strip.clientWidth) return;
+    event.preventDefault();
+    const step = Math.max(40, Math.round(strip.clientWidth * 0.8));
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? strip.scrollWidth : strip.scrollLeft + (event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0);
+    strip.scrollTo({ left: next, behavior: 'auto' });
+  });
   const live = el('p', 'mg-sr');
   live.setAttribute('role', 'status');
   live.setAttribute('aria-live', 'polite');
