@@ -91,7 +91,9 @@ async function installDeterminism(page, theme, viewport) {
 }
 
 async function freezeTime(page, fixture) {
-  const fakeClockDriver = fixture?.id === 'inspection-overtime' || fixture?.driver === 'manual-timer';
+  const fakeClockDriver = fixture?.id === 'inspection-overtime'
+    || fixture?.id === 'demo-playback-midway'
+    || fixture?.driver === 'manual-timer';
   if (fakeClockDriver) await page.clock.install({ time: FIXED_TIME });
   else await page.clock.setFixedTime(FIXED_TIME);
   return fakeClockDriver;

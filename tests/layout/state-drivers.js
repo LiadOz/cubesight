@@ -17,10 +17,11 @@ async function readyForRoute(page, path) {
 
 registerLayoutDriver('main-page', async page => readyForRoute(page, '/solve'));
 
-registerLayoutDriver('demo-fixture', async (page, { fixture }) => {
+registerLayoutDriver('demo-fixture', async (page, { fixture, clockInstalled }) => {
   await readyForRoute(page, fixture.route);
   await expect(page.locator('#demo-view .demo-cube canvas')).toBeVisible();
   await page.locator('#demo-view [data-action="next-move"]').click();
+  if (clockInstalled) await page.clock.runFor(1_000);
   await expect(page.locator('#demo-view .demo-move-description')).toContainText('Move 2');
 });
 
