@@ -52,6 +52,12 @@ test('blog, post, timeline and compare views render from the posts', async ({ pa
   await expect(page).toHaveURL(/#\/dev\/gallery\/compare\?a=brain-v2-orbit&b=orbit-v3/);
   await expect(page.locator('.g-pane')).toHaveCount(2);
   await expect(page.locator('.g-pane .g-big')).toHaveCount(2);
+  const postA = page.getByRole('combobox', { name: 'post A' });
+  await expect(postA).toHaveAttribute('data-value', 'brain-v2-orbit');
+  const nextPost = await page.locator('[data-cmp-post-host="a"] .sel__opt').nth(1).getAttribute('data-value');
+  await postA.click();
+  await page.locator('[data-cmp-post-host="a"] [role="option"]').nth(1).click();
+  await expect(page.getByRole('combobox', { name: 'post A' })).toHaveAttribute('data-value', nextPost);
 });
 
 test('search and the root filter narrow the list; no horizontal scroll at 390 px', async ({ page }) => {

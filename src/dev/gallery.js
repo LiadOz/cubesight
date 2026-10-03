@@ -6,7 +6,7 @@ import '../../docs/design/_gallery/lightbox.css';
 import '../../docs/design/_gallery/lightbox.js';
 import './gallery.css';
 import { mountApprovedWidgetGallery } from './approved-widget-gallery.js';
-import { createSegmented, createWipeComparison } from '../ui/shared/index.js';
+import { createButton, createChip, createFilledSelect, createSearch, createSegmented, createWipeComparison } from '../ui/shared/index.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { renderMarkdown } from './gallery-markdown.js';
 import {
@@ -59,6 +59,7 @@ export function mountGalleryPage(host) {
   let branchOrder = [];
   let widgetGallery = null;
   let compareWidget = null;
+  let compareSelects = [];
   let timelineMode = 'graph';
   const lightbox = () => window.__lightbox;
 
@@ -111,10 +112,9 @@ export function mountGalleryPage(host) {
       <button type="button" class="g-refresh" data-refresh title="Reload the index">refresh</button></nav>`;
   };
 
-  const chips = (name, options, current) => `<div class="g-chips" role="group" aria-label="${esc(name)}">${options
-    .map(([value, label]) => `<button type="button" class="g-chip" data-chip="${esc(name)}" data-value="${esc(value)}" aria-pressed="${value === current}">${esc(label)}</button>`).join('')}</div>`;
+  const chips = (name, options, current) => `<div class="g-chips" role="group" aria-label="${esc(name)}" data-chip-name="${esc(name)}" data-chip-options="${esc(JSON.stringify(options))}" data-chip-current="${esc(current)}"></div>`;
 
-  const search = placeholder => `<input type="search" class="g-search" data-search placeholder="${esc(placeholder)}" value="${esc(query)}" aria-label="${esc(placeholder)}" autocomplete="off">`;
+  const search = placeholder => `<div class="g-search-host" data-search-placeholder="${esc(placeholder)}"></div>`;
 
   const head = (view, title, sub) => `<header class="cs-head g-head"><p class="g-eyebrow">dev / gallery</p><h1>${title}</h1>${sub ? `<p class="cs-sub">${sub}</p>` : ''}${tabs(view)}</header>`;
 
@@ -312,10 +312,10 @@ export function mountGalleryPage(host) {
     const images = post?.images || [];
     const image = images.find(item => item.file === file) || images[0];
     return `<section class="g-pane" data-lb-scope data-scope-id="compare-${side}">
-      <select class="g-select" data-cmp-post="${side}" aria-label="Post ${side.toUpperCase()}">${data.posts.map(item => `<option value="${esc(item.id)}" ${item.id === post.id ? 'selected' : ''}>${esc(item.date)} · ${esc(item.title)}</option>`).join('')}</select>
+      <div data-cmp-post-host="${side}"></div>
       ${post ? `<p class="g-meta"><time>${esc(niceDate(post.date))}</time><span class="g-branch">${esc(post.branch)}</span>${statusBadge(post.status)}</p>
         <p class="g-decision">${esc(post.decision)}</p>
-        <select class="g-select" data-cmp-image="${side}" aria-label="Image ${side.toUpperCase()}">${images.map(item => `<option value="${esc(item.file)}" ${image && item.file === image.file ? 'selected' : ''}>${esc(labelOf(item) || item.file)}</option>`).join('')}</select>
+        <div data-cmp-image-host="${side}"></div>
         ${image ? `<img class="g-big" src="${esc(image.path)}" alt="${esc(labelOf(image))}" data-file="${esc(image.file)}">` : '<p class="g-empty">This post has no images.</p>'}` : ''}
     </section>`;
   }
@@ -335,6 +335,20 @@ export function mountGalleryPage(host) {
     const modeHost = page.querySelector('[data-compare-modes]');
     const images = [...page.querySelectorAll('.g-pane img.g-big')];
     if (!hostEl || !modeHost || images.length !== 2) return;
+    const routeCompareParams = parseGalleryRoute(location.hash).params;
+    for (const side of ['a', 'b']) {
+      const postHost = page.querySelector(`[data-cmp-post-host="${side}"]`);
+      const imageHost = page.querySelector(`[data-cmp-image-host="${side}"]`);
+      const selectedPost = routeCompareParams.get(side) || data.posts[side === 'a' ? 1 : 0]?.id;
+      const postSelect = createFilledSelect(postHost, { label: `post ${side.toUpperCase()}`, name: `post-${side}`, value: selectedPost, options: data.posts.map(item => ({ value: item.id, label: `${item.date} · ${item.title}` })) });
+      compareSelects.push(postSelect);
+      postSelect.input.dataset.cmpPost = side;
+      const activePost = postById(selectedPost) || data.posts[0];
+      const activeImage = routeCompareParams.get(`${side}i`);
+      const imageSelect = createFilledSelect(imageHost, { label: `image ${side.toUpperCase()}`, name: `image-${side}`, value: activeImage || activePost.images[0]?.file, options: activePost.images.map(item => ({ value: item.file, label: labelOf(item) || item.file })) });
+      compareSelects.push(imageSelect);
+      imageSelect.input.dataset.cmpImage = side;
+    }
     const before = images[0].cloneNode(); const after = images[1].cloneNode();
     before.alt = 'left comparison image'; after.alt = 'right comparison image';
     compareWidget = createWipeComparison(hostEl, { before, after, value: 50, mode: 'wipe', label: 'Compare the selected images' });
@@ -350,6 +364,7 @@ export function mountGalleryPage(host) {
     if (!data) return;
     widgetGallery?.destroy(); widgetGallery = null;
     compareWidget?.destroy(); compareWidget = null;
+    compareSelects.forEach(select => select.destroy()); compareSelects = [];
     page.classList.remove('g-page--compare'); delete page.dataset.compareMode;
     const route = parseGalleryRoute(location.hash);
     const scrollKey = `${route.view}:${route.group || route.id || ''}`;
@@ -370,6 +385,31 @@ export function mountGalleryPage(host) {
     }
     const warn = data.warnings?.length ? `<details class="g-warn"><summary>${data.warnings.length} gallery warning${data.warnings.length === 1 ? '' : 's'}</summary><ul>${data.warnings.map(w => `<li>${esc(w)}</li>`).join('')}</ul></details>` : '';
     page.innerHTML = html + warn;
+    page.querySelectorAll('.g-search-host').forEach(searchHost => {
+      const input = createSearch(searchHost, { placeholder: searchHost.dataset.searchPlaceholder, label: searchHost.dataset.searchPlaceholder, value: query }).input;
+      input.dataset.search = '';
+      input.autocomplete = 'off';
+    });
+    page.querySelectorAll('.g-chips[data-chip-options]').forEach(chipHost => {
+      const options = JSON.parse(chipHost.dataset.chipOptions);
+      options.forEach(([value, label]) => {
+        const chip = createChip(chipHost, { label, pressed: value === chipHost.dataset.chipCurrent });
+        chip.dataset.chip = chipHost.dataset.chipName;
+        chip.dataset.value = value;
+      });
+    });
+    page.querySelectorAll('.g-copy').forEach(previous => {
+      const button = createButton(previous.parentElement, { label: 'copy link', variant: 'text', size: 's' });
+      button.classList.add('g-copy');
+      button.dataset.copy = previous.dataset.copy;
+      if (previous.hasAttribute('aria-label')) button.setAttribute('aria-label', previous.getAttribute('aria-label'));
+      previous.replaceWith(button);
+    });
+    const refresh = page.querySelector('.g-refresh');
+    if (refresh) {
+      const button = createButton(refresh.parentElement, { label: 'refresh', variant: 'text', size: 's' });
+      button.classList.add('g-refresh'); button.dataset.refresh = ''; button.title = 'Reload the index'; refresh.replaceWith(button);
+    }
     if (route.view === 'widgets') widgetGallery = mountApprovedWidgetGallery(page.querySelector('[data-approved-widget-gallery]'));
     if (route.view === 'compare') mountCompareWidget();
     if (route.view === 'timeline') createSegmented(page.querySelector('[data-timeline-mode]'), { label: 'Timeline view', value: timelineMode, options: [{ value: 'graph', label: 'git graph' }, { value: 'rings', label: 'branches as rings' }], onChange: mode => { if (mode === timelineMode) return; timelineMode = mode; render(); } });
