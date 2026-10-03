@@ -17,6 +17,8 @@
     "test:impact-map": "node scripts/test-impact-map.mjs",
     "test:health": "node scripts/test-health.mjs",
     "test:flaky": "node scripts/test-flaky.mjs",
+    "perf": "node scripts/perf.mjs",
+    "perf:check": "node scripts/perf-check.mjs",
     "test:rust": "cargo test --manifest-path wasm-core/Cargo.toml",
     "lint": "npm run lint:js && npm run lint:css",
     "lint:js": "eslint .",

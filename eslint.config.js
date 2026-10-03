@@ -73,7 +73,7 @@ export default [
   {
     // Node-side tooling. Playwright specs also contain page.evaluate()
     // callbacks that run in the browser, so tests get both sets.
-    files: ['tests/**/*.{js,mjs}', 'pwa-tests/**/*.{js,mjs}'],
+    files: ['tests/**/*.{js,mjs}', 'pwa-tests/**/*.{js,mjs}', 'perf/**/*.{js,mjs}'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
