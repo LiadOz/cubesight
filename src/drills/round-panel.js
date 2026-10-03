@@ -72,6 +72,7 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
     }
   };
   return {
+    get orbit() { return orbit; },
     get complete() { return completed; },
     getViewModel() {
       const round = store.current?.drill === drill ? store.current : null;
