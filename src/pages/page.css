@@ -18,7 +18,7 @@
   flex-direction: column;
   gap: 28px;
   width: min(1120px, 100% - 48px);
-  min-height: calc(100vh - 57px);
+  min-height: calc(100dvh - var(--site-header-height, 60px));
   margin: 0 auto;
   padding: 40px 0 56px;
   background: var(--b-bg);
@@ -39,6 +39,6 @@
 .cs-sub { margin-top: 8px; color: var(--b-muted); font-size: 15px; }
 
 @media (max-width: 700px) {
-  .cs-page.brain { width: calc(100% - 32px); padding: 24px 0 40px; gap: 22px; min-height: calc(100vh - 100px); }
+  .cs-page.brain { width: calc(100% - 32px); padding: 24px 0 40px; gap: 22px; min-height: calc(100dvh - var(--site-header-height, 104px)); }
   .cs-head h1 { font-size: 28px; }
 }

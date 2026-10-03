@@ -10,13 +10,40 @@
 import { ENGINE_VERSION } from './segment.js';
 import { canonicalizeReconstruction, tokenizeReconstruction } from '../review/import-parser.js';
 import { unrelabelMoves } from './normalize.js';
+import { applyMoves, stateFromScramble } from '../cross-cube.js';
+import { f2lSetupSignature } from '../algs/drill/cube.js';
+import { getCases } from '../algs/seed/cases.js';
 
-export const SUMMARY_VERSION = 2;
+export const SUMMARY_VERSION = 4;
 const MAX_LOSSES = 8;
 const MAX_PAUSES = 8;
 const MAX_CANCELS = 8;
 
 const text = moves => (moves ?? []).join(' ');
+
+function identifyF2lCases(segmentation, pairs) {
+  const normalized = segmentation.normalized;
+  if (!normalized?.scramble || !Array.isArray(normalized.moves)) return {};
+  let initial;
+  try { initial = stateFromScramble(normalized.scramble); }
+  catch { return {}; }
+  const identified = {};
+  for (const pair of pairs ?? []) {
+    // Pair evaluation records labels in the solve's original frame; the replay
+    // below uses cross-on-D moves. Resolve the canonical frame's actual slot
+    // from segmentation so colour-neutral cross rotations cannot mislabel it.
+    const observed = segmentation.pairs?.find(item => item.n === pair.n);
+    const slot = observed?.slot;
+    if (!Number.isInteger(pair.from) || !['FR', 'FL', 'BR', 'BL'].includes(slot)) continue;
+    try {
+      const atStart = applyMoves(initial, normalized.moves.slice(0, pair.from));
+      const signature = f2lSetupSignature(atStart, slot);
+      const row = signature && getCases('f2l').find(candidate => candidate.targetPair === slot && candidate.signature === signature);
+      if (row) identified[`pair${pair.n}`] = { caseId: row.id, targetPair: row.targetPair };
+    } catch { /* Unsupported recording formats simply have no F2L case link. */ }
+  }
+  return identified;
+}
 
 /**
  * @param {{segmentation:Object, cross?:Object|null, pairs?:Object[]|null}} analysis  analyzeSolve* result
@@ -54,15 +81,19 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
     } : null,
     lastLayerReference: Number.isFinite(lastLayer?.lastLayerReference) ? lastLayer.lastLayerReference : null,
   };
+  const f2lCases = identifyF2lCases(seg, pairs);
+  if (Object.keys(f2lCases).length) out.f2lCases = f2lCases;
   if (cross) {
     const lossy = cross.positions.filter(row => row.loss > 0);
     out.cross = {
-      moves: cross.userMoves, d0: cross.d0, extra: cross.extraMoves, total: cross.totalLoss, done: cross.finished, proven: cross.complete,
+      moves: cross.userMoves, d0: cross.d0, extra: cross.extraMoves, total: cross.totalLoss, done: cross.finished, proven: cross.startProven === true && cross.complete === true,
+      target: cross.targetSlots?.length ? { kind: cross.targetSlots.length > 1 ? 'xxcross' : 'xcross', slots: cross.targetSlots, mask: cross.targetMask } : { kind: 'cross', slots: [], mask: 0 },
       best: text(cross.bestContinuation),
       // Every face's optimal length at move 0 (colour-neutral comparison).
       faces: cross.faceLengths ?? null,
       faceProven: cross.faceProven ?? null,
       faceComplete: cross.faceComplete !== false,
+      xcrossFaces: cross.xcrossFaces ?? null,
       startProven: cross.startProven === true,
       // The moves that cost something: i = the move index, loss 1 (extra) or 2 (detour), d = moves left before it, best = shortest finish from before it.
       losses: lossy.slice(0, MAX_LOSSES).map(row => ({ i: row.i - 1, move: row.move, loss: row.loss, d: cross.positions[row.i - 1].d, best: text(cross.positions[row.i - 1].best), after: row.d })),
@@ -106,6 +137,15 @@ function compactLastLayerStage(stage, face) {
   return {
     caseId: stage.caseId, name: stage.name, number: stage.number ?? null, from: stage.from, to: stage.to,
     used: stage.used ? { moves: playableMoves(stage.used.moves ?? '', face), core: playableMoves(stage.used.core ?? '', face), stm: stage.used.stm ?? 0, coreStm: stage.used.coreStm ?? 0, auf: playableMoves(stage.used.auf ?? '', face), aufStm: stage.used.aufStm ?? 0 } : null,
+    recognizedAlg: stage.recognizedAlg ? { id: stage.recognizedAlg.id ?? null, moves: playableMoves(stage.recognizedAlg.moves ?? '', face), sourceNotation: stage.recognizedAlg.moves ?? '' } : null,
+    configuredLooks: stage.configuredLooks ?? stage.configured ?? null,
+    looksTaken: stage.looksTaken ?? null,
+    extraLook: stage.extraLook === true,
+    likelyExtraLook: stage.likelyExtraLook === true,
+    looks: (stage.looks ?? []).slice(0, 8).map(look => ({ caseId: look.caseId, name: look.name, at: look.at, evidence: look.evidence ?? null,
+      ...(Number.isFinite(look.pauseMs) ? { pauseMs: look.pauseMs } : {}),
+      ...(look.recognizedAlg ? { recognizedAlg: look.recognizedAlg } : {}),
+      ...(look.recognizedAlgMoves ? { recognizedAlgMoves: playableMoves(look.recognizedAlgMoves, face), recognizedAlgSourceNotation: look.recognizedAlgMoves } : {}) })),
     best: compactAlg(stage.best), better: stage.better ? { stm: stage.better.stm, loss: stage.better.loss, best: playableMoves(stage.better.best, face) } : null,
     extraAuf: stage.extraAuf ? { loss: stage.extraAuf.loss, indices: stage.extraAuf.indices, used: playableMoves(stage.extraAuf.used, face), best: playableMoves(stage.extraAuf.best, face) } : null,
     recognitionMs: stage.recognitionMs, executionMs: stage.executionMs,

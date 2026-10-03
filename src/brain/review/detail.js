@@ -8,6 +8,7 @@
 
 import { fmtTime, fmtDelta, deltaTone, fmtMoves, fmtTps, plural } from '../format.js';
 import { TRAINER_OF } from './markers.js';
+import { serializeDemo } from '../../demo/model.js';
 
 const words = text => (text ? text.split(' ') : []);
 
@@ -112,6 +113,25 @@ export function buildDetail({ kind, key, record, markers = [], rows = [], plan =
   if (!marker && !row) return null;
   const replayable = Array.isArray(record.solveMoves) && record.solveMoves.length > 0 && record.solveMoves.length === record.moveCount && Boolean(record.scramble);
   const compare = compareFor({ row, marker, record, pending });
+  const pairNumber = /^pair(\d+)$/.exec(stageKey)?.[1];
+  const pairInfo = pairNumber ? record.analysis?.pairs?.find(pair => pair.n === Number(pairNumber)) : null;
+  const targetSlot = pairInfo?.better?.slot || pairInfo?.options?.[0]?.slots?.[0] || null;
+  const caseInfo = record.analysis?.caseMetadata?.f2lCases?.[stageKey]
+    ?? record.analysis?.f2lCases?.[stageKey]
+    ?? (Array.isArray(record.analysis?.f2lCases) ? record.analysis.f2lCases.find(item => (item.stage ?? item.key) === stageKey) : null);
+  const lastLayerCase = /^eo$|^co$|^oll$/.test(stageKey) ? record.analysis?.ollCase : /^cp$|^ep$|^pll$/.test(stageKey) ? record.analysis?.pllCase : null;
+  const rawCaseId = caseInfo?.caseId ?? caseInfo?.case?.id ?? lastLayerCase?.caseId ?? lastLayerCase?.id ?? '';
+  const caseSet = pairNumber ? 'f2l' : (/^eo$|^co$|^oll$/.test(stageKey) ? 'oll' : /^cp$|^ep$|^pll$/.test(stageKey) ? 'pll' : '');
+  const caseId = typeof rawCaseId === 'string' && /^[a-z0-9-]+\/[a-z0-9-]+$/i.test(rawCaseId) ? rawCaseId
+    : caseSet && /^[a-z0-9-]+$/i.test(rawCaseId) ? `${caseSet}/${rawCaseId}` : '';
+  compare.setup = [record.scramble, ...(record.solveMoves ?? []).slice(0, compare.from)].filter(Boolean).join(' ');
+  compare.caseId = caseId;
+  compare.highlight = targetSlot ? `pair:${targetSlot}` : '';
+  compare.colorSetting = record.colorSetting ?? 'yellow top';
+  compare.demoHref = moves => serializeDemo({ title: `${stageKey} solve moment`, parts: [{
+    title: `${stageKey} solve moment`, setup: words(compare.setup), alg: moves, steps: [], highlight: compare.highlight ? [compare.highlight] : [], caseId,
+    speed: 1, colorSetting: compare.colorSetting,
+  }] });
   const stageMarkers = markers.filter(m => m.stage === stageKey);
   const moves = row ? movesView(row, stageMarkers, record) : [];
   const avg = averages?.byKey?.[stageKey] ?? null;

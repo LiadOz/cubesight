@@ -9,9 +9,13 @@ import '../pages/page.css';
 import './hub.css';
 import { loadSettings } from '../brain/settings.js';
 import { createSolvedState } from '../cross-cube.js';
+import { Cube } from '../ui/cube/index.js';
+import { readCaseColorSetting } from '../ui/cube/case-color.js';
+import { caseDisplayState } from '../ui/cube/orientation.js';
 import { CUBE_LABELS, DRILLS, agoLabel, drillSettings, lastDrill } from './catalog.js';
 import { dayStreak, loadShell } from './rounds.js';
 import { syncPageTokens } from '../pages/tokens.js';
+import { buildDrillViewModel } from './view-model.js';
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -27,7 +31,7 @@ function cubeMarker(drill) {
 }
 
 export function createDrillsHub(root, storage = globalThis.localStorage) {
-  let active = false, detached = false, cube = null, cubeLoad = null;
+  let active = false, detached = false, cube = null;
   const page = el('section', 'brain cs-page drills-hub');
   const hero = el('section', 'hub-hero');
   const intro = el('div', 'hub-hero-copy');
@@ -47,17 +51,19 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
   root.replaceChildren(page);
 
   function mountCube() {
-    if (cubeLoad || cube || detached) return;
-    cubeLoad = import('../pages/cube-view.js').then(async ({ createPageCube }) => {
-      if (detached || !cubeMount.isConnected) return null;
-      const instance = await createPageCube(cubeMount, { state: createSolvedState(), mode: 'corner' });
-      if (detached || !cubeMount.isConnected) { instance?.destroy?.(); return null; }
-      cube = instance;
-      return instance;
-    }).catch(() => {
-      if (!detached && cubeMount.isConnected) cubeMount.textContent = '3D cube preview unavailable.';
-      return null;
-    });
+    if (!active || cube || detached) return Promise.resolve(cube);
+    try {
+      cube = new Cube(cubeMount, { state: createSolvedState(), mode: 'case', size: 'M', caseColorSetting: readCaseColorSetting(), caseSeed: 'drills-hub', label: 'Drills cube preview' });
+      return Promise.resolve(cube);
+    } catch {
+      cubeMount.textContent = '3D cube preview unavailable.';
+      return Promise.resolve(null);
+    }
+  }
+
+  function unmountCube() {
+    cube?.destroy(); cube = null;
+    cubeMount.replaceChildren();
   }
 
   function render() {
@@ -142,18 +148,31 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
   render();
 
   return {
-    get ready() { return cubeLoad ?? Promise.resolve(null); },
+    get ready() { return Promise.resolve(cube); },
+    getViewModel() {
+      const last = lastDrill(storage);
+      const rounds = loadShell(storage);
+      const caseColor = readCaseColorSetting(storage);
+      const caseSeed = rounds.round ? `${rounds.round.drill}:${rounds.round.startedAt}:${rounds.round.answers?.length ?? 0}` : `${last?.drill?.id ?? 'drills'}:${last?.at ?? 0}`;
+      const topColor = caseDisplayState(createSolvedState(), caseColor, caseSeed).topColor;
+      return buildDrillViewModel({ page: 'hub', drill: last?.drill?.id ?? null,
+        phase: active ? 'active' : 'inactive', caseColor, topColor, caseSeed,
+        round: rounds.round ? { status: rounds.round.status, kind: rounds.round.preset?.kind,
+          total: rounds.round.preset?.cases ?? rounds.round.answers?.length ?? 0,
+          answers: rounds.round.answers ?? [], combo: rounds.round.combo, bestCombo: rounds.round.bestCombo } : null });
+    },
     setActive(value) {
       const wasActive = active;
-      active = value;
-      if (value && !wasActive) render();   // pick up a new "continue" and the current style
-      if (value) mountCube();
+      active = Boolean(value);
+      if (active && !wasActive) render();   // pick up a new "continue" and the current style
+      if (active) mountCube();
+      else if (wasActive) unmountCube();
     },
     detach() {
       detached = true; active = false;
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('cubesight-theme', onTheme);
-      cube?.destroy?.(); cube = null;
+      unmountCube();
       if (page.parentNode === root) page.remove();
     },
   };

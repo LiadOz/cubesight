@@ -1,12 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildViewModel, frameState, screenFor, phaseText, deviceFor, brainDetail, inspectionLayout, inspectionState } from '../src/brain/view-model.js';
-import { brainFixtures, FIXTURE_NAMES, EXAMPLE_RECORD } from '../src/brain/fixtures.js';
+import { buildViewModel, buildResultsViewModel, frameState, screenFor, phaseText, deviceFor, brainDetail, inspectionLayout, inspectionState } from '../src/brain/view-model.js';
+import { brainFixtures, FIXTURE_NAMES, EXAMPLE_RECORD, EXAMPLE_HISTORY } from '../src/brain/fixtures.js';
 import { coachLines, resultsCoach } from '../src/brain/coach-lines.js';
 import { normalizeSettings } from '../src/brain/settings.js';
 import { DEFAULT_INSPECTION } from '../src/solve-live.js';
+import { buildStagePlan } from '../src/brain/stage-plan.js';
+import { resolvePastReviewHref } from '../src/brain/styles/orbit/results-navigation.js';
 
 const tracking = { phase: 'tracking', detail: 'Live cube updated.', deviceName: 'GAN', protocol: 'GAN Gen4', gyro: null };
+
+test('past results review href invokes the history route callback for the selected marker', () => {
+  let received;
+  const href = resolvePastReviewHref({ reviewHref: marker => {
+    received = marker;
+    return `#/history/1700000000000/review/${encodeURIComponent(marker)}`;
+  } }, 'pair3', '#/review/fallback');
+  assert.equal(received, 'pair3');
+  assert.equal(href, '#/history/1700000000000/review/pair3');
+  assert.equal(resolvePastReviewHref({ reviewHref: () => null }, 'eo', '#/review/fallback'), '#/review/fallback');
+});
 
 test('screens for every session and live phase', () => {
   assert.equal(screenFor({ phase: 'disconnected' }, { phase: 'idle' }), 'disconnected');
@@ -34,6 +47,18 @@ test('phase text follows the shared stage words and time format', () => {
   assert.equal(phaseText({ phase: 'solving', solveMoveCount: 1, elapsedMs: 0, progress: { phase: 'pre-cross' } }).detail, '1 move · 0.00 TPS · 0.00 s');
   assert.equal(phaseText({ phase: 'solving', progress: { phase: 'co-pending', f2lDone: true } }).label, 'CO');
   assert.deepEqual(phaseText({ phase: 'done', record: { moveCount: 40, solveMs: 10000 }, progress: { f2lDone: true } }), { label: 'solved', detail: '40 moves · 4.00 TPS · 10.00 s · 4/4' });
+});
+
+test('guided scramble exposes the current glyph, move position, and spoken turn description', () => {
+  const vm = buildViewModel({
+    session: tracking,
+    live: { phase: 'applying', scrambleStr: "R' U", applyStep: 0, applyTotal: 2 },
+    records: [], settings: normalizeSettings(), held: { bottom: 'D', front: 'F' }, now: 0,
+  });
+  assert.equal(vm.screen, 'scramble');
+  assert.equal(vm.clock.stepTitle, 'R′');
+  assert.equal(vm.clock.stepLine[0].text, 'move 1 of 2');
+  assert.match(vm.clock.stepLine[1].text, /right face.*counterclockwise/i);
 });
 
 test('device view: actions, gyro and unsupported browsers', () => {
@@ -88,6 +113,17 @@ test('inspection state at the WCA boundaries', () => {
   assert.equal(inspectionState({ ...DEFAULT_INSPECTION, overtime: 'grace' }, 16300).bigText, '+1.3');
   assert.equal(inspectionState({ ...DEFAULT_INSPECTION, overtime: 'grace' }, 16300).tone, 'accent', 'grace time is not a warning yet');
   assert.equal(inspectionState({ ...DEFAULT_INSPECTION, mode: 'custom', seconds: 10, overtime: 'grace', graceSeconds: 2, gracePenalty: 'none' }, 13000).penalty, null);
+});
+
+test('inspection shows the proven best cross and only a proven X-cross opportunity', () => {
+  const live = { phase: 'inspecting', inspection: { elapsedMs: 1000 }, inspectionConfig: { ...DEFAULT_INSPECTION } };
+  const base = { session: tracking, live, records: [], settings: normalizeSettings(), now: 1000 };
+  const proven = buildViewModel({ ...base, optimalCross: { face: 'D', length: 6, proven: true,
+    best: { face: 'D', length: 6, proven: true }, bestXcross: { face: 'F', slot: 'FR', length: 8, proven: true } } });
+  assert.equal(proven.inspection.bestStart, 'best cross: yellow, 6 · green cross with white-red pair · X-cross possible in 8');
+  const partial = buildViewModel({ ...base, optimalCross: { face: 'D', length: 6, proven: false,
+    best: { face: 'D', length: 6, proven: false }, bestXcross: { face: 'F', length: 8, proven: false } } });
+  assert.equal(partial.inspection.bestStart, 'cross found so far: yellow, 6');
 });
 
 test('every fixture builds, in both styles', () => {
@@ -177,6 +213,84 @@ test('penalties can be ignored by setting; stored penalties win over the live re
   assert.equal(applied.results.time.penalty, '+2');
 });
 
+test('stored results builder returns the shared Orbit, case, and review data', () => {
+  const settings = normalizeSettings();
+  const record = {
+    ...EXAMPLE_RECORD,
+    analysis: { ...EXAMPLE_RECORD.analysis, f2lCases: { pair1: { caseId: 'f2l/1' } }, lastLayer: {
+      oll: { caseId: 'OLL 1 Dot', name: 'Runway, Blank', from: 32, to: 45, recognitionMs: 840, executionMs: 1210, used: { id: 'oll/1/sune' } },
+      pll: { caseId: 'pll/Jb', name: 'Jb', from: 45, to: 61, recognitionMs: 620, executionMs: 1720, used: { id: 'pll/Jb/standard' } },
+    } },
+  };
+  const result = buildResultsViewModel({ record, records: [...EXAMPLE_HISTORY, record], settings, plan: buildStagePlan(settings) });
+  assert.equal(result.vm.record.at, record.at);
+  assert.equal(result.vm.caseLinks.oll.id, '1');
+  assert.equal(result.vm.caseLinks.pll.id, 'Jb');
+  assert.equal(result.vm.caseLinks.pll.usedAlg, 'pll/Jb/standard');
+  assert.equal(result.vm.caseLinks.pair1.kind, 'f2l');
+  assert.equal(result.vm.caseLinks.pair1.id, '1');
+  assert.equal(result.vm.caseLinks.pair1.targetPair, 'FR');
+  assert.equal(result.vm.caseLinks.oll.recognitionMs, 840);
+  assert.equal(result.vm.caseLinks.oll.executionMs, 1210);
+  assert.equal(result.vm.timeline.segments.find(segment => segment.key === 'pair1').caseKey, 'pair1');
+  assert.equal(result.vm.timeline.segments.length, buildStagePlan(settings).length);
+  assert.ok(result.vm.timeline.segments.some(segment => segment.key === 'ep' && segment.state === 'done'));
+  assert.equal(result.vm.timeline.markers, result.vm.review.markers);
+});
+
+test('case links use canonical library IDs and never turn F2L slots or arbitrary OLL labels into routes', () => {
+  const settings = normalizeSettings();
+  const plan = buildStagePlan(settings);
+  const record = {
+    ...EXAMPLE_RECORD,
+    analysis: { ...EXAMPLE_RECORD.analysis, v: 3,
+      f2lCases: { pair1: { caseId: 'FR', name: 'front right slot' } },
+      ollCase: { id: 'OLL 1 Dot', recognitionMs: 900, executionMs: 1200 },
+      pllCase: { id: 'not-a-pll-case' },
+    },
+  };
+  const result = buildResultsViewModel({ record, records: [record], settings, plan });
+  assert.equal(result.vm.caseLinks.oll.id, '1');
+  assert.equal(result.vm.caseLinks.oll.recognitionMs, 900);
+  assert.equal(result.vm.caseLinks.oll.executionMs, 1200);
+  assert.equal(result.vm.caseLinks.pll, undefined);
+  assert.equal(result.vm.caseLinks.pair1, undefined, 'FR is the slot, not a canonical algorithm case ID');
+});
+
+test('stored results tolerate partial legacy analysis while retaining valid pauses', () => {
+  const settings = normalizeSettings();
+  const plan = buildStagePlan(settings);
+  for (const analysis of [
+    { pauses: [{ i: 1, ms: 2100, allow: 500, boundary: 'f2l-f2l' }] },
+    { v: 1, marks: {}, pauses: [{ i: 1, ms: 2100, allow: 500, boundary: 'f2l-f2l' }] },
+  ]) {
+    const record = { at: 123, solveMs: 12340, moveCount: 2, solveMoves: ["U'", "R'"], analysis };
+    const result = buildResultsViewModel({ record, records: [record], settings, plan });
+    const pause = result.vm.review.markers.find(marker => marker.kind === 'pause');
+    assert.ok(pause, 'valid partial pause evidence is retained');
+    assert.deepEqual(result.record.analysis.skips, []);
+    assert.deepEqual(result.record.analysis.pseudo, []);
+    assert.deepEqual(result.record.analysis.cancels, []);
+  }
+});
+
+test('stored review builder applies top-level variant and cursor to stage detail', () => {
+  const settings = normalizeSettings();
+  const plan = buildStagePlan(settings);
+  const record = {
+    at: 124, scramble: 'R U', solveMs: 5000, moveCount: 3, solveMoves: ['R', 'U', "R'"],
+    splits: [{ key: 'cross', ms: 1000, moves: 1 }, { key: 'pair1', ms: 4000, moves: 2 }],
+    analysis: { v: 2, pairs: [{ n: 1, from: 0, to: 3, yours: 'R U R', better: { slot: 'FR', moves: 'U' } }] },
+  };
+  const result = buildResultsViewModel({
+    record, records: [record], settings, plan,
+    reviewUi: { detail: { kind: 'stage', key: 'pair1' }, variant: 'better', cursor: 2 },
+  });
+  assert.equal(result.vm.review.detail.compare.status, 'better');
+  assert.equal(result.vm.review.detail.variant, 'better');
+  assert.equal(result.vm.review.detail.cursor, 2);
+});
+
 test('unchanged slices keep their identity between builds', () => {
   const settings = normalizeSettings();
   const input = { session: tracking, live: { phase: 'idle', progress: null }, records: [], settings, now: 0, coach: [{ key: 'a', tone: 'muted', text: 'x' }] };
@@ -224,7 +338,23 @@ test('coach lines port the v1 texts and keys', () => {
   assert.deepEqual(coachLines({ live, state: {}, toggles, coach: 'off' }, lenses).map(l => l.key), ['off']);
   assert.equal(coachLines({ live, state: {}, toggles, coach: 'after' }, lenses)[0].key, 'empty', 'after-solve coach stays quiet while solving');
   const results = resultsCoach({ record: { crossMoveCount: 8, rotations: 1, xcross: 'xcross' }, optimalCross: { face: 'D', length: 6 }, faceColors: { D: 'yellow' } });
-  assert.deepEqual(results.map(r => r.tag), ['cross', 'xcross']);
+  assert.deepEqual(results.map(r => r.tag), ['xcross'], 'X-cross solve is not compared with the plain-cross minimum');
+});
+
+test('live X-cross suppresses plain-cross hindsight and passes no mismatched efficiency target', () => {
+  const calls = [];
+  const lenses = {
+    crossHindsight: () => { throw new Error('plain cross hindsight must be suppressed'); },
+    f2lNextPairHint: () => null,
+    ollStage: () => ({ eoDone: false }),
+    pllLens: () => null,
+    efficiencyScore: input => { calls.push(input); return 80; },
+    faceColors: { D: 'yellow' },
+  };
+  const live = { phase: 'solving', crossFace: 'D', crossMoveCount: 8, rotations: 0, progress: {} };
+  const lines = coachLines({ live, state: {}, toggles: { crossSuggest: false, crossHindsight: true, efficiencyScore: true }, optimalCross: { face: 'D', length: 6 }, xcross: 'x-cross' }, lenses);
+  assert.deepEqual(lines.map(line => line.key), ['xcross', 'efficiency']);
+  assert.equal(calls[0].crossTarget, 'xcross');
 });
 
 test('an x-cross is a tag on the cross segment and the merged pairs are done at the same moment', async () => {

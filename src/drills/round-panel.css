@@ -1,8 +1,15 @@
-.brain.quick-round { min-height: 0; width: 100%; margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius, 12px); background: var(--b-surface); color: var(--b-ink); }
+.brain.quick-round { min-height: 0; width: 100%; margin: 0 0 16px; padding: 0; color: var(--b-ink); }
+.quick-round-orbit { width: min(180px, 34vw); margin: 0 auto 8px; }
+.quick-round-content { min-width: 0; }
 .quick-round-line, .quick-round-result, .quick-round-result > div { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .quick-round-result { align-items: flex-start; flex-direction: column; }
+.quick-round-metrics { display: inline-flex; flex-wrap: wrap; gap: 12px; }
+.quick-round-answers { display: flex; flex-wrap: wrap; gap: 5px; max-height: 74px; overflow: auto; margin-top: 8px; }
+.quick-round-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border: 1px solid var(--b-hairline); border-radius: 99px; color: var(--b-muted); font: 500 11px/1.4 var(--b-font-mono); }
+.quick-round-chip.is-good { border-color: var(--b-accent); color: var(--b-accent); }
+.quick-round-chip.is-wrong { border-color: #ed8c70; color: #ed8c70; }
 .quick-round button, .quick-round a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--b-hairline); border-radius: 8px; background: var(--b-surface); color: var(--b-ink); font: inherit; cursor: pointer; }
 .quick-round :is(button, a):focus-visible { outline: 2px solid var(--b-accent); outline-offset: 3px; }
 .quick-round small { color: var(--b-muted); }
 .quick-round[data-brain-style="mono"], .quick-round[data-brain-style="mono"] :is(button, a) { border-radius: 0; }
-@media (max-width: 520px) { .brain.quick-round { padding: 10px; } .quick-round-line { gap: 8px; } }
+@media (max-width: 520px) { .quick-round-line { gap: 8px; } }

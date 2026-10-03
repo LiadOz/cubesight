@@ -156,26 +156,52 @@ export function createSolveReview(host, routeContext = {}) {
 
   function drillLinkMarkup(item) {
     if (!item) return '<span class="sr-label neutral">Fine</span>';
-    const index = Math.max(0, currentMove - 1), from = `review:${record.at}:${index}`;
-    const stage = item.stage ?? stageOf(record, index), params = new URLSearchParams({ setup: from, from });
+    const index = Math.max(0, currentMove - 1), setup = `review:${record.at}:${index}`;
+    const from = typeof location !== 'undefined' ? (location.hash || `#/review/${record.at}`) : `#/review/${record.at}`;
+    const stage = item.stage ?? stageOf(record, index), params = new URLSearchParams({ setup, from });
     let path, destination;
     if (stage === 'cross') {
       params.set('face', item.face ?? record.analysis?.face ?? 'D');
       params.set('kind', item.text === 'X-cross' ? 'xcross' : 'cross');
       path = `#/drills/scout?${params}`; destination = 'cross planning';
     } else if (stage === 'f2l' || stage.startsWith('pair')) {
+      const pairInfo = f2lCaseInfo(stage, record);
+      if (pairInfo) return caseDestinations('f2l', pairInfo, from, item.detail);
       params.set('drill', ['Better pair', 'Pseudo pair'].includes(item.text) ? 'planner' : 'scan');
       params.set('face', 'D');
       if (item.text === 'Pseudo pair') params.set('pseudo', '1');
       path = `#/drills/f2l?${params}`; destination = 'F2L drill';
     } else if (stage === 'oll' || stage === 'eo' || stage === 'co') {
+      const info = record.analysis?.lastLayer?.oll;
+      if (info?.caseId) return caseDestinations('oll', info, from, item.detail);
       params.set('stage', 'oll');
       path = `#/drills/oll?${params}`; destination = 'OLL drill';
     } else {
+      const info = record.analysis?.lastLayer?.pll;
+      if (info?.caseId) return caseDestinations('pll', info, from, item.detail);
       params.set('stage', 'pll');
       path = `#/drills/pll?${params}`; destination = 'PLL drill';
     }
     return `<a class="sr-label sr-drill" href="${escapeHtml(path)}" title="${escapeHtml(item.detail ?? '')}">${escapeHtml(item.text ?? 'Fine')} · ${destination} ›</a>`;
+  }
+
+  function caseDestinations(kind, info, from, title = '') {
+    const id = String(info.caseId).replace(new RegExp(`^${kind}/`), '');
+    const name = String(info.name ?? id);
+    const params = { from };
+    for (const field of ['recognitionMs', 'executionMs']) if (Number.isFinite(info[field]) && info[field] >= 0) params[field] = String(info[field]);
+    if (info.used?.id) params.usedAlg = String(info.used.id);
+    const alg = `#/algs/${kind}/${encodeURIComponent(id)}?${new URLSearchParams(params)}`;
+    const drill = `#/drills/${kind}?${new URLSearchParams({ cases: kind === 'pll' ? name : id, ...params })}`;
+    return `<span class="sr-case-destinations" title="${escapeHtml(title)}"><a class="sr-label sr-drill" href="${escapeHtml(alg)}">${escapeHtml(name)} algorithms ›</a><a class="sr-label sr-drill" href="${escapeHtml(drill)}">drill ${escapeHtml(name)} ›</a></span>`;
+  }
+
+  function f2lCaseInfo(stage, solve) {
+    if (!/^pair\d$/.test(stage)) return null;
+    const source = solve.analysis?.f2lCases ?? solve.analysis?.pairs;
+    const item = Array.isArray(source) ? source.find((row, at) => (row.stage ?? row.key ?? `pair${at + 1}`) === stage) : source?.[stage];
+    const id = item?.caseId ?? item?.case?.id;
+    return id ? { caseId: id, name: item.name ?? item.case?.name ?? id, recognitionMs: item.recognitionMs, executionMs: item.executionMs, used: item.used ?? (item.usedAlg ? { id: item.usedAlg } : null) } : null;
   }
 
   function renderReview() {

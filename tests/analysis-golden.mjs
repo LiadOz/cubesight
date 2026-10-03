@@ -22,6 +22,12 @@ export const GOLD = {
     scramble: "F R U' R' U R U R2 F' R U R U' R' R U2 R' U' R U' R' F U R U' R' F' U L U' L' U R' U' R U' L' U L D R' D B' D' F' D F",
     moves: "F' D' F D B D' R D' L' U' L U R' U R U' L U L' U' F R U R' U' F' R U R' U R U2 R' R U R' U' R' F R2 U' R' U' R U R' F'",
   },
+  // Same scramble and target, with R replaced by the equivalent two-turn
+  // detour R2 R'. This hand-verified solve uses one extra move overall.
+  xcrossPlusOne: {
+    scramble: "F R U' R' U R U R2 F' R U R U' R' R U2 R' U' R U' R' F U R U' R' F' U L U' L' U R' U' R U' L' U L D R' D B' D' F' D F",
+    moves: "F' D' F D B D' R2 R' D' L' U' L U R' U R U' L U L' U' F R U R' U' F' R U R' U R U2 R' R U R' U' R' F R2 U' R' U' R U R' F'",
+  },
   pseudoPair: {
     scramble: "F R U' R' U R U R2 F' R U R U' R' R U2 R' U' R U' R' F U R U' R' F' U L U' L' U R' U' R D U' L' U L D' U R U' R' D R' D B' D' F' D F",
     moves: "F' D' F D B D' R D' R U R' U' D L' U' L U D' R' U R U' L U L' U' F R U R' U' F' R U R' U R U2 R' R U R' U' R' F R2 U' R' U' R U R' F'",

@@ -4,59 +4,97 @@ import { loadSettings } from '../brain/settings.js';
 import { createSolvedState } from '../cross-cube.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { openHistory } from '../store/history.js';
+import { listSessions } from '../store/sessions.js';
 import { readProgress } from './adapter.js';
+import { buildProgressViewModel } from './view-model.js';
 import { algDatabase } from '../algs/runtime.js';
 import { loadLearning } from '../learning.js';
+import { Orbit } from '../ui/orbit/index.js';
+import { buildWeeklyReport, goalProgress, readGoal, saveGoal, clearGoal } from '../goals/adapter.js';
+import { createShareCardPng } from '../goals/share-card.js';
+import { createButton, createChip, createFilledInput, createFilledSelect, createLineChart } from '../ui/shared/index.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const seconds = ms => ms === Infinity ? 'DNF' : Number.isFinite(ms) ? (Math.floor(ms / 10) / 100).toFixed(2) : '—';
-const percent = n => Number.isFinite(n) ? `${Math.round(n * 100)}%` : '—';
+const percent = n => Number.isFinite(n) ? `${Math.round(n * 100)}%` : null;
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-export function trendMarkup(points) {
-  const finite = points.filter(p => Number.isFinite(p.ms));
-  if (finite.length < 2) return '<p class="progress-empty">An ao12 trend appears after 13 timed solves.</p>';
-  const min = Math.min(...finite.map(p => p.ms)), max = Math.max(...finite.map(p => p.ms)), span = Math.max(100, max - min), start = points[0].at, end = Math.max(start + 1, points.at(-1).at);
-  const xy = p => [12 + ((p.at - start) / (end - start)) * 616, 16 + ((max - p.ms) / span) * 108];
-  let path = '', disconnected = true;
-  for (const p of points) {
-    if (!Number.isFinite(p.ms)) { disconnected = true; continue; }
-    const [x, y] = xy(p); path += `${disconnected ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`; disconnected = false;
-  }
-  return `<svg class="progress-trend" viewBox="0 0 640 145" role="img" aria-label="ao12 trend over solve dates"><path d="${path}"></path>${finite.map(p => { const [x, y] = xy(p); return `<circle cx="${x}" cy="${y}" r="4" tabindex="0"><title>${escape(new Date(p.at).toLocaleString())} · ao12 ${seconds(p.ms)}</title></circle>`; }).join('')}</svg><p class="progress-caption">ao12 · ${seconds(min)}–${seconds(max)} · hover or focus a point for its date</p>`;
+
+function drillMeta(row) {
+  const parts = [plural(row.rounds, 'round'), plural(row.cases, 'case')];
+  if (row.accuracy != null) parts.push(`${percent(row.accuracy)} correct`);
+  if (Number.isFinite(row.medianMs)) parts.push(`${seconds(row.medianMs)} s median`);
+  if (row.trendMs != null) parts.push(`${seconds(Math.abs(row.trendMs))} s ${row.trendMs <= 0 ? 'faster' : 'slower'} in recent rounds`);
+  parts.push(`${plural(row.due, 'case')} due`);
+  if (row.lifetime?.attempts) parts.push(`${plural(row.lifetime.attempts, 'answer')} all time`);
+  return parts.join(' · ');
 }
 
 export function createProgressPage(host, { storage = globalThis.localStorage } = {}) {
   const page = document.createElement('section'); page.className = 'brain cs-page progress-page';
-  let active = false, detached = false, history = null, algorithms = [], refreshId = 0, cube = null, cubeLoad = null;
-  const filters = { source: 'smart', focus: 'speed', days: '30' };
-  const hero = document.createElement('section'); hero.className = 'progress-hero';
-  const intro = document.createElement('header'); intro.className = 'cs-head progress-hero-copy';
+  let active = false, detached = false, hasActivated = false, history = null, algorithms = [], refreshId = 0, lifecycleGeneration = 0;
+  let cube = null, cubeLoad = null, orbit = null, viewModel = null, miniOrbits = [];
+  let selectedView = readGoal(storage) ? 'goal' : 'splits';
+  let goalFormError = '', shareStatus = 'share latest solve · PNG';
+  const filters = { session: 'all', source: 'smart', focus: 'speed', days: '30' };
+
+  const intro = document.createElement('header'); intro.className = 'cs-head progress-heading';
   const title = document.createElement('h1'); title.textContent = 'progress';
-  const subtitle = document.createElement('p'); subtitle.className = 'cs-sub'; subtitle.textContent = 'solves, drills, and what’s ready again.';
+  const subtitle = document.createElement('p'); subtitle.className = 'cs-sub'; subtitle.textContent = 'stage averages, drills, and your ao12 goal.';
   intro.append(title, subtitle);
-  const stage = document.createElement('div'); stage.className = 'progress-hero-stage'; stage.setAttribute('aria-label', '3D cube preview');
-  const cubeMount = document.createElement('div'); cubeMount.className = 'progress-cube-mount'; cubeMount.setAttribute('aria-label', '3D cube');
-  stage.append(cubeMount);
-  hero.append(intro, stage);
+
   const filterForm = document.createElement('form'); filterForm.className = 'progress-filters'; filterForm.setAttribute('aria-label', 'Progress filters');
-  filterForm.innerHTML = '<label>solve source<select name="source" aria-label="solve source"><option value="smart">cube</option><option value="manual">manual</option><option value="all">all solves</option></select></label><label>focus<select name="focus" aria-label="focus"><option value="speed">speed</option><option value="flow">flow</option><option value="learning">learning</option><option value="all">all focuses</option></select></label><label>period<select name="days" aria-label="period"><option value="7">7 days</option><option value="30">30 days</option><option value="all">all time</option></select></label>';
+  const sessionFilterHost = document.createElement('div');
+  sessionFilterHost.className = 'progress-chip-group progress-session-filter';
+  sessionFilterHost.setAttribute('role', 'group');
+  sessionFilterHost.setAttribute('aria-label', 'session');
+  const periodFilterHost = document.createElement('div');
+  periodFilterHost.className = 'progress-chip-group progress-period-filter';
+  periodFilterHost.setAttribute('role', 'group');
+  periodFilterHost.setAttribute('aria-label', 'period');
+  filterForm.append(sessionFilterHost, periodFilterHost);
+  const filterControls = {};
+  const changeFilter = (key, value) => {
+    if (!active) return;
+    if (key === 'view') selectedView = value === 'goal' ? 'goal' : 'splits';
+    else if (Object.hasOwn(filters, key)) filters[key] = value;
+    render();
+  };
+  filterControls.source = createFilledSelect(filterForm, { label: 'solve source', value: filters.source, options: [{ value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'all', label: 'all solves' }], onChange: value => changeFilter('source', value) });
+  filterControls.focus = createFilledSelect(filterForm, { label: 'focus', value: filters.focus, options: [{ value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }, { value: 'all', label: 'all focuses' }], onChange: value => changeFilter('focus', value) });
+  filterControls.view = createFilledSelect(filterForm, { label: 'view', value: selectedView, options: [{ value: 'splits', label: 'stage averages' }, { value: 'goal', label: 'ao12 goal' }], onChange: value => changeFilter('view', value) });
+
+  const visual = document.createElement('section'); visual.className = 'progress-visual'; visual.setAttribute('aria-label', 'Progress Orbit');
+  const orbitWrap = document.createElement('div'); orbitWrap.className = 'progress-orbit-wrap';
+  const orbitHost = document.createElement('div'); orbitHost.className = 'progress-orbit-host'; orbitHost.setAttribute('data-primary-orbit', '');
+  const cubeMount = document.createElement('div'); cubeMount.className = 'progress-cube-mount'; cubeMount.setAttribute('aria-label', '3D cube at the center of the Orbit');
+  orbitWrap.append(orbitHost, cubeMount);
+  const orbitCaption = document.createElement('p'); orbitCaption.className = 'progress-caption'; orbitCaption.setAttribute('data-orbit-caption', '');
+  const splitEmpty = document.createElement('p'); splitEmpty.className = 'progress-empty'; splitEmpty.setAttribute('data-split-empty', '');
+  visual.append(orbitWrap, orbitCaption, splitEmpty);
+
   const content = document.createElement('div'); content.className = 'progress-content';
-  page.append(hero, filterForm, content);
+  page.append(intro, filterForm, visual, content);
   host.replaceChildren(page);
 
   function mountCube() {
-    if (cubeLoad || cube || detached) return;
-    cubeLoad = import('../pages/cube-view.js').then(async ({ createPageCube }) => {
-      if (detached || !cubeMount.isConnected) return null;
-      const instance = await createPageCube(cubeMount, { state: createSolvedState(), mode: 'corner' });
-      if (detached || !cubeMount.isConnected) { instance?.destroy?.(); return null; }
-      cube = instance;
-      return instance;
+    if (cubeLoad || cube || detached || !active) return;
+    const generation = lifecycleGeneration;
+    const pending = import('../ui/cube/index.js').then(({ createCube }) => {
+      if (detached || !active || generation !== lifecycleGeneration || !cubeMount.isConnected) return null;
+      const mountedCube = createCube(cubeMount, { state: createSolvedState(), mode: 'case', size: 'M', label: '3D cube at the center of the progress Orbit' });
+      if (detached || !active || generation !== lifecycleGeneration || !cubeMount.isConnected) { mountedCube.destroy(); return null; }
+      cube = mountedCube;
+      return mountedCube;
     }).catch(() => {
-      if (!detached && cubeMount.isConnected) cubeMount.textContent = '3D cube preview unavailable.';
+      if (!detached && active && generation === lifecycleGeneration && cubeMount.isConnected) cubeMount.textContent = '3D cube preview unavailable.';
       return null;
+    }).finally(() => {
+      if (cubeLoad === pending) cubeLoad = null;
+      if (active && !detached && !cube && generation !== lifecycleGeneration) mountCube();
     });
+    cubeLoad = pending;
   }
+
   const historyReady = openHistory().then(store => { history = store; }).catch(() => {});
   async function refresh() {
     const id = ++refreshId;
@@ -65,33 +103,174 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
     algorithms = result?.items ?? [];
     render();
   }
-  const ready = historyReady.then(refresh);
+  const ready = historyReady.then(refresh).then(() => { if (!detached) page.dataset.ready = 'true'; });
+
+  function renderContent(model) {
+    const goal = model.goal;
+    const goalLine = goal.targetSeconds == null
+      ? 'ao12 goal · not set'
+      : `ao12 ${goal.currentLabel} · baseline ${goal.baselineLabel ?? 'not captured'} · target ${goal.targetLabel}`;
+    content.innerHTML = `<section class="progress-section progress-drill-section" aria-label="Drills"><h2>drills · ${plural(model.due, 'case')} due</h2><p class="progress-caption">${escape(model.drillCaption)}</p><ul class="progress-drills">${model.drills.map(row => `<li class="progress-drill-row"><span class="progress-mini-orbit" data-mini-orbit="${escape(row.id)}" aria-hidden="true"></span><a class="progress-drill-name" href="${escape(row.href)}">${escape(row.title)}</a><span class="progress-drill-meta">${escape(drillMeta(row))}</span></li>`).join('')}</ul><a class="progress-link" href="#/drills?review=due">${model.due ? `${plural(model.due, 'case')} due · drill now` : 'start a round'} ›</a></section>
+      <section class="progress-section progress-goals" aria-label="ao12 goal"><h2>goal</h2><p>${escape(goalLine)}</p><p class="progress-caption">${escape(goal.message)}</p>${goal.formError ? `<p role="status">${escape(goal.formError)}</p>` : ''}<form data-goal-form><div data-goal-target></div><div class="progress-goal-actions" data-goal-actions></div><button type="submit" hidden>save goal</button></form></section>
+      <section class="progress-section progress-weekly" aria-label="This week"><h2>this week</h2><p>${escape(model.weekly.summary || 'No solves or drill rounds this week.')}</p><div data-share-action></div><a href="${model.historyHref}" class="progress-link">export or import data ›</a></section>`;
+    const goalTarget = createFilledInput(content.querySelector('[data-goal-target]'), { label: 'ao12 target in seconds', type: 'number', min: 1, max: 120, step: 0.01, required: true, placeholder: '15.00', value: goal.targetSeconds == null ? '' : goal.targetSeconds.toFixed(2) });
+    goalTarget.input.min = '1'; goalTarget.input.max = '120'; goalTarget.input.step = '0.01'; goalTarget.input.required = true; goalTarget.input.name = 'target';
+    const goalActions = content.querySelector('[data-goal-actions]');
+    createButton(goalActions, { label: 'save goal', variant: 'primary', onClick: () => content.querySelector('[data-goal-form]').requestSubmit() });
+    const clearButton = createButton(goalActions, { label: 'clear', variant: 'secondary', disabled: goal.targetSeconds == null }); clearButton.dataset.clearGoal = '';
+    const shareButton = createButton(content.querySelector('[data-share-action]'), { label: model.shareStatus, variant: 'secondary' }); shareButton.dataset.shareSolve = '';
+    const charts = document.createElement('section'); charts.className = 'progress-section progress-charts'; charts.setAttribute('aria-label', 'Solve trends and split comparisons');
+    const heading = document.createElement('h2'); heading.textContent = 'trends and comparisons';
+    const grid = document.createElement('div'); grid.className = 'progress-chart-grid';
+    const addChart = (titleText, label, series, detail) => {
+      const figure = document.createElement('figure'); figure.className = 'progress-chart';
+      const title = document.createElement('h3'); title.textContent = titleText;
+      const description = document.createElement('figcaption'); description.textContent = detail;
+      figure.append(title); createLineChart(figure, { series, label, width: 560, height: 150 }); figure.append(description); grid.append(figure);
+      if (series.length > 1) {
+        const legend = document.createElement('p'); legend.className = 'progress-chart-legend';
+        series.forEach(item => { const entry = document.createElement('span'); entry.textContent = item.name; entry.style.setProperty('--series-color', item.color); legend.append(entry); });
+        figure.insertBefore(legend, description);
+      }
+    };
+    addChart('long-term ao12', 'ao12 trend across selected solves', [{ name: 'ao12 (ms)', values: model.charts.ao12 }], `${model.charts.ao12.length} rolling ao12 samples · selected cohort`);
+    addChart('recent solves', 'recent solve times', [{ name: 'solve time (ms)', values: model.charts.recent }], `${model.charts.recent.length} most recent timed solves · lower is faster`);
+    const splitSeries = [{ name: 'current period', color: 'var(--b-accent)', values: model.charts.splitCurrent }];
+    if (model.charts.splitPrevious.some(Number.isFinite)) splitSeries.push({ name: 'previous period', color: 'var(--b-muted)', values: model.charts.splitPrevious });
+    addChart('stage averages', 'stage split comparison', splitSeries, `${model.charts.splitLabels.join(' · ') || 'stage splits unavailable'} · ${model.splitCaption}`);
+    charts.append(heading, grid); content.prepend(charts);
+    miniOrbits.forEach(item => item.destroy());
+    miniOrbits = [...content.querySelectorAll('[data-mini-orbit]')].map(node => {
+      const row = model.drills.find(item => item.id === node.dataset.miniOrbit);
+      return new Orbit(node, { shape: 'full', size: 'mini', glyphSize: 26, label: `${row.title} · ${row.glyph.value}`, segments: [row.glyph] });
+    });
+  }
+
+  function fitOrbitToViewport() {
+    if (!visual.isConnected) return;
+    const visualBox = visual.getBoundingClientRect();
+    const orbitBox = orbitWrap.getBoundingClientRect();
+    const visualOverhead = Math.max(0, visualBox.height - orbitBox.height);
+    const available = Math.min(440, innerHeight - Math.max(0, visualBox.top) - visualOverhead - 8);
+    orbitWrap.style.setProperty('--progress-orbit-fit', `${Math.max(160, available)}px`);
+  }
+
   function render() {
     if (detached) return;
     page.dataset.brainStyle = loadSettings(storage).style;
-    const data = readProgress(storage, { ...filters, algorithms, ...(history ? { records: history.records } : {}) });
-    content.innerHTML = `<section class="progress-card" aria-label="Solve progress"><div class="progress-stats"><div><span>timed solves</span><strong>${data.stats.timedCount}</strong></div><div><span>PB</span><strong>${seconds(data.stats.best)}</strong></div><div><span>ao5</span><strong>${seconds(data.stats.ao5)}</strong></div><div><span>ao12</span><strong>${seconds(data.stats.ao12)}</strong></div></div>${trendMarkup(data.trend)}<a class="progress-link" href="#/history">see solve history ›</a></section>
-      <section class="progress-card"><h2>where your time goes</h2>${data.splits.length ? `<div class="progress-splits">${data.splits.map(row => `<a href="${row.href}" ${row.largest ? 'class="is-largest"' : ''}><span>${row.label}</span><strong>${seconds(row.ms)} s</strong><small>${plural(row.samples, 'solve')} · drill this ›</small></a>`).join('')}</div>` : '<p class="progress-empty">Finish a cube solve with recorded stages to see its split times.</p>'}</section>
-      <section class="progress-card"><div class="progress-section-head"><h2>drills</h2><a class="progress-link" href="#/drills?review=due">${data.due ? `${plural(data.due, 'case')} due · drill now ›` : 'start a round ›'}</a></div><p class="progress-caption">Rounds follow the period filter. Earlier cases appear as all-time totals.</p><div class="progress-drills">${data.drills.map(row => `<article><a class="progress-drill-name" href="${row.href}">${row.title} ›</a><p>${plural(row.rounds, 'round')} · ${plural(row.cases, 'case')}</p><div><span>${percent(row.accuracy)} correct</span><span>${seconds(row.medianMs)} s median of round medians</span></div>${row.trendMs != null ? `<p>${seconds(Math.abs(row.trendMs))} s ${row.trendMs <= 0 ? 'faster' : 'slower'} in the latest five rounds</p>` : ''}${row.lifetime?.attempts ? `<small>${plural(row.lifetime.attempts, 'answer')} all time${row.lifetime.accuracy != null ? ` · ${percent(row.lifetime.accuracy)} correct` : ''}${row.lifetime.medianMs != null ? ` · ${seconds(row.lifetime.medianMs)} s median` : ''}</small>` : ''}<a href="${row.href}?review=due" class="progress-due">${plural(row.due, 'case')} due</a></article>`).join('')}</div></section>
-      <section class="progress-card"><h2>activity</h2><p class="progress-caption">Selected solves and drill cases by day.</p>${data.activity.length ? `<ol class="progress-activity">${data.activity.map(day => `<li><time datetime="${day.date}">${day.date}</time><strong>${plural(day.solves, 'solve')} · ${plural(day.cases, 'case')}</strong><span aria-hidden="true" class="progress-day" style="--activity-strength:${Math.min(1, (day.solves + day.cases) / 20)}"></span></li>`).join('')}</ol>` : '<p class="progress-empty">Your first solve or drill round starts this view.</p>'}<a href="#/history" class="progress-link">export or import data ›</a></section>`;
-    for (const [key, value] of Object.entries(filters)) filterForm.querySelector(`[name="${key}"]`).value = value;
+    const now = Date.now();
+    const periodStart = filters.days === 'all' ? -Infinity : now - Math.max(1, Number(filters.days) || 30) * 86_400_000;
+    const records = history?.records ?? [];
+    const cohort = records.filter(record => record.at >= periodStart && record.at <= now
+      && (filters.source === 'all' || (filters.source === 'smart' ? record.source !== 'manual' && record.source !== 'import' : record.source === filters.source))
+      && (filters.focus === 'all' || (record.focus ?? 'speed') === filters.focus));
+    const sessionOptions = listSessions(cohort).reverse().map(session => ({
+      ...session,
+      label: `${new Date(session.firstAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · ${plural(session.count, 'solve')} · ${session.focus}`,
+    }));
+    if (filters.session !== 'all' && !sessionOptions.some(session => session.id === filters.session)) filters.session = 'all';
+    const data = readProgress(storage, { ...filters, algorithms, ...(history ? { records: history.records } : {}), now });
+    const goal = readGoal(storage), currentMs = data.stats.ao12;
+    const goalState = goalProgress(goal, Number.isFinite(currentMs) ? currentMs / 1000 : null);
+    const savedRounds = (() => { try { const raw = JSON.parse(storage?.getItem('cubesight-rounds-v1') ?? '[]'); return Array.isArray(raw) ? raw : raw?.rounds ?? []; } catch { return []; } })();
+    const weeklySolves = filters.session === 'all' ? records : records.filter(record => record.sessionId === filters.session);
+    const weekly = buildWeeklyReport({ solves: weeklySolves, rounds: savedRounds }, { source: filters.source, focus: filters.focus, now });
+    viewModel = buildProgressViewModel({ filters, data, goal, goalState, weekly, sessions: sessionOptions, selectedView, goalFormError, shareStatus });
+    orbitCaption.hidden = false;
+    orbitCaption.textContent = selectedView === 'goal' ? viewModel.goal.caption : viewModel.splitCaption;
+    splitEmpty.hidden = !viewModel.emptySplits || selectedView === 'goal';
+    splitEmpty.textContent = filters.source === 'manual' && selectedView === 'splits'
+      ? 'Manual solves do not include recorded stage splits.'
+      : 'Finish a cube solve with recorded stages to see its split averages.';
+    renderContent(viewModel);
+    const renderChipGroup = (host, key, options, selected) => {
+      host.replaceChildren();
+      const choices = document.createElement('div');
+      choices.className = 'progress-chip-group__choices';
+      for (const option of options) {
+        const chip = createChip(choices, {
+          label: option.label,
+          pressed: option.value === selected,
+          onClick: () => changeFilter(key, option.value),
+        });
+        chip.dataset.filterKey = key;
+        chip.dataset.filterValue = option.value;
+      }
+      host.append(choices);
+    };
+    renderChipGroup(sessionFilterHost, 'session', [
+      { value: 'all', label: 'all sessions' },
+      ...viewModel.sessions.map(session => ({ value: session.id, label: session.label })),
+    ], filters.session);
+    renderChipGroup(periodFilterHost, 'days', [
+      { value: '7', label: '7 days' },
+      { value: '30', label: '30 days' },
+      { value: 'all', label: 'all time' },
+    ], filters.days);
+    for (const [key, value] of Object.entries({ ...filters, view: selectedView })) filterControls[key]?.setValue(value);
     syncPageTokens(page);
+    fitOrbitToViewport();
+    if (orbit) void orbit.update(viewModel.orbit, { animate: false });
   }
-  filterForm.addEventListener('change', event => {
-    const key = event.target.name;
-    if (!active || !Object.hasOwn(filters, key)) return;
-    filters[key] = event.target.value; render();
+  content.addEventListener('submit', event => {
+    if (!event.target.matches('[data-goal-form]')) return;
+    event.preventDefault();
+    const data = readProgress(storage, { ...filters, ...(history ? { records: history.records } : {}) });
+    const currentMs = data.stats.ao12;
+    try {
+      saveGoal(storage, { targetSeconds: content.querySelector('[name="target"]').value, baselineSeconds: Number.isFinite(currentMs) ? currentMs / 1000 : null });
+      selectedView = 'goal'; goalFormError = ''; render();
+    } catch (error) { goalFormError = error.message; render(); }
+  });
+  content.addEventListener('click', async event => {
+    if (event.target.closest('[data-clear-goal]')) { clearGoal(storage); goalFormError = ''; selectedView = 'splits'; render(); return; }
+    const button = event.target.closest('[data-share-solve]');
+    if (!button) return;
+    try {
+      const latestData = readProgress(storage, { ...filters, algorithms, ...(history ? { records: history.records } : {}) });
+      const latest = latestData.solves.at(-1);
+      if (!latest) throw new Error('Finish a solve before sharing its Orbit.');
+      const blob = await createShareCardPng(latest), url = URL.createObjectURL(blob), link = document.createElement('a');
+      link.href = url; link.download = 'cubesight-solve.png'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      shareStatus = 'PNG saved'; render();
+    } catch (error) { shareStatus = error.message; render(); }
   });
   const onTheme = () => { if (active) render(); };
   document.addEventListener('cubesight-theme', onTheme);
+  orbit = new Orbit(orbitHost, { shape: 'full', size: 'L', label: 'average split by stage', centerClearance: 105, segments: [], onSegment: segment => { if (segment.href) location.hash = segment.href; } });
+  const onResize = () => { fitOrbitToViewport(); if (orbit) void orbit.update(orbit.options, { animate: false }); };
+  window.addEventListener('resize', onResize);
   render();
+  document.fonts?.ready.then(fitOrbitToViewport);
+
   return {
     get ready() { return Promise.all([ready, cubeLoad ?? Promise.resolve(null)]); },
-    setActive(value) { active = Boolean(value); if (active) { render(); mountCube(); void (history ? history.reload().catch(() => {}) : historyReady).then(() => { if (active && !detached) return refresh(); }); } },
+    getViewModel() { return viewModel; },
+    setActive(value) {
+      if (detached) return;
+      const next = Boolean(value);
+      if (next === active) return;
+      active = next;
+      lifecycleGeneration++;
+      if (!active) {
+        refreshId++;
+        cube?.destroy?.(); cube = null;
+        return;
+      }
+      render(); mountCube();
+      if (!hasActivated) { hasActivated = true; return; }
+      const generation = lifecycleGeneration;
+      void (history ? history.reload().catch(() => {}) : historyReady).then(() => {
+        if (active && !detached && generation === lifecycleGeneration) return refresh();
+      });
+    },
     detach() {
-      detached = true; active = false; refreshId++;
+      detached = true; active = false; lifecycleGeneration++; refreshId++;
       document.removeEventListener('cubesight-theme', onTheme);
+      window.removeEventListener('resize', onResize);
       cube?.destroy?.(); cube = null;
+      orbit?.destroy(); orbit = null;
+      miniOrbits.forEach(item => item.destroy()); miniOrbits = [];
       if (page.parentNode === host) page.remove();
     },
   };

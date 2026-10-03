@@ -10,6 +10,23 @@ const gallery = (page, style = 'orbit', theme = 'dark', extra = '') => page.goto
 const cueState = page => page.evaluate(() => window.gallery.cube.getCueState());
 const cueAngle = page => cueState(page).then(state => state?.angle ?? 0);
 
+test('overflowing move strips scroll with Home, End, and arrow keys', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await gallery(page, 'orbit', 'dark');
+  const strip = page.locator('[data-example="scramble"] .mg-strip');
+  await strip.evaluate(el => { el.scrollLeft = 0; });
+  await strip.focus();
+  const max = await strip.evaluate(el => el.scrollWidth - el.clientWidth);
+  expect(max).toBeGreaterThan(0);
+  await strip.press('End');
+  await expect.poll(() => strip.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+  await strip.press('ArrowLeft');
+  const afterArrow = await strip.evaluate(el => el.scrollLeft);
+  expect(afterArrow).toBeLessThan(max);
+  await strip.press('Home');
+  await expect.poll(() => strip.evaluate(el => el.scrollLeft)).toBe(0);
+});
+
 for (const [style, theme] of LOOKS) {
   test(`chips are plain notation: done dimmed, current highlighted (${style}-${theme})`, async ({ page }) => {
     fs.mkdirSync(SHOTS, { recursive: true });
@@ -223,6 +240,33 @@ test('the cue pref turns the cue off and animateMove still works on all kinds', 
   await expect(page.locator('canvas')).not.toHaveAttribute('data-cue', /.*/);
   const done = await page.evaluate(async () => { const c = window.gallery.cube; await c.animateMove("M'", null, 30); await c.animateMove('x', null, 30); await c.animateMove('r', null, 30); return true; });
   expect(done).toBe(true);
+});
+
+test('move animation cancellation, reduced motion, and destroy settle their promises', async ({ page }) => {
+  await gallery(page, 'orbit', 'dark');
+  const cancelled = await page.evaluate(async () => {
+    const cube = window.gallery.cube;
+    const animation = cube.animateMove('R', null, 1000);
+    cube.update({});
+    return Promise.race([animation.then(() => true), new Promise(resolve => setTimeout(() => resolve(false), 300))]);
+  });
+  expect(cancelled).toBe(true);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const reducedMotion = await page.evaluate(async () => {
+    const started = performance.now();
+    await window.gallery.cube.animateMove('U', null, 1000);
+    return performance.now() - started;
+  });
+  expect(reducedMotion).toBeLessThan(200);
+
+  const destroyed = await page.evaluate(async () => {
+    const cube = window.gallery.cube;
+    const animation = cube.animateMove('F', null, 1000);
+    cube.destroy();
+    return Promise.race([animation.then(() => true), new Promise(resolve => setTimeout(() => resolve(false), 300))]);
+  });
+  expect(destroyed).toBe(true);
 });
 
 // Screenshots of the cue at rest, mid-turn and at its peak for the moves the brief asks

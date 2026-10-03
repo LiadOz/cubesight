@@ -294,14 +294,16 @@ export function phaseSplits(records) {
 }
 
 // Aggregate by a case field (e.g. 'pllCase', 'ollCase') for weak-case surfacing.
-// Returns entries ranked worst-first: lowest accuracy, then slowest median time.
 export function aggregateByCase(records, field) {
   const groups = new Map();
   for (const r of records) {
     const key = r?.[field];
     if (!key) continue;
-    const g = groups.get(key) || { case: key, attempts: 0, solved: 0, times: [], tps: [] };
+    const stage = field === 'ollCase' ? r?.analysis?.lastLayer?.oll : field === 'pllCase' ? r?.analysis?.lastLayer?.pll : null;
+    const g = groups.get(key) || { case: key, attempts: 0, solved: 0, times: [], tps: [], extraLooks: 0, likelyExtraLooks: 0 };
     g.attempts++;
+    if (stage?.extraLook === true) g.extraLooks++;
+    if (stage?.likelyExtraLook === true) g.likelyExtraLooks++;
     if (r.solved) {
       g.solved++;
       if (Number.isFinite(r.solveMs)) g.times.push(r.solveMs);
@@ -315,16 +317,19 @@ export function aggregateByCase(records, field) {
     accuracy: g.solved / g.attempts,
     medianSolveMs: median(g.times),
     medianTPS: median(g.tps),
+    extraLooks: g.extraLooks,
+    likelyExtraLooks: g.likelyExtraLooks,
   }));
 }
 
-// Cases most needing attention: lowest accuracy first (errors), then slowest
-// median among cases with enough samples. `minAttempts` avoids ranking cases
-// seen only once, which would be noise rather than a reliable weakness signal.
+// Cases most needing attention: proven extra looks first, then lower accuracy
+// and slower medians. `minAttempts` avoids ranking one-off cases as weaknesses.
 export function weakCases(records, field, limit = 6, minAttempts = 2) {
   return aggregateByCase(records, field)
     .filter(g => g.attempts >= minAttempts)
     .sort((a, b) => {
+      // A proven extra look is a direct recall signal and outranks speed.
+      if (a.extraLooks !== b.extraLooks) return b.extraLooks - a.extraLooks;
       // Worst first: lowest accuracy, then slowest median (nulls sort as slow
       // so error-only cases do not get hidden behind timed cases).
       if (a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;

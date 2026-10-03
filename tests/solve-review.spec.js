@@ -18,7 +18,7 @@ test('paste reconstruction validates, persists, opens the review, and steps the 
   await expect(page).toHaveURL(/#\/review\/\d+$/);
   await expect(page.getByText('Solve review · 2 moves')).toBeVisible();
   await expect(page.locator('.sr-moves li')).toHaveCount(2);
-  await expect(page.locator('.sr-label.sr-drill').first()).toHaveAttribute('href', /#\/drills\/(scout|f2l|pll)\?.*setup=review%3A\d+%3A0.*from=review%3A\d+%3A0/);
+  await expect(page.locator('.sr-label.sr-drill').first()).toHaveAttribute('href', /#\/drills\/(scout|f2l|pll)\?.*setup=review%3A\d+%3A0.*from=%23%2Freview%2F\d+/);
   await expect(page.locator('.sr-moves [data-move="0"]')).toHaveAttribute('title', /shortest path|verified move evaluation/i);
   await expect(page.locator('.sr-cube canvas')).toBeVisible();
   await page.keyboard.press('ArrowRight');

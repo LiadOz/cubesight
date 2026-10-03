@@ -41,6 +41,7 @@ test('resolveRoute: canonical hashes stay, old hashes redirect and keep their qu
     ['#/algs/oll2/ep-ua/drill?source=next', 'algs', '#/algs/oll2/ep-ua/drill?source=next'],
     ['#/algs/f2l', 'algs', '#/algs/f2l'],
     ['#/dev/studio', 'smart', '#/dev/studio'],
+    ['#/recording', 'recording', '#/recording'],
     ['#/brain', 'brain', '#/solve'],
     ['#/corners?round=10', 'corner', '#/drills/corners?round=10'],
     ['#/f2l?drill=scan', 'f2l', '#/drills/f2l?drill=scan'],
@@ -53,6 +54,13 @@ test('resolveRoute: canonical hashes stay, old hashes redirect and keep their qu
     ['#/dev', 'smart', '#/dev/studio'],
   ];
   for (const [hash, tool, expected] of cases) assert.deepEqual(resolveRoute(hash), { tool, hash: expected }, hash);
+});
+
+test('history past-solve, replay, and marker routes retain their full path', () => {
+  assert.deepEqual(resolveRoute('#/history/1790000000000'), { tool: 'history', hash: '#/history/1790000000000' });
+  assert.deepEqual(resolveRoute('#/history/1790000000000/replay'), { tool: 'history', hash: '#/history/1790000000000/replay' });
+  assert.deepEqual(resolveRoute('#/history/1790000000000/review/pause%3Apair4'), { tool: 'history', hash: '#/history/1790000000000/review/pause%3Apair4' });
+  assert.equal(resolveRoute('#/history/nope').tool, 'notfound');
 });
 
 test('resolveRoute: only the empty home hash is context-sensitive; unknown paths use not found', () => {
@@ -78,6 +86,8 @@ test('the nav is solve, drills, algs, progress and every nav item is a route', (
   assert.deepEqual(NAV_ITEMS.map(item => item.label), ['solve', 'drills', 'algs', 'progress']);
   for (const item of NAV_ITEMS) assert.equal(resolveRoute(item.href).hash, item.href);
   for (const tool of Object.keys(TOOL_PATHS)) assert.ok(tool in NAV_FOR_TOOL, tool);
+  assert.equal(NAV_FOR_TOOL.history, 'history');
+  assert.equal(NAV_FOR_TOOL.timer, 'solve');
 });
 
 test('the drills hub continues the last valid route and shows its saved settings', () => {

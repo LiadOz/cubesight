@@ -1,17 +1,17 @@
 import { test, expect } from 'playwright/test';
 
-const PAGES = [['solve', 'brain'], ['drills', 'drills'], ['algs', 'algs'], ['progress', 'progress']];
+const PAGES = [['solve', 'brain'], ['drills', 'drills'], ['algs', 'algs'], ['progress', 'progress'], ['history', 'history']];
 
 for (const theme of ['dark', 'light']) {
   for (const style of ['orbit', 'mono']) {
-  test(`the nav reaches solve, drills, algs and progress in ${style} / ${theme}`, async ({ page }) => {
+  test(`the nav reaches solve, drills, algs, progress and history in ${style} / ${theme}`, async ({ page }) => {
     await page.addInitScript(({ mode, pageStyle }) => {
       localStorage.setItem('cubesight-theme', mode);
       localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: pageStyle }));
     }, { mode: theme, pageStyle: style });
     await page.goto('/#/drills');
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.locator('.main-nav .nav-link')).toHaveText(['solve', 'drills', 'algs', 'progress']);
+    await expect(page.locator('.main-nav .nav-link')).toHaveText(['solve', 'drills', 'algs', 'progress', 'history']);
     for (const [label, view] of PAGES) {
       await page.getByRole('link', { name: label, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`#/${label}$`));
@@ -70,9 +70,14 @@ test.describe('phone', () => {
   test('the whole nav fits on a phone', async ({ page }) => {
     await page.goto('/#/drills');
     const box = await page.locator('.main-nav').boundingBox();
-    const last = await page.getByRole('link', { name: 'progress', exact: true }).boundingBox();
+    const nav = page.locator('.main-nav');
+    await expect(nav).toHaveAttribute('data-scroll-x', 'true');
+    await nav.evaluate(node => { node.scrollLeft = node.scrollWidth; });
+    const navBox = await nav.boundingBox();
+    const last = await nav.getByRole('link', { name: 'history', exact: true }).boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(last.x + last.width).toBeLessThanOrEqual(390);
+    expect(last.x).toBeGreaterThanOrEqual(navBox.x);
+    expect(last.x + last.width).toBeLessThanOrEqual(navBox.x + navBox.width);
     const actions = await page.locator('.header-actions').boundingBox();
     expect(actions.x + actions.width).toBeLessThanOrEqual(390);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);

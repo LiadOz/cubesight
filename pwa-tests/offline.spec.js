@@ -51,6 +51,10 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
 
+  await page.goto('/#/help');
+  await expect(page.locator('#help-view')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'one cube, one orbit' })).toBeVisible();
+  await expect(page.locator('[data-help-export]')).toBeVisible();
   await page.goto('/#/drills');
   await page.locator('#drills-view a[href="#/drills/f2l"]').click();
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm');

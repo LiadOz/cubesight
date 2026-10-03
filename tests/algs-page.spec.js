@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 import { mkdir } from 'node:fs/promises';
 
 test('curated OLL case page shows verified sources, setup repaint, picked alg and no-cube drill', async ({ page }) => {
@@ -97,32 +97,43 @@ test('all standard F2L cases, back-slot variants and staged two-look routes are 
   await expect(page.locator('.alg-detail__head')).toContainText('All four last-layer edges oriented');
 });
 
-test('algorithm case screens render across Orbit/Mono and light/dark at desktop and mobile widths', async ({ page }) => {
+test('algorithm case screens render across Orbit/Mono and light/dark at desktop and mobile widths', async ({ browser }, testInfo) => {
   await mkdir('test-results/review-next-2-player', { recursive: true });
   for (const width of [1280, 390]) for (const style of ['orbit', 'mono']) for (const theme of ['light', 'dark']) {
-    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-    await page.goto('/');
-    await page.evaluate(([style, theme]) => {
-      localStorage.setItem('cubesight-theme', theme);
-      localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
-    }, [style, theme]);
-    await page.reload();
-    await page.goto('/#/algs/oll/1');
-    const screen = page.locator('#algs-view .alg-detail');
-    await expect(screen).toBeVisible();
-    await expect(page.locator('#algs-view .alg-page')).toHaveAttribute('data-brain-style', style);
-    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.locator('.alg-cube-card')).toBeVisible();
-    await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
-    const cubeWidth = await page.locator('[data-alg-cube] canvas').evaluate(node => node.getBoundingClientRect().width);
-    expect(cubeWidth).toBeGreaterThanOrEqual(width === 390 ? 190 : 240);
-    const playbackText = await page.locator('.alg-cube-card .sequence-progress').textContent();
-    expect(playbackText).toContain('group');
-    expect(playbackText).not.toMatch(/[−-]0\.00/);
-    expect(playbackText).not.toMatch(/\d+–\d+\s*[−-]/);
-    await expect(page.locator('.alg-entry-grid .alg-entry')).toHaveCount(2);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
-    await page.screenshot({ path: `test-results/review-next-2-player/algs-case-${style}-${theme}-${width}.png`, fullPage: true });
+    const context = await browser.newContext({
+      baseURL: testInfo.project.use.baseURL,
+      viewport: { width, height: width === 390 ? 844 : 900 },
+    });
+    try {
+      await context.addInitScript(([preferredStyle, preferredTheme]) => {
+        localStorage.setItem('cubesight-theme', preferredTheme);
+        localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: preferredStyle }));
+      }, [style, theme]);
+      const page = await context.newPage();
+      const finishCoverage = await beginCoverage(page, testInfo);
+      try {
+        await page.goto('/#/algs/oll/1');
+        const screen = page.locator('#algs-view .alg-detail');
+        await expect(screen).toBeVisible();
+        await expect(page.locator('#algs-view .alg-page')).toHaveAttribute('data-brain-style', style);
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect(page.locator('.alg-cube-card')).toBeVisible();
+        await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
+        const cubeWidth = await page.locator('[data-alg-cube] canvas').evaluate(node => node.getBoundingClientRect().width);
+        expect(cubeWidth).toBeGreaterThanOrEqual(width === 390 ? 190 : 240);
+        // F4 puts move-group names on the case Orbit, not in a second legacy strip.
+        const orbitLabels = await page.locator('.alg-case-orbit .orbit__label-name').allTextContents();
+        expect(orbitLabels).toContain('sledgehammer');
+        expect(orbitLabels.join(' ')).not.toMatch(/[−-]0\.00|\d+–\d+\s*[−-]/);
+        await expect(page.locator('.alg-entry-grid .alg-entry')).toHaveCount(2);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+        await page.screenshot({ path: `test-results/review-next-2-player/algs-case-${style}-${theme}-${width}.png`, fullPage: true });
+      } finally {
+        await finishCoverage();
+      }
+    } finally {
+      await context.close();
+    }
   }
 });
 

@@ -524,6 +524,7 @@ export function createCube3D(container, options = {}) {
   function frame() {
     if (stopped) return;
     animationFrame = requestAnimationFrame(frame);
+    moveAnimation?.tick(performance.now());
     if (document.hidden || !container.clientWidth || !container.clientHeight) return;
     if (interactionMode === 'scout') tumbleControls.update();
     else controls.update();
@@ -560,6 +561,7 @@ export function createCube3D(container, options = {}) {
     const matchedPieces = new Set(data.matchedPieces || []);
     const showAllCorners = Boolean(data.showAllCorners);
     const highlightedPieces = new Set(data.highlightedPieces || []);
+    const dimOthers = Boolean(data.dimOthers);
     onPieceClick = data.onPieceClick || onPieceClick;
     selectablePieces = new Set(data.selectablePieces || []);
     if (data.mode && data.mode !== interactionMode) setMode(data.mode);
@@ -596,6 +598,7 @@ export function createCube3D(container, options = {}) {
       answerBadge.sprite.visible = false;
     }
 
+    let dimmedStickerCount = 0, highlightedStickerCount = 0;
     stickerMeshes.forEach((sticker) => {
       const { face, piece, kind } = sticker.userData;
       const targetIndex = kind === 'corner' ? targets.findIndex((target) => samePiece(target.targetCorner, piece)) : -1;
@@ -620,12 +623,15 @@ export function createCube3D(container, options = {}) {
       sticker.material.color.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
       const dimmedTarget = Boolean(target && !active && !showAllCorners);
       const matched = interactionMode === 'f2l' && matchedPieces.has(piece);
-      sticker.material.transparent = dimmedTarget || matched;
-      sticker.material.opacity = dimmedTarget ? .2 : matched ? .38 : 1;
-      sticker.material.depthWrite = !(dimmedTarget || matched);
+      const scoutHighlight = interactionMode === 'scout' && [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
+      const dimmed = interactionMode === 'scout' && dimOthers && !scoutHighlight;
+      if (dimmed) dimmedStickerCount++;
+      if (scoutHighlight) highlightedStickerCount++;
+      sticker.material.transparent = dimmedTarget || matched || dimmed;
+      sticker.material.opacity = dimmedTarget ? .2 : matched ? .38 : dimmed ? .16 : 1;
+      sticker.material.depthWrite = !(dimmedTarget || matched || dimmed);
       const f2lEmphasis = interactionMode === 'f2l' && (piece === f2lSelected || piece === f2lFeedback?.piece);
       const correction = interactionMode === 'f2l' && f2lFeedback?.correctPieces?.includes(piece);
-      const scoutHighlight = interactionMode === 'scout' && [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
       sticker.userData.border.visible = interactionMode === 'f2l' ? Boolean(f2lEmphasis || correction) : interactionMode === 'scout' ? scoutHighlight : Boolean(active && (isKnown || isHiddenTarget));
       sticker.userData.borderInk.material.color.set(scoutHighlight ? '#65e8ff' : correction ? '#55d88b'
         : f2lFeedback && piece === f2lFeedback.piece ? (f2lFeedback.status === 'correct' ? '#55d88b' : '#ff625a')
@@ -633,13 +639,15 @@ export function createCube3D(container, options = {}) {
       sticker.scale.setScalar(interactionMode === 'scout' && scoutHighlight ? 1.045 : active && (isKnown || isHiddenTarget) ? 1.045 : f2lEmphasis ? 1.055 : 1);
       sticker.renderOrder = active ? 2 : 0;
     });
+    renderer.domElement.dataset.dimmedStickers = String(dimmedStickerCount);
+    renderer.domElement.dataset.highlightedStickers = String(highlightedStickerCount);
     renderer.domElement.setAttribute('aria-label', interactionMode === 'f2l'
       ? `Interactive F2L cube with a limited left-right inspection arc.${f2lSelected ? ` Selected ${f2lSelected}.` : ''}${f2lFeedback ? ` Pair result: ${f2lFeedback.status}.` : ''}`
       : interactionMode === 'scout'
         ? `Interactive Cross Scout cube showing all stickers. ${bottomFace} is held on the bottom and ${frontFace} in front.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
       : `Three-dimensional corner-recognition cube in a locked ${lockedViewOffset.label} solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
     // Present the new case immediately rather than waiting for the next loop.
-    renderer.render(scene, camera);
+    if (!applyingAnimationUpdate) renderer.render(scene, camera);
   }
 
   // Animate a layer turn for scout playback. The caller supplies the state
@@ -673,7 +681,6 @@ export function createCube3D(container, options = {}) {
     tumbleControls.enabled = false;
     let settled = false;
     let started = performance.now();
-    let frameId;
     const restore = () => {
       snapshots.forEach(({ object, position, quaternion, scale }) => {
         cubeGroup.attach(object);
@@ -687,7 +694,6 @@ export function createCube3D(container, options = {}) {
       const finish = (applyState) => {
         if (settled) return;
         settled = true;
-        cancelAnimationFrame(frameId);
         restore();
         delete renderer.domElement.dataset.turningFace;
         moveAnimation = null;
@@ -698,7 +704,7 @@ export function createCube3D(container, options = {}) {
         }
         resolve();
       };
-      moveAnimation = { cancel: () => finish(false) };
+      moveAnimation = { cancel: () => finish(false), tick: null };
       const duration = reducedMotion.matches ? 0 : durationMs;
       const tick = (now) => {
         if (settled) return;
@@ -708,11 +714,9 @@ export function createCube3D(container, options = {}) {
         // readable at slow speeds without a sudden first-frame jump.
         const eased = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
         layer.rotateOnAxis(axis, angle * eased);
-        renderer.render(scene, camera);
         if (progress >= 1) finish(true);
-        else frameId = requestAnimationFrame(tick);
       };
-      frameId = requestAnimationFrame(tick);
+      moveAnimation.tick = tick;
     });
   }
 

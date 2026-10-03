@@ -109,3 +109,103 @@
   .scout-button { min-height: 44px; padding: 8px 10px; } .scout-move { min-width: 40px; min-height: 44px; } .scout-result-grid { grid-template-columns: 1fr; } .scout-results-head select { font-size: 16px; max-width: 100%; }
   .scout-practice-panel { padding: 14px; } .scout-practice-actions { flex-direction: column; align-items: stretch; } .scout-practice-actions .scout-button { width: 100%; }
 }
+
+/* Compact, single-screen Cross Scout trainer: case first, settings on demand. */
+#scout-view { display: flex; flex-direction: column; gap: 10px; }
+#scout-view > .intro-row { order: 0; margin: 0; padding: 8px 0; }
+#scout-view > #scout-round-host { order: 1; }
+#scout-view > .scout-shell { order: 2; grid-template-columns: minmax(0,1fr) minmax(280px,.9fr); grid-template-rows: minmax(0,1fr); height: min(340px, calc(100svh - 350px)); min-height: 300px; margin: 0; }
+#scout-view > .scout-shell > .cube-stage, #scout-view > .scout-shell > .scout-plan { min-height: 0; }
+#scout-view > .scout-input { order: 3; margin: 0; padding: 10px; }
+#scout-view .scout-results-details > summary { padding: 10px 14px; color: var(--b-ink); font-size: 13px; font-weight: 600; cursor: pointer; }
+#scout-view .scout-results { padding: 8px 12px; }
+#scout-view .scout-results-head { margin-bottom: 8px; }
+#scout-view .scout-results-head h2 { font-size: 14px; }
+#scout-view .scout-result-grid { grid-template-columns: repeat(3,minmax(0,1fr)); max-height: min(30svh,220px); min-height: 0; overflow-y: auto; }
+#scout-view .scout-result { gap: 6px; padding: 10px; }
+#scout-view .scout-results-details[open] .scout-result { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 3px 8px; padding: 6px 8px; }
+#scout-view .scout-results-details[open] .scout-result > span:first-child,
+#scout-view .scout-results-details[open] .scout-result .scout-family { grid-column: 1 / -1; }
+#scout-view .scout-results-details[open] .scout-result > small,
+#scout-view .scout-results-details[open] .scout-results-head h2,
+#scout-view .scout-results-details[open] .scout-guide,
+#scout-view .scout-results-details[open] .scout-footnote { display: none; }
+#scout-view .scout-results-details[open] .scout-result-grid { max-height: min(25svh,190px); overflow-y: auto; }
+#scout-view .scout-empty, #scout-view .scout-footnote { display: none; }
+#scout-view .scout-input > label { margin: 0 0 4px; }
+#scout-view .scout-scramble-row textarea { min-height: 46px; max-height: 72px; padding: 8px; font-size: 12px; }
+#scout-view .scout-scramble-row .scout-button { min-height: 40px; }
+#scout-view .scout-options { margin-top: 8px; gap: 8px; align-items: center; }
+#scout-view .scout-colors button { min-height: 34px; padding: 5px 8px; }
+#scout-view .scout-options-actions .new-case-button { min-height: 40px; }
+#scout-view .scout-input-settings { margin-top: 6px; border-top: 1px solid var(--b-hairline); }
+#scout-view .scout-input-settings > summary { padding: 8px 2px 2px; color: var(--b-muted); font-size: 11px; cursor: pointer; }
+#scout-view .scout-smart-cube, #scout-view .scout-orientation { margin-top: 8px; }
+#scout-view .scout-message { margin-top: 7px; min-height: 1.3em; line-height: 1.4; }
+#scout-view .scout-shell .cube-stage { min-height: 0; padding: 8px; }
+#scout-view .scout-shell .cube-mount { min-height: 0; height: auto; flex: 1; }
+#scout-view .scout-shell .cube-caption { font-size: 9px; }
+#scout-view #scout-cube > .shared-cube { width: min(var(--cube-size),240px); }
+#scout-view .scout-plan { padding: 12px; }
+#scout-view .scout-plan h2 { margin: 6px 0; font-size: 18px; }
+#scout-view .scout-plan p { font-size: 11px; line-height: 1.45; }
+#scout-view .scout-moves { margin: 8px 0; }
+#scout-view .scout-move { min-width: 0; min-height: 44px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; color: var(--orbit-muted, var(--muted)); }
+#scout-view .scout-move.done { color: var(--orbit-ink, var(--ink)); }
+#scout-view .scout-move.current { background: transparent; color: var(--orbit-ink, var(--ink)); text-decoration: underline; text-decoration-color: var(--orbit-accent, var(--accent)); text-underline-offset: 4px; }
+#scout-view .scout-playback { padding-top: 6px; }
+#scout-view .scout-practice-launch { min-height: 40px; margin-top: 8px; }
+@media (max-height: 780px) and (min-width: 701px) {
+  #scout-view { gap: 4px; }
+  #scout-view > .intro-row { padding: 2px 0; }
+  #scout-view > .intro-row .eyebrow { display: none; }
+  #scout-view > .intro-row h1 { font-size: 28px; }
+  #scout-view > .intro-row > .intro-copy { display: none; }
+  #scout-view > .scout-shell { height: min(360px, calc(100svh - 360px)); min-height: 340px; }
+  #scout-view > .scout-input { padding: 6px; }
+  #scout-view #scout-round-host .brain.quick-round { margin: 0; padding: 6px 10px; }
+  #scout-view #scout-round-host .quick-round button { min-height: 36px; padding-block: 4px; }
+  #scout-view .scout-scramble-row textarea { height: 46px; min-height: 46px; max-height: 46px; }
+  #scout-view .scout-colors button { min-height: 30px; }
+  #scout-view #scout-cube > .shared-cube { width: min(var(--cube-size),200px); }
+  #scout-view .scout-message { min-height: 0; margin-top: 2px; }
+}
+#scout-view:not([data-scout-found="true"]) .scout-results-details { display: none; }
+#scout-view[data-scout-found="true"] .scout-plan:has(.scout-results-details[open]) > :not(.scout-results-details) { display: none; }
+#scout-view:has(#scout-round-host .quick-round-result) > .scout-input,
+#scout-view:has(#scout-round-host .quick-round-result) .scout-plan > .scout-results-details,
+#scout-view:has(#scout-round-host .quick-round-result) .scout-practice-panel { display: none; }
+#scout-view .scout-plan > .scout-results-details { display: block; flex: 1 1 0; min-height: 0; height: 100%; max-height: 100%; overflow-y: auto; margin: 0; }
+#scout-view .scout-results-details[open] > .scout-results { display: block; height: auto; overflow: visible; padding: 8px 10px; }
+@media (max-width: 700px) {
+  #scout-view { gap: 8px; }
+  #scout-view > .intro-row { flex-wrap: wrap; }
+  #scout-view > .scout-round-host { margin-bottom: 0; }
+  #scout-view > #scout-round-host .quick-round-line { gap: 4px; }
+  #scout-view > #scout-round-host .quick-round-line > small { display: none; }
+  #scout-view > #scout-round-host .quick-round button { min-height: 44px; padding: 5px 7px; font-size: 11px; }
+  #scout-view > .scout-shell { display: grid; grid-template-columns: minmax(125px,.78fr) minmax(0,1fr); grid-template-rows: minmax(0,1fr); height: 250px; min-height: 250px; }
+  #scout-view .scout-shell .cube-stage { height: 190px; padding: 8px; }
+  #scout-view .scout-shell .cube-caption { display: block; padding-top: 5px; }
+  #scout-view .scout-shell .cube-caption #scout-view-caption { display: block; font-size: 8px; text-align: center; }
+  #scout-view .scout-view-actions { display: none; }
+  #scout-view #scout-turn-guide { display: none; }
+  #scout-view #scout-cube > .shared-cube { width: min(var(--cube-size),150px); }
+  #scout-view .scout-plan { padding: 10px 12px; }
+  #scout-view .scout-plan > .eyebrow, #scout-view .scout-plan > p:not(.scout-pieces), #scout-view .scout-step-note { display: none; }
+  #scout-view .scout-plan h2 { font-size: 16px; }
+  #scout-view .scout-playback { gap: 4px; }
+  #scout-view .scout-playback .scout-button { min-height: 44px; padding: 5px; }
+  #scout-view .scout-practice-launch { min-height: 44px; padding: 6px; font-size: 10px; }
+  #scout-view > .scout-input { padding: 8px; }
+  #scout-view .scout-scramble-row { flex-wrap: nowrap; }
+  #scout-view .scout-scramble-row textarea { flex: 1 1 0; flex-basis: 0; min-height: 46px; max-height: 54px; font-size: 11px; }
+  #scout-view .scout-scramble-row .scout-button { width: auto; flex: 0 0 88px; min-height: 44px; }
+  #scout-view .scout-input > .scout-message { margin-top: 5px; font-size: 10px; line-height: 1.3; }
+  #scout-view .scout-input { margin-bottom: 0; }
+  #scout-view .scout-input > small { display: none; }
+  #scout-view .scout-result-grid { grid-template-columns: 1fr; }
+  #scout-view .scout-results-details[open] .scout-result-grid { max-height: min(16svh,140px); }
+  #scout-view .scout-options { align-items: start; }
+  #scout-view .scout-options-actions { width: auto; }
+}

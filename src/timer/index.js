@@ -9,7 +9,7 @@
 // Options: store (required), now (monotonic ms clock, default performance.now), wall (epoch ms,
 // default Date.now), scramble (async () => string, default generateWcaScramble), storage
 // (default localStorage: Brain settings + timer prefs), style ('orbit'|'mono', default the Brain
-// style setting), loadStyle (async id => StyleModule, for tests).
+// style setting).
 // Returns { setActive, detach, machine, ready } (machine and ready are for tests and the dev page).
 
 import '@fontsource-variable/manrope';
@@ -30,11 +30,10 @@ import { generateWcaScramble } from '../scramble.js';
 import { openHistory } from '../store/history.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { createSolvedState } from '../cross-cube.js';
-
-const STYLES = {
-  orbit: () => import('../brain/styles/orbit/index.js'),
-  mono: () => import('../brain/styles/mono/index.js'),
-};
+import { Cube } from '../ui/cube/index.js';
+import { readCaseColorSetting } from '../ui/cube/case-color.js';
+import { createOrbit } from '../ui/orbit/index.js';
+import { buildTimerViewModel } from './view-model.js';
 const INSPECTION_CYCLE = ['wca', 'custom', 'unlimited', 'off'];
 const OVERTIME_CYCLE = ['wca', 'count', 'grace', 'autostart'];
 const inspectionName = insp => (insp.mode === 'off' ? 'off' : insp.mode === 'unlimited' ? '∞' : `${insp.mode === 'custom' ? `custom ${insp.seconds}` : 'WCA 15'} s`);
@@ -52,7 +51,7 @@ const keycap = (key, verb) => `<span class="tm-key"><kbd>${key}</kbd><span>${ver
 
 export function createTimer(root, {
   store, now = () => performance.now(), wall = () => Date.now(), scramble = generateWcaScramble,
-  storage = globalThis.localStorage, style: styleOption, loadStyle = id => STYLES[id]().then(m => m.default ?? m),
+  storage = globalThis.localStorage, style: styleOption,
 } = {}) {
   if (!store) throw new Error('createTimer needs a history store');
   let active = true;
@@ -75,12 +74,15 @@ export function createTimer(root, {
   let raf = 0;
   let activePointer = null;
   let keyHeld = false;
-  let styleModule = null;
-  let inspectionView = null;
-  let inspectionShown = false;
+  let timerOrbit = null;
+  let orbitRenderKey = '';
+  let lastOrbitSegments = [];
   let cubeView = null;
   let sequencePlayer = null;
   let previewLoadToken = 0;
+  let previewMountToken = 0;
+  let previewMountPromise = null;
+  let activationToken = 0;
   let previousBusy = false;
 
   const machine = createTimerMachine({
@@ -108,8 +110,8 @@ export function createTimer(root, {
   const nextBtn = el('button', 'tm-textbtn', 'new scramble'); nextBtn.type = 'button'; nextBtn.dataset.action = 'new-scramble';
   scrambleRow.append(scrambleText, nextBtn);
 
-  // The preview owns one cube for the lifetime of this page. Timer renders only
-  // update its visibility; the shared sequence player owns the cue, chips and controls.
+  // The preview cube is mounted only while this route is active. The shared sequence player
+  // owns its cue, chips and controls and is torn down with the cube on route deactivation.
   const preview = el('section', 'tm-preview');
   preview.dataset.testid = 'scramble-preview';
   preview.setAttribute('aria-label', '3D cube scramble preview');
@@ -122,16 +124,17 @@ export function createTimer(root, {
   pad.setAttribute('role', 'button');
   pad.setAttribute('aria-label', 'timer: touch and hold, release to start');
   pad.dataset.testid = 'pad';
-  const inspHost = el('div', 'tm-insp'); inspHost.hidden = true;
-  const count = el('div', 'tm-count');           // orbit: the countdown in the ring's centre
+  const inspHost = el('div', 'tm-insp');
+  const count = el('div', 'tm-count');           // the one Orbit's centre value for inspection and solve
+  count.dataset.testid = 'time';
   const ringHost = el('div', 'tm-ring');
   const consequence = el('p', 'tm-consequence');
   const inspStage = el('div', 'tm-insp-stage');
   inspStage.append(ringHost, count);
   inspHost.append(inspStage, consequence);
-  const time = el('div', 'tm-time', '0.00'); time.dataset.testid = 'time';
+  consequence.hidden = true;
   const sub = el('p', 'tm-sub'); sub.dataset.testid = 'sub';
-  pad.append(inspHost, time, sub);
+  pad.append(inspHost, sub);
 
   const stats = el('div', 'tm-stats'); stats.dataset.testid = 'stats';
   const sourceBtn = el('button', 'tm-opt tm-source'); sourceBtn.type = 'button'; sourceBtn.dataset.action = 'stats-source';
@@ -149,6 +152,8 @@ export function createTimer(root, {
   const keys = el('div', 'tm-keys');
   const status = el('p', 'tm-sr'); status.setAttribute('aria-live', 'polite');
   root.append(top, scrambleRow, preview, pad, stats, sourceBtn, controls, keys, status);
+  inspHost.dataset.kind = 'ring';
+  timerOrbit = createOrbit(ringHost, { size: 'L', shape: 'open', gap: 72, label: 'Manual timer', segments: [] });
 
   // --- scramble -----------------------------------------------------------------------------
   function loadScramble() {
@@ -195,19 +200,42 @@ export function createTimer(root, {
   }
 
   async function mountPreview() {
-    const [cubeModule, playerModule] = await Promise.all([
-      import('../pages/cube-view.js'), import('../moves/sequence-player.js'),
-    ]);
-    if (detached) return;
-    cubeView = await cubeModule.createPageCube(previewCube, { state: createSolvedState(), mode: 'corner' });
-    if (detached) { cubeView?.destroy?.(); cubeView = null; return; }
-    sequencePlayer = playerModule.createSequencePlayer(previewTools, {
-      cube3d: cubeView, startState: createSolvedState(), moves: [], label: 'scramble',
-      onChange: snapshot => paintPreview(snapshot),
-    });
-    sequencePlayer.setActive(active && !machine.snapshot().hold && machine.snapshot().phase === 'idle');
-    if (scrambleState === 'ready') await loadPreviewSequence(currentScramble);
-    else paintPreview();
+    if (!active || detached || cubeView || sequencePlayer) return;
+    if (previewMountPromise) {
+      await previewMountPromise;
+      if (active && !detached && !cubeView && !sequencePlayer) return mountPreview();
+      return;
+    }
+    const token = ++previewMountToken;
+    const task = (async () => {
+      const playerModule = await import('../moves/sequence-player.js');
+      if (token !== previewMountToken || !active || detached) return;
+      const mountedCube = new Cube(previewCube, { state: createSolvedState(), mode: 'case', size: 'L',
+        label: 'scramble case', caseColorSetting: readCaseColorSetting(), caseSeed: 'timer-scramble' });
+      if (token !== previewMountToken || !active || detached) { mountedCube.destroy(); return; }
+      cubeView = mountedCube;
+      sequencePlayer = playerModule.createSequencePlayer(previewTools, {
+        cube3d: mountedCube, startState: createSolvedState(), moves: [], label: 'scramble',
+        onChange: snapshot => paintPreview(snapshot),
+      });
+      sequencePlayer.setActive(active && !machine.snapshot().hold && machine.snapshot().phase === 'idle');
+      if (scrambleState === 'ready') await loadPreviewSequence(currentScramble);
+      else paintPreview();
+    })();
+    previewMountPromise = task;
+    try { await task; }
+    finally { if (previewMountPromise === task) previewMountPromise = null; }
+  }
+
+  function unmountPreview() {
+    previewMountToken++;
+    previewLoadToken++;
+    sequencePlayer?.destroy();
+    sequencePlayer = null;
+    cubeView?.destroy?.();
+    cubeView = null;
+    previewCube.replaceChildren();
+    previewTools.replaceChildren();
   }
 
   // --- saving and editing ---------------------------------------------------------------------
@@ -278,23 +306,27 @@ export function createTimer(root, {
   }
 
   // --- render -------------------------------------------------------------------------------
-  function updateInspection(snap) {
-    const want = snap.phase === 'inspecting' && Boolean(inspectionView);
-    if (want && !inspectionShown) {
-      inspectionView.update({ screen: 'inspection', inspection: buildInspectionVM(machine.inspection, snap.inspectionElapsedMs) }, null);
-      inspectionShown = true;
-    } else if (!want && inspectionShown) {
-      inspectionView.update({ screen: 'idle', inspection: null }, null);
-      inspectionShown = false;
+  function updateTimerOrbit(snap, timeText, tone) {
+    const inspecting = snap.phase === 'inspecting';
+    const vm = inspecting ? buildInspectionVM(machine.inspection, snap.inspectionElapsedMs) : null;
+    const frame = inspecting ? inspectionFrame(machine.inspection, snap.inspectionElapsedMs) : null;
+    const elapsed = inspecting ? Math.max(0, Number(snap.inspectionElapsedMs) || 0) : Math.max(0, Number(snap.elapsedMs) || 0);
+    const limit = inspecting ? vm.limitMs : 60000;
+    const fill = inspecting ? limit ? Math.min(1, elapsed / limit) : (elapsed % 60000) / 60000
+      : snap.phase === 'done' ? 1 : snap.phase === 'running' ? (elapsed % 60000) / 60000 : 0;
+    const value = frame?.bigText ?? timeText;
+    const segments = snap.phase === 'idle' && !snap.hold ? [] : [{ key: inspecting ? 'inspection' : 'solve', label: inspecting ? 'inspection' : 'solve', short: inspecting ? 'inspect' : 'solve',
+      weight: 1, state: snap.phase === 'done' ? 'done' : 'current', fill, value }];
+    lastOrbitSegments = segments;
+    const renderKey = `${snap.phase}/${snap.hold ?? ''}/${value}/${fill.toFixed(3)}/${tone}`;
+    if (renderKey !== orbitRenderKey) {
+      orbitRenderKey = renderKey;
+      timerOrbit?.update({ shape: 'open', segments }, { animate: false });
     }
-    inspHost.hidden = snap.phase !== 'inspecting';
-    if (want) {
-      const f = inspectionFrame(machine.inspection, snap.inspectionElapsedMs);
-      inspectionView.frame?.({ startedAtSolve: null, clockText: '', currentFill: 0, currentSplitText: '', currentOver: false, inspection: f });
-      setText(count, f.bigText);
-      count.dataset.tone = f.tone;
-      setText(consequence, f.consequence);
-    }
+    setText(count, value);
+    count.dataset.tone = frame?.tone ?? (tone === 'dnf' ? 'error' : tone === 'holding' || tone === 'plus2' ? 'warn' : tone === 'ready' ? 'ready' : '');
+    consequence.hidden = !frame;
+    setText(consequence, frame?.consequence ?? '');
   }
 
   function render() {
@@ -327,10 +359,6 @@ export function createTimer(root, {
       timeText = fmtResult(shown);
       tone = shown.penalty === 'DNF' ? 'dnf' : shown.penalty === '+2' ? 'plus2' : '';
     } else timeText = fmtTime(0);
-    setText(time, timeText);
-    time.dataset.tone = tone;
-    time.hidden = snap.phase === 'inspecting';
-
     // The line under it.
     let line = '';
     if (snap.hold === 'holding') line = 'keep holding';
@@ -402,7 +430,7 @@ export function createTimer(root, {
     }
     if (keys.dataset.key !== hints) { keys.dataset.key = hints; keys.innerHTML = hints; }
 
-    updateInspection(snap);
+    updateTimerOrbit(snap, timeText, tone);
     wake(Boolean(busy));
     if (busy && !raf && active) raf = requestAnimationFrame(loop);
   }
@@ -560,41 +588,44 @@ export function createTimer(root, {
   root.dataset.brainStyle = styleId;
   syncPageTokens(root);
 
-  async function mountStyle() {
-    styleModule = await loadStyle(styleId);
-    if (detached) return;
-    inspectionView?.destroy?.();
-    ringHost.replaceChildren();
-    // Orbit draws a ring (the big number is the timer's own, in its centre); Mono draws the lane
-    // with its own countdown, so the centre number is hidden there.
-    const mono = styleId === 'mono';
-    inspHost.dataset.kind = mono ? 'lane' : 'ring';
-    inspectionView = styleModule.inspection(mono ? inspHost : ringHost, {});
-    inspectionShown = false;
-    render();
-  }
   loadScramble();
-  const ready = Promise.all([mountStyle(), mountPreview()]);
+  const ready = mountPreview();
   render();
+
+  function getSnapshot() {
+    const snap = machine.snapshot();
+    const stats = statsRow(store.records, focus(), prefs.statsSource);
+    return buildTimerViewModel({ snapshot: snap,
+      scramble: (snap.phase === 'inspecting' || snap.phase === 'running') ? attemptScramble ?? currentScramble : currentScramble,
+      scrambleState, notice,
+      stats: stats.cells.map(cell => ({ key: cell.key, value: cell.text })),
+      orbitSegments: lastOrbitSegments,
+    });
+  }
 
   return {
     ready,
     machine,
+    getSnapshot,
+    getViewModel: getSnapshot,
     getPreviewSnapshot: () => sequencePlayer?.getSnapshot?.() ?? null,
     async setActive(next) {
+      const token = ++activationToken;
       active = Boolean(next);
-      if (!active) { refreshingHistory = false; machine.cancel(); keyHeld = false; activePointer = null; sequencePlayer?.setActive(false); wake(false); }
+      if (!active) { refreshingHistory = false; machine.cancel(); keyHeld = false; activePointer = null; unmountPreview(); wake(false); }
       else {
         refreshingHistory = true;
         render();
         await store.reload().catch(() => {});
-        if (!active || detached) return;
+        if (token !== activationToken || !active || detached) return;
         refreshingHistory = false;
         settings = loadSettings(storage);
         machine.setInspection(settings.inspection);
+        await mountPreview();
+        if (!active || detached) return;
         sequencePlayer?.setActive(machine.snapshot().phase === 'idle' && !machine.snapshot().hold);
         const nextStyle = BRAIN_STYLES.includes(styleOption) ? styleOption : settings.style;
-        if (nextStyle !== styleId) { styleId = nextStyle; void mountStyle(); }
+        if (nextStyle !== styleId) { styleId = nextStyle; root.dataset.brainStyle = styleId; syncPageTokens(root); }
         render();
       }
     },
@@ -602,6 +633,7 @@ export function createTimer(root, {
       detached = true;
       active = false;
       previewLoadToken++;
+      previewMountToken++;
       if (raf) cancelAnimationFrame(raf);
       wake(false);
       sequencePlayer?.destroy();
@@ -612,7 +644,7 @@ export function createTimer(root, {
       document.removeEventListener('keyup', onKeyUp, true);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibility);
-      inspectionView?.destroy?.();
+      timerOrbit?.destroy(); timerOrbit = null;
       root.classList.remove('brain', 'tm');
       root.replaceChildren();
     },
@@ -632,6 +664,8 @@ export function createManualTimer(host, options = {}) {
   });
   return {
     ready,
+    getSnapshot: () => timer?.getSnapshot?.() ?? null,
+    getViewModel: () => timer?.getViewModel?.() ?? null,
     setActive(next) { active = Boolean(next); timer?.setActive(active); },
     detach() { detached = true; timer?.detach(); },
   };

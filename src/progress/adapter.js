@@ -33,11 +33,15 @@ const dayKey = at => {
   const date = new Date(at);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
-export function readProgress(storage, { records = null, algorithms = [], source = 'smart', focus = 'speed', days = 30, now = Date.now() } = {}) {
-  const since = days === 'all' ? -Infinity : now - Math.max(1, Number(days) || 30) * DAY;
+export function readProgress(storage, { records = null, algorithms = [], source = 'smart', focus = 'speed', session = 'all', days = 30, now = Date.now() } = {}) {
+  const periodDays = days === 'all' ? null : Math.max(1, Number(days) || 30);
+  const since = periodDays == null ? -Infinity : now - periodDays * DAY;
   const allRecords = records ?? loadSolves(storage);
-  const solves = array(allRecords).filter(r => Number.isFinite(r.at) && r.at >= since && r.at <= now && Number.isFinite(r.solveMs)
-    && (source === 'all' || (r.source ?? 'smart') === source) && (focus === 'all' || (r.focus ?? 'speed') === focus)).sort((a, b) => a.at - b.at);
+  const inCohort = r => (source === 'all' || (r.source ?? 'smart') === source)
+    && (focus === 'all' || (r.focus ?? 'speed') === focus)
+    && (session === 'all' || (r.sessionId ?? null) === session);
+  const solves = array(allRecords).filter(r => Number.isFinite(r.at) && r.at >= since && r.at <= now && Number.isFinite(r.solveMs) && inCohort(r)).sort((a, b) => a.at - b.at);
+  const previousSolves = periodDays == null ? [] : array(allRecords).filter(r => Number.isFinite(r.at) && r.at >= since - periodDays * DAY && r.at < since && Number.isFinite(r.solveMs) && inCohort(r)).sort((a, b) => a.at - b.at);
   const corner = read(storage, 'cubesight-progress-v2', {});
   const learning = loadLearning(storage);
   const pll = read(storage, 'cubesight-pll-progress-v1', {});
@@ -85,15 +89,28 @@ export function readProgress(storage, { records = null, algorithms = [], source 
     if ((id === 'corners' && cornerHistory.length) || (id === 'cross' && scout.length) || (id === 'algs' && algorithms.some(item => array(item.activity).length))) continue;
     add(r.at, 'cases', count(r.n ?? r.total));
   }
-  const phases = phaseSplits(solves.filter(r => r.source !== 'manual' && r.source !== 'import'));
+  const splitCohort = rows => rows.filter(r => r.source !== 'manual' && r.source !== 'import');
+  const phases = phaseSplits(splitCohort(solves));
+  const previousPhases = periodDays == null ? null : phaseSplits(splitCohort(previousSolves));
   const phaseDrills = [['cross', 'crossMs', '#/drills/scout'], ['F2L', 'f2lMs', '#/drills/f2l'], ['OLL', 'ollMs', '#/drills/oll'], ['PLL', 'pllMs', '#/drills/pll']];
-  const splits = phases ? phaseDrills.map(([label, key, href]) => ({ label, ms: phases[key], href, samples: phases.samples })) : [];
+  const splits = phases ? phaseDrills.map(([label, key, href]) => ({
+    key: label === 'cross' ? 'cross' : label,
+    label, ms: phases[key], href, samples: phases.samples,
+    previousMs: previousPhases?.[key] ?? null,
+    previousSamples: previousPhases?.samples ?? 0,
+    deltaMs: Number.isFinite(previousPhases?.[key]) ? phases[key] - previousPhases[key] : null,
+  })) : [];
   const slowest = splits.length ? Math.max(...splits.map(row => row.ms)) : null;
   return {
-    source, focus, days, solves, stats: scopeStats(solves),
+    source, focus, session, days, solves, stats: scopeStats(solves),
     trend: solves.map((r, i) => ({ at: r.at, ms: ao12(solves.slice(Math.max(0, i - 11), i + 1)) })),
     drills, due: drills.reduce((sum, row) => sum + row.due, 0),
     splits: splits.map(row => ({ ...row, largest: row.ms === slowest })),
+    comparison: {
+      label: periodDays == null ? 'all time · no comparison period' : `previous ${periodDays} days`,
+      samples: previousPhases?.samples ?? 0,
+      available: Boolean(previousPhases),
+    },
     activity: [...activity.values()].sort((a, b) => a.date.localeCompare(b.date)),
   };
 }
