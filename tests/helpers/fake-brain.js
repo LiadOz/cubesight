@@ -91,8 +91,8 @@ export async function startGuidedScramble(page, scramble, selector = '#brain-tes
  */
 export async function playSolve(page, scramble, solution, { gaps = {}, base = 60, brain = '#brain-test' } = {}) {
   const root = page.locator(brain);
-  await root.locator('.brain-pill-setup > summary').click();
-  await root.locator('.brain-advanced-scramble > summary').click();
+  await root.locator('.brain-pill-setup').evaluate(node => { node.open = true; });
+  await root.locator('.brain-advanced-scramble').evaluate(node => { node.open = true; });
   await root.locator('#brain-scramble').fill(scramble);
   await root.locator('#brain-start-custom').click();
   await page.evaluate(s => window.testBrain.emitTurns(s), scramble);
