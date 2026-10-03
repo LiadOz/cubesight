@@ -19,7 +19,7 @@ export function findPlaywrightFailureCandidates(report) {
     const parts = node.title ? [...parent, node.title] : parent;
     if (node.expectedStatus && Array.isArray(node.results)) {
       for (const result of node.results) {
-        if (!['failed', 'timedOut', 'interrupted'].includes(result.status)) continue;
+        if (!['failed', 'timedOut', 'interrupted'].includes(result.status) || result.status === node.expectedStatus) continue;
         candidates.push({ title: parts.join(' › '), status: result.status, durationMs: Math.round(result.duration ?? 0) });
       }
       return;

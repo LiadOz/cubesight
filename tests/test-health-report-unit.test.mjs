@@ -61,7 +61,9 @@ test('incomplete, stale, or failed shard sets cannot yield a green health report
 });
 
 test('repeat-run report names each test with any failed or timed-out repetition', () => {
-  const report = { suites: [{ title: 'tests/sample.spec.js', specs: [{ title: 'stable test', tests: [
+  const report = { suites: [{ title: 'tests/sample.spec.js', specs: [{ title: 'expected failure', tests: [
+    { expectedStatus: 'failed', results: [{ status: 'failed', duration: 80 }] },
+  ] }, { title: 'stable test', tests: [
     { expectedStatus: 'passed', results: [{ status: 'passed', duration: 80 }] },
   ] }, { title: 'flaky test', tests: [
     { expectedStatus: 'passed', results: [{ status: 'passed', duration: 90 }, { status: 'failed', duration: 400 }, { status: 'passed', duration: 85 }] },
