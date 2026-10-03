@@ -32,6 +32,19 @@ async function finishFrameSample(page, durationMs, key = '__f11FrameSample') {
       frames: frames.length,
       elapsedMs: frames.length > 1 ? frames.at(-1) - frames[0] : 0,
       fps: frames.length > 1 ? (frames.length - 1) * 1000 / (frames.at(-1) - frames[0]) : 0,
+      frameIntervalMs: {
+        count: deltas.length,
+        median: sorted[Math.floor(sorted.length / 2)] ?? null,
+        p95: sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)] ?? null,
+        max: sorted.at(-1) ?? null,
+        buckets: {
+          'under-16.7': deltas.filter(value => value < 16.7).length,
+          '16.7-to-25': deltas.filter(value => value >= 16.7 && value < 25).length,
+          '25-to-33.3': deltas.filter(value => value >= 25 && value < 33.3).length,
+          '33.3-to-50': deltas.filter(value => value >= 33.3 && value < 50).length,
+          '50-or-more': deltas.filter(value => value >= 50).length,
+        },
+      },
       p95FrameMs: sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)] ?? null,
     };
   }, key);
@@ -65,7 +78,26 @@ async function captureMorphFps(page, trigger) {
   return page.evaluate(() => {
     const frames = window.__f11MorphSample.frames;
     const elapsedMs = frames.length > 1 ? frames.at(-1) - frames[0] : 0;
-    return { frames: frames.length, elapsedMs, fps: elapsedMs > 0 ? (frames.length - 1) * 1000 / elapsedMs : 0 };
+    const deltas = frames.slice(1).map((time, index) => time - frames[index]);
+    const sorted = [...deltas].sort((a, b) => a - b);
+    return {
+      frames: frames.length,
+      elapsedMs,
+      fps: elapsedMs > 0 ? (frames.length - 1) * 1000 / elapsedMs : 0,
+      frameIntervalMs: {
+        count: deltas.length,
+        median: sorted[Math.floor(sorted.length / 2)] ?? null,
+        p95: sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)] ?? null,
+        max: sorted.at(-1) ?? null,
+        buckets: {
+          'under-16.7': deltas.filter(value => value < 16.7).length,
+          '16.7-to-25': deltas.filter(value => value >= 16.7 && value < 25).length,
+          '25-to-33.3': deltas.filter(value => value >= 25 && value < 33.3).length,
+          '33.3-to-50': deltas.filter(value => value >= 33.3 && value < 50).length,
+          '50-or-more': deltas.filter(value => value >= 50).length,
+        },
+      },
+    };
   });
 }
 
