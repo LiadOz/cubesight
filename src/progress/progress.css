@@ -1,7 +1,13 @@
 .progress-page { gap: 22px; }
 .progress-heading { width: 100%; }
 .progress-filters { display: flex; flex-wrap: wrap; gap: 12px; }
-.progress-filters .ui-field, .progress-session-filter { min-width: 0; flex: 1 1 150px; }
+.progress-filters .ui-field, .progress-session-filter, .progress-period-filter { min-width: 0; flex: 1 1 150px; }
+.progress-chip-group { display: grid; align-content: start; gap: 5px; }
+.progress-chip-group::before { color: var(--b-muted); font-size: 11px; line-height: 1.2; }
+.progress-session-filter::before { content: 'session'; }
+.progress-period-filter::before { content: 'period'; }
+.progress-chip-group__choices { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.progress-chip-group .chip { max-width: 100%; height: auto; min-height: var(--hc, 32px); padding-block: 6px; white-space: normal; text-align: left; }
 .progress-visual { position: sticky; top: 8px; z-index: 2; display: grid; justify-items: center; gap: 6px; align-self: center; width: 100%; min-width: 0; padding: 8px 0; background: var(--b-bg); }
 .progress-orbit-wrap { position: relative; width: min(100%, 440px); aspect-ratio: 1; }
 .progress-orbit-host { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -31,7 +37,7 @@
   .progress-visual { top: 4px; }
   .progress-orbit-wrap { width: min(100%, 390px); }
   .progress-chart-grid { grid-template-columns: minmax(0, 1fr); }
-  .progress-filters .ui-field, .progress-session-filter { flex: 1 1 130px; }
+  .progress-filters .ui-field, .progress-session-filter, .progress-period-filter { flex: 1 1 130px; }
   .progress-drill-row { grid-template-columns: 28px minmax(0, 1fr); }
   .progress-drill-meta { grid-column: 2; }
 }

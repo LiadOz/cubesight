@@ -12,7 +12,7 @@ import { loadLearning } from '../learning.js';
 import { Orbit } from '../ui/orbit/index.js';
 import { buildWeeklyReport, goalProgress, readGoal, saveGoal, clearGoal } from '../goals/adapter.js';
 import { createShareCardPng } from '../goals/share-card.js';
-import { createButton, createFilledInput, createFilledSelect, createLineChart } from '../ui/shared/index.js';
+import { createButton, createChip, createFilledInput, createFilledSelect, createLineChart } from '../ui/shared/index.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const seconds = ms => ms === Infinity ? 'DNF' : Number.isFinite(ms) ? (Math.floor(ms / 10) / 100).toFixed(2) : '—';
@@ -43,7 +43,15 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   intro.append(title, subtitle);
 
   const filterForm = document.createElement('form'); filterForm.className = 'progress-filters'; filterForm.setAttribute('aria-label', 'Progress filters');
-  const sessionFilterHost = document.createElement('div'); sessionFilterHost.className = 'progress-session-filter'; filterForm.append(sessionFilterHost);
+  const sessionFilterHost = document.createElement('div');
+  sessionFilterHost.className = 'progress-chip-group progress-session-filter';
+  sessionFilterHost.setAttribute('role', 'group');
+  sessionFilterHost.setAttribute('aria-label', 'session');
+  const periodFilterHost = document.createElement('div');
+  periodFilterHost.className = 'progress-chip-group progress-period-filter';
+  periodFilterHost.setAttribute('role', 'group');
+  periodFilterHost.setAttribute('aria-label', 'period');
+  filterForm.append(sessionFilterHost, periodFilterHost);
   const filterControls = {};
   const changeFilter = (key, value) => {
     if (!active) return;
@@ -53,9 +61,7 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   };
   filterControls.source = createFilledSelect(filterForm, { label: 'solve source', value: filters.source, options: [{ value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'all', label: 'all solves' }], onChange: value => changeFilter('source', value) });
   filterControls.focus = createFilledSelect(filterForm, { label: 'focus', value: filters.focus, options: [{ value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }, { value: 'all', label: 'all focuses' }], onChange: value => changeFilter('focus', value) });
-  filterControls.days = createFilledSelect(filterForm, { label: 'period', value: filters.days, options: [{ value: '7', label: '7 days' }, { value: '30', label: '30 days' }, { value: 'all', label: 'all time' }], onChange: value => changeFilter('days', value) });
   filterControls.view = createFilledSelect(filterForm, { label: 'view', value: selectedView, options: [{ value: 'splits', label: 'stage averages' }, { value: 'goal', label: 'ao12 goal' }], onChange: value => changeFilter('view', value) });
-  let sessionFilter = null;
 
   const visual = document.createElement('section'); visual.className = 'progress-visual'; visual.setAttribute('aria-label', 'Progress Orbit');
   const orbitWrap = document.createElement('div'); orbitWrap.className = 'progress-orbit-wrap';
@@ -169,8 +175,30 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
       ? 'Manual solves do not include recorded stage splits.'
       : 'Finish a cube solve with recorded stages to see its split averages.';
     renderContent(viewModel);
-    sessionFilter?.destroy();
-    sessionFilter = createFilledSelect(sessionFilterHost, { label: 'session', value: filters.session, options: [{ value: 'all', label: 'all sessions' }, ...viewModel.sessions.map(session => ({ value: session.id, label: session.label }))], onChange: value => changeFilter('session', value) });
+    const renderChipGroup = (host, key, options, selected) => {
+      host.replaceChildren();
+      const choices = document.createElement('div');
+      choices.className = 'progress-chip-group__choices';
+      for (const option of options) {
+        const chip = createChip(choices, {
+          label: option.label,
+          pressed: option.value === selected,
+          onClick: () => changeFilter(key, option.value),
+        });
+        chip.dataset.filterKey = key;
+        chip.dataset.filterValue = option.value;
+      }
+      host.append(choices);
+    };
+    renderChipGroup(sessionFilterHost, 'session', [
+      { value: 'all', label: 'all sessions' },
+      ...viewModel.sessions.map(session => ({ value: session.id, label: session.label })),
+    ], filters.session);
+    renderChipGroup(periodFilterHost, 'days', [
+      { value: '7', label: '7 days' },
+      { value: '30', label: '30 days' },
+      { value: 'all', label: 'all time' },
+    ], filters.days);
     for (const [key, value] of Object.entries({ ...filters, view: selectedView })) filterControls[key]?.setValue(value);
     syncPageTokens(page);
   }

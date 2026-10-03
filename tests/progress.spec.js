@@ -19,6 +19,11 @@ test('progress charts the selected solve cohort, shares the Orbit, and preserves
   await expect(page.locator('.progress-chart h3')).toContainText(['long-term ao12', 'recent solves', 'stage averages']);
   // The default source is cube; the manual solve is excluded until the filter changes.
   await expect(page.locator('.progress-chart').nth(1)).toContainText('1 most recent timed solve');
+  await expect(page.getByRole('group', { name: 'session' }).getByRole('button', { name: 'all sessions' })).toHaveAttribute('aria-pressed', 'true');
+  const period = page.getByRole('group', { name: 'period' });
+  await expect(period.getByRole('button', { name: '30 days' })).toHaveAttribute('aria-pressed', 'true');
+  await period.getByRole('button', { name: '7 days' }).click();
+  await expect(period.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.progress-drills')).toContainText('20 answers all time');
   const source = page.getByRole('combobox', { name: 'solve source' });
   await source.click();
