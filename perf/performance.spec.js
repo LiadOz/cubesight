@@ -73,14 +73,22 @@ async function keyboardResponseMs(page) {
   return page.evaluate(async () => {
     const brain = document.querySelector('#brain-view .brain');
     const settings = brain?.querySelector('.b-settings');
+    const panel = settings?.querySelector('.b-settings-body');
     if (!brain) throw new Error('Keyboard sample requires the mounted Brain view.');
-    if (!settings || settings.open) throw new Error('Keyboard sample requires the settings drawer to start closed.');
+    if (!settings || !panel || settings.open) throw new Error('Keyboard sample requires the visible settings drawer to start closed.');
     return new Promise((resolve, reject) => {
       const startedAt = performance.now();
       const observer = new MutationObserver(() => {
         if (!settings.open) return;
         observer.disconnect();
-        requestAnimationFrame(time => resolve(time - startedAt));
+        let frames = 0;
+        const waitForPaint = time => {
+          const rect = panel.getBoundingClientRect();
+          if (settings.open && rect.width > 0 && rect.height > 0 && getComputedStyle(panel).visibility !== 'hidden') resolve(time - startedAt);
+          else if (++frames < 4) requestAnimationFrame(waitForPaint);
+          else reject(new Error('Settings opened but its panel did not become visible.'));
+        };
+        requestAnimationFrame(waitForPaint);
       });
       observer.observe(settings, { attributes: true, attributeFilter: ['open'] });
       window.dispatchEvent(new KeyboardEvent('keydown', { key: ',', bubbles: true }));
