@@ -87,6 +87,7 @@ const familyFor = (route, id) => id === 'results' || id === 'review-detail' ? 'r
 for (const fixture of STATE_FIXTURES) {
   test(`state ${fixture.id} · ${fixture.route}`, async ({ page }, testInfo) => {
     test.setTimeout(180_000);
+    page.setDefaultTimeout(10_000);
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await installShiftObserver(page);
@@ -131,6 +132,7 @@ for (const route of ROUTES) {
     // The 16-cell/theme matrix plus evidence screenshots can exceed Playwright's
     // 20-second default even when a route is healthy.
     test.setTimeout(180_000);
+    page.setDefaultTimeout(10_000);
     await installShiftObserver(page);
     await page.addInitScript(history => {
       localStorage.setItem('cubesight-theme', 'dark');

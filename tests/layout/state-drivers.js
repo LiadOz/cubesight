@@ -103,8 +103,8 @@ registerLayoutDriver('drill-fixture', async page => {
   await expect(page.locator('.quick-round')).toContainText('1 cases left');
 });
 
-registerLayoutDriver('alg-fixture', async page => {
-  await readyForRoute(page, '/algs/oll/1');
+registerLayoutDriver('alg-fixture', async (page, { fixture }) => {
+  await readyForRoute(page, fixture.route);
   const sequence = page.locator('[data-case-sequence]');
   await expect(sequence.locator('[data-sequence="play"]')).toBeVisible();
   await sequence.locator('[data-sequence="next"]').click();
@@ -137,15 +137,18 @@ registerLayoutDriver('manual-timer', async (page, { id, fixture }) => {
 
 registerLayoutDriver('case-colour-fixture', async (page, { fixture }) => {
   await readyForRoute(page, fixture.route);
-  const control = page.locator('[data-case-colours], [data-case-colors], [aria-label*="case colour" i], [aria-label*="case color" i]').first();
-  if (!(await control.count())) throw new Error(`F4 case-colour control is missing (${fixture.colour})`);
-  if (await control.evaluate(el => el.tagName === 'SELECT')) await control.selectOption({ label: fixture.colour });
-  else {
-    await control.click();
-    const choice = page.getByRole('option', { name: fixture.colour, exact: true }).or(page.getByRole('button', { name: fixture.colour, exact: true })).or(page.getByRole('menuitem', { name: fixture.colour, exact: true })).first();
-    if (!(await choice.count())) throw new Error(`case-colour option is missing: ${fixture.colour}`);
-    await choice.click();
+  await page.locator('#algs-view .alg-detail').waitFor({ state: 'visible' });
+  const cycle = page.locator('[data-case-colors]:visible, [data-case-colours]:visible').first();
+  if (await cycle.count()) {
+    await expect(cycle).toBeVisible();
+    for (let i = 0; i < 8 && !(await cycle.innerText()).includes(fixture.colour); i++) await cycle.click();
+    await expect(cycle).toContainText(fixture.colour);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('cubesight-case-color-v1'))).toBe(fixture.colour);
+    return;
   }
+  const select = page.locator('select[aria-label*="case colour" i]:visible, select[aria-label*="case color" i]:visible').first();
+  if (!(await select.count())) throw new Error(`F4 visible case-colour control is missing (${fixture.colour})`);
+  await select.selectOption({ label: fixture.colour });
 });
 
 registerLayoutDriver('orbit-fixture', async page => {
