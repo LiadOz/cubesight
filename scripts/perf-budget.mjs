@@ -51,6 +51,10 @@ export function comparePerformanceReport(report, budgets, requiredMetrics = requ
       failures.push({ metric: name, reason: 'measurement missing or not finite' });
       continue;
     }
+    if (name.startsWith('input.') && measured < 0) {
+      failures.push({ metric: name, measured, reason: 'negative input latency is invalid' });
+      continue;
+    }
     const direction = budget.direction;
     const limit = budget.limit;
     if (!['max', 'min'].includes(direction) || !Number.isFinite(limit)) {

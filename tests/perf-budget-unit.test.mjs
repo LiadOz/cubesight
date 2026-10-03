@@ -29,3 +29,11 @@ test('the performance gate requires budgets for every required scenario and engi
   const failures = comparePerformanceReport({ metrics: {} }, budgets);
   assert.ok(failures.some(({ metric, reason }) => metric === 'startup.routeScriptEncodedBytes' && reason === 'required metric has no committed budget'));
 });
+
+test('performance budgets reject negative input latency measurements', () => {
+  assert.deepEqual(comparePerformanceReport({ metrics: { 'input.keyboardVisualResponseMs': -4.1 } }, {
+    metrics: { 'input.keyboardVisualResponseMs': { direction: 'max', limit: 50 } },
+  }, []), [
+    { metric: 'input.keyboardVisualResponseMs', measured: -4.1, reason: 'negative input latency is invalid' },
+  ]);
+});
