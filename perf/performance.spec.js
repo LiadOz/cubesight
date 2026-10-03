@@ -150,7 +150,7 @@ async function runSolveScenario(page, screenshotPath = null) {
 async function startupSample(page, label) {
   await page.reload();
   await page.locator('#brain-view .brain').waitFor();
-  await page.waitForFunction(() => performance.getEntriesByName('f11-first-meaningful').length > 0);
+  await page.waitForFunction(() => performance.getEntriesByName('f11-first-meaningful').length > 0, undefined, { timeout: 30_000 });
   return page.evaluate((name) => {
     const navigation = performance.getEntriesByType('navigation')[0];
     const meaningful = performance.getEntriesByName('f11-first-meaningful')[0];
@@ -241,7 +241,7 @@ test('captures production-cache startup and deterministic solve/render performan
   await page.goto('/#/solve');
   await page.locator('#brain-view .brain').waitFor();
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller), { timeout: 30_000 });
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller), undefined, { timeout: 30_000 });
   const desktopStartup = await startupSample(page, 'desktop-installed-pwa');
   expect(desktopStartup.controlledByServiceWorker).toBe(true);
 
@@ -345,7 +345,7 @@ test('captures production-cache startup and deterministic solve/render performan
     await page.waitForFunction((id) => {
       const view = document.querySelector(id);
       return view && !view.hidden;
-    }, selector);
+    }, selector, { timeout: 10_000 });
   }
   await cdp.send('HeapProfiler.collectGarbage');
   const afterHeap = (await cdp.send('Runtime.getHeapUsage')).usedSize;
