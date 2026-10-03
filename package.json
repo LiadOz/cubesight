@@ -18,7 +18,11 @@
     "lint:css": "stylelint \"src/**/*.css\"",
     "gallery:coverage": "node scripts/gallery-coverage.mjs",
     "check": "npm run lint && npm run test:unit && npm run build && node scripts/check-no-dev-gallery.mjs && npm run gallery:coverage",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "test:layout": "playwright test --config=playwright.layout.config.js",
+    "test:snapshots": "playwright test --config=playwright.snapshots.config.js",
+    "snapshots:update": "playwright test --config=playwright.snapshots.config.js --update-snapshots",
+    "snapshots:compare": "node scripts/snapshots-compare.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

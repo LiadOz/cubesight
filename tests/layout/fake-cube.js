@@ -1,57 +1,38 @@
-const hookedPages = new WeakSet();
-
-export async function installBrainSnapshotHook(page) {
-  if (hookedPages.has(page)) return;
-  hookedPages.add(page);
-  await page.route('**/src/brain/index.js*', async route => {
-    const response = await route.fetch();
-    const source = await response.text();
-    const anchor = 'view = mountBrainController(root, cubeSession, { createShell, loadStyle, rebuild: mount });';
-    if (!source.includes(anchor)) throw new Error('F9 could not attach the view-model capture hook to the shared Brain controller.');
-    await route.fulfill({
-      response,
-      body: source.replace(anchor, `${anchor}\n    if (globalThis.testBrain) globalThis.testBrain.handle = { getViewModel: () => view?.getViewModel() ?? null, getCubeState: () => view?.getCubeState?.() ?? null };`),
-    });
-  });
-}
+const SOLVED = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
 
 export async function mountFakeCube(page, { delayed = false } = {}) {
-  await installBrainSnapshotHook(page);
-  // Let main.js build the shared header and its one lifetime-owned cube session
-  // before installing the adapter. The actual solve page must consume this same
-  // session so the shared cube chip and the Brain never show different states.
-  await page.goto('/');
-  await page.evaluate(async ({ delayed }) => {
-    const [{ smartCube, setReplayConnectDevice }, { createManualDevice }] = await Promise.all([
-      import('/src/smart-cube-bluetooth.js'), import('/src/recording-replay.js'),
+  await page.goto('/#/solve');
+  await page.evaluate(async ({ delayed, solved }) => {
+    localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: 'orbit' }));
+    const [{ createBrain }, { createSmartCubeSession }] = await Promise.all([
+      import('/src/brain.js'), import('/src/smart-cube-session.js'),
     ]);
-    const device = createManualDevice({ deviceName: 'GAN F8 layout fixture' });
+    let observer;
     let resolveConnection;
     let tick = 0;
-    setReplayConnectDevice(() => delayed
-      ? new Promise(resolve => { resolveConnection = () => resolve(device.connection); })
-      : Promise.resolve(device.connection));
+    const connection = {
+      deviceName: 'GAN F8 layout fixture',
+      protocol: { name: 'GAN Gen4' },
+      capabilities: { facelets: true },
+      events$: { subscribe(value) { observer = value; return { unsubscribe() { observer = null; } }; } },
+      async sendCommand() { queueMicrotask(() => observer?.next({ type: 'FACELETS', facelets: solved })); },
+      async disconnect() {},
+    };
+    const session = createSmartCubeSession(() => delayed ? new Promise(resolve => { resolveConnection = resolve; }) : Promise.resolve(connection));
     const emitTurns = moves => moves.split(/\s+/).filter(Boolean).forEach(raw => {
       if (raw.endsWith('2')) {
-        tick += 1000; device.move(raw[0], tick);
-        tick += 20; device.move(raw[0], tick);
-      } else { tick += 1000; device.move(raw, tick); }
+        tick += 1000; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
+        tick += 20; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
+      } else { tick += 1000; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick }); }
     });
-    const emitTimed = async (moves, gapMs = 24) => {
-      for (const raw of moves.split(/\s+/).filter(Boolean)) {
-        await new Promise(resolve => setTimeout(resolve, Math.max(1, gapMs)));
-        if (raw.endsWith('2')) {
-          tick += 1000; device.move(raw[0], tick);
-          tick += 20; device.move(raw[0], tick);
-        } else { tick += 1000; device.move(raw, tick); }
-      }
-    };
-    window.testBrain = { session: smartCube, device, emitTurns, emitTimed, resolveConnection: () => resolveConnection?.() };
-  }, { delayed });
-  await page.goto('/#/solve');
-  await page.waitForSelector('#brain-view .brain', { state: 'attached' });
-  await page.evaluate(() => { window.testBrain.connectPromise = window.testBrain.session.connect(); });
-  if (!delayed) await page.evaluate(() => window.testBrain.connectPromise);
+    const root = document.querySelector('#brain-view');
+    root.replaceChildren();
+    window.testBrain = { session, emitTurns, resolveConnection: () => resolveConnection?.(connection) };
+    window.testBrain.handle = createBrain(root, session);
+    await window.testBrain.handle.ready;
+    window.testBrain.connectPromise = session.connect();
+    if (!delayed) await window.testBrain.connectPromise;
+  }, { delayed, solved: SOLVED });
 }
 
 export async function startScramble(page, scramble = "R2 D' F2 U B2 L' U2 F") {
