@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { writeFileSync } from 'node:fs';
+import { cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, statfs, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getLayoutMatrix } from '../tests/layout/matrix.js';
 import { FIXTURE_NAMES } from '../src/brain/fixtures.js';
-import { SNAPSHOT_ROUTES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from '../tests/snapshots/capture-matrix.js';
+import { SNAPSHOT_ROUTES, SNAPSHOT_STATES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from '../tests/snapshots/capture-matrix.js';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const snapshotBaselineRelative = path.join('tests', 'snapshots', '__baselines__', path.basename(fileURLToPath(new URL('../tests/snapshots/snapshots.spec.js', import.meta.url)), '.js'));
 const [baseArg, headArg = 'HEAD'] = process.argv.slice(2);
 if (!baseArg) {
   console.error('Usage: npm run snapshots:compare -- <base-ref> [<head-ref>]');
@@ -28,6 +30,23 @@ function run(command, args, cwd) {
   const result = spawnSync(command, args, { cwd, stdio: 'inherit', env: process.env });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${path.basename(command)} ${args.join(' ')} failed in ${cwd} (exit ${result.status ?? result.signal})`);
+}
+
+function runCaptured(command, args, cwd, logFile) {
+  const result = spawnSync(command, args, { cwd, encoding: 'utf8', env: process.env });
+  const output = `${result.stdout || ''}${result.stderr || ''}`;
+  writeFileSync(logFile, output);
+  process.stdout.write(output);
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`${path.basename(command)} ${args.join(' ')} failed in ${cwd} (exit ${result.status ?? result.signal}; log ${logFile})`);
+}
+
+async function requireCaptureSpace(directory) {
+  const { bavail, bsize } = await statfs(directory);
+  const freeBytes = Number(bavail) * Number(bsize);
+  if (freeBytes < 1024 ** 3 && process.env.CUBESIGHT_ALLOW_LOW_DISK !== '1') {
+    throw new Error(`F9 comparison stopped before capture: ${directory} has ${Math.floor(freeBytes / 1024 ** 2)} MiB free; at least 1024 MiB is required. Set CUBESIGHT_ALLOW_LOW_DISK=1 only when the CI artifact mount is provisioned for the run.`);
+  }
 }
 
 function refName(ref, sha) {
@@ -70,7 +89,9 @@ async function overlayHarness(worktree, ref) {
       Promise.resolve(execFileSync('git', ['show', `${ref}:package-lock.json`], { cwd: repo })),
     ]);
     const lockMatches = createHash('sha256').update(localLock).digest('hex') === createHash('sha256').update(refLock).digest('hex');
-    if (lockMatches) {
+    const viteConfig = await readFile(path.join(worktree, 'vite.config.js'), 'utf8').catch(() => '');
+    const allowsResolvedDependencies = viteConfig.includes("fs.realpathSync('./node_modules')");
+    if (lockMatches && allowsResolvedDependencies) {
       await symlink(await realpath(path.join(repo, 'node_modules')), dependencyDirectory, 'dir');
     } else {
       run('npm', ['ci'], worktree);
@@ -126,9 +147,36 @@ async function assertCompleteCapture(directory, label) {
   // Every registered F8 state, selected default F9 routes, and one real replay
   // are captured for all configured viewport/theme pairs with three artifacts.
   const expectedCells = (getLayoutMatrix().states.length + SNAPSHOT_ROUTES.length + 1) * SNAPSHOT_VIEWPORTS.length * SNAPSHOT_THEMES.length;
-  const expected = expectedCells * 3 + FIXTURE_NAMES.length;
-  if (files.length !== expected) {
-    throw new Error(`${label} snapshot run produced ${files.length}/${expected} artifacts; refusing an incomplete comparison.`);
+  const expectedCount = expectedCells * 3 + FIXTURE_NAMES.length;
+  const name = value => String(value).toLowerCase().replaceAll(/[^a-z0-9]+/g, '-').replaceAll(/^-|-$/g, '');
+  const fileSet = new Set();
+  const addCell = (route, state, viewport, theme) => {
+    const cell = name(`${route}-${state}-${viewport.width}x${viewport.height}-${theme}`);
+    fileSet.add(`${cell}.png`);
+    fileSet.add(`${cell}.aria.yml`);
+    fileSet.add(`${cell}.vm.json`);
+  };
+  const statesById = new Map(getLayoutMatrix().states.map(fixture => [fixture.id, fixture]));
+  for (const stateId of SNAPSHOT_STATES) {
+    const fixture = statesById.get(stateId);
+    if (!fixture) throw new Error(`F9 state ${stateId} is missing from the F8 matrix`);
+    for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) addCell(fixture.route, stateId, viewport, theme);
+  }
+  const routesById = new Map(getLayoutMatrix().routes.map(route => [route.id, route]));
+  for (const routeId of SNAPSHOT_ROUTES) {
+    const route = routesById.get(routeId);
+    if (!route) throw new Error(`F9 route ${routeId} is missing from the F8 matrix`);
+    for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) addCell(route.path, 'default', viewport, theme);
+  }
+  for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) addCell('/brain', 'rotation-cross-recording', viewport, theme);
+  for (const fixtureName of FIXTURE_NAMES) fileSet.add(`${name(fixtureName)}.vm.json`);
+  const expected = new Set(fileSet);
+  if (expected.size !== expectedCount) throw new Error(`F9 expected artifact registration collision: ${expected.size}/${expectedCount}`);
+  const actual = new Set(files);
+  const missing = [...expected].filter(filename => !actual.has(filename));
+  const unexpected = [...actual].filter(filename => !expected.has(filename));
+  if (missing.length || unexpected.length) {
+    throw new Error(`${label} snapshot run is incomplete (${actual.size}/${expected.size} artifacts); missing: ${missing.slice(0, 8).join(', ') || 'none'}; unexpected: ${unexpected.slice(0, 8).join(', ') || 'none'}.`);
   }
 }
 
@@ -180,11 +228,15 @@ async function writeGallery(outDir, baseDir, headDir, baseLabel, headLabel) {
   }
 
   const generatedAt = new Date().toISOString();
+  const [viewerCss, viewerJs] = await Promise.all([
+    readFile(path.join(repo, 'docs/design/_gallery/lightbox.css'), 'utf8'),
+    readFile(path.join(repo, 'docs/design/_gallery/lightbox.js'), 'utf8'),
+  ]);
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>F9 snapshot comparison</title>
-<link rel="stylesheet" href="../../docs/design/_gallery/lightbox.css"><style>
+<style>${viewerCss}</style><style>
 *{box-sizing:border-box}body{margin:0;background:#111c22;color:#edf1f2;font:15px/1.5 Manrope,system-ui,sans-serif}header{padding:24px max(20px,calc((100vw - 1400px)/2));background:#15272d;border-bottom:1px solid #476069}h1{font-size:26px;margin:0 0 8px}header p{margin:4px 0;color:#bdc9ca}.summary{color:#71dcc9;font-weight:700}main{max-width:1440px;padding:20px;margin:auto}article{padding:20px;margin:20px 0;border:1px solid #3d555d;border-radius:12px;background:#17262b}h2{font-size:18px;margin:0 0 16px;color:#fff}.visuals{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}figure{margin:0;min-width:0}figcaption{font:12px/1.4 'DM Mono',monospace;color:#aababe;margin-bottom:6px}.visuals img{display:block;width:100%;height:auto;border:1px solid #52656a;border-radius:4px;cursor:zoom-in}.overlay{position:relative;aspect-ratio:16/9;background:#fff;overflow:hidden}.overlay img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border:0;mix-blend-mode:difference}.missing{color:#e5b979}.text-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}details{margin-top:12px}summary{cursor:pointer;color:#86d9ca}pre{max-height:440px;overflow:auto;padding:12px;background:#0e171b;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:700px){.text-pair{grid-template-columns:1fr}}
-</style></head><body><header><h1>F9 snapshot comparison</h1><p><b>base:</b> ${escapeHtml(baseLabel)}</p><p><b>head:</b> ${escapeHtml(headLabel)}</p><p class="summary">${changed.length ? `${byCell.size} changed cells · ${changed.length} changed artifacts` : 'No changes across captured cells'}</p><p>Generated ${escapeHtml(generatedAt)} · click an image to zoom; use ←/→ in the shared viewer.</p></header><main>${cards.join('\n') || '<p>No changed cells.</p>'}</main><script src="../../docs/design/_gallery/lightbox.js"></script></body></html>`;
+</style></head><body><header><h1>F9 snapshot comparison</h1><p><b>base:</b> ${escapeHtml(baseLabel)}</p><p><b>head:</b> ${escapeHtml(headLabel)}</p><p class="summary">${changed.length ? `${byCell.size} changed cells · ${changed.length} changed artifacts` : 'No changes across captured cells'}</p><p>Generated ${escapeHtml(generatedAt)} · click an image to zoom; use ←/→ in the shared viewer.</p></header><main>${cards.join('\n') || '<p>No changed cells.</p>'}</main><script>${viewerJs.replaceAll('</script', '<\\/script')}</script></body></html>`;
   await writeFile(path.join(outDir, 'index.html'), html);
   return { changedCells: byCell.size, changedArtifacts: changed.length };
 }
@@ -193,8 +245,16 @@ const baseCommit = resolveRef(baseArg);
 const headCommit = resolveRef(headArg);
 const baseLabel = `${baseArg} (${baseCommit.slice(0, 8)})`;
 const headLabel = `${headArg} (${headCommit.slice(0, 8)})`;
-const agentsRoot = path.resolve(repo, '../..');
-const tempRoot = await mkdtemp(path.join(agentsRoot, 'worktrees', 'cubesight-f9-compare-'));
+const commonGitDirectory = git(['rev-parse', '--path-format=absolute', '--git-common-dir']);
+const repositoryRoot = path.dirname(commonGitDirectory);
+const agentsWorktreesRoot = path.join(repositoryRoot, '.agents', 'worktrees');
+await mkdir(agentsWorktreesRoot, { recursive: true });
+const artifactsRoot = path.resolve(process.env.CUBESIGHT_ARTIFACTS_ROOT || path.join(repositoryRoot, '.agents', 'artifacts', 'f9-comparison'));
+await mkdir(artifactsRoot, { recursive: true });
+await requireCaptureSpace(agentsWorktreesRoot);
+await requireCaptureSpace(artifactsRoot);
+const tempRoot = await mkdtemp(path.join(agentsWorktreesRoot, 'cubesight-f9-compare-'));
+const comparisonRoot = await mkdtemp(path.join(artifactsRoot, 'snapshot-compare-'));
 const refs = [
   { side: 'base', ref: baseCommit, dir: path.join(tempRoot, refName(baseArg, baseCommit)) },
   { side: 'head', ref: headCommit, dir: path.join(tempRoot, refName(headArg, headCommit)) },
@@ -207,14 +267,15 @@ try {
     registered.push(entry.dir);
     await overlayHarness(entry.dir, entry.ref);
     const playwright = path.join(entry.dir, 'node_modules', 'playwright', 'cli.js');
-    run(process.execPath, [playwright, 'test', '--config=playwright.snapshots.config.js', '--update-snapshots'], entry.dir);
-    await assertCompleteCapture(path.join(entry.dir, 'tests/snapshots/__baselines__/snapshots.spec'), entry.side);
+    const runOutput = path.join(comparisonRoot, 'runs', entry.side);
+    await mkdir(runOutput, { recursive: true });
+    runCaptured(process.execPath, [playwright, 'test', '--config=playwright.snapshots.config.js', '--update-snapshots', `--output=${runOutput}`], entry.dir, path.join(comparisonRoot, `${entry.side}-playwright.log`));
+    await assertCompleteCapture(path.join(entry.dir, snapshotBaselineRelative), entry.side);
   }
 
-  const output = path.join(repo, 'test-results', 'snapshot-compare');
-  await rm(output, { recursive: true, force: true });
-  const baseArtifacts = path.join(refs[0].dir, 'tests/snapshots/__baselines__/snapshots.spec.js');
-  const headArtifacts = path.join(refs[1].dir, 'tests/snapshots/__baselines__/snapshots.spec.js');
+  const output = path.join(comparisonRoot, 'gallery');
+  const baseArtifacts = path.join(refs[0].dir, snapshotBaselineRelative);
+  const headArtifacts = path.join(refs[1].dir, snapshotBaselineRelative);
   const baseOut = path.join(output, 'base'), headOut = path.join(output, 'head');
   await mkdir(baseOut, { recursive: true });
   await mkdir(headOut, { recursive: true });

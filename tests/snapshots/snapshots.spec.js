@@ -4,23 +4,11 @@ import { FIXTURE_NAMES, brainFixtures } from '../../src/brain/fixtures.js';
 import { getLayoutDriver, getLayoutMatrix } from '../layout/matrix.js';
 import { HISTORY_SEED } from '../layout/fixtures/state-seeds.js';
 import { installBrainSnapshotHook } from '../layout/fake-cube.js';
-import { SNAPSHOT_ROUTES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from './capture-matrix.js';
+import { SNAPSHOT_ROUTES, SNAPSHOT_STATES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from './capture-matrix.js';
 import '../layout/state-drivers.js';
 
 const FIXED_TIME = new Date('2026-01-15T12:00:00.000Z');
 const FIXED_NOW = FIXED_TIME.getTime();
-const SNAPSHOT_STATES = [
-  'idle', 'connecting', 'guided-scramble', 'wrong-turn', 'inspection', 'inspection-overtime', 'solving', 'results',
-  'review-detail', 'replay-midway', 'drill-midround', 'alg-playback-midway', 'crowded-markers',
-  'timer-inspection', 'timer-running', 'timer-results', 'case-colour-yellow-top',
-  'case-colour-white-top', 'case-colour-dual', 'case-colour-neutral', 'case-colour-fixed',
-  'goal-unset', 'goal-insufficient', 'goal-progress', 'goal-reached',
-  'settings-open', 'debug-open', 'connection-menu-open',
-  'f1-idle', 'f1-connecting-full', 'f1-guided-scramble-current-progress', 'f1-wrong-turn-undo',
-  'f1-inspection-normal', 'f1-inspection-plus2', 'f1-inspection-dnf-ticks', 'f1-solving-fill',
-  'f1-live-results', 'f1-case-choices', 'f1-staged-detail-comparison', 'f1-marker-detail',
-  'f1-settings-open', 'f1-past-results-review-deeplink', 'demo-playback-midway',
-];
 const MATRIX_ROUTES = getLayoutMatrix().routes;
 const ROUTE_BY_ID = new Map(MATRIX_ROUTES.map(route => [route.id, route]));
 const ROUTE_BY_PATH = new Map(MATRIX_ROUTES.map(route => [route.path, route]));
