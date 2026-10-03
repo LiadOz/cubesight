@@ -12,6 +12,9 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, fix
     const previousCanvas = window.testBrain?.root?.querySelector('.b-cube-wrap canvas') ?? null;
     window.testBrain?.handle?.detach?.();
     if (previousCanvas?.isConnected) throw new Error('Previous Brain renderer canvas survived detach.');
+    if (fixture && window.__f11PendingAnimationFrames?.() !== 0) {
+      throw new Error(`Brain teardown left ${window.__f11PendingAnimationFrames()} animation frame callback(s) pending.`);
+    }
     if (!keepStorage) localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
     const { createBrain } = await import('/src/brain.js');
