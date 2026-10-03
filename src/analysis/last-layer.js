@@ -132,7 +132,7 @@ function pauseBefore(segmentation, nextIndex) {
   return (segmentation.pauses ?? []).find(pause => pause.i === nextIndex && pause.excessMs > 0) ?? null;
 }
 
-function lookReport({ segmentation, kind, start, end, originalCase, stateAt, caseAt, settings, expectedBoundary }) {
+function lookReport({ segmentation, kind, start, end, originalCase, stateAt, caseAt, settings, expectedBoundary, completeAlg }) {
   const configured = settings?.[kind] === '1look' ? 1 : 2;
   const moves = segmentation.normalized.moves;
   const observations = [];
@@ -145,7 +145,10 @@ function lookReport({ segmentation, kind, start, end, originalCase, stateAt, cas
       const pause = pauseBefore(segmentation, index + 1);
       const prefix = prefixAlg(originalCase, moves.slice(start, index + 1));
       const knownBoundary = expectedBoundary?.has(index);
-      const evidence = knownBoundary ? 'configured-look' : pause ? 'pause' : prefix ? 'known-alg-prefix' : null;
+      // A pause inside a complete, catalog-verified solution is not evidence
+      // of a second recognition. Algorithms often pass through other catalog
+      // cases on their way to solving the original case.
+      const evidence = knownBoundary ? 'configured-look' : completeAlg ? null : pause ? 'pause' : prefix ? 'known-alg-prefix' : null;
       observations.push({ caseId, name: caseRow.name ?? caseId, at: index, ...(pause ? { pauseMs: Math.round(pause.gapMs) } : {}),
         ...(prefix ? { recognizedAlg: prefix.id, recognizedAlgMoves: prefix.moves } : {}), evidence });
     }
@@ -155,7 +158,7 @@ function lookReport({ segmentation, kind, start, end, originalCase, stateAt, cas
   const extraCandidates = observations.filter(row => row.evidence && row.evidence !== 'configured-look');
   const looksTaken = 1 + configuredBoundaries + extraCandidates.length;
   const extraLook = looksTaken > configured;
-  const likelyExtraLook = observations.some(row => !row.evidence);
+  const likelyExtraLook = !completeAlg && observations.some(row => !row.evidence);
   return { configured, looksTaken, extraLook, likelyExtraLook, looks: observations };
 }
 
@@ -184,6 +187,7 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
 
   if (ollCase && Number.isInteger(limits.ollEnd) && limits.ollStart <= segmentation.moves.length) {
     const usedMoves = segmentation.normalized.moves.slice(limits.ollStart, limits.ollEnd + 1);
+    const recognizedAlg = matchingAlg(ollCase, usedMoves);
     const used = metric(usedMoves.join(' '));
     const pattern = puzzle.defaultPattern().applyAlg(ollSetup.join(' '));
     const best = bestOll(ollCase, pattern);
@@ -200,7 +204,7 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
       ollStates[index] = { state: walkState, pattern: walkPattern };
     }
     const ollLook = lookReport({ segmentation, kind: 'oll', start: limits.ollStart, end: limits.ollEnd,
-      originalCase: ollCase, settings: config, expectedBoundary: (config?.oll ?? '2look') === '2look' ? new Set([segmentation.marks.eoIdx]) : new Set(),
+      originalCase: ollCase, settings: config, completeAlg: recognizedAlg, expectedBoundary: (config?.oll ?? '2look') === '2look' ? new Set([segmentation.marks.eoIdx]) : new Set(),
       stateAt: index => ollStates[index]?.state,
       caseAt: (state, index) => {
         if (!crossSolved(state, 'D') || solvedPairs(state, 'D').length !== 4) return null;
@@ -209,7 +213,7 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
       } });
     out.oll = { caseId: ollCase.id, name: ollCase.name, number: ollCase.number ?? null, from: limits.ollStart, to: Math.max(limits.ollStart - 1, limits.ollEnd),
       used: { moves: string(usedMoves), stm: used.stm, etm: used.etm }, best, better,
-      recognizedAlg: (() => { const alg = matchingAlg(ollCase, usedMoves); return alg ? { id: alg.id, moves: alg.moves } : null; })(), ...ollLook, ...measured };
+      recognizedAlg: recognizedAlg ? { id: recognizedAlg.id, moves: recognizedAlg.moves } : null, ...ollLook, ...measured };
   }
 
   if (Number.isInteger(limits.pllStart) && limits.pllStart <= segmentation.moves.length) {
@@ -220,6 +224,7 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
     if (caseRow) {
       const usedMoves = segmentation.normalized.moves.slice(limits.pllStart, limits.pllEnd + 1);
       const parts = actualPllParts(usedMoves);
+      const recognizedAlg = matchingAlg(caseRow, parts.core);
       const usedCore = metric(parts.core.join(' '));
       const usedTotal = metric(usedMoves.join(' '));
       const best = bestPllFromState(canonical, caseRow);
@@ -237,14 +242,14 @@ export async function evaluateLastLayer(segmentation, { kpuzzle = null, caseRows
       }
       const pllCatalog = new Map(caseRows.filter(row => row.set === 'pll').map(row => [row.id, row]));
       const pllLook = lookReport({ segmentation, kind: 'pll', start: limits.pllStart, end: limits.pllEnd,
-        originalCase: caseRow, settings: config, expectedBoundary: (config?.pll ?? '2look') === '2look' ? new Set([segmentation.marks.cpIdx]) : new Set(),
+        originalCase: caseRow, settings: config, completeAlg: recognizedAlg, expectedBoundary: (config?.pll ?? '2look') === '2look' ? new Set([segmentation.marks.cpIdx]) : new Set(),
         stateAt: index => pllStates[index],
         caseAt: (state, index) => crossSolved(state, 'D') && solvedPairs(state, 'D').length === 4 && eoSolved(state, 'D') && coSolved(state, 'D')
           ? pllCatalog.get(`pll/${identifyPllCase(state)?.name ?? ''}`) ?? null : null });
       out.pll = { caseId: caseRow.id, name: caseRow.name, from: limits.pllStart, to: Math.max(limits.pllStart - 1, limits.pllEnd),
         used: { moves: string(usedMoves), core: string(parts.core), stm: usedTotal.stm, coreStm: usedCore.stm, auf: string([...parts.pre, ...parts.post]), aufStm: actualAufStm },
         best, better, extraAuf,
-        recognizedAlg: (() => { const alg = matchingAlg(caseRow, parts.core); return alg ? { id: alg.id, moves: alg.moves } : null; })(),
+        recognizedAlg: recognizedAlg ? { id: recognizedAlg.id, moves: recognizedAlg.moves } : null,
         ...pllLook, ...measured };
     }
   }

@@ -204,6 +204,19 @@ test('a clean one-look OLL does not count canonical states inside its algorithm 
   assert.equal(saved.lastLayer.oll.recognizedAlg.id, result.oll.recognizedAlg.id);
 });
 
+test('a pause at an intermediate case inside a recognized single OLL alg is not another look', async () => {
+  const row = getCase('oll/41');
+  const moves = row.algs.find(alg => alg.id === 's.oll.41.1').moves.split(' ');
+  const pauseAt = 8;
+  const times = moves.map((_, i) => 500 + i * 100 + (i >= pauseAt ? 1100 : 0));
+  const segmentation = segmentSolve({ scramble: row.setup, moves, moveTimes: times, crossFace: 'D' });
+  const result = await evaluateLastLayer(segmentation, { config: { oll: '1look', pll: '1look' } });
+  assert.equal(result.oll.recognizedAlg.id, 's.oll.41.1');
+  assert.equal(result.oll.looksTaken, 1);
+  assert.equal(result.oll.extraLook, false);
+  assert.equal(result.oll.likelyExtraLook, false);
+});
+
 test('repeating a U-perm reaches a second PLL case; a pause corroborates the extra look', async () => {
   const start = getCase('pll/Gb');
   const uPerm = getCase('pll/Ua').algs.find(alg => alg.verified && alg.moves.split(/\s+/).every(move => /^[URFDLB](?:2|')?$/.test(move))).moves.split(' ');
