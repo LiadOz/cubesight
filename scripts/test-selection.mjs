@@ -31,6 +31,15 @@ export function changedTestInputs(previous, current) {
   return [...files].filter((file) => previous[file] !== current[file]).sort();
 }
 
+export function impactMapAgeMs(impactMap, now = Date.now()) {
+  const generatedAt = impactMap?.generatedAt ? Date.parse(impactMap.generatedAt) : NaN;
+  const captures = Object.values(impactMap?.coverageCapturedAt ?? {}).map((timestamp) => Date.parse(timestamp));
+  const oldest = captures.length
+    ? (captures.every(Number.isFinite) ? Math.min(...captures) : NaN)
+    : generatedAt;
+  return Number.isFinite(oldest) ? now - oldest : Infinity;
+}
+
 export function buildPlaywrightSelection({ wholeSpecs = [], coverageEntries = [], testCases = {} }) {
   const allSpecs = new Set(wholeSpecs);
   const casesBySpec = new Map();
