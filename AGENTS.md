@@ -6,7 +6,8 @@ Read this before doing anything in this repository. It applies to every agent (C
 - **Never modify the main checkout** `/home/loz/projects/cubesight` directly. It is the user's live checkout and dev server. Do not create, edit or delete files there; do not run `npm ci`/`npm install`, builds, tests or servers there; never delete or move its `node_modules`.
 - Work in **your own git worktree** (e.g. `git worktree add ../cubesight-<task> -b <branch> feature/smart-cube-guidance`) or the isolated worktree you were given. Branch from the tip of `feature/smart-cube-guidance`.
 - Dependencies in your worktree: install there, or symlink read-only: `ln -s /home/loz/projects/cubesight/node_modules node_modules`. Vite in a worktree needs `server.fs.allow` for that path.
-- Scratch files (local configs, logs, temporary specs) live in your worktree (untracked) or in `/tmp`, never in the main checkout.
+- **Put worktrees and test artifacts in `/home/loz/projects/cubesight/.agents/`** (`worktrees/`, `artifacts/`). This is the ONE exception to the rule above: it is gitignored, it is host-backed (about 511 GB free) and it is already visible inside the sandboxes, whereas a sandbox's own filesystem is a 20 GB overlay that has repeatedly filled to 99% and caused browser crashes, lost test output and stalled runs. Never put them on `/tmp` or in sandbox-local paths such as `/home/loz/projects/cubesight-<something>`. Check with `df -h <your actual output path>` before a long run: it must show the 924 GB host filesystem, not a 20 GB overlay.
+- Scratch files (local configs, logs, temporary specs) live in your worktree (untracked) or under `.agents/artifacts/`, never loose in the main checkout.
 - **Port 5173 belongs to the user.** Use another free port for dev servers and tests.
 
 ## 2. Commits and merges

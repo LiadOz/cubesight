@@ -14,3 +14,6 @@ playwright-report/
 # Local smart-cube recordings (anonymized, but bulky and user-specific)
 /recordings/*
 !/recordings/README.md
+
+# Host-backed root for agent worktrees and test artifacts (never committed)
+/.agents/
