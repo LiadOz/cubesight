@@ -198,7 +198,7 @@ test('captures production-cache startup and deterministic solve/render performan
   await startFrameSample(page, 12_000);
   await playSolve(page, GOLD.normal.scramble, GOLD.normal.moves, { brain: '#brain-view', base: 14 });
   const resultsShownAt = await page.evaluate(() => performance.now());
-  await page.locator('#brain-view .b-rev-chip').first().waitFor({ timeout: 30_000 });
+  await page.locator('#brain-view .b-oring-markers [data-marker]').first().waitFor({ state: 'visible', timeout: 30_000 });
   brain.analysisResultsMs = await page.evaluate((startedAt) => performance.now() - startedAt, resultsShownAt);
   const screenshotPath = path.join(outputDir, 'solve-results.png');
   await page.screenshot({ path: screenshotPath, fullPage: true });
