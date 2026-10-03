@@ -101,14 +101,26 @@ test('captures production-cache startup and deterministic solve/render performan
       new PerformanceObserver((list) => window.__f11LongTasks.push(...list.getEntries().map((entry) => ({ startTime: entry.startTime, durationMs: entry.duration })))).observe({ type: 'longtask', buffered: true });
     } catch { /* longtask entries are not available in every Chromium build */ }
     const mark = () => {
-      if (document.querySelector('#brain-view .brain') && !performance.getEntriesByName('f11-first-meaningful').length) {
-        performance.mark('f11-first-meaningful');
+      const brain = document.querySelector('#brain-view .brain');
+      const canvas = brain?.querySelector('.b-cube-wrap canvas');
+      const visible = node => {
+        if (!node) return false;
+        const rect = node.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && getComputedStyle(node).visibility !== 'hidden';
+      };
+      if (visible(brain) && visible(canvas) && canvas.width > 0 && canvas.height > 0
+        && !performance.getEntriesByName('f11-first-meaningful').length && !window.__f11MeaningfulPending) {
+        window.__f11MeaningfulPending = true;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (visible(brain) && visible(canvas)) performance.mark('f11-first-meaningful');
+          window.__f11MeaningfulPending = false;
+        }));
       }
     };
     new MutationObserver(mark).observe(document, { subtree: true, childList: true } );
   });
 
-  const cdp = await page.context().newCDPSession(page);
+  const startupCdp = await page.context().newCDPSession(page);
   const browserVersion = browser.version();
   const environment = {
     browserVersion,
@@ -129,10 +141,24 @@ test('captures production-cache startup and deterministic solve/render performan
   const desktopStartup = await startupSample(page, 'desktop-installed-pwa');
   expect(desktopStartup.controlledByServiceWorker).toBe(true);
 
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  await startupCdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   await page.setViewportSize({ width: 390, height: 844 });
   const phoneStartup = await startupSample(page, 'phone-installed-pwa-cpu-x4');
   expect(phoneStartup.controlledByServiceWorker).toBe(true);
+
+  await startupCdp.detach();
+  const scenarioContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await scenarioContext.addInitScript(() => {
+    window.__f11LongTasks = [];
+    try {
+      new PerformanceObserver((list) => window.__f11LongTasks.push(...list.getEntries().map((entry) => ({ startTime: entry.startTime, durationMs: entry.duration })))).observe({ type: 'longtask', buffered: true });
+    } catch { /* longtask entries are not available in every Chromium build */ }
+  });
+  page = await scenarioContext.newPage();
+  await page.goto('http://127.0.0.1:4177/#/solve');
+  const cdp = await page.context().newCDPSession(page);
+  const scenarioEnvironment = { origin: 'Vite development server at http://127.0.0.1:4177', metricsAreProduction: false };
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
 
   const brain = {};
   await mountTestBrain(page, 'orbit', { route: true });
@@ -204,6 +230,7 @@ test('captures production-cache startup and deterministic solve/render performan
     generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA ?? null,
     environment,
+    scenarioEnvironment,
     scenarios: {
       startupDesktop: desktopStartup,
       startupPhone: phoneStartup,
