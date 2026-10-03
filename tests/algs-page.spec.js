@@ -12,10 +12,19 @@ test('curated OLL case page shows verified sources, setup repaint, picked alg an
   await expect(page.locator('.alg-entry a').first()).toHaveAttribute('href', /speedsolving\.com/);
   await page.locator('[data-pick]').last().click();
   await expect(page.locator('.alg-entry.is-picked')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Start no-cube drill' }).click();
-  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  const startDrill = page.getByRole('button', { name: 'Start no-cube drill' });
+  await expect(startDrill).toHaveClass(/btn--primary/);
+  await startDrill.click();
+  const start = page.getByRole('button', { name: 'Start', exact: true });
+  const done = page.getByRole('button', { name: 'Done', exact: true });
+  await expect(start).toHaveClass(/btn--primary/);
+  await start.click();
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAttribute('aria-disabled', 'true');
+  await expect(done).toBeEnabled();
+  await expect(done).not.toHaveAttribute('aria-disabled', 'true');
   await page.waitForTimeout(20);
-  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await done.click();
   await expect(page.locator('[data-drill-result]')).toContainText('Recorded');
 });
 

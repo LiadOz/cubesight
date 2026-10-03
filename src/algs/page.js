@@ -11,6 +11,7 @@ import { loadSettings } from '../brain/settings.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
 import { algorithmMetrics } from './notation.js';
+import { createButton } from '../ui/shared/index.js';
 import '../pages/page.css';
 import './page.css';
 
@@ -34,6 +35,27 @@ function routeSelection(hash = location.hash) {
 }
 
 const supportsVirtualRepaint = row => ['oll', 'pll', 'oll2'].includes(row?.set);
+
+function adoptActionButtons(scope) {
+  scope.querySelectorAll('button').forEach(previous => {
+    if (previous.closest('.sequence-player') || previous.classList.contains('btn')) return;
+    const primary = previous.matches('[data-action="start-case-drill"], [data-action="start-cube-drill"], [data-action="save-alg"], [data-action="drill-start"]');
+    const button = createButton(previous.parentElement, { label: previous.textContent.trim(), variant: primary ? 'primary' : 'secondary', disabled: previous.disabled, size: previous.matches('[data-action="close-drill"]') ? 's' : '' });
+    for (const attribute of previous.attributes) {
+      if (['class', 'type', 'disabled'].includes(attribute.name)) continue;
+      button.setAttribute(attribute.name, attribute.value);
+    }
+    if (previous.disabled) button.disabled = true;
+    previous.replaceWith(button);
+  });
+}
+
+function setActionDisabled(button, disabled) {
+  if (!button) return;
+  button.disabled = disabled;
+  if (disabled) button.setAttribute('aria-disabled', 'true');
+  else button.removeAttribute('aria-disabled');
+}
 
 function caseCard(row) {
   const count = row.algs.length;
@@ -112,6 +134,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     sequencePlayer?.destroy(); sequencePlayer = null;
     cubeView?.destroy(); cubeView = null;
     root.innerHTML = caseData ? caseDetail(caseData) : browser(set);
+    adoptActionButtons(root);
     const shell = root.querySelector('.alg-page');
     if (shell) { shell.dataset.brainStyle = loadSettings(storage).style; syncPageTokens(shell); }
     if (caseData) {
@@ -143,6 +166,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       if (personalSection && personal.length) {
         personalSection.hidden = false;
         personalSection.innerHTML = `<h2>Your algorithms</h2><div class="alg-entry-grid">${personal.map((alg, index) => `<article class="alg-entry ${pick?.algId === alg.id ? 'is-picked' : ''}" data-alg-entry="${esc(alg.id)}"><div class="alg-entry__top"><strong>Personal ${index + 1}</strong><span>${alg.verified ? 'verified' : 'Failed verification · excluded from matching'}</span></div><code>${esc(fmt.moves(alg.moves))}</code><p>${safeHttpUrl(alg.source?.url) ? `Credit: ${esc(alg.credit ?? alg.source.name)} · <a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">Source (needs internet)</a>` : 'Added on this device.'}</p><div class="alg-entry__actions"><button type="button" data-pick="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Choose this alg</button><button type="button" data-drill-alg="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Drill</button></div></article>`).join('')}</div>`;
+        adoptActionButtons(personalSection);
       }
       refreshCubeStatus();
       if (drill) void startDrill(pick?.algId, cubeSnapshot.phase === 'tracking' ? supportsVirtualRepaint(caseData) && repaintReady ? 'repeat' : 'smart' : 'self');
@@ -175,6 +199,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     session.start({ algId });
     const panel = root.querySelector('[data-drill]');
     panel.innerHTML = drillMarkup(caseData, alg, mode); panel.hidden = false;
+    adoptActionButtons(panel);
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
@@ -189,7 +214,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     const repaint = supportsVirtualRepaint(row) && repaintReady && tracking && f2lStateIntact(snapshot.state);
     const f2lComplete = row?.set === 'f2l' && session?.state.phase === 'results' && session.state.lastAttempt?.clean;
     status.textContent = !tracking ? (snapshot.detail || 'Connect your smart cube to begin.') : repaint ? 'Virtual repaint ready. The physical cube stays in place for the next last-layer case.' : atSetup ? 'Cube matches this case. Start when ready.' : f2lComplete ? 'F2L round complete. Set up this case again before another round.' : 'Turn your cube until it matches the virtual case setup.';
-    start.disabled = !(atSetup || repaint);
+    setActionDisabled(start, !(atSetup || repaint));
   }
 
   async function connectCube() {
@@ -282,12 +307,12 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     if (action === 'drill-start') {
       sequencePlayer?.pause();
       session?.start({ startedAt: performance.now() }); const started = performance.now();
-      root.querySelector('[data-action="drill-start"]').disabled = true; root.querySelector('[data-action="drill-done"]').disabled = false;
+      setActionDisabled(root.querySelector('[data-action="drill-start"]'), true); setActionDisabled(root.querySelector('[data-action="drill-done"]'), false);
       tick = setInterval(() => { const node = root.querySelector('[data-timer]'); if (node) node.textContent = `${((performance.now() - started) / 1000).toFixed(1)} s`; }, 100);
     }
     if (action === 'drill-done') {
       stopTimer(); const result = await session?.completeSelf(performance.now());
-      root.querySelector('[data-action="drill-start"]').disabled = false; root.querySelector('[data-action="drill-done"]').disabled = true;
+      setActionDisabled(root.querySelector('[data-action="drill-start"]'), false); setActionDisabled(root.querySelector('[data-action="drill-done"]'), true);
       root.querySelector('[data-drill-result]').textContent = result ? `Recorded ${result.metrics.executionMs} ms${result.pbMs === result.metrics.executionMs ? ' · PB (all-time)' : ''}.` : '';
       const alg = session?.selectedAlg;
       if (result && alg && sequencePlayer) {
