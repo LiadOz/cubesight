@@ -6,11 +6,12 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, fix
   // keeps performance scenarios to one controller and one renderer at a time.
   if (!fixture) await page.goto(route ? '/#/brain' : '/');
   if (fixture || route) await page.waitForSelector('#brain-view', { state: 'attached' });
-  await page.evaluate(async ({ style, route, settings, keepStorage, connectDelayMs, awaitConnect }) => {
+  await page.evaluate(async ({ style, route, fixture, settings, keepStorage, connectDelayMs, awaitConnect }) => {
     // The fixture can be remounted on the same SPA route; stop its previous
     // RAF, WebGL renderer, and session subscription before replacing its DOM.
     const previousCanvas = window.testBrain?.root?.querySelector('.b-cube-wrap canvas') ?? null;
     window.testBrain?.handle?.detach?.();
+    if (fixture) await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     if (previousCanvas?.isConnected) throw new Error('Previous Brain renderer canvas survived detach.');
     if (fixture && window.__f11PendingAnimationFrames?.() !== 0) {
       throw new Error(`Brain teardown left ${window.__f11PendingAnimationFrames()} animation frame callback(s) pending.`);
@@ -69,9 +70,20 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, fix
     };
     const emitMeasuredTurn = async raw => {
       const eventAt = performance.now();
+      const canvas = window.testBrain.root.querySelector('.b-cube-wrap canvas');
+      const animationStarted = new Promise((resolve, reject) => {
+        let observer;
+        const timer = setTimeout(() => { observer?.disconnect(); reject(new Error('Live move did not reach the Cube animation start.')); }, 5000);
+        observer = new MutationObserver(() => {
+          const startedAt = performance.now();
+          if (canvas.hasAttribute('data-turning-face')) { clearTimeout(timer); observer.disconnect(); resolve(startedAt); }
+        });
+        observer.observe(canvas, { attributes: true, attributeFilter: ['data-turning-face'] });
+      });
       emitTurn(raw);
+      const animationAt = await animationStarted;
       const frameAt = await new Promise(resolve => requestAnimationFrame(resolve));
-      return { eventToFrameMs: frameAt - eventAt, frameAt };
+      return { eventToAnimationStartMs: animationAt - eventAt, eventToFirstFrameMs: frameAt - eventAt, frameAt };
     };
     window.testBrain = { session, emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn), emitTimed, emitGyroBurst, emitMeasuredTurn };
     const root = route ? document.querySelector('#brain-view') : document.createElement('div');
@@ -85,7 +97,7 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, fix
     const connecting = session.connect();
     window.testBrain.connecting = connecting;
     if (awaitConnect) await connecting;
-  }, { style, route, settings, keepStorage, connectDelayMs, awaitConnect });
+  }, { style, route, fixture, settings, keepStorage, connectDelayMs, awaitConnect });
 }
 
 /** Start a guided scramble from the advanced "use a specific scramble" box. */

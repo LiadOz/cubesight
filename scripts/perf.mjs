@@ -10,9 +10,13 @@ const reportPath = path.join(outputDir, 'report.json');
 const browserReportPath = path.join(outputDir, 'playwright-report.json');
 await mkdir(outputDir, { recursive: true });
 
-const storageCheck = spawnSync('df', ['-h', outputDir], { cwd: root, encoding: 'utf8' });
-if (storageCheck.status !== 0 || !storageCheck.stdout.includes('host')) {
-  throw new Error(`Performance output must be on the host-backed artifact filesystem.\n${storageCheck.stdout}${storageCheck.stderr}`);
+const storageCheck = spawnSync('df', ['-Pk', outputDir], { cwd: root, encoding: 'utf8' });
+const storageRow = storageCheck.stdout.trim().split('\n').at(-1)?.trim().split(/\s+/) ?? [];
+const availableKb = Number(storageRow[3]);
+const allowCiStorage = process.env.CUBESIGHT_PERF_ALLOW_NON_HOST_ARTIFACTS === '1';
+const isHostBacked = storageRow[0] === 'host';
+if (storageCheck.status !== 0 || (!isHostBacked && !allowCiStorage) || (allowCiStorage && availableKb < 10 * 1024 * 1024)) {
+  throw new Error(`Performance output needs the host-backed artifact filesystem locally; CI may set CUBESIGHT_PERF_ALLOW_NON_HOST_ARTIFACTS=1 when at least 10 GiB are free.\n${storageCheck.stdout}${storageCheck.stderr}`);
 }
 const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
 
@@ -43,6 +47,7 @@ const report = {
   generatedAt: new Date().toISOString(),
   commit,
   environment: browser.environment,
+  scenarioEnvironment: browser.scenarioEnvironment,
   metrics,
   scenarios: browser.scenarios,
   engine: {

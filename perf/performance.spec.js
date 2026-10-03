@@ -3,15 +3,15 @@ import path from 'node:path';
 import os from 'node:os';
 import { expect, test } from 'playwright/test';
 import { GOLD } from '../tests/analysis-golden.mjs';
-import { mountTestBrain, playSolve } from '../tests/helpers/fake-brain.js';
+import { mountTestBrain, startGuidedScramble } from '../tests/helpers/fake-brain.js';
 
 const outputDir = path.resolve('test-results/perf');
 
-async function startFrameSample(page, durationMs) {
-  await page.evaluate((duration) => {
+async function startFrameSample(page, durationMs, key = '__f11FrameSample') {
+  await page.evaluate(({ duration, sampleKey }) => {
     const sample = { startedAt: performance.now(), frames: [], done: false };
     sample.stop = () => { sample.done = true; };
-    window.__f11FrameSample = sample;
+    window[sampleKey] = sample;
     const step = (time) => {
       if (sample.done) return;
       sample.frames.push(time);
@@ -19,13 +19,13 @@ async function startFrameSample(page, durationMs) {
       else sample.done = true;
     };
     requestAnimationFrame(step);
-  }, durationMs);
+  }, { duration: durationMs, sampleKey: key });
 }
 
-async function finishFrameSample(page, durationMs) {
-  await page.waitForFunction(() => window.__f11FrameSample?.done, { timeout: durationMs + 10_000 });
-  return page.evaluate(() => {
-    const frames = window.__f11FrameSample.frames;
+async function finishFrameSample(page, durationMs, key = '__f11FrameSample') {
+  await page.waitForFunction(name => window[name]?.done, key, { timeout: durationMs + 10_000 });
+  return page.evaluate(name => {
+    const frames = window[name].frames;
     const deltas = frames.slice(1).map((time, index) => time - frames[index]);
     const sorted = [...deltas].sort((a, b) => a - b);
     return {
@@ -34,17 +34,116 @@ async function finishFrameSample(page, durationMs) {
       fps: frames.length > 1 ? (frames.length - 1) * 1000 / (frames.at(-1) - frames[0]) : 0,
       p95FrameMs: sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)] ?? null,
     };
+  }, key);
+}
+
+async function stopFrameSample(page, key = '__f11FrameSample') {
+  await page.evaluate(name => window[name]?.stop(), key);
+}
+
+async function frameSample(page, durationMs, action, key = '__f11FrameSample') {
+  await startFrameSample(page, durationMs, key);
+  await action();
+  return finishFrameSample(page, durationMs, key);
+}
+
+async function captureMorphFps(page, trigger) {
+  await page.evaluate(() => {
+    const sample = window.__f11MorphSample = { startedAt: performance.now(), lastMorphAt: null, frames: [], done: false };
+    const tick = time => {
+      if (document.querySelector('#brain-view .orbit.is-morphing')) {
+        sample.lastMorphAt = time;
+        sample.frames.push(time);
+      }
+      sample.done = time - sample.startedAt > 5000 || (sample.lastMorphAt != null && time - sample.lastMorphAt > 100);
+      if (!sample.done) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await trigger();
+  await page.waitForFunction(() => window.__f11MorphSample?.done, undefined, { timeout: 6_000 });
+  return page.evaluate(() => {
+    const frames = window.__f11MorphSample.frames;
+    const elapsedMs = frames.length > 1 ? frames.at(-1) - frames[0] : 0;
+    return { frames: frames.length, elapsedMs, fps: elapsedMs > 0 ? (frames.length - 1) * 1000 / elapsedMs : 0 };
   });
 }
 
-async function stopFrameSample(page) {
-  await page.evaluate(() => window.__f11FrameSample?.stop());
+async function keyboardResponseMs(page) {
+  return page.evaluate(async () => {
+    const brain = document.querySelector('#brain-view .brain');
+    const previous = brain?.getAttribute('data-timer-hidden');
+    if (!brain) throw new Error('Keyboard sample requires the mounted Brain view.');
+    return new Promise((resolve, reject) => {
+      const startedAt = performance.now();
+      const observer = new MutationObserver(() => {
+        if (brain.getAttribute('data-timer-hidden') === previous) return;
+        observer.disconnect();
+        requestAnimationFrame(time => resolve(time - startedAt));
+      });
+      observer.observe(brain, { attributes: true, attributeFilter: ['data-timer-hidden'] });
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 't', bubbles: true }));
+      setTimeout(() => { observer.disconnect(); reject(new Error('Keyboard shortcut did not produce a visible timer state change.')); }, 2000);
+    });
+  });
 }
 
-async function frameSample(page, durationMs, action) {
-  await startFrameSample(page, durationMs);
-  await action();
-  return finishFrameSample(page, durationMs);
+async function runSolveScenario(page, screenshotPath = null) {
+  const startedAt = await page.evaluate(() => performance.now());
+  const morph = await captureMorphFps(page, async () => {
+    await startGuidedScramble(page, GOLD.normal.scramble, '#brain-view');
+    await page.evaluate(scramble => window.testBrain.emitTurns(scramble), GOLD.normal.scramble);
+    await page.locator('#brain-phase-label').filter({ hasText: 'inspection' }).waitFor();
+  });
+  expect(morph.frames).toBeGreaterThan(1);
+  await startFrameSample(page, 12_000);
+  const moves = GOLD.normal.moves.split(/\s+/).filter(Boolean);
+  let liveMove;
+  const liveMoveSmoothness = await frameSample(page, 1200, async () => {
+    liveMove = await page.evaluate(move => window.testBrain.emitMeasuredTurn(move), moves[0]);
+    await page.evaluate(solution => window.testBrain.emitTimed(solution, () => 14), moves.slice(1, 8).join(' '));
+  }, '__f11LiveMoveSample');
+  await page.evaluate(solution => window.testBrain.emitTimed(solution, () => 14), moves.slice(8).join(' '));
+  await page.locator('#brain-phase-label').filter({ hasText: 'solved' }).waitFor();
+  const resultsShownAt = await page.evaluate(() => performance.now());
+  await page.waitForFunction(start => window.testBrain.handle.getViewModel()?.results?.review?.status === 'done'
+    || (window.__f11Workers ?? []).some(item => item.createdAt >= start && item.errorAt != null), startedAt, { timeout: 45_000 });
+  await page.locator('#brain-timeline .orbit__marker-cluster[data-marker-cluster]').first().waitFor({ state: 'visible', timeout: 5_000 });
+  const analysisResultsMs = await page.evaluate(start => performance.now() - start, resultsShownAt);
+  const analysisWorker = await page.evaluate(start => {
+    const worker = [...(window.__f11Workers ?? [])].reverse().find(item => item.createdAt >= start && new URL(item.url, location.href).pathname.includes('/analysis/worker.js'));
+    if (!worker) throw new Error('Solve analysis did not create its own analysis Worker.');
+    if (worker.errorAt != null || worker.resultAt == null) throw new Error(`Analysis Worker failed instead of returning a result: ${worker.errorMessage ?? 'no result message'}`);
+    return {
+      url: worker.url,
+      constructorToFirstReplyMs: worker.firstReplyAt == null ? null : worker.firstReplyAt - worker.createdAt,
+      constructorToResultMs: worker.resultAt - worker.createdAt,
+      terminatedAt: worker.terminatedAt,
+    };
+  }, startedAt);
+  if (screenshotPath) await page.screenshot({ path: screenshotPath, fullPage: true });
+  await stopFrameSample(page);
+  const solvePlaybackAndResults = await finishFrameSample(page, 12_000);
+  const solveLongTasks = await page.evaluate(start => (window.__f11LongTasks ?? []).filter(entry => entry.startTime >= start), startedAt);
+  const finalScreen = await page.locator('#brain-view .brain').getAttribute('data-screen');
+  const activeFixtureOwnership = {
+    canvases: await page.locator('#brain-view .b-cube-wrap canvas').count(),
+    controllers: await page.locator('#brain-view .brain').count(),
+    pendingAnimationFrames: await page.evaluate(() => window.__f11PendingAnimationFrames?.() ?? null),
+  };
+  expect(activeFixtureOwnership.canvases).toBe(1);
+  expect(activeFixtureOwnership.controllers).toBe(1);
+  const fixtureTeardown = await page.evaluate(async () => {
+    window.testBrain.handle.detach();
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    return {
+      canvases: document.querySelectorAll('#brain-view .b-cube-wrap canvas').length,
+      controllers: document.querySelectorAll('#brain-view .brain').length,
+      pendingAnimationFrames: window.__f11PendingAnimationFrames(),
+    };
+  });
+  expect(fixtureTeardown).toEqual({ canvases: 0, controllers: 0, pendingAnimationFrames: 0 });
+  return { morph, liveMove, liveMoveSmoothness, analysisResultsMs, analysisWorker, solvePlaybackAndResults, solveLongTasks, finalScreen, activeFixtureOwnership, fixtureTeardown };
 }
 
 async function startupSample(page, label) {
@@ -177,53 +276,57 @@ test('captures production-cache startup and deterministic solve/render performan
   const brain = {};
   await mountTestBrain(page, 'orbit', { route: true, fixture: true });
   const initialCanvas = await page.locator('#brain-view .b-cube-wrap canvas').count();
+  const phoneIdleStart = await page.evaluate(() => performance.now());
   brain.idleGyroPhone = await frameSample(page, 1200, () => page.evaluate(() => window.testBrain.emitGyroBurst(1100, 16)));
+  brain.idleGyroPhoneLongTasks = (await readLongTasks(page)).filter(entry => entry.startTime >= phoneIdleStart);
   console.log('F11 checkpoint: phone gyro sample complete');
+  brain.keyboardResponseMs = await keyboardResponseMs(page);
+
+  await mountTestBrain(page, 'orbit', { route: true, fixture: true, connectDelayMs: 900, awaitConnect: false });
+  const phoneConnectStart = await page.evaluate(() => performance.now());
+  brain.connectSpinPhone = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', undefined, { timeout: 5_000 }));
+  brain.connectElapsedPhoneMs = await page.evaluate(start => performance.now() - start, phoneConnectStart);
+  brain.connectLongTasksPhone = (await readLongTasks(page)).filter(entry => entry.startTime >= phoneConnectStart);
+  console.log('F11 checkpoint: phone connecting ring sample complete');
+  await page.locator('#brain-view .orbit.is-morphing').waitFor({ state: 'hidden', timeout: 3_000 });
+  brain.solvePhone = await runSolveScenario(page);
+  console.log('F11 checkpoint: phone solve and analysis sample complete');
+  await page.goto('/#/algs/oll/1');
+  let sequence = page.locator('[data-case-sequence]');
+  await sequence.waitFor();
+  const phoneAlgorithmStart = await page.evaluate(() => performance.now());
+  brain.algorithmPlaybackPhone = await frameSample(page, 4000, () => sequence.locator('[data-sequence="play"]').click());
+  brain.algorithmLongTasksPhone = (await readLongTasks(page)).filter(entry => entry.startTime >= phoneAlgorithmStart);
 
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   await page.setViewportSize({ width: 1280, height: 900 });
-  const traceStarted = new Promise((resolve) => cdp.once('Tracing.tracingStarted', resolve));
-  await cdp.send('Tracing.start', {
-    categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
-    transferMode: 'ReturnAsStream',
-  });
-  await traceStarted;
-
+  await page.goto('http://127.0.0.1:4177/perf/fixture.html');
   await mountTestBrain(page, 'orbit', { route: true, fixture: true, connectDelayMs: 900, awaitConnect: false });
-  const connectStart = performance.now();
-  brain.connectSpin = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', { timeout: 5_000 }));
-  brain.connectElapsedMs = Math.round(performance.now() - connectStart);
-  console.log('F11 checkpoint: connect-ring sample complete');
+  const desktopConnectStart = await page.evaluate(() => performance.now());
+  brain.connectSpin = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', undefined, { timeout: 5_000 }));
+  brain.connectElapsedMs = await page.evaluate(start => performance.now() - start, desktopConnectStart);
+  brain.connectLongTasksDesktop = (await readLongTasks(page)).filter(entry => entry.startTime >= desktopConnectStart);
+  console.log('F11 checkpoint: desktop connecting ring sample complete');
+  await page.locator('#brain-view .orbit.is-morphing').waitFor({ state: 'hidden', timeout: 3_000 });
+  brain.keyboardResponseDesktopMs = await keyboardResponseMs(page);
 
   const gyroStart = await page.evaluate(() => performance.now());
   brain.idleGyro = await frameSample(page, 1200, () => page.evaluate(() => window.testBrain.emitGyroBurst(1100, 16)));
   brain.idleGyroLongTasks = (await readLongTasks(page)).filter((entry) => entry.startTime >= gyroStart && entry.startTime <= gyroStart + 1200);
-  brain.simulatedMoveInput = await page.evaluate(() => window.testBrain.emitMeasuredTurn('R'));
-  console.log('F11 checkpoint: desktop gyro and move samples complete');
+  console.log('F11 checkpoint: desktop gyro sample complete');
 
   await mountTestBrain(page, 'orbit', { route: true, fixture: true });
-  const solveStart = await page.evaluate(() => performance.now());
-  await startFrameSample(page, 12_000);
-  await playSolve(page, GOLD.normal.scramble, GOLD.normal.moves, { brain: '#brain-view', base: 14 });
-  const resultsShownAt = await page.evaluate(() => performance.now());
-  await page.locator('#brain-timeline .orbit__marker-cluster[data-marker-cluster]').first().waitFor({ state: 'visible', timeout: 5_000 });
-  brain.analysisResultsMs = await page.evaluate((startedAt) => performance.now() - startedAt, resultsShownAt);
+  brain.solveDesktop = await runSolveScenario(page, path.join(outputDir, 'solve-results.png'));
   const screenshotPath = path.join(outputDir, 'solve-results.png');
-  await page.screenshot({ path: screenshotPath, fullPage: true });
-  await stopFrameSample(page);
-  brain.solvePlaybackAndResults = await finishFrameSample(page, 12_000);
-  brain.solveLongTasks = (await readLongTasks(page)).filter((entry) => entry.startTime >= solveStart);
-  brain.finalSolveScreen = await page.locator('#brain-view .brain').getAttribute('data-screen');
-  brain.fixtureOwnership = { canvasesAfterFirstMount: initialCanvas, canvasesAfterRemount: await page.locator('#brain-view .b-cube-wrap canvas').count(), controllerHostCount: await page.locator('#brain-view .brain').count() };
-  expect(brain.fixtureOwnership.canvasesAfterRemount).toBe(1);
-  expect(brain.fixtureOwnership.controllerHostCount).toBe(1);
+  brain.fixtureOwnership = { canvasesAfterFirstMount: initialCanvas, ...brain.solveDesktop.fixtureOwnership };
   console.log('F11 checkpoint: solve and analysis sample complete');
 
   await page.goto('/#/algs/oll/1');
-  const sequence = page.locator('[data-case-sequence]');
+  sequence = page.locator('[data-case-sequence]');
   await sequence.waitFor();
+  const desktopAlgorithmStart = await page.evaluate(() => performance.now());
   brain.algorithmPlayback = await frameSample(page, 4000, () => sequence.locator('[data-sequence="play"]').click());
-  brain.algorithmLongTasks = await readLongTasks(page);
+  brain.algorithmLongTasks = (await readLongTasks(page)).filter(entry => entry.startTime >= desktopAlgorithmStart);
   console.log('F11 checkpoint: algorithm playback sample complete');
 
   await cdp.send('HeapProfiler.enable');
@@ -257,12 +360,18 @@ test('captures production-cache startup and deterministic solve/render performan
     scenarios: {
       startupDesktop: desktopStartup,
       startupPhone: phoneStartup,
-      connectingRing: { fps: brain.connectSpin.fps, p95FrameMs: brain.connectSpin.p95FrameMs, elapsedMs: brain.connectElapsedMs },
+      connectingRingDesktop: { ...brain.connectSpin, elapsedMs: brain.connectElapsedMs },
+      connectingRingPhone: { ...brain.connectSpinPhone, elapsedMs: brain.connectElapsedPhoneMs },
       phoneIdleGyro: brain.idleGyroPhone,
       idleGyro: { ...brain.idleGyro, longTaskCount: brain.idleGyroLongTasks.length, longestTaskMs: Math.max(0, ...brain.idleGyroLongTasks.map((entry) => entry.durationMs)) },
-      simulatedMoveInput: brain.simulatedMoveInput,
-      solvePlaybackAndResults: { ...brain.solvePlaybackAndResults, analysisResultsMs: brain.analysisResultsMs, longTaskCount: brain.solveLongTasks.length, longestTaskMs: Math.max(0, ...brain.solveLongTasks.map((entry) => entry.durationMs)), finalScreen: brain.finalSolveScreen },
-      algorithmPlayback: { ...brain.algorithmPlayback, longTaskCount: brain.algorithmLongTasks.length, longestTaskMs: Math.max(0, ...brain.algorithmLongTasks.map((entry) => entry.durationMs)) },
+      keyboardResponseMs: brain.keyboardResponseMs,
+      keyboardResponseDesktopMs: brain.keyboardResponseDesktopMs,
+      solvePhone: brain.solvePhone,
+      solveDesktop: brain.solveDesktop,
+      algorithmPlaybackPhone: brain.algorithmPlaybackPhone,
+      algorithmPlaybackDesktop: brain.algorithmPlayback,
+      longTasksPhone: [...brain.idleGyroPhoneLongTasks, ...brain.connectLongTasksPhone, ...brain.solvePhone.solveLongTasks, ...brain.algorithmLongTasksPhone],
+      longTasksDesktop: [...brain.connectLongTasksDesktop, ...brain.idleGyroLongTasks, ...brain.solveDesktop.solveLongTasks, ...brain.algorithmLongTasks],
       routeSwitches: brain.routeSwitches,
       fixtureOwnership: brain.fixtureOwnership,
     },
@@ -272,13 +381,31 @@ test('captures production-cache startup and deterministic solve/render performan
       'startup.routeScriptEncodedBytes': desktopStartup.routeScriptEncodedBytes,
       'smoothness.desktopIdleGyroFps': brain.idleGyro.fps,
       'smoothness.phoneIdleGyroFps': brain.idleGyroPhone.fps,
-      'smoothness.connectingRingFps': brain.connectSpin.fps,
-      'smoothness.solvePlaybackFps': brain.solvePlaybackAndResults.fps,
-      'smoothness.algorithmPlaybackFps': brain.algorithmPlayback.fps,
-      'input.simulatedMoveToNextFrameMs': brain.simulatedMoveInput.eventToFrameMs,
-      'analysis.resultRevealMs': brain.analysisResultsMs,
+      'smoothness.connectingRingDesktopFps': brain.connectSpin.fps,
+      'smoothness.connectingRingPhoneFps': brain.connectSpinPhone.fps,
+      'smoothness.openFullOrbitMorphDesktopFps': brain.solveDesktop.morph.fps,
+      'smoothness.openFullOrbitMorphPhoneFps': brain.solvePhone.morph.fps,
+      'smoothness.liveMoveDesktopFps': brain.solveDesktop.liveMoveSmoothness.fps,
+      'smoothness.liveMovePhoneFps': brain.solvePhone.liveMoveSmoothness.fps,
+      'smoothness.solvePlaybackDesktopFps': brain.solveDesktop.solvePlaybackAndResults.fps,
+      'smoothness.solvePlaybackPhoneFps': brain.solvePhone.solvePlaybackAndResults.fps,
+      'smoothness.algorithmPlaybackDesktopFps': brain.algorithmPlayback.fps,
+      'smoothness.algorithmPlaybackPhoneFps': brain.algorithmPlaybackPhone.fps,
+      'input.liveMoveDesktopToAnimationStartMs': brain.solveDesktop.liveMove.eventToAnimationStartMs,
+      'input.liveMovePhoneToAnimationStartMs': brain.solvePhone.liveMove.eventToAnimationStartMs,
+      'input.keyboardVisualResponseMs': brain.keyboardResponseMs,
+      'input.keyboardVisualResponseDesktopMs': brain.keyboardResponseDesktopMs,
+      'analysis.resultRevealDesktopMs': brain.solveDesktop.analysisResultsMs,
+      'analysis.resultRevealPhoneMs': brain.solvePhone.analysisResultsMs,
+      'analysis.workerDesktopConstructorToFirstReplyMs': brain.solveDesktop.analysisWorker?.constructorToFirstReplyMs ?? null,
+      'analysis.workerDesktopConstructorToResultMs': brain.solveDesktop.analysisWorker?.constructorToResultMs ?? null,
+      'analysis.workerPhoneConstructorToFirstReplyMs': brain.solvePhone.analysisWorker?.constructorToFirstReplyMs ?? null,
+      'analysis.workerPhoneConstructorToResultMs': brain.solvePhone.analysisWorker?.constructorToResultMs ?? null,
       'memory.routeSwitchGrowthMb': brain.routeSwitches.growthMb,
-      'longTasks.maxDuringSolveMs': Math.max(0, ...brain.solveLongTasks.map((entry) => entry.durationMs)),
+      'longTasks.maxDuringDesktopSolveMs': Math.max(0, ...brain.solveDesktop.solveLongTasks.map((entry) => entry.durationMs)),
+      'longTasks.maxDuringPhoneSolveMs': Math.max(0, ...brain.solvePhone.solveLongTasks.map((entry) => entry.durationMs)),
+      'longTasks.maxDuringDesktopAnimationsMs': Math.max(0, ...[...brain.connectLongTasksDesktop, ...brain.idleGyroLongTasks, ...brain.solveDesktop.solveLongTasks, ...brain.algorithmLongTasks].map(entry => entry.durationMs)),
+      'longTasks.maxDuringPhoneAnimationsMs': Math.max(0, ...[...brain.idleGyroPhoneLongTasks, ...brain.connectLongTasksPhone, ...brain.solvePhone.solveLongTasks, ...brain.algorithmLongTasksPhone].map(entry => entry.durationMs)),
     },
     trace: null,
     screenshot: path.relative(process.cwd(), screenshotPath),
@@ -301,5 +428,6 @@ test('captures production-cache startup and deterministic solve/render performan
   await writeFile(path.join(outputDir, 'scenarios.json'), `${JSON.stringify(report, null, 2)}\n`);
   await testInfo.attach('f11-performance-scenarios', { body: Buffer.from(JSON.stringify(report, null, 2)), contentType: 'application/json' });
   await cdp.detach();
-  expect(brain.finalSolveScreen).toBe('results');
+  expect(brain.solvePhone.finalScreen).toBe('results');
+  expect(brain.solveDesktop.finalScreen).toBe('results');
 });
