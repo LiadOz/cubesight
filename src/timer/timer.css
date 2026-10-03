@@ -60,12 +60,12 @@
 
 /* One persistent cube and the shared move player. */
 .tm-preview {
-  box-sizing: border-box; overflow: hidden; display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: center; gap: 16px;
+  box-sizing: border-box; overflow: hidden; display: grid; grid-template-columns: 310px minmax(0, 1fr); align-items: center; gap: 16px;
   width: min(860px, 100%); min-height: 272px; margin: 10px auto 0; padding: 10px 18px;
   border: 1px solid var(--b-hairline); border-radius: var(--b-radius-panel, 14px); background: var(--b-panel);
   transition: opacity .18s ease, filter .18s ease;
 }
-.tm-preview-cube { width: 256px; max-width: 100%; aspect-ratio: 1; justify-self: center; }
+.tm-preview-cube { width: 300px; max-width: 100%; aspect-ratio: 1; justify-self: center; }
 .tm-preview-cube.has-sequence-ring > canvas { transform: none; }
 .tm-preview-tools { width: 100%; min-width: 0; max-width: 100%; overflow: visible; }
 .tm-preview-tools.sequence-player { gap: 6px; }
@@ -106,14 +106,13 @@
 .tm-sub { min-height: 1.5em; color: var(--b-muted); font-size: 15px; text-align: center; }
 .tm.is-busy .tm-sub { color: var(--b-faint); }
 
-/* Inspection: Orbit draws the ring (src/brain/styles/orbit) with the count in its centre; Mono
-   draws its own countdown number over the lane (src/brain/styles/mono). */
+/* One shared Orbit carries inspection and solve time, with a single centre value. */
 .tm-insp { display: flex; flex-direction: column; align-items: center; width: 100%; }
-.tm-insp-stage { position: relative; width: min(100%, 520px); aspect-ratio: 640 / 500; }
+.tm-insp-stage { position: relative; width: min(100%, 440px); aspect-ratio: 1.12; }
 .tm-ring { position: absolute; inset: 0; }
 .tm-count {
   position: absolute; inset: 0; display: grid; place-items: center;
-  font: var(--b-weight-clock) clamp(84px, 24vw, var(--b-fs-countdown))/1 var(--b-font-num); letter-spacing: -.02em; color: var(--b-ink);
+  font: var(--b-weight-clock) clamp(44px, 11vw, var(--b-fs-clock))/1 var(--b-font-num); letter-spacing: -.02em; color: var(--b-ink);
 }
 .tm-count[data-tone="warn"] { color: var(--b-warn); }
 .tm-count[data-tone="error"] { color: var(--b-dnf); }
@@ -139,6 +138,45 @@
 .tm-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; min-height: 32px; margin-top: 4px; }
 .tm-keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; min-height: 26px; margin-top: 8px; color: var(--b-muted); font-size: 13px; }
 .tm-key { display: inline-flex; align-items: center; gap: 10px; }
+
+@media (min-width: 900px) {
+  .brain.tm {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, .92fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "top top" "scramble scramble" "pad preview" "stats stats" "source source" "controls keys";
+    gap: 4px 22px;
+    width: min(1120px, 100% - 32px);
+    min-height: calc(100dvh - 56px);
+    padding-block: 8px 12px;
+  }
+  .tm-top { grid-area: top; }
+  .tm-scramble-row { grid-area: scramble; min-height: 38px; margin: 0; }
+  .tm-scramble { max-width: min(100%, 110ch); font-size: clamp(15px, 1.5vw, 19px); line-height: 1.35; }
+  .tm-preview {
+    grid-area: preview;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(220px, 1fr) auto;
+    align-content: center;
+    width: 100%;
+    min-height: 0;
+    height: 100%;
+    margin: 0;
+    padding: 4px 10px;
+    border: 0;
+    background: transparent;
+  }
+  .tm-preview-cube { width: min(100%, 280px); }
+  .tm-preview-tools { max-width: 100%; }
+  .tm-pad { grid-area: pad; min-height: 0; height: 100%; margin: 0; }
+  .tm-insp-stage { width: min(100%, 360px); }
+  .tm-count { font-size: clamp(44px, 7vw, 76px); }
+  .tm-stats { grid-area: stats; }
+  .tm-source { grid-area: source; }
+  .tm-controls { grid-area: controls; justify-content: flex-start; margin: 0; }
+  .tm-keys { grid-area: keys; justify-content: flex-end; margin: 0; }
+}
 
 /* Touch screens: the key hints give way to the buttons (docs/design/VOICE.md 5, D7). */
 @media (pointer: coarse) {

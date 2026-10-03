@@ -1,5 +1,7 @@
 import { readCaseColorSetting } from '../ui/cube/case-color.js';
 
+const finiteOrNull = value => value != null && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
+
 export function buildTimerViewModel(input = {}) {
   const snap = input.snapshot ?? {};
   return {
@@ -8,7 +10,7 @@ export function buildTimerViewModel(input = {}) {
     scramble: input.scramble ?? null,
     scrambleState: input.scrambleState ?? 'loading',
     elapsedMs: Number.isFinite(Number(snap.elapsedMs)) ? Number(snap.elapsedMs) : 0,
-    inspectionElapsedMs: Number.isFinite(Number(snap.inspectionElapsedMs)) ? Number(snap.inspectionElapsedMs) : null,
+    inspectionElapsedMs: finiteOrNull(snap.inspectionElapsedMs),
     penalty: snap.penalty ?? snap.result?.penalty ?? null,
     display: {
       cube: 'case',

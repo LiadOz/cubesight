@@ -156,7 +156,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     if (shell) { shell.dataset.brainStyle = loadSettings(storage).style; syncPageTokens(shell); }
     if (caseData) {
       const orbitHost = root.querySelector('[data-alg-orbit]');
-      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'M', shape: 'open', gap: 78, label: `${caseData.name} algorithm progress`, segments: [] });
+      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, label: `${caseData.name} algorithm progress`, segments: [] });
       if (!supportsVirtualRepaint(caseData)) repaintReady = false;
       try { setupState = caseSetupState(caseData); }
       catch { setupState = null; }

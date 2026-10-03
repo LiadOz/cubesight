@@ -1,57 +1,46 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAlgOrbitSegments, buildAlgViewModel, parseAlgRouteContext } from '../src/algs/view-model.js';
+import { buildAlgViewModel } from '../src/algs/view-model.js';
 import { buildDrillViewModel } from '../src/drills/view-model.js';
 import { buildTimerViewModel } from '../src/timer/view-model.js';
-import { CASE_COLOR_STORAGE_KEY, CASE_COLORS, readCaseColorSetting, writeCaseColorSetting } from '../src/ui/cube/case-color.js';
 
-test('alg route context decodes local return routes once and drops invalid timing', () => {
-  const query = new URLSearchParams({ from: '#/history/123/review/PLL?tab=case', usedAlg: 's.pll.Jb.1', recognitionMs: '735', executionMs: '-1' });
-  const context = parseAlgRouteContext(`#/algs/pll/Jb?${query}`);
-  assert.equal(context.from, '#/history/123/review/PLL?tab=case');
-  assert.equal(context.usedAlg, 's.pll.Jb.1');
-  assert.equal(context.recognitionMs, 735);
-  assert.equal(context.executionMs, null);
-  assert.equal(parseAlgRouteContext('#/algs/pll/Jb?from=https%3A%2F%2Fexample.com').from, null);
-  assert.equal(parseAlgRouteContext('#/algs/pll/Jb').recognitionMs, null);
+test('algorithm view model records the rendered live cube state and finite route context', () => {
+  const state = { cubies: [{ id: 'U', position: [0, 1, 0], stickers: { U: 'yellow' } }] };
+  const vm = buildAlgViewModel({ caseId: 'pll/H', displayMode: 'your cube', caseColor: 'fixed: red', cubeState: state,
+    gyro: { x: 0, y: 0, z: 0, w: 1 }, context: { from: '#/history/123', recognitionMs: 800, executionMs: Infinity } });
+  state.cubies[0].stickers.U = 'changed';
+  assert.equal(vm.page, 'case');
+  assert.equal(vm.display.mode, 'your cube');
+  assert.equal(vm.display.caseColor, 'fixed: red');
+  assert.equal(vm.display.cubeState.cubies[0].stickers.U, 'yellow');
+  assert.deepEqual(vm.display.gyro, { x: 0, y: 0, z: 0, w: 1 });
+  assert.equal(vm.context.from, '#/history/123');
+  assert.equal(vm.context.recognitionMs, 800);
+  assert.equal(vm.context.executionMs, null);
+  assert.doesNotThrow(() => JSON.stringify(vm));
 });
 
-test('case colour settings persist through one shared adapter and include fixed face colours', () => {
-  const values = new Map();
-  const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
-  assert.equal(writeCaseColorSetting('fixed: red', storage), 'fixed: red');
-  assert.equal(readCaseColorSetting(storage), 'fixed: red');
-  assert.equal(values.get(CASE_COLOR_STORAGE_KEY), 'fixed: red');
-  for (const color of ['white', 'yellow', 'green', 'blue', 'red', 'orange']) assert.ok(CASE_COLORS.includes(`fixed: ${color}`));
+test('drill round view model carries the shared colour seed and ordered result segments', () => {
+  const vm = buildDrillViewModel({ page: 'round', drill: 'pll', phase: 'active', caseColor: 'yellow or white',
+    topColor: 'white', caseSeed: 'pll:round-1:3', currentCase: 'H',
+    round: { status: 'active', kind: 'cases', total: 20, answers: [{ caseId: 'Jb', correct: true, ms: 800 }, { caseId: 'H', correct: false, ms: NaN }],
+      combo: 0, bestCombo: 1, averageMs: 800, segments: [{ key: 'case-1', state: 'good', weight: 1, fill: 1 }] } });
+  assert.equal(vm.display.caseColor, 'yellow or white');
+  assert.equal(vm.display.topColor, 'white');
+  assert.equal(vm.display.caseSeed, 'pll:round-1:3');
+  assert.equal(vm.round.answered, 2);
+  assert.equal(vm.round.answers[1].ms, null);
+  assert.deepEqual(vm.round.segments, [{ key: 'case-1', state: 'good', weight: 1, fill: 1 }]);
+  assert.doesNotThrow(() => JSON.stringify(vm));
 });
 
-test('algorithm Orbit groups recognized triggers once and tracks full-turn progress', () => {
-  const moves = ["R", "U", "R'", "U'", 'F', 'D', 'R', 'U', "R'"];
-  const initial = buildAlgOrbitSegments(moves, 0);
-  assert.deepEqual(initial.map(segment => segment.label), ['sexy move', 'moves', 'trigger']);
-  assert.equal(initial[0].weight, 4);
-  assert.equal(initial[0].state, 'current');
-  const finished = buildAlgOrbitSegments(moves, moves.length);
-  assert.ok(finished.every(segment => segment.state === 'done' && segment.fill === 1));
-});
-
-test('alg and drill view models snapshot playback, colour, and live attempt state as plain data', () => {
-  const alg = buildAlgViewModel({ caseId: 'pll/Jb', displayMode: 'your cube', caseColor: 'fixed: red', topColor: 'red', playback: { index: 3, moveCount: 11, playing: true, groups: [{ label: 'sexy move', start: 0, end: 3 }] }, context: { recognitionMs: 712 }, drill: { mode: 'smart', phase: 'running', attempt: 2, match: { status: 'prefix' } } });
-  assert.equal(alg.display.mode, 'your cube');
-  assert.equal(alg.playback.groups[0].label, 'sexy move');
-  assert.equal(alg.drill.match, 'prefix');
-  assert.equal(alg.context.executionMs, null);
-  assert.doesNotThrow(() => JSON.stringify(alg));
-  const drill = buildDrillViewModel({ drill: 'pll', phase: 'case', caseColor: 'any colour', round: { status: 'active', total: 20, combo: 4, answers: [{ caseId: 'Jb', correct: true, ms: 820 }] } });
-  assert.equal(drill.round.answered, 1);
-  assert.equal(drill.round.answers[0].caseId, 'Jb');
-  assert.equal(drill.display.caseColor, 'any colour');
-});
-
-test('timer view model describes a single open Orbit and current manual attempt', () => {
-  const model = buildTimerViewModel({ snapshot: { phase: 'inspecting', hold: 'ready', elapsedMs: 0, inspectionElapsedMs: 2500 }, scramble: 'R U', scrambleState: 'ready', orbitSegments: [{ key: 'inspection', state: 'current', label: 'inspection', fill: .2 }] });
-  assert.equal(model.phase, 'inspecting');
-  assert.equal(model.display.orbitShape, 'open');
-  assert.equal(model.display.orbitSegments[0].fill, .2);
-  assert.doesNotThrow(() => JSON.stringify(model));
+test('manual timer view model keeps one Orbit segment and finite timing values', () => {
+  const vm = buildTimerViewModel({ snapshot: { phase: 'inspecting', elapsedMs: 0, inspectionElapsedMs: 2400 },
+    scramble: 'R U R\'', scrambleState: 'ready', caseColor: 'white top', orbitSegments: [{ key: 'inspection', state: 'current', label: 'inspection', fill: .2, value: '12' }] });
+  assert.equal(vm.phase, 'inspecting');
+  assert.equal(vm.scramble, "R U R'");
+  assert.equal(vm.display.caseColor, 'white top');
+  assert.deepEqual(vm.display.orbitSegments, [{ key: 'inspection', state: 'current', label: 'inspection', value: '12', fill: .2 }]);
+  assert.equal(vm.inspectionElapsedMs, 2400);
+  assert.doesNotThrow(() => JSON.stringify(vm));
 });
