@@ -51,6 +51,9 @@ export function createMoveGuide(host, options = {}) {
   setAttr(host, 'aria-label', state.label);
   const strip = el('div', 'mg-strip');
   strip.setAttribute('role', 'list');
+  strip.setAttribute('data-scroll-x', 'true');
+  strip.tabIndex = 0;
+  strip.setAttribute('aria-label', `Moves for ${state.label}`);
   const live = el('p', 'mg-sr');
   live.setAttribute('role', 'status');
   live.setAttribute('aria-live', 'polite');

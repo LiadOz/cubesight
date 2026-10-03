@@ -146,6 +146,15 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
     });
   }
 
+  function fitOrbitToViewport() {
+    if (!visual.isConnected) return;
+    const visualBox = visual.getBoundingClientRect();
+    const orbitBox = orbitWrap.getBoundingClientRect();
+    const visualOverhead = Math.max(0, visualBox.height - orbitBox.height);
+    const available = Math.min(440, innerHeight - Math.max(0, visualBox.top) - visualOverhead - 8);
+    orbitWrap.style.setProperty('--progress-orbit-fit', `${Math.max(160, available)}px`);
+  }
+
   function render() {
     if (detached) return;
     page.dataset.brainStyle = loadSettings(storage).style;
@@ -167,7 +176,6 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
     const weeklySolves = filters.session === 'all' ? records : records.filter(record => record.sessionId === filters.session);
     const weekly = buildWeeklyReport({ solves: weeklySolves, rounds: savedRounds }, { source: filters.source, focus: filters.focus, now });
     viewModel = buildProgressViewModel({ filters, data, goal, goalState, weekly, sessions: sessionOptions, selectedView, goalFormError, shareStatus });
-    orbit?.update(viewModel.orbit);
     orbitCaption.hidden = false;
     orbitCaption.textContent = selectedView === 'goal' ? viewModel.goal.caption : viewModel.splitCaption;
     splitEmpty.hidden = !viewModel.emptySplits || selectedView === 'goal';
@@ -201,6 +209,8 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
     ], filters.days);
     for (const [key, value] of Object.entries({ ...filters, view: selectedView })) filterControls[key]?.setValue(value);
     syncPageTokens(page);
+    fitOrbitToViewport();
+    if (orbit) void orbit.update(viewModel.orbit, { animate: false });
   }
   content.addEventListener('submit', event => {
     if (!event.target.matches('[data-goal-form]')) return;
@@ -228,9 +238,10 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   const onTheme = () => { if (active) render(); };
   document.addEventListener('cubesight-theme', onTheme);
   orbit = new Orbit(orbitHost, { shape: 'full', size: 'L', label: 'average split by stage', centerClearance: 105, segments: [], onSegment: segment => { if (segment.href) location.hash = segment.href; } });
-  const onResize = () => { if (orbit) void orbit.update(orbit.options, { animate: false }); };
+  const onResize = () => { fitOrbitToViewport(); if (orbit) void orbit.update(orbit.options, { animate: false }); };
   window.addEventListener('resize', onResize);
   render();
+  document.fonts?.ready.then(fitOrbitToViewport);
 
   return {
     get ready() { return Promise.all([ready, cubeLoad ?? Promise.resolve(null)]); },

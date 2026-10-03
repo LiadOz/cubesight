@@ -12,6 +12,7 @@ import { caseSetupState, f2lStateIntact, matchesCaseSetup } from './drill/cube.j
 import { createVirtualRepaint } from './drill/repaint.js';
 import { loadSettings } from '../brain/settings.js';
 import { syncPageTokens } from '../pages/tokens.js';
+import { createChip, createSegmented } from '../ui/shared/index.js';
 import { fmt } from '../copy/terms.js';
 import { algorithmMetrics } from './notation.js';
 import { groupMoves } from '../moves/triggers.js';
@@ -65,7 +66,7 @@ function caseDetail(row, context = {}) {
     <div class="alg-entry__top"><strong>${used ? 'used in this solve' : `alg ${index + 1}`}</strong><span>${moveCount} ${moveCount === 1 ? 'move' : 'moves'}</span></div>
     <code>${esc(fmt.moves(alg.moves))}</code>
     <p>${esc(alg.credit)} · ${safeHttpUrl(alg.source?.url) ? `<a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">source ↗</a>` : 'source link unavailable'}</p>
-    <div class="alg-entry__actions"><button type="button" data-pick="${esc(alg.id)}">${used ? 'used alg' : 'choose'}</button><button type="button" data-drill-alg="${esc(alg.id)}">drill</button></div>
+    <div class="alg-entry__actions"><button class="btn btn--secondary btn--s" type="button" data-pick="${esc(alg.id)}">${used ? 'used alg' : 'choose'}</button><button class="btn btn--text btn--s" type="button" data-drill-alg="${esc(alg.id)}">drill</button></div>
   </article>`;
   }).join('');
   const back = context.from ? `<a class="alg-case-back" data-case-back href="${esc(context.from)}">${returnLabel(context.from)}</a>` : `<a class="alg-case-back" data-case-back href="#/algs/${esc(row.set)}">‹ ${esc(row.set.toUpperCase())} cases</a>`;
@@ -77,7 +78,7 @@ function caseDetail(row, context = {}) {
         <section class="alg-case-focus" aria-label="Case and playback">
           <div class="alg-case-orbit" data-alg-orbit></div>
           <section class="alg-cube-card"><div class="alg-cube" data-alg-cube aria-label="3D cube case setup"></div><div data-case-sequence></div></section>
-          <div class="alg-case-display" role="group" aria-label="Cube display"><button type="button" data-display-mode="case" aria-pressed="true">case</button><button type="button" data-display-mode="your cube" aria-pressed="false">your cube</button><button type="button" data-case-colors>case colors · yellow top</button></div>
+          <div class="alg-case-display"><div data-display-mode-controls></div><div data-case-colors-host></div></div>
           <p class="alg-cube-status" data-cube-status></p>
           <p class="alg-cube-setup" data-setup-status hidden></p>
         </section>
@@ -86,8 +87,8 @@ function caseDetail(row, context = {}) {
           ${context.recognitionMs != null || context.executionMs != null ? `<p class="alg-case-context">this solve${context.recognitionMs != null ? ` · recog ${(context.recognitionMs / 1000).toFixed(2)} s` : ''}${context.executionMs != null ? ` · exec ${(context.executionMs / 1000).toFixed(2)} s` : ''}</p>` : ''}
           <div class="alg-case-selected" data-selected-alg></div>
           <div class="alg-entry-grid">${algorithms}</div>
-          <div class="alg-detail__tools"><button type="button" data-action="start-case-drill">drill alg</button><button type="button" data-action="start-cube-drill" disabled>start smart-cube drill</button><span data-case-usage></span></div>
-          <details class="alg-add-own"><summary>add your alg</summary><p>It is checked against this case and rejected if it does not solve it while preserving F2L.</p><label>moves<textarea data-new-alg rows="2" placeholder="R U R′ U′"></textarea></label><button type="button" data-action="save-alg">check and save</button><span data-own-alg-status role="status"></span></details>
+          <div class="alg-detail__tools"><button class="btn btn--secondary btn--s" type="button" data-action="start-case-drill">drill alg</button><button class="btn btn--text btn--s" type="button" data-action="start-cube-drill" disabled>start smart-cube drill</button><span data-case-usage></span></div>
+          <details class="alg-add-own"><summary>add your alg</summary><p>It is checked against this case and rejected if it does not solve it while preserving F2L.</p><label>moves<textarea data-new-alg rows="2" placeholder="R U R′ U′"></textarea></label><button class="btn btn--primary btn--s" type="button" data-action="save-alg">check and save</button><span data-own-alg-status role="status"></span></details>
           <section class="alg-personal-entries" data-personal-algs hidden></section>
         </aside>
       </div>
@@ -116,11 +117,11 @@ function drillMarkup(row, alg, mode = 'self') {
   const seedIndex = row.algs.findIndex(item => item.id === alg.id);
   const label = seedIndex >= 0 ? `Algorithm ${seedIndex + 1}` : 'Your algorithm';
   // copy-ok: The no-cube label distinguishes the manual timer from smart-cube input.
-  return `<div class="alg-drill__top"><div><p class="alg-eyebrow">${smart ? 'smart-cube drill' : 'no-cube drill'}</p><h2>${esc(row.name)} · ${label}</h2></div><button type="button" data-action="close-drill" aria-label="Close drill">×</button></div>
+  return `<div class="alg-drill__top"><div><p class="alg-eyebrow">${smart ? 'smart-cube drill' : 'no-cube drill'}</p><h2>${esc(row.name)} · ${label}</h2></div><button class="btn btn--text btn--s" type="button" data-action="close-drill" aria-label="Close drill">×</button></div>
     <p>${smart ? repaint ? 'Follow the verified sequence in the virtual case. This last-layer case was repainted without resetting the physical cube.' : row.set === 'f2l' ? 'Follow the verified insertion on your cube. Set up the displayed F2L case again before each round.' : 'Follow the verified sequence in the virtual case. After a clean round, the next last-layer case can be repainted without resetting the physical cube.' : 'Remember the selected algorithm, then use Start and Done to record a self-timed round. This mode has no per-turn timing.'}</p>
     <div class="alg-drill__alg"><code>${esc(fmt.moves(alg.moves))}</code>${sourceUrl ? `<a href="${esc(sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(alg.credit)} · needs internet</a>` : '<span>Added on this device.</span>'}</div>
-    ${smart ? '<p data-cube-match aria-live="polite">Turn through the algorithm on the cube.</p><div data-cube-metrics></div>' : '<div class="alg-drill__timer" data-timer>Ready</div><div class="alg-drill__actions"><button type="button" data-action="drill-start">Start</button><button type="button" data-action="drill-done" disabled>Done</button></div><p data-drill-result></p>'}
-    <div class="alg-drill__actions"><button type="button" data-action="drill-next">Next due algorithm</button></div>`;
+    ${smart ? '<p data-cube-match aria-live="polite">Turn through the algorithm on the cube.</p><div data-cube-metrics></div>' : '<div class="alg-drill__timer" data-timer>Ready</div><div class="alg-drill__actions"><button class="btn btn--primary btn--s" type="button" data-action="drill-start">Start</button><button class="btn btn--secondary btn--s" type="button" data-action="drill-done" disabled>Done</button></div><p data-drill-result></p>'}
+    <div class="alg-drill__actions"><button class="btn btn--secondary btn--s" type="button" data-action="drill-next">Next due algorithm</button></div>`;
 }
 
 /** Mount the canonical case browser. The injected `subscribeTurns` adapter can
@@ -131,7 +132,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   const learning = loadLearning(storage);
   let session = null, tick = null, destroyed = false, renderId = 0, active = true, lastRouteKey = null;
   let cubeView = null, sequencePlayer = null, caseOrbit = null, selectedAlgId = null, cubeSnapshot = smartCube.getSnapshot(), cubeUnsubscribe = null, cubeSessionUnsubscribe = null, repaintRound = null, repaintReady = false;
-  let displayMode = 'case', caseColorSetting = readCaseColorSetting(storage);
+  let displayMode = 'case', displayModeWidget = null, caseColorSetting = readCaseColorSetting(storage);
   let setupState = null, lastCubeMoveSeq = 0;
   const saveLearning = () => { try { storage?.setItem(LEARNING_KEY, JSON.stringify(learning)); } catch { /* Keep the schedule for this tab. */ } };
 
@@ -153,10 +154,34 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     const context = parseAlgRouteContext(location.hash);
     root.innerHTML = caseData ? caseDetail(caseData, context) : browser(set);
     const shell = root.querySelector('.alg-page');
+    displayModeWidget = null;
     if (shell) { shell.dataset.brainStyle = loadSettings(storage).style; syncPageTokens(shell); }
+    const displayModeHost = root.querySelector('[data-display-mode-controls]');
+    if (displayModeHost) {
+      displayModeWidget = createSegmented(displayModeHost, {
+        label: 'Cube display', value: displayMode,
+        options: [{ value: 'case', label: 'case' }, { value: 'your cube', label: 'your cube' }],
+        onChange: requestedMode => {
+          if (requestedMode === 'your cube' && cubeSnapshot.phase !== 'tracking') {
+            setCubeMessage('Connect with the cube chip in the header to mirror your cube.');
+            displayModeWidget?.setValue('case');
+            return;
+          }
+          displayMode = requestedMode;
+          applyCubeDisplay();
+          refreshCubeStatus();
+        },
+      });
+      displayModeWidget.element.querySelectorAll('.seg__o').forEach(button => { button.dataset.displayMode = button.dataset.value; });
+    }
+    const colorHost = root.querySelector('[data-case-colors-host]');
+    if (colorHost) {
+      const colorChip = createChip(colorHost, { label: 'case colors', value: caseColorSetting });
+      colorChip.dataset.caseColors = '';
+    }
     if (caseData) {
       const orbitHost = root.querySelector('[data-alg-orbit]');
-      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, label: `${caseData.name} algorithm progress`, segments: [] });
+      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, centerClearance: 140, label: `${caseData.name} algorithm progress`, segments: [] });
       if (!supportsVirtualRepaint(caseData)) repaintReady = false;
       try { setupState = caseSetupState(caseData); }
       catch { setupState = null; }
@@ -196,7 +221,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       const personalSection = root.querySelector('[data-personal-algs]');
       if (personalSection && personal.length) {
         personalSection.hidden = false;
-        personalSection.innerHTML = `<h2>Your algorithms</h2><div class="alg-entry-grid">${personal.map((alg, index) => `<article class="alg-entry ${pick?.algId === alg.id ? 'is-picked' : ''}" data-alg-entry="${esc(alg.id)}"><div class="alg-entry__top"><strong>Personal ${index + 1}</strong><span>${alg.verified ? 'verified' : 'Failed verification · excluded from matching'}</span></div><code>${esc(fmt.moves(alg.moves))}</code><p>${safeHttpUrl(alg.source?.url) ? `Credit: ${esc(alg.credit ?? alg.source.name)} · <a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">Source (needs internet)</a>` : 'Added on this device.'}</p><div class="alg-entry__actions"><button type="button" data-pick="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Choose this alg</button><button type="button" data-drill-alg="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Drill</button></div></article>`).join('')}</div>`;
+        personalSection.innerHTML = `<h2>Your algorithms</h2><div class="alg-entry-grid">${personal.map((alg, index) => `<article class="alg-entry ${pick?.algId === alg.id ? 'is-picked' : ''}" data-alg-entry="${esc(alg.id)}"><div class="alg-entry__top"><strong>Personal ${index + 1}</strong><span>${alg.verified ? 'verified' : 'Failed verification · excluded from matching'}</span></div><code>${esc(fmt.moves(alg.moves))}</code><p>${safeHttpUrl(alg.source?.url) ? `Credit: ${esc(alg.credit ?? alg.source.name)} · <a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">Source (needs internet)</a>` : 'Added on this device.'}</p><div class="alg-entry__actions"><button class="btn btn--secondary btn--s" type="button" data-pick="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Choose this alg</button><button class="btn btn--text btn--s" type="button" data-drill-alg="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Drill</button></div></article>`).join('')}</div>`;
       }
       refreshCubeStatus();
       if (drill) void startDrill(pick?.algId, cubeSnapshot.phase === 'tracking' ? supportsVirtualRepaint(caseData) && repaintReady ? 'repeat' : 'smart' : 'self');
@@ -247,9 +272,6 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   }
 
   function applyCubeDisplay() {
-    root.querySelectorAll('[data-display-mode]').forEach(button => {
-      button.setAttribute('aria-pressed', String(button.dataset.displayMode === displayMode));
-    });
     if (!cubeView) return;
     if (displayMode === 'your cube') {
       sequencePlayer?.pause();
@@ -298,18 +320,6 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
 
   function stopTimer() { if (tick != null) clearInterval(tick); tick = null; }
   const clickHandler = async event => {
-    const displayButton = event.target.closest('[data-display-mode]');
-    if (displayButton) {
-      const requestedMode = displayButton.dataset.displayMode === 'your cube' ? 'your cube' : 'case';
-      if (requestedMode === 'your cube' && cubeSnapshot.phase !== 'tracking') {
-        setCubeMessage('Connect with the cube chip in the header to mirror your cube.');
-        return;
-      }
-      displayMode = requestedMode;
-      applyCubeDisplay();
-      refreshCubeStatus();
-      return;
-    }
     if (event.target.closest('[data-case-colors]')) {
       const index = CASE_COLORS.indexOf(caseColorSetting);
       caseColorSetting = writeCaseColorSetting(CASE_COLORS[(index + 1) % CASE_COLORS.length], storage);

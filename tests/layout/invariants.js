@@ -45,7 +45,7 @@ export async function inspectLayout(page, cell) {
       if (!el) return false;
       const style = getComputedStyle(el);
       const r = el.getBoundingClientRect();
-      if (el.closest('.sr-only,.visually-hidden,.b-sr')) return false;
+      if (el.closest('.sr-only,.visually-hidden,.b-sr,.mg-sr')) return false;
       for (let ancestor = el; ancestor; ancestor = ancestor.parentElement) {
         const parentStyle = getComputedStyle(ancestor);
         if (parentStyle.display === 'none' || (ancestor !== el && +parentStyle.opacity === 0)) return false;
@@ -110,7 +110,7 @@ export async function inspectLayout(page, cell) {
     const visible = selector => [...document.querySelectorAll(selector)].filter(isVisible).map(el => ({ el, r: el.getBoundingClientRect() }));
     const intersects = (a, b) => a.r.left < b.r.right - 1 && a.r.right > b.r.left + 1 && a.r.top < b.r.bottom - 1 && a.r.bottom > b.r.top + 1;
     const keyGroups = [
-      ['header', '.site-header, .ui-header, [data-shared-header]'], ['cube', '#brain-cube canvas, .cube-stage canvas, .tm-preview canvas, .history-cube canvas, [data-cube] canvas, .shared-cube canvas'],
+      ['header', '.site-header, .ui-header, [data-shared-header]'], ['cube', '#brain-cube canvas, .cube-stage canvas, .tm-preview canvas, .history-cube canvas, .progress-cube-mount canvas, [data-cube] canvas, .shared-cube canvas'],
       ['rail', '.b-aside, [data-ui-rail]'], ['actions', '.b-results-actions, .ui-actions, [data-ui-actions]'], ['key-bar', '.b-keybar, .b-keys, .ui-key-bar, [data-key-bar]'],
     ];
     const boxes = keyGroups.map(([name, selector]) => [name, visible(selector)]).filter(([, nodes]) => nodes.length);
@@ -186,7 +186,7 @@ export async function inspectLayout(page, cell) {
         if (header && el !== document.querySelector('.site-header') && r.top < header.bottom - 1 && r.bottom > header.top + 1) found.push({ selector: el.id ? `#${el.id}` : el.tagName.toLowerCase(), box, detail: 'sticky element covers the header' });
       }
       if (['results', 'history', 'progress'].includes(routeFamily)) {
-        for (const [name, selector] of [['cube', '#brain-cube canvas, .tm-preview canvas, .history-cube canvas, [data-cube] canvas'], ['orbit', '#brain-timeline, [data-orbit], .orbit, .tm-orbit, .tm-ring']]) {
+        for (const [name, selector] of [['cube', '#brain-cube canvas, .tm-preview canvas, .history-cube canvas, .progress-cube-mount canvas, [data-cube] canvas'], ['orbit', '#brain-timeline, [data-orbit], .orbit, .tm-orbit, .tm-ring']]) {
           const target = [...document.querySelectorAll(selector)].find(el => {
             const r = el.getBoundingClientRect();
             return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
@@ -212,16 +212,21 @@ export async function inspectLayout(page, cell) {
 
 export async function saveFailure(page, report, filePath, frameId = 'F8') {
   const selector = report.errors[0]?.selector;
+  let diagnosticStyle = null;
   if (selector) {
     await page.evaluate(({ sel, frameId }) => {
-      document.querySelectorAll('[data-layout-failure]').forEach(el => el.removeAttribute('data-layout-failure'));
+      document.querySelectorAll('[data-layout-failure], [data-layout-frame]').forEach(el => { el.removeAttribute('data-layout-failure'); el.removeAttribute('data-layout-frame'); });
       try {
         const target = document.querySelector(sel);
         target?.setAttribute('data-layout-failure', 'true');
         target?.setAttribute('data-layout-frame', frameId);
       } catch { /* diagnostic selector only */ }
     }, { sel: selector, frameId });
-    await page.addStyleTag({ content: '[data-layout-failure="true"]{outline:3px solid #ff3355!important;outline-offset:2px!important;background-color:#ff335533!important;position:relative}[data-layout-failure="true"]::before{content:attr(data-layout-frame) " ①";position:absolute;left:0;top:0;z-index:99999;background:#ff3355;color:white;font:700 14px/1.4 sans-serif;padding:0 5px}' }).catch(() => {});
+    diagnosticStyle = await page.addStyleTag({ content: '[data-layout-failure="true"]{outline:3px solid #ff3355!important;outline-offset:2px!important;background-color:#ff335533!important;position:relative}[data-layout-failure="true"]::before{content:attr(data-layout-frame) " ①";position:absolute;left:0;top:0;z-index:99999;background:#ff3355;color:white;font:700 14px/1.4 sans-serif;padding:0 5px}' }).catch(() => null);
   }
-  await page.screenshot({ path: filePath, fullPage: false }).catch(() => {});
+  try { await page.screenshot({ path: filePath, fullPage: false }).catch(() => {}); }
+  finally {
+    await diagnosticStyle?.evaluate(style => style.remove()).catch(() => {});
+    await page.evaluate(() => document.querySelectorAll('[data-layout-failure], [data-layout-frame]').forEach(el => { el.removeAttribute('data-layout-failure'); el.removeAttribute('data-layout-frame'); })).catch(() => {});
+  }
 }
