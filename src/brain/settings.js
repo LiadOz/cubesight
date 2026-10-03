@@ -264,6 +264,29 @@ export function buildSettingsPanel(settings, open = false, themePreference = 'sy
   };
 }
 
+const voiceStatusPanels = new WeakMap();
+export function withVoiceCalloutStatus(panel, status) {
+  if (!panel || typeof panel !== 'object' || !Array.isArray(panel.sections)) return panel;
+  let byStatus = voiceStatusPanels.get(panel);
+  if (byStatus?.has(status)) return byStatus.get(status);
+  let found = false;
+  const sections = panel.sections.map(section => {
+    let changed = false;
+    const rows = section.rows.map(row => {
+      if (row.id !== 'voice') return row;
+      found = true;
+      changed = true;
+      return { ...row, help: `${row.help} ${status}`.trim() };
+    });
+    return changed ? { ...section, rows } : section;
+  });
+  if (!found) return panel;
+  const withStatus = { ...panel, sections };
+  if (!byStatus) voiceStatusPanels.set(panel, byStatus = new Map());
+  byStatus.set(status, withStatus);
+  return withStatus;
+}
+
 /** A short text for the inspection setting, e.g. 'insp 15s', 'insp 10s', 'insp ∞', 'insp off'. */
 export function inspectionLabel(inspection) {
   if (inspection.mode === 'off') return 'insp off';

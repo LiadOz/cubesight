@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_SETTINGS, SETTINGS_KEY, loadSettings, saveSettings, normalizeSettings, setSetting, getSetting,
-  parseCommand, buildSettingsPanel, buildConfigBar, inspectionLabel,
+  parseCommand, buildSettingsPanel, buildConfigBar, inspectionLabel, withVoiceCalloutStatus,
 } from '../src/brain/settings.js';
 import { resolveKey, keyHints } from '../src/brain/keys.js';
 
@@ -57,6 +57,19 @@ test('cross colour defaults to all faces and supports a selected colour', () => 
   assert.equal(normalizeSettings({ crossColor: 'purple' }).crossColor, 'neutral');
   assert.deepEqual(parseCommand('crosscolor green'), { path: 'crossColor', value: 'green' });
   assert.ok(buildSettingsPanel(normalizeSettings(), true).sections.find(section => section.id === 'solve').rows.some(row => row.id === 'crossColor'));
+});
+
+test('voice help status decorates cached settings immutably and idempotently', () => {
+  const panel = buildSettingsPanel(normalizeSettings(), true);
+  const base = panel.sections.flatMap(section => section.rows).find(row => row.id === 'voice');
+  const status = 'no offline voice installed; callouts stay silent.';
+  const decorated = withVoiceCalloutStatus(panel, status);
+  const row = decorated.sections.flatMap(section => section.rows).find(item => item.id === 'voice');
+  assert.equal(base.help, 'Speak the callouts with a local device voice.');
+  assert.equal(row.help, `${base.help} ${status}`);
+  assert.equal(withVoiceCalloutStatus(panel, status), decorated, 'repeated rendering reuses the same decorated panel');
+  assert.equal(withVoiceCalloutStatus(panel, 'offline voice ready.').sections.flatMap(section => section.rows).find(item => item.id === 'voice').help,
+    `${base.help} offline voice ready.`, 'changing status starts from the immutable base help');
 });
 
 test('setSetting: paths, inspection merge (including the legacy shape), toggles and presets', () => {

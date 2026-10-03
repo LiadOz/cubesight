@@ -21,7 +21,7 @@ import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
 import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
 import { attachBrainRecording } from '../brain-recording.js';
 import { MSG } from '../copy/terms.js';
-import { loadSettings, saveSettings, setSetting, parseCommand } from './settings.js';
+import { loadSettings, saveSettings, setSetting, parseCommand, withVoiceCalloutStatus } from './settings.js';
 import { createVoiceCallouts } from '../goals/voice-callouts.js';
 import { buildStagePlan, xcrossLabel } from './stage-plan.js';
 import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './milestones.js';
@@ -135,8 +135,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       scrambleText, scrambleNumber, settingsOpen, themePreference: getThemePreference(), debugOpen, connectStep, commandOpen, toast,
       reviewUi, caseChoice, pins: history?.pins.list ?? NO_PINS, analysisStatus: analysisState.get(currentAt()) ?? 'none',
     }, vm);
-    const voiceRow = next.settings?.sections.flatMap(section => section.rows).find(row => row.id === 'voice');
-    if (voiceRow) voiceRow.help = `${voiceRow.help} ${voiceCallouts.status()}`;
+    next.settings = withVoiceCalloutStatus(next.settings, voiceCallouts.status());
     commandOpen = false;
     const prev = vm;
     vm = next;
