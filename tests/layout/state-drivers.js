@@ -17,8 +17,8 @@ async function readyForRoute(page, path) {
 
 registerLayoutDriver('main-page', async page => readyForRoute(page, '/solve'));
 
-registerLayoutDriver('demo-fixture', async (page, { route }) => {
-  await readyForRoute(page, route);
+registerLayoutDriver('demo-fixture', async (page, { fixture }) => {
+  await readyForRoute(page, fixture.route);
   await expect(page.locator('#demo-view .demo-cube canvas')).toBeVisible();
   await page.locator('#demo-view [data-action="next-move"]').click();
   await expect(page.locator('#demo-view .demo-move-description')).toContainText('Move 2');
