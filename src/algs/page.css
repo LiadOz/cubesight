@@ -57,6 +57,7 @@
 .alg-drill__alg a { display: inline-flex; align-items: center; min-height: 44px; margin-top: 10px; }
 .alg-drill__timer { padding: 16px; text-align: center; font: 600 clamp(32px, 8vw, 60px) var(--b-font-num); }
 .alg-drill__actions { justify-content: center; margin-top: 10px; }
+.alg-drill__actions .btn { min-height: 44px; }
 .alg-metric-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
 .alg-metric-stats span { display: grid; gap: 4px; color: var(--b-muted); font-size: 11px; }
 .alg-metric-stats strong { color: var(--b-ink); font: 600 16px var(--b-font-mono); }
