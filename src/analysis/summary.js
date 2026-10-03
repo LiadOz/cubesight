@@ -11,7 +11,7 @@ import { ENGINE_VERSION } from './segment.js';
 import { canonicalizeReconstruction, tokenizeReconstruction } from '../review/import-parser.js';
 import { unrelabelMoves } from './normalize.js';
 
-export const SUMMARY_VERSION = 2;
+export const SUMMARY_VERSION = 3;
 const MAX_LOSSES = 8;
 const MAX_PAUSES = 8;
 const MAX_CANCELS = 8;
@@ -106,6 +106,16 @@ function compactLastLayerStage(stage, face) {
   return {
     caseId: stage.caseId, name: stage.name, number: stage.number ?? null, from: stage.from, to: stage.to,
     used: stage.used ? { moves: playableMoves(stage.used.moves ?? '', face), core: playableMoves(stage.used.core ?? '', face), stm: stage.used.stm ?? 0, coreStm: stage.used.coreStm ?? 0, auf: playableMoves(stage.used.auf ?? '', face), aufStm: stage.used.aufStm ?? 0 } : null,
+    recognizedAlg: stage.recognizedAlg ? { id: stage.recognizedAlg.id ?? null,
+      moves: playableMoves(stage.recognizedAlg.moves ?? '', face), sourceNotation: stage.recognizedAlg.moves ?? '' } : null,
+    configuredLooks: stage.configuredLooks ?? stage.configured ?? null,
+    looksTaken: stage.looksTaken ?? null,
+    extraLook: stage.extraLook === true,
+    likelyExtraLook: stage.likelyExtraLook === true,
+    looks: (stage.looks ?? []).slice(0, 8).map(look => ({ caseId: look.caseId, name: look.name, at: look.at, evidence: look.evidence ?? null,
+      ...(Number.isFinite(look.pauseMs) ? { pauseMs: look.pauseMs } : {}),
+      ...(look.recognizedAlg ? { recognizedAlg: look.recognizedAlg } : {}),
+      ...(look.recognizedAlgMoves ? { recognizedAlgMoves: playableMoves(look.recognizedAlgMoves, face), recognizedAlgSourceNotation: look.recognizedAlgMoves } : {}) })),
     best: compactAlg(stage.best), better: stage.better ? { stm: stage.better.stm, loss: stage.better.loss, best: playableMoves(stage.better.best, face) } : null,
     extraAuf: stage.extraAuf ? { loss: stage.extraAuf.loss, indices: stage.extraAuf.indices, used: playableMoves(stage.extraAuf.used, face), best: playableMoves(stage.extraAuf.best, face) } : null,
     recognitionMs: stage.recognitionMs, executionMs: stage.executionMs,

@@ -15,7 +15,7 @@ export function cleanRotationMarks(marks) {
 
 /** @returns {Object|null} */
 export function cleanAnalysis(a) {
-  if (!a || typeof a !== 'object' || ![1, 2].includes(a.v)) return null;
+  if (!a || typeof a !== 'object' || ![1, 2, 3].includes(a.v)) return null;
   const marks = a.marks && typeof a.marks === 'object' ? a.marks : {};
   const cross = a.cross && typeof a.cross === 'object' ? a.cross : null;
   const out = {
@@ -125,6 +125,19 @@ export function cleanAnalysis(a) {
     return {
       caseId: str(stage.caseId, 24), name: str(stage.name, 80) ?? '', number: int(stage.number, 1, 100), from: stage.from, to: stage.to,
       used, best: cleanAlg(stage.best), better, extraAuf,
+      recognizedAlg: stage.recognizedAlg && typeof stage.recognizedAlg === 'object' ? {
+        id: str(stage.recognizedAlg.id, 100), moves: moveString(stage.recognizedAlg.moves), sourceNotation: str(stage.recognizedAlg.sourceNotation, 600) ?? '',
+      } : null,
+      configuredLooks: int(stage.configuredLooks, 1, 2), looksTaken: int(stage.looksTaken, 1, 12),
+      extraLook: stage.extraLook === true, likelyExtraLook: stage.likelyExtraLook === true,
+      looks: list(stage.looks, 8, look => look && typeof look.caseId === 'string' && Number.isInteger(look.at) ? {
+        caseId: look.caseId.slice(0, 24), name: str(look.name, 80) ?? '', at: look.at,
+        evidence: ['configured-look', 'pause', 'known-alg-prefix'].includes(look.evidence) ? look.evidence : null,
+        ...(Number.isFinite(look.pauseMs) ? { pauseMs: Math.max(0, Math.round(look.pauseMs)) } : {}),
+        ...(typeof look.recognizedAlg === 'string' ? { recognizedAlg: look.recognizedAlg.slice(0, 100) } : {}),
+        ...(typeof look.recognizedAlgMoves === 'string' ? { recognizedAlgMoves: moveString(look.recognizedAlgMoves) } : {}),
+        ...(typeof look.recognizedAlgSourceNotation === 'string' ? { recognizedAlgSourceNotation: look.recognizedAlgSourceNotation.slice(0, 600) } : {}),
+      } : null),
       recognitionMs: Number.isFinite(stage.recognitionMs) ? Math.max(0, Math.round(stage.recognitionMs)) : null,
       executionMs: Number.isFinite(stage.executionMs) ? Math.max(0, Math.round(stage.executionMs)) : null,
     };

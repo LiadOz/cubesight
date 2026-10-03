@@ -4,6 +4,7 @@ import {
   crossHindsight, f2lNextPairHint, betterInsertionHindsight,
   ollStage, pllLens, efficiencyScore,
 } from '../src/solve-coach.js';
+import { resultsCoach } from '../src/brain/coach-lines.js';
 import { stateFromScramble, createSolvedState } from '../src/cross-cube.js';
 import { f2lPairSlots } from '../src/solve-tracker.js';
 
@@ -58,4 +59,13 @@ test('efficiencyScore is bounded 0–100 and rewards solving with an optimal cro
   assert.ok(optimal > bad);
   assert.ok(optimal <= 100 && optimal >= 0);
   assert.ok(bad >= 0);
+});
+
+test('results coach names a corroborated extra last-layer look and its drill case', () => {
+  const insights = resultsCoach({ record: { analysis: { lastLayer: { oll: {
+    caseId: 'oll/10', name: 'Corner Case', number: 10, looksTaken: 2, extraLook: true,
+    looks: [{ caseId: 'oll/34', name: 'Fish', at: 12, evidence: 'pause' }],
+  } } } }, optimalCross: null });
+  assert.match(insights[0].text, /OLL 10 · 2 looks: a pause led to OLL 34, then continued/);
+  assert.match(insights[0].text, /Drill OLL 34 next/);
 });
