@@ -36,7 +36,6 @@ import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
 import { toRenderData, validateSolution } from './cross-cube.js';
-import { Cube } from './ui/cube/index.js';
 import { readCaseColorSetting, CASE_COLOR_CHANGE_EVENT } from './ui/cube/case-color.js';
 import { createCaseDisplayMap, colorHex, displayColorKey, logicalColorKey, recolorStickers } from './trainers/case-display.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from './f2l-planner.js';
@@ -1817,12 +1816,26 @@ function renderRecordingView() {
 let recordingViewModel = null;
 let recordingSnapshotSource = null;
 let recordingCube = null;
+let recordingCubeGeneration = 0;
+let sharedCubeModule = null;
+const loadSharedCube = () => sharedCubeModule ??= import('./ui/cube/index.js');
 function syncRecordingCube(tool) {
-  if (tool !== 'recording') { recordingCube?.destroy(); recordingCube = null; return; }
+  if (tool !== 'recording') {
+    recordingCubeGeneration++;
+    recordingCube?.destroy(); recordingCube = null;
+    return;
+  }
   if (recordingCube) return;
-  const host = document.querySelector('#recording-cube');
-  recordingCube = new Cube(host, { mode: 'live', size: 'M', label: 'current smart cube recording preview' });
-  recordingCube.bindSession(smartCube);
+  const generation = ++recordingCubeGeneration;
+  void loadSharedCube().then(({ Cube }) => {
+    if (generation !== recordingCubeGeneration || activeTool !== 'recording') return;
+    const host = document.querySelector('#recording-cube');
+    if (!host) return;
+    recordingCube = new Cube(host, { mode: 'live', size: 'M', label: 'current smart cube recording preview' });
+    recordingCube.bindSession(smartCube);
+  }).catch(error => {
+    if (generation === recordingCubeGeneration) console.error('Could not load the recording cube preview.', error);
+  });
 }
 
 function setTool(tool, initial = false) {
@@ -2378,7 +2391,10 @@ function syncLegacyCubes(tool) {
   const controller = new AbortController();
   legacyCubeLoad = { tool, controller };
   const host = document.querySelector(tool === 'corner' ? '#cube' : '#f2l-cube');
-  void Promise.resolve().then(() => {
+  void Promise.resolve().then(async () => {
+    // copy-ok: internal cancellation reason used only to stop stale cube mounts
+    if (controller.signal.aborted) throw new DOMException('Trainer cube mount was cancelled.', 'AbortError');
+    const { Cube } = await loadSharedCube();
     // copy-ok: internal cancellation reason used only to stop stale cube mounts
     if (controller.signal.aborted) throw new DOMException('Trainer cube mount was cancelled.', 'AbortError');
     // The legacy renderer may have installed its accessible SVG fallback before
