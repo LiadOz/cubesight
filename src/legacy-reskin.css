@@ -31,7 +31,7 @@
 
 .legacy-drill-view :is(.training-settings, .trainer-shell, .pll-settings, .pll-trainer-shell,
 .case-table-card, .pll-case-card, .metric-card, .trend-card, .pll-metric-grid article,
-.f2l-info-grid article, .pll-answer-stage, .answer-stage) {
+.pll-answer-stage, .answer-stage) {
   border-color: var(--b-hairline);
   background-color: var(--b-surface);
   color: var(--b-ink);
@@ -53,7 +53,7 @@
   color: var(--b-muted);
 }
 
-.legacy-drill-view :is(.status-dot i, .progress-track i, .mini-track i, .pll-mini-track em) {
+.legacy-drill-view :is(.status-dot i, .mini-track i, .pll-mini-track em) {
   background: var(--b-accent);
   box-shadow: none;
 }
@@ -64,11 +64,11 @@
 }
 
 .legacy-drill-view :is(.training-settings, .pll-settings, .case-table-card, .pll-case-card,
-.metric-card, .trend-card, .pll-metric-grid article, .f2l-info-grid article) {
+.metric-card, .trend-card, .pll-metric-grid article) {
   border-radius: var(--b-radius-bar);
 }
 
-.legacy-drill-view :is(.segmented, .pll-segmented, .cross-option, .f2l-progress i,
+.legacy-drill-view :is(.segmented, .pll-segmented, .cross-option,
 .selected-piece-card, .pll-control-group select, .scan-duration select) {
   border-color: var(--b-hairline);
   background: var(--b-bg);
@@ -90,7 +90,7 @@
 }
 
 .legacy-drill-view :is(.answer-button.correct, .planner-choice.best, .selected-piece-card.has-selection,
-.f2l-progress i.done, .cross-option.active, .pll-answer.correct) {
+.cross-option.active, .pll-answer.correct) {
   border-color: var(--b-good);
   background: var(--b-accent-soft);
   color: var(--b-accent-text);
@@ -131,7 +131,7 @@
 .legacy-drill-view .pll-pause button { border-radius: var(--b-radius-control); background: var(--b-accent); color: var(--b-on-accent); }
 .legacy-drill-view .planner-loading { border-color: var(--b-hairline); color: var(--b-muted); }
 
-:root[data-theme] .legacy-drill-view :is(.segmented, .pll-segmented, .cross-option, .f2l-progress i,
+:root[data-theme] .legacy-drill-view :is(.segmented, .pll-segmented, .cross-option,
 .selected-piece-card, .pll-control-group select, .scan-duration select, .answer-button, .planner-choice, .pll-answer) {
   border-color: var(--b-hairline);
   background: var(--b-bg);
@@ -139,7 +139,7 @@
 }
 
 :root[data-theme] .legacy-drill-view :is(.segment.active, .pll-segment.active, .cross-option.active,
-.answer-button.correct, .planner-choice.best, .selected-piece-card.has-selection, .f2l-progress i.done,
+.answer-button.correct, .planner-choice.best, .selected-piece-card.has-selection,
 .pll-answer.correct) {
   border-color: var(--b-good);
   background: var(--b-accent-soft);
@@ -215,4 +215,73 @@
   .legacy-drill-view :is(.cube-mount, .pll-cube-mount) { max-height: 28svh; }
   .legacy-drill-view :is(.answer-grid, .pll-answer-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .legacy-drill-view :is(.answer-button, .pll-answer) { min-width: 0; }
+}
+
+@media (max-width: 700px) {
+  :root:has(#pll-view:not([hidden])) .brain.quick-round,
+  :root:has(#f2l-view:not([hidden])) .brain.quick-round { margin-bottom: 8px; padding: 6px 8px; }
+  :root:has(#pll-view:not([hidden])) .quick-round-line,
+  :root:has(#f2l-view:not([hidden])) .quick-round-line { gap: 6px; }
+  :root:has(#pll-view:not([hidden])) .quick-round button,
+  :root:has(#f2l-view:not([hidden])) .quick-round button { min-height: 44px; padding: 5px 8px; font-size: 11px; }
+  :root:has(#pll-view:not([hidden])) .intro-row,
+  :root:has(#f2l-view:not([hidden])) .intro-row { padding: 8px 2px; }
+  :root:has(#pll-view:not([hidden])) .training-settings,
+  :root:has(#f2l-view:not([hidden])) .training-settings { margin-bottom: 8px; }
+  :root:has(#pll-view:not([hidden])) .training-settings summary,
+  :root:has(#f2l-view:not([hidden])) .training-settings summary { min-height: 40px; padding: 8px 12px; }
+  :root:has(#pll-view:not([hidden])) .mode-bar,
+  :root:has(#f2l-view:not([hidden])) .mode-bar { padding: 8px; gap: 6px; }
+  :root:has(#pll-view:not([hidden])) .mode-group,
+  :root:has(#f2l-view:not([hidden])) .mode-group { gap: 5px; }
+  :root:has(#pll-view:not([hidden])) .segment,
+  :root:has(#f2l-view:not([hidden])) .segment { min-height: 44px; padding: 6px; font-size: 10px; }
+  :root:has(#pll-view:not([hidden])) .learning-controls,
+  :root:has(#f2l-view:not([hidden])) .learning-controls { gap: 6px; font-size: 9px; }
+  :root:has(#pll-view:not([hidden])) .exposure-picker select,
+  :root:has(#f2l-view:not([hidden])) .exposure-picker select { min-height: 32px; padding: 4px; font-size: 10px; }
+  :root:has(#pll-view:not([hidden])) .trainer-shell,
+  :root:has(#f2l-view:not([hidden])) .trainer-shell,
+  :root:has(#pll-view:not([hidden])) .pll-trainer-shell { display: grid; grid-template-columns: minmax(132px, .85fr) minmax(0, 1.15fr); min-height: 0; }
+  :root:has(#pll-view:not([hidden])) .cube-stage,
+  :root:has(#f2l-view:not([hidden])) .cube-stage,
+  :root:has(#pll-view:not([hidden])) .pll-cube-stage { padding: 8px; }
+  :root:has(#pll-view:not([hidden])) .cube-mount,
+  :root:has(#f2l-view:not([hidden])) .cube-mount,
+  :root:has(#pll-view:not([hidden])) .pll-cube-mount { height: 160px; min-height: 0; max-height: 160px; }
+  :root:has(#pll-view:not([hidden])) .answer-stage,
+  :root:has(#f2l-view:not([hidden])) .answer-stage,
+  :root:has(#pll-view:not([hidden])) .pll-answer-stage { padding: 8px; }
+  :root:has(#pll-view:not([hidden])) .timer-wrap,
+  :root:has(#f2l-view:not([hidden])) .timer-wrap { margin: 6px 0; }
+  :root:has(#pll-view:not([hidden])) .answer-button,
+  :root:has(#f2l-view:not([hidden])) .answer-button,
+  :root:has(#pll-view:not([hidden])) .pll-answer { min-height: 44px; padding: 4px; font-size: 8px; }
+}
+
+@media (max-width: 700px) {
+  :root:has(#corner-view:not([hidden])) .brain.quick-round { margin-bottom: 8px; padding: 6px 8px; }
+  :root:has(#corner-view:not([hidden])) .quick-round-line { gap: 6px; }
+  :root:has(#corner-view:not([hidden])) .quick-round button { min-height: 44px; padding: 5px 8px; font-size: 11px; }
+  :root:has(#corner-view:not([hidden])) .intro-row { padding: 8px 2px; }
+  :root:has(#corner-view:not([hidden])) .training-settings { margin-bottom: 8px; }
+  :root:has(#corner-view:not([hidden])) .training-settings summary { min-height: 40px; padding: 8px 12px; }
+  :root:has(#corner-view:not([hidden])) .mode-bar { padding: 8px; gap: 6px; }
+  :root:has(#corner-view:not([hidden])) .mode-group { gap: 5px; }
+  :root:has(#corner-view:not([hidden])) .segment { min-height: 44px; padding: 6px; font-size: 10px; }
+  :root:has(#corner-view:not([hidden])) .learning-controls { gap: 6px; font-size: 9px; }
+  :root:has(#corner-view:not([hidden])) .exposure-picker select { min-height: 32px; padding: 4px; font-size: 10px; }
+  :root:has(#corner-view:not([hidden])) .trainer-shell { display: grid; grid-template-columns: minmax(132px, .85fr) minmax(0, 1.15fr); min-height: 0; }
+  :root:has(#corner-view:not([hidden])) .cube-stage { padding: 8px; }
+  :root:has(#corner-view:not([hidden])) .stage-topline { flex-wrap: wrap; font-size: 7px; }
+  :root:has(#corner-view:not([hidden])) .cube-mount { height: 160px; min-height: 0; }
+  :root:has(#corner-view:not([hidden])) .cube-caption { font-size: 7px; }
+  :root:has(#corner-view:not([hidden])) .answer-stage { padding: 8px; }
+  :root:has(#corner-view:not([hidden])) .timer-wrap { margin: 6px 0; }
+  :root:has(#corner-view:not([hidden])) .timer { font-size: 24px; }
+  :root:has(#corner-view:not([hidden])) .prompt-block { margin-bottom: 6px; }
+  :root:has(#corner-view:not([hidden])) .prompt-block p { font-size: 14px; }
+  :root:has(#corner-view:not([hidden])) .answer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; }
+  :root:has(#corner-view:not([hidden])) .answer-button { min-height: 44px; padding: 4px; font-size: 8px; }
+  :root:has(#corner-view:not([hidden])) .answer-button > i { width: 14px; height: 18px; }
 }

@@ -1,6 +1,5 @@
 .cross-planning-page { display: grid; gap: 16px; width: 100%; min-width: 0; }
 .cp-session { overflow: hidden; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); }
-.cp-status { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; color: var(--b-muted); font: var(--b-fs-label) var(--b-font-mono); }
 .cp-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, .8fr); }
 .cp-cube { min-height: 300px; height: min(52vw, 440px); max-height: 440px; background: var(--b-canvas); }
 .cp-work { min-width: 0; padding: clamp(16px, 3vw, 28px); display: flex; flex-direction: column; justify-content: center; gap: 14px; }
@@ -23,13 +22,25 @@
 #cp-next { align-self: start; padding: 8px 16px; border-color: var(--b-accent); background: var(--b-accent); color: var(--b-on-accent); }
 .cp-source { font-size: var(--b-fs-label); }
 .cp-source a { color: var(--b-accent-text); }
+@media (min-width: 701px) and (max-height: 780px) {
+  .cross-planning-page { gap: 8px; }
+  .cp-cube { height: 300px; min-height: 0; max-height: 300px; }
+  .cp-work { gap: 8px; padding: 12px; }
+  .cp-source { display: none; }
+}
 @media (max-width: 700px) {
   .cross-planning-page { gap: 10px; }
+  .cross-planning-page > .cs-head .cs-sub { display: none; }
+  .cross-planning-page > .cs-head { margin-bottom: 0; }
   .cp-session { border-radius: var(--b-radius-bar); }
-  .cp-layout { grid-template-columns: minmax(0, 1fr); }
-  .cp-cube { height: clamp(210px, 38svh, 310px); min-height: 0; max-height: 310px; }
-  .cp-work { gap: 10px; padding: 14px; }
+  .cp-layout { grid-template-columns: minmax(132px, .8fr) minmax(0, 1.2fr); }
+  .cp-cube { height: 190px; min-height: 0; max-height: 190px; }
+  .cp-work { gap: 6px; padding: 8px; }
+  .cp-hint, .cp-source { display: none; }
+  .cp-question { font-size: 14px; }
   .cp-faces { gap: 6px; }
-  .cp-face { min-width: 0; grid-template-columns: 14px 1fr auto; gap: 5px; padding: 7px 6px; font-size: var(--b-fs-label); }
-  .cp-face i { width: 13px; height: 13px; }
+  .cp-face { min-width: 0; min-height: 44px; grid-template-columns: 12px 1fr; gap: 4px; padding: 4px; font-size: 9px; }
+  .cp-face i { width: 11px; height: 11px; }
+  .cp-face kbd { display: none; }
+  .cp-reveal { max-height: 140px; overflow: auto; padding: 8px; }
 }

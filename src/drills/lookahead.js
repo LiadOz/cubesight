@@ -1,8 +1,9 @@
 import '../pages/page.css';
 import './lookahead.css';
-import { createPageCube } from '../pages/cube-view.js';
+import { Cube } from '../ui/cube/index.js';
+import { readCaseColorSetting, CASE_COLOR_CHANGE_EVENT } from '../ui/cube/case-color.js';
 import { createSequencePlayer } from '../moves/sequence-player.js';
-import { toRenderData, validateSolution } from '../cross-cube.js';
+import { validateSolution } from '../cross-cube.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from '../f2l-planner.js';
 import { solveCross } from '../cross-solver.js';
 import { parseDrillStart } from './start-position.js';
@@ -15,6 +16,8 @@ import { relabelMoves } from '../analysis/normalize.js';
 import { parseCaseFilter } from './case-filter.js';
 import { loadSettings } from '../brain/settings.js';
 import { createRoundPanel } from './round-panel.js';
+import { createTrainerOrbit } from '../trainers/orbit-round.js';
+import { mountCaseColorControl } from '../trainers/case-color-control.js';
 
 const LEARNING_KEY = 'cubesight-lookahead-learning-v1';
 const randomSeed = () => Math.floor(Math.random() * 0x7fffffff) + 1;
@@ -30,7 +33,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   let active = true, disposed = false, generation = 0, current = null, startedAt = 0, selected = null;
   let currentSeed = null, round = rounds.current?.drill === 'lookahead' ? rounds.current : null;
   let activePin = null;
-  let cube = null, feedback = '', loading = false, clockTimer = null;
+  let cube = null, feedback = '', loading = false, clockTimer = null, activeCaseSeed = '';
   let roundPanel = null;
   let player = null;
   const positionPromise = resolveDrillPosition(start, 'lookahead');
@@ -64,8 +67,8 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
 
   root.innerHTML = `<section class="cs-page brain lookahead-page" data-brain-style="${loadSettings(storage).style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / F2L</p><h1>lookahead</h1><p class="cs-sub">Choose a pair to solve while keeping the next pair in view.</p></header>
+    <div class="trainer-round-host" id="lookahead-round-host"></div>
     <section class="lookahead-session" aria-label="Lookahead round">
-      <div class="lookahead-status"><span id="la-round-label">20-case round</span><span id="la-round-count">case 0 of 20</span><span id="la-combo">combo 0</span><span id="la-clock">3.00 s</span></div>
       <div class="lookahead-layout"><div class="lookahead-cube" id="la-cube" aria-label="F2L case cube"></div>
         <div class="lookahead-work"><p class="lookahead-prompt">Which pair would you solve next?</p><p class="lookahead-hint">Choose a short, verified pair solution. Keep your eyes on the other unsolved pairs.</p>
           <div id="la-choices" class="lookahead-choices" role="group" aria-label="Choose the next pair"></div>
@@ -73,52 +76,49 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
           <button id="la-next" class="la-next" type="button" hidden>next case</button>
         </div>
       </div>
-      <div class="lookahead-actions"><button id="la-start" type="button">start 20-case round</button><a href="#/drills">all drills</a></div>
+      <div class="lookahead-actions"><a href="#/drills">all drills</a></div>
     </section>
-    <section class="lookahead-result" id="la-result" hidden aria-live="polite"></section>
   </section>`;
   const $ = selector => root.querySelector(selector);
-  const cubeReady = createPageCube($('#la-cube'), { mode: 'scout' }).then(view => {
-    if (disposed) { view.destroy(); return; }
-    cube = view;
-    if (current) cube.update(toRenderData(current.setup.state));
+  const disposeCaseColorControl = mountCaseColorControl($('.cs-head'), storage);
+  const trainerOrbit = createTrainerOrbit($('#la-cube'));
+  const cubeReady = Promise.resolve().then(() => {
+    if (disposed) return;
+    cube = new Cube($('#la-cube'), { mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(storage), caseSeed: 'lookahead:initial', label: 'F2L lookahead case' });
+    if (current) cube.setState(current.setup.state);
     if (typeof selected === 'number') showContinuation(current?.choices[selected]);
   }).catch(() => { if (!disposed) $('#la-cube').textContent = '3D cube needs WebGL. The verified choices still work.'; });
-  roundPanel = createRoundPanel(root, {
-    drill: 'lookahead', storage, store: rounds,
+  roundPanel = createRoundPanel($('#lookahead-round-host'), {
+    drill: 'lookahead', storage, store: rounds, orbitHost: $('#la-cube'),
     onRestart() {
-      round = rounds.current; current = null; selected = null; $('#la-result').hidden = true;
-      $('#la-start').textContent = 'resume round';
+      round = rounds.current; current = null; selected = null;
       void makeCase(dueSeed());
     },
     onComplete() {
       clearInterval(clockTimer);
       $('#la-next').hidden = true;
       [...$('#la-choices').children].forEach(button => { button.disabled = true; });
-      round = rounds.current; labelState();
+      round = rounds.current;
     },
   });
+  trainerOrbit.connect(roundPanel.orbit, () => roundPanel.getViewModel());
 
-  function labelState() {
-    const total = round?.preset?.kind === 'cases' ? ` of ${round.preset.cases}` : '';
-    $('#la-round-count').textContent = `case ${round?.answers?.length ?? 0}${total}`;
-    $('#la-combo').textContent = `combo ${round?.combo ?? 0}`;
-    $('#la-round-label').textContent = round?.status === 'active' ? 'round in progress' : '20-case round';
-    $('#la-start').textContent = round?.status === 'active' ? 'resume round' : 'start 20-case round';
-  }
   function renderCase() {
     player?.setActive(false);
     $('#la-playback').hidden = true;
     if (!current) return;
     startedAt = performance.now();
     clearInterval(clockTimer);
-    $('#la-clock').textContent = '3.00 s';
+    trainerOrbit.tick('3.00 s');
     clockTimer = setInterval(() => {
       const remaining = Math.max(0, 3000 - (performance.now() - startedAt));
-      $('#la-clock').textContent = `${(remaining / 1000).toFixed(2)} s`;
+      trainerOrbit.tick(`${(remaining / 1000).toFixed(2)} s`);
       if (remaining <= 0) answer(null, true);
     }, 40);
-    cube?.update({ ...toRenderData(current.setup.state), mode: 'scout' });
+    activeCaseSeed = `lookahead:${round?.answers?.length || 0}:${currentSeed}`;
+    cube?.setCaseOrientation(readCaseColorSetting(storage), { seed: activeCaseSeed });
+    cube?.setState(current.setup.state);
+    trainerOrbit?.update({ index: round?.answers?.length || 0, state: 'current', value: `${round?.combo || 0} combo` });
     const choices = $('#la-choices');
     choices.replaceChildren();
     current.choices.forEach((choice, index) => {
@@ -132,8 +132,9 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     $('#la-feedback').textContent = feedback || (current.choices.length === 1 ? 'Only one pair remains. Check its verified plan.' : 'Pick the pair you would solve first.');
     $('#la-next').hidden = true;
     $('#la-next').disabled = false;
-    labelState();
   }
+  const onCaseColorChange = event => { if (cube && current) cube.setCaseOrientation(event.detail?.setting || readCaseColorSetting(storage), { seed: activeCaseSeed }); };
+  window.addEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange);
   async function makeCase(seed = randomSeed(), custom = '') {
     const token = ++generation;
     clearInterval(clockTimer);
@@ -230,29 +231,11 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
       if (at === index && !correct) button.dataset.missed = 'true';
     });
     $('#la-feedback').textContent = timedOut ? 'Time is up. No answer was recorded.' : correct ? 'Good choice. This pair has the lowest verified cost.' : 'Another pair had a shorter verified solution. Keep it in view while you solve.';
+    trainerOrbit?.update({ index: Math.max(0, (round?.answers?.length || 1) - 1), state: correct ? 'good' : 'bad', value: timedOut ? 'timeout' : `${(ms / 1000).toFixed(2)} s`, text: correct ? 'This pair has the lowest verified cost.' : 'Keep the next pair in view while you solve.' });
     showContinuation(choice);
-    labelState();
     if (result.complete) return;
     else $('#la-next').hidden = false;
   }
-  function startRound(resume = true) {
-    if (!caseFilter.valid) {
-      $('#la-feedback').textContent = `Unknown lookahead case${caseFilter.invalid.length > 1 ? 's' : ''}: ${caseFilter.invalid.join(', ')}. Use a seed 1–48 or pair slot FR, BR, BL, or FL.`;
-      return;
-    }
-    if (start.invalid) { $('#la-feedback').textContent = 'This setup is not valid move notation. Check the link and try again.'; return; }
-    round = rounds.startRound({ drill: 'lookahead', preset: QUICK_ROUNDS.lookahead || { kind: 'cases', cases: 20 }, from: start.from, resume });
-    roundPanel.refresh();
-    $('#la-start').textContent = 'resume round';
-    $('#la-result').hidden = true;
-    selected = null;
-    current = null;
-    startedAt = performance.now();
-    labelState();
-    const target = numericCases.map(Number).find(Number.isSafeInteger);
-    void pinnedSetup().then(setup => makeCase(target || dueSeed(), setup));
-  }
-  $('#la-start').addEventListener('click', () => startRound(Boolean(round?.status === 'active')));
   $('#la-next').addEventListener('click', () => {
     selected = null;
     startedAt = performance.now();
@@ -262,7 +245,6 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
         : ($('#la-feedback').textContent = 'No new verified variation was found for this saved position. Choose another point in the solve.'));
     } else void makeCase();
   });
-  $('#la-start').textContent = round?.status === 'active' ? 'resume round' : 'start 20-case round';
   if (start.invalid) $('#la-feedback').textContent = 'This setup is not valid move notation. Check the link and try again.';
   else if (start.moves.length || start.cases.length || start.review) {
     if (!caseFilter.valid) {
@@ -270,19 +252,25 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     } else {
       round = rounds.startRound({ drill: 'lookahead', preset: QUICK_ROUNDS.lookahead || { kind: 'cases', cases: 20 }, resume: false, from: start.from });
       roundPanel.refresh();
-      $('#la-start').textContent = 'resume round';
       startedAt = performance.now();
       const target = numericCases.map(Number).find(Number.isSafeInteger);
       void pinnedSetup().then(setup => makeCase(target || dueSeed(), setup));
     }
   } else if (round?.status === 'active') {
-    labelState();
     startedAt = performance.now();
     void makeCase();
   }
   syncPageTokens(root.querySelector('.brain'));
   return {
     ready: cubeReady,
+    getViewModel() {
+      const snapshot = cube?.getSnapshot?.() ?? null;
+      const buttons = [...(root.querySelectorAll('#la-choices .lookahead-choice') || [])];
+      return { screen: 'trainer', drill: 'lookahead', phase: selected == null ? (current ? 'recognition' : loading ? 'loading' : 'idle') : 'feedback',
+        currentCase: current ? { id: currentSeed ?? null, seed: activeCaseSeed || null, topColor: snapshot?.renderData?.colors?.U ?? null, orientation: snapshot?.caseColorSetting ?? null, targets: current } : null,
+        answers: buttons.map((button, index) => ({ logicalKey: button.dataset.choice ?? String(index), displayKey: button.dataset.choice ?? String(index), label: button.textContent.trim(), selected: index === selected, correct: button.dataset.best === 'true' || button.classList.contains('is-best') })),
+        round: roundPanel.getViewModel(), cube: snapshot, feedback: root.querySelector('#la-feedback')?.textContent || feedback || '', settings: { caseColor: readCaseColorSetting(storage) } };
+    },
     setActive(value) {
       active = value;
       player?.setActive(value);
@@ -291,6 +279,6 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
       else if (round?.status === 'active' && current && selected == null) renderCase();
       else if (round?.status === 'active' && !current && !loading) void makeCase(dueSeed());
     },
-    detach() { disposed = true; active = false; generation++; clearInterval(clockTimer); roundPanel.destroy(); player?.destroy(); cube?.destroy(); root.replaceChildren(); },
+    detach() { disposed = true; active = false; generation++; clearInterval(clockTimer); window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange); disposeCaseColorControl(); roundPanel.destroy(); trainerOrbit?.destroy(); player?.destroy(); cube?.destroy(); root.replaceChildren(); },
   };
 }
