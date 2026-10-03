@@ -9,7 +9,7 @@
 .progress-chip-group__choices { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .progress-chip-group .chip { max-width: 100%; height: auto; min-height: var(--hc, 32px); padding-block: 6px; white-space: normal; text-align: left; }
 .progress-visual { position: sticky; top: 8px; z-index: 2; display: grid; justify-items: center; gap: 6px; align-self: center; width: 100%; min-width: 0; padding: 8px 0; background: var(--b-bg); }
-.progress-orbit-wrap { position: relative; width: min(100%, 440px, max(260px, calc(100dvh - 360px))); aspect-ratio: 1; }
+.progress-orbit-wrap { position: relative; width: min(100%, 440px, var(--progress-orbit-fit, 440px)); aspect-ratio: 1; }
 .progress-orbit-host { position: absolute; inset: 0; display: grid; place-items: center; }
 .progress-cube-mount { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 36%; aspect-ratio: 1; transform: translate(-50%, -50%); }
 .progress-cube-mount canvas { display: block; width: 100%; height: 100%; }
@@ -35,7 +35,7 @@
 @media (width <= 700px) {
   .progress-page { gap: 18px; }
   .progress-visual { top: 4px; }
-  .progress-orbit-wrap { width: min(100%, 390px); }
+  .progress-orbit-wrap { width: min(100%, 390px, var(--progress-orbit-fit, 390px)); }
   .progress-chart-grid { grid-template-columns: minmax(0, 1fr); }
   .progress-filters .ui-field { flex: 1 1 130px; }
   .progress-session-filter, .progress-period-filter { flex: 1 1 100%; }
