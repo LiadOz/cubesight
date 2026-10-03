@@ -68,7 +68,7 @@ export const STATE_FIXTURES = [
   { id: 'results', route: '/solve', driver: 'fake-cube' },
   { id: 'review-detail', route: '/solve', driver: 'review-fixture' },
   { id: 'replay-midway', route: '/history/1000000/replay', driver: 'recording-fixture' },
-  { id: 'drill-midround', route: '/drills/corners', driver: 'drill-fixture' },
+  { id: 'drill-midround', route: '/drills/corners', driver: 'drill-fixture', owner: 'F15', dataOwner: 'F15' },
   { id: 'alg-playback-midway', route: '/algs/pll/T', driver: 'alg-fixture' },
   { id: 'timer-inspection', route: '/timer', driver: 'manual-timer', phase: 'inspecting' },
   { id: 'timer-running', route: '/timer', driver: 'manual-timer', phase: 'running' },

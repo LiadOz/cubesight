@@ -15,6 +15,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4250',
     viewport: { width: 1280, height: 720 },
+    timezoneId: 'UTC',
     serviceWorkers: 'block',
     launchOptions: {
       args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'],

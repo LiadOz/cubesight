@@ -1742,6 +1742,8 @@ const cubeConnected = () => {
 let routedHash = null;
 const snapshotBridge = createSnapshotBridge();
 const SNAPSHOT_OWNER = {
+  corner: { owner: 'F15', dataOwner: 'F15' },
+  f2l: { owner: 'F15', dataOwner: 'F15' },
   brain: { owner: 'F1', dataOwner: 'F1' },
   history: { owner: 'F2', dataOwner: 'F2' },
   drills: { owner: 'F4', dataOwner: 'F4' },
@@ -1757,7 +1759,9 @@ const SNAPSHOT_OWNER = {
 const recordingSnapshotHandle = { getViewModel: () => recordingViewModel };
 function activeSnapshotHandle(tool) {
   return ({ brain, history: historyPage, drills: drillsHub, algs: algsPage, timer: timerPage,
-    progress: progressPage, review: reviewPage, recording: recordingSnapshotHandle, demo: demoPage, oll: drillPages.oll, lookahead: drillPages.lookahead })[tool] || null;
+    progress: progressPage, review: reviewPage, recording: recordingSnapshotHandle, demo: demoPage,
+    corner: window.__cubesightLegacyTrainerHandles?.corner, f2l: window.__cubesightLegacyTrainerHandles?.f2l,
+    oll: drillPages.oll, lookahead: drillPages.lookahead })[tool] || null;
 }
 function mountSnapshotPage(tool, handle = activeSnapshotHandle(tool)) {
   const owner = SNAPSHOT_OWNER[tool];

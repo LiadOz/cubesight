@@ -3,7 +3,6 @@ import { expect, test } from 'playwright/test';
 import { FIXTURE_NAMES, brainFixtures } from '../../src/brain/fixtures.js';
 import { getLayoutDriver, getLayoutMatrix } from '../layout/matrix.js';
 import { HISTORY_SEED } from '../layout/fixtures/state-seeds.js';
-import { installBrainSnapshotHook } from '../layout/fake-cube.js';
 import { SNAPSHOT_ROUTES, SNAPSHOT_STATES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from './capture-matrix.js';
 import '../layout/state-drivers.js';
 
@@ -13,7 +12,10 @@ const MATRIX_ROUTES = getLayoutMatrix().routes;
 const ROUTE_BY_ID = new Map(MATRIX_ROUTES.map(route => [route.id, route]));
 const ROUTE_BY_PATH = new Map(MATRIX_ROUTES.map(route => [route.path, route]));
 const EXPECTED_VIEW = {
-  solve: '#brain-view', drills: '#drills-view', algs: '#algs-view', history: '#history-view',
+  solve: '#brain-view', drills: '#drills-view', corners: '#corner-view', 'pll-drill': '#pll-view',
+  f2l: '#f2l-view', 'cross-planning': '#scout-view', 'oll-drill': '#oll-view', lookahead: '#lookahead-view',
+  algs: '#algs-view', 'alg-case-pll': '#algs-view', 'alg-case-oll': '#algs-view',
+  'alg-case-oll2': '#algs-view', 'alg-case-f2l': '#algs-view', 'alg-drill': '#algs-view', history: '#history-view',
   'past-solve': '#history-view', replay: '#history-view', 'review-detail': '#history-view',
   progress: '#progress-view', timer: '#timer-view', recording: '#recording-view',
   demo: '#demo-view', 'demo-format': '#demo-view',
@@ -56,13 +58,11 @@ function snapshotJsonValue(value, path = '$', seen = new WeakSet()) {
 
 async function installDeterminism(page, theme, viewport) {
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
-  await page.emulateTimezone('UTC');
   await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
     return SERVER_ORIGINS.has(url.origin) ? route.continue() : route.abort();
   });
-  await installBrainSnapshotHook(page);
   await page.addInitScript(({ themeMode, fixedNow }) => {
     if (!localStorage.getItem('cubesight-theme')) localStorage.setItem('cubesight-theme', themeMode);
     if (!localStorage.getItem('cubesight-brain-settings-v2')) localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: 'orbit' }));
@@ -126,13 +126,6 @@ async function snapshotCell(page, cell) {
     expect(cubeState.cameraUp, `${name} must keep the cube camera up vector at its fixed pose`).toBe('0.0000,1.0000,0.0000');
   }
 
-  // The page screenshot deliberately includes canvas pixels. SwiftShader is
-  // configured in both Playwright configs; no canvas mask is used here.
-  await expect(page).toHaveScreenshot(`${name}.png`, {
-    animations: 'disabled', caret: 'hide', scale: 'css', maxDiffPixelRatio: 0.001, threshold: 0.1,
-  });
-  await expect(page.locator('body')).toMatchAriaSnapshot({ name: `${name}.aria.yml` });
-
   const snapshot = await page.evaluate(() => window.__cubesightSnapshot?.getViewModel?.() ?? null);
   expect(snapshot, `${cell.owner} must provide its active page snapshot for ${cell.route} · ${cell.state}`).toBeTruthy();
   expect(snapshot.schemaVersion).toBe(1);
@@ -147,6 +140,14 @@ async function snapshotCell(page, cell) {
   });
   await expect(JSON.stringify(jsonSnapshot, null, 2))
     .toMatchSnapshot(`${name}.vm.json`);
+
+  // Validate the live view model before pixel baselines can short-circuit a
+  // first capture with missing or stale image artifacts.
+  // SwiftShader renders canvas pixels directly; no canvas mask is used.
+  await expect(page).toHaveScreenshot(`${name}.png`, {
+    animations: 'disabled', caret: 'hide', scale: 'css', maxDiffPixelRatio: 0.001, threshold: 0.1,
+  });
+  await expect(page.locator('body')).toMatchAriaSnapshot({ name: `${name}.aria.yml` });
 }
 
 for (const fixtureId of SNAPSHOT_STATES) {
