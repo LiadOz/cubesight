@@ -19,7 +19,7 @@
   pointer-events: none;
 }
 .brain[data-brain-style="orbit"] .b-tabs { position: absolute; top: -48px; right: 0; pointer-events: auto; }
-.brain[data-brain-style="orbit"] .b-tab:not(.b-settings),
+.brain[data-brain-style="orbit"] .b-tabs > .b-tab,
 .brain[data-brain-style="orbit"] .brain-connect-chip,
 .brain[data-brain-style="orbit"] [data-primary="connect"] { display: none !important; }
 .brain[data-brain-style="orbit"] .b-settings { position: relative; }
