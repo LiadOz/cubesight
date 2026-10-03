@@ -39,7 +39,7 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const helpButton = document.createElement('button'); helpButton.type = 'button'; helpButton.className = 'header-button help-button'; helpButton.dataset.action = 'open-help'; helpButton.setAttribute('aria-label', 'help'); helpButton.textContent = '?'; helpButton.addEventListener('click', () => help?.()); controls.append(helpButton);
   let drawer = null;
   const openDrawer = () => { if (!showDevDrawer) return; if (!drawer) {
-    drawer = document.createElement('dialog'); drawer.className = 'ui-dev-drawer'; drawer.setAttribute('aria-label', 'developer drawer');
+    drawer = document.createElement('dialog'); drawer.className = 'ui-dev-drawer'; drawer.dataset.globalDevDrawer = 'true'; drawer.setAttribute('aria-label', 'developer drawer');
     const heading = document.createElement('h2'); heading.textContent = 'developer drawer'; const close = document.createElement('button'); close.type = 'button'; close.className = 'ui-dev-drawer__close'; close.textContent = 'close'; close.addEventListener('click', () => drawer.close());
     const save = document.createElement('button'); save.type = 'button'; save.textContent = 'save recording'; save.addEventListener('click', () => actions['save-recording']?.());
     const status = document.createElement('p'); status.className = 'ui-dev-drawer__status'; status.textContent = 'The local recording buffer is always on.';
@@ -52,6 +52,13 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   }
   header.append(brand, nav, controls); if (compass) header.querySelector('.ui-header__brand').after(compass);
   host.append(header);
+  if (host.id === 'site-header' || host.matches('[data-site-header]')) {
+    const syncHeaderHeight = () => document.documentElement.style.setProperty('--site-header-height', `${Math.ceil(header.getBoundingClientRect().height)}px`);
+    syncHeaderHeight();
+    const headerResizeObserver = new ResizeObserver(syncHeaderHeight);
+    headerResizeObserver.observe(header);
+    header.addEventListener('cube-header-destroy', () => headerResizeObserver.disconnect(), { once: true });
+  }
   const applySnapshot = snapshot => {
     const model = buildSharedViewModel({ connection: snapshot, theme: document.documentElement.dataset.theme,
       activeRoute: nav.querySelector('[aria-current="page"]')?.dataset.nav, connectionMenuOpen: cubeMenu.open,

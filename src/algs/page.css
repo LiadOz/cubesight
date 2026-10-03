@@ -69,7 +69,7 @@
 /* Case playback is a one-screen workspace: the open Orbit frames the shared L Cube,
    while the algorithm choices and actions remain in a compact adjacent rail. */
 @media (min-width: 900px) {
-  .cs-page.brain.alg-page:has(.alg-case-layout) { gap: 0; min-height: calc(100dvh - 56px); padding-block: 8px; }
+  .cs-page.brain.alg-page:has(.alg-case-layout) { gap: 0; min-height: calc(100dvh - var(--site-header-height, 60px)); padding-block: 8px; }
   .alg-case-shell { width: min(1180px, 100%); }
   .alg-case-head { display: grid; grid-template-columns: minmax(112px, auto) minmax(0, 1fr); align-items: center; gap: 18px; max-width: none; margin: 0 0 8px; }
   .alg-case-head h1 { font-size: clamp(30px, 3vw, 42px); }
@@ -102,3 +102,7 @@
   .alg-cube-actions { align-items: stretch; flex-direction: column; }
   .alg-metric-stats { grid-template-columns: repeat(2, 1fr); }
 }
+.alg-demo-import { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 16px; }
+.alg-demo-import label { color: var(--b-muted); font-size: 12px; }
+.alg-demo-import input { flex: 1 1 260px; min-width: 0; }
+.alg-demo-import [data-alg-demo-status] { flex-basis: 100%; color: var(--b-muted); font-size: 12px; }

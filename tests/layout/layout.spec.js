@@ -58,7 +58,7 @@ async function checkCell(page, cell, testInfo) {
 const viewFor = {
   solve: '#brain-view', drills: '#drills-view', corners: '#corner-view', 'pll-drill': '#pll-view',
   f2l: '#f2l-view', 'cross-planning': '#scout-view', 'oll-drill': '#oll-view', lookahead: '#lookahead-view',
-  algs: '#algs-view', 'alg-case-pll': '#algs-view', 'alg-case-oll': '#algs-view',
+  algs: '#algs-view', demo: '#demo-view', 'demo-format': '#demo-view', 'alg-case-pll': '#algs-view', 'alg-case-oll': '#algs-view',
   'alg-case-oll2': '#algs-view', 'alg-case-f2l': '#algs-view', 'alg-drill': '#algs-view',
   'review-import': '#review-view', 'review-record': '#review-view', progress: '#progress-view', history: '#history-view',
   review: '#review-view', recording: '#recording-view', 'not-found': '#not-found-view',
@@ -69,9 +69,10 @@ const viewFor = {
 const stateView = {
   '/solve': '#brain-view', '/history': '#history-view', '/history/1000000/replay': '#history-view',
   '/drills/corners': '#corner-view', '/algs/oll/1': '#algs-view', '/algs/pll/T': '#algs-view', '/timer': '#timer-view',
+  '/demo': '#demo-view',
 };
 
-const canvasCountFor = route => route === '/algs' || route === '/help' ? 0 : 1;
+const canvasCountFor = route => route === '/algs' || route === '/help' || route === '/demo/format' ? 0 : 1;
 
 const familyFor = (route, id) => id === 'results' || id === 'review-detail' ? 'results'
   : route.startsWith('/solve') ? 'solve'
@@ -79,8 +80,9 @@ const familyFor = (route, id) => id === 'results' || id === 'review-detail' ? 'r
     : route.startsWith('/algs') ? 'algs'
       : route.startsWith('/timer') ? 'timer'
         : route.startsWith('/history') ? 'history'
-          : route.startsWith('/progress') ? 'progress'
-            : route.startsWith('/review') ? 'review' : 'scroll';
+            : route.startsWith('/progress') ? 'progress'
+              : route.startsWith('/demo?') ? 'demo'
+              : route.startsWith('/review') ? 'review' : 'scroll';
 
 for (const fixture of STATE_FIXTURES) {
   test(`state ${fixture.id} · ${fixture.route}`, async ({ page }, testInfo) => {
@@ -109,7 +111,7 @@ for (const fixture of STATE_FIXTURES) {
         await page.evaluate(() => { window.__layoutShiftCheckpoint = (window.__layoutShiftSamples || []).length; });
         const report = await checkCell(page, {
           width, height, routeId: `state-${fixture.id}`, routeFamily: familyFor(fixture.route, fixture.id),
-          routePath: fixture.route, expectedView: stateView[fixture.route], expectedCanvasCount: canvasCountFor(fixture.route), state: fixture.id, theme, driverFailure,
+          routePath: fixture.route, expectedView: stateView[fixture.route] ?? (fixture.route.startsWith('/demo?') ? '#demo-view' : undefined), expectedCanvasCount: canvasCountFor(fixture.route), state: fixture.id, theme, driverFailure,
           expectDebugDrawer: fixture.id === 'debug-open',
           expectSettingsDrawer: fixture.id === 'settings-open',
           expectConnectionMenu: fixture.id === 'connection-menu-open',

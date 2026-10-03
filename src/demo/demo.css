@@ -1,0 +1,38 @@
+.demo-root { min-width: 0; }
+.demo-page { display: grid; gap: 14px; max-width: 1180px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 38px) 30px; color: var(--b-ink); }
+.demo-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.demo-heading h1, .demo-format h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); }
+.demo-eyebrow { margin: 0 0 4px; color: var(--b-accent-text); font: 500 11px/1.2 var(--b-font-mono); text-transform: lowercase; }
+.demo-part-title { margin: 0; color: var(--b-muted); }
+.demo-lesson-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.demo-part-count { color: var(--b-muted); font: 12px var(--b-font-mono); }
+.demo-stage { position: relative; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); align-items: center; gap: 12px; min-height: 370px; }
+.demo-orbit { grid-area: 1 / 1 / 2 / 3; width: min(100%, 440px); aspect-ratio: 1; justify-self: center; }
+.demo-cube { grid-area: 1 / 1 / 2 / 3; width: min(100%, 260px); aspect-ratio: 1; justify-self: center; z-index: 1; pointer-events: none; }
+.demo-cube .shared-cube { width: 100%; height: 100%; }
+.demo-actions { grid-area: 1 / 2 / 2 / 3; align-self: end; justify-self: end; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 4px 8px; }
+.demo-speed { width: 90px; min-height: 38px; }
+.demo-coach { min-height: 58px; padding: 10px 0; border-top: 1px solid var(--b-hairline); }
+.demo-coach p { margin: 0; }
+.demo-move-description { color: var(--b-ink); font-size: 14px; }
+.demo-author-note { margin-top: 5px !important; color: var(--b-muted); font-size: 13px; white-space: pre-wrap; }
+.demo-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.demo-case-link { color: var(--b-accent-text); font-size: 13px; }
+.demo-copy-status { color: var(--b-muted); font-size: 12px; overflow-wrap: anywhere; }
+.demo-paste { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--b-hairline); }
+.demo-paste label { color: var(--b-muted); font-size: 12px; }
+.demo-paste textarea { box-sizing: border-box; width: 100%; min-height: 66px; padding: 10px 12px; resize: vertical; border: 1px solid var(--b-hairline); border-radius: 10px; background: var(--b-surface); color: var(--b-ink); font: 13px/1.5 var(--b-font-mono); }
+.demo-status, .demo-error { margin: 0; color: var(--b-muted); font-size: 13px; }
+.demo-format__example { overflow-wrap: anywhere; white-space: pre-wrap; padding: 14px; border-radius: 12px; background: var(--b-surface); color: var(--b-ink); font: 12px/1.65 var(--b-font-mono); }
+.demo-format__copy { color: var(--b-muted); font-size: 14px; line-height: 1.55; }
+.demo-format__copy p { margin: 8px 0; }
+@media (max-width: 600px) {
+  .demo-page { gap: 10px; padding: 12px 14px 24px; }
+  .demo-heading { display: block; }
+  .demo-lesson-nav { margin-top: 4px; }
+  .demo-stage { display: grid; grid-template-columns: 1fr; min-height: auto; }
+  .demo-orbit { grid-area: 1 / 1; width: min(100%, 360px); }
+  .demo-cube { grid-area: 1 / 1; width: min(100%, 220px); }
+  .demo-actions { grid-area: 2 / 1; justify-self: stretch; justify-content: center; padding: 0; }
+  .demo-actions .btn { min-width: 42px; }
+}

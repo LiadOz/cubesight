@@ -229,7 +229,12 @@ export class Orbit {
         const title = svg('title'); title.textContent = segment.ariaLabel || [segment.label, segment.value, deltaText(segment.delta)].filter(Boolean).join(' · '); label.append(title);
         const text = (className, value, y) => { if (value == null || value === '') return; const row = svg('text', { class: className, x: 0, y }); row.textContent = value; label.append(row); };
         if (sideLabels) { text('orbit__label-name', segment.label || '', -12); text('orbit__label-value', [segment.value, deltaText(segment.delta)].filter(Boolean).join(' · '), 8); }
-        else { text('orbit__label-name', segment.label || '', -14); text('orbit__label-value', segment.value ?? '', 10); text('orbit__label-delta', deltaText(segment.delta), 31); }
+        else {
+          const hasDetails = segment.value != null || Boolean(deltaText(segment.delta));
+          text('orbit__label-name', segment.label || '', hasDetails ? -14 : 4);
+          text('orbit__label-value', segment.value ?? '', 10);
+          text('orbit__label-delta', deltaText(segment.delta), 31);
+        }
         root.append(label);
       }
     });

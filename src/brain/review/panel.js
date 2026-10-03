@@ -31,6 +31,7 @@ const TEMPLATE = `
     <div class="b-rev-actions">
       <span class="b-rev-better"></span>
       <button class="b-rev-open" type="button" data-act="open" hidden>show on the cube</button>
+      <button class="b-rev-share-coach btn btn--secondary btn--s" type="button" data-act="copy-coach-demo" hidden>copy coach demo link</button>
       <button class="b-rev-pin" type="button" data-act="pin" aria-pressed="false">pin</button>
     </div>
   </div>
@@ -47,6 +48,7 @@ const TEMPLATE = `
         <button class="b-rev-variant" type="button" data-variant="better">better ▶</button>
         <button class="b-rev-pin b-rev-pin-detail" type="button" data-act="pin" aria-pressed="false">pin</button>
       </div>
+      <div class="b-rev-demo-links"><button class="btn btn--secondary btn--s" type="button" data-act="copy-demo" data-variant="yours" hidden>copy your demo link</button><button class="btn btn--secondary btn--s" type="button" data-act="copy-demo" data-variant="better" hidden>copy better demo link</button></div>
       <p class="b-rev-alg b-rev-alg-yours"><span>yours</span><code></code></p>
       <p class="b-rev-alg b-rev-alg-better"><span>better</span><code></code></p>
       <ol class="b-rev-options" aria-label="Ranked pair completions"></ol>
@@ -71,6 +73,24 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     if (!target || !root.contains(target)) return;
     if (target.dataset.marker) dispatch({ type: 'selectMarker', id: target.dataset.marker });
     else if (target.dataset.at != null) dispatch({ type: 'jumpTo', at: Number(target.dataset.at) });
+    else if (target.dataset.act === 'copy-coach-demo' && shown?.coach.markerId) {
+      dispatch({ type: 'selectMarker', id: shown.coach.markerId });
+      const compare = shown?.detail?.compare;
+      const moves = compare?.status === 'better' && compare.better.length ? compare.better : compare?.yours;
+      if (!moves?.length || typeof compare.demoHref !== 'function') return;
+      const href = compare.demoHref(moves);
+      const copy = navigator.clipboard?.writeText?.(`${location.origin}${location.pathname}${location.search}${href}`);
+      if (copy) copy.then(() => { target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
+      else location.hash = href;
+    }
+    else if (target.dataset.act === 'copy-demo' && shown?.detail?.compare?.demoHref) {
+      const moves = target.dataset.variant === 'better' ? shown.detail.compare.better : shown.detail.compare.yours;
+      if (!moves?.length) return;
+      const href = shown.detail.compare.demoHref(moves);
+      const copy = navigator.clipboard?.writeText?.(`${location.origin}${location.pathname}${location.search}${href}`);
+      if (copy) copy.then(() => { target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
+      else location.hash = href;
+    }
     else if (target.dataset.variant) dispatch({ type: 'playVariant', variant: target.dataset.variant });
     else if (target.dataset.option != null) dispatch({ type: 'playOption', option: Number(target.dataset.option) });
     else if (target.dataset.act === 'close') dispatch({ type: 'closeDetail' });
@@ -136,6 +156,10 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     setText($('.b-rev-alg-yours code'), cmp.yoursText);
     $('.b-rev-alg-better').hidden = !better;
     setText($('.b-rev-alg-better code'), cmp.betterText);
+    for (const node of root.querySelectorAll('[data-act="copy-demo"]')) {
+      const hasMoves = node.dataset.variant === 'better' ? better && cmp.better.length : cmp.yours.length > 0;
+      node.hidden = !hasMoves || typeof cmp.demoHref !== 'function';
+    }
     const options = (cmp.options ?? []).slice(0, 8).map((option, index) => {
       const li = el('li');
       const label = `${option.slots?.length > 1 ? option.slots.join('+') : option.slots?.[0] ?? 'pair'} · ${option.stm} moves${option.goalShift ? ' · D offset finish' : ''}${option.source === 'recorded-fallback' ? ' · recorded' : ''}`;
@@ -162,6 +186,7 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
       setText($('.b-rev-note'), review.coach.text);
       setText($('.b-rev-better'), review.coach.better ?? '');
       $('.b-rev-open').hidden = !review.coach.markerId || Boolean(review.detail && review.detail.key === review.coach.markerId);
+      $('.b-rev-share-coach').hidden = !review.coach.markerId;
       for (const node of root.querySelectorAll('.b-rev-pin')) {
         node.hidden = !review.pin.available || (node.classList.contains('b-rev-pin-detail') ? !review.detail : Boolean(review.detail));
         setText(node, review.pin.pinned ? 'pinned · unpin' : 'pin');

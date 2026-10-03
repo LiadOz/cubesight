@@ -58,7 +58,7 @@ export async function inspectLayout(page, cell) {
     if (expectedBrainStyle && document.querySelector('#brain-view .brain')?.dataset.brainStyle !== expectedBrainStyle) add('brain-style-mismatch', document.querySelector('#brain-view .brain') || document.querySelector('#brain-view'), `expected ${expectedBrainStyle} Orbit skin`);
     if (document.querySelector('footer, .site-footer, [data-site-footer]')) add('site-footer-present', document.querySelector('footer, .site-footer, [data-site-footer]'), 'the site has no footer');
     if (expectDebugDrawer && ![...document.querySelectorAll('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]')].some(isVisible)) add('debug-drawer-shortcut', document.querySelector('.site-header'), 'backtick must open the shared dev drawer on every page');
-    if (expectDebugDrawer && !/save recording/i.test(document.querySelector('[data-global-dev-drawer], #brain-debug')?.textContent || '')) add('dev-drawer-recording-action', document.querySelector('[data-global-dev-drawer], #brain-debug'), 'dev drawer needs save recording');
+    if (expectDebugDrawer && !/save recording/i.test(document.querySelector('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]')?.textContent || '')) add('dev-drawer-recording-action', document.querySelector('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]'), 'dev drawer needs save recording');
     if (expectSettingsDrawer && ![...document.querySelectorAll('.b-settings[open], [data-settings-drawer][open], [role="dialog"][aria-label*="settings" i]')].some(isVisible)) add('settings-drawer-closed', document.querySelector('#brain-view'), 'settings state did not open the settings drawer');
     if (expectConnectionMenu) {
       const menu = [...document.querySelectorAll('[data-global-cube-menu], [role="menu"], [role="dialog"][aria-label*="cube" i]')].find(isVisible);
@@ -125,7 +125,7 @@ export async function inspectLayout(page, cell) {
 
     const canvases = [...document.querySelectorAll('canvas')];
     if (canvases.length !== expectedCanvasCount) add('canvas-count', canvases[0] || document.querySelector('main'), `expected ${expectedCanvasCount} page canvas(es), found ${canvases.length} (${canvases.filter(isVisible).length} visible)`);
-    const coreNoScroll = ['solve', 'drills', 'algs', 'timer'].includes(routeFamily);
+    const coreNoScroll = ['solve', 'drills', 'algs', 'timer', 'demo'].includes(routeFamily);
     if (coreNoScroll && width >= 1280 && height >= 720 && scrolling.scrollHeight > innerHeight + 2) {
       add('vertical-scroll-main-page', scrolling, `scrollHeight ${scrolling.scrollHeight} > ${innerHeight} + 2`);
     }
@@ -156,11 +156,25 @@ export async function inspectLayout(page, cell) {
 
   for (const selector of result.scrollers) {
     const scroller = page.locator(selector).first();
-    const before = await scroller.evaluate(el => ({ left: el.scrollLeft, max: el.scrollWidth - el.clientWidth }));
-    if (before.max <= 1) continue;
-    await scroller.focus();
-    await scroller.press('End');
-    const after = await scroller.evaluate(el => el.scrollLeft);
+    const before = await scroller.evaluate(el => {
+      const original = el.scrollLeft;
+      el.scrollLeft = 0;
+      window.__layoutPreviousFocus = document.activeElement;
+      window.__layoutPageScroll = { x: scrollX, y: scrollY };
+      return { left: el.scrollLeft, max: el.scrollWidth - el.clientWidth, original };
+    });
+    if (before.max <= 1) {
+      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); window.scrollTo(window.__layoutPageScroll?.x ?? 0, window.__layoutPageScroll?.y ?? 0); delete window.__layoutPreviousFocus; delete window.__layoutPageScroll; }, before.original);
+      continue;
+    }
+    let after = 0;
+    try {
+      await scroller.evaluate(el => el.focus({ preventScroll: true }));
+      await scroller.press('End');
+      after = await scroller.evaluate(el => el.scrollLeft);
+    } finally {
+      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); window.scrollTo(window.__layoutPageScroll?.x ?? 0, window.__layoutPageScroll?.y ?? 0); delete window.__layoutPreviousFocus; delete window.__layoutPageScroll; }, before.original);
+    }
     if (after <= before.left) {
       const box = await scroller.boundingBox();
       result.errors.push({ kind: 'scroller-not-keyboard-scrollable', selector, box, detail: 'End did not move the horizontal scroller' });

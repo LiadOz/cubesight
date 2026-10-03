@@ -46,6 +46,7 @@ are stored in a separate `capture` object next to the bridge envelope.
 | F5 progress | `src/progress/view-model.js` · `buildProgressViewModel(input)` | `src/progress/index.js` · add `getViewModel()` to the returned handle |
 | F6 goal data | Existing `src/goals/adapter.js` · `readGoal(storage)`, `goalProgress(goal, ao12)`, `buildWeeklyReport(input, options)` | F5's progress view-model includes the exact goal data it renders; tests seed it through `tests/helpers/goal-progress-state.js` |
 | F14 help | `src/help/view-model.js` · `buildHelpViewModel(input)` | Add `getViewModel()` to the help page handle and expose it through F0's active-page bridge |
+| F17 demos | `src/demo/view-model.js` · `buildDemoViewModel(input)` | `src/demo/index.js` · `getViewModel()` on the shared demo player; snapshots lesson, active part, progress, and displayed cube state without DOM or WebGL objects |
 
 ## F1/F2 route and state coverage
 
@@ -96,8 +97,11 @@ builder or getter fails the browser capture.
   legacy solve-store migration.
 - **F14:** help content, selected help section, shortcuts, and build/update
   status.
+- **F17:** lesson title, active part, committed move index, and displayed cube
+  state. `/demo/format` is an intentional zero-canvas page; `/demo` has one
+  shared cube canvas.
 
-F2/F4/F5/F14 implement the same runtime getter on their page handle; the app's
+F2/F4/F5/F14/F17 implement the same runtime getter on their page handle; the app's
 snapshot bridge exposes the active handle through the common API above. F5
 combines its progress view-model with the F6 goal result, but keeps the two
 owners labelled separately in test metadata.

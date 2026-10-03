@@ -6,6 +6,7 @@ import { buildDetail, compareFor, positionedRows } from '../src/brain/review/det
 import { buildMarkers } from '../src/brain/review/markers.js';
 import { isMergedSplit } from '../src/brain/stage-plan.js';
 import { cleanRecord } from '../src/solve-store.js';
+import { parseDemoHash } from '../src/demo/model.js';
 import { MOCK } from './analysis-golden.mjs';
 import { timesFor, analysed, PLAN, FACE_COLORS } from './helpers/review-fixtures.mjs';
 
@@ -62,6 +63,14 @@ test('detail view: stage stats, yours vs better, honest "no suggestion yet", and
   assert.equal(stage.compare.status, 'better');
   assert.equal(stage.compare.text, 'yours 8 · better 6');
   assert.equal(stage.compare.better.length, 6);
+  const yoursDemo = parseDemoHash(stage.compare.demoHref(stage.compare.yours));
+  const betterDemo = parseDemoHash(stage.compare.demoHref(stage.compare.better));
+  assert.deepEqual(yoursDemo.parts[0].alg, stage.compare.yours);
+  assert.deepEqual(betterDemo.parts[0].alg, stage.compare.better);
+  assert.deepEqual(yoursDemo.parts[0].setup, MOCK.scramble.split(' '));
+  assert.equal(yoursDemo.parts[0].colorSetting, 'yellow top');
+  const pairDetail = buildDetail({ kind: 'stage', key: 'pair1', record: { ...record, analysis: { ...record.analysis, caseMetadata: { f2lCases: { pair1: { caseId: '8' } } } } }, rows: [...rows, { key: 'pair1', ms: 500, moves: 2 }], plan: PLAN });
+  assert.equal(parseDemoHash(pairDetail.compare.demoHref(['R'])).parts[0].caseId, 'f2l/8');
   assert.equal(stage.moves.find(m => m.i === 3).flags.includes('detour'), true);
   assert.equal(stage.pin.payload.trainer, 'cross');
   assert.equal(stage.pin.payload.moveIdx, 0);

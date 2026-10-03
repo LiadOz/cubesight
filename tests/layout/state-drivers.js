@@ -9,13 +9,21 @@ import { GOLD } from '../analysis-golden.mjs';
 const SCRAMBLE = "R2 D' F2 U B2 L' U2 F";
 const BRAIN = '#brain-view';
 
-async function readyForRoute(page, path) {
+async function readyForRoute(page, path, { clockInstalled = false } = {}) {
   await page.goto(`/#${path}`);
   await page.waitForFunction(hash => location.hash === hash, `#${path}`);
-  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  if (!clockInstalled) await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 
 registerLayoutDriver('main-page', async page => readyForRoute(page, '/solve'));
+
+registerLayoutDriver('demo-fixture', async (page, { fixture, clockInstalled }) => {
+  await readyForRoute(page, fixture.route, { clockInstalled });
+  await expect(page.locator('#demo-view .demo-cube canvas')).toBeVisible();
+  await page.locator('#demo-view [data-action="next-move"]').click();
+  if (clockInstalled) await page.clock.runFor(1_000);
+  await expect(page.locator('#demo-view .demo-move-description')).toContainText('Move 2');
+});
 
 registerLayoutDriver('fake-cube', async (page, { id }) => {
   await mountFakeCube(page, { delayed: id === 'connecting' });

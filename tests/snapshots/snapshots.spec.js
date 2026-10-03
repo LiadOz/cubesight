@@ -23,9 +23,9 @@ const SNAPSHOT_STATES = [
   'f1-idle', 'f1-connecting-full', 'f1-guided-scramble-current-progress', 'f1-wrong-turn-undo',
   'f1-inspection-normal', 'f1-inspection-plus2', 'f1-inspection-dnf-ticks', 'f1-solving-fill',
   'f1-live-results', 'f1-case-choices', 'f1-staged-detail-comparison', 'f1-marker-detail',
-  'f1-settings-open', 'f1-past-results-review-deeplink',
+  'f1-settings-open', 'f1-past-results-review-deeplink', 'demo-playback-midway',
 ];
-const SNAPSHOT_ROUTES = ['solve', 'drills', 'algs', 'history', 'past-solve', 'replay', 'review-detail', 'progress', 'timer', 'recording'];
+const SNAPSHOT_ROUTES = ['solve', 'drills', 'algs', 'demo', 'demo-format', 'history', 'past-solve', 'replay', 'review-detail', 'progress', 'timer', 'recording'];
 const MATRIX_ROUTES = getLayoutMatrix().routes;
 const ROUTE_BY_ID = new Map(MATRIX_ROUTES.map(route => [route.id, route]));
 const ROUTE_BY_PATH = new Map(MATRIX_ROUTES.map(route => [route.path, route]));
@@ -33,6 +33,7 @@ const EXPECTED_VIEW = {
   solve: '#brain-view', drills: '#drills-view', algs: '#algs-view', history: '#history-view',
   'past-solve': '#history-view', replay: '#history-view', 'review-detail': '#history-view',
   progress: '#progress-view', timer: '#timer-view', recording: '#recording-view',
+  demo: '#demo-view', 'demo-format': '#demo-view',
 };
 const FIXTURE_BY_ID = new Map(getLayoutMatrix().states.map(fixture => [fixture.id, fixture]));
 if (SNAPSHOT_STATES.length !== FIXTURE_BY_ID.size) throw new Error('F9 must cover every registered F8 state fixture');
@@ -90,7 +91,9 @@ async function installDeterminism(page, theme, viewport) {
 }
 
 async function freezeTime(page, fixture) {
-  const fakeClockDriver = fixture?.id === 'inspection-overtime' || fixture?.driver === 'manual-timer';
+  const fakeClockDriver = fixture?.id === 'inspection-overtime'
+    || fixture?.id === 'demo-playback-midway'
+    || fixture?.driver === 'manual-timer';
   if (fakeClockDriver) await page.clock.install({ time: FIXED_TIME });
   else await page.clock.setFixedTime(FIXED_TIME);
   return fakeClockDriver;
@@ -119,7 +122,8 @@ async function snapshotCell(page, cell) {
   const name = slug(`${cell.route}-${cell.state}-${cell.width}x${cell.height}-${cell.theme}`);
   await applyThemeAndSettle(page, cell.theme);
   const canvasCount = await page.locator('canvas').count();
-  expect(canvasCount, `${name} keeps exactly one shared cube canvas`).toBe(1);
+  const expectedCanvasCount = cell.expectedCanvasCount ?? 1;
+  expect(canvasCount, `${name} keeps ${expectedCanvasCount} page canvas(es)`).toBe(expectedCanvasCount);
   const cubeState = canvasCount ? await page.locator('canvas').first().evaluate(canvas => ({
     cameraPose: canvas.dataset.cameraPose || null,
     cameraUp: canvas.dataset.cameraUp || null,
@@ -160,7 +164,7 @@ for (const fixtureId of SNAPSHOT_STATES) {
   const missingDriver = !driver;
   const owner = fixture.owner || (fixture.route.startsWith('/history') ? 'F2'
       : fixture.route.startsWith('/drills') || fixture.route.startsWith('/algs') || fixture.route.startsWith('/timer') ? 'F4'
-        : fixture.route.startsWith('/progress') ? 'F5' : 'F1');
+        : fixture.route.startsWith('/progress') ? 'F5' : fixture.route.startsWith('/demo') ? 'F17' : 'F1');
 
   for (const viewport of VIEWPORTS) for (const theme of THEMES) {
     test(`fixture ${fixture.id} · ${viewport.id} · ${theme}`, async ({ page }) => {
@@ -179,7 +183,7 @@ for (const fixtureId of SNAPSHOT_STATES) {
       await expect(page.locator(expectedView), `${fixture.id} route view`).toBeVisible();
       await snapshotCell(page, {
         route: fixture.route, state: fixture.id, width: viewport.width, height: viewport.height, theme,
-        owner, dataOwner: fixture.dataOwner, expectCube: true,
+        owner, dataOwner: fixture.dataOwner, expectCube: true, expectedCanvasCount: 1,
       });
     });
   }
@@ -189,8 +193,9 @@ for (const routeId of SNAPSHOT_ROUTES) {
   const route = ROUTE_BY_ID.get(routeId);
   if (!route) throw new Error(`F9 route ${routeId} is missing from the shared F8 matrix`);
   const owner = route.id === 'recording' ? 'F0'
-    : route.page === 'history' ? 'F2'
-      : ['drills', 'algs', 'timer'].includes(route.page) ? 'F4'
+      : route.page === 'history' ? 'F2'
+        : route.page === 'demo' ? 'F17'
+        : ['drills', 'algs', 'timer'].includes(route.page) ? 'F4'
         : route.page === 'progress' ? 'F5' : 'F1';
 
   for (const viewport of VIEWPORTS) for (const theme of THEMES) {
@@ -205,7 +210,8 @@ for (const routeId of SNAPSHOT_ROUTES) {
       await expect(page.locator(expectedView), `${route.id} route view`).toBeVisible();
       await snapshotCell(page, {
         route: route.path, state: 'default', width: viewport.width, height: viewport.height, theme,
-        owner, dataOwner: route.id === 'progress' ? 'F6' : null, expectCube: ['solve', 'history', 'timer'].includes(route.page),
+        owner, dataOwner: route.id === 'progress' ? 'F6' : null, expectCube: route.id === 'demo' || ['solve', 'history', 'timer'].includes(route.page),
+        expectedCanvasCount: route.id === 'demo-format' ? 0 : 1,
       });
     });
   }

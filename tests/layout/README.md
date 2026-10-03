@@ -7,8 +7,10 @@ regular Playwright specs too (`npm test`), so a full browser run includes them.
 
 Add the canonical route (the destination of any legacy redirect) to
 `matrix.js`. Set its page family to `solve`, `drills`, `algs`, `timer`,
-`history`, `progress`, `review`, or `scroll`; only `solve`, `drills`, `algs`,
-and `timer` select the desktop no-vertical-scroll rule. Use a stable,
+`demo`, `history`, `progress`, `review`, or `scroll`; only `solve`, `drills`,
+`algs`, `timer`, and the demo player select the desktop no-vertical-scroll
+rule. The informational `/demo/format` route is zero-canvas; `/demo` has one
+shared cube canvas. Use a stable,
 fixture-backed record ID for history routes. Keep
 route names and state names in failure reports descriptive enough to reproduce
 the cell. Register each state with `registerLayoutState` and bind its named
