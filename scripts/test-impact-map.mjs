@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { loadPlaywrightShards } from './test-health-report.mjs';
@@ -12,6 +12,7 @@ const reportPath = path.join(root, 'tests/impact-map.json');
 const playwrightReportPath = path.join(root, 'test-results/impact-map/playwright-report.json');
 const fromRaw = process.argv.includes('--from-raw');
 const started = performance.now();
+const commit = process.env.GITHUB_SHA ?? execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
 let playwrightReport;
 if (!fromRaw) {
   await rm(rawDirectory, { recursive: true, force: true });
@@ -63,6 +64,7 @@ for (const [source, testIds] of Object.entries(sourceToTests)) sourceToTests[sou
 const report = {
   version: 3,
   generatedAt: new Date().toISOString(),
+  commit,
   runner: 'Playwright Chromium page.coverage',
   durationMs: fromRaw ? shardedReport.wallTimeMs : Math.round(performance.now() - started),
   ...(fromRaw ? { criticalPathWallTimeMs: shardedReport.wallTimeMs } : {}),
