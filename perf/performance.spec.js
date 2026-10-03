@@ -147,7 +147,7 @@ test('captures production-cache startup and deterministic solve/render performan
   expect(phoneStartup.controlledByServiceWorker).toBe(true);
 
   await startupCdp.detach();
-  const scenarioContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const scenarioContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4177', viewport: { width: 390, height: 844 } });
   await scenarioContext.addInitScript(() => {
     window.__f11LongTasks = [];
     try {
