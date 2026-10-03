@@ -76,7 +76,11 @@ async function readLongTasks(page) {
 }
 
 async function writeTrace(cdp) {
-  const complete = new Promise((resolve) => cdp.once('Tracing.tracingComplete', resolve));
+  let timeout;
+  const complete = new Promise((resolve, reject) => {
+    timeout = setTimeout(() => reject(new Error('Timed out waiting for CDP Tracing.tracingComplete.')), 15_000);
+    cdp.once('Tracing.tracingComplete', (event) => { clearTimeout(timeout); resolve(event); });
+  });
   await cdp.send('Tracing.end');
   const { stream } = await complete;
   const chunks = [];
@@ -226,19 +230,6 @@ test('captures production-cache startup and deterministic solve/render performan
   const afterHeap = (await cdp.send('Runtime.getHeapUsage')).usedSize;
   brain.routeSwitches = { count: 30, beforeHeapBytes: beforeHeap, afterHeapBytes: afterHeap, growthBytes: afterHeap - beforeHeap, growthMb: (afterHeap - beforeHeap) / (1024 * 1024) };
 
-  // Keep tracing out of every timing window above. Capture a separate real
-  // browser trace for inspection after the FPS and memory samples are complete.
-  const traceStarted = new Promise((resolve) => cdp.once('Tracing.tracingStarted', resolve));
-  await cdp.send('Tracing.start', {
-    categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
-    transferMode: 'ReturnAsStream',
-  });
-  await traceStarted;
-  await page.goto('/#/solve');
-  await page.locator('#brain-view .brain').waitFor();
-  await mountTestBrain(page, 'orbit', { route: true });
-  await frameSample(page, 1000, () => page.evaluate(() => window.testBrain.emitGyroBurst(900, 16)));
-  const tracePath = await writeTrace(cdp);
   const report = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
@@ -270,10 +261,23 @@ test('captures production-cache startup and deterministic solve/render performan
       'memory.routeSwitchGrowthMb': brain.routeSwitches.growthMb,
       'longTasks.maxDuringSolveMs': Math.max(0, ...brain.solveLongTasks.map((entry) => entry.durationMs)),
     },
-    trace: path.relative(process.cwd(), tracePath),
+    trace: null,
     screenshot: path.relative(process.cwd(), screenshotPath),
     limitations: ['BLE-to-frame latency uses an explicitly simulated MOVE event; no physical cube was connected.', 'Route-switch heap deltas are Chromium JS heap measurements after explicit garbage collection; they do not include GPU memory.'],
   };
+  // Preserve completed measurements before the separate trace phase. Tracing
+  // stays out of every frame-timing window and its completion is bounded.
+  await writeFile(path.join(outputDir, 'scenarios.json'), `${JSON.stringify(report, null, 2)}\n`);
+  await cdp.send('Tracing.start', {
+    categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
+    transferMode: 'ReturnAsStream',
+  });
+  await page.goto('/#/solve');
+  await page.locator('#brain-view .brain').waitFor();
+  await mountTestBrain(page, 'orbit', { route: true });
+  await frameSample(page, 1000, () => page.evaluate(() => window.testBrain.emitGyroBurst(900, 16)));
+  const tracePath = await writeTrace(cdp);
+  report.trace = path.relative(process.cwd(), tracePath);
   await writeFile(path.join(outputDir, 'scenarios.json'), `${JSON.stringify(report, null, 2)}\n`);
   await testInfo.attach('f11-performance-scenarios', { body: Buffer.from(JSON.stringify(report, null, 2)), contentType: 'application/json' });
   await cdp.detach();
