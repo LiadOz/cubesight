@@ -275,7 +275,11 @@ Do, in this order, measuring after each step:
 6. **Move down a tier.** Any browser test asserting only logic/wording/state belongs in node, where 500+ tests run in 5.0 s.
 7. **Only then raise parallelism** (`workers`, `fullyParallel`) and re-measure; the WebGL contention should be gone. Leave `workers: 2` until it demonstrably is.
 
-**Targets:** full browser gate **≤ 90 s** wall clock, node tier ≈ 5 s, no test over 10 s without a written reason, and the suite green at the new settings. **Report:** before/after wall clock and per-spec times, the pruning decisions with rationale, and the coverage comparison proving nothing was silently dropped.
+**Budgets (the user's hard limits, 2026-10-03). Two tiers:**
+- **Tier 1, the merge gate: ≤ 60 s total.** This runs on every merge through the queue (F18), on the *merged result*. It contains: lint, the node tier (≈5 s for 500+ tests), the production build, plus a **browser smoke set** of the critical paths (connect → scramble → solve → results; routing and redirects; one visual cell per style) **and the affected browser tests** for the change. If it cannot fit in 60 s, move work down a tier rather than widening the budget.
+- **Tier 2, full regression: ≤ 10 min, and never more.** Everything, including the complete visual matrix. It runs on a schedule and before any release candidate, not on every merge. If it exceeds 10 minutes, that is a failure to be fixed (prune or move down a tier), not a budget to raise.
+**Protection is not reduced by this split:** nothing reaches trunk without Tier 1 passing on the merged result; Tier 2 runs often enough that a regression is caught in hours, not days; and a Tier 2 failure blocks the next merge until trunk is green again. No test is deleted to meet either budget: a removal must move the assertion to a cheaper tier or prove redundancy.
+Also: node tier ≈ 5 s, no individual test over 10 s without a written reason, and the suite green at the new settings. **Report:** before/after wall clock and per-spec times, the pruning decisions with rationale, and the coverage comparison proving nothing was silently dropped.
 
 ## Future tasks (after the waves above; not blocking)
 - **F11 Performance and test health (promoted: run in wave 2, alongside F1–F5).** See the full section "F11" below.
