@@ -216,11 +216,13 @@ let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', recording: 'recording-view', help: 'help-view', notfound: 'not-found-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', recording: 'recording-view', help: 'help-view', demo: 'demo-view', notfound: 'not-found-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
 let algsPageLoad = null;
+let demoPage = null;
+let demoPageLoad = null;
 let progressPage = null;
 let progressPageLoad = null;
 let historyPage = null;
@@ -452,6 +454,7 @@ document.querySelector('#app').innerHTML = `
     <div id="brain-view" hidden></div>
     <div id="smart-view" hidden></div>
     <div id="help-view" class="cs-host" hidden></div>
+    <div id="demo-view" class="cs-host" hidden></div>
     <section class="retention-panel" aria-label="drill progress"><div><span>due</span><strong id="review-due">0 cases</strong></div><p id="review-summary">No cases due. Do a round to build your queue.</p><small>Misses and slow recog return sooner. Accuracy and delayed recall are separate.</small></section>
   </main>
 
@@ -1794,6 +1797,7 @@ function setTool(tool, initial = false) {
   drillsHub?.setActive(false);
   historyPage?.setActive(false);
   algsPage?.setActive(false);
+  demoPage?.setActive(false);
   progressPage?.setActive(false);
   timerPage?.setActive(false);
   reviewPage?.setActive(false);
@@ -1890,7 +1894,7 @@ function setTool(tool, initial = false) {
         brainLoad = null;
       });
     } else brain?.setActive(true);
-  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer' || tool === 'review' || tool === 'oll' || tool === 'lookahead') {
+  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer' || tool === 'review' || tool === 'oll' || tool === 'lookahead' || tool === 'demo') {
     state.locked = true;
     f2lState.locked = true;
     mountPage(tool);
@@ -2113,6 +2117,18 @@ function mountPage(tool) {
         mountSnapshotPage('algs', algsPage);
       }).catch(error => { if (algsPageLoad === load) algsPageLoad = null; failed(error); });
       algsPageLoad = load;
+    }
+    return;
+  }
+  if (tool === 'demo') {
+    if (demoPage) { demoPage.setActive(true); return; }
+    if (!demoPageLoad) {
+      const load = import('./demo/index.js').then(({ createDemoPage }) => {
+        if (activeTool !== 'demo') { if (demoPageLoad === load) demoPageLoad = null; return; }
+        demoPage = createDemoPage(root);
+        mountSnapshotPage('demo', demoPage);
+      }).catch(error => { if (demoPageLoad === load) demoPageLoad = null; failed(error); });
+      demoPageLoad = load;
     }
     return;
   }

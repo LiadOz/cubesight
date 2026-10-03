@@ -103,6 +103,8 @@ export function createHelpPage(host, { build = 'development', development = buil
       const algorithms = el('p', vm.content.algorithms, 'help-copy');
       algorithms.append(document.createTextNode(' '), externalLink('SpeedSolving wiki', 'https://www.speedsolving.com/wiki/index.php/OLL'), document.createTextNode(' · '), externalLink('SpeedCubeDB', 'https://speedcubedb.com/'), document.createTextNode('.')); section.append(algorithms);
       const engine = el('p', vm.content.engine, 'help-copy'); engine.append(document.createTextNode(' '), externalLink('source and licence', 'https://github.com/vangie/cube-xcross')); section.append(engine);
+      const demo = el('p', 'Share a setup and alg as a playable lesson.', 'help-copy');
+      const formatLink = el('a', 'demo link format'); formatLink.href = '#/demo/format'; demo.append(document.createTextNode(' '), formatLink); section.append(demo);
     }
     close.textContent = vm.returnLabel;
   };
