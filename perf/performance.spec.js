@@ -114,10 +114,13 @@ async function keyboardResponseMs(page) {
         if (!settings.open) return;
         observer.disconnect();
         let frames = 0;
-        const waitForPaint = time => {
+        const waitForPaint = () => {
           const rect = panel.getBoundingClientRect();
-          if (settings.open && rect.width > 0 && rect.height > 0 && getComputedStyle(panel).visibility !== 'hidden') resolve(time - startedAt);
-          else if (++frames < 4) requestAnimationFrame(waitForPaint);
+          if (settings.open && rect.width > 0 && rect.height > 0 && getComputedStyle(panel).visibility !== 'hidden') {
+            const elapsedMs = performance.now() - startedAt;
+            if (!Number.isFinite(elapsedMs) || elapsedMs < 0) reject(new Error(`Keyboard response produced an invalid latency: ${elapsedMs}ms.`));
+            else resolve(elapsedMs);
+          } else if (++frames < 4) requestAnimationFrame(waitForPaint);
           else reject(new Error('Settings opened but its panel did not become visible.'));
         };
         requestAnimationFrame(waitForPaint);
