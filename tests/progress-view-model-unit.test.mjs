@@ -92,6 +92,25 @@ test('the renderer model selects one primary Orbit for split averages or an ao12
   assert.match(waitingModel.goal.message, /6 of 12 timed solves/);
 });
 
+test('approved progress chart series come from actual cohort samples and preserve missing comparisons', () => {
+  const filters = { session: 'all', source: 'smart', focus: 'speed', days: '30' };
+  const data = {
+    stats: { ao12: 15_000, timedCount: 12 },
+    trend: [{ ms: null }, { ms: 16_000 }, { ms: 15_000 }],
+    solves: [{ solveMs: 18_000 }, { solveMs: 17_000 }, { solveMs: Infinity }],
+    splits: [
+      { key: 'cross', label: 'cross', ms: 2_500, previousMs: 2_700, deltaMs: -200 },
+      { key: 'F2L', label: 'F2L', ms: 5_000, previousMs: null, deltaMs: null },
+    ],
+  };
+  const model = buildProgressViewModel({ filters, data, weekly: {} });
+  assert.deepEqual(model.charts.ao12, [16_000, 15_000]);
+  assert.deepEqual(model.charts.recent, [18_000, 17_000]);
+  assert.deepEqual(model.charts.splitCurrent, [2_500, 5_000]);
+  assert.deepEqual(model.charts.splitPrevious, [2_700, null]);
+  assert.deepEqual(model.charts.splitLabels, ['cross', 'F2L']);
+});
+
 test('F6 progress fixtures build strict-clone-safe F5 models for empty, waiting, progress, and reached states', () => {
   const now = Date.UTC(2026, 9, 2, 12);
   const storageFactory = () => {

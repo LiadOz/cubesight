@@ -127,6 +127,8 @@ export function buildProgressViewModel({ filters, data, goal, goalState, weekly,
     rounds: count(weekly?.rounds), cases: count(weekly?.cases), correct: count(weekly?.correct),
     summary: weeklySummary,
   };
+  const trend = (Array.isArray(data?.trend) ? data.trend : []).filter(row => Number.isFinite(row?.ms)).slice(-180);
+  const recentSolves = (Array.isArray(data?.solves) ? data.solves : []).filter(row => Number.isFinite(row?.solveMs)).slice(-20);
   const source = ['smart', 'manual', 'all'].includes(filters?.source) ? filters.source : 'smart';
   const focus = ['speed', 'flow', 'learning', 'all'].includes(filters?.focus) ? filters.focus : 'speed';
   const session = typeof filters?.session === 'string' ? filters.session : 'all';
@@ -140,6 +142,13 @@ export function buildProgressViewModel({ filters, data, goal, goalState, weekly,
       shape: 'full', size: 'L', centerClearance: 105, segments: orbitSegments,
     },
     splits, splitCaption,
+    charts: {
+      ao12: trend.map(row => row.ms),
+      recent: recentSolves.map(row => row.solveMs),
+      splitCurrent: splits.map(row => row.ms),
+      splitPrevious: splits.map(row => row.previousMs),
+      splitLabels: splits.map(row => row.label),
+    },
     emptySplits: splits.length === 0,
     goal: {
       targetSeconds: hasGoal ? goalTarget : null, baselineSeconds,

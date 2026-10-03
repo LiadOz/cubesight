@@ -1,6 +1,6 @@
 import { test, expect } from 'playwright/test';
 
-test('progress scopes solve statistics and preserves legacy drill totals across reload', async ({ page }) => {
+test('progress charts the selected solve cohort, shares the Orbit, and preserves legacy drill totals', async ({ page }) => {
   await page.addInitScript(() => {
     if (localStorage.getItem('progress-fixture')) return;
     localStorage.setItem('progress-fixture','1');
@@ -12,12 +12,18 @@ test('progress scopes solve statistics and preserves legacy drill totals across 
     localStorage.setItem('cubesight-progress-v2',JSON.stringify({attempts:20,correct:15,history:[]}));
   });
   await page.goto('/#/progress');
-  await expect(page.locator('.progress-stats')).toContainText('12.00');
+  await expect(page.getByRole('heading', { name: 'progress', exact: true })).toBeVisible();
+  await expect(page.locator('[data-primary-orbit]')).toBeVisible();
+  await expect(page.locator('.progress-chart h3')).toContainText(['long-term ao12', 'recent solves', 'stage averages']);
+  await expect(page.locator('.progress-chart').nth(1)).toContainText('2 most recent timed solves');
   await expect(page.locator('.progress-drills')).toContainText('20 answers all time');
-  await page.getByLabel('solve source',{exact:true}).selectOption('manual');
-  await expect(page.locator('.progress-stats')).toContainText('8.00');
+  const source = page.getByRole('combobox', { name: 'solve source' });
+  await source.click();
+  await page.getByRole('option', { name: 'manual', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'solve source' }).locator('.sel__value')).toHaveText('manual');
+  await expect(page.locator('.progress-chart').nth(1)).toContainText('1 most recent timed solve');
   await page.reload();
-  await expect(page.locator('.progress-stats')).toContainText('12.00');
+  await expect(page.getByRole('combobox', { name: 'solve source' }).locator('.sel__value')).toHaveText('cube');
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('cubesight-progress-v2')).attempts)).toBe(20);
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
@@ -34,11 +40,49 @@ test('progress reads recorded algorithm practice and its due schedule after relo
     localStorage.setItem('cubesight-alg-learning-v1',JSON.stringify({version:1,trial:1,items:{[`alg|${alg.id}`]:{attempts:1,correct:1,due:Date.now()-1,dueTrial:0}}}));
   });
   await page.goto('/#/progress');
-  const row=page.locator('.progress-drills article').filter({has:page.getByRole('link',{name:'alg drills ›',exact:true})});
+  const row=page.locator('.progress-drills li').filter({has:page.getByRole('link',{name:'alg drills',exact:true})});
   await expect(row).toContainText('1 answer all time');
   await expect(row).toContainText('1.23 s median');
   await expect(row).toContainText('1 case due');
   await page.reload();
   await expect(row).toContainText('1 answer all time');
   await expect(row).toContainText('1 case due');
+});
+
+test('the shared goal controls save, switch to the ao12 Orbit, and clear locally', async ({ page }) => {
+  await page.addInitScript(() => localStorage.removeItem('cubesight-goal-v1'));
+  await page.goto('/#/progress');
+  await page.getByLabel('ao12 target in seconds').fill('15.25');
+  await page.getByRole('button', { name: 'save goal' }).click();
+  await expect(page.getByRole('combobox', { name: 'view' }).locator('.sel__value')).toHaveText('ao12 goal');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-goal-v1')).targetSeconds)).toBe(15.25);
+  await page.getByRole('button', { name: 'clear' }).click();
+  await expect(page.getByRole('combobox', { name: 'view' }).locator('.sel__value')).toHaveText('stage averages');
+  expect(await page.evaluate(() => localStorage.getItem('cubesight-goal-v1'))).toBeNull();
+});
+
+test('the primary Cube and Orbit stay on screen while progress scrolls', async ({ page }) => {
+  await page.goto('/#/progress');
+  for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    const maxScroll = await page.evaluate(() => document.scrollingElement.scrollHeight - innerHeight);
+    for (const fraction of [0, 0.5, 1]) {
+      await page.evaluate(value => new Promise(resolve => {
+        window.scrollTo(0, Math.max(0, document.scrollingElement.scrollHeight - innerHeight) * value);
+        requestAnimationFrame(resolve);
+      }), fraction);
+      const boxes = await page.evaluate(() => {
+        const orbit = document.querySelector('.progress-orbit-wrap').getBoundingClientRect();
+        const cube = document.querySelector('.progress-cube-mount').getBoundingClientRect();
+        const header = document.querySelector('.site-header').getBoundingClientRect();
+        return { orbit: { top: orbit.top, bottom: orbit.bottom }, cube: { top: cube.top, bottom: cube.bottom }, header: { top: header.top, bottom: header.bottom }, height: innerHeight, width: innerWidth, scrollWidth: document.scrollingElement.scrollWidth };
+      });
+      expect(boxes.scrollWidth).toBeLessThanOrEqual(boxes.width);
+      expect(boxes.orbit.top).toBeGreaterThanOrEqual(-1);
+      expect(boxes.orbit.bottom).toBeLessThanOrEqual(boxes.height + 1);
+      expect(boxes.cube.top).toBeGreaterThanOrEqual(boxes.header.bottom - 1);
+      expect(boxes.cube.bottom).toBeLessThanOrEqual(boxes.height + 1);
+    }
+    expect(maxScroll).toBeGreaterThan(0);
+  }
 });

@@ -12,6 +12,7 @@ import { loadLearning } from '../learning.js';
 import { Orbit } from '../ui/orbit/index.js';
 import { buildWeeklyReport, goalProgress, readGoal, saveGoal, clearGoal } from '../goals/adapter.js';
 import { createShareCardPng } from '../goals/share-card.js';
+import { createButton, createFilledInput, createFilledSelect, createLineChart } from '../ui/shared/index.js';
 
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const seconds = ms => ms === Infinity ? 'DNF' : Number.isFinite(ms) ? (Math.floor(ms / 10) / 100).toFixed(2) : '—';
@@ -42,7 +43,19 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   intro.append(title, subtitle);
 
   const filterForm = document.createElement('form'); filterForm.className = 'progress-filters'; filterForm.setAttribute('aria-label', 'Progress filters');
-  filterForm.innerHTML = '<label>session<select name="session" aria-label="session"><option value="all">all sessions</option></select></label><label>solve source<select name="source" aria-label="solve source"><option value="smart">cube</option><option value="manual">manual</option><option value="all">all solves</option></select></label><label>focus<select name="focus" aria-label="focus"><option value="speed">speed</option><option value="flow">flow</option><option value="learning">learning</option><option value="all">all focuses</option></select></label><label>period<select name="days" aria-label="period"><option value="7">7 days</option><option value="30">30 days</option><option value="all">all time</option></select></label><label>view<select name="view" aria-label="progress ring view"><option value="splits">stage averages</option><option value="goal">ao12 goal</option></select></label>';
+  const sessionFilterHost = document.createElement('div'); sessionFilterHost.className = 'progress-session-filter'; filterForm.append(sessionFilterHost);
+  const filterControls = {};
+  const changeFilter = (key, value) => {
+    if (!active) return;
+    if (key === 'view') selectedView = value === 'goal' ? 'goal' : 'splits';
+    else if (Object.hasOwn(filters, key)) filters[key] = value;
+    render();
+  };
+  filterControls.source = createFilledSelect(filterForm, { label: 'solve source', value: filters.source, options: [{ value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'all', label: 'all solves' }], onChange: value => changeFilter('source', value) });
+  filterControls.focus = createFilledSelect(filterForm, { label: 'focus', value: filters.focus, options: [{ value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }, { value: 'all', label: 'all focuses' }], onChange: value => changeFilter('focus', value) });
+  filterControls.days = createFilledSelect(filterForm, { label: 'period', value: filters.days, options: [{ value: '7', label: '7 days' }, { value: '30', label: '30 days' }, { value: 'all', label: 'all time' }], onChange: value => changeFilter('days', value) });
+  filterControls.view = createFilledSelect(filterForm, { label: 'view', value: selectedView, options: [{ value: 'splits', label: 'stage averages' }, { value: 'goal', label: 'ao12 goal' }], onChange: value => changeFilter('view', value) });
+  let sessionFilter = null;
 
   const visual = document.createElement('section'); visual.className = 'progress-visual'; visual.setAttribute('aria-label', 'Progress Orbit');
   const orbitWrap = document.createElement('div'); orbitWrap.className = 'progress-orbit-wrap';
@@ -92,8 +105,34 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
       ? 'ao12 goal · not set'
       : `ao12 ${goal.currentLabel} · baseline ${goal.baselineLabel ?? 'not captured'} · target ${goal.targetLabel}`;
     content.innerHTML = `<section class="progress-section progress-drill-section" aria-label="Drills"><h2>drills · ${plural(model.due, 'case')} due</h2><p class="progress-caption">${escape(model.drillCaption)}</p><ul class="progress-drills">${model.drills.map(row => `<li class="progress-drill-row"><span class="progress-mini-orbit" data-mini-orbit="${escape(row.id)}" aria-hidden="true"></span><a class="progress-drill-name" href="${escape(row.href)}">${escape(row.title)}</a><span class="progress-drill-meta">${escape(drillMeta(row))}</span></li>`).join('')}</ul><a class="progress-link" href="#/drills?review=due">${model.due ? `${plural(model.due, 'case')} due · drill now` : 'start a round'} ›</a></section>
-      <section class="progress-section progress-goals" aria-label="ao12 goal"><h2>goal</h2><p>${escape(goalLine)}</p><p class="progress-caption">${escape(goal.message)}</p>${goal.formError ? `<p role="status">${escape(goal.formError)}</p>` : ''}<form data-goal-form><label>ao12 target in seconds<input name="target" type="number" min="1" max="120" step="0.01" required placeholder="15.00" value="${goal.targetSeconds == null ? '' : goal.targetSeconds.toFixed(2)}"></label><button type="submit">save goal</button><button type="button" data-clear-goal ${goal.targetSeconds == null ? 'disabled' : ''}>clear</button></form></section>
-      <section class="progress-section progress-weekly" aria-label="This week"><h2>this week</h2><p>${escape(model.weekly.summary || 'No solves or drill rounds this week.')}</p><button type="button" data-share-solve>${escape(model.shareStatus)}</button><a href="${model.historyHref}" class="progress-link">export or import data ›</a></section>`;
+      <section class="progress-section progress-goals" aria-label="ao12 goal"><h2>goal</h2><p>${escape(goalLine)}</p><p class="progress-caption">${escape(goal.message)}</p>${goal.formError ? `<p role="status">${escape(goal.formError)}</p>` : ''}<form data-goal-form><div data-goal-target></div><div class="progress-goal-actions" data-goal-actions></div><button type="submit" hidden>save goal</button></form></section>
+      <section class="progress-section progress-weekly" aria-label="This week"><h2>this week</h2><p>${escape(model.weekly.summary || 'No solves or drill rounds this week.')}</p><div data-share-action></div><a href="${model.historyHref}" class="progress-link">export or import data ›</a></section>`;
+    const goalTarget = createFilledInput(content.querySelector('[data-goal-target]'), { label: 'ao12 target in seconds', type: 'number', min: 1, max: 120, step: 0.01, required: true, placeholder: '15.00', value: goal.targetSeconds == null ? '' : goal.targetSeconds.toFixed(2) });
+    goalTarget.input.min = '1'; goalTarget.input.max = '120'; goalTarget.input.step = '0.01'; goalTarget.input.required = true; goalTarget.input.name = 'target';
+    const goalActions = content.querySelector('[data-goal-actions]');
+    createButton(goalActions, { label: 'save goal', variant: 'primary', onClick: () => content.querySelector('[data-goal-form]').requestSubmit() });
+    const clearButton = createButton(goalActions, { label: 'clear', variant: 'secondary', disabled: goal.targetSeconds == null }); clearButton.dataset.clearGoal = '';
+    const shareButton = createButton(content.querySelector('[data-share-action]'), { label: model.shareStatus, variant: 'secondary' }); shareButton.dataset.shareSolve = '';
+    const charts = document.createElement('section'); charts.className = 'progress-section progress-charts'; charts.setAttribute('aria-label', 'Solve trends and split comparisons');
+    const heading = document.createElement('h2'); heading.textContent = 'trends and comparisons';
+    const grid = document.createElement('div'); grid.className = 'progress-chart-grid';
+    const addChart = (titleText, label, series, detail) => {
+      const figure = document.createElement('figure'); figure.className = 'progress-chart';
+      const title = document.createElement('h3'); title.textContent = titleText;
+      const description = document.createElement('figcaption'); description.textContent = detail;
+      figure.append(title); createLineChart(figure, { series, label, width: 560, height: 150 }); figure.append(description); grid.append(figure);
+      if (series.length > 1) {
+        const legend = document.createElement('p'); legend.className = 'progress-chart-legend';
+        series.forEach(item => { const entry = document.createElement('span'); entry.textContent = item.name; entry.style.setProperty('--series-color', item.color); legend.append(entry); });
+        figure.insertBefore(legend, description);
+      }
+    };
+    addChart('long-term ao12', 'ao12 trend across selected solves', [{ name: 'ao12 (ms)', values: model.charts.ao12 }], `${model.charts.ao12.length} rolling ao12 samples · selected cohort`);
+    addChart('recent solves', 'recent solve times', [{ name: 'solve time (ms)', values: model.charts.recent }], `${model.charts.recent.length} most recent timed solves · lower is faster`);
+    const splitSeries = [{ name: 'current period', color: 'var(--b-accent)', values: model.charts.splitCurrent }];
+    if (model.charts.splitPrevious.some(Number.isFinite)) splitSeries.push({ name: 'previous period', color: 'var(--b-muted)', values: model.charts.splitPrevious });
+    addChart('stage averages', 'stage split comparison', splitSeries, `${model.charts.splitLabels.join(' · ') || 'stage splits unavailable'} · ${model.splitCaption}`);
+    charts.append(heading, grid); content.prepend(charts);
     miniOrbits.forEach(item => item.destroy());
     miniOrbits = [...content.querySelectorAll('[data-mini-orbit]')].map(node => {
       const row = model.drills.find(item => item.id === node.dataset.miniOrbit);
@@ -130,20 +169,11 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
       ? 'Manual solves do not include recorded stage splits.'
       : 'Finish a cube solve with recorded stages to see its split averages.';
     renderContent(viewModel);
-    const sessionSelect = filterForm.querySelector('[name="session"]');
-    sessionSelect.replaceChildren(new Option('all sessions', 'all'), ...viewModel.sessions.map(session => new Option(session.label, session.id)));
-    for (const [key, value] of Object.entries({ ...filters, view: selectedView })) filterForm.querySelector(`[name="${key}"]`).value = value;
+    sessionFilter?.destroy();
+    sessionFilter = createFilledSelect(sessionFilterHost, { label: 'session', value: filters.session, options: [{ value: 'all', label: 'all sessions' }, ...viewModel.sessions.map(session => ({ value: session.id, label: session.label }))], onChange: value => changeFilter('session', value) });
+    for (const [key, value] of Object.entries({ ...filters, view: selectedView })) filterControls[key]?.setValue(value);
     syncPageTokens(page);
   }
-
-  filterForm.addEventListener('change', event => {
-    const key = event.target.name;
-    if (!active) return;
-    if (key === 'view') selectedView = event.target.value === 'goal' ? 'goal' : 'splits';
-    else if (Object.hasOwn(filters, key)) filters[key] = event.target.value;
-    else return;
-    render();
-  });
   content.addEventListener('submit', event => {
     if (!event.target.matches('[data-goal-form]')) return;
     event.preventDefault();
