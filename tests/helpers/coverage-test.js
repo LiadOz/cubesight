@@ -20,6 +20,8 @@ export const test = base.extend({
     await devtools.detach();
     const data = {
       testId: testInfo.testId,
+      retry: testInfo.retry,
+      workerIndex: testInfo.workerIndex,
       title: testInfo.titlePath.join(' › '),
       spec: path.relative(process.cwd(), testInfo.file).replaceAll('\\', '/'),
       files: coverage.flatMap((entry) => {

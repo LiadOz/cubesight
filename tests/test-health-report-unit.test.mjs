@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { findPlaywrightFailureCandidates, loadPlaywrightShards } from '../scripts/test-health-report.mjs';
+import { expectedCoverageRuns, findPlaywrightFailureCandidates, loadPlaywrightShards } from '../scripts/test-health-report.mjs';
 
 const now = Date.parse('2026-10-03T12:00:00.000Z');
 
@@ -70,5 +70,16 @@ test('repeat-run report names each test with any failed or timed-out repetition'
   ] }] }] };
   assert.deepEqual(findPlaywrightFailureCandidates(report), [
     { title: 'tests/sample.spec.js › flaky test', status: 'failed', durationMs: 400 },
+  ]);
+});
+
+test('coverage completeness counts executed attempts and ignores skipped tests', () => {
+  const shard = { playwright: { suites: [{ specs: [
+    { id: 'case-a', tests: [{ results: [{ status: 'passed', retry: 0 }, { status: 'passed', retry: 1 }] }] },
+    { id: 'case-b', tests: [{ results: [{ status: 'skipped', retry: 0 }] }] },
+  ] }] } };
+  assert.deepEqual(expectedCoverageRuns([shard]), [
+    { testId: 'case-a', retry: 0 },
+    { testId: 'case-a', retry: 1 },
   ]);
 });

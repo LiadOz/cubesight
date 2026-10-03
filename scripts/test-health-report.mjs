@@ -32,6 +32,27 @@ export function findPlaywrightFailureCandidates(report) {
   return candidates;
 }
 
+export function expectedCoverageRuns(shards) {
+  return shards.flatMap((shard) => {
+    const runs = [];
+    function visit(node) {
+      if (!node || typeof node !== 'object') return;
+      for (const spec of node.specs ?? []) {
+        for (const test of spec.tests ?? []) {
+          for (const result of test.results ?? []) {
+            if (['passed', 'failed', 'timedOut', 'interrupted'].includes(result.status)) {
+              runs.push({ testId: spec.id, retry: result.retry ?? 0 });
+            }
+          }
+        }
+      }
+      for (const suite of node.suites ?? []) visit(suite);
+    }
+    for (const suite of shard.playwright?.suites ?? []) visit(suite);
+    return runs;
+  });
+}
+
 export async function loadPlaywrightShards(directory, expectedCount, now = Date.now(), expectedCommit = process.env.GITHUB_SHA ?? null) {
   const names = (await readdir(directory).catch(() => []))
     .filter((name) => /^\d+-of-\d+\.json$/u.test(name)).sort();
@@ -65,6 +86,7 @@ export async function loadPlaywrightShards(directory, expectedCount, now = Date.
   return {
     shards: shards.map(({ shard, totalShards, generatedAt, wallTimeMs, exitCode }) => ({ shard, totalShards, generatedAt, wallTimeMs, exitCode })),
     tests: shards.flatMap((shard) => flattenTests(shard.playwright)),
+    coverageRuns: expectedCoverageRuns(shards),
     errors,
     wallTimeMs: Math.max(0, ...shards.map((shard) => shard.wallTimeMs ?? 0)),
   };

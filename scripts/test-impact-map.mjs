@@ -25,11 +25,23 @@ const rawFiles = (await readdir(rawDirectory)).filter((name) => name.endsWith('.
 if (!rawFiles.length) throw new Error(`No per-test coverage files found under ${path.relative(root, rawDirectory)}.`);
 const shardedReport = fromRaw ? await loadPlaywrightShards(shardDirectory, Number(process.env.PLAYWRIGHT_SHARD_COUNT ?? 4)) : null;
 if (shardedReport?.errors.length) throw new Error(`Cannot build a complete impact map: ${shardedReport.errors.join('; ')}`);
+const observedCoverageRuns = [];
 for (const file of rawFiles) {
   const coverage = JSON.parse(await readFile(path.join(rawDirectory, file), 'utf8'));
+  if (typeof coverage.testId !== 'string' || !Number.isInteger(coverage.retry) || !Array.isArray(coverage.files)) {
+    throw new Error(`Coverage report ${file} is missing its test ID, retry index, or source file list.`);
+  }
+  observedCoverageRuns.push(`${coverage.testId}:${coverage.retry}`);
   for (const source of new Set(coverage.files)) {
     sourceToTests[source] ??= [];
     sourceToTests[source].push({ id: coverage.testId, title: coverage.title, spec: coverage.spec });
+  }
+}
+if (shardedReport) {
+  const expected = shardedReport.coverageRuns.map(({ testId, retry }) => `${testId}:${retry}`).sort();
+  const observed = observedCoverageRuns.sort();
+  if (expected.length !== observed.length || expected.some((run, index) => run !== observed[index])) {
+    throw new Error(`Coverage is incomplete: reports contain ${observed.length} test executions; Playwright reported ${expected.length}.`);
   }
 }
 for (const tests of Object.values(sourceToTests)) tests.sort((a, b) => a.id.localeCompare(b.id));
