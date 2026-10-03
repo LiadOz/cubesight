@@ -31,7 +31,7 @@ function drillMeta(row) {
 
 export function createProgressPage(host, { storage = globalThis.localStorage } = {}) {
   const page = document.createElement('section'); page.className = 'brain cs-page progress-page';
-  let active = false, detached = false, history = null, algorithms = [], refreshId = 0, lifecycleGeneration = 0;
+  let active = false, detached = false, hasActivated = false, history = null, algorithms = [], refreshId = 0, lifecycleGeneration = 0;
   let cube = null, cubeLoad = null, orbit = null, viewModel = null, miniOrbits = [];
   let selectedView = readGoal(storage) ? 'goal' : 'splits';
   let goalFormError = '', shareStatus = 'share latest solve · PNG';
@@ -97,7 +97,7 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
     algorithms = result?.items ?? [];
     render();
   }
-  const ready = historyReady.then(refresh);
+  const ready = historyReady.then(refresh).then(() => { if (!detached) page.dataset.ready = 'true'; });
 
   function renderContent(model) {
     const goal = model.goal;
@@ -200,6 +200,8 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
   const onTheme = () => { if (active) render(); };
   document.addEventListener('cubesight-theme', onTheme);
   orbit = new Orbit(orbitHost, { shape: 'full', size: 'L', label: 'average split by stage', centerClearance: 105, segments: [], onSegment: segment => { if (segment.href) location.hash = segment.href; } });
+  const onResize = () => { if (orbit) void orbit.update(orbit.options, { animate: false }); };
+  window.addEventListener('resize', onResize);
   render();
 
   return {
@@ -217,6 +219,7 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
         return;
       }
       render(); mountCube();
+      if (!hasActivated) { hasActivated = true; return; }
       const generation = lifecycleGeneration;
       void (history ? history.reload().catch(() => {}) : historyReady).then(() => {
         if (active && !detached && generation === lifecycleGeneration) return refresh();
@@ -225,6 +228,7 @@ export function createProgressPage(host, { storage = globalThis.localStorage } =
     detach() {
       detached = true; active = false; lifecycleGeneration++; refreshId++;
       document.removeEventListener('cubesight-theme', onTheme);
+      window.removeEventListener('resize', onResize);
       cube?.destroy?.(); cube = null;
       orbit?.destroy(); orbit = null;
       miniOrbits.forEach(item => item.destroy()); miniOrbits = [];

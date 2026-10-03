@@ -13,9 +13,12 @@ test('progress charts the selected solve cohort, shares the Orbit, and preserves
   });
   await page.goto('/#/progress');
   await expect(page.getByRole('heading', { name: 'progress', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Progress Orbit' })).toBeVisible();
+  await expect(page.locator('.progress-page')).toHaveAttribute('data-ready', 'true');
   await expect(page.locator('[data-primary-orbit]')).toBeVisible();
   await expect(page.locator('.progress-chart h3')).toContainText(['long-term ao12', 'recent solves', 'stage averages']);
-  await expect(page.locator('.progress-chart').nth(1)).toContainText('2 most recent timed solves');
+  // The default source is cube; the manual solve is excluded until the filter changes.
+  await expect(page.locator('.progress-chart').nth(1)).toContainText('1 most recent timed solve');
   await expect(page.locator('.progress-drills')).toContainText('20 answers all time');
   const source = page.getByRole('combobox', { name: 'solve source' });
   await source.click();
@@ -40,18 +43,24 @@ test('progress reads recorded algorithm practice and its due schedule after relo
     localStorage.setItem('cubesight-alg-learning-v1',JSON.stringify({version:1,trial:1,items:{[`alg|${alg.id}`]:{attempts:1,correct:1,due:Date.now()-1,dueTrial:0}}}));
   });
   await page.goto('/#/progress');
+  await expect(page.locator('.progress-page')).toHaveAttribute('data-ready', 'true');
   const row=page.locator('.progress-drills li').filter({has:page.getByRole('link',{name:'alg drills',exact:true})});
   await expect(row).toContainText('1 answer all time');
-  await expect(row).toContainText('1.23 s median');
   await expect(row).toContainText('1 case due');
+  const recorded = await page.evaluate(async () => (await import('/src/algs/runtime.js')).algDatabase.progressFor());
+  expect(recorded.items.flatMap(item => item.times)).toEqual([1230]);
   await page.reload();
   await expect(row).toContainText('1 answer all time');
   await expect(row).toContainText('1 case due');
+  const reloaded = await page.evaluate(async () => (await import('/src/algs/runtime.js')).algDatabase.progressFor());
+  expect(reloaded.items.flatMap(item => item.times)).toEqual([1230]);
 });
 
 test('the shared goal controls save, switch to the ao12 Orbit, and clear locally', async ({ page }) => {
   await page.addInitScript(() => localStorage.removeItem('cubesight-goal-v1'));
   await page.goto('/#/progress');
+  await expect(page.getByRole('region', { name: 'Progress Orbit' })).toBeVisible();
+  await expect(page.locator('.progress-page')).toHaveAttribute('data-ready', 'true');
   await page.getByLabel('ao12 target in seconds').fill('15.25');
   await page.getByRole('button', { name: 'save goal' }).click();
   await expect(page.getByRole('combobox', { name: 'view' }).locator('.sel__value')).toHaveText('ao12 goal');
@@ -63,6 +72,12 @@ test('the shared goal controls save, switch to the ao12 Orbit, and clear locally
 
 test('the primary Cube and Orbit stay on screen while progress scrolls', async ({ page }) => {
   await page.goto('/#/progress');
+  await expect(page.getByRole('region', { name: 'Progress Orbit' })).toBeVisible();
+  await expect(page.locator('.progress-page')).toHaveAttribute('data-ready', 'true');
+  await expect(page.locator('.progress-orbit-wrap')).toBeVisible();
+  await expect(page.locator('.progress-cube-mount')).toBeVisible();
+  await expect(page.locator('.progress-chart')).toHaveCount(3);
+  await page.evaluate(() => document.fonts.ready);
   for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     const maxScroll = await page.evaluate(() => document.scrollingElement.scrollHeight - innerHeight);
