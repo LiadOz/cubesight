@@ -102,3 +102,7 @@
   .alg-cube-actions { align-items: stretch; flex-direction: column; }
   .alg-metric-stats { grid-template-columns: repeat(2, 1fr); }
 }
+.alg-demo-import { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 16px; }
+.alg-demo-import label { color: var(--b-muted); font-size: 12px; }
+.alg-demo-import input { flex: 1 1 260px; min-width: 0; }
+.alg-demo-import [data-alg-demo-status] { flex-basis: 100%; color: var(--b-muted); font-size: 12px; }

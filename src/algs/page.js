@@ -17,6 +17,7 @@ import { fmt } from '../copy/terms.js';
 import { algorithmMetrics } from './notation.js';
 import { groupMoves } from '../moves/triggers.js';
 import { buildAlgOrbitSegments, buildAlgViewModel, parseAlgRouteContext } from './view-model.js';
+import { parseDemoPaste, serializeDemo } from '../demo/model.js';
 import '../pages/page.css';
 import './page.css';
 
@@ -66,7 +67,7 @@ function caseDetail(row, context = {}) {
     <div class="alg-entry__top"><strong>${used ? 'used in this solve' : `alg ${index + 1}`}</strong><span>${moveCount} ${moveCount === 1 ? 'move' : 'moves'}</span></div>
     <code>${esc(fmt.moves(alg.moves))}</code>
     <p>${esc(alg.credit)} · ${safeHttpUrl(alg.source?.url) ? `<a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">source ↗</a>` : 'source link unavailable'}</p>
-    <div class="alg-entry__actions"><button class="btn btn--secondary btn--s" type="button" data-pick="${esc(alg.id)}">${used ? 'used alg' : 'choose'}</button><button class="btn btn--text btn--s" type="button" data-drill-alg="${esc(alg.id)}">drill</button></div>
+    <div class="alg-entry__actions"><button class="btn btn--secondary btn--s" type="button" data-pick="${esc(alg.id)}">${used ? 'used alg' : 'choose'}</button><button class="btn btn--text btn--s" type="button" data-drill-alg="${esc(alg.id)}">drill</button><button class="btn btn--text btn--s" type="button" data-demo-alg="${esc(alg.id)}">copy demo link</button></div>
   </article>`;
   }).join('');
   const back = context.from ? `<a class="alg-case-back" data-case-back href="${esc(context.from)}">${returnLabel(context.from)}</a>` : `<a class="alg-case-back" data-case-back href="#/algs/${esc(row.set)}">‹ ${esc(row.set.toUpperCase())} cases</a>`;
@@ -74,6 +75,7 @@ function caseDetail(row, context = {}) {
   return `<section class="cs-page brain alg-page" data-brain-style="orbit">
     <section class="alg-detail alg-case-shell">
       <header class="alg-case-head">${back}<div><p class="alg-eyebrow">${esc(row.set.toUpperCase())} case</p><h1>${esc(row.name)}</h1><p>${note}</p></div></header>
+      ${demoPasteMarkup()}
       <div class="alg-case-layout">
         <section class="alg-case-focus" aria-label="Case and playback">
           <div class="alg-case-orbit" data-alg-orbit></div>
@@ -106,8 +108,13 @@ function browser(set = null) {
   // copy-ok: Algorithms is the library's name, separate from the Drills navigation label.
   const note = set === 'f2l' ? '<p class="alg-browser__scope">All 41 standard F2L cases, plus 41 back-right and 41 back-left variants. Each credited insertion is checked with the cross and other three pairs solved.</p>' : set === 'oll2' ? '<p class="alg-browser__scope">Practice each stage goal separately: edge orientation, corner orientation, corner permutation, then edge permutation.</p>' : '';
   return /* copy-ok: Drill is a feature label used by the algorithm case actions. */ `<section class="cs-page brain alg-page" data-brain-style="orbit"><section class="alg-browser"><header class="alg-browser__head"><p class="alg-eyebrow">OFFLINE ALGORITHM LIBRARY</p><h1>Algorithm library</h1><p>Browse canonical cases, compare credited variants, and practice your picked algorithm. Community source links need an internet connection.</p>${note}</header>
+    ${demoPasteMarkup()}
     <nav class="alg-set-tabs" aria-label="Algorithm sets">${ALG_SETS.map(item => item.status === 'ready' ? `<a class="${item.id === active?.id ? 'is-active' : ''}" href="#/algs/${item.id}">${esc(item.name)} <small>${item.count}</small></a>` : `<span class="is-disabled" aria-disabled="true">${esc(item.name)} <small>Coming soon</small></span>`).join('')}</nav>
     ${slotNav}<div class="alg-case-grid">${rows.map(caseCard).join('')}</div></section></section>`;
+}
+
+function demoPasteMarkup() {
+  return '<form class="alg-demo-import" data-alg-demo-form><label for="alg-demo-input">Paste a demo link</label><input id="alg-demo-input" class="field__input" data-alg-demo-input type="text" placeholder="CubeSight, alg.cubing.net, or Twizzle link"><button class="btn btn--secondary" type="submit">open demo</button><span data-alg-demo-status role="status" aria-live="polite"></span></form>';
 }
 
 function drillMarkup(row, alg, mode = 'self') {
@@ -221,7 +228,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       const personalSection = root.querySelector('[data-personal-algs]');
       if (personalSection && personal.length) {
         personalSection.hidden = false;
-        personalSection.innerHTML = `<h2>Your algorithms</h2><div class="alg-entry-grid">${personal.map((alg, index) => `<article class="alg-entry ${pick?.algId === alg.id ? 'is-picked' : ''}" data-alg-entry="${esc(alg.id)}"><div class="alg-entry__top"><strong>Personal ${index + 1}</strong><span>${alg.verified ? 'verified' : 'Failed verification · excluded from matching'}</span></div><code>${esc(fmt.moves(alg.moves))}</code><p>${safeHttpUrl(alg.source?.url) ? `Credit: ${esc(alg.credit ?? alg.source.name)} · <a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">Source (needs internet)</a>` : 'Added on this device.'}</p><div class="alg-entry__actions"><button class="btn btn--secondary btn--s" type="button" data-pick="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Choose this alg</button><button class="btn btn--text btn--s" type="button" data-drill-alg="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Drill</button></div></article>`).join('')}</div>`;
+        personalSection.innerHTML = `<h2>Your algorithms</h2><div class="alg-entry-grid">${personal.map((alg, index) => `<article class="alg-entry ${pick?.algId === alg.id ? 'is-picked' : ''}" data-alg-entry="${esc(alg.id)}"><div class="alg-entry__top"><strong>Personal ${index + 1}</strong><span>${alg.verified ? 'verified' : 'Failed verification · excluded from matching'}</span></div><code>${esc(fmt.moves(alg.moves))}</code><p>${safeHttpUrl(alg.source?.url) ? `Credit: ${esc(alg.credit ?? alg.source.name)} · <a href="${esc(safeHttpUrl(alg.source.url))}" target="_blank" rel="noopener noreferrer">Source (needs internet)</a>` : 'Added on this device.'}</p><div class="alg-entry__actions"><button class="btn btn--secondary btn--s" type="button" data-pick="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Choose this alg</button><button class="btn btn--text btn--s" type="button" data-drill-alg="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>Drill</button><button class="btn btn--text btn--s" type="button" data-demo-alg="${esc(alg.id)}" ${alg.verified ? '' : 'disabled'}>copy demo link</button></div></article>`).join('')}</div>`;
       }
       refreshCubeStatus();
       if (drill) void startDrill(pick?.algId, cubeSnapshot.phase === 'tracking' ? supportsVirtualRepaint(caseData) && repaintReady ? 'repeat' : 'smart' : 'self');
@@ -320,6 +327,20 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
 
   function stopTimer() { if (tick != null) clearInterval(tick); tick = null; }
   const clickHandler = async event => {
+    const demoButton = event.target.closest('[data-demo-alg]');
+    if (demoButton) {
+      const row = routeSelection().caseData;
+      const alg = await db.getAlg(demoButton.dataset.demoAlg) ?? row?.algs.find(item => item.id === demoButton.dataset.demoAlg);
+      if (!row || !alg) return;
+      const params = new URLSearchParams({ title: `${row.name} · ${alg.id}`, setup: row.setup || '', alg: alg.moves, case: row.id, color: caseColorSetting });
+      if (row.set === 'f2l') params.set('highlight', `pair:${row.targetPair}`);
+      const href = `#/demo?${params}`;
+      try {
+        await navigator.clipboard.writeText(`${location.origin}${location.pathname}${location.search}${href}`);
+        demoButton.textContent = 'link copied';
+      } catch { location.hash = href; }
+      return;
+    }
     if (event.target.closest('[data-case-colors]')) {
       const index = CASE_COLORS.indexOf(caseColorSetting);
       caseColorSetting = writeCaseColorSetting(CASE_COLORS[(index + 1) % CASE_COLORS.length], storage);
@@ -411,7 +432,15 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       }
     }
   };
+  const pasteSubmitHandler = event => {
+    const form = event.target.closest('[data-alg-demo-form]');
+    if (!form) return;
+    event.preventDefault();
+    try { location.hash = serializeDemo(parseDemoPaste(form.querySelector('[data-alg-demo-input]')?.value)); }
+    catch (error) { form.querySelector('[data-alg-demo-status]').textContent = error.message; }
+  };
   root.addEventListener('click', clickHandler);
+  root.addEventListener('submit', pasteSubmitHandler);
   window.addEventListener('hashchange', render);
   watchCube();
   void db.ready().then(render);
@@ -447,7 +476,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
         cubeUnsubscribe?.(); cubeUnsubscribe = null;
       }
     },
-    destroy() { destroyed = true; active = false; ++renderId; stopTimer(); cubeUnsubscribe?.(); cubeUnsubscribe = null; disposeVisuals(); root.removeEventListener('click', clickHandler); window.removeEventListener('hashchange', render); root.replaceChildren(); },
+    destroy() { destroyed = true; active = false; ++renderId; stopTimer(); cubeUnsubscribe?.(); cubeUnsubscribe = null; disposeVisuals(); root.removeEventListener('click', clickHandler); root.removeEventListener('submit', pasteSubmitHandler); window.removeEventListener('hashchange', render); root.replaceChildren(); },
   };
 }
 
