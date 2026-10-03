@@ -97,7 +97,7 @@ async function writeTrace(cdp) {
 }
 
 test('captures production-cache startup and deterministic solve/render performance', async ({ page, browser }, testInfo) => {
-  test.setTimeout(180_000);
+  test.setTimeout(120_000);
   await mkdir(outputDir, { recursive: true });
   await page.addInitScript(() => {
     window.__f11LongTasks = [];
@@ -149,6 +149,7 @@ test('captures production-cache startup and deterministic solve/render performan
   await page.setViewportSize({ width: 390, height: 844 });
   const phoneStartup = await startupSample(page, 'phone-installed-pwa-cpu-x4');
   expect(phoneStartup.controlledByServiceWorker).toBe(true);
+  console.log('F11 checkpoint: installed-cache startup complete');
   expect(desktopStartup.routeScriptEncodedBytes).toBeGreaterThan(0);
   expect(phoneStartup.routeScriptEncodedBytes).toBeGreaterThan(0);
   await writeFile(path.join(outputDir, 'startup.json'), `${JSON.stringify({
@@ -176,6 +177,7 @@ test('captures production-cache startup and deterministic solve/render performan
   const brain = {};
   await mountTestBrain(page, 'orbit', { route: true });
   brain.idleGyroPhone = await frameSample(page, 1200, () => page.evaluate(() => window.testBrain.emitGyroBurst(1100, 16)));
+  console.log('F11 checkpoint: phone gyro sample complete');
 
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -183,11 +185,13 @@ test('captures production-cache startup and deterministic solve/render performan
   const connectStart = performance.now();
   brain.connectSpin = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', undefined, { timeout: 5_000 }));
   brain.connectElapsedMs = Math.round(performance.now() - connectStart);
+  console.log('F11 checkpoint: connect-ring sample complete');
 
   const gyroStart = await page.evaluate(() => performance.now());
   brain.idleGyro = await frameSample(page, 1200, () => page.evaluate(() => window.testBrain.emitGyroBurst(1100, 16)));
   brain.idleGyroLongTasks = (await readLongTasks(page)).filter((entry) => entry.startTime >= gyroStart && entry.startTime <= gyroStart + 1200);
   brain.simulatedMoveInput = await page.evaluate(() => window.testBrain.emitMeasuredTurn('R'));
+  console.log('F11 checkpoint: desktop gyro and move samples complete');
 
   await mountTestBrain(page, 'orbit', { route: true });
   const solveStart = await page.evaluate(() => performance.now());
@@ -202,12 +206,14 @@ test('captures production-cache startup and deterministic solve/render performan
   brain.solvePlaybackAndResults = await finishFrameSample(page, 12_000);
   brain.solveLongTasks = (await readLongTasks(page)).filter((entry) => entry.startTime >= solveStart);
   brain.finalSolveScreen = await page.locator('#brain-view .brain').getAttribute('data-screen');
+  console.log('F11 checkpoint: solve and analysis sample complete');
 
   await page.goto('/#/algs/oll/1');
   const sequence = page.locator('[data-case-sequence]');
   await sequence.waitFor();
   brain.algorithmPlayback = await frameSample(page, 4000, () => sequence.locator('[data-sequence="play"]').click());
   brain.algorithmLongTasks = await readLongTasks(page);
+  console.log('F11 checkpoint: algorithm playback sample complete');
 
   await cdp.send('HeapProfiler.enable');
   await cdp.send('HeapProfiler.collectGarbage');
@@ -229,6 +235,7 @@ test('captures production-cache startup and deterministic solve/render performan
   await cdp.send('HeapProfiler.collectGarbage');
   const afterHeap = (await cdp.send('Runtime.getHeapUsage')).usedSize;
   brain.routeSwitches = { count: 30, beforeHeapBytes: beforeHeap, afterHeapBytes: afterHeap, growthBytes: afterHeap - beforeHeap, growthMb: (afterHeap - beforeHeap) / (1024 * 1024) };
+  console.log('F11 checkpoint: heap and route-switch sample complete');
 
   const report = {
     schemaVersion: 1,
@@ -268,6 +275,7 @@ test('captures production-cache startup and deterministic solve/render performan
   // Preserve completed measurements before the separate trace phase. Tracing
   // stays out of every frame-timing window and its completion is bounded.
   await writeFile(path.join(outputDir, 'scenarios.json'), `${JSON.stringify(report, null, 2)}\n`);
+  console.log('F11 checkpoint: scenario report persisted; starting trace');
   await cdp.send('Tracing.start', {
     categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
     transferMode: 'ReturnAsStream',
@@ -277,6 +285,7 @@ test('captures production-cache startup and deterministic solve/render performan
   await mountTestBrain(page, 'orbit', { route: true });
   await frameSample(page, 1000, () => page.evaluate(() => window.testBrain.emitGyroBurst(900, 16)));
   const tracePath = await writeTrace(cdp);
+  console.log('F11 checkpoint: trace saved');
   report.trace = path.relative(process.cwd(), tracePath);
   await writeFile(path.join(outputDir, 'scenarios.json'), `${JSON.stringify(report, null, 2)}\n`);
   await testInfo.attach('f11-performance-scenarios', { body: Buffer.from(JSON.stringify(report, null, 2)), contentType: 'application/json' });
