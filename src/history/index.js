@@ -11,7 +11,7 @@ import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
-import { createButton, createFileInput, createFilledInput, createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
+import { createButton, createCountPill, createFileInput, createFilledInput, createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
 
 export const historyTime = record => {
   return fmt.penalty(record);
@@ -61,6 +61,9 @@ export function initHistory(host) {
   ];
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
+  const countHost = root.querySelector('.history-count');
+  const solveCount = createCountPill(countHost, 0, 'solves');
+  const pinCount = createCountPill(countHost, 0, 'pins');
   const exportActions = root.querySelector('[data-history-export-actions]');
   createButton(exportActions, { label: 'export data', variant: 'secondary' }).dataset.action = 'backup';
   createButton(exportActions, { label: 'export csTimer', variant: 'secondary' }).dataset.action = 'cstimer';
@@ -104,7 +107,8 @@ export function initHistory(host) {
     if (!store) return;
     const filters = Object.fromEntries(new FormData(form));
     const list = filterHistory(store.records, filters);
-    root.querySelector('.history-count').textContent = `${list.length} solves · ${store.pins.count} pins`;
+    solveCount.textContent = `${list.length} solves`;
+    pinCount.textContent = `${store.pins.count} pins`;
     const rows = list.map(record => {
       const row = make('li');
       const source = record.source === 'manual' ? 'manual' : record.source === 'import' ? 'import' : 'cube';
