@@ -3,6 +3,7 @@ import { defineConfig } from 'playwright/test';
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/snapshots/**/*.spec.js',
+  outputDir: 'test-results/snapshots',
   timeout: 60_000,
   fullyParallel: true,
   workers: 2,
