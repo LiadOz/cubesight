@@ -7,9 +7,14 @@ export function mergeCoverageObservations(previous, current) {
   if (previous?.testId !== current.testId || previous.retry !== current.retry) {
     return { ...current, coverageContexts: 1 };
   }
+  const lineCoverage = {};
+  for (const source of new Set([...Object.keys(previous.lineCoverage ?? {}), ...Object.keys(current.lineCoverage ?? {})])) {
+    lineCoverage[source] = [...new Set([...(previous.lineCoverage?.[source] ?? []), ...(current.lineCoverage?.[source] ?? [])])].sort((a, b) => a - b);
+  }
   return {
     ...current,
     files: [...new Set([...(previous.files ?? []), ...(current.files ?? [])])].sort(),
+    lineCoverage,
     coverageContexts: (previous.coverageContexts ?? 1) + 1,
   };
 }

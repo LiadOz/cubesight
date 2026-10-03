@@ -3,12 +3,13 @@ import test from 'node:test';
 import { mergeCoverageObservations } from './helpers/coverage-test.js';
 
 test('multiple browser contexts union runtime files into the same test coverage record', () => {
-  const previous = { testId: 'test-1', retry: 0, files: ['src/algs/page.js'], coverageContexts: 1 };
-  const next = { testId: 'test-1', retry: 0, files: ['src/shared/state.js', 'src/algs/page.js'] };
+  const previous = { testId: 'test-1', retry: 0, files: ['src/algs/page.js'], lineCoverage: { 'src/algs/page.js': [1, 4], 'src/shared/old.js': [2] }, coverageContexts: 1 };
+  const next = { testId: 'test-1', retry: 0, files: ['src/shared/state.js', 'src/algs/page.js'], lineCoverage: { 'src/algs/page.js': [4, 7], 'src/shared/state.js': [3] } };
   assert.deepEqual(mergeCoverageObservations(previous, next), {
     testId: 'test-1',
     retry: 0,
     files: ['src/algs/page.js', 'src/shared/state.js'],
+    lineCoverage: { 'src/algs/page.js': [1, 4, 7], 'src/shared/old.js': [2], 'src/shared/state.js': [3] },
     coverageContexts: 2,
   });
 });
