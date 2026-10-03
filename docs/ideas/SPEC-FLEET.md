@@ -261,6 +261,26 @@ Evidence (2026-10-03): `.github/workflows/check.yml` exists but **has never run*
 6. **Keep the GitHub workflow** for when pushing is allowed; until then the queue is the CI and must run the identical commands.
 Acceptance: the queue rejects a branch that passes alone but fails when merged (test it deliberately); trunk is green at every commit; no branch is more than a few hours behind; the duplicate-commit pattern is gone; `fleet/combined` is either landed through the queue or deleted.
 
+## F19: Scale the test suite back (next wave; owns `tests/**` and the test harnesses)
+The suite grew with the features (126 tests → ~290) and now runs 8–10 minutes per gate, which does not scale with several agents merging. **Read F11 section B2 first: the measurements are already done, do not re-derive them.** Summary: there is no browser overhead to remove (a page load is 0.3 s, the browser is already reused), the 34 fixed sleeps total 18 s, and raising parallelism broke 26 tests through software-WebGL contention. The cost is that **individual tests do far too much work**: a test that wants to look at a screen drives a whole solve to get there, then repeats that per theme and viewport. Visual specs are ~31% of all test time; the three most expensive (`review-next-2-visual` 333 s, `brain-visual-orbit` 225 s, `history-review-visual` 137 s) were added 30 Sep – 1 Oct.
+
+**Rule: never delete an assertion to make a number look better.** Every removal must be justified in the report as either (a) the same assertion moved to a cheaper tier, or (b) genuinely redundant with another case. Coverage must be equal or better afterwards.
+
+Do, in this order, measuring after each step:
+1. **Seed states; stop simulating them.** Provide a test helper that writes a finished solve (record + analysis) straight into IndexedDB/the view-model and opens the target screen, instead of replaying dozens of animated cube moves. Apply it to every test whose subject is a *screen*, not the solving flow. Keep a small number of genuine end-to-end flows (connect → scramble → solve → results) that still drive the cube, because that path must stay covered.
+2. **Set up once, capture many.** The theme × viewport matrices currently rebuild the whole flow per cell. Reach the state once per spec, then switch theme/viewport and capture. 
+3. **Prune the matrices deliberately.** Decide, and write down, which screens genuinely need all four of Orbit dark/light × desktop/phone, and which need one representative cell plus a token check. This is the "scale back" the user asked for: fewer cells, chosen on purpose, not accidental breadth.
+4. **Freeze the clock** (`page.clock`) and disable animations in every visual test; replace the 34 `waitForTimeout` sleeps with condition waits (they also cause flakiness).
+5. **Stub the 3D cube and the analysis worker** wherever the test is not about them (mask the canvas in screenshots). Keep a small, explicit set of real-WebGL tests.
+6. **Move down a tier.** Any browser test asserting only logic/wording/state belongs in node, where 500+ tests run in 5.0 s.
+7. **Only then raise parallelism** (`workers`, `fullyParallel`) and re-measure; the WebGL contention should be gone. Leave `workers: 2` until it demonstrably is.
+
+**Budgets (the user's hard limits, 2026-10-03). Two tiers:**
+- **Tier 1, the merge gate: ≤ 60 s total.** This runs on every merge through the queue (F18), on the *merged result*. It contains: lint, the node tier (≈5 s for 500+ tests), the production build, plus a **browser smoke set** of the critical paths (connect → scramble → solve → results; routing and redirects; one visual cell per style) **and the affected browser tests** for the change. If it cannot fit in 60 s, move work down a tier rather than widening the budget.
+- **Tier 2, full regression: ≤ 10 min, and never more.** Everything, including the complete visual matrix. It runs on a schedule and before any release candidate, not on every merge. If it exceeds 10 minutes, that is a failure to be fixed (prune or move down a tier), not a budget to raise.
+**Protection is not reduced by this split:** nothing reaches trunk without Tier 1 passing on the merged result; Tier 2 runs often enough that a regression is caught in hours, not days; and a Tier 2 failure blocks the next merge until trunk is green again. No test is deleted to meet either budget: a removal must move the assertion to a cheaper tier or prove redundancy.
+Also: node tier ≈ 5 s, no individual test over 10 s without a written reason, and the suite green at the new settings. **Report:** before/after wall clock and per-spec times, the pruning decisions with rationale, and the coverage comparison proving nothing was silently dropped.
+
 ## Future tasks (after the waves above; not blocking)
 - **F11 Performance and test health (promoted: run in wave 2, alongside F1–F5).** See the full section "F11" below.
 - **F12 Cube skins (maybe):** user-customisable cube appearance (sticker colours/shapes, the plastic body, stickerless styles). The user isn't sure yet; first prototype it in the design lab (F10).

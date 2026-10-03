@@ -15,7 +15,8 @@ Read this before doing anything in this repository. It applies to every agent (C
 - Never push. The lead (the user's main Claude session) reviews and merges into `feature/smart-cube-guidance`.
 - **Trunk is `feature/smart-cube-guidance`. Branch from it, merge back within hours, and update from it often.** Do not create or use a second integration branch, and never re-apply your own commits onto another branch: that duplication is what made the history unreadable. Work lands only through the merge queue (F18), which runs the gate on the *merged result*, so a change that passes alone but breaks in combination is rejected rather than landing.
 
-## 3. Tests: affected while iterating, full gate before reporting
+## 3. Tests: two tiers with hard budgets
+**Tier 1, the merge gate (≤ 60 s):** lint + node unit tests + build + a browser smoke set + the affected browser tests. This runs on every merge, on the merged result. **Tier 2, full regression (≤ 10 min, never more):** everything including the full visual matrix; scheduled and before a release candidate. Never delete a test to meet a budget: move the assertion to a cheaper tier or prove it redundant.
 While iterating, run `npm run test:affected` (once it exists; F11) instead of the whole suite. Before you report done, the full gate below must be green.
 `npm run check` (lint 0 errors, unit tests, build, gallery coverage) · the full `npx playwright test` · `npx playwright test --config=playwright.pwa.config.js` · and, once they exist, `npm run test:layout`, `npm run test:snapshots`, `npm run perf:check`. Tests never write into `docs/` or `src/`.
 
