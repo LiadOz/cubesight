@@ -145,8 +145,17 @@ test('captures production-cache startup and deterministic solve/render performan
   await page.setViewportSize({ width: 390, height: 844 });
   const phoneStartup = await startupSample(page, 'phone-installed-pwa-cpu-x4');
   expect(phoneStartup.controlledByServiceWorker).toBe(true);
+  expect(desktopStartup.routeScriptEncodedBytes).toBeGreaterThan(0);
+  expect(phoneStartup.routeScriptEncodedBytes).toBeGreaterThan(0);
+  await writeFile(path.join(outputDir, 'startup.json'), `${JSON.stringify({
+    commit: process.env.GITHUB_SHA ?? null,
+    environment,
+    desktopStartup,
+    phoneStartup,
+  }, null, 2)}\n`);
 
   await startupCdp.detach();
+  await page.close();
   const scenarioContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4177', viewport: { width: 390, height: 844 } });
   await scenarioContext.addInitScript(() => {
     window.__f11LongTasks = [];

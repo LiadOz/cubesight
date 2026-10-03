@@ -26,7 +26,7 @@ const browserRun = spawnSync('npx', ['playwright', 'test', '--config=playwright.
   cwd: root,
   encoding: 'utf8',
   maxBuffer: 64 * 1024 * 1024,
-  env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: browserReportPath },
+  env: { ...process.env, GITHUB_SHA: commit, PLAYWRIGHT_JSON_OUTPUT_NAME: browserReportPath },
 });
 if (browserRun.status !== 0) throw new Error(`Performance browser capture failed (exit ${browserRun.status}):\n${browserRun.stderr}`);
 
