@@ -204,6 +204,26 @@ The user: the code must run fast, things must look smooth, and the tests must ru
 - **Isolation:** every test uses its own port/storage/IndexedDB and leaves no files in `docs/`, `src/` or the repo root; no test depends on another's order; no network.
 - **Reporting:** `test-results/health/summary.json` + a short markdown (total time per suite, the slowest tests, flaky candidates), shown in the lead's review.
 
+**B2. Why the suite is slow: measured, 2026-10-03 (do not re-guess this).**
+| Measurement | Result |
+|---|---|
+| Node unit tests (500+) | **5.0 s total** |
+| Bare page load in a test | **326 ms**, second load 273 ms |
+| A test with no navigation | **1 ms** |
+| Sum of all browser test times | **3297 s (55 min) over 272 tests**, 7.8 min wall clock |
+| Tests taking over 5 s | **199 of 272** |
+| Slowest tests | visual/screenshot tests at **40–60 s each** |
+| All fixed `waitForTimeout` sleeps combined | 18.2 s across 34 calls |
+**Conclusions, which overturn the obvious guesses:** there is **no "browser tax" to remove** (Playwright already reuses one browser per worker; a page load is 0.3 s), a persistent browser server would save nothing, and the fixed sleeps are a rounding error. **Raising parallelism is not the answer either:** workers 2→10 plus `fullyParallel` took a subset from 72 s to 49 s but **broke 26 tests in the full suite** through software-WebGL contention (reverted; `workers: 2` stands until the contention is fixed). The suite is slow because **individual tests do an enormous amount of work**: a visual test that wants a results screen *drives an entire solve* (dozens of animated cube moves, real analysis workers, software WebGL) and then repeats that per theme and viewport.
+**So the fix is to stop producing states the test could simply be given:**
+1. **Seed the state, don't simulate it.** Inject a finished solve record (IndexedDB/view-model) and open the results screen directly, instead of replaying 60 moves to reach it. This is the single biggest win and it applies to most of the 199 slow tests.
+2. **Reach a state once, then screenshot the variants.** The theme × viewport matrices currently rebuild the whole flow per cell.
+3. **Freeze time and disable animation** in visual tests (`page.clock`), so nothing waits in real seconds.
+4. **Stub the 3D cube and the analysis worker** wherever the test is not about them; keep a small set of genuinely WebGL tests, and only those need the low worker count.
+5. **Then raise parallelism** and re-measure; the contention should be gone once most tests no longer render WebGL.
+6. Replace the 34 fixed sleeps with condition waits (small, but they also cause flakiness).
+**Targets:** unit tier stays ≈5 s; the full browser gate ≤ 90 s wall clock; the inner loop (affected tests) in seconds. "Seconds for everything" is not achievable while 272 real browser tests exist, and claiming otherwise would mean deleting coverage.
+
 **C. Run only the affected tests while working (the user: 8 minutes per run is too long).**
 - `npm run test:affected [-- <base-ref>]` (default base: the merge-base with `feature/smart-cube-guidance`): (1) unit tests related to the changed files via the ESM import graph (a small script on `es-module-lexer`, or migrate the unit runner to Vitest and use `vitest related`; pick the lighter option and justify it); (2) Playwright specs selected by `--only-changed` (the import graph) PLUS a **coverage-based impact map**: a nightly/explicit job `npm run test:impact-map` records V8 JS coverage per Playwright test (`page.coverage`) and writes `tests/impact-map.json` (source file → tests); the selector unions both; (3) a **safety valve**: changes to shared foundations (the Cube/Orbit components, tokens/CSS, the router, `tests/helpers`, configs, package.json) select the FULL suite.
 - **Tiers:** while working → `test:affected` (target: < 90 s typical); the pre-commit hook → lint + the affected unit tests only (target < 20 s); before every merge (the lead's review), CI and nightly → the FULL suites (unit, Playwright, PWA, layout, snapshots, perf). Selection is never used at a gate, so it can't hide failures.
@@ -228,6 +248,18 @@ Build a **self-contained demo route** `#/demo?…` plus a shared player componen
 5. **Accept other people's links:** paste an `alg.cubing.net` or `twizzle.net` URL and convert it locally (parse the URL's own parameters; never fetch it) into a demo link of ours.
 6. **Produce links from anywhere:** a "copy demo link" action on alg case pages, review moments ("yours vs better"), coach tips, pins and history, so any explanation in the app is shareable as a link that teaches.
 Acceptance: an AI, given only the `#/demo/format` page, can produce a working link (test this literally: follow the published spec by hand and open the result); a multi-part lesson link renders with next/previous; pasting a link or raw setup+alg opens the demo; it renders, plays and highlights offline; an alg.cubing.net URL converts; copy-link round-trips. Tests: the verifier against golden good/bad pairs, URL parse/serialize round-trips, and a Playwright run of a demo link end to end.
+
+## F18: Integration and CI, so agents stop breaking each other (do this FIRST, before more parallel work)
+Evidence (2026-10-03): `.github/workflows/check.yml` exists but **has never run**, because agents are forbidden to push; every branch is verified alone and the *combination* is only tested at the end. Branches drifted 28–48 commits behind trunk. The same work is committed twice (once on the owner's branch, once re-applied on `fleet/combined`). Two agents appending entries to the same registry object produced real conflicts the lead had to resolve by hand (`scripts/widget-*-shots.mjs`). `fleet/combined` now sits 140 commits ahead of trunk, unreviewed.
+
+**The one change that fixes most of it: nothing lands on trunk unless the MERGED RESULT passes the gate.**
+1. **A local merge queue** (`npm run queue`), which is the real CI here: take the next candidate branch → merge trunk into it → run the required gate **on the merged result** → only then fast-forward trunk. One at a time, serialized. A ~10-minute gate allows roughly six merges an hour, which is ample. If the merged result fails, the branch is rejected with the failure attached and **trunk stays green**. Agents can no longer break each other, because a broken combination never lands. Record per attempt: branch, base commit, result commit, gate output, duration.
+2. **One trunk, short-lived branches.** `feature/smart-cube-guidance` is trunk. Branch from it, merge back within hours. **Delete the parallel `fleet/combined` and `fleet/integration` branches**: a second integration point is what forces the duplicate-commit pattern. Builders update from trunk (not from each other) whenever the queue advances.
+3. **Make conflicts structurally impossible** where they are mechanical. The conflicts seen so far came from several agents appending to one shared object. Convert such registries to **directory-based discovery: one file per entry, auto-loaded** (the gallery already works this way, which is exactly why gallery posts never conflict). Apply to the screenshot-script registries, the route table, and any similar list.
+4. **Enforce ownership mechanically:** a path → work-package map, and a check that fails when a branch touches another package's files without declaring it. Catch it at commit time, not at merge time.
+5. **Tiers stay as in F11:** affected tests while iterating, the full gate only in the queue. Don't run a 10-minute gate after every edit.
+6. **Keep the GitHub workflow** for when pushing is allowed; until then the queue is the CI and must run the identical commands.
+Acceptance: the queue rejects a branch that passes alone but fails when merged (test it deliberately); trunk is green at every commit; no branch is more than a few hours behind; the duplicate-commit pattern is gone; `fleet/combined` is either landed through the queue or deleted.
 
 ## Future tasks (after the waves above; not blocking)
 - **F11 Performance and test health (promoted: run in wave 2, alongside F1–F5).** See the full section "F11" below.

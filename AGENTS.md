@@ -13,6 +13,7 @@ Read this before doing anything in this repository. It applies to every agent (C
 ## 2. Commits and merges
 - Small, descriptive commits. **Never bypass the pre-commit hook** (`--no-verify` is forbidden). No auto "WIP" commits.
 - Never push. The lead (the user's main Claude session) reviews and merges into `feature/smart-cube-guidance`.
+- **Trunk is `feature/smart-cube-guidance`. Branch from it, merge back within hours, and update from it often.** Do not create or use a second integration branch, and never re-apply your own commits onto another branch: that duplication is what made the history unreadable. Work lands only through the merge queue (F18), which runs the gate on the *merged result*, so a change that passes alone but breaks in combination is rejected rather than landing.
 
 ## 3. Tests: affected while iterating, full gate before reporting
 While iterating, run `npm run test:affected` (once it exists; F11) instead of the whole suite. Before you report done, the full gate below must be green.
