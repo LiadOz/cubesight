@@ -243,7 +243,7 @@ test('the cue pref turns the cue off and animateMove still works on all kinds', 
 });
 
 test('move animation cancellation, reduced motion, and destroy settle their promises', async ({ page }) => {
-  await gallery(page, 'orbit', 'dark');
+  await gallery(page, 'orbit', 'dark', '&cue=1');
   const cancelled = await page.evaluate(async () => {
     const cube = window.gallery.cube;
     const animation = cube.animateMove('R', null, 1000);
