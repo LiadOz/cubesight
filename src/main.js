@@ -1805,8 +1805,11 @@ function setTool(tool, initial = false) {
     recordView('mount', { tool });
   }
   if (tool === 'recording') renderRecordingView();
-  if (tool === 'help' && !helpPage) { helpPage = createHelpPage(document.querySelector('#help-view'), { build: BUILD_LABEL, onCheckUpdate: checkForUpdate }); syncPageTokens(helpPage.element); }
-  if (tool === 'help' && helpPage) helpPage.setReturn(helpReturnHash, `return to ${PAGE_TITLES[resolveRoute(helpReturnHash).tool] ?? 'solve'}`);
+  if (tool === 'help' && !helpPage) { helpPage = createHelpPage(document.querySelector('#help-view'), { build: BUILD_LABEL, development: import.meta.env.DEV, onCheckUpdate: checkForUpdate }); syncPageTokens(helpPage.element); }
+  if (tool === 'help' && helpPage) {
+    helpPage.setReturn(helpReturnHash, `return to ${PAGE_TITLES[resolveRoute(helpReturnHash).tool] ?? 'solve'}`);
+    helpPage.open();
+  }
   activeTool = tool;
   syncLegacyCubes(tool);
   syncRecordingCube(tool);
