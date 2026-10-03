@@ -204,6 +204,26 @@ The user: the code must run fast, things must look smooth, and the tests must ru
 - **Isolation:** every test uses its own port/storage/IndexedDB and leaves no files in `docs/`, `src/` or the repo root; no test depends on another's order; no network.
 - **Reporting:** `test-results/health/summary.json` + a short markdown (total time per suite, the slowest tests, flaky candidates), shown in the lead's review.
 
+**B2. Why the suite is slow: measured, 2026-10-03 (do not re-guess this).**
+| Measurement | Result |
+|---|---|
+| Node unit tests (500+) | **5.0 s total** |
+| Bare page load in a test | **326 ms**, second load 273 ms |
+| A test with no navigation | **1 ms** |
+| Sum of all browser test times | **3297 s (55 min) over 272 tests**, 7.8 min wall clock |
+| Tests taking over 5 s | **199 of 272** |
+| Slowest tests | visual/screenshot tests at **40–60 s each** |
+| All fixed `waitForTimeout` sleeps combined | 18.2 s across 34 calls |
+**Conclusions, which overturn the obvious guesses:** there is **no "browser tax" to remove** (Playwright already reuses one browser per worker; a page load is 0.3 s), a persistent browser server would save nothing, and the fixed sleeps are a rounding error. **Raising parallelism is not the answer either:** workers 2→10 plus `fullyParallel` took a subset from 72 s to 49 s but **broke 26 tests in the full suite** through software-WebGL contention (reverted; `workers: 2` stands until the contention is fixed). The suite is slow because **individual tests do an enormous amount of work**: a visual test that wants a results screen *drives an entire solve* (dozens of animated cube moves, real analysis workers, software WebGL) and then repeats that per theme and viewport.
+**So the fix is to stop producing states the test could simply be given:**
+1. **Seed the state, don't simulate it.** Inject a finished solve record (IndexedDB/view-model) and open the results screen directly, instead of replaying 60 moves to reach it. This is the single biggest win and it applies to most of the 199 slow tests.
+2. **Reach a state once, then screenshot the variants.** The theme × viewport matrices currently rebuild the whole flow per cell.
+3. **Freeze time and disable animation** in visual tests (`page.clock`), so nothing waits in real seconds.
+4. **Stub the 3D cube and the analysis worker** wherever the test is not about them; keep a small set of genuinely WebGL tests, and only those need the low worker count.
+5. **Then raise parallelism** and re-measure; the contention should be gone once most tests no longer render WebGL.
+6. Replace the 34 fixed sleeps with condition waits (small, but they also cause flakiness).
+**Targets:** unit tier stays ≈5 s; the full browser gate ≤ 90 s wall clock; the inner loop (affected tests) in seconds. "Seconds for everything" is not achievable while 272 real browser tests exist, and claiming otherwise would mean deleting coverage.
+
 **C. Run only the affected tests while working (the user: 8 minutes per run is too long).**
 - `npm run test:affected [-- <base-ref>]` (default base: the merge-base with `feature/smart-cube-guidance`): (1) unit tests related to the changed files via the ESM import graph (a small script on `es-module-lexer`, or migrate the unit runner to Vitest and use `vitest related`; pick the lighter option and justify it); (2) Playwright specs selected by `--only-changed` (the import graph) PLUS a **coverage-based impact map**: a nightly/explicit job `npm run test:impact-map` records V8 JS coverage per Playwright test (`page.coverage`) and writes `tests/impact-map.json` (source file → tests); the selector unions both; (3) a **safety valve**: changes to shared foundations (the Cube/Orbit components, tokens/CSS, the router, `tests/helpers`, configs, package.json) select the FULL suite.
 - **Tiers:** while working → `test:affected` (target: < 90 s typical); the pre-commit hook → lint + the affected unit tests only (target < 20 s); before every merge (the lead's review), CI and nightly → the FULL suites (unit, Playwright, PWA, layout, snapshots, perf). Selection is never used at a gate, so it can't hide failures.
