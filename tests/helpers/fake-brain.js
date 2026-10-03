@@ -1,6 +1,14 @@
 // Shared by the Brain specs that drive a fake GAN cube: mounts the real Brain on
 // a scripted smart-cube connection and exposes window.testBrain.emitTurns().
-function installTestCubeFactory({ style, settings, keepStorage, connectDelayMs, deferConnect }) {
+function installTestCubeFactory(config = null) {
+  if (!config) {
+    try {
+      const encoded = new URL(location.href).searchParams.get('__f11CubeTest');
+      if (encoded) config = JSON.parse(encoded);
+    } catch { /* A normal application page has no test fixture configuration. */ }
+  }
+  if (!config) return;
+  const { style, settings, keepStorage, connectDelayMs, deferConnect } = config;
   if (!keepStorage) localStorage.clear();
   localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
   window.__CUBESIGHT_TEST_CUBE_FACTORY__ = async () => {
@@ -72,6 +80,7 @@ function installTestCubeFactory({ style, settings, keepStorage, connectDelayMs, 
       return { eventToAnimationStartMs: animationAt - eventAt, eventToFirstFrameMs: frameAt - eventAt, frameAt };
     };
     return {
+      fixtureId: config.fixtureId,
       connectDevice,
       resolveConnection: () => resolveConnection?.(connection),
       emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn),
@@ -87,9 +96,11 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, fix
   // Route tests install a scripted adapter before the app starts, then drive
   // the single Brain controller that main.js owns on the shared smartCube.
   if (route && !fixture) {
-    await page.addInitScript(installTestCubeFactory, config);
-    await page.goto('/#/brain');
-    await page.waitForFunction(() => window.testBrain?.handle && window.testBrain.root === document.querySelector('#brain-view'), undefined, { timeout: 10_000 });
+    config.fixtureId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    await page.addInitScript(installTestCubeFactory);
+    await page.goto(`/?__f11CubeTest=${encodeURIComponent(JSON.stringify(config))}#/brain`);
+    await page.waitForFunction(id => window.testBrain?.fixtureId === id
+      && window.testBrain.handle && window.testBrain.root === document.querySelector('#brain-view'), config.fixtureId, { timeout: 10_000 });
   } else {
     if (!fixture) await page.goto('/');
     if (fixture) await page.waitForSelector('#brain-view', { state: 'attached' });
