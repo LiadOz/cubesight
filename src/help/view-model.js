@@ -110,7 +110,7 @@ export function buildHelpViewModel({ build = 'development', development = build 
       { id: 'privacy', title: 'offline and your data' },
       { id: 'credits', title: 'build and credits' },
     ],
-    devGalleryLinks: development ? [
+    devGalleryLinks: (import.meta.env?.DEV ?? development) && development ? [
       { label: 'gallery blog', href: '#/dev/gallery/blog' },
       { label: 'gallery timeline', href: '#/dev/gallery/timeline' },
     ] : [],
