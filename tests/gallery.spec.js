@@ -60,6 +60,29 @@ test('blog, post, timeline and compare views render from the posts', async ({ pa
   await expect(page.getByRole('combobox', { name: 'post A' })).toHaveAttribute('data-value', nextPost);
 });
 
+test('compare keeps its selectors available when a selected post has no images', async ({ page }) => {
+  await page.route('**/__gallery', async route => {
+    const response = await route.fetch();
+    const index = await response.json();
+    const emptyPost = index.posts.find(post => post.id === 'orbit-v3');
+    if (emptyPost) emptyPost.images = [];
+    await route.fulfill({ response, json: index });
+  });
+  await page.goto('/#/dev/gallery/compare?a=orbit-v3&b=brain-v2-orbit');
+  await expect(page.getByRole('combobox', { name: 'post A' })).toHaveAttribute('data-value', 'orbit-v3');
+  await expect(page.getByRole('combobox', { name: 'image A' })).toBeDisabled();
+  await expect(page.locator('[data-compare-wipe]')).toContainText('Choose posts with images on both sides');
+  await expect(page.locator('[data-compare-modes]')).toBeHidden();
+
+  const postA = page.getByRole('combobox', { name: 'post A' });
+  await postA.click();
+  const nextPost = page.locator('[data-cmp-post-host="a"] [role="option"]').nth(1);
+  const nextPostId = await nextPost.getAttribute('data-value');
+  await nextPost.click();
+  await expect(page.getByRole('combobox', { name: 'post A' })).toHaveAttribute('data-value', nextPostId);
+  await expect(page.getByRole('combobox', { name: 'image A' })).toBeEnabled();
+});
+
 test('search and the root filter narrow the list; no horizontal scroll at 390 px', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto('/#/dev/gallery');
