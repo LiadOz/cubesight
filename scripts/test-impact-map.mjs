@@ -15,7 +15,8 @@ const started = performance.now();
 let playwrightReport;
 if (!fromRaw) {
   await rm(rawDirectory, { recursive: true, force: true });
-  const result = spawnSync('npx', ['playwright', 'test', '--output=test-results/impact-map/playwright', '--reporter=line,json'], {
+  const config = process.env.PLAYWRIGHT_CONFIG ? [`--config=${process.env.PLAYWRIGHT_CONFIG}`] : [];
+  const result = spawnSync('npx', ['playwright', 'test', '--output=test-results/impact-map/playwright', '--reporter=line,json', ...config], {
     cwd: root,
     env: { ...process.env, CUBESIGHT_IMPACT_COVERAGE: '1', PLAYWRIGHT_JSON_OUTPUT_NAME: playwrightReportPath },
     stdio: 'inherit',

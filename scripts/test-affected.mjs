@@ -8,6 +8,7 @@ import { buildPlaywrightSelection, changedTestInputs, fingerprintTestInputs, gre
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit' });
+const playwrightConfig = process.env.PLAYWRIGHT_CONFIG ? [`--config=${process.env.PLAYWRIGHT_CONFIG}`] : [];
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 const normalize = (value) => value.replaceAll('\\', '/').replace(/^\.\//u, '');
 
@@ -144,7 +145,7 @@ if (full) {
   console.log(`Shared foundation/configuration change: running the full${unitOnly ? ' unit' : ''} suite${unitOnly ? '' : 's'}.`);
   if (dryRunIndex >= 0) process.exit(0);
   const commands = unitOnly ? [['npm', ['run', 'test:unit']]] : [
-    ['npm', ['run', 'test:unit']], ...(fullBrowserAlreadyRan ? [] : [['npx', ['playwright', 'test', '--output=test-results/affected']]]), ['npm', ['run', 'test:pwa']],
+    ['npm', ['run', 'test:unit']], ...(fullBrowserAlreadyRan ? [] : [['npx', ['playwright', 'test', '--output=test-results/affected', ...playwrightConfig]]]), ['npm', ['run', 'test:pwa']],
   ];
   for (const [command, args] of commands) {
     const result = run(command, args);
@@ -161,14 +162,14 @@ if (dryRunIndex >= 0) process.exit(0);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
   if (playwright.length && !unitOnly) {
-    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...playwright]);
+    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...playwright, ...playwrightConfig]);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
   if (!unitOnly && selection.casesBySpec.size) {
     const specs = [...selection.casesBySpec.keys()];
     const cases = [...selection.casesBySpec.values()].flatMap((selected) => [...selected.values()]);
     const grep = grepPatternForCases(cases);
-    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...specs, `--grep=${grep}`]);
+    const result = run('npx', ['playwright', 'test', '--output=test-results/affected', ...specs, `--grep=${grep}`, ...playwrightConfig]);
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
 }
