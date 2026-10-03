@@ -193,7 +193,7 @@ export default defineConfig({
   },
   // CUBESIGHT_NO_WATCH=1: dev mode without file watching. The page never changes
   // under you while agents edit code; restart the server to pick up changes.
-  server: { hmr: false, host: true, allowedHost: true, fs: { allow: [searchForWorkspaceRoot(process.cwd()), fs.realpathSync('./node_modules')] }, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]test-results[\\/]/] } },
+  server: { hmr: false, host: true, allowedHost: true, fs: { allow: [searchForWorkspaceRoot(process.cwd()), fs.realpathSync('./node_modules')] }, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]\.agents[\\/]/, /[\\/]test-results[\\/]/] } },
   // Only crawl the app's own entry for dependency pre-bundling; agent worktrees
   // under .claude/ contain their own index.html and build output.
   optimizeDeps: { entries: ['index.html'], exclude: ['cubing'] },
