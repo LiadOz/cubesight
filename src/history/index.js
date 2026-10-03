@@ -11,7 +11,7 @@ import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
-import { createButton, createCountPill, createFileInput, createFilledInput, createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
+import { createBreadcrumbs, createButton, createCountPill, createFileInput, createFilledInput, createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
 
 export const historyTime = record => {
   return fmt.penalty(record);
@@ -36,7 +36,7 @@ export function initHistory(host) {
   let store, active = false, cube = null, player = null, cubeAbort = null, cubeGeneration = 0, selected = null, move = 0;
   const settings = loadSettings(globalThis.localStorage);
   host.innerHTML = `<section class="brain cs-page history-page" data-brain-style="${settings.style}">
-    <header><h1>history</h1><p>Solves and saved moments on this device.</p><a href="#/solve">back to solve</a></header>
+    <header><h1>history</h1><p>Solves and saved moments on this device.</p><div data-history-crumbs></div></header>
     <form class="history-filters" aria-label="Filter history">
       <div data-history-search></div>
       <div data-history-session></div>
@@ -52,6 +52,7 @@ export function initHistory(host) {
   </section>`;
   const root = host.firstElementChild;
   syncPageTokens(root);
+  createBreadcrumbs(root.querySelector('[data-history-crumbs]'), [{ label: 'solve', href: '#/' }, { label: 'history', href: '#/history' }]);
   const form = root.querySelector('form');
   createSearch(form.querySelector('[data-history-search]'), { placeholder: 'scramble, case, time', label: 'search', name: 'query' });
   const filterSelects = [

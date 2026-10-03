@@ -10,6 +10,7 @@ async function seed(page, style = 'orbit') {
     if (!localStorage.getItem('cubesight-brain-settings-v2')) localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
   }, { records, style });
   await page.goto('/#/history');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumbs' })).toContainText('solvehistory');
   await expect(page.locator('.history-count')).toContainText('2 solves');
 }
 
