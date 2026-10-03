@@ -5,8 +5,8 @@
 // BrainVM (view-model.js) that the shell and the style components render.
 // Behaviour is ported from the v1 src/brain.js; the DOM lives in shell.js.
 
-import { createCube3D } from '../cube-3d.js';
-import { FACE_COLORS, toRenderData, applyMoves } from '../cross-cube.js';
+import { Cube } from '../ui/cube/index.js';
+import { FACE_COLORS, toRenderData, applyMoves, createSolvedState } from '../cross-cube.js';
 import { stateAfter } from '../review/replay.js';
 import { analysisInputFromRecord } from '../analysis/record.js';
 import { createSolveLive } from '../solve-live.js';
@@ -28,7 +28,6 @@ import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './
 import { buildViewModel, frameState } from './view-model.js';
 import { coachLines } from './coach-lines.js';
 import { resolveKey } from './keys.js';
-import { readStickerPalette, themedRender } from './cube-theme.js';
 import { fmtSeconds, fmtResult } from './format.js';
 import { getThemePreference, setThemePreference, THEME_EVENT } from '../theme.js';
 
@@ -87,7 +86,6 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   let lastMirroredLen = 0;
   let lastMirroredSeq = cubeSession.getSnapshot().moveEvent?.seq ?? null; // don't replay a turn made before mount
   let lastMirroredState = null;
-  let palette = null;           // sticker palette for the current style/theme
   let snapshots = [];           // cube snapshots at stage transitions (end-of-solve review)
   let lastCapturedStage = -1;
   let raf = 0;
@@ -97,6 +95,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // and whether the cube is held on a review position instead of mirroring the real cube.
   const NO_REVIEW = { selectedId: null, detail: null, cursor: null, variant: 'yours' };
   let reviewUi = NO_REVIEW;
+  let caseChoice = null;
   let reviewHold = false;
   let playToken = 0;
   const analysisState = new Map();   // record.at -> 'pending' | 'done' | 'none'
@@ -109,7 +108,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   const theme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
   let cube = null;
-  try { cube = createCube3D(shell.slots.cube, { mode: 'scout' }); }
+  try { cube = new Cube(shell.slots.cube, { mode: 'live', state: cubeSession.getSnapshot().state ?? createSolvedState(), size: 'XL', label: 'Live solve cube' }); }
   catch { shell.slots.cube.textContent = 'Solve needs WebGL. Enable hardware acceleration or try another browser.'; }
   shell.setCube?.(cube);   // the move guide plays its ghost on this cube
 
@@ -117,7 +116,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   // held-orientation reads and the clock are captured for deterministic replay.
   const live = recordLiveCalls(createSolveLive(cubeSession, {
     now: recorderNow,
-    getOrientation: () => recordRead('orientation', () => (cube?.getHeldFaces?.() ?? { bottom: 'D', front: 'F' })),
+    getOrientation: () => recordRead('orientation', () => (cube?.cube?.getHeldFaces?.() ?? { bottom: 'D', front: 'F' })),
   }));
   live.setPseudo(settings.f2l === 'pseudo');
   live.setInspection(settings.inspection);
@@ -132,9 +131,9 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     const next = buildViewModel({
       session, live: liveSnap, records, settings, track, optimalCross, coach, error,
       status: statusOverride, theme: theme(), supported: Boolean(window.isSecureContext && navigator.bluetooth?.requestDevice),
-      now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.getHeldFaces?.() : null,
+      now: recorderNow(), held: liveSnap.phase === 'applying' ? cube?.cube?.getHeldFaces?.() : null,
       scrambleText, scrambleNumber, settingsOpen, themePreference: getThemePreference(), debugOpen, connectStep, commandOpen, toast,
-      reviewUi, pins: history?.pins.list ?? NO_PINS, analysisStatus: analysisState.get(currentAt()) ?? 'none',
+      reviewUi, caseChoice, pins: history?.pins.list ?? NO_PINS, analysisStatus: analysisState.get(currentAt()) ?? 'none',
     }, vm);
     const voiceRow = next.settings?.sections.flatMap(section => section.rows).find(row => row.id === 'voice');
     if (voiceRow) voiceRow.help = `${voiceRow.help} ${voiceCallouts.status()}`;
@@ -190,13 +189,10 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
 
   // --- Cube mirror -------------------------------------------------------------------------
 
-  // Sticker colours come from the style's --b-st-* tokens (the page background
-  // follows the style through CSS alone).
-  const themed = data => themedRender(data, palette ?? (palette = readStickerPalette(brainEl())));
+  // Cube owns theme-aware rendering and the page's sole WebGL canvas.
   function retheme() {
-    palette = null;
     const state = cubeSession.getSnapshot().state;
-    if (state) cube?.update(themed(toRenderData(state)));
+    if (state) cube?.setState(state);
   }
 
   // Animate a mirrored turn. A fast replay shortens the animation so the cube
@@ -209,7 +205,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     instantFrame = 0;
     const state = instantState;
     instantState = null;
-    if (state && !detached) cube?.update(themed(toRenderData(state)));
+    if (state && !detached) cube?.setState(state);
   }
   function showState(state) {
     if (replaySpeed() === 0) {
@@ -218,13 +214,13 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       return;
     }
     if (instantFrame) { cancelAnimationFrame(instantFrame); instantFrame = 0; instantState = null; }
-    cube?.update(themed(toRenderData(state)));
+    cube?.setState(state);
   }
   function mirrorTurn(move, state) {
     const speed = replaySpeed();
     if (speed === 0) { showState(state); return; }
     if (instantFrame) showInstantState();
-    cube?.queueLiveMove(move, themed(toRenderData(state)), { speed: speed ?? 1 });
+    cube?.queueLiveMove(move, state, { speed: speed ?? 1 });
   }
 
   function onSession(snapshot) {
@@ -234,7 +230,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     const sessionLogLabel = `session: phase=${snapshot.phase} moves=${snapshot.moves?.length ?? '-'} lastMove=${snapshot.lastMove ?? '-'} detail=${snapshot.detail ?? '-'} `;
     if (sessionLogLabel !== lastSessionLogLabel) { lastSessionLogLabel = sessionLogLabel; logConnection({ label: sessionLogLabel, kind: 'debug' }); }
     const gyro = snapshot.protocol?.startsWith('GAN') ? snapshot.gyro : null;
-    if (gyro !== lastGyro) { cube?.setGyroOrientation(gyro); lastGyro = gyro; }
+    if (gyro !== lastGyro) { cube?.cube?.setGyroOrientation(gyro); lastGyro = gyro; }
     if (snapshot.phase === 'connecting') connectStep = snapshot.detail || connectStep;
     else connectStep = '';
     const key = [snapshot.phase, snapshot.detail, snapshot.deviceName, snapshot.protocol, Boolean(gyro), snapshot.battery].join('|');
@@ -384,7 +380,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (!cube || !replayable(rec)) return;
     reviewHold = true;
     playToken++;
-    cube.update(themed(toRenderData(positionState(rec, n))));
+    cube.setState(positionState(rec, n));
     reviewUi = { ...reviewUi, cursor: n };
   }
 
@@ -395,14 +391,14 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     reviewHold = true;
     const token = ++playToken;
     let state = positionState(rec, from);
-    cube.update(themed(toRenderData(state)));
+    cube.setState(state);
     reviewUi = { ...reviewUi, variant, cursor: from };
     render();
     await pause(320);
     for (const move of moves) {
       if (token !== playToken || detached) return;
       state = applyMoves(state, [move]);
-      await cube.animateMove(move, themed(toRenderData(state)), 380);
+      await cube.animateMove(move, state, 380);
       await pause(90);
     }
   }
@@ -594,10 +590,10 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'reconnect': void cubeSession.reconnect({ gesture: true }); break;
       case 'resumeSolve': live.resume(); break;
       case 'sync': void cubeSession.syncSolved().catch(() => {}); break;
-      case 'recenter': cube?.recenterGyro(); message('Cube motion recentered.'); break;
+      case 'recenter': cube?.cube?.recenterGyro(); message('Cube motion recentered.'); break;
       case 'disconnect': void cubeSession.disconnect(); break;
       case 'clearSavedCube': clearSavedCubeData(); message('Cube address forgotten. Connect again to derive it from scratch.'); break;
-      case 'resetView': cube?.resetView(); break;
+      case 'resetView': cube?.cube?.resetView(); break;
       case 'rebuildView': rebuild(); break;
       case 'start': return start();
       case 'startCustom': startCustom(); break;
@@ -624,6 +620,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         scrambleText = scramble;
         return start();
       }
+      case 'caseClick': caseChoice = action.key || null; render(); break;
+      case 'closeCase': caseChoice = null; render(); break;
       case 'setPenalty': setPenaltyAt(Number.isFinite(action.at) ? action.at : currentAt(), action.penalty, false); break;
       case 'togglePenalty': setPenaltyAt(currentAt(), action.penalty, true); break;
       case 'deleteSolve': deleteSolve(action.at); break;
@@ -836,6 +834,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   return {
     /** @returns {import('./types.js').BrainVM|null} */
     getViewModel: () => vm,
+    /** A read-only snapshot of the one Cube mounted by this Brain controller. */
+    getCubeState: () => (cube?.mode === 'case' ? cube.displayState : cube?.state) ?? null,
     dispatch,
     /** Resolves once the history is open and every queued write has reached IndexedDB (tests, export). */
     async flushHistory() { await historyReady; await history?.flush(); },
@@ -843,7 +843,21 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       if (detached) return;
       active = value;
       const token = ++activationToken;
-      if (!value) { live.cancel(); cancelAnimationFrame(raf); raf = 0; return; }
+      if (!value) {
+        live.cancel();
+        playToken++;
+        cube?.stop();
+        cube?.clearCue();
+        shell.setCube?.(null);
+        // main.js keeps Brain mounted while another route is active. Remove its
+        // WebGL canvas from the document, but retain this Cube instance so every
+        // Brain phase and style continues to use the same canvas.
+        cube?.element.remove();
+        cancelAnimationFrame(raf); raf = 0;
+        return;
+      }
+      if (cube && !cube.element.isConnected) cube.mount(shell.slots.cube);
+      shell.setCube?.(cube);
       render();
       await historyReady;
       if (detached || !active || token !== activationToken) return;

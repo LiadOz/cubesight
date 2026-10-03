@@ -9,6 +9,8 @@ import './legacy-reskin.css';
 import './not-found.css';
 import { setupTheme } from './theme.js';
 import { createHeader, createToastSlot } from './ui/shared/index.js';
+import { buildSharedViewModel } from './ui/shared/snapshot-model.js';
+import { createSnapshotBridge } from './ui/shared/snapshot-bridge.js';
 import { smartCube, clearSavedCubeData } from './smart-cube-bluetooth.js';
 import { clearRecording, enableRecordingPersistence, getRecording, recordNavigation, recordView } from './recorder.js';
 import { saveRecording } from './brain-recording.js';
@@ -1721,6 +1723,35 @@ const cubeConnected = () => {
   return Boolean(phase) && phase !== 'disconnected';
 };
 let routedHash = null;
+const snapshotBridge = createSnapshotBridge();
+const SNAPSHOT_OWNER = {
+  brain: { owner: 'F1', dataOwner: 'F1' },
+  history: { owner: 'F2', dataOwner: 'F2' },
+  drills: { owner: 'F4', dataOwner: 'F4' },
+  algs: { owner: 'F4', dataOwner: 'F4' },
+  timer: { owner: 'F4', dataOwner: 'F4' },
+  oll: { owner: 'F4', dataOwner: 'F4' },
+  lookahead: { owner: 'F4', dataOwner: 'F4' },
+  progress: { owner: 'F5', dataOwner: 'F6' },
+  review: { owner: 'F1', dataOwner: 'F1' },
+  recording: { owner: 'F0', dataOwner: 'F0' },
+};
+const recordingSnapshotHandle = { getViewModel: () => recordingViewModel };
+function activeSnapshotHandle(tool) {
+  return ({ brain, history: historyPage, drills: drillsHub, algs: algsPage, timer: timerPage,
+    progress: progressPage, review: reviewPage, recording: recordingSnapshotHandle, oll: drillPages.oll, lookahead: drillPages.lookahead })[tool] || null;
+}
+function mountSnapshotPage(tool, handle = activeSnapshotHandle(tool)) {
+  const owner = SNAPSHOT_OWNER[tool];
+  if (activeTool !== tool || !owner || !handle) return;
+  const path = parseHash(location.hash).path;
+  snapshotBridge.mount({ ...owner, route: path ? `/${path.replace(/^\/+/, '')}` : '/', handle });
+}
+function snapshotViewModel() {
+  const path = parseHash(location.hash).path;
+  const shared = globalHeader.getViewModel({ route: path ? `/${path.replace(/^\/+/, '')}` : '/', recording: activeTool === 'recording' ? recordingSnapshotSource : null });
+  return snapshotBridge.getViewModel(shared);
+}
 function syncRoute(initial = false) {
   const incomingHash = location.hash;
   const { tool, hash } = resolveRoute(incomingHash, { isPhone: isPhone(), cubeConnected: cubeConnected() });
@@ -1732,23 +1763,27 @@ function syncRoute(initial = false) {
   reviewRouteHash = tool === 'review' ? hash : '';
   setTool(tool, initial || routedHash !== hash);
   routedHash = hash;
+  mountSnapshotPage(tool);
   rememberDrill(localStorage, tool, hash);
 }
 
 function renderRecordingView() {
-  const recording = getRecording();
+  recordingSnapshotSource = getRecording();
+  recordingViewModel = buildSharedViewModel({ recording: recordingSnapshotSource }).recording;
   const count = document.querySelector('#recording-count');
   const list = document.querySelector('#recording-events');
   if (!count || !list) return;
-  count.textContent = `${recording.events.length.toLocaleString()} events · ${Math.max(0, recording.durationMs / 1000).toFixed(1)} s recording duration · local buffer`;
-  list.replaceChildren(...recording.events.slice(-12).reverse().map(event => {
+  count.textContent = `${recordingViewModel.eventCount.toLocaleString()} events · ${(recordingViewModel.durationMs / 1000).toFixed(1)} s recording duration · local buffer`;
+  list.replaceChildren(...recordingViewModel.events.map(event => {
     const item = document.createElement('li');
     const kind = document.createElement('strong'); kind.textContent = event.kind;
-    const timing = document.createElement('span'); timing.textContent = `+${Math.round(event.t)} ms`;
+    const timing = document.createElement('span'); timing.textContent = `+${Math.round(event.elapsedMs)} ms`;
     item.append(kind, timing); return item;
   }));
 }
 
+let recordingViewModel = null;
+let recordingSnapshotSource = null;
 let recordingCube = null;
 function syncRecordingCube(tool) {
   if (tool !== 'recording') { recordingCube?.destroy(); recordingCube = null; return; }
@@ -1760,6 +1795,7 @@ function syncRecordingCube(tool) {
 
 function setTool(tool, initial = false) {
   if (!isKnownTool(tool) || (tool === activeTool && !initial && tool !== 'review')) return;
+  snapshotBridge.clear();
   if ((tool === 'oll' || tool === 'lookahead') && drillPages[tool] && drillPageHashes[tool] !== location.hash) {
     drillPages[tool].detach();
     delete drillPages[tool];
@@ -1794,6 +1830,7 @@ function setTool(tool, initial = false) {
   activeTool = tool;
   syncLegacyCubes(tool);
   syncRecordingCube(tool);
+  mountSnapshotPage(tool);
   if (tool === 'corner' || tool === 'pll' || tool === 'f2l') syncLegacyDrillStyle();
   document.title = `${PAGE_TITLES[tool] ?? tool} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
@@ -1829,6 +1866,7 @@ function setTool(tool, initial = false) {
       brainLoad = import('./brain.js').then(({ createBrain }) => {
         brain = createBrain(document.querySelector('#brain-view'));
         brain.setActive(activeTool === 'brain');
+        mountSnapshotPage('brain', brain);
       }).catch((error) => {
         document.querySelector('#brain-view').textContent = MSG.loadFailed('solve');
         brainLoad = null;
@@ -1934,6 +1972,7 @@ function mountPage(tool) {
     else if (!drillsHubLoad) {
       drillsHubLoad = import('./drills/hub.js').then(({ createDrillsHub }) => {
         drillsHub = createDrillsHub(root);
+        mountSnapshotPage('drills', drillsHub);
         drillsHub.setActive(activeTool === 'drills');
       }).catch((error) => { drillsHubLoad = null; failed(error); });
     }
@@ -1950,6 +1989,7 @@ function mountPage(tool) {
           return null;
         }
         historyPage = page;
+        mountSnapshotPage('history', historyPage);
         historyPage.setActive(true);
         return historyPage.ready;
       }).catch((error) => {
@@ -1965,6 +2005,7 @@ function mountPage(tool) {
     if (!timerPageLoad) {
       timerPageLoad = import('./timer/index.js').then(({ createManualTimer }) => {
         timerPage = createManualTimer(root);
+        mountSnapshotPage('timer', timerPage);
         syncPageTokens(root);
         timerPage.setActive(activeTool === 'timer');
         return timerPage.ready;
@@ -1989,6 +2030,7 @@ function mountPage(tool) {
           return null;
         }
         reviewPage = page;
+        mountSnapshotPage('review', reviewPage);
         reviewPage.setActive(activeTool === 'review');
         syncPageTokens(document.querySelector('#review-view'));
         return reviewPage.ready;
@@ -2005,6 +2047,7 @@ function mountPage(tool) {
     if (!progressPageLoad) {
       progressPageLoad = import('./progress/index.js').then(({ createProgressPage }) => {
         progressPage = createProgressPage(root);
+        mountSnapshotPage('progress', progressPage);
         progressPage.setActive(activeTool === 'progress');
         return progressPage.ready;
       }).catch(error => { progressPageLoad = null; failed(error); });
@@ -2019,6 +2062,7 @@ function mountPage(tool) {
       drillPageLoads[tool] = load.then(module => {
         const page = module.createDrillPage(root);
         drillPages[tool] = page;
+        mountSnapshotPage(tool, page);
         drillPageHashes[tool] = location.hash;
         syncPageTokens(root);
         page.setActive(activeTool === tool);
@@ -2033,6 +2077,7 @@ function mountPage(tool) {
       const load = import('./algs/page.js').then(({ mountAlgsPage }) => {
         if (activeTool !== 'algs') { if (algsPageLoad === load) algsPageLoad = null; return; }
         algsPage = mountAlgsPage(root);
+        mountSnapshotPage('algs', algsPage);
       }).catch(error => { if (algsPageLoad === load) algsPageLoad = null; failed(error); });
       algsPageLoad = load;
     }
@@ -2241,6 +2286,7 @@ updateStatsUI();
 updateSprintUI();
 updateLearningUI();
 if (import.meta.env.DEV) {
+  window.__cubesightSnapshot = Object.freeze({ getViewModel: snapshotViewModel });
   // Dev-only image gallery (#/dev/gallery): registered here so a production build has no trace of it.
   registerDevRoute({ tool: 'gallery', match: path => /^\/dev\/gallery(?:\/.*)?$/.test(path) });
   TOOL_VIEWS.gallery = 'gallery-view';

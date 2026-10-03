@@ -1,112 +1,171 @@
-// Orbit results (C-08): time and stats and the TPS chart, then splits and the
-// session (averages, sparkline, recent, coach), in a column beside the stage.
-// The stage (the live cube inside its finished ring, which is the solve donut)
-// stays on screen while the stats are read; see orbit.css for the layout.
-
-import { createSparkline } from '../../charts/sparkline.js';
-import { createSplitBars } from '../../charts/split-bars.js';
-import { createTpsLine } from '../../charts/tps-line.js';
+import { createActions, createCoachLine, createKeyBar } from '../../../ui/shared/index.js';
+import { setText, toggleClass } from '../../dom.js';
 import { createReviewPanel } from '../../review/panel.js';
-import { reconcileChildren, setText, toggleClass } from '../../dom.js';
+import { stateAfter } from '../../../review/replay.js';
+import { presentResultsOrbit } from './solve-orbit.js';
+import { resolvePastReviewHref } from './results-navigation.js';
+import '../../css/results-orbit.css';
 
-const TEMPLATE = `
-  <section class="b-ores-top">
-    <div class="b-ores-time">
-      <p class="b-ores-eyebrow">time</p>
-      <p class="b-ores-big"><span class="b-ores-num"></span><span class="b-ores-unit">s</span><span class="b-ores-penalty"></span></p>
-      <dl class="b-ores-stats">
-        <div><dt>moves</dt><dd class="b-ores-moves"></dd></div>
-        <div><dt>tps</dt><dd class="b-ores-tps"></dd></div>
-        <div><dt>inspection</dt><dd class="b-ores-insp"></dd></div>
-        <div class="b-ores-vs-wrap"><dt>vs ao12</dt><dd class="b-ores-vs"></dd></div>
-      </dl>
-      <p class="b-ores-method"></p>
-      <a class="b-ores-full-review" hidden>Review solve <span aria-hidden="true">→</span></a>
-    </div>
-    <div class="b-ores-chart">
-      <p class="b-ores-chart-head"><span class="b-ores-eyebrow">turns per second</span><span class="b-ores-legend"><i aria-hidden="true"></i><span class="b-ores-avg-label"></span></span></p>
-      <div class="b-ores-chart-host"></div>
-    </div>
-  </section>
-  <section class="b-ores-review"></section>
-  <hr class="b-ores-rule">
-  <section class="b-ores-bottom">
-    <div class="b-ores-splits">
-      <p class="b-ores-splits-head"><span class="b-ores-eyebrow">splits</span><span class="b-ores-avg-key"><i aria-hidden="true"></i>your average</span><span class="b-ores-eyebrow b-ores-vs-head">vs avg</span></p>
-      <div class="b-ores-splits-host"></div>
-    </div>
-    <div class="b-ores-session">
-      <p class="b-ores-eyebrow">session</p>
-      <div class="b-ores-session-row">
-        <dl class="b-ores-avgs">
-          <div><dt>ao5</dt><dd data-stat="ao5"></dd></div>
-          <div><dt>ao12</dt><dd data-stat="ao12"></dd></div>
-          <div><dt>pb</dt><dd data-stat="pb"></dd></div>
-          <div><dt>mean</dt><dd data-stat="mean"></dd></div>
-        </dl>
-        <div class="b-ores-spark-host"></div>
-      </div>
-      <p class="b-ores-eyebrow">recent</p>
-      <p class="b-ores-recent"></p>
-    </div>
-  </section>`;
+const el = (tag, className, text) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+};
 
-/** @type {import('../../types.js').ComponentFactory} */
+const hrefWith = (path, params) => `${path}?${new URLSearchParams(params)}`;
+
+function caseForStage(results, detail) {
+  const stage = detail?.stage ?? detail?.stageKey ?? detail?.key;
+  if (!stage) return null;
+  const links = results?.caseLinks ?? {};
+  const direct = links[stage];
+  if (direct) return direct;
+  const timelineCase = results?.timeline?.segments?.find(segment => segment.key === stage)?.caseKey;
+  if (timelineCase && links[timelineCase]) return links[timelineCase];
+  if (stage === 'oll' || stage === 'co') return links.oll ?? null;
+  if (stage === 'pll' || stage === 'ep') return links.pll ?? null;
+  return null;
+}
+
+/** The shared solve result rail used by live results and history past solves. */
 export function createOrbitResults(host, ctx = {}) {
-  const root = document.createElement('div');
-  root.className = 'b-ores is-hidden';
-  root.innerHTML = TEMPLATE;   // one-time mount template
+  const root = el('section', 'f1-results is-hidden');
+  root.setAttribute('aria-label', 'Solve results');
+  const historyNav = el('nav', 'f1-results__history-nav');
+  const time = el('div', 'f1-results__time');
+  time.append(el('span', 'f1-results__eyebrow', 'time'), el('strong', 'f1-results__number'), el('p', 'f1-results__compare'));
+  const coachHost = el('div', 'f1-results__coach');
+  const casePrompt = el('summary', 'ui-action f1-results__case-prompt', 'open case');
+  const detailHost = el('div', 'f1-results__detail-host');
+  const caseMenu = document.createElement('details'); caseMenu.className = 'f1-results__case-menu';
+  caseMenu.hidden = true;
+  const caseLinks = el('div', 'f1-results__case-links');
+  caseMenu.append(casePrompt, caseLinks);
+  const actions = el('div', 'f1-results__actions');
+  const actionRow = createActions(actions, [
+    { label: 'next scramble', primary: true, onClick: () => mode === 'past' ? ctx.onReplay?.() : ctx.dispatch?.({ type: 'next' }) },
+    { label: 'review', href: '#/review' },
+    { label: 'more…', onClick: () => { more.open = !more.open; } },
+  ]);
+  const [next, reviewLink] = [...actionRow.children];
+  next.dataset.action = 'next';
+  const more = document.createElement('details'); more.className = 'f1-results__more';
+  const moreBody = el('div', 'f1-results__more-body');
+  const penalty = el('button', 'ui-action', 'edit +2 / DNF'); penalty.type = 'button'; penalty.dataset.action = 'penalty';
+  const retry = el('button', 'ui-action', 'retry scramble'); retry.type = 'button'; retry.dataset.action = 'retry';
+  moreBody.append(penalty, retry); more.append(moreBody);
+  actions.append(more);
+  const keysHost = el('div', 'f1-results__keys');
+  root.append(historyNav, time, coachHost, caseMenu, detailHost, actions, keysHost);
   host.append(root);
-  const $ = sel => root.querySelector(sel);
-  const select = (kind, key) => ctx.dispatch?.(kind === 'marker' ? { type: 'selectMarker', id: key } : { type: 'openDetail', kind: 'stage', key });
-  const tps = createTpsLine($('.b-ores-chart-host'), { variant: 'orbit', onSelect: select });
-  const splits = createSplitBars($('.b-ores-splits-host'), { layout: 'rows', onSelect: key => select('stage', key) });
-  const review = createReviewPanel($('.b-ores-review'), { dispatch: action => ctx.dispatch?.(action) });
-  const spark = createSparkline($('.b-ores-spark-host'));
+
+  const coach = createCoachLine(coachHost, { orbit: ctx.resultsOrbit });
+  const review = createReviewPanel(detailHost, { dispatch: action => ctx.dispatch?.(action), compact: true });
+  let keyBar = createKeyBar(keysHost, []);
   let key = null;
+  let currentRecord = null;
+  let mode = ctx.mode ?? 'live';
+  let pastNavigation = ctx.pastNavigation ?? null;
+  let externalCube = ctx.resultsCube ?? null;
+  let selectedCase = null;
+
+  function currentPath() { return location.hash || '#/solve'; }
+  function caseHref(info, algs) {
+    const from = currentPath();
+    const fields = { from };
+    if (info.usedAlg) fields.usedAlg = info.usedAlg;
+    for (const field of ['recognitionMs', 'executionMs']) if (Number.isFinite(info[field]) && info[field] >= 0) fields[field] = String(info[field]);
+    if (algs) return hrefWith(`#/algs/${info.kind}/${encodeURIComponent(info.id)}`, fields);
+    const cases = info.kind === 'pll' ? info.name : info.id;
+    return hrefWith(`#/drills/${info.kind}`, { cases, ...fields });
+  }
+  function showCase(info) {
+    if (!info) return;
+    casePrompt.textContent = `open ${info.name} case`;
+    caseLinks.replaceChildren();
+    const algorithms = el('a', 'ui-action', `${info.name} algorithms`);
+    algorithms.href = caseHref(info, true);
+    const drill = el('a', 'ui-action', `drill ${info.name}`);
+    drill.href = caseHref(info, false);
+    caseLinks.append(algorithms, drill);
+    caseMenu.hidden = false;
+    caseMenu.open = true;
+  }
+  root.addEventListener('click', event => {
+    const button = event.target.closest?.('[data-action]');
+    if (!button || !root.contains(button)) return;
+    if (button.dataset.action === 'retry') ctx.dispatch?.({ type: 'retry' });
+    if (button.dataset.action === 'penalty') ctx.dispatch?.({ type: 'togglePenalty', penalty: currentRecord?.penalty === '+2' ? null : '+2' });
+  });
+  root.addEventListener('keydown', event => { if (event.key === 'Escape' && !caseMenu.hidden) caseMenu.hidden = true; });
+
+  function update(result, previous = null) {
+    mode = ctx.mode ?? mode;
+    pastNavigation = ctx.pastNavigation ?? pastNavigation;
+    const page = result?.screen ? result : null;
+    const model = page ? page.results : result;
+    const r = model?.vm ? { ...model.vm, record: model.record ?? model.vm.record, key: model.key ?? model.vm.key } : model;
+    toggleClass(root, 'is-hidden', !r);
+    if (!r) { key = null; currentRecord = null; return; }
+    if (previous && previous.results === result?.vm && key === r.key) return;
+    key = r.key;
+    currentRecord = r.record;
+    historyNav.replaceChildren();
+    if (mode === 'past' && pastNavigation) {
+      const back = el('a', 'f1-results__crumb', `‹ ${pastNavigation.back?.label ?? 'history'}`);
+      back.href = pastNavigation.back?.href ?? '#/history';
+      const neighbors = el('span', 'f1-results__neighbors');
+      for (const direction of ['previous', 'next']) {
+        const nav = pastNavigation[direction];
+        if (!nav?.href) continue;
+        const link = el('a', '', direction === 'previous' ? '‹' : '›'); link.href = nav.href; link.title = nav.label ?? `${direction} solve`; link.setAttribute('aria-label', link.title); neighbors.append(link);
+      }
+      historyNav.append(back, neighbors);
+    }
+    setText(root.querySelector('.f1-results__number'), r.time.resultText ?? r.time.text);
+    const compare = [r.vsAo12?.text && `${r.vsAo12.text} vs ao12`, r.session?.ao5 && `ao5 ${r.session.ao5}`, r.session?.pb && `PB ${r.session.pb}`].filter(Boolean).join(' · ');
+    setText(root.querySelector('.f1-results__compare'), compare);
+    root.querySelector('.f1-results__time').dataset.tone = r.time.tone;
+    coach.update({ text: r.review.coach.text, marker: r.review.selectedId, orbit: ctx.resultsOrbit });
+    review.update(r.review);
+    if (mode === 'past') {
+      presentResultsOrbit(ctx.resultsOrbit, r, { dispatch: action => ctx.dispatch?.(action) });
+      if (r.review.detail?.replayable && r.review.detail.variant !== 'better' && typeof externalCube?.setState === 'function') {
+        externalCube.setState(stateAfter(r.record, r.review.detail.cursor ?? r.review.detail.start ?? 0));
+      }
+    }
+    const fallbackReview = `#/review/${encodeURIComponent(r.record?.at ?? '')}`;
+    const firstMarker = r.review.markers?.[0]?.id ?? r.review.markers?.[0]?.key ?? null;
+    const fullReview = mode === 'past'
+      ? resolvePastReviewHref(pastNavigation, r.review.selectedId ?? firstMarker, fallbackReview)
+      : fallbackReview;
+    reviewLink.href = fullReview;
+    next.hidden = mode === 'past';
+    if (mode === 'past' && ctx.onReplay) {
+      next.hidden = false; next.textContent = 'replay';
+    } else next.textContent = 'next scramble';
+    more.hidden = mode === 'past';
+    keyBar.remove();
+    const liveKeys = mode === 'past' ? [{ key: '[ ]', label: 'markers' }] : [{ key: 'space', label: 'next scramble' }, { key: '[ ]', label: 'markers' }];
+    keyBar = createKeyBar(keysHost, liveKeys);
+    caseMenu.open = false;
+    if (page?.caseChoice) showCase(r.caseLinks?.[page.caseChoice]);
+    else caseMenu.hidden = true;
+    const detail = r.review.detail;
+    selectedCase = caseForStage(r, detail);
+    caseMenu.hidden = !selectedCase;
+    if (selectedCase) showCase(selectedCase);
+    else if (detail) {
+      const caseInfo = detail.caseId ? (r.caseLinks?.[detail.stage] ?? (detail.stage?.includes('pll') ? r.caseLinks?.pll : r.caseLinks?.oll)) : null;
+      if (caseInfo) showCase(caseInfo);
+    }
+  }
 
   return {
-    update(vm, prev) {
-      const r = vm.screen === 'results' ? vm.results : null;
-      toggleClass(root, 'is-hidden', !r);
-      if (!r) { key = null; return; }
-      if (prev && prev.results === r && key === r.key) return;
-      const fresh = key !== r.key;
-      key = r.key;
-      setText($('.b-ores-num'), r.time.text);
-      setText($('.b-ores-penalty'), r.time.penalty ? ` ${r.time.penalty === 'DNF' ? 'DNF' : '+2'}` : '');
-      $('.b-ores-big').className = `b-ores-big is-${r.time.tone}`;
-      toggleClass($('.b-ores-unit'), 'is-hidden', r.time.penalty === 'DNF');
-      setText($('.b-ores-moves'), r.moves);
-      setText($('.b-ores-tps'), r.tps);
-      setText($('.b-ores-insp'), r.inspection);
-      setText($('.b-ores-vs'), r.vsAo12?.text ?? '—');
-      $('.b-ores-vs').className = `b-ores-vs is-${r.vsAo12?.tone || 'none'}`;
-      setText($('.b-ores-method'), r.method);
-      const fullReview = $('.b-ores-full-review');
-      fullReview.hidden = !Array.isArray(r.record?.solveMoves) || !r.record.solveMoves.length;
-      fullReview.href = `#/review/${encodeURIComponent(r.record?.at ?? '')}`;
-      const avg = r.tpsSeries?.avgFlat;
-      setText($('.b-ores-avg-label'), avg != null ? `your avg ${avg.toFixed(2)}` : '');
-      tps.update(r.tpsSeries, { drawIn: fresh, markers: r.review.markers });
-      splits.update(r.splits);
-      spark.update(r.spark);
-      for (const k of ['ao5', 'ao12', 'pb', 'mean']) {
-        const dd = root.querySelector(`[data-stat="${k}"]`);
-        setText(dd, r.session[k]);
-        dd.className = `is-${r.session.tones?.[k] || 'none'}`;
-      }
-      reconcileChildren($('.b-ores-recent'), r.recent.map(x => ({
-        key: x.key, text: x.text,   // already '14.97+' / 'DNF(13.20)'; the tag only colours it
-        className: `b-ores-recent-item${x.current ? ' is-current' : ''}${x.penaltyTag ? ' is-penalty' : ''}`,
-      })), 'span');
-      review.update(r.review);
-      if (fresh) {
-        root.classList.remove('is-entering');
-        void root.offsetWidth;
-        root.classList.add('is-entering');
-      }
-    },
-    destroy() { tps.destroy(); splits.destroy(); spark.destroy(); review.destroy(); root.remove(); },
+    update,
+    setCube(cube) { externalCube = cube; root.dataset.hasCube = String(Boolean(externalCube)); },
+    openCase(info) { showCase(info); },
+    destroy() { coach.destroy(); review.destroy(); root.remove(); },
   };
 }
