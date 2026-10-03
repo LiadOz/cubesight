@@ -7,8 +7,11 @@ export function solveOrbitOptions(solve) {
   const splits = Array.isArray(solve?.splits) ? solve.splits.filter(row => Number.isFinite(row.ms) && row.ms >= 0) : [];
   const stages = splits.length ? splits : [{ key: 'solve', ms: Number.isFinite(solve?.solveMs) ? solve.solveMs : 1 }];
   return {
-    shape: 'full', size: 'L', label: 'solve Orbit', labelStyle: 'side',
-    segments: stages.map((row, index) => ({ key: row.key ?? String(index), weight: Math.max(1, row.ms), state: 'done' })),
+    shape: 'full', size: 'L', label: 'solve Orbit', segmentGap: 5,
+    segments: stages.map((row, index) => ({
+      key: row.key ?? String(index), label: row.label ?? row.key ?? `stage ${index + 1}`,
+      value: seconds(row.ms), weight: Math.max(1, row.ms), state: 'done',
+    })),
   };
 }
 

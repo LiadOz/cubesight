@@ -111,6 +111,8 @@ test('share card embeds the shared Orbit SVG and displays the official +2 result
   const options = solveOrbitOptions(solve);
   assert.equal(options.segments.length, 2);
   assert.equal(options.segments[0].weight, 3000);
+  assert.equal(options.segments[0].label, '<cross>');
+  assert.equal(options.segments[0].value, '3.00');
   const svg = shareCardSvg(solve, '<path class="orbit__segment-fill"/>');
   assert.match(svg, /<svg[^>]*width="1200"/);
   assert.match(svg, /16\.00/);
