@@ -104,6 +104,9 @@ export class Orbit {
   async animateFrom(from, to, duration) {
     const sequence = ++this.sequence;
     const started = performance.now();
+    // The host box is stable for this transition. Carry one measurement into
+    // draw() so each animation frame can update SVG without forcing layout.
+    const layoutBounds = this.host.getBoundingClientRect();
     this.element.classList.add('is-morphing');
     return new Promise(resolve => {
       const finish = () => { if (sequence !== this.sequence) { resolve(); return; } this.draw(to); this.element.classList.remove('is-morphing'); resolve(); };
@@ -136,7 +139,7 @@ export class Orbit {
           return { ...b, angle: lerpAngle(a.angle, b.angle) };
         });
         const fromGap = from.interpolatedGap ?? from.gap;
-        this.draw({ ...to, layout, markers, interpolatedGap: fromGap + (to.gap - fromGap) * t, interpolatedWidth: fromWidth + (toWidth - fromWidth) * t });
+        this.draw({ ...to, layout, markers, interpolatedGap: fromGap + (to.gap - fromGap) * t, interpolatedWidth: fromWidth + (toWidth - fromWidth) * t, layoutBounds });
         if (raw >= 1) finish(); else requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
@@ -159,7 +162,7 @@ export class Orbit {
     const width = model.interpolatedWidth ?? (options.size === 'mini' ? miniGlyphSize(options.glyphSize) : SIZES[options.size] || SIZES.L);
     const gap = model.interpolatedGap ?? model.gap;
     const mini = options.size === 'mini';
-    const hostBox = this.host.getBoundingClientRect();
+    const hostBox = model.layoutBounds || this.host.getBoundingClientRect();
     const fittedWidth = Math.min(width, hostBox.width || width, hostBox.height || width);
     const renderWidth = fittedWidth;
     this.element.style.width = `${fittedWidth}px`;

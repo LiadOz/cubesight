@@ -25,6 +25,28 @@ test('Orbit morph interruption, collapse/expand, keyboard activation and dynamic
   await expect(page.locator('.f0-orbit [data-segment]')).toHaveCount(beforeGrowth + 1);
 });
 
+test('Orbit takes fresh host bounds when a resize interrupts a morph', async ({ page }) => {
+  await page.goto('/src/ui/gallery.html?flow=results');
+  const fitted = await page.evaluate(async () => {
+    const orbit = window.__f0Orbit;
+    const current = orbit.options;
+    const interrupted = orbit.update({ ...current, shape: 'full', duration: 420 });
+    await new Promise(resolve => setTimeout(resolve, 80));
+    orbit.host.style.width = '280px';
+    orbit.host.style.height = '280px';
+    const resized = orbit.update({ ...current, shape: 'open', size: 'XL', duration: 420 });
+    await Promise.all([interrupted, resized]);
+    return {
+      renderedWidth: Number.parseFloat(orbit.element.style.width),
+      hostWidth: orbit.host.getBoundingClientRect().width,
+      shape: orbit.element.dataset.shape,
+    };
+  });
+  expect(fitted.shape).toBe('open');
+  expect(fitted.hostWidth).toBe(280);
+  expect(fitted.renderedWidth).toBeLessThanOrEqual(fitted.hostWidth);
+});
+
 test('crowded Orbit markers expand by keyboard and preserve exact marker lookup', async ({ page }) => {
   await page.goto('/src/ui/gallery.html?flow=results');
   const cluster = page.locator('.f0-orbit [data-marker-cluster].is-cluster').first();
