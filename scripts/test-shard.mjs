@@ -13,7 +13,7 @@ const run = spawnSync('npx', ['playwright', 'test', `--shard=${index}/${total}`,
   cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
 });
 const wallTimeMs = Math.round(performance.now() - started);
-const report = { shard: index, totalShards: total, wallTimeMs, exitCode: run.status };
+const report = { shard: index, totalShards: total, commit: process.env.GITHUB_SHA ?? null, generatedAt: new Date().toISOString(), wallTimeMs, exitCode: run.status };
 try { report.playwright = JSON.parse(run.stdout); } catch { report.reportParseError = true; }
 const output = path.resolve(`test-results/shards/${index}-of-${total}.json`);
 await mkdir(path.dirname(output), { recursive: true });

@@ -2,14 +2,15 @@
 import { spawnSync } from 'node:child_process';
 import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { findPlaywrightFailureCandidates } from './test-health-report.mjs';
 
 const root = process.cwd();
 const dir = path.join(root, 'test-results/health/repeat');
 const files = (await readdir(path.join(root, 'tests'))).filter((name) => name.endsWith('-unit.test.mjs')).map((name) => `tests/${name}`);
 await mkdir(dir, { recursive: true });
 const runs = [
-  ['playwright', 'npx', ['playwright', 'test', '--repeat-each=5', '--reporter=line']],
-  ['pwa', 'npx', ['playwright', 'test', '--config=playwright.pwa.config.js', '--repeat-each=5', '--reporter=line']],
+  ['playwright', 'npx', ['playwright', 'test', '--repeat-each=5', '--reporter=json']],
+  ['pwa', 'npx', ['playwright', 'test', '--config=playwright.pwa.config.js', '--repeat-each=5', '--reporter=json']],
 ];
 const results = [];
 for (let repeat = 1; repeat <= 5; repeat += 1) {
@@ -27,9 +28,15 @@ for (const [name, command, args] of runs) {
   const durationMs = Math.round(performance.now() - started);
   const output = `${run.stdout ?? ''}${run.stderr ?? ''}`;
   await writeFile(path.join(dir, `${name}.log`), output);
-  const failures = name === 'unit'
-    ? [...output.matchAll(/^not ok \d+ - (.+)$/gmu)].map((match) => match[1])
-    : [...output.matchAll(/\b(?:failed|timed out)\b[^\n]*/gimu)].map((match) => match[0]);
+  let failures;
+  if (name === 'unit') failures = [...output.matchAll(/^not ok \d+ - (.+)$/gmu)].map((match) => match[1]);
+  else {
+    try {
+      failures = findPlaywrightFailureCandidates(JSON.parse(run.stdout ?? '')).map((candidate) => `${candidate.title}: ${candidate.status} (${candidate.durationMs} ms)`);
+      if (run.status !== 0 && failures.length === 0) failures.push(`Playwright exited ${run.status} without a test-level failure in its JSON report.`);
+    }
+    catch { failures = ['Could not parse the Playwright JSON report; flakiness could not be classified.']; }
+  }
   results.push({ name, durationMs, exitCode: run.status, failures });
   console.log(`${name}: ${durationMs} ms, exit ${run.status}, ${failures.length} failure lines`);
 }

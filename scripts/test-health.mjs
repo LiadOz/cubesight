@@ -2,9 +2,11 @@
 import { spawnSync } from 'node:child_process';
 import { mkdir, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { flattenTests, loadPlaywrightShards } from './test-health-report.mjs';
 
 const root = process.cwd();
 const outDir = path.join(root, 'test-results/health');
+const shardDir = path.join(root, 'test-results/shards');
 const slowLimitMs = 20_000;
 const suiteBudgetsMs = { unit: 60_000, playwright: 5 * 60_000, pwa: 2 * 60_000 };
 const unitFiles = (await readdir(path.join(root, 'tests')))
@@ -15,17 +17,6 @@ function execute(command, args) {
   const started = performance.now();
   const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   return { ...result, elapsedMs: Math.round(performance.now() - started) };
-}
-
-function flattenTests(node, suite = '') {
-  if (!node || typeof node !== 'object') return [];
-  const ownName = typeof node.title === 'string' ? node.title : typeof node.name === 'string' ? node.name : '';
-  const fullName = [suite, ownName].filter(Boolean).join(' › ');
-  const duration = Number(node.duration ?? node.duration_ms ?? node.durationMs);
-  const isCase = node.type === 'test' || node.expectedStatus || node.status === 'passed' || node.status === 'failed';
-  const children = [node.tests, node.suites, node.specs, node.results].flatMap((value) => Array.isArray(value) ? value : []);
-  const childCases = children.flatMap((child) => flattenTests(child, fullName));
-  return [...(isCase && Number.isFinite(duration) ? [{ name: fullName, durationMs: Math.round(duration), status: node.status ?? 'unknown' }] : []), ...childCases];
 }
 
 function parseNodeTap(output) {
@@ -50,18 +41,30 @@ function parseNodeTap(output) {
   return tests;
 }
 
+async function loadShardedPlaywrightReport() {
+  const report = await loadPlaywrightShards(shardDir, Number(process.env.PLAYWRIGHT_SHARD_COUNT ?? 4));
+  return {
+    name: 'playwright',
+    elapsedMs: report.wallTimeMs,
+    exitCode: report.errors.length ? 1 : 0,
+    tests: report.tests,
+    shardErrors: report.errors,
+    shards: report.shards,
+  };
+}
+
 const suites = [];
 const unit = execute('node', ['--test', '--test-reporter=tap', ...unitFiles]);
 suites.push({ name: 'unit', elapsedMs: unit.elapsedMs, exitCode: unit.status, output: unit.stdout });
-const playwright = execute('npx', ['playwright', 'test', '--reporter=json']);
-suites.push({ name: 'playwright', elapsedMs: playwright.elapsedMs, exitCode: playwright.status, output: playwright.stdout });
+const playwright = await loadShardedPlaywrightReport();
+suites.push(playwright);
 const pwa = execute('npx', ['playwright', 'test', '--config=playwright.pwa.config.js', '--reporter=json']);
 suites.push({ name: 'pwa', elapsedMs: pwa.elapsedMs, exitCode: pwa.status, output: pwa.stdout });
 const reports = suites.map((suite) => {
   let parsed;
   try { parsed = JSON.parse(suite.output); } catch { parsed = null; }
-  const tests = suite.name === 'unit' ? parseNodeTap(suite.output) : parsed ? flattenTests(parsed) : [];
-  return { name: suite.name, wallTimeMs: suite.elapsedMs, exitCode: suite.exitCode, tests };
+  const tests = suite.tests ?? (suite.name === 'unit' ? parseNodeTap(suite.output) : parsed ? flattenTests(parsed) : []);
+  return { name: suite.name, wallTimeMs: suite.elapsedMs, exitCode: suite.exitCode, tests, ...(suite.shards === undefined ? {} : { shards: suite.shards, shardErrors: suite.shardErrors }) };
 });
 const tests = reports.flatMap((suite) => suite.tests.map((test) => ({ ...test, suite: suite.name })));
 const slowest = [...tests].sort((a, b) => b.durationMs - a.durationMs).slice(0, 20);
@@ -70,7 +73,7 @@ const result = {
   generatedAt: new Date().toISOString(),
   softLimitMs: slowLimitMs,
   suiteBudgetsMs,
-  suites: reports.map(({ name, wallTimeMs, exitCode }) => ({ name, wallTimeMs, exitCode, budgetMs: suiteBudgetsMs[name], overBudget: wallTimeMs > suiteBudgetsMs[name] })),
+  suites: reports.map(({ name, wallTimeMs, exitCode, shards, shardErrors }) => ({ name, wallTimeMs, ...(shards === undefined ? {} : { criticalPathWallTimeMs: wallTimeMs, shards, shardErrors }), exitCode, budgetMs: suiteBudgetsMs[name], overBudget: wallTimeMs > suiteBudgetsMs[name] })),
   testsObserved: tests.length,
   slowestTests: slowest,
   testsOverSoftLimit: overBudget,
@@ -84,6 +87,8 @@ const lines = [
   `Generated ${result.generatedAt}. Soft per-test limit: ${slowLimitMs / 1000}s.`,
   '',
   ...reports.map((suite) => `- ${suite.name}: ${(suite.wallTimeMs / 1000).toFixed(1)}s wall time / ${(suiteBudgetsMs[suite.name] / 1000).toFixed(0)}s budget; exit ${suite.exitCode}; ${suite.tests.length} test timings parsed.`),
+  ...(reports.find((suite) => suite.name === 'playwright')?.shards ?? []).map((shard) => `- Playwright shard ${shard.shard}/${shard.totalShards}: ${(shard.wallTimeMs / 1000).toFixed(1)}s wall time; exit ${shard.exitCode}.`),
+  ...((reports.find((suite) => suite.name === 'playwright')?.shardErrors ?? []).map((error) => `- Playwright shard report: ${error}`)),
   '',
   '## Slowest tests',
   '',
