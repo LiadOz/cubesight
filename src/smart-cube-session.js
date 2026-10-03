@@ -82,7 +82,11 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
   let moveSeq = 0;
 
   function publish(changes) {
-    snapshot = { ...snapshot, ...changes };
+    snapshot = { ...snapshot, ...changes,
+      canSync: Boolean(connection),
+      canDisconnect: Boolean(connection) || (changes.phase ?? snapshot.phase) === 'connecting',
+      capabilities: connection?.capabilities || {},
+    };
     if (typeof document !== 'undefined') document.documentElement.dataset.cubePhase = snapshot.phase;
     for (const listener of listeners) {
       // A failing consumer (UI mirror, live tracker) must not be mistaken for a
@@ -97,7 +101,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
   function establishSolvedBaseline() {
     lastCoalesce = null;
     suspect = null; needCheck = false;
-    publish({ phase: 'tracking', detail: 'Cube synced. Turn it, then find plans.', state: solvedState(), moves: [], lastMove: null });
+    publish({ phase: 'tracking', detail: 'Cube synced. Turns are mirrored live.', state: solvedState(), moves: [], lastMove: null });
   }
 
   function endFaceletsRequest(error, facelets) {
@@ -241,7 +245,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
         publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves.slice(0, -1), double], lastMove: double, moveEvent: { seq: ++moveSeq, move: double, turn: move, replaces: true, ...stamps, startCubeTimestamp }, detail: 'Live cube updated.' });
       } else {
         lastCoalesce = quarterTurn ? { face, prime, cubeTs } : null;
-        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, moveEvent: { seq: ++moveSeq, move, turn: move, replaces: false, ...stamps, startCubeTimestamp: cubeTs }, detail: 'Live cube updated. Find plans when ready.' });
+        publish({ state, moves: isSolvedState(state) ? [] : [...snapshot.moves, move], lastMove: move, moveEvent: { seq: ++moveSeq, move, turn: move, replaces: false, ...stamps, startCubeTimestamp: cubeTs }, detail: 'Live cube updated.' });
       }
     } else if (event.type === 'BATTERY') {
       publish({ battery: event.batteryLevel });

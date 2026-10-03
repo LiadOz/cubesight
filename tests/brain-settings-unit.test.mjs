@@ -51,6 +51,14 @@ test('stored v2 settings win and bad values are normalized away', () => {
   assert.equal(normalizeSettings('garbage').style, 'orbit');
 });
 
+test('cross colour defaults to all faces and supports a selected colour', () => {
+  assert.equal(DEFAULT_SETTINGS.crossColor, 'neutral');
+  assert.equal(normalizeSettings({ crossColor: 'red' }).crossColor, 'red');
+  assert.equal(normalizeSettings({ crossColor: 'purple' }).crossColor, 'neutral');
+  assert.deepEqual(parseCommand('crosscolor green'), { path: 'crossColor', value: 'green' });
+  assert.ok(buildSettingsPanel(normalizeSettings(), true).sections.find(section => section.id === 'solve').rows.some(row => row.id === 'crossColor'));
+});
+
 test('setSetting: paths, inspection merge (including the legacy shape), toggles and presets', () => {
   let s = normalizeSettings();
   s = setSetting(s, 'oll', '1look');

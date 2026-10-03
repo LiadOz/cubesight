@@ -99,6 +99,7 @@ export const DEFAULT_BRAIN_STYLE = 'orbit';
  * @property {'accent'|'warn'|'error'} tone
  * @property {string} consequence      "starting now = +2 penalty · dnf in 1.2 s"
  * @property {boolean} autostartHandoff
+ * @property {string} bestStart   proven best cross + bounded X-cross opportunity when available
  * @property {number|null} startedAt   frameState recomputes elapsed/remaining per frame
  */
 

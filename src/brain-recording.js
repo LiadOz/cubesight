@@ -16,6 +16,23 @@ import { SOLVE_STORE_KEY } from './solve-metrics.js';
 const DEV = Boolean(import.meta.env?.DEV);
 let urlReplayStarted = false;
 
+/** Download the active, anonymized recording from any page. */
+export async function saveRecording({ context = {}, status = () => {} } = {}) {
+  const json = serializeRecording({ diagnostics: getConnectionLog(), context });
+  const name = `cubesight-recording-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = name; anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  const size = `${(json.length / 1024).toFixed(0)} KB`;
+  if (!DEV) { status(`Downloaded ${name} (${size}).`); return { name, size, json }; }
+  try {
+    const res = await fetch('/__recording', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json });
+    const body = res.ok ? await res.json() : null;
+    status(res.ok ? `Downloaded and saved to ${body.file} (${size}). Replay: node scripts/replay-recording.mjs ${body.file}` : `Downloaded (${size}); dev save failed: HTTP ${res.status}`);
+    return { name, size, path: body?.file, json };
+  } catch (error) { status(`Downloaded (${size}); dev save failed: ${error.message}`); return { name, size, json }; }
+}
+
 // Controls whose clicks/changes are recorded as 'ui' actions. Start/Cancel and
 // the pseudo/inspection checkboxes are recorded at the live-tracker seam
 // (live.call) instead, with their exact arguments (the scramble string).
@@ -50,20 +67,7 @@ export function attachBrainRecording({ root, live, cubeSession, getContext = () 
   record('ui', { type: 'brain-created', context: getContext() });
 
   async function save() {
-    const json = serializeRecording({ diagnostics: getConnectionLog(), context: getContext() });
-    const name = `cubesight-recording-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
-    const size = `${(json.length / 1024).toFixed(0)} KB`;
-    if (!DEV) { status(`Downloaded ${name} (${size}).`); return; }
-    try {
-      const res = await fetch('/__recording', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json });
-      const body = res.ok ? await res.json() : null;
-      status(res.ok ? `Downloaded and saved to ${body.file} (${size}). Replay: node scripts/replay-recording.mjs ${body.file}` : `Downloaded (${size}); dev save failed: HTTP ${res.status}`);
-    } catch (error) { status(`Downloaded (${size}); dev save failed: ${error.message}`); }
+    return saveRecording({ context: getContext(), status });
   }
 
   // Re-apply one recorded user action through the Brain's own controls.

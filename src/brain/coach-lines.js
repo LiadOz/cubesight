@@ -27,10 +27,16 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
     lines.push({ tone: 'info', text: 'Follow the scramble. A wrong turn shows the way back.' });
   } else if ((snap?.phase === 'solving' || snap?.phase === 'done') && crossFace && state && showLive) {
     if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross.startsWith('xx') ? 'xx-cross' : 'x-cross'}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'}. The scramble allowed it and you took it.` });
-    if (toggles.crossSuggest && optimalCross) {
+    if (toggles.crossSuggest && optimalCross?.best) {
+      const suggestion = optimalCross.best;
+      const xcross = optimalCross.bestXcross;
+      // copy-ok: “best” is the proven lowest-move start plan in the bounded search.
+      const lead = suggestion.proven ? 'Best cross' : 'Cross found so far';
+      lines.push({ tone: 'info', text: `${lead}: ${colorOf(suggestion.face)}, ${suggestion.length}${xcross?.proven ? ` · x-cross possible in ${xcross.length}` : ''}` });
+    } else if (toggles.crossSuggest && optimalCross) {
       lines.push({ tone: 'info', text: `Suggested cross: ${colorOf(optimalCross.face)}, ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}` });
     }
-    if (toggles.crossHindsight && snap.crossMoveCount != null && optimalCross) {
+    if (toggles.crossHindsight && snap.crossMoveCount != null && optimalCross && !xcross) {
       const h = lenses.crossHindsight(snap.crossMoveCount, optimalCross.length, colorOf(crossFace));
       if (h) lines.push({ tone: h.kind === 'optimal' ? 'good' : 'warn', text: h.text });
     }
@@ -50,7 +56,7 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
       lines.push({ key: 'rotations', tone: 'warn', text: `${snap.rotations} rotation${snap.rotations === 1 ? '' : 's'} this solve. Fewer often saves time.` });
     }
     if (toggles.efficiencyScore) {
-      const score = lenses.efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, rotations: snap.rotations, solved: p.solved, f2lPairs: p.pairsSolved, ollDone: p.ollDone });
+      const score = lenses.efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, crossTarget: xcross ? 'xcross' : 'cross', rotations: snap.rotations, solved: p.solved, f2lPairs: p.pairsSolved, ollDone: p.ollDone });
       lines.push({ key: 'efficiency', tone: 'good', text: `efficiency ${score}` });
     }
   } else if (snap?.phase === 'done' && snap.record) {
@@ -72,7 +78,8 @@ export function resultsCoach({ record, optimalCross, stages = [], plan = [], ave
   const out = [];
   if (!record) return out;
   const label = key => plan.find(s => s.key === key)?.label ?? key;
-  if (record.crossMoveCount != null && optimalCross && record.crossMoveCount > optimalCross.length) {
+  const targetKind = record.analysis?.cross?.target?.kind ?? (record.xcross && record.xcross !== 'cross' ? record.xcross : 'cross');
+  if (targetKind === 'cross' && record.crossMoveCount != null && optimalCross && record.crossMoveCount > optimalCross.length) {
     out.push({ key: 'cross', tag: 'cross', tone: 'warn', text: `Your cross took ${record.crossMoveCount} moves; an optimal ${faceColors[optimalCross.face] ?? optimalCross.face} cross here is ${optimalCross.length}.`, ...(optimalCross.solution ? { alg: optimalCross.solution } : {}) });
   }
   if (record.xcross && record.xcross !== 'cross') out.push({ key: 'xcross', tag: record.xcross, tone: 'good', text: `${record.xcross === 'xxcross' ? 'xx-cross' : 'x-cross'} built with the cross.` });

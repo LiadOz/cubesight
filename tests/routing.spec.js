@@ -22,8 +22,8 @@ const routes = [
   ['drills/scout', 'scout', 'drills', 'cross planning'],
   ['algs', 'algs', 'algs', 'algs'],
   ['progress', 'progress', 'progress', 'progress'],
-  ['history', 'history', null, 'history'],
-  ['timer', 'timer', null, 'timer'],
+  ['history', 'history', 'history', 'history'],
+  ['timer', 'timer', 'solve', 'timer'],
   ['dev/studio', 'smart', null, 'studio'],
 ];
 

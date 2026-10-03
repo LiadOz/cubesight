@@ -8,7 +8,11 @@ import './brain/css/tokens-mono.css';
 import './legacy-reskin.css';
 import './not-found.css';
 import { setupTheme } from './theme.js';
-import { APP_NAME, NAV_ITEMS, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
+import { createHeader } from './ui/shared/index.js';
+import { smartCube, clearSavedCubeData } from './smart-cube-bluetooth.js';
+import { clearRecording, enableRecordingPersistence, getRecording, recordNavigation, recordView } from './recorder.js';
+import { saveRecording } from './brain-recording.js';
+import { APP_NAME, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
 import { T, MSG, fmt, KEYS } from './copy/terms.js';
 import { isKnownTool, resolveRoute, keyScope, parseHash, registerDevRoute } from './routes.js';
 import { rememberDrill } from './drills/catalog.js';
@@ -27,6 +31,7 @@ import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
 import { toRenderData, validateSolution } from './cross-cube.js';
+import { Cube } from './ui/cube/index.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from './f2l-planner.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
@@ -208,7 +213,7 @@ let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', notfound: 'not-found-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', recording: 'recording-view', notfound: 'not-found-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
@@ -265,21 +270,7 @@ let f2lState = {
 };
 
 document.querySelector('#app').innerHTML = `
-  <header class="site-header">
-    <a class="brand" href="#/" aria-label="${APP_NAME} home">${APP_NAME.toLowerCase()}</a>
-    <nav class="main-nav" aria-label="Main">
-      ${NAV_ITEMS.map(item => `<a class="nav-link" href="${item.href}" data-nav="${item.id}">${item.label}</a>`).join('\n      ')}
-    </nav>
-    <div class="header-actions">
-      <button id="theme-toggle" class="header-button theme-button" aria-label="theme">
-        <svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z"/></svg>
-        <svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
-        <span class="theme-label" aria-hidden="true">light</span>
-      </button>
-      <button class="header-button help-button" data-action="open-help" aria-label="help">?</button>
-    </div>
-  </header>
-
+  <div id="site-header"></div>
   <main>
     <div id="corner-view">
     <section class="intro-row">
@@ -437,6 +428,15 @@ document.querySelector('#app').innerHTML = `
         <a id="not-found-solve" href="#/solve">go to solve</a>
       </nav>
     </section>
+    <section id="recording-view" class="recording-page" hidden aria-labelledby="recording-title">
+      <p class="eyebrow">developer tools</p>
+      <h1 id="recording-title">recording</h1>
+      <p class="recording-page__intro">CubeSight keeps a bounded local ring of cube input, connection events and page changes. Exported recordings mask device identifiers and coarse browser details.</p>
+      <div id="recording-cube" class="recording-page__cube" aria-label="current smart cube"></div>
+      <p class="recording-page__count" id="recording-count" role="status"></p>
+      <div class="recording-page__actions"><button class="primary-button" data-action="save-recording">save anonymized recording</button><button class="text-button" data-action="clear-recording">clear recording</button></div>
+      <ol class="recording-page__events" id="recording-events" aria-label="recent recorded events"></ol>
+    </section>
     <div id="oll-view" class="cs-host" hidden></div>
     <div id="lookahead-view" class="cs-host" hidden></div>
     <div id="pll-view" hidden></div>
@@ -468,6 +468,34 @@ document.querySelector('#app').innerHTML = `
     <button class="primary-button" data-action="close-help">start</button>
   </dialog>
 `;
+
+const globalHeaderStatus = document.createElement('span');
+globalHeaderStatus.className = 'ui-header-status';
+globalHeaderStatus.setAttribute('role', 'status');
+const globalHeader = createHeader(document.querySelector('#site-header'), {
+  title: APP_NAME,
+  sections: [
+    { id: 'solve', label: 'solve', href: '#/solve' },
+    { id: 'drills', label: 'drills', href: '#/drills' },
+    { id: 'algs', label: 'algs', href: '#/algs' },
+    { id: 'progress', label: 'progress', href: '#/progress' },
+    { id: 'history', label: 'history', href: '#/history' },
+  ],
+  session: smartCube,
+  actions: {
+    connect: () => { const state = smartCube.getSnapshot(); const attempt = state.link?.status === 'lost' ? smartCube.reconnect({ gesture: true }) : smartCube.connect(); void attempt.catch(error => { globalHeaderStatus.textContent = error?.message || 'Could not connect to the cube.'; }); },
+    sync: () => { void smartCube.syncSolved().catch(error => { globalHeaderStatus.textContent = error?.message || 'Could not sync the cube.'; }); },
+    recenter: () => document.dispatchEvent(new Event('cubesight-recenter')),
+    disconnect: () => { void smartCube.disconnect(); },
+    forget: () => clearSavedCubeData(),
+    'save-recording': () => { void saveRecording({ context: { route: location.hash }, status: message => { globalHeaderStatus.textContent = message; } }); },
+    'report-problem': () => { location.hash = '#/recording'; },
+    forgetAvailable: () => { try { return Object.keys(localStorage).some(key => key.startsWith('cubesight-smartcube-mac-name:') || key.startsWith('smartcube-ble-mac:')); } catch { return false; } },
+  },
+});
+document.addEventListener('cubesight-recenter', () => { if (['corner', 'f2l'].includes(activeTool)) cube3D?.recenterGyro?.(); });
+globalHeader.querySelector('.header-actions')?.prepend(globalHeaderStatus);
+void enableRecordingPersistence();
 
 // Keep the training surface within reach on a phone. Settings remain one tap away.
 setupTheme();
@@ -1699,8 +1727,10 @@ const cubeConnected = () => {
 };
 let routedHash = null;
 function syncRoute(initial = false) {
-  const { tool, hash } = resolveRoute(location.hash, { isPhone: isPhone(), cubeConnected: cubeConnected() });
+  const incomingHash = location.hash;
+  const { tool, hash } = resolveRoute(incomingHash, { isPhone: isPhone(), cubeConnected: cubeConnected() });
   if (location.hash !== hash) history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
+  recordNavigation({ hash: incomingHash, resolvedHash: hash, tool, initial });
   if (tool === 'review' && reviewRouteHash && reviewRouteHash !== hash) {
     reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
   }
@@ -1708,6 +1738,29 @@ function syncRoute(initial = false) {
   setTool(tool, initial || routedHash !== hash);
   routedHash = hash;
   rememberDrill(localStorage, tool, hash);
+}
+
+function renderRecordingView() {
+  const recording = getRecording();
+  const count = document.querySelector('#recording-count');
+  const list = document.querySelector('#recording-events');
+  if (!count || !list) return;
+  count.textContent = `${recording.events.length.toLocaleString()} events · ${Math.max(0, recording.durationMs / 1000).toFixed(1)} s recording duration · local buffer`;
+  list.replaceChildren(...recording.events.slice(-12).reverse().map(event => {
+    const item = document.createElement('li');
+    const kind = document.createElement('strong'); kind.textContent = event.kind;
+    const timing = document.createElement('span'); timing.textContent = `+${Math.round(event.t)} ms`;
+    item.append(kind, timing); return item;
+  }));
+}
+
+let recordingCube = null;
+function syncRecordingCube(tool) {
+  if (tool !== 'recording') { recordingCube?.destroy(); recordingCube = null; return; }
+  if (recordingCube) return;
+  const host = document.querySelector('#recording-cube');
+  recordingCube = new Cube(host, { mode: 'live', size: 'M', label: 'current smart cube recording preview' });
+  recordingCube.bindSession(smartCube);
 }
 
 function setTool(tool, initial = false) {
@@ -1737,8 +1790,15 @@ function setTool(tool, initial = false) {
     reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
   }
   Object.values(legacyRounds).forEach(panel => panel.setActive(false));
+  const previousTool = activeTool;
+  if (previousTool !== tool || initial) {
+    if (previousTool && previousTool !== tool) recordView('unmount', { tool: previousTool });
+    recordView('mount', { tool });
+  }
+  if (tool === 'recording') renderRecordingView();
   activeTool = tool;
   syncLegacyCubes(tool);
+  syncRecordingCube(tool);
   if (tool === 'corner' || tool === 'pll' || tool === 'f2l') syncLegacyDrillStyle();
   document.title = `${PAGE_TITLES[tool] ?? tool} · ${APP_NAME}`;
   for (const [id, viewId] of Object.entries(TOOL_VIEWS)) document.querySelector(`#${viewId}`).hidden = id !== tool;
@@ -2077,6 +2137,11 @@ document.addEventListener('click', (event) => {
   if (sessionButton) return setSession(sessionButton.dataset.session);
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!action) return;
+  if (action === 'save-recording') {
+    void saveRecording({ context: { route: location.hash }, status: message => { globalHeaderStatus.textContent = message; } });
+    return;
+  }
+  if (action === 'clear-recording') { clearRecording(); renderRecordingView(); return; }
   if (action === 'resume') return resumePractice();
   if (action === 'next-recall' && activeTool === 'corner' && state.mode === 'recall') return startCase();
   if (action === 'skip' && activeTool === 'corner') answer(null, true);

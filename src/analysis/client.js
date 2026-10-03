@@ -61,7 +61,7 @@ export function createAnalysisClient({
       if (signal?.aborted) { clearTimeout(timer); resolve(null); return; }
       signal?.addEventListener('abort', cancel, { once: true });
       pending.set(id, { resolve, reject, timer, onProgress, signal, cleanup: () => signal?.removeEventListener('abort', cancel) });
-      w.postMessage({ type: 'analyze', id, input, summary: true, options: { pairs: true } });
+      w.postMessage({ type: 'analyze', id, input, summary: true, options: { pairs: true, startPlan: true } });
     }).finally(() => {
       if (!pending.size) { clearTimeout(idleTimer); idleTimer = setTimeout(() => drop(), idleMs); }
     });

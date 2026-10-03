@@ -36,7 +36,9 @@ function forceBudgetEnd(){
 export function solveCross(request,{signal,onProgress}={}) {
   if(signal?.aborted)return Promise.reject(abortError());
   if(pending)return Promise.reject(new Error('A search is already running.'));
-  const budget=Math.min(15000,Math.max(100,Number(request.timeLimitMs)||2500));
+  const requested=Number(request.timeLimitMs);
+  const budget=Number.isFinite(requested)?Math.min(15000,Math.max(0,requested)):2500;
+  if(budget===0)return Promise.resolve({results:[],complete:false,backend:'cube-xcross-lite-wasm',reason:'time-limit'});
   return new Promise((resolve,reject)=>{
     const w=getWorker(),id=++nextId;
     const cancel=()=>{worker?.terminate();worker=null;finish(null,abortError());};

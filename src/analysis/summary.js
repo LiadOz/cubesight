@@ -11,7 +11,7 @@ import { ENGINE_VERSION } from './segment.js';
 import { canonicalizeReconstruction, tokenizeReconstruction } from '../review/import-parser.js';
 import { unrelabelMoves } from './normalize.js';
 
-export const SUMMARY_VERSION = 2;
+export const SUMMARY_VERSION = 3;
 const MAX_LOSSES = 8;
 const MAX_PAUSES = 8;
 const MAX_CANCELS = 8;
@@ -57,12 +57,14 @@ export function summarizeAnalysis({ segmentation: seg, cross = null, pairs = nul
   if (cross) {
     const lossy = cross.positions.filter(row => row.loss > 0);
     out.cross = {
-      moves: cross.userMoves, d0: cross.d0, extra: cross.extraMoves, total: cross.totalLoss, done: cross.finished, proven: cross.complete,
+      moves: cross.userMoves, d0: cross.d0, extra: cross.extraMoves, total: cross.totalLoss, done: cross.finished, proven: cross.startProven === true && cross.complete === true,
+      target: cross.targetSlots?.length ? { kind: cross.targetSlots.length > 1 ? 'xxcross' : 'xcross', slots: cross.targetSlots, mask: cross.targetMask } : { kind: 'cross', slots: [], mask: 0 },
       best: text(cross.bestContinuation),
       // Every face's optimal length at move 0 (colour-neutral comparison).
       faces: cross.faceLengths ?? null,
       faceProven: cross.faceProven ?? null,
       faceComplete: cross.faceComplete !== false,
+      xcrossFaces: cross.xcrossFaces ?? null,
       startProven: cross.startProven === true,
       // The moves that cost something: i = the move index, loss 1 (extra) or 2 (detour), d = moves left before it, best = shortest finish from before it.
       losses: lossy.slice(0, MAX_LOSSES).map(row => ({ i: row.i - 1, move: row.move, loss: row.loss, d: cross.positions[row.i - 1].d, best: text(cross.positions[row.i - 1].best), after: row.d })),
