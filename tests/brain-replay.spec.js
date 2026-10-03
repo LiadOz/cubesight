@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { createSmartCubeSession } from '../src/smart-cube-session.js';
 import { createSolveLive } from '../src/solve-live.js';
 import {

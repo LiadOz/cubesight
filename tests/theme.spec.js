@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 
 test('follows system theme until an explicit choice, then remembers it', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
@@ -32,12 +32,14 @@ test('theme switch preserves the current cube and its sticker colors', async ({ 
   await expect(page.getByRole('heading', { name: 'one cube, one orbit' })).toBeVisible();
 });
 
-test('theme toggle fits and responds to touch on a narrow phone', async ({ browser }) => {
+test('theme toggle fits and responds to touch on a narrow phone', async ({ browser }, testInfo) => {
   const context = await browser.newContext({ viewport: { width: 320, height: 740 }, isMobile: true, hasTouch: true, colorScheme: 'light' });
   const page = await context.newPage();
+  const finishCoverage = await beginCoverage(page, testInfo);
   await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'Switch to dark mode' }).tap();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await finishCoverage();
   await context.close();
 });

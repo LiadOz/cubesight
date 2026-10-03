@@ -50,3 +50,25 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:pwa
+  perf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run perf
+        env:
+          CUBESIGHT_PERF_ALLOW_NON_HOST_ARTIFACTS: '1'
+      - run: npm run perf:check
+        env:
+          CUBESIGHT_PERF_ALLOW_NON_HOST_ARTIFACTS: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-report
+          path: test-results/perf/
+          if-no-files-found: ignore

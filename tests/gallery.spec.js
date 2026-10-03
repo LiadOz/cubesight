@@ -1,5 +1,5 @@
 // The dev-only gallery (#/dev/gallery). Needs the dev server: the data comes from the /__gallery plugin.
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 const open = page => page.locator('.lb-root.lb-open');
 

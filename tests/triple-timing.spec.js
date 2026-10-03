@@ -1,4 +1,4 @@
-import {test,expect} from 'playwright/test';
+import {test,expect} from './helpers/coverage-test.js';
 
 test('three-corner clock includes feedback between answers in displayed and logged times',async({page})=>{
   await page.clock.install();

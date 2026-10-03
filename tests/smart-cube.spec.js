@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('Cross Scout explains how to find a GAN MAC in Chrome', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

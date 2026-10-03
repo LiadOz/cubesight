@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 // The Brain v2 controller end to end in a real browser, with a stub shell (the
 // visual shell and styles are tested separately): the real smart-cube session

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "evidence": {
+    "commit": "78e81d4a470c6b29cbcd45f552ccb775b1de4c54",
+    "report": "test-results/perf/report.json from the `npm run perf` capture at the evidence commit; CI archives this path as the performance-report artifact.",
+    "capturedAt": "2026-10-03T14:25:46.181Z",
+    "environment": "Chromium 153.0.8010.12, Linux x64, Intel Xeon; SwiftShader; desktop CPU throttle ×1 and phone CPU throttle ×4.",
+    "limitations": [
+      "BLE-to-animation uses a deterministic simulated MOVE event, not a physical cube.",
+      "The 30-route memory scenario measures JS heap after explicit garbage collection and does not include GPU memory.",
+      "Service-worker cache ResourceTiming reports transferSize as zero; the measured encodedBodySize is nonzero and is used for routeScriptEncodedBytes.",
+      "Analysis and engine limits below use the captured values as reference budgets with 15% regression tolerance; they are environment-specific measurements, not product acceptance claims."
+    ]
+  },
+  "metrics": {
+    "startup.desktopFirstMeaningfulMs": { "direction": "max", "limit": 1000, "reason": "F11 desktop startup limit." },
+    "startup.phoneFirstMeaningfulMs": { "direction": "max", "limit": 2500, "reason": "F11 ×4 phone startup limit." },
+    "startup.routeScriptEncodedBytes": { "direction": "max", "limit": 1312596, "reason": "10% reduction from the captured 1,458,440-byte route after startup fixes." },
+    "smoothness.desktopIdleGyroFps": { "direction": "min", "limit": 60, "reason": "F11 desktop frame-rate limit." },
+    "smoothness.phoneIdleGyroFps": { "direction": "min", "limit": 50, "reason": "F11 ×4 phone frame-rate limit." },
+    "smoothness.connectingRingDesktopFps": { "direction": "min", "limit": 60, "reason": "F11 desktop frame-rate limit." },
+    "smoothness.connectingRingPhoneFps": { "direction": "min", "limit": 50, "reason": "F11 ×4 phone frame-rate limit." },
+    "smoothness.openFullOrbitMorphDesktopFps": { "direction": "min", "limit": 60, "reason": "F11 desktop frame-rate limit." },
+    "smoothness.openFullOrbitMorphPhoneFps": { "direction": "min", "limit": 50, "reason": "F11 ×4 phone frame-rate limit." },
+    "smoothness.liveMoveDesktopFps": { "direction": "min", "limit": 60, "reason": "F11 desktop frame-rate limit." },
+    "smoothness.liveMovePhoneFps": { "direction": "min", "limit": 50, "reason": "F11 ×4 phone frame-rate limit." },
+    "smoothness.solvePlaybackDesktopFps": { "direction": "min", "limit": 60, "reason": "F11 desktop frame-rate limit." },
+    "smoothness.solvePlaybackPhoneFps": { "direction": "min", "limit": 50, "reason": "F11 ×4 phone frame-rate limit." },
+    "smoothness.algorithmPlaybackDesktopFps": { "direction": "min", "limit": 60, "reason": "F11 desktop frame-rate limit." },
+    "smoothness.algorithmPlaybackPhoneFps": { "direction": "min", "limit": 50, "reason": "F11 ×4 phone frame-rate limit." },
+    "input.liveMoveDesktopToAnimationStartMs": { "direction": "max", "limit": 16.67, "reason": "One desktop display frame." },
+    "input.liveMovePhoneToAnimationStartMs": { "direction": "max", "limit": 20, "reason": "One frame at the 50fps phone target." },
+    "input.keyboardVisualResponseMs": { "direction": "max", "limit": 50, "reason": "F11 keyboard response limit." },
+    "input.keyboardVisualResponseDesktopMs": { "direction": "max", "limit": 50, "reason": "F11 keyboard response limit." },
+    "analysis.resultRevealDesktopMs": { "direction": "max", "limit": 1691.88, "regressionBaseline": 1471.2, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 desktop analysis result." },
+    "analysis.resultRevealPhoneMs": { "direction": "max", "limit": 2423.395, "regressionBaseline": 2107.3, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 ×4 phone analysis result." },
+    "analysis.workerDesktopConstructorToFirstReplyMs": { "direction": "max", "limit": 1344.58, "regressionBaseline": 1169.2, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 worker first reply." },
+    "analysis.workerDesktopConstructorToResultMs": { "direction": "max", "limit": 1651.055, "regressionBaseline": 1435.7, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 worker result." },
+    "analysis.workerPhoneConstructorToFirstReplyMs": { "direction": "max", "limit": 1207.155, "regressionBaseline": 1049.7, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 ×4 phone worker first reply." },
+    "analysis.workerPhoneConstructorToResultMs": { "direction": "max", "limit": 2134.86, "regressionBaseline": 1856.4, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 ×4 phone worker result." },
+    "memory.routeSwitchGrowthMb": { "direction": "max", "limit": 5, "reason": "F11 allows at most 5MB growth over 30 route switches." },
+    "longTasks.maxDuringDesktopSolveMs": { "direction": "max", "limit": 50, "reason": "F11 forbids animation long tasks over 50ms." },
+    "longTasks.maxDuringPhoneSolveMs": { "direction": "max", "limit": 50, "reason": "F11 forbids animation long tasks over 50ms." },
+    "longTasks.maxDuringDesktopAnimationsMs": { "direction": "max", "limit": 50, "reason": "F11 forbids animation long tasks over 50ms." },
+    "longTasks.maxDuringPhoneAnimationsMs": { "direction": "max", "limit": 50, "reason": "F11 forbids animation long tasks over 50ms." },
+    "engine.pairSearchTableColdMs": { "direction": "max", "limit": 88.849, "regressionBaseline": 77.26, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 cold pair-search table setup." },
+    "engine.pairSearchMedianMs": { "direction": "max", "limit": 26.818, "regressionBaseline": 23.32, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 pair-search median." },
+    "engine.pairSearchP95Ms": { "direction": "max", "limit": 728.939, "regressionBaseline": 633.86, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 pair-search p95." },
+    "engine.pairSearchMaxMs": { "direction": "max", "limit": 2265.155, "regressionBaseline": 1969.7, "regressionTolerancePct": 0.15, "reason": "15% regression allowance over measured 78e81d4 maximum pair-search time." }
+  }
+}

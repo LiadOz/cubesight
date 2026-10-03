@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 // The Brain's isolated controller and real shell: the settings panel (one active
 // tab, closes from every path) and its debug drawer (connection log, recordings

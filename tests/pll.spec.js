@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 
 async function openPLL(page) {
   await page.goto('/#/drills/pll');
@@ -71,9 +71,10 @@ test('PLL stays within a mobile viewport and collapses settings', async ({ page 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
-test('PLL canvas stays bounded on a high-density Android display', async ({ browser }) => {
+test('PLL canvas stays bounded on a high-density Android display', async ({ browser }, testInfo) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   const page = await context.newPage();
+  const finishCoverage = await beginCoverage(page, testInfo);
   await page.goto('/#/drills/pll');
   const canvas = page.locator('#pll-cube canvas');
   await expect(canvas).toBeVisible();
@@ -93,6 +94,7 @@ test('PLL canvas stays bounded on a high-density Android display', async ({ brow
     expect(size.documentHeight).toBeLessThan(2_500);
   }
   expect(Math.max(...sizes.map((size) => size.mountHeight)) - Math.min(...sizes.map((size) => size.mountHeight))).toBeLessThan(1);
+  await finishCoverage();
   await context.close();
 });
 

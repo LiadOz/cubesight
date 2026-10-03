@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 for (const [path, view] of [['/drills', 'drills'], ['/progress', 'progress']]) {
   for (const style of ['orbit', 'mono']) {

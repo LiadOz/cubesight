@@ -1,4 +1,4 @@
-import {test, expect} from 'playwright/test';
+import {test, expect} from './helpers/coverage-test.js';
 
 test('corner case filters constrain recorded targets and reject unknown cases', async ({page}) => {
   await page.goto('/#/drills/corners?cases=ubr');

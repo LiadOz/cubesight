@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('progress charts the selected solve cohort, shares the Orbit, and preserves legacy drill totals', async ({ page }) => {
   await page.addInitScript(() => {

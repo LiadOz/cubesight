@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('routed timer saves a solve and its keys stay scoped after navigation', async ({ page }) => {
   await page.addInitScript(() => {

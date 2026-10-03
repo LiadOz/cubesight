@@ -206,7 +206,6 @@ export function createCube3D(container, options = {}) {
     turnHint = group;
     renderer.domElement.dataset.hintMove = move;
     renderer.domElement.dataset.hintLayers = wide ? '2' : '1';
-    renderer.render(scene, camera);
   }
   let bottomFace = 'D';
   let frontFace = 'F';
@@ -412,7 +411,6 @@ export function createCube3D(container, options = {}) {
     if (interactionMode === 'scout') tumbleControls.update();
     else controls.update();
     syncCameraPose();
-    renderer.render(scene,camera);
   }
 
   function setFullTouchRotation(enabled) {
@@ -442,7 +440,6 @@ export function createCube3D(container, options = {}) {
     renderer.domElement.dataset.frontFace=frontFace;
     if (interactionMode === 'scout') tumbleControls.update();
     else controls.update();
-    renderer.render(scene,camera);
   }
   setOrientation();
 
@@ -646,8 +643,9 @@ export function createCube3D(container, options = {}) {
       : interactionMode === 'scout'
         ? `Interactive Cross Scout cube showing all stickers. ${bottomFace} is held on the bottom and ${frontFace} in front.${highlightedPieces.size ? ` Highlighted pieces: ${[...highlightedPieces].join(', ')}.` : ''}`
       : `Three-dimensional corner-recognition cube in a locked ${lockedViewOffset.label} solve view. Current target: ${targets[activeIndex]?.targetCorner || 'corner'}. Hidden stickers remain masked.${feedback ? ` Result: ${feedback.status}. Correct color: ${feedback.correctName}.` : ''}`);
-    // Present the new case immediately rather than waiting for the next loop.
-    if (!applyingAnimationUpdate) renderer.render(scene, camera);
+    // The persistent frame pump paints the latest state once on its next frame.
+    // BLE snapshots and replay updates can arrive together; rendering here too
+    // would duplicate the frame pump's WebGL work.
   }
 
   // Animate a layer turn for scout playback. The caller supplies the state

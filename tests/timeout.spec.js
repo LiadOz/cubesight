@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 const savedProgress = page => page.evaluate(() => Object.fromEntries(Object.entries(localStorage).filter(([key]) => key !== 'cubesight-theme')));
 

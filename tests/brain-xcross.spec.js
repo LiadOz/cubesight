@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 // X-cross is an opportunity, not a stage: the timeline always plans the cross
 // and four pairs; when the cross completes together with a pair the cross

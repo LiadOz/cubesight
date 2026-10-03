@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 

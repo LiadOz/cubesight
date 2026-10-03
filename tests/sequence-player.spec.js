@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 async function mountPlayer(page, style = 'orbit') {
   await page.goto('/#/drills');

@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { generatePllCase } from '../src/pll-logic.js';
 
 test('PLL starts at the requested case and changes case on a same-route link', async ({page}) => {

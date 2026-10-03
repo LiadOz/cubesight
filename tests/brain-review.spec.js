@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { GOLD } from './analysis-golden.mjs';
 import { mountTestBrain, playSolve } from './helpers/fake-brain.js';
 
