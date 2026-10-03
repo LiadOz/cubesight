@@ -10,6 +10,10 @@ test('exposes the installed build and a network version marker', async ({ page, 
   await page.locator('[data-action="open-help"]').click();
   await page.locator('.build-info [data-action="check-update"]').click();
   await expect(page.locator('#update-status')).toContainText('is current');
+  await expect(page.locator('.ui-toast-slot .toast')).toContainText('CubeSight build');
+  const toastBox = await page.locator('.ui-toast-slot .toast').boundingBox();
+  expect(toastBox.x + toastBox.width).toBeGreaterThan(1200);
+  expect(toastBox.y + toastBox.height).toBeGreaterThan(850);
 });
 
 const routes = [

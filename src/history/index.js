@@ -11,6 +11,7 @@ import { algDatabase } from '../algs/runtime.js';
 import { SOLVE_STORE_KEY } from '../solve-metrics.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { fmt } from '../copy/terms.js';
+import { createBreadcrumbs, createButton, createCountPill, createFileInput, createFilledInput, createFilledSelect, createListRow, createSearch } from '../ui/shared/index.js';
 
 export const historyTime = record => {
   return fmt.penalty(record);
@@ -35,17 +36,15 @@ export function initHistory(host) {
   let store, active = false, cube = null, player = null, cubeAbort = null, cubeGeneration = 0, selected = null, move = 0;
   const settings = loadSettings(globalThis.localStorage);
   host.innerHTML = `<section class="brain cs-page history-page" data-brain-style="${settings.style}">
-    <header><h1>history</h1><p>Solves and saved moments on this device.</p><a href="#/solve">back to solve</a></header>
+    <header><h1>history</h1><p>Solves and saved moments on this device.</p><div data-history-crumbs></div></header>
     <form class="history-filters" aria-label="Filter history">
-      <label>search<input type="search" name="query" placeholder="scramble, case, time" /></label>
-      <label>session<select name="session"><option value="all">all sessions</option></select></label>
-      <label>focus<select name="focus"><option value="all">all foci</option><option>speed</option><option>flow</option><option>learning</option></select></label>
-      <label>source<select name="source"><option value="all">all sources</option><option value="smart">cube</option><option value="manual">manual</option><option value="import">import</option></select></label>
+      <div data-history-search></div>
+      <div data-history-session></div>
+      <div data-history-focus></div>
+      <div data-history-source></div>
     </form>
     <details class="history-data"><summary>data and sessions</summary><div class="history-actions">
-      <button type="button" data-action="backup">export data</button><label class="history-file">import data<input type="file" data-import="backup" accept=".json,application/json" /></label>
-      <button type="button" data-action="cstimer">export csTimer</button><label class="history-file">import csTimer<input type="file" data-import="cstimer" accept=".json,application/json" /></label>
-      <label>session gap (minutes)<input type="number" name="gap" min="1" max="1440" value="${settings.session.gapMin}" /></label>
+      <span data-history-export-actions></span><div data-history-imports></div><div data-history-gap></div>
     </div><p>Changing the gap starts future sessions after that idle time.</p></details>
     <p class="history-status" role="status" aria-live="polite"></p>
     <div class="history-layout"><div><p class="history-count"></p><ol class="history-list" aria-label="Solves"></ol></div>
@@ -53,9 +52,26 @@ export function initHistory(host) {
   </section>`;
   const root = host.firstElementChild;
   syncPageTokens(root);
+  createBreadcrumbs(root.querySelector('[data-history-crumbs]'), [{ label: 'solve', href: '#/' }, { label: 'history', href: '#/history' }]);
   const form = root.querySelector('form');
+  createSearch(form.querySelector('[data-history-search]'), { placeholder: 'scramble, case, time', label: 'search', name: 'query' });
+  const filterSelects = [
+    createFilledSelect(form.querySelector('[data-history-session]'), { label: 'session', name: 'session', value: 'all', options: [{ value: 'all', label: 'all sessions' }] }),
+    createFilledSelect(form.querySelector('[data-history-focus]'), { label: 'focus', name: 'focus', value: 'all', options: [{ value: 'all', label: 'all foci' }, { value: 'speed', label: 'speed' }, { value: 'flow', label: 'flow' }, { value: 'learning', label: 'learning' }] }),
+    createFilledSelect(form.querySelector('[data-history-source]'), { label: 'source', name: 'source', value: 'all', options: [{ value: 'all', label: 'all sources' }, { value: 'smart', label: 'cube' }, { value: 'manual', label: 'manual' }, { value: 'import', label: 'import' }] }),
+  ];
   const status = root.querySelector('.history-status');
   const detail = root.querySelector('.history-detail');
+  const countHost = root.querySelector('.history-count');
+  const solveCount = createCountPill(countHost, 0, 'solves');
+  const pinCount = createCountPill(countHost, 0, 'pins');
+  const exportActions = root.querySelector('[data-history-export-actions]');
+  createButton(exportActions, { label: 'export data', variant: 'secondary' }).dataset.action = 'backup';
+  createButton(exportActions, { label: 'export csTimer', variant: 'secondary' }).dataset.action = 'cstimer';
+  const backupFile = createFileInput(root.querySelector('[data-history-imports]'), { label: 'import data', accept: '.json,application/json' }); backupFile.input.dataset.import = 'backup';
+  const csTimerFile = createFileInput(root.querySelector('[data-history-imports]'), { label: 'import csTimer', accept: '.json,application/json' }); csTimerFile.input.dataset.import = 'cstimer';
+  const gapInput = createFilledInput(root.querySelector('[data-history-gap]'), { label: 'session gap (minutes)', name: 'gap', type: 'number', value: settings.session.gapMin });
+  gapInput.input.min = '1'; gapInput.input.max = '1440'; gapInput.input.step = '1';
   const report = text => { status.textContent = text; };
   const stopPlayback = () => player?.pause();
   function destroyReplay() {
@@ -92,25 +108,35 @@ export function initHistory(host) {
     if (!store) return;
     const filters = Object.fromEntries(new FormData(form));
     const list = filterHistory(store.records, filters);
-    root.querySelector('.history-count').textContent = `${list.length} solves · ${store.pins.count} pins`;
+    solveCount.textContent = `${list.length} solves`;
+    pinCount.textContent = `${store.pins.count} pins`;
     const rows = list.map(record => {
       const row = make('li');
-      const button = make('button', `${historyTime(record)} · ${historyDate(record.at)} · ${record.focus} · ${record.source === 'manual' ? 'manual' : record.source === 'import' ? 'import' : 'cube'}`);
-      button.type = 'button'; button.dataset.at = String(record.at);
-      button.setAttribute('aria-pressed', String(record.at === selected?.at));
-      row.append(button); return row;
+      const source = record.source === 'manual' ? 'manual' : record.source === 'import' ? 'import' : 'cube';
+      const moves = Array.isArray(record.solveMoves) ? record.solveMoves : [];
+      const durations = Array.isArray(record.moveTimes) ? record.moveTimes : [];
+      const segments = moves.map((move, index) => {
+        const duration = Number(durations[index]);
+        return { key: `move-${index}`, label: fmt.move(move), weight: Number.isFinite(duration) && duration > 0 ? duration : 1, state: 'done', fill: 1 };
+      });
+      const button = createListRow(row, {
+        title: historyTime(record), detail: `${historyDate(record.at)} · ${record.focus} · ${source}`,
+        selected: record.at === selected?.at, ariaPressed: record.at === selected?.at, interactive: true,
+        orbit: { segments, label: `Solve ${historyTime(record)} by move timing` },
+      });
+      button.dataset.at = String(record.at);
+      return row;
     });
-    root.querySelector('.history-list').replaceChildren(...rows.length ? rows : [make('li', 'No solves match. Change a filter or start a solve.')]);
+    const listHost = root.querySelector('.history-list');
+    listHost.querySelectorAll('.ui-list-row').forEach(row => row.destroy?.());
+    listHost.replaceChildren(...rows.length ? rows : [make('li', 'No solves match. Change a filter or start a solve.')]);
   }
   function refreshSessions() {
-    const select = form.elements.session;
-    const old = select.value;
-    const all = make('option', 'all sessions'); all.value = 'all';
-    select.replaceChildren(all, ...listSessions(store.records).reverse().map(session => {
-      const option = make('option', `${historyDate(session.firstAt)} · ${fmt.count(session.count, 'solve')} · ${session.focus}`);
-      option.value = session.id; return option;
-    }));
-    if ([...select.options].some(option => option.value === old)) select.value = old;
+    const sessionFilter = filterSelects[0];
+    const options = [{ value: 'all', label: 'all sessions' }, ...listSessions(store.records).reverse().map(session => ({
+      value: session.id, label: `${historyDate(session.firstAt)} · ${fmt.count(session.count, 'solve')} · ${session.focus}`,
+    }))];
+    sessionFilter.setOptions(options, sessionFilter.value());
   }
   function showPosition() {
     if (!selected?.solveMoves?.length) return;
@@ -140,7 +166,7 @@ export function initHistory(host) {
     if (pins.length) detail.append(make('p', `${pins.length} saved moments`));
     const actions = make('div', undefined, 'history-actions');
     for (const [action, text] of [['none', 'clear penalty'], ['plus2', '+2'], ['dnf', 'DNF'], ['delete', 'delete']]) {
-      const button = make('button', text); button.type = 'button'; button.dataset.action = action; actions.append(button);
+      const button = createButton(actions, { label: text, variant: action === 'delete' ? 'text' : 'secondary' }); button.dataset.action = action;
     }
     detail.append(actions); renderList();
   }
@@ -168,7 +194,7 @@ export function initHistory(host) {
       await store.flush();
       destroyReplay(); selected = null;
       detail.replaceChildren(make('p', 'Solve deleted.'));
-      const undo = make('button', 'undo'); undo.type = 'button'; undo.dataset.action = 'undo'; detail.append(undo); refreshSessions(); renderList();
+      const undo = createButton(detail, { label: 'undo', variant: 'secondary' }); undo.dataset.action = 'undo'; refreshSessions(); renderList();
     } else if (['none', 'plus2', 'dnf'].includes(action)) {
       const record = store.setPenalty(selected.at, action === 'none' ? null : action === 'plus2' ? '+2' : 'DNF'); await store.flush(); if (record) showRecord(record);
     }
@@ -224,6 +250,6 @@ export function initHistory(host) {
         else { selected = null; detail.replaceChildren(make('p', 'This solve was deleted. Select another solve.')); }
       }
     },
-    detach() { active = false; stopPlayback(); destroyReplay(); document.removeEventListener('cubesight-theme', retheme); host.replaceChildren(); },
+    detach() { active = false; stopPlayback(); destroyReplay(); filterSelects.forEach(filter => filter.destroy()); document.removeEventListener('cubesight-theme', retheme); host.replaceChildren(); },
   };
 }

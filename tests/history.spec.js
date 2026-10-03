@@ -10,6 +10,7 @@ async function seed(page, style = 'orbit') {
     if (!localStorage.getItem('cubesight-brain-settings-v2')) localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
   }, { records, style });
   await page.goto('/#/history');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumbs' })).toContainText('solvehistory');
   await expect(page.locator('.history-count')).toContainText('2 solves');
 }
 
@@ -17,11 +18,24 @@ test('history filters, replays and edits records without affecting their source'
   await seed(page);
   const list = page.locator('.history-list');
   await expect(list.locator('button')).toHaveCount(2);
-  await page.locator('select[name="source"]').selectOption('manual');
+  const session = page.getByRole('combobox', { name: 'session', exact: true });
+  await session.click();
+  expect(await page.getByRole('option').count()).toBeGreaterThan(1);
+  await page.getByRole('option').nth(1).click();
   await expect(list.locator('button')).toHaveCount(1);
+  await session.click();
+  await page.getByRole('option', { name: 'all sessions', exact: true }).click();
+  await expect(list.locator('button')).toHaveCount(2);
+  await page.getByRole('combobox', { name: 'source', exact: true }).click();
+  await page.getByRole('option', { name: 'manual', exact: true }).click();
+  await expect(list.locator('button')).toHaveCount(1);
+  await page.getByRole('searchbox', { name: 'search' }).fill('F2');
+  await expect(list.locator('button')).toHaveCount(1);
+  await page.getByRole('searchbox', { name: 'search' }).fill('');
   await list.locator('button').click();
   await expect(page.locator('.history-detail')).toContainText('No moves were recorded.');
-  await page.locator('select[name="source"]').selectOption('smart');
+  await page.getByRole('combobox', { name: 'source', exact: true }).click();
+  await page.getByRole('option', { name: 'cube', exact: true }).click();
   await list.locator('button').click();
   await expect(page.locator('.history-cube canvas')).toBeVisible();
   await page.getByRole('button', { name: 'Next move', exact: true }).click();

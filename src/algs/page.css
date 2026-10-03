@@ -40,9 +40,6 @@
 .alg-cube-card .mg-strip { box-sizing: border-box; width: 100%; }
 .alg-detail__tools { max-width: 760px; margin: 0 auto 14px; }
 .alg-detail__tools span { color: var(--b-muted); font-size: 12px; }
-.alg-detail button, .alg-drill button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 13px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); background: var(--b-surface); color: var(--b-ink); cursor: pointer; }
-.alg-detail button:hover, .alg-drill button:hover { border-color: var(--b-accent); }
-.alg-detail button:disabled { opacity: .5; cursor: default; }
 .alg-entry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; }
 .alg-entry { padding: 16px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); }
 .alg-entry.is-picked { border-color: var(--b-accent); box-shadow: inset 0 0 0 1px var(--b-accent); }
@@ -60,7 +57,7 @@
 .alg-drill__alg a { display: inline-flex; align-items: center; min-height: 44px; margin-top: 10px; }
 .alg-drill__timer { padding: 16px; text-align: center; font: 600 clamp(32px, 8vw, 60px) var(--b-font-num); }
 .alg-drill__actions { justify-content: center; margin-top: 10px; }
-.alg-drill [data-action="drill-start"] { background: var(--b-accent); color: var(--b-on-accent); border-color: transparent; }
+.alg-drill__actions .btn { min-height: 44px; }
 .alg-metric-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
 .alg-metric-stats span { display: grid; gap: 4px; color: var(--b-muted); font-size: 11px; }
 .alg-metric-stats strong { color: var(--b-ink); font: 600 16px var(--b-font-mono); }

@@ -305,18 +305,21 @@ test('global header keeps sync and disconnect available through recovery phases'
     let snapshot = { phase: 'connecting', canSync: false, canDisconnect: true };
     const session = { getSnapshot: () => snapshot, subscribe(callback) { listener = callback; callback(snapshot); return () => {}; } };
     const header = createHeader(host, { session, showDevDrawer: false });
+    const menus = document.querySelectorAll('.ui-cube-menu__drawer');
+    const menu = menus[menus.length - 1];
+    const summary = header.querySelector('.ui-cube-chip');
     const result = {};
     for (const phase of ['connecting', 'awaiting-solved', 'desynced', 'interrupted']) {
       snapshot = { phase, canSync: phase !== 'connecting', canDisconnect: true };
       listener(snapshot);
-      result[phase] = Object.fromEntries(['connect', 'sync', 'recenter', 'disconnect'].map(action => [action, !header.querySelector(`[data-cube-action="${action}"]`).disabled]));
+      result[phase] = Object.fromEntries(['connect', 'sync', 'recenter', 'disconnect'].map(action => [action, !menu.querySelector(`[data-cube-action="${action}"]`).disabled]));
     }
     snapshot = { phase: 'disconnected', link: { status: 'lost' }, canSync: false, canDisconnect: false };
     listener(snapshot);
     result.lostLink = {
-      status: header.querySelector('.ui-cube-chip').getAttribute('aria-label'),
+      status: summary.getAttribute('aria-label'),
       phase: header.querySelector('.ui-cube-menu').dataset.phase,
-      connect: !header.querySelector('[data-cube-action="connect"]').disabled,
+      connect: !menu.querySelector('[data-cube-action="connect"]').disabled,
     };
     header.destroy(); host.remove(); return result;
   });

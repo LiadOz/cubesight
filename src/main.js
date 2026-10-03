@@ -8,7 +8,7 @@ import './brain/css/tokens-mono.css';
 import './legacy-reskin.css';
 import './not-found.css';
 import { setupTheme } from './theme.js';
-import { createHeader } from './ui/shared/index.js';
+import { createHeader, createToastSlot } from './ui/shared/index.js';
 import { smartCube, clearSavedCubeData } from './smart-cube-bluetooth.js';
 import { clearRecording, enableRecordingPersistence, getRecording, recordNavigation, recordView } from './recorder.js';
 import { saveRecording } from './brain-recording.js';
@@ -448,7 +448,6 @@ document.querySelector('#app').innerHTML = `
 
   <footer><span>Cubesight <span class="footer-dot">·</span> solve · see the pattern <button class="build-badge" data-action="check-update">Build <b>${BUILD_LABEL}</b></button></span><span>${MSG.stays}</span></footer>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="pause-overlay" class="pause-overlay" hidden role="region" aria-label="paused" aria-live="polite"><div><p class="eyebrow">Taking a break?</p><h2>paused</h2><p>This case won't count.</p><button class="primary-button" data-action="resume">resume</button></div></div>
   <dialog id="summary-dialog" class="summary-dialog">
     <button class="dialog-close" data-action="close-summary" aria-label="Close">×</button>
@@ -1167,12 +1166,8 @@ function showSummary() {
   document.querySelector('#summary-dialog').showModal();
 }
 
-function showToast(message) {
-  const toast = document.querySelector('#toast');
-  toast.textContent = message;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 1800);
-}
+const appToast = createToastSlot();
+function showToast(message) { appToast.show({ text: message }); }
 
 let checkingForUpdate = false;
 async function checkForUpdate() {
