@@ -1,13 +1,43 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdirSync, readFileSync, unlinkSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { init, parse } from 'es-module-lexer';
-import { buildPlaywrightSelection, changedTestInputs, fingerprintTestInputs, grepPatternForCases } from './test-selection.mjs';
+import { buildPlaywrightSelection, changedTestInputs, fingerprintTestInputs, grepPatternForCases, impactMapAgeMs } from './test-selection.mjs';
+import { flattenTests } from './test-health-report.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const run = (command, args) => spawnSync(command, args, { cwd: root, stdio: 'inherit' });
+const affectedReportPath = path.join(root, 'test-results/health/affected-latest.json');
+const run = (command, args) => {
+  const isPlaywright = command === 'npx' && args[0] === 'playwright';
+  const started = performance.now();
+  const finalArgs = isPlaywright && !args.some((argument) => argument.startsWith('--reporter'))
+    ? [...args, '--reporter=line,json']
+    : args;
+  if (isPlaywright) {
+    mkdirSync(path.dirname(affectedReportPath), { recursive: true });
+    try { unlinkSync(affectedReportPath); } catch { /* no prior report */ }
+  }
+  const result = spawnSync(command, finalArgs, {
+    cwd: root,
+    stdio: 'inherit',
+    env: isPlaywright ? { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: affectedReportPath } : process.env,
+  });
+  if (isPlaywright) {
+    const wallTimeMs = Math.round(performance.now() - started);
+    console.log(`Affected Playwright wall time: ${(wallTimeMs / 1000).toFixed(1)}s.`);
+    try {
+      const report = JSON.parse(readFileSync(affectedReportPath, 'utf8'));
+      const slowest = flattenTests(report).sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
+      console.log(`Slowest affected tests: ${slowest.map(({ durationMs, name }) => `${durationMs}ms ${name}`).join('; ') || 'no timings parsed'}.`);
+    } catch {
+      console.warn(`No Playwright JSON timing report was written to ${path.relative(root, affectedReportPath)}.`);
+    }
+  }
+  return result;
+};
 const playwrightConfig = process.env.PLAYWRIGHT_CONFIG ? [`--config=${process.env.PLAYWRIGHT_CONFIG}`] : [];
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 const normalize = (value) => value.replaceAll('\\', '/').replace(/^\.\//u, '');
@@ -83,8 +113,7 @@ const edges = await importGraph(allFiles);
 const impactMapPath = path.join(root, 'tests/impact-map.json');
 let impactMap;
 try { impactMap = JSON.parse(await readFile(impactMapPath, 'utf8')); } catch { impactMap = null; }
-const generatedAt = impactMap?.generatedAt ? Date.parse(impactMap.generatedAt) : NaN;
-const mapAgeMs = Number.isFinite(generatedAt) ? Date.now() - generatedAt : Infinity;
+const mapAgeMs = impactMapAgeMs(impactMap);
 const inputChanges = changedTestInputs(impactMap?.inputFingerprints, await fingerprintTestInputs(root));
 const refreshImpactMap = !unitOnly && (mapAgeMs > 7 * 24 * 60 * 60 * 1000 || inputChanges.length > 0) && dryRunIndex < 0;
 const full = changed.some(safetyValve);
