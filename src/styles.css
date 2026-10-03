@@ -41,10 +41,6 @@ h1 { margin: 0; font-size: 31px; letter-spacing: -1.2px; line-height: 1.2; font-
 .learning-toggle input { width: 17px; height: 17px; accent-color: var(--accent); }
 .exposure-picker { display: flex; align-items: center; gap: 8px; color: var(--muted); }
 .exposure-picker select { min-height: 38px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); font-size: 12px; }
-.sprint-progress { margin-left: auto; min-width: 120px; font: 10px var(--mono); }
-.sprint-progress span { display: block; text-align: right; margin-bottom: 7px; }
-.progress-track { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
-.progress-track i { display: block; height: 100%; width: 0; background: var(--accent); }
 .trainer-shell { display: grid; grid-template-columns: minmax(0,1.28fr) minmax(360px,1fr); min-height: 498px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: white; box-shadow: 0 8px 30px #20334705; }
 .cube-stage { position: relative; min-width: 0; display: flex; flex-direction: column; padding: 22px 24px 16px; background: radial-gradient(ellipse at 50% 38%, #253a49, #142330 72%); overflow: hidden; }
 .stage-topline, .cube-caption { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #afc1ce; font: 10px var(--mono); }
@@ -147,12 +143,6 @@ h2 { margin: 0; font-size: 23px; letter-spacing: -.6px; }
 .cross-option.neutral i { background: conic-gradient(#fff 0 16.66%,#ffd500 0 33.33%,#009b48 0 50%,#0051ba 0 66.66%,#e7332a 0 83.33%,#ff6b00 0); }
 .new-case-button { min-height: 40px; padding: 0 16px; border: 0; border-radius: 8px; background: var(--accent); color: white; font-size: 11px; font-weight: 700; }
 .new-case-button span { margin-left: 16px; }
-.f2l-score { margin-top: 26px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
-.f2l-score > span { display: block; color: var(--muted); font-size: 11px; }
-.f2l-score strong { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; font: 52px/1 var(--mono); letter-spacing: -3px; }
-.f2l-score strong i { color: #b2bdc9; font-size: .42em; font-style: normal; }
-.f2l-score strong b { font-weight: 500; }
-.f2l-score strong b:last-child { color: #99a7b5; }
 .f2l-instructions { margin: 24px 0 18px; }
 .f2l-instructions p { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.35; letter-spacing: -.5px; }
 .f2l-instructions small { display: block; margin-top: 10px; color: var(--muted); font-size: 10px; line-height: 1.6; }
@@ -162,9 +152,6 @@ h2 { margin: 0; font-size: 23px; letter-spacing: -.6px; }
 .selected-piece-card strong { grid-column: 2; grid-row: 1 / 3; align-self: center; font: 600 14px var(--mono); }
 .selected-piece-card small { color: var(--muted); font-size: 10px; }
 .f2l-timings { min-height: 30px; margin-top: 12px; color: var(--muted); font: 10px/1.6 var(--mono); }
-.f2l-progress { display: flex; gap: 7px; margin-top: auto; padding-top: 16px; }
-.f2l-progress i { flex: 1; height: 26px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: #f0f3f6; color: var(--muted); font: 9px var(--mono); }
-.f2l-progress i.done { border-color: #90c9be; background: #e3f7ed; color: #087849; }
 .f2l-planner-choices { display: grid; gap: 8px; margin-top: 14px; }
 .planner-choice { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--ink); text-align: left; }
 .planner-choice strong { font-size: 12px; }
@@ -184,6 +171,8 @@ h2 { margin: 0; font-size: 23px; letter-spacing: -.6px; }
 .build-info code { font:12px var(--mono); }
 .build-info button { justify-self:end; grid-column:2; grid-row:1 / 3; min-height:40px; }
 .build-info small { color:var(--muted); font-size:9px; line-height:1.5; }
+.toast { position: fixed; left: 50%; bottom: 25px; max-width: calc(100% - 24px); transform: translate(-50%,20px); z-index: 20; padding: 13px 18px; border-radius: 9px; background: var(--ink); color: white; font-size: 11px; opacity: 0; pointer-events: none; transition: .2s ease; }
+.toast.show { opacity: 1; transform: translate(-50%,0); }
 dialog { width: min(500px,calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 36px; border: 1px solid var(--line); border-radius: 18px; background: white; box-shadow: 0 30px 90px #10233344; }
 dialog::backdrop { background: #102333bb; backdrop-filter: blur(6px); }
 .dialog-close { position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; border: 0; border-radius: 50%; background: #f0f3f6; font-size: 24px; }
@@ -214,7 +203,6 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
   .training-settings { margin-bottom: 12px; border-radius: 10px; } .training-settings summary { min-height: 44px; padding: 11px 13px; gap: 10px; font-size: 11px; } .training-settings summary small { font-size: 9px; }
   .mode-bar { flex-direction: column; align-items: stretch; padding: 13px; gap: 12px; } .mode-group { justify-content: space-between; gap: 8px; }
   .segment { min-height: 42px; padding: 8px 10px; font-size: 10px; } .learning-controls { gap: 12px; } .learning-toggle { min-height: 44px; } .exposure-picker select { min-height: 44px; font-size: 16px; }
-  .sprint-progress { width: 100%; }
   .trainer-shell { display: flex; flex-direction: column; min-height: 0; border-radius: 13px; }
   .cube-stage { padding: 12px 14px 10px; } .stage-topline { font-size: 9px; gap: 8px; } .view-lock { font-size: 8px; padding: 4px 6px; } .corner-result { top: 40px; right: 14px; max-width: calc(100% - 28px); padding: 6px 9px; font-size: 10px; }
   .cube-mount { flex: none; height: clamp(200px,28svh,275px); min-height: 0; }
@@ -236,10 +224,10 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
   .cross-picker { flex-direction: column; align-items: stretch; } .cross-options { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); margin-top: 5px; }
   .f2l-drill-picker { flex-direction: column; align-items: stretch; } .f2l-drill-picker .segmented { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 5px; }
   .cross-option { min-height: 44px; padding: 7px 5px; gap: 4px; font-size: 9px; } .cross-option i { width: 13px; height: 13px; } .new-case-button { min-height: 44px; }
-  .f2l-score { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-bottom: 8px; } .f2l-score strong { margin: 0; font-size: 30px; letter-spacing: -1.5px; } .f2l-score > span { font-size: 10px; }
   .f2l-instructions { margin: 12px 0; } .f2l-instructions p { font-size: 15px; } .f2l-instructions small { font-size: 9px; margin-top: 6px; }
   .selected-piece-card { padding: 10px 12px; } .f2l-timings { font-size: 9px; min-height: 20px; margin-top: 8px; }
-  .f2l-progress { padding-top: 10px; } .f2l-progress i { height: 18px; font-size: 8px; } .f2l-footer-actions { margin-top: 10px; padding-top: 4px; font-size: 8px; }
+  .f2l-footer-actions { margin-top: 10px; padding-top: 4px; font-size: 8px; }
+  .f2l-progress { padding-top: 10px; } .f2l-progress i { height: 18px; font-size: 8px; }
   .f2l-info-grid { grid-template-columns: 1fr; gap: 10px; } .f2l-info-grid article { padding: 18px; } .f2l-info-grid h3 { margin-top: 12px; }
   dialog { padding: 36px 22px 24px; } dialog h2 { font-size: 25px; }
 }
@@ -249,8 +237,8 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
 
 /* Theme surfaces are independent of sticker colors and cube lighting. */
 :root[data-theme="dark"] { color-scheme: dark; --ink: #e3ebf3; --paper: #101820; --panel: #19242f; --line: #30404e; --muted: #a6b6c6; --accent: #66dfc5; color: var(--ink); background: var(--paper); }
-[data-theme="dark"] :is(.training-settings, .trainer-shell, .metric-card, .trend-card, .case-table-card, .f2l-info-grid article, dialog, .pause-overlay > div) { background: var(--panel); }
-[data-theme="dark"] :is(.segmented, .cross-option, .dialog-close, .selected-piece-card, .f2l-progress i) { background: #22313e; }
+[data-theme="dark"] :is(.training-settings, .trainer-shell, .metric-card, .trend-card, .case-table-card, dialog, .pause-overlay > div) { background: var(--panel); }
+[data-theme="dark"] :is(.segmented, .cross-option, .dialog-close, .selected-piece-card) { background: #22313e; }
 [data-theme="dark"] .planner-choice { background: #22313e; }
 [data-theme="dark"] .planner-choice.best { background: #17483b; }
 [data-theme="dark"] .planner-choice.picked-wrong { background: #542c2c; }
@@ -264,12 +252,13 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
 [data-theme="dark"] .answer-button.wrong { background: #482c2b; border-color: #ff998c; }
 [data-theme="dark"] :is(.feedback-line p.is-correct, .f2l-instructions p.is-correct) { color: #83e7b3; }
 [data-theme="dark"] :is(.feedback-line p.is-wrong, .f2l-instructions p.is-wrong, .danger) { color: #ffa395; }
-[data-theme="dark"] :is(.retention-panel, .cross-option.active, .selected-piece-card.has-selection, .f2l-progress i.done, .correction-button) { background: #193830; border-color: #386b5b; color: #d6f4e8; }
+[data-theme="dark"] :is(.retention-panel, .cross-option.active, .selected-piece-card.has-selection, .correction-button) { background: #193830; border-color: #386b5b; color: #d6f4e8; }
 [data-theme="dark"] .retention-panel span { color: #8ae2ca; }
 [data-theme="dark"] .retention-panel small { color: #b0c9c2; }
 [data-theme="dark"] :is(.new-case-button, .primary-button) { color: #102923; }
 [data-theme="dark"] .trend-chart > i { background: #3d7f73; }
 [data-theme="dark"] .trend-chart > i:last-child { background: var(--accent); }
+[data-theme="dark"] .toast { background: #dcece8; color: #152a25; }
 @media (hover:hover) { [data-theme="dark"] .answer-button:hover:not(.muted):not(.correct):not(.wrong) { background: #2c414f; border-color: #7a9bad; } }
 
 /* One-time smart-cube MAC entry dialog (self-contained; works in any trainer view). */

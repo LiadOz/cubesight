@@ -1,8 +1,9 @@
 import '../pages/page.css';
 import './cross-planning.css';
-import { createPageCube } from '../pages/cube-view.js';
+import { Cube } from '../ui/cube/index.js';
+import { readCaseColorSetting, CASE_COLOR_CHANGE_EVENT } from '../ui/cube/case-color.js';
 import { createSequencePlayer } from '../moves/sequence-player.js';
-import { COLOR_HEX, FACE_COLORS, randomScramble, toRenderData, validateSolution } from '../cross-cube.js';
+import { FACE_COLORS, randomScramble, validateSolution } from '../cross-cube.js';
 import { analysisStateFromScramble, parseAnalysisMoves } from '../analysis/long-replay.js';
 import { solveCross } from '../cross-solver.js';
 import { createRoundPanel } from './round-panel.js';
@@ -13,6 +14,9 @@ import { syncPageTokens } from '../pages/tokens.js';
 import { loadSettings } from '../brain/settings.js';
 import { fmt } from '../copy/terms.js';
 import { parseCaseFilter } from './case-filter.js';
+import { createTrainerOrbit } from '../trainers/orbit-round.js';
+import { displayFaceColor, colorHex } from '../trainers/case-display.js';
+import { mountCaseColorControl } from '../trainers/case-color-control.js';
 
 const faces = Object.keys(FACE_COLORS);
 const title = color => color[0].toUpperCase() + color.slice(1);
@@ -27,8 +31,8 @@ export function createCrossPlanning(root) {
   let player = null;
   root.innerHTML = `<section class="cs-page brain cross-planning-page" data-brain-style="${loadSettings(globalThis.localStorage).style}">
     <header class="cs-head"><p class="cs-eyebrow">drills / cross planning</p><h1>cross planning</h1><p class="cs-sub">Choose a cross from the scramble. Then check the verified plans.</p></header>
+    <div class="trainer-round-host" id="cross-round-host"></div>
     <section class="cp-session" aria-label="Cross planning case">
-      <div class="cp-status"><span id="cp-case">case 1</span><span id="cp-time">—</span></div>
       <div class="cp-layout"><div class="cp-cube" id="cp-cube" aria-label="Scrambled cube"></div>
         <div class="cp-work"><p class="cp-question">Which cross would you start with?</p><p class="cp-hint">Pick a face before seeing the plans. The search checks all six crosses locally.</p>
           <div class="cp-faces" id="cp-faces" role="group" aria-label="Choose a cross face"></div>
@@ -43,20 +47,23 @@ export function createCrossPlanning(root) {
     <p class="cp-source">Every plan is replayed against the cube state before it appears. Search is local and bounded. <a href="#/drills/scout?mode=explore">open Cross Scout</a></p>
   </section>`;
   const $ = selector => root.querySelector(selector);
+  const disposeCaseColorControl = mountCaseColorControl($('.cs-head'));
+  const trainerOrbit = createTrainerOrbit($('#cp-cube'));
   const reviewFrom = /^review:(\d{1,16}):(\d{1,5})$/.exec(start.from ?? '');
   if (reviewFrom) {
     const back = $('#cp-return');
     back.hidden = false;
     back.innerHTML = `<a href="#/review/${reviewFrom[1]}?move=${reviewFrom[2]}">← review · solve · move ${Number(reviewFrom[2]) + 1}</a>`;
   }
-  const cubeReady = createPageCube($('#cp-cube'), { mode: 'scout' }).then(view => {
-    if (detached) { view.destroy(); return; }
-    cube = view;
+  const cubeReady = Promise.resolve().then(() => {
+    if (detached) return;
+    cube = new Cube($('#cp-cube'), { mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(), caseSeed: 'cross:initial', label: 'cross planning case' });
     if (current?.chosen) showPlan(current.chosen, false);
-    else if (current?.state) cube.update(toRenderData(current.state));
+    else if (current?.state) cube.setState(current.state);
   }).catch(() => { if (!detached) $('#cp-cube').textContent = '3D cube needs WebGL. Cross choices still work.'; });
   function buildRoundPanel() {
-    roundPanel = createRoundPanel(root, { drill: 'cross', getSettings: () => ({ search: 'all six crosses' }), onComplete: () => { renderChoices(); $('#cp-next').hidden = true; }, onRestart: () => { void nextCase(); } });
+    roundPanel = createRoundPanel($('#cross-round-host'), { drill: 'cross', orbitHost: $('#cp-cube'), getSettings: () => ({ search: 'all six crosses' }), onComplete: () => { renderChoices(); $('#cp-next').hidden = true; }, onRestart: () => { void nextCase(); } });
+    trainerOrbit.connect(roundPanel.orbit, () => roundPanel.getViewModel());
     roundPanel.setActive(active);
   }
   function showPlan(chosen, autoplay = true) {
@@ -75,13 +82,14 @@ export function createCrossPlanning(root) {
     player.setActive(active);
     if (autoplay) void player.play();
   }
+  const visibleColor = face => displayFaceColor(face, readCaseColorSetting(), current?.caseSeed || 'cross:idle');
   function renderChoices() {
     $('#cp-faces').replaceChildren();
     for (const face of requestedFaces) {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'cp-face'; button.dataset.face = face;
       button.disabled = !current?.plans || !current.plans.some(plan => plan.face === face) || Boolean(answer) || Boolean(roundPanel?.complete);
-      button.innerHTML = `<i style="--face-color:${COLOR_HEX[FACE_COLORS[face]]}" aria-hidden="true"></i><span>${title(FACE_COLORS[face])}</span><kbd>${face}</kbd>`;
+      button.innerHTML = `<i style="--face-color:${colorHex(visibleColor(face))}" aria-hidden="true"></i><span>${title(visibleColor(face))}</span><kbd>${face}</kbd>`;
       button.addEventListener('click', () => choose(face));
       $('#cp-faces').append(button);
     }
@@ -91,7 +99,7 @@ export function createCrossPlanning(root) {
     const plans = [];
     for (const face of requestedFaces) {
       if (token !== generation || detached || !active) return [];
-      $('#cp-feedback').textContent = `checking ${title(FACE_COLORS[face])} cross…`;
+      $('#cp-feedback').textContent = `checking ${title(visibleColor(face))} cross…`;
       try {
         const reply = await solveCross({ scramble: normalizedScramble, face, kind: 'cross', maxResults: 2, maxDepth: 10, timeLimitMs: 450 });
         for (const result of reply.results || []) {
@@ -109,7 +117,6 @@ export function createCrossPlanning(root) {
     player?.setActive(false);
     answer = null; current = null;
     $('#cp-reveal').hidden = true; $('#cp-playback').hidden = true; $('#cp-next').hidden = true;
-    $('#cp-time').textContent = '—';
     if (!caseFilter.valid) {
       $('#cp-feedback').textContent = `Unknown cross face${caseFilter.invalid.length > 1 ? 's' : ''}: ${caseFilter.invalid.join(', ')}. Use U, D, F, B, R, or L.`;
       renderChoices();
@@ -139,9 +146,12 @@ export function createCrossPlanning(root) {
     let state;
     try { state = analysisStateFromScramble(text); }
     catch { $('#cp-feedback').textContent = 'This position could not be loaded. No substitute scramble was started.'; renderChoices(); return; }
-    cube?.update(toRenderData(state));
-    current = { scramble: text, state, plans: null };
-    $('#cp-case').textContent = `case ${++caseNumber}`;
+    const caseSeed = `cross:${caseNumber + 1}:${text}`;
+    cube?.setCaseOrientation(readCaseColorSetting(), { seed: caseSeed });
+    cube?.setState(state);
+    trainerOrbit?.update({ index: roundPanel?.getViewModel()?.round?.answers?.length || 0, state: 'current', value: 'choose a cross' });
+    current = { scramble: text, state, plans: null, caseSeed };
+    caseNumber++;
     renderChoices();
     const plans = await searchPlans(text, state, token);
     if (token !== generation || detached || roundPanel?.complete) return;
@@ -161,12 +171,12 @@ export function createCrossPlanning(root) {
     roundPanel?.record({ correct, ms: elapsed, caseId: face });
     const chosen = current.plans.filter(plan => plan.face === face).sort((a, b) => a.moves.length - b.moves.length)[0];
     const best = scored[0];
-    $('#cp-feedback').textContent = correct ? `Good read. ${title(FACE_COLORS[face])} is tied for the shortest cross found here.` : `The shortest cross found here is ${title(FACE_COLORS[best.face])}. Compare the routes.`;
-    $('#cp-time').textContent = `${(elapsed / 1000).toFixed(2)} s`;
+    $('#cp-feedback').textContent = correct ? `Good read. ${title(visibleColor(face))} is tied for the shortest cross found here.` : `The shortest cross found here is ${title(visibleColor(best.face))}. Compare the routes.`;
+    trainerOrbit?.update({ index: Math.max(0, (roundPanel?.getViewModel()?.round?.answers?.length || 1) - 1), state: correct ? 'good' : 'bad', value: `${(elapsed / 1000).toFixed(2)} s`, text: correct ? `${title(visibleColor(face))} is tied for the shortest cross found.` : `The shortest cross found here is ${title(visibleColor(best.face))}.` });
     $('#cp-reveal').hidden = false;
     $('#cp-reveal').innerHTML = chosen
-      ? `<strong>${title(FACE_COLORS[face])} cross · ${chosen.moves.length} moves</strong><p>${fmt.moves(chosen.moves.join(' '))}</p><small>Shortest found in this search: ${scored.map(plan => `${FACE_COLORS[plan.face]} · ${plan.moves.length}`).join(' / ')}</small>`
-      : `<strong>No verified plan found for ${title(FACE_COLORS[face])}.</strong><p>Shortest found in this search: ${scored.map(plan => `${FACE_COLORS[plan.face]} · ${plan.moves.length} moves`).join(' / ')}</p>`;
+      ? `<strong>${title(visibleColor(face))} cross · ${chosen.moves.length} moves</strong><p>${fmt.moves(chosen.moves.join(' '))}</p><small>Shortest found in this search: ${scored.map(plan => `${visibleColor(plan.face)} · ${plan.moves.length}`).join(' / ')}</small>`
+      : `<strong>No verified plan found for ${title(visibleColor(face))}.</strong><p>Shortest found in this search: ${scored.map(plan => `${visibleColor(plan.face)} · ${plan.moves.length} moves`).join(' / ')}</p>`;
     if (chosen) {
       current.chosen = chosen;
       $('#cp-playback').hidden = false; showPlan(chosen);
@@ -174,6 +184,8 @@ export function createCrossPlanning(root) {
     $('#cp-next').hidden = Boolean(roundPanel?.complete);
     renderChoices();
   }
+  const onCaseColorChange = event => { if (cube && current?.state) { cube.setCaseOrientation(event.detail?.setting || readCaseColorSetting(), { seed: current.caseSeed }); renderChoices(); } };
+  window.addEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange);
   $('#cp-next').addEventListener('click', () => { start.moves = []; start.review = null; start.invalid = false; void nextCase(); });
   const onKeydown = event => {
     if (!active || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName ?? '') || event.target?.closest('button,a')) return;
@@ -189,7 +201,14 @@ export function createCrossPlanning(root) {
   void nextCase();
   return {
     ready: cubeReady,
+    getViewModel() {
+      const snapshot = cube?.getSnapshot?.() ?? null;
+      return { screen: 'trainer', drill: 'cross', phase: answer ? 'feedback' : current?.plans ? 'recognition' : 'loading',
+        currentCase: current ? { id: current.scramble || current.caseId || String(caseNumber), seed: current.caseSeed || `cross:${caseNumber}`, topColor: snapshot?.renderData?.colors?.U ?? null, orientation: snapshot?.caseColorSetting ?? null, targets: current.plans?.map(plan => plan.face) || null } : null,
+        answers: [...($('#cp-faces')?.querySelectorAll('button') || [])].map(button => ({ logicalKey: button.dataset.face, displayKey: button.dataset.face, label: button.getAttribute('aria-label') || button.textContent.trim(), selected: button.dataset.face === answer, correct: Boolean(current?.plans?.[0]?.face === button.dataset.face) })),
+        round: roundPanel?.getViewModel() || null, cube: snapshot, feedback: $('#cp-feedback')?.textContent || '', settings: { caseColor: readCaseColorSetting() } };
+    },
     setActive(value) { active = value; player?.setActive(value); roundPanel?.setActive(value); if (active && !current && !detached) void nextCase(); else if (!active) { generation++; current = null; answer = null; } },
-    detach() { detached = true; active = false; generation++; document.removeEventListener('keydown', onKeydown); roundPanel?.destroy(); player?.destroy(); cube?.destroy(); root.replaceChildren(); },
+    detach() { detached = true; active = false; generation++; document.removeEventListener('keydown', onKeydown); window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange); disposeCaseColorControl(); roundPanel?.destroy(); trainerOrbit?.destroy(); player?.destroy(); cube?.destroy(); root.replaceChildren(); },
   };
 }

@@ -30,11 +30,15 @@ import { loadSettings } from './brain/settings.js';
 import { renderCube } from './cube-renderer.js';
 import { createPageCube } from './pages/cube-view.js';
 import { createHelpPage } from './help/index.js';
+import { createTrainerOrbit } from './trainers/orbit-round.js';
+import { mountCaseColorControl } from './trainers/case-color-control.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
 import { toRenderData, validateSolution } from './cross-cube.js';
 import { Cube } from './ui/cube/index.js';
+import { readCaseColorSetting, CASE_COLOR_CHANGE_EVENT } from './ui/cube/case-color.js';
+import { createCaseDisplayMap, colorHex, displayColorKey, logicalColorKey, recolorStickers } from './trainers/case-display.js';
 import { createPlannerSetup, plannerChoices, formatWeight, wideURequest, wideUResults } from './f2l-planner.js';
 import { loadLearning, saveLearning, review, itemKey, f2lKey, sessionSummary, chooseDue } from './learning.js';
 import { createGlancePacing } from './glance-pacing.js';
@@ -193,7 +197,7 @@ const initialStats = () => ({ attempts: 0, correct: 0, totalMs: 0, bestMs: null,
 const GLANCE_EXPOSURES = [25, 50, 75, 100, 150, 200, 300, 450, 600, 800, 1000, 1500];
 let stats = loadStats();
 let learning = loadLearning(localStorage);
-let session = { attempts: 0, correct: 0, times: [], streak: 0 };
+let session = { attempts: 0, correct: 0, times: [], streak: 0, outcomes: [] };
 let state = {
   mode: ['single', 'triple', 'recall'].includes(localStorage.getItem('cubesight-corner-mode')) ? localStorage.getItem('cubesight-corner-mode') : 'single',
   sprint: false,
@@ -291,7 +295,7 @@ document.querySelector('#app').innerHTML = `
         <p class="intro-copy">Find the hidden color.</p>
     </section>
 
-    <details class="training-settings" open>
+    <details class="training-settings">
     <summary><span>settings</span><small>drill, round & glance</small><i aria-hidden="true"></i></summary>
     <section class="mode-bar" aria-label="settings">
       <div class="mode-group">
@@ -308,10 +312,6 @@ document.querySelector('#app').innerHTML = `
           <button class="segment active" data-session="practice">endless</button>
           <button class="segment" data-session="sprint">10-case round</button>
         </div>
-      </div>
-      <div class="sprint-progress" aria-label="round progress" hidden>
-        <span id="sprint-count">0 / 10</span>
-        <div class="progress-track"><i id="progress-fill"></i></div>
       </div>
       <div class="learning-controls" aria-label="Recognition pacing">
         <label class="learning-toggle"><input id="glance-toggle" type="checkbox"><span>glance</span></label>
@@ -338,7 +338,6 @@ document.querySelector('#app').innerHTML = `
 
       <div class="answer-stage">
         <div class="case-meta">
-          <span id="case-number">case 1</span>
           <span id="case-mode">single corner</span>
         </div>
         <div class="timer-wrap">
@@ -359,6 +358,8 @@ document.querySelector('#app').innerHTML = `
       </div>
     </section>
 
+    <details class="trainer-progress-details">
+      <summary>Progress · recognition profile</summary>
     <section class="stats-section">
       <div class="section-heading">
         <div><p class="eyebrow">Progress</p><h2>Your recognition profile</h2></div>
@@ -379,6 +380,7 @@ document.querySelector('#app').innerHTML = `
       </div>
       <div id="recognition-profile"></div>
     </section>
+    </details>
     </div>
 
     <div id="f2l-view" hidden>
@@ -386,7 +388,7 @@ document.querySelector('#app').innerHTML = `
         <div><p class="eyebrow">drills / F2L</p><h1>F2L deduction</h1></div>
         <p class="intro-copy">Find your next pair.</p>
       </section>
-      <details class="training-settings" open>
+      <details class="training-settings">
       <summary><span>settings</span><small>color neutral · choose a drill</small><i aria-hidden="true"></i></summary>
       <section class="mode-bar f2l-controls" aria-label="F2L settings">
         <div class="mode-group f2l-drill-picker"><span class="control-label">drill</span><div class="segmented" aria-label="F2L drill"><button class="segment active" data-f2l-drill="deduction">pair deduction</button><button class="segment" data-f2l-drill="scan">timed scan</button><button class="segment" data-f2l-drill="planner">best next pair</button></div></div>
@@ -404,23 +406,15 @@ document.querySelector('#app').innerHTML = `
           <div class="cube-caption"><span id="f2l-orientation">White bottom · Green front</span><span>Drag left / right · click pieces to pair</span></div>
         </div>
         <div class="answer-stage f2l-answer-stage">
-          <div class="case-meta"><span id="f2l-case-number">case 1</span><span id="f2l-cross-label">white bottom</span></div>
-          <div class="f2l-score"><span>Deducible pairs</span><strong><b id="f2l-found">0</b><i>/</i><b id="f2l-total">0</b></strong></div>
           <div class="f2l-instructions">
             <p id="f2l-status" role="status" aria-live="polite">Select a corner or edge to begin.</p>
             <small>Then select its matching piece. Selecting the same piece again clears it.</small>
           </div>
           <div class="selected-piece-card" id="f2l-selection"><span>First selection</span><strong>None</strong><small>Click a visible F2L corner or edge</small></div>
           <div class="f2l-timings" id="f2l-timings">Find a pair to see search and matching times.</div>
-          <div class="f2l-progress" id="f2l-progress"></div>
           <div id="f2l-planner-choices" class="f2l-planner-choices" hidden></div>
           <div class="f2l-footer-actions"><span>back and bottom faces are locked</span><button id="f2l-continue" class="skip-button" data-action="new-f2l">skip <kbd>s</kbd></button></div>
         </div>
-      </section>
-      <section class="f2l-info-grid">
-        <article><p class="eyebrow">01 / inspect</p><h3>Limited view</h3><p>Scan the top, front, left, and right faces. The camera stops before the back becomes visible.</p></article>
-        <article><p class="eyebrow">02 / scan</p><h3>Find, don’t solve</h3><p>Timed scan rewards corner–edge recognition across fresh cases, with optional D offset pseudo pairs.</p></article>
-        <article><p class="eyebrow">03 / plan</p><h3>Choose efficiently</h3><p>The planner compares verified next-pair solutions with ergonomic weights, not raw move count alone.</p></article>
       </section>
     </div>
     <div id="drills-view" class="cs-host" hidden></div>
@@ -470,6 +464,48 @@ document.querySelector('#app').innerHTML = `
   </dialog>
 
 `;
+
+const cornerTrainerOrbit = createTrainerOrbit(document.querySelector('#corner-view .cube-stage'));
+const f2lTrainerOrbit = createTrainerOrbit(document.querySelector('#f2l-view .cube-stage'));
+mountCaseColorControl(document.querySelector('#corner-view .intro-row'));
+mountCaseColorControl(document.querySelector('#f2l-view .intro-row'));
+
+function legacyTrainerViewModel(tool) {
+  const roundPanelModel = legacyRounds[tool]?.getViewModel?.() || null;
+  if (tool === 'corner') {
+    const current = state.current;
+    const target = activeTarget();
+    const buttons = [...document.querySelectorAll('#answers [data-color]')];
+    const correct = target?.target?.hidden ? target.stickers?.[target.target.hidden] : null;
+    const round = state.sprint ? { ...(roundPanelModel || {}), round: { status: session.attempts >= state.sprintLength ? 'complete' : 'active', kind: 'cases', total: state.sprintLength, answered: session.attempts, answers: session.outcomes, combo: session.streak, bestCombo: stats.bestStreak } } : roundPanelModel;
+    return { screen: 'trainer', drill: 'corner', phase: state.locked ? 'feedback' : current ? 'recognition' : 'idle',
+      currentCase: current ? { id: target?.target?.id || current.targets?.map(item => item.target?.id).join('+'), seed: current.caseSeed || null, topColor: current.orientation?.U ? displayColorKey(current.orientation.U, current.displayColorMap) : null, orientation: current.displayColorMap || null, targets: current.targets?.map(item => ({ id: item.target?.id, hidden: displayColorKey(item.hidden, current.displayColorMap), visible: item.visible?.map(color => displayColorKey(color, current.displayColorMap)) })) || null } : null,
+      answers: buttons.map(button => ({ logicalKey: button.dataset.logicalColor || logicalColorKey(button.dataset.color, current?.displayColorMap), displayKey: button.dataset.color, label: button.querySelector('span')?.textContent || '', selected: button.classList.contains('wrong') || button.classList.contains('correct'), correct: logicalColorKey(button.dataset.color, current?.displayColorMap) === correct })),
+      round, cube: cube3D?.getSnapshot?.() || null, feedback: document.querySelector('.corner-result')?.textContent || '', settings: { mode: state.mode, glance: state.glance, exposureMode: state.exposureMode, exposureMs: state.exposureMs, caseColor: readCaseColorSetting() } };
+  }
+  const current = f2lState.current;
+  const planner = f2lState.planner;
+  const buttons = [...document.querySelectorAll('#f2l-planner-choices [data-planner-choice]')];
+  const selectable = current?.selectablePieces || [];
+  const orientation = current?.orientation || planner?.orientation;
+  const displayMap = orientation
+    ? current?.displayColorMap || createCaseDisplayMap(orientation, readCaseColorSetting(), `f2l-planner:${f2lState.caseNumber}`)
+    : {};
+  return { screen: 'trainer', drill: 'f2l', phase: f2lState.locked ? 'feedback' : current || planner ? 'recognition' : 'idle',
+    currentCase: current || planner ? { id: current?.id || `f2l-planner:${f2lState.caseNumber}`, seed: `f2l:${current?.id || f2lState.caseNumber}`, topColor: orientation?.U ? displayColorKey(orientation.U, displayMap) : null, orientation: displayMap, targets: current?.targetPairIds || planner?.choices?.map(choice => choice.slot) || null } : null,
+    answers: planner ? buttons.map(button => { const choice = planner.choices[Number(button.dataset.plannerChoice)]; return { logicalKey: choice?.slot, displayKey: choice ? plannerPairLabel(choice, planner.orientation) : '', label: button.querySelector('strong')?.textContent || '', selected: Number(button.dataset.plannerChoice) === planner.answer, correct: choice?.weight === planner.choices[0]?.weight }; }) : selectable.map(id => ({ logicalKey: id, displayKey: id, label: id, selected: f2lState.selected === id, correct: f2lState.matchedPieces?.includes?.(id) || matchedPieces().includes(id) })),
+    round: roundPanelModel, cube: f2lCube3D?.getSnapshot?.() || null, feedback: document.querySelector('#f2l-status')?.textContent || '', settings: { mode: f2lState.drill, scanDuration: f2lState.scanDuration, pseudo: f2lState.scanPseudo, plannerShiftD: f2lState.plannerShiftD, caseColor: readCaseColorSetting() } };
+}
+window.__cubesightLegacyTrainerHandles = { corner: { getViewModel: () => legacyTrainerViewModel('corner') }, f2l: { getViewModel: () => legacyTrainerViewModel('f2l') } };
+
+window.addEventListener(CASE_COLOR_CHANGE_EVENT, () => {
+  if (activeTool === 'corner' && state.current) {
+    state.current.displayColorSetting = null;
+    renderCurrentCase();
+    renderAnswers();
+  } else if (activeTool === 'f2l' && f2lState.current) renderF2L();
+  else if (activeTool === 'f2l' && f2lState.planner) renderF2LPlanner();
+});
 
 const globalHeaderStatus = document.createElement('span');
 globalHeaderStatus.className = 'ui-header-status';
@@ -700,28 +736,36 @@ function activeTarget() {
 }
 
 function cubeTargetData(item) {
+  const displayMap = state.current?.displayColorMap || {};
   return {
     targetCorner: item.target.corner,
     knownFaces: item.target.visible,
     hiddenFace: item.target.hidden,
-    knownStickers: Object.fromEntries(item.target.visible.map((face) => [face, COLORS[item.stickers[face]].hex])),
+    knownStickers: Object.fromEntries(item.target.visible.map((face) => [face, colorHex(displayColorKey(item.stickers[face], displayMap))])),
   };
 }
 
 function renderCurrentCase() {
   const current = state.current;
   const active = activeTarget();
-  const palette = Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].map((face) => [face, COLORS[current.orientation[face]].hex]));
+  const caseColorSetting = readCaseColorSetting();
+  if (current.displayColorSetting !== caseColorSetting) {
+    current.displayColorSetting = caseColorSetting;
+    current.displayColorMap = createCaseDisplayMap(current.orientation, caseColorSetting, current.caseSeed || `corner:${stats.attempts}:${current.family}`);
+  }
+  const palette = Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].map((face) => [face, colorHex(displayColorKey(current.orientation[face], current.displayColorMap))]));
   const cubeData = {
     targets: current.targets.map(cubeTargetData),
     activeTargetIndex: current.activeIndex,
-    stickerColors: current.edgeStickers,
-    cornerStickers: current.cornerStickers,
+    stickerColors: recolorStickers(current.edgeStickers, current.displayColorMap),
+    cornerStickers: recolorStickers(current.cornerStickers, current.displayColorMap),
     showAllCorners: multiCorner(),
     colors: palette,
     feedback: current.feedback || null,
   };
   if (cube3D) {
+    cube3D.caseColorSetting = caseColorSetting;
+    cube3D.caseSeed = current.caseSeed || `corner:${stats.attempts}:${current.family}`;
     cube3D.setViewOffset(current.viewPose);
     cube3D.update(cubeData);
   }
@@ -729,22 +773,25 @@ function renderCurrentCase() {
     const fallback = renderCube(cubeTargetData(active), { title: 'Corner recognition cube' });
     document.querySelector('#cube').replaceChildren(fallback);
   }
-  document.querySelector('#orientation-caption').textContent = `${COLORS[current.orientation.U].label} top · ${COLORS[current.orientation.F].label} front`;
-  document.querySelector('#case-number').textContent = `case ${stats.attempts + 1}`;
+  document.querySelector('#orientation-caption').textContent = `${COLORS[displayColorKey(current.orientation.U, current.displayColorMap)].label} top · ${COLORS[displayColorKey(current.orientation.F, current.displayColorMap)].label} front`;
   document.querySelector('#case-mode').textContent = multiCorner() ? `${state.mode === 'recall' ? 'one-glance recall' : 'three corners'} · ${current.activeIndex + 1}/3` : 'single corner';
   document.querySelector('#case-mode').dataset.targetCorner = active.target.corner;
   document.querySelector('#prompt-text').innerHTML = multiCorner()
     ? `Case ${current.activeIndex + 1} of 3. Which color <br>completes it?`
     : 'Which color completes <br>this corner?';
   renderSequence();
+  const activeRoundIndex = legacyRounds.corner?.getViewModel?.().round?.answers?.length ?? 0;
+  cornerTrainerOrbit?.update({ index: state.sprint ? session.attempts : activeRoundIndex, state: 'current', value: `${stats.streak} combo` });
 }
 
 function renderAnswers() {
   state.answerChoices = Object.keys(COLORS);
-  document.querySelector('#answers').innerHTML = state.answerChoices.map((key, index) => {
+  const displayMap = state.current?.displayColorMap || {};
+  document.querySelector('#answers').innerHTML = state.answerChoices.map((logicalKey, index) => {
+    const key = displayColorKey(logicalKey, displayMap);
     const color = COLORS[key];
     return `
-    <button class="answer-button color-${key}" data-color="${key}" style="--swatch:${color.hex};--swatch-ink:${color.ink}">
+      <button class="answer-button color-${key}" data-color="${key}" data-logical-color="${logicalKey}" style="--swatch:${color.hex};--swatch-ink:${color.ink}">
       <i aria-hidden="true"></i><span>${color.label}</span><kbd>${color.label[0]}</kbd>
     </button>
   `}).join('');
@@ -763,9 +810,10 @@ function showCornerResult(isCorrect, correctColor, skipped) {
   const result = document.createElement('div');
   result.className = `corner-result ${isCorrect ? 'is-correct' : 'is-wrong'}`;
   result.setAttribute('aria-hidden', 'true');
+  const shownColor = displayColorKey(correctColor, state.current?.displayColorMap);
   result.textContent = isCorrect
-    ? `Nice · ${COLORS[correctColor].label.toLowerCase()}`
-    : skipped ? `Skipped, it was ${COLORS[correctColor].label.toLowerCase()}.` : `Not quite, it was ${COLORS[correctColor].label.toLowerCase()}.`;
+    ? `Nice · ${COLORS[shownColor].label.toLowerCase()}`
+    : skipped ? `Skipped, it was ${COLORS[shownColor].label.toLowerCase()}.` : `Not quite, it was ${COLORS[shownColor].label.toLowerCase()}.`;
   result.addEventListener('animationend', () => result.remove(), { once: true });
   document.querySelector('#corner-view .cube-stage').append(result);
 }
@@ -816,6 +864,7 @@ function startCase(successNotice = null) {
     return;
   }
   state.current.viewPose = chooseCornerView(previousCornerView);
+  state.current.caseSeed = `corner:${state.sprint ? 'sprint' : 'practice'}:${stats.attempts}:${session.attempts}:${state.generation}`;
   previousCornerView = state.current.viewPose.id;
   state.current.exposureMs = state.exposureMs;
   state.current.recallAnswers = [];
@@ -893,15 +942,15 @@ function answerRecall(color, skipped, answeredAt) {
   if (pacingResult.changed) syncExposureSelect();
   current.feedback = {
     status: outcomes[2].isCorrect ? 'correct' : 'wrong',
-    correctColor: COLORS[outcomes[2].correctColor].hex,
-    correctName: COLORS[outcomes[2].correctColor].label,
+    correctColor: COLORS[displayColorKey(outcomes[2].correctColor, current.displayColorMap)].hex,
+    correctName: COLORS[displayColorKey(outcomes[2].correctColor, current.displayColorMap)].label,
   };
   renderCurrentCase();
   document.querySelector('#cube').dataset.learningState = 'feedback';
   const positions = ['Left', 'Top right', 'Bottom right'];
   document.querySelector('#feedback').className = allCorrect ? 'is-correct' : 'is-wrong';
   document.querySelector('#feedback').textContent = outcomes.map((outcome, index) =>
-    `${positions[index]}: ${outcome.isCorrect ? '✓' : '✗'} ${COLORS[outcome.correctColor].label}${outcome.isCorrect ? '' : ` (you: ${current.recallAnswers[index].color || 'skip'})`}`).join(' · ');
+    `${positions[index]}: ${outcome.isCorrect ? '✓' : '✗'} ${COLORS[displayColorKey(outcome.correctColor, current.displayColorMap)].label}${outcome.isCorrect ? '' : ` (you: ${current.recallAnswers[index].color ? COLORS[displayColorKey(current.recallAnswers[index].color, current.displayColorMap)].label : 'skip'})`}`).join(' · ');
   document.querySelector('#prompt-text').textContent = `${outcomes.filter((outcome) => outcome.isCorrect).length} of 3 correct · inspect, then next`;
   document.querySelector('#timer').textContent = formatMs(current.recallAnswers.reduce((sum, response) => sum + response.ms, 0));
   document.querySelector('.timer-label').textContent = 'recog · full sequence';
@@ -973,6 +1022,7 @@ function recordCornerAnswer(active, color, skipped, elapsed, position, at = Date
 
   stats.attempts++;
   session.attempts++;
+  session.outcomes.push({ correct: isCorrect, ms: elapsed, caseId: family });
   stats.byCase[family] ??= { attempts: 0, correct: 0, totalMs: 0, bestMs: null };
   const familyStats = stats.byCase[family];
   familyStats.attempts++;
@@ -1007,6 +1057,8 @@ function recordCornerAnswer(active, color, skipped, elapsed, position, at = Date
   stats.history = stats.history.slice(-1000);
   saveStats();
   legacyRounds.corner?.record({correct:isCorrect,ms:elapsed,caseId:family,at});
+  const activeRoundAnswers = legacyRounds.corner?.getViewModel?.().round?.answers?.length ?? session.attempts;
+  cornerTrainerOrbit?.update({ index: Math.max(0, activeRoundAnswers - 1), state: isCorrect ? 'good' : 'bad', value: fmt.time(elapsed), text: isCorrect ? 'Color recognized.' : `This corner needs ${COLORS[displayColorKey(correctColor, state.current.displayColorMap)].label.toLowerCase()}.` });
   return { isCorrect, correctColor };
 }
 
@@ -1014,6 +1066,7 @@ function answer(color, skipped = false) {
   if (state.locked || activeTool !== 'corner' || paused) return;
   const answeredAt = performance.now();
   if (expireTrial(state.startedAt)) return;
+  color = logicalColorKey(color, state.current.displayColorMap);
   if (state.mode === 'recall') return answerRecall(color, skipped, answeredAt);
   state.locked = true;
   cancelCornerTimers();
@@ -1025,16 +1078,17 @@ function answer(color, skipped = false) {
   if (!isCorrect) {
     document.querySelectorAll('.answer-button').forEach((button) => {
       const buttonColor = button.dataset.color;
-      if (buttonColor === correctColor) button.classList.add('correct');
-      else if (!skipped && buttonColor === color) button.classList.add('wrong');
+      if (logicalColorKey(buttonColor, state.current.displayColorMap) === correctColor) button.classList.add('correct');
+      else if (!skipped && logicalColorKey(buttonColor, state.current.displayColorMap) === color) button.classList.add('wrong');
       else button.classList.add('muted');
     });
     feedback.className = 'is-wrong';
-    feedback.textContent = skipped ? `Skipped, it was ${COLORS[correctColor].label.toLowerCase()}.` : `Not quite, it was ${COLORS[correctColor].label.toLowerCase()}.`;
+    const shownColor = displayColorKey(correctColor, state.current.displayColorMap);
+    feedback.textContent = skipped ? `Skipped, it was ${COLORS[shownColor].label.toLowerCase()}.` : `Not quite, it was ${COLORS[shownColor].label.toLowerCase()}.`;
     state.current.feedback = {
       status: 'wrong',
-      correctColor: COLORS[correctColor].hex,
-      correctName: COLORS[correctColor].label,
+      correctColor: COLORS[shownColor].hex,
+      correctName: COLORS[shownColor].label,
     };
     renderCurrentCase();
     document.querySelector('#cube').dataset.learningState = 'feedback';
@@ -1123,14 +1177,11 @@ function caseScore(item) {
 }
 
 function updateSprintUI() {
-  const box = document.querySelector('.sprint-progress');
-  box.hidden = !state.sprint;
-  document.querySelector('#sprint-count').textContent = `${session.attempts} / ${state.sprintLength}`;
-  document.querySelector('#progress-fill').style.width = `${session.attempts / state.sprintLength * 100}%`;
+  cornerTrainerOrbit?.update();
 }
 
 function resetSession() {
-  session = { attempts: 0, correct: 0, times: [], streak: 0 };
+  session = { attempts: 0, correct: 0, times: [], streak: 0, outcomes: [] };
   updateSprintUI();
 }
 
@@ -1238,12 +1289,11 @@ function renderF2LControls() {
   document.querySelector('#f2l-scan-duration').value = String(f2lState.scanDuration);
   document.querySelector('#f2l-planner-choices').hidden = f2lState.drill !== 'planner';
   document.querySelector('#f2l-selection').hidden = f2lState.drill === 'planner';
-  document.querySelector('#f2l-progress').hidden = f2lState.drill === 'planner';
 }
 
-function recolorPlannerData(state, orientation) {
+function recolorPlannerData(state, orientation, displayMap = {}) {
   const data = toRenderData(state);
-  const replacements = Object.fromEntries(Object.entries(FACE_COLOR).map(([face, color]) => [COLORS[color].hex, COLORS[orientation[face]].hex]));
+  const replacements = Object.fromEntries(Object.entries(FACE_COLOR).map(([face, color]) => [COLORS[color].hex, colorHex(displayColorKey(orientation[face], displayMap))]));
   const replace = (value) => replacements[String(value).toLowerCase()] || value;
   data.mode = 'f2l';
   data.colors = Object.fromEntries(Object.entries(data.colors).map(([key, value]) => [key, replace(value)]));
@@ -1254,21 +1304,24 @@ function recolorPlannerData(state, orientation) {
 }
 
 function plannerPairLabel(choice, orientation) {
-  return [...choice.slot].map((face) => COLORS[orientation[face]].label).join(' + ');
+  const map = createCaseDisplayMap(orientation, readCaseColorSetting(), `f2l-planner:${f2lState.caseNumber}`);
+  return [...choice.slot].map((face) => COLORS[displayColorKey(orientation[face], map)].label).join(' + ');
 }
 
 function renderF2LPlanner() {
   renderF2LControls();
   const planner = f2lState.planner;
+  const displayMap = planner ? createCaseDisplayMap(planner.orientation, readCaseColorSetting(), `f2l-planner:${f2lState.caseNumber}`) : {};
+  if (f2lCube3D && planner) {
+    f2lCube3D.caseColorSetting = readCaseColorSetting();
+    f2lCube3D.caseSeed = `f2l-planner:${f2lState.caseNumber}`;
+  }
   const status = document.querySelector('#f2l-status');
   const choices = document.querySelector('#f2l-planner-choices');
-  document.querySelector('.f2l-score > span').textContent = f2lState.plannerShiftD ? 'pairs solved before D offset' : 'pairs already solved';
-  document.querySelector('#f2l-found').textContent = planner?.setup.solvedCount ?? '—';
-  document.querySelector('#f2l-total').textContent = '4';
-  document.querySelector('#f2l-case-number').textContent = `case ${f2lState.caseNumber}`;
-  document.querySelector('#f2l-cross-label').textContent = planner ? `${COLORS[planner.orientation.D].label.toLowerCase()} bottom` : 'CN';
+  const roundIndex = legacyRounds.f2l?.getViewModel?.().round?.answers?.length ?? 0;
+  f2lTrainerOrbit?.update({ index: roundIndex, state: 'current', value: `${planner?.setup.solvedCount ?? 0}/4 pairs` });
   document.querySelector('#f2l-orientation').textContent = planner
-    ? `${COLORS[planner.orientation.D].label} bottom · ${COLORS[planner.orientation.F].label} front`
+    ? `${COLORS[displayColorKey(planner.orientation.D, displayMap)].label} bottom · ${COLORS[displayColorKey(planner.orientation.F, displayMap)].label} front`
     : 'preparing a verified case…';
   document.querySelector('#f2l-timings').textContent = 'U/R/L/D/Uw = 1 · F/B = 5 · rotations = 2';
   const button = document.querySelector('#f2l-continue');
@@ -1282,9 +1335,9 @@ function renderF2LPlanner() {
     choices.innerHTML = '<div class="planner-loading">finding verified next-pair plans…</div>';
     return;
   }
-  f2lCube3D?.update(recolorPlannerData(planner.setup.state, planner.orientation));
+  f2lCube3D?.update(recolorPlannerData(planner.setup.state, planner.orientation, displayMap));
   document.querySelector('#f2l-view').dataset.preference = 'neutral';
-  document.querySelector('#f2l-view').dataset.bottomColor = planner.orientation.D;
+  document.querySelector('#f2l-view').dataset.bottomColor = displayColorKey(planner.orientation.D, displayMap);
   document.querySelector('#f2l-view').dataset.caseSource = 'verified-planner';
   const answerIsBest = planner.answer != null && planner.choices[planner.answer].weight === planner.choices[0].weight;
   status.className = planner.answer == null ? '' : answerIsBest ? 'is-correct' : 'is-wrong';
@@ -1407,11 +1460,17 @@ function renderF2L() {
   if (!current) { document.querySelector('#f2l-status').textContent = f2lState.message || 'preparing a case…'; return; }
   const matched = matchedPieces();
   const selectable = current.selectablePieces.filter((piece) => !matched.includes(piece));
+  const displayMap = current.displayColorMap = createCaseDisplayMap(current.orientation, readCaseColorSetting(), `f2l:${current.id || f2lState.caseNumber}`);
+  if (f2lCube3D) {
+    f2lCube3D.caseColorSetting = readCaseColorSetting();
+    f2lCube3D.caseSeed = `f2l:${current.id || f2lState.caseNumber}`;
+  }
+  const displayPalette = Object.fromEntries(Object.keys(current.orientation).map(face => [face, colorHex(displayColorKey(current.orientation[face], displayMap))]));
   f2lCube3D?.update({
     mode: 'f2l',
-    colors: current.palette,
-    cornerStickers: current.cornerStickers,
-    stickerColors: current.edgeStickers,
+    colors: displayPalette,
+    cornerStickers: recolorStickers(current.cornerStickers, displayMap),
+    stickerColors: recolorStickers(current.edgeStickers, displayMap),
     showAllCorners: true,
     targets: [],
     selectablePieces: selectable,
@@ -1420,18 +1479,14 @@ function renderF2L() {
     matchedPieces: matched,
     onPieceClick: handleF2LPiece,
   });
-  const bottom = COLORS[current.bottomColor];
-  const front = COLORS[current.frontColor];
   const view = document.querySelector('#f2l-view');
   view.dataset.preference = 'neutral';
-  view.dataset.bottomColor = current.bottomColor;
+  view.dataset.bottomColor = displayColorKey(current.bottomColor, displayMap);
   view.dataset.caseSource = current.source;
-  document.querySelector('#f2l-orientation').textContent = `${bottom.label.toLowerCase()} bottom · ${front.label.toLowerCase()} front${current.dShift ? ` · ${current.dShift} offset` : ''}`;
-  document.querySelector('#f2l-cross-label').textContent = current.dShift ? `${current.dShift} offset` : `${bottom.label.toLowerCase()} bottom`;
-  document.querySelector('#f2l-case-number').textContent = `case ${f2lState.caseNumber}`;
-  document.querySelector('.f2l-score > span').textContent = f2lState.drill === 'scan' ? (f2lState.scanPseudo ? 'Pseudo pairs this round' : 'Pairs this round') : 'Deducible pairs';
-  document.querySelector('#f2l-found').textContent = f2lState.drill === 'scan' ? f2lState.scanScore : f2lState.matchedPairIds.length;
-  document.querySelector('#f2l-total').textContent = f2lState.drill === 'scan' ? '∞' : current.targetPairIds.length;
+  document.querySelector('#f2l-orientation').textContent = `${COLORS[displayColorKey(current.bottomColor, displayMap)].label.toLowerCase()} bottom · ${COLORS[displayColorKey(current.frontColor, displayMap)].label.toLowerCase()} front${current.dShift ? ` · ${current.dShift} offset` : ''}`;
+  const roundAnswers = legacyRounds.f2l?.getViewModel?.().round?.answers?.length ?? 0;
+  const currentRoundIndex = Math.max(0, roundAnswers - (f2lState.feedback ? 1 : 0));
+  f2lTrainerOrbit?.update({ index: currentRoundIndex, state: f2lState.feedback?.status === 'correct' ? 'good' : f2lState.feedback?.status === 'wrong' ? 'bad' : 'current', value: f2lState.drill === 'scan' ? `${f2lState.scanScore} found` : `${f2lState.matchedPairIds.length}/${current.targetPairIds.length} pairs` });
   const status = document.querySelector('#f2l-status');
   status.textContent = f2lState.message || 'Select a corner or edge to begin.';
   status.className = f2lState.feedback?.status === 'correct' ? 'is-correct' : f2lState.feedback?.status === 'wrong' ? 'is-wrong' : '';
@@ -1444,7 +1499,6 @@ function renderF2L() {
     selection.className = 'selected-piece-card';
     selection.innerHTML = '<span>First selection</span><strong>None</strong><small>Click a visible F2L corner or edge</small>';
   }
-  document.querySelector('#f2l-progress').innerHTML = current.targetPairIds.map((pairId, index) => `<i class="${f2lState.matchedPairIds.includes(pairId) ? 'done' : ''}" title="Pair ${index + 1}"><span>${f2lState.matchedPairIds.includes(pairId) ? '✓' : index + 1}</span></i>`).join('');
   const continueButton = document.querySelector('#f2l-continue');
   if (continueButton) {
     const waitingScan = f2lState.drill === 'scan' && !f2lState.scanRunning;
@@ -1965,11 +2019,14 @@ function setTool(tool, initial = false) {
   }
   if (tool === 'corner' || tool === 'f2l') {
     legacyRounds[tool] ??= createRoundPanel(document.querySelector(`#${TOOL_VIEWS[tool]}`), {
+      orbitHost: document.querySelector(tool === 'corner' ? '#corner-view .cube-stage' : '#f2l-view .cube-stage'),
       drill: tool === 'corner' ? 'corners' : 'f2l',
       getSettings: () => tool === 'corner' ? {mode:state.mode,glance:state.glance,exposureMs:state.exposureMs} : {drill:f2lState.drill,pseudo:f2lState.plannerShiftD},
       onComplete: () => { if(tool==='corner'){state.locked=true;cancelCornerTimers();document.querySelectorAll('.answer-button').forEach(button=>button.disabled=true);} else {f2lState.locked=true;clearTimeout(f2lState.nextTimer);stopF2LScan();f2lState.plannerGeneration++;} },
       onRestart: () => { paused=false;if(tool==='corner')startCase();else newF2LCase(); },
     });
+    const trainerOrbit = tool === 'corner' ? cornerTrainerOrbit : f2lTrainerOrbit;
+    trainerOrbit.connect(legacyRounds[tool].orbit, () => legacyTrainerViewModel(tool));
     legacyRounds[tool].setActive(true);
   }
   updateLearningUI();
@@ -2303,9 +2360,10 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (state.mode === 'recall' && state.locked && !document.querySelector('[data-action="next-recall"]').hidden && [KEYS.global.space, 'enter'].includes(event.key === ' ' ? KEYS.global.space : event.key.toLowerCase())) return startCase();
-  const colorKey = Object.keys(COLORS).find((color) => color[0] === event.key.toLowerCase());
-  if (colorKey && state.answerChoices.includes(colorKey)) return answer(colorKey);
-  if (/^[1-6]$/.test(event.key)) answer(state.answerChoices[Number(event.key) - 1]);
+  const displayChoices = state.answerChoices.map(color => displayColorKey(color, state.current?.displayColorMap));
+  const colorKey = displayChoices.find(color => color[0] === event.key.toLowerCase());
+  if (colorKey) return answer(colorKey);
+  if (/^[1-6]$/.test(event.key)) answer(displayChoices[Number(event.key) - 1]);
   if (event.key.toLowerCase() === KEYS.case.s) answer(null, true);
 });
 
@@ -2320,7 +2378,17 @@ function syncLegacyCubes(tool) {
   const controller = new AbortController();
   legacyCubeLoad = { tool, controller };
   const host = document.querySelector(tool === 'corner' ? '#cube' : '#f2l-cube');
-  void createPageCube(host, { mode: tool === 'corner' ? 'corner' : 'f2l', signal: controller.signal }).then(view => {
+  void Promise.resolve().then(() => {
+    // copy-ok: internal cancellation reason used only to stop stale cube mounts
+    if (controller.signal.aborted) throw new DOMException('Trainer cube mount was cancelled.', 'AbortError');
+    // The legacy renderer may have installed its accessible SVG fallback before
+    // this shared WebGL cube was ready. Keep one visible Cube in the stage.
+    host.replaceChildren();
+    const view = new Cube(host, { mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(), caseSeed: `${tool}:initial`, label: tool === 'corner' ? 'corner recognition case' : 'F2L deduction case' });
+    view.setViewOffset = (...args) => view.cube.setViewOffset?.(...args);
+    view.recenterGyro = (...args) => view.cube.recenterGyro?.(...args);
+    return view;
+  }).then(view => {
     if (controller.signal.aborted || activeTool !== tool) { view.destroy(); return; }
     if (tool === 'corner') { cube3D = view; if (state.current) renderCurrentCase(); }
     else { f2lCube3D = view; renderF2L(); }

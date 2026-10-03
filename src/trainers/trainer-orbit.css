@@ -1,0 +1,65 @@
+.trainer-orbit-stage { position: relative; isolation: isolate; }
+.trainer-case-color-control { display: inline-flex; align-items: center; gap: 8px; color: var(--b-muted); font-size: 11px; white-space: nowrap; }
+.trainer-case-color-control select { min-height: 36px; max-width: 170px; padding: 5px 8px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); background: var(--b-surface); color: var(--b-ink); font: 500 11px var(--b-font-sans); }
+.trainer-orbit-stage > .shared-cube { margin-inline: auto; }
+.trainer-orbit-stage > .orbit { position: absolute; z-index: 3; inset: 50% auto auto 50%; width: min(100%, 420px) !important; height: min(100%, 420px) !important; transform: translate(-50%, -50%); pointer-events: none; }
+.trainer-orbit-stage > .orbit .orbit__svg { width: 100%; height: 100%; overflow: visible; }
+.trainer-orbit-slot { position: absolute; z-index: 4; left: 50%; bottom: max(8px, calc(50% - 202px)); transform: translateX(-50%); color: var(--b-ink, var(--orbit-ink, #222)); font: 600 15px 'DM Mono', monospace; font-variant-numeric: tabular-nums; pointer-events: none; }
+.trainer-coach-host { position: absolute; z-index: 4; inset: auto 0 0; pointer-events: none; }
+.trainer-coach-host:empty { display: none; }
+.trainer-coach-host .ui-coach-line { justify-content: center; }
+.trainer-orbit-stage > :not(.orbit):not(.trainer-orbit-slot):not(.trainer-coach-host) { position: relative; z-index: 1; }
+.trainer-orbit-stage > .cube-mount,
+.trainer-orbit-stage > .pll-cube-mount,
+.trainer-orbit-stage > .oll-cube,
+.trainer-orbit-stage > .lookahead-cube,
+.trainer-orbit-stage > .cp-cube { z-index: 2; }
+.trainer-progress-details { margin: 10px 0 24px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); color: var(--b-ink); }
+.trainer-progress-details > summary { padding: 12px 16px; color: var(--b-ink); font-size: 13px; font-weight: 600; cursor: pointer; }
+.trainer-progress-details[open] > summary { border-bottom: 1px solid var(--b-hairline); }
+.pll-progress-details { margin: 8px 0 20px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); color: var(--b-ink); }
+.pll-progress-details > summary { padding: 12px 16px; color: var(--b-ink); font-size: 13px; font-weight: 600; cursor: pointer; }
+.pll-progress-details[open] > summary { border-bottom: 1px solid var(--b-hairline); }
+@media (max-height: 780px) and (min-width: 701px) {
+  .cs-page.brain { gap: 12px; padding: 14px 0; min-height: 0; }
+  .cs-head h1 { font-size: 28px; }
+  .cs-sub { margin-top: 4px; font-size: 13px; }
+  .brain.quick-round { margin-bottom: 0; padding: 8px 12px; }
+  .oll-session, .lookahead-session { gap: 8px; padding: 12px; }
+  .oll-layout, .lookahead-layout { gap: 12px; }
+  #oll-cube, #la-cube { width: min(100%, 360px); min-height: 0; }
+  #oll-cube > .shared-cube, #la-cube > .shared-cube { width: min(var(--cube-size), 220px); }
+  .oll-answers, .lookahead-choices { gap: 6px; margin: 8px 0; }
+  .oll-answer, .lookahead-choice { min-height: 42px; padding: 8px; }
+  .oll-hint, #oll-feedback, .lookahead-hint, #la-feedback { font-size: 12px; }
+  .cp-cube { height: min(36svh, 250px); min-height: 220px; }
+  .legacy-drill-view .intro-row { margin: 0; padding: 8px 0; }
+  .legacy-drill-view .training-settings { margin-bottom: 8px; }
+  .legacy-drill-view .trainer-shell { min-height: 0; height: min(320px, calc(100svh - 340px)); }
+  .legacy-drill-view .cube-stage { padding: 8px; }
+  .legacy-drill-view .cube-mount { min-height: 0; }
+  .legacy-drill-view .answer-stage { padding: 10px; }
+  .legacy-drill-view .retention-panel { margin: 0; padding: 8px 12px; }
+  #pll-view { display: flex; flex-direction: column; gap: 10px; }
+  #pll-view .pll-intro { margin: 0; }
+  #pll-view .pll-settings { margin: 0; }
+  #pll-view .pll-settings summary { min-height: 38px; padding: 0 12px; }
+  #pll-view .pll-round { margin-bottom: 0; }
+  #pll-view .pll-trainer-shell { min-height: 0; height: min(320px, calc(100svh - 340px)); border-radius: var(--b-radius-bar); }
+  #pll-view .pll-cube-stage { padding: 8px; }
+  #pll-view .pll-cube-mount { flex: 1; min-height: 0; height: auto; }
+  #pll-view .pll-answer-stage { padding: 10px; }
+  #pll-view .pll-feedback-row { margin-top: 8px; padding-top: 6px; }
+  .pll-progress-details { margin: 0; }
+}
+@media (max-width: 640px) {
+  .trainer-orbit-stage > .orbit { width: min(100%, 310px); height: min(100%, 310px); }
+  .trainer-orbit-slot { bottom: max(6px, calc(50% - 150px)); font-size: 13px; }
+}
+@media (max-width: 700px) {
+  .cs-page.brain { padding: 14px 0 20px; gap: 12px; min-height: 0; }
+  .trainer-progress-details { margin-bottom: 14px; }
+  .trainer-orbit-stage > .orbit { width: min(100%, 310px) !important; height: min(100%, 310px) !important; }
+  #oll-cube, #la-cube { width: min(100%, 310px); min-height: 0; }
+  #oll-cube > .shared-cube, #la-cube > .shared-cube { width: min(var(--cube-size), 220px); }
+}
