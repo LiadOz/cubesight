@@ -6,6 +6,7 @@ import { readCaseColorSetting } from '../ui/cube/case-color.js';
 import { caseDisplayState } from '../ui/cube/orientation.js';
 import { createSolvedState } from '../cross-cube.js';
 import { buildDrillViewModel } from './view-model.js';
+import { buildRoundSegments } from './round-segments.js';
 import './round-panel.css';
 
 const PRESETS = Object.freeze({ '2m': { kind: 'timed', durationMs: 120000 }, '20': { kind: 'cases', cases: 20 }, '30s': { kind: 'timed', durationMs: 30000 } });
@@ -40,12 +41,7 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
     panel.dataset.brainStyle = loadSettings(storage).style;
     const answers = round?.answers ?? summary?.answers ?? [];
     const target = round?.preset.kind === 'cases' ? round.preset.cases : Math.max(answers.length + (running ? 1 : 0), 1);
-    const segments = Array.from({ length: target }, (_, index) => {
-      const answer = answers[index];
-      return { key: `case-${index + 1}`, label: `${index + 1}`, short: `${index + 1}`, weight: 1,
-        state: answer ? answer.correct ? 'good' : 'wrong' : running && index === answers.length ? 'current' : 'future',
-        value: answer?.ms == null ? null : `${(answer.ms / 1000).toFixed(1)} s` };
-    });
+    const segments = buildRoundSegments({ ...round, answers }, target);
     orbit.update({ segments, shape: 'open' });
     const times = answers.map(answer => answer.ms).filter(Number.isFinite);
     const average = times.length ? `${(times.reduce((sum, ms) => sum + ms, 0) / times.length / 1000).toFixed(2)} s` : '—';
@@ -80,9 +76,7 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
       const timed = answers.map(answer => answer.ms).filter(Number.isFinite);
       const averageMs = timed.length ? timed.reduce((sum, value) => sum + value, 0) / timed.length : null;
       const target = round?.preset.kind === 'cases' ? round.preset.cases : Math.max(answers.length + (round?.status === 'active' ? 1 : 0), 1);
-      const segments = Array.from({ length: target }, (_, index) => ({ key: `case-${index + 1}`,
-        state: answers[index] ? answers[index].correct ? 'good' : 'wrong' : round?.status === 'active' && index === answers.length ? 'current' : 'future',
-        weight: 1, fill: answers[index] ? 1 : 0 }));
+      const segments = buildRoundSegments(round, target).map((segment, index) => ({ ...segment, fill: answers[index] ? 1 : 0 }));
       const caseSeed = round ? `${drill}:${round.startedAt}:${answers.length}` : `${drill}:idle`;
       const caseColor = readCaseColorSetting(storage);
       const topColor = caseDisplayState(createSolvedState(), caseColor, caseSeed).topColor;

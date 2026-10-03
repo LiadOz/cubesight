@@ -1,11 +1,14 @@
 import './pll-trainer.css';
 import { createRoundPanel } from './drills/round-panel.js';
-import { createPageCube } from './pages/cube-view.js';
+import { Cube } from './ui/cube/index.js';
+import { readCaseColorSetting, CASE_COLOR_CHANGE_EVENT } from './ui/cube/case-color.js';
 import { renderCube } from './cube-renderer.js';
 import { toRenderData } from './cross-cube.js';
 import { PLL_CASES, createPLLTrial } from './pll-logic.js';
 import { KEYS, fmt } from './copy/terms.js';
 import { resolvePLLStart } from './drills/pll-start.js';
+import { createTrainerOrbit } from './trainers/orbit-round.js';
+import { mountCaseColorControl } from './trainers/case-color-control.js';
 
 /*
  * PLL trainer UI contract
@@ -133,25 +136,27 @@ export function createPLLTrainer(root) {
 
   root.innerHTML = `
     <section class="pll-intro"><div><p class="eyebrow">drills / PLL recognition</p><h1>PLL recognition</h1></div><p class="intro-copy">Recognize the case.</p></section>
-    <details class="pll-settings" open><summary><span>settings</span><small>glance · case family</small><i aria-hidden="true"></i></summary>
+    <details class="pll-settings"><summary><span>settings</span><small>glance · case family</small><i aria-hidden="true"></i></summary>
       <div class="pll-controls">
         <div class="pll-control-group"><span class="pll-label">mode</span><div class="pll-segmented" role="group" aria-label="PLL mode">${MODES.map((item) => `<button type="button" class="pll-segment${item.id === mode ? ' active' : ''}" data-pll-mode="${item.id}">${item.label}</button>`).join('')}</div><small id="pll-mode-note">${MODES[0].note}</small></div>
         <label class="pll-control-group"><span class="pll-label">case family</span><select id="pll-family" aria-label="PLL case family"><option value="all">all PLL cases · mixed</option>${families.map((item) => `<option value="${esc(item)}"${item === family ? ' selected' : ''}>${esc(pretty(item))} family · learn</option>`).join('')}</select></label>
         <div class="pll-control-group pll-pacing"><span class="pll-label">glance</span><label class="pll-check"><input id="pll-glance" type="checkbox" ${glanceEnabled ? 'checked' : ''}> <span>hide after glance</span></label><label class="pll-select-label" for="pll-glance-ms"><span id="pll-glance-caption">adaptive glance · ${glanceMs} ms</span><select id="pll-glance-ms" aria-label="glance time"><option value="25">25 ms</option><option value="50">50 ms</option><option value="75">75 ms</option><option value="100">100 ms</option><option value="150">150 ms</option><option value="200">200 ms</option><option value="300">300 ms</option><option value="450">450 ms</option><option value="600">600 ms</option><option value="800">800 ms</option><option value="1000">1 s</option><option value="1500">1.5 s</option></select></label></div>
       </div>
     </details>
+    <div id="pll-round-host"></div>
     <section class="pll-trainer-shell">
       <div class="pll-cube-stage"><div class="pll-stage-topline"><span class="status-dot"><i></i> identify the PLL</span><span class="view-lock">fixed two-sided view</span></div><div id="pll-cube" class="pll-cube-mount"></div><div id="pll-glance-overlay" class="pll-glance-overlay" hidden>answer now</div><div id="pll-pause" class="pll-pause" hidden><strong>Taking a break?</strong><span>This one won’t count. Resume for a fresh case.</span><button type="button" id="pll-resume">resume</button></div><div class="pll-cube-caption"><span>U top · F/R sides · AUF varies</span><span>Rotation locked to protect recog.</span></div></div>
-      <div class="pll-answer-stage"><div class="pll-case-meta"><span id="pll-case-number">case 1</span><span id="pll-case-mode">learn · all cases</span></div><div class="pll-timer-wrap"><span class="pll-timer-label">recog</span><div id="pll-timer" class="pll-timer">0.00</div><small id="pll-timing-note">Accuracy first. Speed follows stable cues.</small></div><div class="pll-prompt"><p>Which PLL case is this?</p><small>Answer before you reveal the cue.</small></div><div id="pll-answers" class="pll-answer-grid" role="group" aria-label="Choose the PLL case"></div><div class="pll-feedback-row"><p id="pll-feedback" role="status" aria-live="polite">Choose the case you see.</p><button type="button" class="pll-skip" id="pll-skip">skip <kbd>s</kbd></button></div><button type="button" class="pll-next" id="pll-next" hidden>next case</button></div>
+      <div class="pll-answer-stage"><div class="pll-case-meta"><span id="pll-case-mode">learn · all cases</span></div><div class="pll-prompt"><p>Which PLL case is this?</p><small>Answer before you reveal the cue.</small><small id="pll-timing-note">Accuracy first. Speed follows stable cues.</small></div><div id="pll-answers" class="pll-answer-grid" role="group" aria-label="Choose the PLL case"></div><div class="pll-feedback-row"><p id="pll-feedback" role="status" aria-live="polite">Choose the case you see.</p><button type="button" class="pll-skip" id="pll-skip">skip <kbd>s</kbd></button></div><button type="button" class="pll-next" id="pll-next" hidden>next case</button></div>
     </section>
-    <section class="pll-progress"><div class="pll-section-heading"><div><p class="eyebrow">progress</p><h2>PLL recognition</h2></div><button type="button" class="pll-text-button danger" id="pll-clear">clear PLL history</button></div><div class="pll-metric-grid"><article><span>accuracy</span><strong id="pll-accuracy">—</strong><small id="pll-accuracy-note">No answers yet</small></article><article><span>random AUF accuracy</span><strong id="pll-transfer">—</strong><small id="pll-transfer-note">No random AUF answers</small></article><article><span>median recog</span><strong id="pll-median">—</strong><small>correct answers only</small></article><article><span>due</span><strong id="pll-due">0</strong><small id="pll-due-note">due · retry</small></article><article><span>24 h retention</span><strong id="pll-retention">—</strong><small>delayed random AUF answers</small></article></div><div class="pll-case-card"><div class="pll-case-head"><div><span>by case</span><small>misses and slow recog first</small></div><button type="button" class="pll-text-button" id="pll-retention-help">why 24 h returns?</button></div><div id="pll-case-list"></div></div></section>`;
+    <details class="pll-progress-details"><summary>Progress · PLL recognition</summary><section class="pll-progress"><div class="pll-section-heading"><div><p class="eyebrow">progress</p><h2>PLL recognition</h2></div><button type="button" class="pll-text-button danger" id="pll-clear">clear PLL history</button></div><div class="pll-metric-grid"><article><span>accuracy</span><strong id="pll-accuracy">—</strong><small id="pll-accuracy-note">No answers yet</small></article><article><span>random AUF accuracy</span><strong id="pll-transfer">—</strong><small id="pll-transfer-note">No random AUF answers</small></article><article><span>median recog</span><strong id="pll-median">—</strong><small>correct answers only</small></article><article><span>due</span><strong id="pll-due">0</strong><small id="pll-due-note">due · retry</small></article><article><span>24 h retention</span><strong id="pll-retention">—</strong><small>delayed random AUF answers</small></article></div><div class="pll-case-card"><div class="pll-case-head"><div><span>by case</span><small>misses and slow recog first</small></div><button type="button" class="pll-text-button" id="pll-retention-help">why 24 h returns?</button></div><div id="pll-case-list"></div></div></section></details>`;
 
   const $ = (selector) => root.querySelector(selector);
-  if (window.matchMedia('(max-width: 700px)').matches) $('.pll-settings').open = false;
-  let cube = null, renderData = null, disposed = false;
-  const cubeReady = createPageCube($('#pll-cube'), { mode: 'corner' }).then(view => {
-    if (disposed) { view.destroy(); return; }
-    cube = view;
+  const disposeCaseColorControl = mountCaseColorControl($('.pll-intro'));
+  const trainerOrbit = createTrainerOrbit($('.pll-cube-stage'));
+  let cube = null, renderData = null, disposed = false, activeCaseSeed = '';
+  const cubeReady = Promise.resolve().then(() => {
+    if (disposed) return;
+    cube = new Cube($('#pll-cube'), { mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(), caseSeed: 'pll:initial', label: 'PLL recognition case' });
     if (renderData) cube.update(renderData);
   }).catch(error => {
     if (disposed) return;
@@ -165,7 +170,7 @@ export function createPLLTrainer(root) {
     };
     if (renderData) cube.update(renderData);
   });
-  const setTimerText = (milliseconds) => { $('#pll-timer').textContent = fmt.time(milliseconds); };
+  const setTimerText = milliseconds => trainerOrbit.tick(fmt.time(milliseconds));
   const totalAttempts = () => Object.values(stats).reduce((sum, item) => sum + (item.attempts || 0), 0);
   const totalCorrect = () => Object.values(stats).reduce((sum, item) => sum + (item.correct || 0), 0);
   const allTimes = () => Object.values(stats).flatMap((item) => [...item.times, ...(item.transfer?.times || [])]);
@@ -327,12 +332,19 @@ export function createPLLTrainer(root) {
     } catch { setMessage('Couldn’t load PLL cases. Reload and try again.', 'error'); return; }
     if (token !== trialToken || !active) return;
     trial = { ...generated, caseId: generated?.caseId || generated?.id || selected?.id, name: generated?.name || generated?.label || selected?.name || selected?.id, family: generated?.family || selected?.family || family };
+    const roundIndex = roundPanel?.getViewModel()?.round?.answers?.length || 0;
+    trainerOrbit?.update({ index: roundIndex, state: 'current', value: `${roundIndex + 1}` });
     root.dataset.pllCase = trial.caseId;
     if (start.pin) linkedAttempts++;
     const seenStats = caseStats(trial.caseId);
       trial.delayedEligible = mode === 'transfer' && isDelayedRetentionEligible(seenStats.lastSeen);
-    const data = renderDataFor(trial); renderData = data; cube?.update(data);
-    $('#pll-case-number').textContent = `case ${completed + 1}`; $('#pll-case-mode').textContent = `${MODES.find(item => item.id === mode)?.label || 'learn'} · ${currentFamilyLabel()}`;
+    const data = renderDataFor(trial); renderData = data;
+    if (trial.state?.cubies && cube?.setState) {
+      activeCaseSeed = `pll:${completed}:${trial.caseId}`;
+      cube.setCaseOrientation(readCaseColorSetting(), { seed: activeCaseSeed });
+      cube.setState(trial.state);
+    } else cube?.update(data);
+    $('#pll-case-mode').textContent = `${MODES.find(item => item.id === mode)?.label || 'learn'} · ${currentFamilyLabel()}`;
     $('#pll-timing-note').textContent = mode === 'transfer'
       ? 'random AUF · no cue until reveal.'
       : glanceEnabled ? `adaptive glance · ${glanceMs} ms · accuracy first.` : 'full view · enable glance when the cues feel reliable.';
@@ -389,6 +401,7 @@ export function createPLLTrainer(root) {
       completed++; saveStats(stats); refreshStats();
       roundPanel.record({correct,ms:elapsed,caseId:trial.caseId,at:answeredAt});
     }
+    trainerOrbit?.update({ index: Math.max(0, (roundPanel?.getViewModel()?.round?.answers?.length || 1) - 1), state: correct ? 'good' : 'bad', value: `${(elapsed / 1000).toFixed(2)} s`, text: correct ? `${getCase(trial.caseId).name} · recognized.` : `This is ${getCase(trial.caseId).name}.` });
     if (roundPanel.complete) return;
     const expected = getCase(trial.caseId); const cue = feedbackCue();
     const result = skipped ? `Skipped, it was ${expected.name}.` : correct ? `Nice · ${expected.name}` : `Not quite, it was ${expected.name}.`;
@@ -427,8 +440,11 @@ export function createPLLTrainer(root) {
     newTrial();
   }));
   $('#pll-retention-help').addEventListener('click', () => setMessage('Random AUF cases return after 24 h to check your recog.', 'info'));
+  const onCaseColorChange = event => { if (cube?.setCaseOrientation && trial?.state?.cubies) cube.setCaseOrientation(event.detail?.setting || readCaseColorSetting(), { seed: activeCaseSeed }); };
+  window.addEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange);
   window.addEventListener('keydown', onKey);
-  const roundPanel = createRoundPanel(root, {drill:'pll',getSettings:()=>({mode,family,glanceEnabled,glanceMs}),onRestart:()=>newTrial(),onComplete:()=>{locked=true;stopClock();$('#pll-answers').querySelectorAll('button').forEach(button=>button.disabled=true);}});
+  const roundPanel = createRoundPanel($('#pll-round-host'), {drill:'pll',orbitHost:$('.pll-cube-stage'),getSettings:()=>({mode,family,glanceEnabled,glanceMs}),onRestart:()=>newTrial(),onComplete:()=>{locked=true;stopClock();$('#pll-answers').querySelectorAll('button').forEach(button=>button.disabled=true);}});
+  trainerOrbit.connect(roundPanel.orbit, () => roundPanel.getViewModel());
   roundPanel.setActive(true);
   refreshStats(); renderAnswers(); newTrial();
 
@@ -437,6 +453,13 @@ export function createPLLTrainer(root) {
     // to the trainer always starts a fresh case, so unseen time is never
     // mistaken for recognition time.
     ready: cubeReady,
+    getViewModel() {
+      const snapshot = cube?.getSnapshot?.() ?? null;
+      return { screen: 'trainer', drill: 'pll', phase: locked ? 'feedback' : trial ? (paused ? 'paused' : 'recognition') : 'loading',
+        currentCase: trial ? { id: trial.caseId ?? null, seed: activeCaseSeed || `pll:${trial.caseId}`, topColor: snapshot?.renderData?.colors?.U ?? null, orientation: snapshot?.caseColorSetting ?? null, targets: trial.caseId ?? null } : null,
+        answers: [...($('#pll-answers')?.querySelectorAll('[data-pll-answer]') || [])].map(button => ({ logicalKey: button.dataset.pllAnswer, displayKey: button.dataset.pllAnswer, label: button.querySelector('span')?.textContent || button.textContent.trim(), selected: button.classList.contains('wrong') || button.classList.contains('correct'), correct: button.classList.contains('correct') || (Boolean(trial) && sameId(button.dataset.pllAnswer, trial.caseId)) })),
+        round: roundPanel.getViewModel(), cube: snapshot, feedback: $('#pll-feedback')?.textContent || '', settings: { mode, family, glanceEnabled, glanceMs, caseColor: readCaseColorSetting() } };
+    },
     setActive(value) {
       if (active === value) return;
       active = value;
@@ -446,7 +469,7 @@ export function createPLLTrainer(root) {
     },
     handleKey(event) { onKey(event); },
     updateHelp() {},
-    destroy() { disposed = true; active = false; roundPanel.destroy(); stopClock(); window.removeEventListener('keydown', onKey); cube?.destroy(); root.replaceChildren(); },
+    destroy() { disposed = true; active = false; roundPanel.destroy(); trainerOrbit?.destroy(); stopClock(); window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange); window.removeEventListener('keydown', onKey); disposeCaseColorControl(); cube?.destroy(); root.replaceChildren(); },
   };
 }
 
