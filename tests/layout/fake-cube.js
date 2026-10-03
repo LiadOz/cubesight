@@ -1,38 +1,7 @@
-const SOLVED = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+import { mountTestBrain } from '../helpers/fake-brain.js';
 
 export async function mountFakeCube(page, { delayed = false } = {}) {
-  await page.goto('/#/solve');
-  await page.evaluate(async ({ delayed, solved }) => {
-    localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: 'orbit' }));
-    const [{ createBrain }, { createSmartCubeSession }] = await Promise.all([
-      import('/src/brain.js'), import('/src/smart-cube-session.js'),
-    ]);
-    let observer;
-    let resolveConnection;
-    let tick = 0;
-    const connection = {
-      deviceName: 'GAN F8 layout fixture',
-      protocol: { name: 'GAN Gen4' },
-      capabilities: { facelets: true },
-      events$: { subscribe(value) { observer = value; return { unsubscribe() { observer = null; } }; } },
-      async sendCommand() { queueMicrotask(() => observer?.next({ type: 'FACELETS', facelets: solved })); },
-      async disconnect() {},
-    };
-    const session = createSmartCubeSession(() => delayed ? new Promise(resolve => { resolveConnection = resolve; }) : Promise.resolve(connection));
-    const emitTurns = moves => moves.split(/\s+/).filter(Boolean).forEach(raw => {
-      if (raw.endsWith('2')) {
-        tick += 1000; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
-        tick += 20; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
-      } else { tick += 1000; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick }); }
-    });
-    const root = document.querySelector('#brain-view');
-    root.replaceChildren();
-    window.testBrain = { session, emitTurns, resolveConnection: () => resolveConnection?.(connection) };
-    window.testBrain.handle = createBrain(root, session);
-    await window.testBrain.handle.ready;
-    window.testBrain.connectPromise = session.connect();
-    if (!delayed) await window.testBrain.connectPromise;
-  }, { delayed, solved: SOLVED });
+  await mountTestBrain(page, 'orbit', { route: true, awaitConnect: !delayed, deferConnect: delayed });
 }
 
 export async function startScramble(page, scramble = "R2 D' F2 U B2 L' U2 F") {

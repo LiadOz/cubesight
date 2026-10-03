@@ -11,7 +11,7 @@ import { setupTheme } from './theme.js';
 import { createHeader, createToastSlot } from './ui/shared/index.js';
 import { buildSharedViewModel } from './ui/shared/snapshot-model.js';
 import { createSnapshotBridge } from './ui/shared/snapshot-bridge.js';
-import { smartCube, clearSavedCubeData } from './smart-cube-bluetooth.js';
+import { smartCube, clearSavedCubeData, setReplayConnectDevice } from './smart-cube-bluetooth.js';
 import { clearRecording, enableRecordingPersistence, getRecording, recordNavigation, recordView } from './recorder.js';
 import { saveRecording } from './brain-recording.js';
 import { APP_NAME, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
@@ -1882,8 +1882,13 @@ function setTool(tool, initial = false) {
             getViewModel: () => brain?.getViewModel?.() ?? null,
           };
         }
+        const testCube = import.meta.env.DEV && window.__CUBESIGHT_TEST_CUBE_FACTORY__
+          ? await window.__CUBESIGHT_TEST_CUBE_FACTORY__()
+          : null;
+        if (testCube) setReplayConnectDevice(testCube.connectDevice);
         brain = createBrain(document.querySelector('#brain-view'), smartCube);
         await brain.ready;
+        if (testCube) window.testBrain = { ...testCube, session: smartCube, handle: brain, root: document.querySelector('#brain-view') };
         brain.setActive(activeTool === 'brain');
         mountSnapshotPage('brain', brain);
         if (labPreviewCube) {
