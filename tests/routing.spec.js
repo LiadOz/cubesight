@@ -2,19 +2,22 @@ import { test, expect } from './helpers/coverage-test.js';
 
 test('exposes the installed build and a network version marker', async ({ page, request }) => {
   await page.goto('/');
-  await expect(page.locator('#app-build')).toHaveText(/^(development|[0-9a-f]{7})$/);
+  await expect(page.locator('#app > footer')).toHaveCount(0);
   const response = await request.get('/version.json');
   expect(response.ok()).toBe(true);
   const server = await response.json();
-  expect(await page.locator('#app-build').textContent()).toBe(server.revision === 'development' ? server.revision : server.revision.slice(0, 7));
-  await page.locator('[data-action="open-help"]').click();
-  await page.locator('.build-info [data-action="check-update"]').click();
-  await expect(page.locator('#update-status')).toContainText('is current');
+  await page.goto('/#/help');
+  await expect(page.locator('[data-help-build]')).toHaveText(server.revision === 'development' ? server.revision : server.revision.slice(0, 7));
+  await page.locator('[data-help-update]').click();
+  await expect(page.locator('[data-help-update-status]')).toContainText('is current');
+  await expect(page.locator('.ui-toast-slot .toast')).toContainText('CubeSight build');
+  await expect(page.locator('#app > footer')).toHaveCount(0);
 });
 
 const routes = [
   // [path, view id, nav item lit, document title]
   ['solve', 'brain', 'solve', 'solve'],
+  ['help', 'help', null, 'help'],
   ['drills', 'drills', 'drills', 'drills'],
   ['drills/corners', 'corner', 'drills', 'corner recognition'],
   ['drills/f2l', 'f2l', 'drills', 'F2L deduction'],
@@ -22,8 +25,8 @@ const routes = [
   ['drills/scout', 'scout', 'drills', 'cross planning'],
   ['algs', 'algs', 'algs', 'algs'],
   ['progress', 'progress', 'progress', 'progress'],
-  ['history', 'history', null, 'history'],
-  ['timer', 'timer', null, 'timer'],
+  ['history', 'history', 'history', 'history'],
+  ['timer', 'timer', 'solve', 'timer'],
   ['dev/studio', 'smart', null, 'studio'],
 ];
 

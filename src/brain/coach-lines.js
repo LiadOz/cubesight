@@ -4,6 +4,8 @@
 // unchanged lines keep their DOM node, running counters use a fixed key.
 
 // 'pair 1' -> 'Pair 1'; step codes stay upper case ('eo' -> 'EO').
+import { fmtMoves } from './format.js';
+
 const skipName = name => (/^(eo|co|cp|ep|oll|pll|cmll|l6e)$/.test(name) ? name.toUpperCase() : name[0].toUpperCase() + name.slice(1));
 const title = color => (color ? color[0].toUpperCase() + color.slice(1) : '');
 const seconds = ms => (ms == null ? '—' : !Number.isFinite(ms) ? 'DNF' : `${(ms / 1000).toFixed(2)}s`);
@@ -27,10 +29,16 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
     lines.push({ tone: 'info', text: 'Follow the scramble. A wrong turn shows the way back.' });
   } else if ((snap?.phase === 'solving' || snap?.phase === 'done') && crossFace && state && showLive) {
     if (xcross) lines.push({ key: 'xcross', tone: 'good', text: `${xcross.startsWith('xx') ? 'xx-cross' : 'x-cross'}! The cross came together with ${xcross.startsWith('xx') ? 'pairs' : 'a pair'}. The scramble allowed it and you took it.` });
-    if (toggles.crossSuggest && optimalCross) {
+    if (toggles.crossSuggest && optimalCross?.best) {
+      const suggestion = optimalCross.best;
+      const xcross = optimalCross.bestXcross;
+      // copy-ok: “best” is the proven lowest-move start plan in the bounded search.
+      const lead = suggestion.proven ? 'Best cross' : 'Cross found so far';
+      lines.push({ tone: 'info', text: `${lead}: ${colorOf(suggestion.face)}, ${suggestion.length}${xcross?.proven ? ` · x-cross possible in ${xcross.length}` : ''}` });
+    } else if (toggles.crossSuggest && optimalCross) {
       lines.push({ tone: 'info', text: `Suggested cross: ${colorOf(optimalCross.face)}, ${optimalCross.length} move${optimalCross.length === 1 ? '' : 's'}` });
     }
-    if (toggles.crossHindsight && snap.crossMoveCount != null && optimalCross) {
+    if (toggles.crossHindsight && snap.crossMoveCount != null && optimalCross && !xcross) {
       const h = lenses.crossHindsight(snap.crossMoveCount, optimalCross.length, colorOf(crossFace));
       if (h) lines.push({ tone: h.kind === 'optimal' ? 'good' : 'warn', text: h.text });
     }
@@ -50,7 +58,7 @@ export function coachLines({ live: snap, state, toggles, optimalCross, xcross = 
       lines.push({ key: 'rotations', tone: 'warn', text: `${snap.rotations} rotation${snap.rotations === 1 ? '' : 's'} this solve. Fewer often saves time.` });
     }
     if (toggles.efficiencyScore) {
-      const score = lenses.efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, rotations: snap.rotations, solved: p.solved, f2lPairs: p.pairsSolved, ollDone: p.ollDone });
+      const score = lenses.efficiencyScore({ userCrossMoves: snap.crossMoveCount ?? 0, optimalCrossMoves: optimalCross?.length ?? null, crossTarget: xcross ? 'xcross' : 'cross', rotations: snap.rotations, solved: p.solved, f2lPairs: p.pairsSolved, ollDone: p.ollDone });
       lines.push({ key: 'efficiency', tone: 'good', text: `efficiency ${score}` });
     }
   } else if (snap?.phase === 'done' && snap.record) {
@@ -72,7 +80,8 @@ export function resultsCoach({ record, optimalCross, stages = [], plan = [], ave
   const out = [];
   if (!record) return out;
   const label = key => plan.find(s => s.key === key)?.label ?? key;
-  if (record.crossMoveCount != null && optimalCross && record.crossMoveCount > optimalCross.length) {
+  const targetKind = record.analysis?.cross?.target?.kind ?? (record.xcross && record.xcross !== 'cross' ? record.xcross : 'cross');
+  if (targetKind === 'cross' && record.crossMoveCount != null && optimalCross && record.crossMoveCount > optimalCross.length) {
     out.push({ key: 'cross', tag: 'cross', tone: 'warn', text: `Your cross took ${record.crossMoveCount} moves; an optimal ${faceColors[optimalCross.face] ?? optimalCross.face} cross here is ${optimalCross.length}.`, ...(optimalCross.solution ? { alg: optimalCross.solution } : {}) });
   }
   if (record.xcross && record.xcross !== 'cross') out.push({ key: 'xcross', tag: record.xcross, tone: 'good', text: `${record.xcross === 'xxcross' ? 'xx-cross' : 'x-cross'} built with the cross.` });
@@ -84,6 +93,19 @@ export function resultsCoach({ record, optimalCross, stages = [], plan = [], ave
   }
   for (const s of stages.filter(s => s.pseudo)) out.push({ key: `pseudo-${s.key}`, tag: 'pseudo pair', tone: 'info', text: `${title(label(s.key))} used a pseudo pair (D offset).` });
   for (const s of stages.filter(s => s.skipped && s.key !== 'cross')) out.push({ key: `skip-${s.key}`, tag: `${label(s.key)} skip`, tone: 'good', text: `${skipName(label(s.key))} skip.` });
+  for (const key of ['oll', 'pll']) {
+    const lastLayer = record.analysis?.lastLayer?.[key];
+    const look = lastLayer?.extraLook && lastLayer.looks?.find(row => ['pause', 'known-alg-prefix'].includes(row.evidence));
+    if (!look) continue;
+    const caseLabel = id => {
+      const number = String(id ?? '').split('/')[1];
+      return `${key.toUpperCase()} ${number || lastLayer.name}`;
+    };
+    const story = look.recognizedAlgMoves ? `${fmtMoves(look.recognizedAlgMoves)} first (→ ${caseLabel(look.caseId)})` : `a pause led to ${caseLabel(look.caseId)}`;
+    out.push({ key: `extra-look-${key}`, tag: `${key.toUpperCase()} · ${lastLayer.looksTaken} looks`, tone: 'warn',
+      text: `${caseLabel(lastLayer.caseId)} · ${lastLayer.looksTaken} looks: ${story}, then continued. Drill ${caseLabel(look.caseId)} next.` });
+    break;
+  }
   if (record.rotations > 2) out.push({ key: 'rotations', tag: 'rotations', tone: 'warn', text: `${record.rotations} rotation${record.rotations === 1 ? '' : 's'}. Fewer often saves time.` });
   return out;
 }

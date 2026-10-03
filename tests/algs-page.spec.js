@@ -121,10 +121,10 @@ test('algorithm case screens render across Orbit/Mono and light/dark at desktop 
         await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
         const cubeWidth = await page.locator('[data-alg-cube] canvas').evaluate(node => node.getBoundingClientRect().width);
         expect(cubeWidth).toBeGreaterThanOrEqual(width === 390 ? 190 : 240);
-        const playbackText = await page.locator('.alg-cube-card .sequence-progress').textContent();
-        expect(playbackText).toContain('group');
-        expect(playbackText).not.toMatch(/[−-]0\.00/);
-        expect(playbackText).not.toMatch(/\d+–\d+\s*[−-]/);
+        // F4 puts move-group names on the case Orbit, not in a second legacy strip.
+        const orbitLabels = await page.locator('.alg-case-orbit .orbit__label-name').allTextContents();
+        expect(orbitLabels).toContain('sledgehammer');
+        expect(orbitLabels.join(' ')).not.toMatch(/[−-]0\.00|\d+–\d+\s*[−-]/);
         await expect(page.locator('.alg-entry-grid .alg-entry')).toHaveCount(2);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
         await page.screenshot({ path: `test-results/review-next-2-player/algs-case-${style}-${theme}-${width}.png`, fullPage: true });

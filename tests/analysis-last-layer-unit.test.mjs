@@ -144,6 +144,97 @@ test('unfinished OLL and PLL stages keep case suggestions but do not receive eff
   assert.equal(partialPllReview.lastLayerReference, null);
 });
 
+test('one-look OLL Sune then OLL re-recognition is counted after a pause on all six cross faces', async () => {
+  const first = getCase('oll/10'), next = getCase('oll/34');
+  const sune = "R U R' U R U2 R'".split(' ');
+  const continuation = next.algs.find(alg => alg.verified && alg.moves.split(/\s+/).every(move => /^[URFDLB](?:2|')?$/.test(move))).moves.split(' ');
+  const canonicalMoves = [...sune, ...continuation];
+  const times = canonicalMoves.map((_, i) => 500 + i * 100 + (i >= sune.length ? 1000 : 0));
+  let segmentation, result;
+  for (const face of ['D', 'F', 'U', 'B', 'R', 'L']) {
+    const moves = unrelabelMoves(canonicalMoves, face);
+    segmentation = segmentSolve({ scramble: unrelabelMoves(first.setup.split(' '), face).join(' '), moves, moveTimes: times, crossFace: face });
+    result = await evaluateLastLayer(segmentation, { config: { oll: '1look', pll: '1look' } });
+    assert.equal(result.oll.caseId, 'oll/10', `${face}-cross initial case`);
+    assert.equal(result.oll.looksTaken, 2, `${face}-cross look count`);
+    assert.equal(result.oll.extraLook, true, `${face}-cross extra-look signal`);
+    assert.equal(result.oll.looks[0].caseId, 'oll/34', `${face}-cross intermediate case`);
+    assert.equal(result.oll.looks[0].evidence, 'pause');
+  }
+  const summary = summarizeAnalysis({ segmentation, lastLayer: result });
+  const saved = cleanAnalysis(summary);
+  assert.equal(saved.lastLayer.oll.extraLook, true);
+  assert.equal(saved.lastLayer.oll.looksTaken, 2);
+});
+
+test('a clean two-look EO then CO solve counts its configured boundary without an extra look', async () => {
+  const eo = getCase('oll2/eo-line').algs[0].moves;
+  const co = getCase('oll2/co-oll-27').algs[0].moves;
+  const moves = [...eo.split(' '), ...co.split(' ')];
+  const segmentation = segmentSolve({ scramble: invertAlg(moves.join(' ')).join(' '), moves, crossFace: 'D' });
+  const result = await evaluateLastLayer(segmentation, { config: { oll: '2look', pll: '2look' } });
+  assert.equal(result.oll.looksTaken, 2);
+  assert.equal(result.oll.extraLook, false);
+  assert.equal(result.oll.looks[0].evidence, 'configured-look');
+});
+
+test('a two-look OLL that reaches a third case after a pause is flagged', async () => {
+  const eo = getCase('oll2/eo-line').algs[0].moves.split(' ');
+  const co = getCase('oll2/co-oll-27').algs[0].moves.split(' ');
+  const moves = [...eo, ...co, ...co];
+  const pauseAt = eo.length + co.length;
+  const times = moves.map((_, i) => 500 + i * 100 + (i >= pauseAt ? 1000 : 0));
+  const segmentation = segmentSolve({ scramble: invertAlg(moves.join(' ')).join(' '), moves, moveTimes: times, crossFace: 'D' });
+  const result = await evaluateLastLayer(segmentation, { config: { oll: '2look', pll: '2look' } });
+  assert.equal(result.oll.looksTaken, 3);
+  assert.equal(result.oll.extraLook, true);
+  assert.equal(result.oll.looks.length, 2);
+  assert.equal(result.oll.looks[1].evidence, 'pause');
+});
+
+test('a clean one-look OLL does not count canonical states inside its algorithm as extra looks', async () => {
+  const row = getCase('oll/27');
+  const moves = row.algs.find(alg => alg.verified).moves.split(' ');
+  const segmentation = segmentSolve({ scramble: invertAlg(moves.join(' ')).join(' '), moves, crossFace: 'D' });
+  const result = await evaluateLastLayer(segmentation, { config: { oll: '1look', pll: '1look' } });
+  assert.equal(result.oll.looksTaken, 1);
+  assert.equal(result.oll.extraLook, false);
+  assert.equal(result.oll.likelyExtraLook, false);
+  const saved = cleanAnalysis(summarizeAnalysis({ segmentation, lastLayer: result }));
+  assert.equal(saved.lastLayer.oll.recognizedAlg.id, result.oll.recognizedAlg.id);
+});
+
+test('a pause at an intermediate case inside a recognized single OLL alg is not another look', async () => {
+  const row = getCase('oll/41');
+  const moves = row.algs.find(alg => alg.id === 's.oll.41.1').moves.split(' ');
+  const pauseAt = 8;
+  const times = moves.map((_, i) => 500 + i * 100 + (i >= pauseAt ? 1100 : 0));
+  const segmentation = segmentSolve({ scramble: row.setup, moves, moveTimes: times, crossFace: 'D' });
+  const result = await evaluateLastLayer(segmentation, { config: { oll: '1look', pll: '1look' } });
+  assert.equal(result.oll.recognizedAlg.id, 's.oll.41.1');
+  assert.equal(result.oll.looksTaken, 1);
+  assert.equal(result.oll.extraLook, false);
+  assert.equal(result.oll.likelyExtraLook, false);
+});
+
+test('repeating a U-perm reaches a second PLL case; a pause corroborates the extra look', async () => {
+  const start = getCase('pll/Gb');
+  const uPerm = getCase('pll/Ua').algs.find(alg => alg.verified && alg.moves.split(/\s+/).every(move => /^[URFDLB](?:2|')?$/.test(move))).moves.split(' ');
+  const moves = [...uPerm, ...uPerm];
+  const uncorroborated = segmentSolve({ scramble: start.setup, moves, crossFace: 'D' });
+  const likely = await evaluateLastLayer(uncorroborated, { config: { oll: '1look', pll: '1look' } });
+  assert.equal(likely.pll.looksTaken, 1);
+  assert.equal(likely.pll.extraLook, false, 'a catalog state inside the repeated algorithm is not enough by itself');
+  assert.equal(likely.pll.likelyExtraLook, true);
+
+  const times = moves.map((_, i) => 500 + i * 100 + (i >= uPerm.length ? 1000 : 0));
+  const paused = segmentSolve({ scramble: start.setup, moves, moveTimes: times, crossFace: 'D' });
+  const corroborated = await evaluateLastLayer(paused, { config: { oll: '1look', pll: '1look' } });
+  assert.equal(corroborated.pll.looks[0].caseId, 'pll/F');
+  assert.equal(corroborated.pll.extraLook, true);
+  assert.equal(corroborated.pll.looksTaken, 2);
+});
+
 test('summary maps canonical D-frame OLL suggestions back to the solve face and preserves source notation', () => {
   const solve = segmentSolve({ scramble: 'R U', moves: ['R', 'U'], crossFace: 'F' });
   const summary = summarizeAnalysis({ segmentation: solve, lastLayer: {

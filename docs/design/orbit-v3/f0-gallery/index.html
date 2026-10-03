@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F0 · Cube and Orbit foundation</title>
+  <link rel="stylesheet" href="../../_gallery/lightbox.css">
+  <style>
+    :root { color-scheme: dark; font: 15px/1.55 system-ui, sans-serif; background:#100f0d; color:#f2eee4; }
+    body { max-width:1440px; margin:0 auto; padding:32px clamp(16px,4vw,56px) 64px; }
+    h1 { margin:0; font-size:clamp(28px,5vw,46px); }
+    .intro { max-width:72ch; color:#a8a69d; }
+    .flow { margin-top:40px; }
+    .flow h2 { margin:0 0 14px; font-size:20px; }
+    .shots { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:14px; }
+    figure { min-width:0; margin:0; padding:10px; border:1px solid #45443e; border-radius:12px; background:#171613; }
+    figure img { display:block; width:100%; height:auto; aspect-ratio:16 / 10; object-fit:contain; background:#100f0d; cursor:zoom-in; }
+    figcaption { padding:9px 2px 1px; color:#a8a69d; font-size:13px; }
+    figcaption strong { color:#f2eee4; font:12px 'DM Mono',monospace; }
+  </style>
+</head>
+<body>
+  <main>
+    <p>CubeSight · shared components</p>
+    <h1>F0 · Cube and Orbit foundation</h1>
+    <p class="intro">Numbered gallery of the shared Cube, Orbit and page pieces across every foundation flow. ① is the Orbit, ② the Cube, ③ the open-dial slot, and ④ the shared coach line, actions and chips. Click any frame to zoom; use the arrow keys to browse.</p>
+    <div id="gallery"></div>
+  </main>
+  <script>
+    const flows = [
+      ['01','guided scramble'], ['02','inspection'], ['03','solving'], ['04','results'],
+      ['05','algorithm playback'], ['06','drill round'], ['07','manual timer'],
+      ['08','history'], ['09','progress'],
+    ];
+    const variants = [['dark','Orbit dark'],['light','Orbit light'],['phone','390 px phone']];
+    const root = document.querySelector('#gallery');
+    for (const [id, title] of flows) {
+      const section = document.createElement('section'); section.className = 'flow';
+      const heading = document.createElement('h2'); heading.textContent = `F0-${id} · ${title}`; section.append(heading);
+      const shots = document.createElement('div'); shots.className = 'shots';
+      for (const [suffix, label] of variants) {
+        const file = `F0-${id}-${suffix}.png`;
+        const figure = document.createElement('figure');
+        const link = document.createElement('a'); link.href = file;
+        const image = document.createElement('img'); image.src = file; image.loading = 'lazy'; image.alt = `F0-${id} ${title} · ${label} · ① Orbit · ② Cube · ③ slot · ④ shared pieces`;
+        const caption = document.createElement('figcaption'); caption.innerHTML = `<strong>F0-${id}</strong> · ${label} · ① Orbit · ② Cube · ③ slot · ④ shared pieces`;
+        link.append(image); figure.append(link, caption); shots.append(figure);
+      }
+      section.append(shots); root.append(section);
+    }
+  </script>
+  <script src="../../_gallery/lightbox.js"></script>
+</body>
+</html>

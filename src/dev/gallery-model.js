@@ -6,7 +6,7 @@ export const STATUSES = Object.freeze(['exploring', 'chosen', 'rejected', 'super
 
 /**
  * '#/dev/gallery/post/orbit-v3?img=A-05.png' -> { view: 'post', id: 'orbit-v3', params }.
- * Views: folders (the group list), group (a folder path), blog, timeline, post, compare.
+ * Views: folders (the group list), group (a folder path), blog, timeline, post, compare, widgets.
  */
 export function parseGalleryRoute(hash = '') {
   const raw = hash.startsWith('#') ? hash.slice(1) : hash;
@@ -20,6 +20,7 @@ export function parseGalleryRoute(hash = '') {
   if (!decoded) return { view: 'folders', params };
   if (decoded === 'blog') return { view: 'blog', params };
   if (decoded === 'timeline') return { view: 'timeline', params };
+  if (decoded === 'widgets') return { view: 'widgets', params };
   if (decoded === 'compare') return { view: 'compare', params };
   if (decoded.startsWith('post/')) return { view: 'post', id: decoded.slice(5), params };
   return { view: 'group', group: decoded, params };

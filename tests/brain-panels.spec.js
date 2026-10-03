@@ -1,12 +1,14 @@
 import { test, expect } from './helpers/coverage-test.js';
 
-// The Brain's panels and navigation in a real browser with the real shell: the
-// settings panel (one active tab, closes from every path) and the debug drawer
-// (keeps the connection log, recordings and data off the solve view).
+// The Brain's isolated controller and real shell: the settings panel (one active
+// tab, closes from every path) and its debug drawer (connection log, recordings
+// and data). Global app-header drawer shortcuts are covered by ui-foundation.spec.
 const STYLES = ['orbit', 'mono'];
 
 async function mountBrain(page, style, { connected = true } = {}) {
-  await page.goto('/#/drills/corners');
+  // Mount in the standalone Brain harness so this controller's backtick owner
+  // is unambiguous; the full app header has its own global drawer/shortcut.
+  await page.goto('/src/brain/_gallery.html');
   await page.evaluate(async ([style, connected]) => {
     localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));

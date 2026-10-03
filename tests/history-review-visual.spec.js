@@ -25,9 +25,10 @@ for (const style of ['orbit', 'mono']) {
         await expect(history).toHaveAttribute('data-brain-style', style);
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expect(history.locator('.history-count')).toContainText('1 solves');
-        await history.locator('.history-list button').click();
-        await expect(history.locator('.history-cube canvas')).toBeVisible();
-        await expect(history.locator('.history-playback [data-sequence-position]')).toHaveText('0 / 2');
+        await history.locator('.history-solve a').click();
+        await expect(page).toHaveURL(new RegExp(`#\\/history\\/${record.at}$`));
+        await expect(history.locator('.history-stage__cube canvas')).toBeVisible();
+        await expect(history.locator('.history-results-host .f1-results')).toBeVisible();
         await expect(history.locator('canvas')).toHaveCount(1);
         fs.mkdirSync(output, { recursive: true });
         await page.screenshot({ path: path.join(output, `history-${style}-${theme}-${viewport.name}.png`), fullPage: true });

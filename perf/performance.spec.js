@@ -23,7 +23,7 @@ async function startFrameSample(page, durationMs) {
 }
 
 async function finishFrameSample(page, durationMs) {
-  await page.waitForFunction(() => window.__f11FrameSample?.done, { timeout: durationMs + 10_000 });
+  await page.waitForFunction(() => window.__f11FrameSample?.done, undefined, { timeout: durationMs + 10_000 });
   return page.evaluate(() => {
     const frames = window.__f11FrameSample.frames;
     const deltas = frames.slice(1).map((time, index) => time - frames[index]);
@@ -50,7 +50,7 @@ async function frameSample(page, durationMs, action) {
 async function startupSample(page, label) {
   await page.reload();
   await page.locator('#brain-view .brain').waitFor();
-  await page.waitForFunction(() => performance.getEntriesByName('f11-first-meaningful').length > 0);
+  await page.waitForFunction(() => performance.getEntriesByName('f11-first-meaningful').length > 0, undefined, { timeout: 30_000 });
   return page.evaluate((name) => {
     const navigation = performance.getEntriesByType('navigation')[0];
     const meaningful = performance.getEntriesByName('f11-first-meaningful')[0];
@@ -125,7 +125,7 @@ test('captures production-cache startup and deterministic solve/render performan
   await page.goto('/#/solve');
   await page.locator('#brain-view .brain').waitFor();
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller), { timeout: 30_000 });
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller), undefined, { timeout: 30_000 });
   const desktopStartup = await startupSample(page, 'desktop-installed-pwa');
   expect(desktopStartup.controlledByServiceWorker).toBe(true);
 
@@ -140,16 +140,9 @@ test('captures production-cache startup and deterministic solve/render performan
 
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   await page.setViewportSize({ width: 1280, height: 900 });
-  const traceStarted = new Promise((resolve) => cdp.once('Tracing.tracingStarted', resolve));
-  await cdp.send('Tracing.start', {
-    categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
-    transferMode: 'ReturnAsStream',
-  });
-  await traceStarted;
-
   await mountTestBrain(page, 'orbit', { route: true, connectDelayMs: 900, awaitConnect: false });
   const connectStart = performance.now();
-  brain.connectSpin = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', { timeout: 5_000 }));
+  brain.connectSpin = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', undefined, { timeout: 5_000 }));
   brain.connectElapsedMs = Math.round(performance.now() - connectStart);
 
   const gyroStart = await page.evaluate(() => performance.now());
@@ -192,12 +185,24 @@ test('captures production-cache startup and deterministic solve/render performan
     await page.waitForFunction((id) => {
       const view = document.querySelector(id);
       return view && !view.hidden;
-    }, selector);
+    }, selector, { timeout: 10_000 });
   }
   await cdp.send('HeapProfiler.collectGarbage');
   const afterHeap = (await cdp.send('Runtime.getHeapUsage')).usedSize;
   brain.routeSwitches = { count: 30, beforeHeapBytes: beforeHeap, afterHeapBytes: afterHeap, growthBytes: afterHeap - beforeHeap, growthMb: (afterHeap - beforeHeap) / (1024 * 1024) };
 
+  // Keep tracing out of every timing window above. Capture a separate real
+  // browser trace for inspection after the FPS and memory samples are complete.
+  const traceStarted = new Promise((resolve) => cdp.once('Tracing.tracingStarted', resolve));
+  await cdp.send('Tracing.start', {
+    categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
+    transferMode: 'ReturnAsStream',
+  });
+  await traceStarted;
+  await page.goto('/#/solve');
+  await page.locator('#brain-view .brain').waitFor();
+  await mountTestBrain(page, 'orbit', { route: true });
+  await frameSample(page, 1000, () => page.evaluate(() => window.testBrain.emitGyroBurst(900, 16)));
   const tracePath = await writeTrace(cdp);
   const report = {
     schemaVersion: 1,

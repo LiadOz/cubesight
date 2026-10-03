@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execFileSync } from 'node:child_process';
 import { galleryPlugin } from './scripts/gallery-index.mjs';
@@ -91,6 +91,45 @@ const recordingPlugin = {
   },
 };
 
+// Private lab preview shell: localStorage and IndexedDB are replaced by a
+// per-iframe in-memory fixture before the real application module is imported.
+const labPreviewPlugin = {
+  name: 'cubesight-dev-lab-preview',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use('/__lab-preview', (_request, response) => {
+      response.setHeader('Content-Type', 'text/html; charset=utf-8');
+      response.setHeader('Cache-Control', 'no-store');
+      response.end('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>CubeSight lab preview</title></head><body><script type="module" src="/src/dev/lab/preview-bootstrap.js"></script></body></html>');
+    });
+  },
+};
+
+const labFeedbackPlugin = {
+  name: 'cubesight-dev-lab-feedback',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use('/__lab-feedback', (request, response) => {
+      if (request.method !== 'POST') { response.statusCode = 405; response.end('405'); return; }
+      const chunks = [];
+      let size = 0;
+      request.on('data', chunk => { size += chunk.length; if (size > 2e6) request.destroy(); else chunks.push(chunk); });
+      request.on('end', () => {
+        try {
+          const payload = Buffer.concat(chunks).toString('utf8');
+          const parsed = JSON.parse(payload);
+          const dir = '/tmp/cubesight-lab';
+          fs.mkdirSync(dir, { recursive: true });
+          const file = `${dir}/${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+          fs.writeFileSync(file, JSON.stringify(parsed, null, 2));
+          response.setHeader('Content-Type', 'application/json');
+          response.end(JSON.stringify({ file }));
+        } catch (error) { response.statusCode = 400; response.end(String(error?.message || error)); }
+      });
+    });
+  },
+};
+
 // Installed apps have no update prompt UI, so activate new app shells
 // immediately instead of leaving a stale worker waiting indefinitely.
 export default defineConfig({
@@ -105,6 +144,8 @@ export default defineConfig({
     appNamePlugin,
     devLogPlugin,
     recordingPlugin,
+    labPreviewPlugin,
+    labFeedbackPlugin,
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
@@ -152,7 +193,7 @@ export default defineConfig({
   },
   // CUBESIGHT_NO_WATCH=1: dev mode without file watching. The page never changes
   // under you while agents edit code; restart the server to pick up changes.
-  server: { hmr: false, host: true, allowedHost: true, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]test-results[\\/]/] } },
+  server: { hmr: false, host: true, allowedHost: true, fs: { allow: [searchForWorkspaceRoot(process.cwd()), fs.realpathSync('./node_modules')] }, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]test-results[\\/]/] } },
   // Only crawl the app's own entry for dependency pre-bundling; agent worktrees
   // under .claude/ contain their own index.html and build output.
   optimizeDeps: { entries: ['index.html'], exclude: ['cubing'] },

@@ -57,8 +57,9 @@ const TEMPLATE = `
  * @param {HTMLElement} host
  * @param {{dispatch:(a:import('../types.js').BrainAction)=>void}} ctx
  */
-export function createReviewPanel(host, { dispatch }) {
+export function createReviewPanel(host, { dispatch, compact = false }) {
   const root = el('section', 'b-rev');
+  if (compact) root.classList.add('is-compact');
   root.setAttribute('aria-label', 'Solve review');
   root.innerHTML = TEMPLATE;   // one-time mount template
   host.append(root);

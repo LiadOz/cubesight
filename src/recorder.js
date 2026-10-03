@@ -23,6 +23,8 @@ export const RECORDING_FORMAT = 'cubesight-recording';
 // replay runs the session with the app's robustness options (APP_SESSION_OPTIONS).
 export const RECORDING_VERSION = 2;
 const DEFAULT_CAP = 100_000;
+const MAX_CAP = DEFAULT_CAP;
+const EMERGENCY_TAIL_KEY = 'cubesight-recording-pending-tail';
 
 const perf = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 
@@ -39,6 +41,169 @@ let connectionCounter = 0;
 let commandCounter = 0;
 let header = [];            // pinned events of the active connection
 let checkpointProvider = null;
+let persistence = null;
+let persistTimer = 0;
+let persistenceReady = null;
+let discardStoredOnHydrate = false;
+let persistenceHydrated = false;
+
+function schedulePersist() {
+  if (!persistence || persistTimer || !isRecording()) return;
+  persistTimer = setTimeout(() => { persistTimer = 0; void persistBuffer(); }, 900);
+}
+
+function persistOnPageHide() {
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = 0;
+  try {
+    const tail = anonymizeRecording({ events: events.slice(-128) }).events;
+    const pinnedHeader = anonymizeRecording({ events: header }).events;
+    globalThis.localStorage?.setItem(EMERGENCY_TAIL_KEY, JSON.stringify({ events: tail, header: pinnedHeader, dropped, startedAt, clearStored: discardStoredOnHydrate }));
+  } catch { /* The IndexedDB flush remains the primary persistence path. */ }
+  void persistBuffer();
+}
+
+function readEmergencyTail() {
+  try {
+    const value = JSON.parse(globalThis.localStorage?.getItem(EMERGENCY_TAIL_KEY) || 'null');
+    return Array.isArray(value?.events) ? value : null;
+  } catch { return null; }
+}
+
+function clearEmergencyTail() {
+  try { globalThis.localStorage?.removeItem(EMERGENCY_TAIL_KEY); } catch { /* Storage may be unavailable. */ }
+}
+
+function prependPinnedHeader(pinned) {
+  if (!Array.isArray(pinned) || !pinned.length) return;
+  const present = new Set(events.map(event => Number(event.seq)));
+  events = [...pinned.filter(event => !present.has(Number(event.seq))), ...events]
+    .sort((a, b) => Number(a.seq) - Number(b.seq));
+  seq = events.reduce((max, entry) => Math.max(max, Number(entry.seq) || 0), seq);
+}
+
+function restoreEmergencyTail() {
+  const emergency = readEmergencyTail();
+  if (!emergency) return false;
+  cap = Math.max(100, Math.min(MAX_CAP, Number(cap) || DEFAULT_CAP));
+  events = emergency.events.slice(-cap);
+  seq = events.reduce((max, entry) => Math.max(max, Number(entry.seq) || 0), seq);
+  dropped = Number(emergency.dropped) || 0;
+  startedAt = Number(emergency.startedAt) || Date.now();
+  header = Array.isArray(emergency.header) ? emergency.header : header;
+  prependPinnedHeader(header);
+  origin = perf() - (Number(events.at(-1)?.t) || 0);
+  if (!discardStoredOnHydrate && !emergency.clearStored) clearEmergencyTail();
+  return events.length > 0;
+}
+
+async function persistBuffer() {
+  if (!persistence) return;
+  try {
+    const safeHeader = anonymizeRecording({ events: header }).events;
+    const row = { key: 'active', recording: getRecording(), header: safeHeader, cap };
+    const tx = persistence.transaction('buffer', 'readwrite');
+    tx.objectStore('buffer').put(row);
+    await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error); });
+  } catch { /* Recording remains available in memory when IndexedDB is unavailable. */ }
+}
+
+/** Restore and persist the bounded always-on ring buffer across reloads. */
+export function enableRecordingPersistence({ factory = globalThis.indexedDB, name = 'cubesight-recording-buffer' } = {}) {
+  if (persistenceReady) return persistenceReady;
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', persistOnPageHide);
+  if (!factory) {
+    const restored = restoreEmergencyTail();
+    if (restored) record('reload', { href: typeof location === 'undefined' ? '' : location.href, restoredEvents: events.length });
+    return Promise.resolve({ restored, available: false });
+  }
+  persistenceReady = new Promise(resolve => {
+    let request;
+    try { request = factory.open(name, 1); } catch {
+      const restored = restoreEmergencyTail();
+      resolve({ restored, available: false });
+      if (restored) record('reload', { href: typeof location === 'undefined' ? '' : location.href, restoredEvents: events.length });
+      return;
+    }
+    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains('buffer')) request.result.createObjectStore('buffer', { keyPath: 'key' }); };
+    request.onerror = () => { const restored = restoreEmergencyTail(); resolve({ restored, available: false }); if (restored) record('reload', { href: typeof location === 'undefined' ? '' : location.href, restoredEvents: events.length }); };
+    request.onblocked = () => { const restored = restoreEmergencyTail(); resolve({ restored, available: false }); if (restored) record('reload', { href: typeof location === 'undefined' ? '' : location.href, restoredEvents: events.length }); };
+    request.onsuccess = () => {
+      persistence = request.result;
+      persistence.onversionchange = () => { persistence.close(); persistence = null; };
+      const read = persistence.transaction('buffer').objectStore('buffer').get('active');
+      read.onerror = () => {
+        const restored = restoreEmergencyTail();
+        persistenceHydrated = true;
+        resolve({ restored, available: true });
+        if (restored) record('reload', { href: typeof location === 'undefined' ? '' : location.href, restoredEvents: events.length });
+        void persistBuffer();
+      };
+      read.onsuccess = () => {
+        try {
+          const saved = read.result;
+          const pending = events;
+          const emergency = readEmergencyTail();
+          let restored = false;
+          const version = Number(saved?.recording?.version);
+          const ignoreSaved = discardStoredOnHydrate || emergency?.clearStored === true;
+          const validSaved = !ignoreSaved && saved?.recording?.format === RECORDING_FORMAT
+            && Number.isInteger(version) && version > 0 && version <= RECORDING_VERSION
+            && Array.isArray(saved.recording.events);
+          const corrupted = Boolean(saved) && !validSaved && !ignoreSaved;
+          if (validSaved || (!discardStoredOnHydrate && emergency?.events?.length)) {
+            const rec = validSaved ? parseRecording(saved.recording) : null;
+            cap = Math.max(100, Math.min(MAX_CAP, Number(saved?.cap) || DEFAULT_CAP));
+            events = rec?.events.slice(-cap) || [];
+            seq = events.reduce((max, entry) => Math.max(max, Number(entry.seq) || 0), 0);
+            for (const event of emergency?.events || []) {
+              const eventSeq = Number(event.seq) || 0;
+              if (eventSeq > seq) { events.push(event); seq = eventSeq; }
+            }
+            if (ignoreSaved) prependPinnedHeader(emergency?.header || header);
+            dropped = Number(rec?.dropped ?? emergency?.dropped) || 0;
+            if (events.length > cap) trim();
+            startedAt = Number(rec?.startedAt ?? emergency?.startedAt) || Date.now();
+            const lastAt = Number(events.at(-1)?.t) || 0;
+            origin = perf() - lastAt;
+            header = ignoreSaved
+              ? (Array.isArray(emergency?.header) ? emergency.header : header)
+              : (Array.isArray(saved?.header) ? saved.header : []);
+            restored = events.length > 0;
+            if (pending.length) {
+              // Keep pre-hydration startup events after the persisted tail. They
+              // are rare, but assigning them a fresh monotonic time avoids both
+              // reordering and zero-time duplicates after a reload.
+              let mergeAt = Math.max(lastAt, perf() - origin);
+              for (const event of pending) events.push({ ...event, seq: ++seq, t: Math.max(mergeAt, event.t) });
+              if (events.length > cap) trim();
+            }
+          }
+          persistenceHydrated = true;
+          discardStoredOnHydrate = false;
+          clearEmergencyTail();
+          resolve({ restored, available: true, corrupted });
+          if (restored) { record('reload', { href: typeof location === 'undefined' ? '' : location.href, restoredEvents: events.length }); schedulePersist(); }
+          else schedulePersist();
+        } catch {
+          persistenceHydrated = true;
+          resolve({ restored: false, available: true, corrupted: true });
+          schedulePersist();
+        }
+      };
+    };
+  });
+  return persistenceReady;
+}
+
+/** Record address navigation and resolved page/view lifecycle without page-specific status copy. */
+export function recordNavigation({ hash = '', resolvedHash = hash, tool = '', initial = false } = {}) {
+  record('navigation.route', { hash, resolvedHash, tool, initial: Boolean(initial) });
+}
+export function recordView(type, { tool = '', hash = typeof location === 'undefined' ? '' : location.hash } = {}) {
+  if (!['mount', 'unmount'].includes(type)) throw new Error('View lifecycle must be mount or unmount.');
+  record(`view.${type}`, { tool, hash });
+}
 
 // ---------------------------------------------------------------------------
 // JSON-safe encoding that keeps every field: non-finite numbers, undefined
@@ -130,6 +295,7 @@ export function record(kind, payload = {}, { pin = false } = {}) {
   events.push(entry);
   if (pin) header.push(entry);
   if (events.length > cap) trim();
+  schedulePersist();
   return t;
 }
 
@@ -151,7 +317,7 @@ export function withClock(t, fn) {
 
 export function pauseRecording() { paused++; }
 export function resumeRecording() { paused = Math.max(0, paused - 1); }
-export function setRecordingCap(value) { cap = Math.max(100, value | 0); }
+export function setRecordingCap(value) { cap = Math.max(100, Math.min(MAX_CAP, Number(value) | 0)); if (events.length > cap) trim(); schedulePersist(); }
 
 /** Installed by a replay driver: serves the virtual clock and recorded reads. */
 export function setReplayHooks(hooks) { replayHooks = hooks || null; }
@@ -177,9 +343,20 @@ export function clearRecording() {
   const keep = header.slice();
   events = [];
   dropped = 0;
+  discardStoredOnHydrate = true;
+  clearEmergencyTail();
+  if (persistence) {
+    try {
+      const transaction = persistence.transaction('buffer', 'readwrite');
+      transaction.objectStore('buffer').delete('active');
+      transaction.oncomplete = () => { if (persistenceHydrated) discardStoredOnHydrate = false; };
+    }
+    catch { /* A fresh in-memory recording remains available. */ }
+  }
   events.push(...keep);
   const cp = checkpoint();
   if (cp && keep.length) events.push({ seq: ++seq, t: perf() - origin, kind: 'checkpoint', data: toJSONSafe(cp) });
+  schedulePersist();
 }
 
 /** Drop everything, including the pinned connection header (tests). */

@@ -157,6 +157,7 @@ function buildAside(parent) {
   root.innerHTML = `
     <p class="b-oinsp-eyebrow"></p>
     <p class="b-oinsp-sentence"></p>
+    <p class="b-oinsp-best"></p>
     <p class="b-oinsp-big"><span class="b-oinsp-num"></span><span class="b-oinsp-unit"></span></p>
     <p class="b-oinsp-callout"><i aria-hidden="true"></i><span class="b-oinsp-callout-text"></span><span class="b-oinsp-callout-at"></span></p>
     <div class="b-oinsp-meter" hidden>
@@ -172,6 +173,7 @@ function buildAside(parent) {
   return {
     root,
     eyebrow: $('.b-oinsp-eyebrow'), sentence: $('.b-oinsp-sentence'), num: $('.b-oinsp-num'), unit: $('.b-oinsp-unit'),
+    bestStart: $('.b-oinsp-best'),
     callout: $('.b-oinsp-callout'), calloutText: $('.b-oinsp-callout-text'), calloutAt: $('.b-oinsp-callout-at'),
     meter: $('.b-oinsp-meter'), inspected: $('.b-oinsp-inspected'), barFill: $('.b-oinsp-bar-fill'), barLabels: $('.b-oinsp-bar-labels'),
     penaltyNow: $('.b-oinsp-penalty-now'), penaltyNext: $('.b-oinsp-penalty-next'), rules: $('.b-oinsp-rules'),
@@ -184,6 +186,8 @@ function paintAside(a, i, live, { elapsed, overtimeMs, inOver }) {
   setText(a.eyebrow, inOver ? 'overtime' : i.mode === 'unlimited' ? 'inspection · unlimited' : 'inspection');
   a.eyebrow.className = `b-oinsp-eyebrow is-${inOver ? 'warn' : 'accent'}`;
   setText(a.sentence, (live?.consequence ?? i.consequence) || 'the solve clock starts on your first turn.');
+  setText(a.bestStart, i.bestStart || '');
+  toggleClass(a.bestStart, 'is-hidden', !i.bestStart);
   setText(a.num, live?.bigText ?? i.bigText);
   a.num.parentElement.className = `b-oinsp-big is-${tone}`;
   setText(a.unit, !inOver && limit && !/^[+−-]/.test(live?.bigText ?? i.bigText) ? 's left' : '');

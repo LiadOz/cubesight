@@ -15,7 +15,7 @@ export function cleanRotationMarks(marks) {
 
 /** @returns {Object|null} */
 export function cleanAnalysis(a) {
-  if (!a || typeof a !== 'object' || ![1, 2].includes(a.v)) return null;
+  if (!a || typeof a !== 'object' || ![1, 2, 3, 4].includes(a.v)) return null;
   const marks = a.marks && typeof a.marks === 'object' ? a.marks : {};
   const cross = a.cross && typeof a.cross === 'object' ? a.cross : null;
   const out = {
@@ -84,6 +84,15 @@ export function cleanAnalysis(a) {
     lastLayerReference: Number.isFinite(a.lastLayerReference) ? Math.max(0, a.lastLayerReference) : null,
     lastLayer: null,
   };
+  if (a.f2lCases && typeof a.f2lCases === 'object' && !Array.isArray(a.f2lCases)) {
+    const cases = {};
+    for (let n = 1; n <= 4; n++) {
+      const row = a.f2lCases[`pair${n}`];
+      if (!row || typeof row.caseId !== 'string' || !/^f2l\/\d{1,2}$/.test(row.caseId) || !['FR', 'FL', 'BR', 'BL'].includes(row.targetPair)) continue;
+      cases[`pair${n}`] = { caseId: row.caseId, targetPair: row.targetPair };
+    }
+    if (Object.keys(cases).length) out.f2lCases = cases;
+  }
   for (const field of (a.v >= 2 ? ['ollCase', 'pllCase'] : [])) {
     const item = a[field];
     if (item && typeof item.id === 'string') out[field] = {
@@ -101,6 +110,23 @@ export function cleanAnalysis(a) {
       faceProven: cross.faceProven && typeof cross.faceProven === 'object' ? Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].filter(f => cross.faceProven[f] === true).map(f => [f, true])) : null,
       faceComplete: cross.faceComplete !== false,
       startProven: cross.startProven === true,
+      ...(a.v >= 3 ? {
+        target: cross.target && typeof cross.target === 'object' ? {
+          kind: ['cross', 'xcross', 'xxcross'].includes(cross.target.kind) ? cross.target.kind : 'cross',
+          slots: list(cross.target.slots, 2, slot => ['FR', 'BR', 'BL', 'FL'].includes(slot) ? slot : null),
+          mask: int(cross.target.mask, 0, 15) ?? 0,
+        } : { kind: 'cross', slots: [], mask: 0 },
+        xcrossFaces: cross.xcrossFaces && typeof cross.xcrossFaces === 'object'
+          ? Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].filter(face => cross.xcrossFaces[face] && typeof cross.xcrossFaces[face] === 'object').map(face => {
+            const row = cross.xcrossFaces[face];
+            const cleanOpportunity = item => (item && ['FR', 'BR', 'BL', 'FL'].includes(item.slot)
+              ? { slot: item.slot, mask: int(item.mask, 1, 8) ?? 1, length: int(item.length, 0, 60), moves: moveString(item.moves), proven: item.proven === true } : null);
+            return [face, {
+              opportunities: list(row.opportunities, 4, cleanOpportunity),
+              best: cleanOpportunity(row.best), complete: row.complete === true, proven: row.proven === true,
+            }];
+          })) : null,
+      } : {}),
       losses: list(cross.losses, 8, l => (l && Number.isInteger(l.i) && (l.loss === 1 || l.loss === 2)
         ? { i: l.i, move: moveString(l.move), loss: l.loss, d: int(l.d) ?? 0, best: moveString(l.best), after: int(l.after) ?? 0 } : null)),
     };
@@ -125,6 +151,19 @@ export function cleanAnalysis(a) {
     return {
       caseId: str(stage.caseId, 24), name: str(stage.name, 80) ?? '', number: int(stage.number, 1, 100), from: stage.from, to: stage.to,
       used, best: cleanAlg(stage.best), better, extraAuf,
+      recognizedAlg: stage.recognizedAlg && typeof stage.recognizedAlg === 'object' ? {
+        id: str(stage.recognizedAlg.id, 100), moves: moveString(stage.recognizedAlg.moves), sourceNotation: str(stage.recognizedAlg.sourceNotation, 600) ?? '',
+      } : null,
+      configuredLooks: int(stage.configuredLooks, 1, 2), looksTaken: int(stage.looksTaken, 1, 12),
+      extraLook: stage.extraLook === true, likelyExtraLook: stage.likelyExtraLook === true,
+      looks: list(stage.looks, 8, look => look && typeof look.caseId === 'string' && Number.isInteger(look.at) ? {
+        caseId: look.caseId.slice(0, 24), name: str(look.name, 80) ?? '', at: look.at,
+        evidence: ['configured-look', 'pause', 'known-alg-prefix'].includes(look.evidence) ? look.evidence : null,
+        ...(Number.isFinite(look.pauseMs) ? { pauseMs: Math.max(0, Math.round(look.pauseMs)) } : {}),
+        ...(typeof look.recognizedAlg === 'string' ? { recognizedAlg: look.recognizedAlg.slice(0, 100) } : {}),
+        ...(typeof look.recognizedAlgMoves === 'string' ? { recognizedAlgMoves: moveString(look.recognizedAlgMoves) } : {}),
+        ...(typeof look.recognizedAlgSourceNotation === 'string' ? { recognizedAlgSourceNotation: look.recognizedAlgSourceNotation.slice(0, 600) } : {}),
+      } : null),
       recognitionMs: Number.isFinite(stage.recognitionMs) ? Math.max(0, Math.round(stage.recognitionMs)) : null,
       executionMs: Number.isFinite(stage.executionMs) ? Math.max(0, Math.round(stage.executionMs)) : null,
     };

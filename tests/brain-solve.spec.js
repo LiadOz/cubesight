@@ -2,9 +2,8 @@ import { test, expect } from './helpers/coverage-test.js';
 
 const STYLES = ['orbit', 'mono'];
 
-// Timeline hooks shared by both styles: every stage segment carries data-key and
-// data-state (future | current | done | skipped).
-const SEGMENTS = '#brain-timeline :is(.m-seg, .b-oring-seg)';
+// The F1 shared Orbit is mounted by the app shell, outside the legacy Brain
+// timeline slot. The tests below read its actual SVG groups; Mono keeps its linear timeline.
 
 async function mountTestBrain(page, style = 'orbit') {
   await page.goto('/#/drills/corners');
@@ -44,6 +43,12 @@ async function mountTestBrain(page, style = 'orbit') {
   }, style);
 }
 
+async function openBrainSettings(page, brain) {
+  const settings = brain.locator('.brain-pill-setup');
+  if (!await settings.evaluate(node => node.open)) await page.keyboard.press(',');
+  await expect(settings).toHaveJSProperty('open', true);
+}
+
 // Regression: the first solving move after a guided scramble used to throw
 // inside a Brain live-tracker subscriber (ReferenceError: STAGES is not
 // defined). The exception escaped through the session's MOVE handler and
@@ -62,7 +67,7 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   await expect(brain.locator('.brain')).toHaveAttribute('data-brain-style', style);
 
   const scramble = "R2 D' F2 U B2 L' U2 F R' D2 B U' L2";
-  await brain.locator('.brain-pill-setup > summary').click();
+  await openBrainSettings(page, brain);
   await brain.locator('.brain-advanced-scramble > summary').click();
   await brain.locator('#brain-scramble').fill(scramble);
   await brain.locator('#brain-start-custom').click();
@@ -98,7 +103,7 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   });
   await page.waitForTimeout(300);
   expect(await storedSolves()).toBe(1);
-  await brain.locator('#brain-review-close').click();
+  await brain.getByRole('button', { name: /next scramble/ }).last().click();
   await expect(brain.locator('#brain-generate')).toBeEnabled();
 
   // Reset view rebuilds the Brain in place: the old WebGL cube is destroyed and the new
@@ -108,7 +113,7 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   await brain.locator('#brain-rebuild-view').click();
   await expect(brain.locator('canvas')).toHaveCount(1);
   expect(await canvases()).toBe(before);
-  await brain.locator('.brain-pill-setup > summary').click();
+  await openBrainSettings(page, brain);
   await brain.locator('.brain-advanced-scramble > summary').click();
   await brain.locator('#brain-scramble').fill("F R' U2");
   await brain.locator('#brain-start-custom').click();
@@ -145,7 +150,7 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
     pll: "U R U R' U' R' F R2 U' R' U' R U R' F'",
   };
   const scramble = inverse(Object.values(steps).join(' '));
-  await brain.locator('.brain-pill-setup > summary').click();
+  await openBrainSettings(page, brain);
   await brain.locator('.brain-advanced-scramble > summary').click();
   await brain.locator('#brain-scramble').fill(scramble);
   await brain.locator('#brain-start-custom').click();
@@ -194,12 +199,16 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
   await expect(brain.locator('#brain-phase-label')).toHaveText('inspection');
   const timeline = brain.locator('#brain-timeline');
   await expect(timeline).toBeVisible();
-  const keys = state => page.evaluate(([sel, state]) => [...document.querySelectorAll(`#brain-test ${sel}`)]
-    .filter(el => !state || el.dataset.state === state).map(el => el.dataset.key), [SEGMENTS, state]);
-  expect(await keys()).toEqual(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);   // no Scramble stage
+  const keys = state => page.evaluate(([style, state]) => {
+    const orbit = style === 'orbit';
+    return [...document.querySelectorAll(orbit ? '.orbit__segment[data-key]' : '#brain-timeline :is(.m-seg, .b-oring-seg)')]
+      .filter(el => !state || (orbit ? el.classList.contains(`is-${state}`) : el.dataset.state === state))
+      .map(el => el.dataset.key);
+  }, [style, state]);
+  expect(await keys()).toEqual(style === 'orbit' ? ['inspection', 'plus2', 'dnf'] : ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
   const current = async () => (await keys('current'))[0] ?? null;
   const finished = async () => [...await keys('done'), ...await keys('skipped')];
-  await expect.poll(current).toBe('cross');
+  await expect.poll(current).toBe(style === 'orbit' ? 'inspection' : 'cross');
   expect(await finished()).toEqual([]);
   await page.waitForTimeout(600);  // let the swoop-in finish before the screenshot
   const shot = async name => {

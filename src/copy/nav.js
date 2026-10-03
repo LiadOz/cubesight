@@ -19,16 +19,18 @@ export const NAV_FOR_TOOL = Object.freeze({
   drills: T.nav.drills, corner: T.nav.drills, f2l: T.nav.drills, pll: T.nav.drills, scout: T.nav.drills, oll: T.nav.drills, lookahead: T.nav.drills,
   algs: T.nav.algs,
   progress: T.nav.progress,
-  history: null,
-  timer: null,
+  history: 'history',
+  timer: 'solve',
   review: 'solve',
   notfound: null,
   smart: null,
+  recording: null,
+  help: null,
 });
 
 /** Document titles ("<title> · <app name>"). */
 export const PAGE_TITLES = Object.freeze({
   brain: 'solve', drills: 'drills', algs: 'algs', progress: 'progress', history: 'history', timer: 'timer',
   corner: 'corner recognition', f2l: 'F2L deduction', pll: 'PLL recognition', scout: 'cross planning', oll: 'OLL recognition', lookahead: 'lookahead',
-  smart: 'studio', review: 'solve review', notfound: 'not found',
+  smart: 'studio', review: 'solve review', recording: 'recording', help: null, notfound: 'not found',
 });
