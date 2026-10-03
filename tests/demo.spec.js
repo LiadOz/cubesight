@@ -162,7 +162,7 @@ test('the coach tip can copy a demo link for its selected review moment', async 
     await markerDetail.click();
   }
   await expect.poll(() => page.evaluate(() => window.testBrain.handle.getViewModel().results.review.selectedId)).toBe(coachMarkerId);
-  await page.locator('.f1-results__more > summary').click();
+  await page.getByRole('button', { name: 'more…' }).click();
   const share = page.getByRole('button', { name: 'copy coach demo link' });
   await expect(share).toBeVisible();
   const expected = await page.evaluate(() => {
