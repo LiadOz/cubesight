@@ -160,20 +160,25 @@ export async function inspectLayout(page, cell) {
       const original = el.scrollLeft;
       el.scrollLeft = 0;
       window.__layoutPreviousFocus = document.activeElement;
+      window.__layoutPageScroll = { x: scrollX, y: scrollY };
       return { left: el.scrollLeft, max: el.scrollWidth - el.clientWidth, original };
     });
     if (before.max <= 1) {
-      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); delete window.__layoutPreviousFocus; }, before.original);
+      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); window.scrollTo(window.__layoutPageScroll?.x ?? 0, window.__layoutPageScroll?.y ?? 0); delete window.__layoutPreviousFocus; delete window.__layoutPageScroll; }, before.original);
       continue;
     }
-    await scroller.focus();
-    await scroller.press('End');
-    const after = await scroller.evaluate(el => el.scrollLeft);
+    let after = 0;
+    try {
+      await scroller.evaluate(el => el.focus({ preventScroll: true }));
+      await scroller.press('End');
+      after = await scroller.evaluate(el => el.scrollLeft);
+    } finally {
+      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); window.scrollTo(window.__layoutPageScroll?.x ?? 0, window.__layoutPageScroll?.y ?? 0); delete window.__layoutPreviousFocus; delete window.__layoutPageScroll; }, before.original);
+    }
     if (after <= before.left) {
       const box = await scroller.boundingBox();
       result.errors.push({ kind: 'scroller-not-keyboard-scrollable', selector, box, detail: 'End did not move the horizontal scroller' });
     }
-    await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); delete window.__layoutPreviousFocus; }, before.original);
   }
 
   const sticky = await page.evaluate(async ({ routeFamily }) => {

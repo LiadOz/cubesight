@@ -188,7 +188,11 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     }
     if (caseData) {
       const orbitHost = root.querySelector('[data-alg-orbit]');
-      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, centerClearance: 140, label: `${caseData.name} algorithm progress`, segments: [] });
+      const cubeMount = root.querySelector('[data-alg-cube]');
+      const cubeWidth = cubeMount?.getBoundingClientRect().width || 250;
+      const orbitWidth = orbitHost?.getBoundingClientRect().width || 340;
+      const centerClearance = Math.ceil((cubeWidth / orbitWidth) * 280 + 14);
+      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, centerClearance, label: `${caseData.name} algorithm progress`, segments: [] });
       if (!supportsVirtualRepaint(caseData)) repaintReady = false;
       try { setupState = caseSetupState(caseData); }
       catch { setupState = null; }

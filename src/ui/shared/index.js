@@ -52,6 +52,11 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   }
   header.append(brand, nav, controls); if (compass) header.querySelector('.ui-header__brand').after(compass);
   host.append(header);
+  const syncHeaderHeight = () => document.documentElement.style.setProperty('--site-header-height', `${Math.ceil(header.getBoundingClientRect().height)}px`);
+  syncHeaderHeight();
+  const headerResizeObserver = new ResizeObserver(syncHeaderHeight);
+  headerResizeObserver.observe(header);
+  header.addEventListener('cube-header-destroy', () => headerResizeObserver.disconnect(), { once: true });
   const applySnapshot = snapshot => {
     const model = buildSharedViewModel({ connection: snapshot, theme: document.documentElement.dataset.theme,
       activeRoute: nav.querySelector('[aria-current="page"]')?.dataset.nav, connectionMenuOpen: cubeMenu.open,
