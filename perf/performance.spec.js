@@ -169,19 +169,20 @@ test('captures production-cache startup and deterministic solve/render performan
     } catch { /* longtask entries are not available in every Chromium build */ }
   });
   page = await scenarioContext.newPage();
-  await page.goto('http://127.0.0.1:4177/#/solve');
+  await page.goto('http://127.0.0.1:4177/perf/fixture.html');
   const cdp = await page.context().newCDPSession(page);
   const scenarioEnvironment = { origin: 'Vite development server at http://127.0.0.1:4177', metricsAreProduction: false };
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
 
   const brain = {};
-  await mountTestBrain(page, 'orbit', { route: true });
+  await mountTestBrain(page, 'orbit', { route: true, fixture: true });
+  const initialCanvas = await page.locator('#brain-view .b-cube-wrap canvas').count();
   brain.idleGyroPhone = await frameSample(page, 1200, () => page.evaluate(() => window.testBrain.emitGyroBurst(1100, 16)));
   console.log('F11 checkpoint: phone gyro sample complete');
 
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   await page.setViewportSize({ width: 1280, height: 900 });
-  await mountTestBrain(page, 'orbit', { route: true, connectDelayMs: 900, awaitConnect: false });
+  await mountTestBrain(page, 'orbit', { route: true, fixture: true, connectDelayMs: 900, awaitConnect: false });
   const connectStart = performance.now();
   brain.connectSpin = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', undefined, { timeout: 5_000 }));
   brain.connectElapsedMs = Math.round(performance.now() - connectStart);
@@ -193,7 +194,7 @@ test('captures production-cache startup and deterministic solve/render performan
   brain.simulatedMoveInput = await page.evaluate(() => window.testBrain.emitMeasuredTurn('R'));
   console.log('F11 checkpoint: desktop gyro and move samples complete');
 
-  await mountTestBrain(page, 'orbit', { route: true });
+  await mountTestBrain(page, 'orbit', { route: true, fixture: true });
   const solveStart = await page.evaluate(() => performance.now());
   await startFrameSample(page, 12_000);
   await playSolve(page, GOLD.normal.scramble, GOLD.normal.moves, { brain: '#brain-view', base: 14 });
@@ -206,6 +207,9 @@ test('captures production-cache startup and deterministic solve/render performan
   brain.solvePlaybackAndResults = await finishFrameSample(page, 12_000);
   brain.solveLongTasks = (await readLongTasks(page)).filter((entry) => entry.startTime >= solveStart);
   brain.finalSolveScreen = await page.locator('#brain-view .brain').getAttribute('data-screen');
+  brain.fixtureOwnership = { canvasesAfterFirstMount: initialCanvas, canvasesAfterRemount: await page.locator('#brain-view .b-cube-wrap canvas').count(), controllerHostCount: await page.locator('#brain-view .brain').count() };
+  expect(brain.fixtureOwnership.canvasesAfterRemount).toBe(1);
+  expect(brain.fixtureOwnership.controllerHostCount).toBe(1);
   console.log('F11 checkpoint: solve and analysis sample complete');
 
   await page.goto('/#/algs/oll/1');
@@ -253,6 +257,7 @@ test('captures production-cache startup and deterministic solve/render performan
       solvePlaybackAndResults: { ...brain.solvePlaybackAndResults, analysisResultsMs: brain.analysisResultsMs, longTaskCount: brain.solveLongTasks.length, longestTaskMs: Math.max(0, ...brain.solveLongTasks.map((entry) => entry.durationMs)), finalScreen: brain.finalSolveScreen },
       algorithmPlayback: { ...brain.algorithmPlayback, longTaskCount: brain.algorithmLongTasks.length, longestTaskMs: Math.max(0, ...brain.algorithmLongTasks.map((entry) => entry.durationMs)) },
       routeSwitches: brain.routeSwitches,
+      fixtureOwnership: brain.fixtureOwnership,
     },
     metrics: {
       'startup.desktopFirstMeaningfulMs': desktopStartup.firstMeaningfulRenderMs,
@@ -280,9 +285,8 @@ test('captures production-cache startup and deterministic solve/render performan
     categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
     transferMode: 'ReturnAsStream',
   });
-  await page.goto('/#/solve');
-  await page.locator('#brain-view .brain').waitFor();
-  await mountTestBrain(page, 'orbit', { route: true });
+  await page.goto('http://127.0.0.1:4177/perf/fixture.html');
+  await mountTestBrain(page, 'orbit', { route: true, fixture: true });
   await frameSample(page, 1000, () => page.evaluate(() => window.testBrain.emitGyroBurst(900, 16)));
   const tracePath = await writeTrace(cdp);
   console.log('F11 checkpoint: trace saved');

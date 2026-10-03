@@ -68,6 +68,7 @@ const readable = [
   `Generated ${report.generatedAt} at commit ${commit}.`,
   `Environment: Chromium ${browser.environment.browserVersion}, ${browser.environment.renderer}, desktop CPU ×${browser.environment.cpuThrottleDesktop}, phone CPU ×${browser.environment.cpuThrottlePhone}.`,
   'Startup figures use the production preview after the service worker controls the page; desktop and phone measurements are cache-backed.',
+  `Interaction scenarios use ${browser.scenarioEnvironment.origin} with metricsAreProduction=${browser.scenarioEnvironment.metricsAreProduction}; the fixture owns a single Brain controller and renderer.`,
   '',
   '| Measurement | Value |',
   '| --- | ---: |',

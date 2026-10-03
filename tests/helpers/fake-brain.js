@@ -1,13 +1,17 @@
 // Shared by the Brain specs that drive a fake GAN cube: mounts the real Brain on
 // a scripted smart-cube connection and exposes window.testBrain.emitTurns().
-export async function mountTestBrain(page, style = 'orbit', { route = false, settings = {}, keepStorage = false, connectDelayMs = 0, awaitConnect = true } = {}) {
-  // route: mount into the real #brain-view on the Brain route (so the page-level theme rules apply).
-  await page.goto(route ? '/#/brain' : '/');
-  if (route) await page.waitForSelector('#brain-view .brain', { state: 'attached' });
+export async function mountTestBrain(page, style = 'orbit', { route = false, fixture = false, settings = {}, keepStorage = false, connectDelayMs = 0, awaitConnect = true } = {}) {
+  // route: mount into an existing #brain-view so the page-level theme rules apply.
+  // fixture: use a minimal dev entry with no app router/auto-mounted Brain. This
+  // keeps performance scenarios to one controller and one renderer at a time.
+  if (!fixture) await page.goto(route ? '/#/brain' : '/');
+  if (fixture || route) await page.waitForSelector('#brain-view', { state: 'attached' });
   await page.evaluate(async ({ style, route, settings, keepStorage, connectDelayMs, awaitConnect }) => {
     // The fixture can be remounted on the same SPA route; stop its previous
     // RAF, WebGL renderer, and session subscription before replacing its DOM.
+    const previousCanvas = window.testBrain?.root?.querySelector('.b-cube-wrap canvas') ?? null;
     window.testBrain?.handle?.detach?.();
+    if (previousCanvas?.isConnected) throw new Error('Previous Brain renderer canvas survived detach.');
     if (!keepStorage) localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
     const { createBrain } = await import('/src/brain.js');
@@ -70,7 +74,11 @@ export async function mountTestBrain(page, style = 'orbit', { route = false, set
     const root = route ? document.querySelector('#brain-view') : document.createElement('div');
     if (route) root.replaceChildren(); else { root.id = 'brain-test'; document.body.append(root); }
     window.testBrain.handle = createBrain(root, session);
+    window.testBrain.root = root;
     await window.testBrain.handle.ready;
+    if (fixture && root.querySelectorAll('.b-cube-wrap canvas').length !== 1) {
+      throw new Error(`Expected one owned Cube renderer; found ${root.querySelectorAll('.b-cube-wrap canvas').length}.`);
+    }
     const connecting = session.connect();
     window.testBrain.connecting = connecting;
     if (awaitConnect) await connecting;
