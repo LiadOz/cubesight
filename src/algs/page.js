@@ -2,7 +2,7 @@ import { CASES, ALG_SETS, getCase, canonicalCasePath } from './seed/cases.js';
 import { algDatabase } from './runtime.js';
 import { createAlgDrillSession } from './drill/session.js';
 import { smartCube } from '../smart-cube-bluetooth.js';
-import { createCube } from '../ui/cube/index.js';
+import { Cube } from '../ui/cube/index.js';
 import { CASE_COLORS, readCaseColorSetting, writeCaseColorSetting } from '../ui/cube/case-color.js';
 import { caseDisplayState } from '../ui/cube/orientation.js';
 import { createOrbit } from '../ui/orbit/index.js';
@@ -16,7 +16,6 @@ import { fmt } from '../copy/terms.js';
 import { algorithmMetrics } from './notation.js';
 import { groupMoves } from '../moves/triggers.js';
 import { buildAlgOrbitSegments, buildAlgViewModel, parseAlgRouteContext } from './view-model.js';
-import { createButton } from '../ui/shared/index.js';
 import '../pages/page.css';
 import './page.css';
 
@@ -164,7 +163,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       try {
         const mount = root.querySelector('[data-alg-cube]');
         if (mount) {
-          const created = createCube(mount, { state: setupState, mode: 'case', size: 'L', label: `${caseData.name} case` });
+          const created = new Cube(mount, { state: setupState, mode: 'case', size: 'L', label: `${caseData.name} case` });
           if (destroyed || !active || thisRender !== renderId || !root.isConnected) { created.destroy(); return; }
           cubeView = created;
           cubeView.setCaseOrientation(caseColorSetting, { seed: caseData.id });
