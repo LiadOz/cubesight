@@ -4,15 +4,11 @@ import { FIXTURE_NAMES, brainFixtures } from '../../src/brain/fixtures.js';
 import { getLayoutDriver, getLayoutMatrix } from '../layout/matrix.js';
 import { HISTORY_SEED } from '../layout/fixtures/state-seeds.js';
 import { installBrainSnapshotHook } from '../layout/fake-cube.js';
+import { SNAPSHOT_ROUTES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from './capture-matrix.js';
 import '../layout/state-drivers.js';
 
 const FIXED_TIME = new Date('2026-01-15T12:00:00.000Z');
 const FIXED_NOW = FIXED_TIME.getTime();
-const VIEWPORTS = [
-  { id: 'phone390', width: 390, height: 844 },
-  { id: 'desktop1280', width: 1280, height: 720 },
-];
-const THEMES = ['dark', 'light'];
 const SNAPSHOT_STATES = [
   'idle', 'connecting', 'guided-scramble', 'wrong-turn', 'inspection', 'inspection-overtime', 'solving', 'results',
   'review-detail', 'replay-midway', 'drill-midround', 'alg-playback-midway', 'crowded-markers',
@@ -25,7 +21,6 @@ const SNAPSHOT_STATES = [
   'f1-live-results', 'f1-case-choices', 'f1-staged-detail-comparison', 'f1-marker-detail',
   'f1-settings-open', 'f1-past-results-review-deeplink', 'demo-playback-midway',
 ];
-const SNAPSHOT_ROUTES = ['solve', 'drills', 'algs', 'demo', 'demo-format', 'history', 'past-solve', 'replay', 'review-detail', 'progress', 'timer', 'recording'];
 const MATRIX_ROUTES = getLayoutMatrix().routes;
 const ROUTE_BY_ID = new Map(MATRIX_ROUTES.map(route => [route.id, route]));
 const ROUTE_BY_PATH = new Map(MATRIX_ROUTES.map(route => [route.path, route]));
@@ -37,6 +32,7 @@ const EXPECTED_VIEW = {
 };
 const FIXTURE_BY_ID = new Map(getLayoutMatrix().states.map(fixture => [fixture.id, fixture]));
 if (SNAPSHOT_STATES.length !== FIXTURE_BY_ID.size) throw new Error('F9 must cover every registered F8 state fixture');
+if (new Set(SNAPSHOT_STATES).size !== SNAPSHOT_STATES.length) throw new Error('F9 state captures cannot repeat a fixture ID');
 const ROTATION_RECORDING = readFileSync(new URL('../fixtures/rotation-cross-recording.json', import.meta.url), 'utf8');
 const SERVER_ORIGINS = new Set(['http://127.0.0.1:4174', 'http://127.0.0.1:4250']);
 
@@ -72,6 +68,7 @@ function snapshotJsonValue(value, path = '$', seen = new WeakSet()) {
 
 async function installDeterminism(page, theme, viewport) {
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
+  await page.emulateTimezone('UTC');
   await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
@@ -105,6 +102,12 @@ async function applyThemeAndSettle(page, theme) {
     setThemePreference(themeMode);
   }, theme);
   await page.evaluate(() => document.fonts.ready);
+  const loadedFonts = await page.evaluate(() => ({
+    manrope: document.fonts.check('500 14px "Manrope Variable"', 'CubeSight'),
+    dmMono: document.fonts.check('500 12px "DM Mono"', 'R U′ 12.34'),
+  }));
+  expect(loadedFonts.manrope, 'bundled Manrope face is available before capture').toBe(true);
+  expect(loadedFonts.dmMono, 'bundled DM Mono face is available before capture').toBe(true);
   await page.addStyleTag({ content: `
     *,*::before,*::after {
       animation-delay: 0s !important;
@@ -132,6 +135,7 @@ async function snapshotCell(page, cell) {
   })) : null;
   if (cell.expectCube) {
     expect(cubeState.cameraPose, `${name} must keep the cube camera at its fixed pose`).toBe('6.7000,5.6000,7.7000');
+    expect(cubeState.cameraUp, `${name} must keep the cube camera up vector at its fixed pose`).toBe('0.0000,1.0000,0.0000');
   }
 
   // The page screenshot deliberately includes canvas pixels. SwiftShader is
@@ -166,7 +170,7 @@ for (const fixtureId of SNAPSHOT_STATES) {
       : fixture.route.startsWith('/drills') || fixture.route.startsWith('/algs') || fixture.route.startsWith('/timer') ? 'F4'
         : fixture.route.startsWith('/progress') ? 'F5' : fixture.route.startsWith('/demo') ? 'F17' : 'F1');
 
-  for (const viewport of VIEWPORTS) for (const theme of THEMES) {
+  for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) {
     test(`fixture ${fixture.id} · ${viewport.id} · ${theme}`, async ({ page }) => {
       if (missingDriver) throw new Error(`F9 state ${fixture.id} is missing fixture driver "${fixture.driver}"; see tests/layout/F1-FIXTURES.md`);
       test.setTimeout(90_000);
@@ -198,7 +202,7 @@ for (const routeId of SNAPSHOT_ROUTES) {
         : ['drills', 'algs', 'timer'].includes(route.page) ? 'F4'
         : route.page === 'progress' ? 'F5' : 'F1';
 
-  for (const viewport of VIEWPORTS) for (const theme of THEMES) {
+  for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) {
     test(`route ${route.id} · ${viewport.id} · ${theme}`, async ({ page }) => {
       await installDeterminism(page, theme, viewport);
       await page.addInitScript(records => localStorage.setItem('cubesight-solves-v1', JSON.stringify(records)), HISTORY_SEED);
@@ -217,7 +221,7 @@ for (const routeId of SNAPSHOT_ROUTES) {
   }
 }
 
-for (const viewport of VIEWPORTS) for (const theme of THEMES) {
+for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) {
   test(`recorded rotation-cross replay · ${viewport.id} · ${theme}`, async ({ page }) => {
     test.setTimeout(90_000);
     await installDeterminism(page, theme, viewport);

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cp, lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import os from 'node:os';
+import { cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getLayoutMatrix } from '../tests/layout/matrix.js';
+import { FIXTURE_NAMES } from '../src/brain/fixtures.js';
+import { SNAPSHOT_ROUTES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from '../tests/snapshots/capture-matrix.js';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [baseArg, headArg = 'HEAD'] = process.argv.slice(2);
@@ -42,7 +44,7 @@ const HARNESS_PATHS = [
   'tests/fixtures/rotation-cross-recording.json',
 ];
 
-async function overlayHarness(worktree) {
+async function overlayHarness(worktree, ref) {
   for (const rel of HARNESS_PATHS) {
     const source = path.join(repo, rel);
     const destination = path.join(worktree, rel);
@@ -58,12 +60,21 @@ async function overlayHarness(worktree) {
   let dependencyInfo;
   try { dependencyInfo = await lstat(dependencyDirectory); }
   catch { dependencyInfo = null; }
-  // Vite resolves symlinked font packages outside its serving root and rejects
-  // their requests. Install into each detached worktree so every asset remains
-  // inside that ref's root and its lockfile controls the exact dependency set.
+  // Vite's filesystem allowlist includes the resolved node_modules root. Reuse
+  // the current worktree's read-only dependency link when lockfiles match;
+  // install only when a compared ref requires a different dependency set.
   if (!dependencyInfo || dependencyInfo.isSymbolicLink()) {
     if (dependencyInfo?.isSymbolicLink()) await rm(dependencyDirectory, { force: true });
-    run('npm', ['ci'], worktree);
+    const [localLock, refLock] = await Promise.all([
+      readFile(path.join(repo, 'package-lock.json')),
+      Promise.resolve(execFileSync('git', ['show', `${ref}:package-lock.json`], { cwd: repo })),
+    ]);
+    const lockMatches = createHash('sha256').update(localLock).digest('hex') === createHash('sha256').update(refLock).digest('hex');
+    if (lockMatches) {
+      await symlink(await realpath(path.join(repo, 'node_modules')), dependencyDirectory, 'dir');
+    } else {
+      run('npm', ['ci'], worktree);
+    }
   }
 }
 
@@ -112,9 +123,10 @@ async function sameArtifact(filename, left, right) {
 
 async function assertCompleteCapture(directory, label) {
   const files = await filesUnder(directory);
-  // 42 registered states + 10 default routes + 1 replay, each in two sizes and
-  // two themes, with PNG/ARIA/view-model captures; plus the brain VM fixtures.
-  const expected = (42 + 10 + 1) * 2 * 2 * 3 + 47;
+  // Every registered F8 state, selected default F9 routes, and one real replay
+  // are captured for all configured viewport/theme pairs with three artifacts.
+  const expectedCells = (getLayoutMatrix().states.length + SNAPSHOT_ROUTES.length + 1) * SNAPSHOT_VIEWPORTS.length * SNAPSHOT_THEMES.length;
+  const expected = expectedCells * 3 + FIXTURE_NAMES.length;
   if (files.length !== expected) {
     throw new Error(`${label} snapshot run produced ${files.length}/${expected} artifacts; refusing an incomplete comparison.`);
   }
@@ -181,7 +193,8 @@ const baseCommit = resolveRef(baseArg);
 const headCommit = resolveRef(headArg);
 const baseLabel = `${baseArg} (${baseCommit.slice(0, 8)})`;
 const headLabel = `${headArg} (${headCommit.slice(0, 8)})`;
-const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'cubesight-f9-compare-'));
+const agentsRoot = path.resolve(repo, '../..');
+const tempRoot = await mkdtemp(path.join(agentsRoot, 'worktrees', 'cubesight-f9-compare-'));
 const refs = [
   { side: 'base', ref: baseCommit, dir: path.join(tempRoot, refName(baseArg, baseCommit)) },
   { side: 'head', ref: headCommit, dir: path.join(tempRoot, refName(headArg, headCommit)) },
@@ -192,7 +205,7 @@ try {
   for (const entry of refs) {
     run('git', ['worktree', 'add', '--detach', entry.dir, entry.ref]);
     registered.push(entry.dir);
-    await overlayHarness(entry.dir);
+    await overlayHarness(entry.dir, entry.ref);
     const playwright = path.join(entry.dir, 'node_modules', 'playwright', 'cli.js');
     run(process.execPath, [playwright, 'test', '--config=playwright.snapshots.config.js', '--update-snapshots'], entry.dir);
     await assertCompleteCapture(path.join(entry.dir, 'tests/snapshots/__baselines__/snapshots.spec'), entry.side);
