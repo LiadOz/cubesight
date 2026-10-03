@@ -239,12 +239,14 @@ let scoutRouteHash = null;
 let smart = null;
 let smartLoad = null;
 let galleryPage = null; // dev only: stays null in a production build
+let labPage = null;
 let helpPage = null;
 let helpReturnHash = '#/solve';
 let helpPausedForReturn = false;
 let galleryLoad = null;
 let brain = null;
 let brainLoad = null;
+let labPreviewCube = null;
 let pll = null;
 let pllLoad = null;
 let f2lCube3D = null;
@@ -1786,6 +1788,7 @@ function setTool(tool, initial = false) {
   scout?.setActive(false);
   smart?.setActive(false);
   galleryPage?.setActive(false);
+  window.cubesightDesignLab?.setActive(false);
   pll?.setActive(false);
   brain?.setActive(false);
   drillsHub?.setActive(false);
@@ -1859,10 +1862,29 @@ function setTool(tool, initial = false) {
     f2lState.locked = true;
     if (!brainLoad) {
       document.querySelector('#brain-view').textContent = 'loading solve…';
-      brainLoad = import('./brain.js').then(({ createBrain }) => {
-        brain = createBrain(document.querySelector('#brain-view'));
+      brainLoad = import('./brain.js').then(async ({ createBrain }) => {
+        const labQuery = new URLSearchParams(location.search);
+        if (import.meta.env.DEV && labQuery.has('labPreview')) {
+          const lab = await import('./dev/lab/fake-cube.js');
+          labPreviewCube = await lab.createLabCube();
+          window.__CUBESIGHT_LAB_PREVIEW__ = {
+            async runResults() {
+              await lab.runResultsFixture(document.querySelector('#brain-view'), labPreviewCube, {
+                openReview: labQuery.get('state') === 'review-detail',
+                getViewModel: () => brain?.getViewModel?.() ?? null,
+              });
+            },
+            getViewModel: () => brain?.getViewModel?.() ?? null,
+          };
+        }
+        brain = createBrain(document.querySelector('#brain-view'), smartCube);
+        await brain.ready;
         brain.setActive(activeTool === 'brain');
         mountSnapshotPage('brain', brain);
+        if (labPreviewCube) {
+          await smartCube.connect();
+          if (labQuery.get('fixture') === 'results') await window.__CUBESIGHT_LAB_PREVIEW__.runResults();
+        }
       }).catch((error) => {
         document.querySelector('#brain-view').textContent = MSG.loadFailed('solve');
         brainLoad = null;
@@ -1887,6 +1909,8 @@ function setTool(tool, initial = false) {
     } else smart?.setActive(true);
   } else if (import.meta.env.DEV && tool === 'gallery') {
     showDevGallery();
+  } else if (import.meta.env.DEV && tool === 'lab') {
+    showDevLab();
   } else if (tool === 'scout') {
     state.locked = true;
     f2lState.locked = true;
@@ -1957,6 +1981,19 @@ function showDevGallery() {
     galleryPage = mountGalleryPage(root);
     galleryPage.setActive(activeTool === 'gallery');
   }).catch(() => { root.textContent = MSG.loadFailed('gallery'); galleryLoad = null; });
+}
+
+function showDevLab() {
+  state.locked = true;
+  f2lState.locked = true;
+  const root = document.querySelector('#lab-view');
+  if (window.cubesightDesignLab) { window.cubesightDesignLab.setActive(true); return; }
+  if (labPage) return;
+  root.textContent = 'loading design lab…';
+  labPage = import('./dev/lab/index.js').then(({ mountDesignLab }) => {
+    if (activeTool !== 'lab') return;
+    window.cubesightDesignLab = mountDesignLab(root);
+  }).catch(error => { root.textContent = `Design lab failed: ${error.message}`; labPage = null; });
 }
 
 function mountPage(tool) {
@@ -2283,6 +2320,12 @@ if (import.meta.env.DEV) {
   galleryView.id = 'gallery-view';
   galleryView.hidden = true;
   document.querySelector('#smart-view').after(galleryView);
+  registerDevRoute({ tool: 'lab', match: path => /^\/dev\/lab(?:\/.*)?$/.test(path) });
+  TOOL_VIEWS.lab = 'lab-view';
+  const labView = document.createElement('div');
+  labView.id = 'lab-view';
+  labView.hidden = true;
+  document.querySelector('#gallery-view').after(labView);
 }
 window.addEventListener('hashchange', () => syncRoute());
 document.addEventListener('cubesight-theme', () => {
