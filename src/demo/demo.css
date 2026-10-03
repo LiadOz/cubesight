@@ -6,11 +6,12 @@
 .demo-part-title { margin: 0; color: var(--b-muted); }
 .demo-lesson-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .demo-part-count { color: var(--b-muted); font: 12px var(--b-font-mono); }
-.demo-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 12px; min-width: 0; min-height: 0; }
-.demo-orbit { grid-area: 1 / 1 / 2 / 3; inline-size: auto; block-size: min(100%, 340px); max-inline-size: 100%; min-width: 0; aspect-ratio: 1; justify-self: center; }
-.demo-cube { grid-area: 1 / 1 / 2 / 3; inline-size: auto; block-size: min(100%, 260px); max-inline-size: 100%; aspect-ratio: 1; justify-self: center; z-index: 1; pointer-events: none; }
+.demo-stage { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) max-content; grid-template-rows: minmax(0, 1fr); align-items: center; gap: 12px; min-width: 0; min-height: 0; }
+.demo-visual-stage { position: relative; grid-area: 1 / 1; display: grid; place-items: center; width: 100%; height: 100%; min-width: 0; min-height: 0; container-type: size; }
+.demo-orbit { position: absolute; inset: 0; display: grid; place-items: center; min-width: 0; min-height: 0; }
+.demo-cube { position: absolute; top: 50%; left: 50%; inline-size: min(62cqh, 62cqi, 220px); block-size: auto; max-inline-size: 100%; aspect-ratio: 1; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; }
 .demo-cube .shared-cube { width: 100%; height: 100%; }
-.demo-actions { grid-area: 1 / 2 / 2 / 3; align-self: end; justify-self: end; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 4px 8px; }
+.demo-actions { grid-area: 1 / 2; align-self: end; justify-self: end; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 4px 8px; }
 .demo-speed { width: 90px; min-width: 0; min-height: 38px; }
 .demo-speed .ui-field, .demo-speed .sel, .demo-speed .sel__btn { width: 100%; min-width: 0; }
 .demo-coach { min-height: 58px; padding: 10px 0; border-top: 1px solid var(--b-hairline); }
@@ -21,6 +22,8 @@
 .demo-case-link { display: inline-flex; align-items: center; min-height: 40px; color: var(--b-accent-text); font-size: 13px; }
 .demo-copy-status { color: var(--b-muted); font-size: 12px; overflow-wrap: anywhere; }
 .demo-paste { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--b-hairline); }
+.demo-paste-disclosure > summary { min-height: 40px; display: flex; align-items: center; color: var(--b-muted); font-size: 13px; cursor: pointer; }
+.demo-paste-disclosure[open] > summary { margin-bottom: 8px; }
 .demo-paste label { color: var(--b-muted); font-size: 12px; }
 .demo-paste textarea { box-sizing: border-box; width: 100%; min-height: 66px; padding: 10px 12px; resize: vertical; border: 1px solid var(--b-hairline); border-radius: 10px; background: var(--b-surface); color: var(--b-ink); font: 13px/1.5 var(--b-font-mono); }
 .demo-status, .demo-error { margin: 0; color: var(--b-muted); font-size: 13px; }
@@ -31,9 +34,9 @@
   .cs-page.brain.demo-page { grid-template-rows: auto auto auto auto auto auto; gap: 10px; width: calc(100% - 32px); height: auto; min-height: calc(100dvh - var(--site-header-height, 104px)); padding: 12px 0 16px; }
   .demo-heading { display: block; }
   .demo-lesson-nav { margin-top: 4px; }
-  .demo-stage { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; min-height: auto; }
-  .demo-orbit { grid-area: 1 / 1; inline-size: min(100%, calc(100vw - 64px)); block-size: auto; max-width: 340px; }
-  .demo-cube { grid-area: 1 / 1; inline-size: min(100%, 220px, calc((100vw - 64px) * .72)); block-size: auto; }
+  .demo-stage { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; min-width: 0; min-height: auto; }
+  .demo-visual-stage { grid-area: 1 / 1; width: min(100%, 35dvh, 358px); height: auto; aspect-ratio: 1; justify-self: center; }
+  .demo-orbit { grid-area: 1 / 1; }
   .demo-actions { grid-area: 2 / 1; justify-self: stretch; justify-content: center; padding: 0; }
   .demo-actions .btn { min-width: 42px; }
 }

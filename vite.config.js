@@ -3,6 +3,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { execFileSync } from 'node:child_process';
 import { galleryPlugin } from './scripts/gallery-index.mjs';
 import fs from 'node:fs';
+import path from 'node:path';
 import { APP_NAME } from './src/copy/nav.js';
 
 function currentRevision() {
@@ -193,7 +194,8 @@ export default defineConfig({
   },
   // CUBESIGHT_NO_WATCH=1: dev mode without file watching. The page never changes
   // under you while agents edit code; restart the server to pick up changes.
-  server: { hmr: false, host: true, allowedHost: true, fs: { allow: [searchForWorkspaceRoot(process.cwd()), fs.realpathSync('./node_modules')] }, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]\.agents[\\/]/, /[\\/]test-results[\\/]/] } },
+  cacheDir: path.resolve(process.env.CUBESIGHT_VITE_CACHE_DIR || 'test-results/vite-cache'),
+  server: { hmr: false, host: true, allowedHost: true, fs: { allow: [searchForWorkspaceRoot(process.cwd()), fs.realpathSync('./node_modules'), ...(process.env.CUBESIGHT_SHARED_NODE_MODULES && fs.existsSync(process.env.CUBESIGHT_SHARED_NODE_MODULES) ? [fs.realpathSync(process.env.CUBESIGHT_SHARED_NODE_MODULES)] : [])] }, watch: process.env.CUBESIGHT_NO_WATCH ? null : { ignored: [/[\\/]\.claude[\\/]/, /[\\/]\.agents[\\/]/, /[\\/]test-results[\\/]/] } },
   // Only crawl the app's own entry for dependency pre-bundling; agent worktrees
   // under .claude/ contain their own index.html and build output.
   optimizeDeps: { entries: ['index.html'], exclude: ['cubing'] },

@@ -35,6 +35,11 @@ const copyClipboard = async (page, button) => {
   return page.evaluate(() => navigator.clipboard.readText());
 };
 
+async function openDemoPaste(page) {
+  await page.getByText('paste a demo', { exact: true }).click();
+  return page.locator('#demo-paste-input');
+}
+
 let historyRecord;
 let historyMarker;
 test.beforeAll(async () => {
@@ -61,7 +66,7 @@ test('published format example opens, multipart lesson navigates, and offline pl
   await page.goto('/#/demo/format');
   const example = (await page.locator('.demo-format__example').textContent()).split('\n')[0].trim();
   expect(example).toMatch(/^#\/demo\?/);
-  await page.locator('#demo-paste-input').fill(example);
+  await (await openDemoPaste(page)).fill(example);
   await page.getByRole('button', { name: 'open demo' }).click();
   await expect(page.locator('.demo-heading h1')).toHaveText('F2L pair');
   await expect(page.locator('.demo-cube .shared-cube canvas')).toBeVisible();
@@ -106,11 +111,12 @@ test('local absolute-hash and alg.cubing links paste into CubeSight without a ne
     if (new URL(request.url()).origin !== localOrigin) offOrigin.push(request.url());
   });
   await page.route('https://**', route => route.abort());
-  const input = page.locator('#demo-paste-input');
+  const input = await openDemoPaste(page);
   await input.fill('Here is the demo: https://learn.example.org/app/#/demo?title=shared&setup=F&alg=R%27');
   await page.getByRole('button', { name: 'open demo' }).click();
   await expect(page.locator('.demo-heading h1')).toHaveText('shared');
-  await input.fill('https://alg.cubing.net/?alg=R_U&setup=F');
+  const rebuiltInput = await openDemoPaste(page);
+  await rebuiltInput.fill('https://alg.cubing.net/?alg=R_U&setup=F');
   await page.getByRole('button', { name: 'open demo' }).click();
   await expect(page.locator('.demo-heading h1')).toHaveText('cube demo');
   const imported = parseDemoPaste('https://alg.cubing.net/?alg=R_U&setup=F');

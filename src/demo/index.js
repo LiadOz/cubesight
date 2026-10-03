@@ -47,11 +47,13 @@ export function createDemoPage(root) {
     rules.append(el('p', 'Add step1.moves=R%20U and step1.note=extract for a move group; add step2.moves and step2.note for another group. Lesson parts use part1.title/setup/alg, part2.title/setup/alg, and so on; their step fields start part1.step1.moves. Optional fields: highlight=UFR,FR or pair:FR, case=f2l/8, speed=1.5, color=white%20top.'));
     rules.append(el('p', 'The CubeSight format plays locally. A pasted alg.cubing.net or Twizzle link is converted on this device without fetching it.')); 
     const paste = pasteForm();
-    page.append(title, intro, code, rules, paste.form);
+    page.append(title, intro, code, rules, paste.disclosure);
     root.append(page);
   };
 
   const pasteForm = () => {
+    const disclosure = el('details', '', 'demo-paste-disclosure');
+    const summary = el('summary', 'paste a demo');
     const form = el('form', '', 'demo-paste');
     const input = createTextarea(form, { label: 'Paste a demo link or setup + alg', rows: 3, placeholder: 'Paste a link, or write setup: R U\nalg: R′ U′' }).textarea;
     input.id = 'demo-paste-input'; input.name = 'demo';
@@ -66,7 +68,8 @@ export function createDemoPage(root) {
         location.hash = serializeDemo(parsed);
       } catch (error) { status.textContent = error.message; }
     });
-    return { form, input, status };
+    disclosure.append(summary, form);
+    return { disclosure, form, input, status };
   };
 
   function dispose() { orbitResizeObserver?.disconnect(); orbitResizeObserver = null; cube?.destroy(); cube = null; orbit?.destroy(); orbit = null; speedControl?.destroy(); speedControl = null; }
@@ -86,7 +89,7 @@ export function createDemoPage(root) {
       stylePage(page);
       const h = el('h1', 'This demo link needs a check');
       const message = el('p', parsed.error, 'demo-error');
-      const paste = pasteForm(); page.append(h, message, paste.form); root.append(page); return;
+      const paste = pasteForm(); page.append(h, message, paste.disclosure); root.append(page); return;
     }
     const page = el('section', '', 'cs-page brain demo-page');
     stylePage(page);
@@ -101,6 +104,8 @@ export function createDemoPage(root) {
     const nextPart = button('next case', 'next-part');
     lessonNav.append(previousPart, partCount, nextPart);
     const stage = el('section', '', 'demo-stage'); stage.setAttribute('aria-label', 'Demo playback');
+    const visualStage = el('div', '', 'demo-visual-stage');
+    visualStage.setAttribute('aria-label', 'Cube and move sequence');
     const orbitHost = el('div', '', 'demo-orbit'); orbitHost.setAttribute('aria-label', 'Move sequence and progress');
     const cubeHost = el('div', '', 'demo-cube');
     const actions = el('div', '', 'demo-actions');
@@ -110,7 +115,8 @@ export function createDemoPage(root) {
     const next = button('next move', 'next-move');
     const speedHost = el('div', '', 'demo-speed');
     actions.append(restart, prev, playButton, next, speedHost);
-    stage.append(orbitHost, cubeHost, actions);
+    visualStage.append(orbitHost, cubeHost);
+    stage.append(visualStage, actions);
     const coach = el('section', '', 'demo-coach'); coach.setAttribute('aria-live', 'polite');
     const moveDescription = el('p', '', 'demo-move-description');
     const authorNote = el('p', '', 'demo-author-note');
@@ -121,7 +127,7 @@ export function createDemoPage(root) {
     const links = el('div', '', 'demo-tools');
     const caseLink = el('a', 'open case page', 'demo-case-link');
     links.append(copy, copyStatus, caseLink);
-    page.append(header, lessonNav, stage, coach, links, paste.form);
+    page.append(header, lessonNav, stage, coach, links, paste.disclosure);
     root.append(page);
     view = { heading, partTitle, previousPart, partCount, nextPart, restart, prev, playButton, next, moveDescription, authorNote, caseLink };
     const part = demo.parts[0];
