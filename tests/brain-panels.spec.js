@@ -100,13 +100,13 @@ for (const style of STYLES) {
     // Closed: nothing of it is visible, and the page is no taller than the solve view needs.
     await expect(drawer).toBeHidden();
     for (const id of DEBUG_IDS) await expect(brain.locator(id)).toHaveCount(1);
-    // Nothing in flow follows the footer row (the old drawers sat there), and the footer is one slim row.
+    // Nothing in flow follows the key row (the bottom-left row of the frames; the old drawers sat below it), and it is one slim row.
     const rows = await brain.evaluate(el => {
-      const foot = el.querySelector('.b-foot').getBoundingClientRect();
-      return { foot: foot.height, below: el.getBoundingClientRect().bottom - foot.bottom };
+      const keys = (el.querySelector('.b-keys') ?? el.querySelector('.b-foot')).getBoundingClientRect();
+      return { keys: keys.height, below: el.getBoundingClientRect().bottom - keys.bottom };
     });
-    expect(rows.foot).toBeLessThan(80);
-    expect(rows.below).toBeLessThan(60);
+    expect(rows.keys).toBeLessThan(80);
+    expect(rows.below).toBeLessThan(120);
     await expect(brain.locator('#brain-debug-toggle')).toHaveAttribute('aria-expanded', 'false');
 
     // Settings and the backtick key open it; the log is painted; esc or close shuts it.

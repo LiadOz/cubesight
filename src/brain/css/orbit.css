@@ -1,4 +1,9 @@
-/* F1 solve: the F0 Cube and a single F0 Orbit share one mounted stage. */
+/* The solve screen, laid out on the approved frames' canvas (docs/design/orbit-v3/SPEC-A-EXACT.md).
+   Every number is a --ds-* custom property set from src/ui/design-spec.js by layout-spec.js (canvas px at 1440x900).
+   --u is one canvas px at the current viewport (the Orbit sizes itself with the same unit, see ui/orbit/index.js), so the
+   whole composition scales together and the Orbit centre always lands on (--ds-cx, --ds-cy) of the canvas.
+   Text is placed by its BASELINE (the frames' y): top = y - baseline-ratio x font-size, with line-height 1. */
+
 .brain[data-brain-style="orbit"] {
   --orbit-ink: var(--b-ink);
   --orbit-muted: var(--b-muted);
@@ -6,212 +11,395 @@
   --orbit-bg: var(--b-bg);
   --orbit-accent: var(--b-accent);
   --orbit-key: var(--b-surface-2);
-  width: min(1280px, 100% - 48px);
-  min-height: calc(100dvh - 60px);
-  padding: 12px 0;
+  --u: min(1.25px, calc(100vw / 1440), calc(100dvh / 900));
+  --c-x: var(--ds-cx); --c-y: var(--ds-cy); --c-cube: var(--ds-cube-box); --c-orbit: var(--ds-orbit-view);   /* ring centre and the two square boxes centred on it, in canvas px */
+  --ox: calc(50% - var(--c-x) * var(--u));
+  --oy: calc(50% - 450 * var(--u));
+  --base-sans: .88;   /* baseline of Manrope / DM Mono at line-height 1, as a fraction of the font size (measured) */
+  --base-mono: .84;
+  /* The canvas is 1440 wide: its centre column (cube, ring, timer, pill) is x = --ds-cx. Page corners stay 48 px from the window edge, like the header. */
+  --corner: 48px;
+  /* Timer: one style per state (user decision: 120 idle / 168 inspection / 128 solving / 124 results). */
+  --t-x: var(--ds-timer-idle-x); --t-y: var(--ds-timer-idle-y); --t-size: var(--ds-timer-idle-size); --t-weight: var(--ds-timer-idle-weight); --t-ls: var(--ds-timer-idle-ls);
+  --keys-y: var(--ds-keys-idle-y);
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  margin: calc(-1 * var(--site-header-height, 64px)) 0 0;
+  padding: 0;
+  overflow: clip;
   background: var(--b-bg);
   color: var(--b-ink);
   font-family: var(--b-font-sans);
 }
+.brain[data-brain-style="orbit"]:is([data-screen="inspection"], [data-screen="ready"]) { --t-x: var(--ds-timer-inspection-x); --t-y: var(--ds-timer-inspection-y); --t-size: var(--ds-timer-inspection-size); --t-weight: var(--ds-timer-inspection-weight); --t-ls: var(--ds-timer-inspection-ls); }
+.brain[data-brain-style="orbit"][data-screen="solving"] { --t-x: var(--ds-timer-solving-x); --t-y: var(--ds-timer-solving-y); --t-size: var(--ds-timer-solving-size); --t-weight: var(--ds-timer-solving-weight); --t-ls: var(--ds-timer-solving-ls); }
+.brain[data-brain-style="orbit"][data-screen="results"] { --t-x: var(--ds-timer-results-x); --t-y: var(--ds-timer-results-y); --t-size: var(--ds-timer-results-size); --t-weight: var(--ds-timer-results-weight); --t-ls: var(--ds-timer-results-ls); }
+.brain[data-brain-style="orbit"]:is([data-screen="scramble"], [data-screen="inspection"], [data-screen="ready"], [data-screen="solving"]) { --keys-y: var(--ds-keys-live-y); }
 
-.brain[data-brain-style="orbit"] > .b-top {
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: 4;
-  min-height: 0;
-  pointer-events: none;
-}
-.brain[data-brain-style="orbit"] .b-tabs { position: absolute; top: 0; right: 0; pointer-events: auto; }
+/* The page behind the Brain is the full window: no centred column, no scrolling. */
+:root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"]) { overflow: hidden; }
+:root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"]) main { width: 100%; max-width: none; margin: 0; }
+/* The header is drawn over the top of the canvas (the frames' wordmark sits at y=38); it dims to .3 while a solve is under way. */
+:root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"]) .site-header { position: relative; z-index: 5; transition: opacity .3s; }
+:root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"].is-chrome-dimmed) .site-header { opacity: .3; }
+:root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"].is-chrome-dimmed) .site-header:is(:hover, :focus-within) { opacity: 1; }
+
+/* The wrappers are not boxes: everything below is positioned against .brain itself. */
+.brain[data-brain-style="orbit"] :is(.b-stage, .brain-body, .brain-stage, .brain-hero, .brain-review, .b-results-host, .b-slot-inspection) { display: contents; }
+.brain[data-brain-style="orbit"] .b-banner { position: absolute; left: 0; right: 0; top: calc(var(--oy) + 70 * var(--u)); z-index: 6; }
+
+/* --- Top bar: only the (invisible) settings handle stays; the page header carries nav and the cube chip --------------- */
+.brain[data-brain-style="orbit"] > .b-top { position: absolute; inset: 0 0 auto; height: 0; z-index: 4; min-height: 0; pointer-events: none; }
+.brain[data-brain-style="orbit"] .b-tabs { position: absolute; top: 110px; right: var(--corner); pointer-events: auto; }
 .brain[data-brain-style="orbit"] .b-tabs > .b-tab,
 .brain[data-brain-style="orbit"] .brain-connect-chip,
 .brain[data-brain-style="orbit"] [data-primary="connect"] { display: none !important; }
 .brain[data-brain-style="orbit"] .b-settings { position: relative; }
-.brain[data-brain-style="orbit"] .b-stage { width: 100%; margin: 0; text-align: left; }
-.brain[data-brain-style="orbit"] > .b-configbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  max-width: 100%;
-  min-width: 0;
-  margin: 34px 0 0;
-  padding: 0;
-  overflow-x: auto;
-  background: none;
-  font: 500 13px var(--b-font-mono);
-}
+.brain[data-brain-style="orbit"] .b-settings > summary { opacity: 0; }   /* `tab` and the "tab settings" key hint open it */
 .brain[data-brain-style="orbit"] .b-configbar-copy { box-sizing: border-box; width: 100%; min-width: 0; flex-wrap: wrap; justify-content: flex-start; background: none; font: 500 14px var(--b-font-mono); }
+.brain[data-brain-style="orbit"] .b-configbar-copy .chip { --hc: 32px; padding-inline: 10px; font-size: 12px; }
 .brain[data-brain-style="orbit"] .b-sep { width: 8px; font-size: 0; }
-.brain[data-brain-style="orbit"] .b-configbar .chip { --hc: 32px; padding-inline: 10px; font-size: 12px; }
-.brain[data-brain-style="orbit"] .brain-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  position: relative;
-  align-items: center;
-  column-gap: clamp(16px, 3vw, 48px);
+
+/* --- Cube: centred on the Orbit centre, glow and shadow behind it ------------------------------------------------------ */
+.brain[data-brain-style="orbit"] .b-art {
+  position: absolute; z-index: 0; left: var(--ox); top: var(--oy);
+  width: calc(var(--ds-w) * var(--u)); height: calc(var(--ds-h) * var(--u)); overflow: visible; pointer-events: none;
 }
-.brain[data-brain-style="orbit"] .brain-stage {
-  position: relative;
-  width: min(100%, calc(100dvh - 210px), 720px);
-  margin-inline: auto;
-  aspect-ratio: 1;
-  isolation: isolate;
-}
-.brain[data-brain-style="orbit"] .brain-stage > [data-slot="cube"] {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 76%;
-  height: auto;
-  aspect-ratio: 1;
-  margin: 0;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-  transition: none;
+.brain[data-brain-style="orbit"] .b-cube-wrap {
+  position: absolute; z-index: 1; margin: 0; transition: none;
+  width: calc(var(--c-cube) * var(--u)); height: calc(var(--c-cube) * var(--u));
+  left: calc(var(--ox) + (var(--c-x) - var(--c-cube) / 2) * var(--u));
+  top: calc(var(--oy) + (var(--c-y) - var(--c-cube) / 2) * var(--u));
 }
 .brain[data-brain-style="orbit"] .b-cube-wrap::before { display: none; }
-.brain[data-brain-style="orbit"] .b-cube-reset { right: -24px; }
-.brain[data-brain-style="orbit"] .brain-stage > [data-slot="timeline"] {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  pointer-events: none;
-}
-.brain[data-brain-style="orbit"] .brain-stage > [data-slot="timeline"] > .orbit {
-  position: absolute;
-  inset: auto;
-  left: 50%;
-  top: 50%;
-  width: 100% !important;
-  height: 100% !important;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-}
-.brain[data-brain-style="orbit"] .brain-stage > [data-slot="timeline"] > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
-.brain[data-brain-style="orbit"] .brain-stage > [data-slot="inspection"] { display: none; }
-.brain[data-brain-style="orbit"] .brain-hero {
-  position: absolute;
-  left: 0;
-  top: 32%;
-  width: min(22%, 230px);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  max-width: 520px;
-}
-.brain[data-brain-style="orbit"] .b-scramble-head { order: 5; color: var(--b-accent-text); font: 500 14px var(--b-font-mono); }
-.brain[data-brain-style="orbit"] .b-stepline { order: 10; justify-content: flex-start; color: var(--b-accent-text); font: 500 14px var(--b-font-mono); }
-.brain[data-brain-style="orbit"] .brain-stage > :is(.b-clock, .b-steptitle) {
-  position: absolute;
-  top: 82%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  margin: 0;
-  white-space: nowrap;
-}
-.brain[data-brain-style="orbit"] .b-clock { font-size: clamp(56px, 9vh, 86px); letter-spacing: -.04em; }
-.brain[data-brain-style="orbit"].is-timer-hidden .b-clock { visibility: visible; font-size: 32px; }
-.brain[data-brain-style="orbit"][data-screen="scramble"] .b-clock { display: none; }
-.brain[data-brain-style="orbit"] .brain-stage > .b-steptitle { display: none; }
-.brain[data-brain-style="orbit"][data-screen="solving"] .brain-stage > .b-steptitle { display: none; }
-.brain[data-brain-style="orbit"][data-screen="scramble"] .brain-stage > .b-steptitle { display: block; font: 600 56px var(--b-font-mono); }
-.brain[data-brain-style="orbit"] .b-steptitle:not(:has(strong:empty)) { order: 21; display: flex; align-items: center; gap: 26px; margin-bottom: 30px; color: var(--b-ink); font: 700 var(--b-fs-step) var(--b-font-sans); }
-.brain[data-brain-style="orbit"] .b-tag { padding: 6px 12px; border-radius: 999px; background: var(--b-accent-soft); color: var(--b-accent-text); font: 400 14px var(--b-font-mono); }
-.brain[data-brain-style="orbit"] :is(.b-toast, #brain-error) { position: fixed; right: 24px; bottom: 24px; z-index: 70; max-width: min(380px, calc(100vw - 48px)); margin: 0; padding: 14px 18px; border-radius: var(--b-radius-control); background: var(--b-surface-2); text-align: left; font: 500 14px var(--b-font-sans); }
-.brain[data-brain-style="orbit"] .b-aside { order: 24; align-self: stretch; }
-.brain[data-brain-style="orbit"] .b-sub { order: 30; margin-top: 26px; font: 14px var(--b-font-mono); }
-.brain[data-brain-style="orbit"] .b-moves,
-.brain[data-brain-style="orbit"] .b-recovery-cue { max-width: 520px; }
-.brain[data-brain-style="orbit"] .b-coach { justify-items: start; text-align: left; font-family: var(--b-font-sans); }
-.brain[data-brain-style="orbit"] .b-coach-line { font-size: 15px; font-weight: 500; }
-.brain[data-brain-style="orbit"][data-screen="scramble"] :is(.b-scramble-head, .b-moves, .b-recovery-cue) { display: none !important; }
-.brain[data-brain-style="orbit"][data-screen="scramble"] .b-steptitle:not(:has(strong:empty)) { order: 9; margin-bottom: 4px; }
-.brain[data-brain-style="orbit"][data-screen="scramble"] .b-stepline { display: flex; flex-wrap: wrap; order: 10; max-width: 520px; margin: 0; }
-.brain[data-brain-style="orbit"][data-screen="scramble"] .b-coach { align-self: stretch; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--b-hairline); }
-.brain[data-brain-style="orbit"] .b-idle-status { margin-top: 14px; font: 500 16px var(--b-font-sans); }
-.brain[data-brain-style="orbit"] .b-primary { margin: 16px 0; }
-.brain[data-brain-style="orbit"] #brain-stop { position: static; }
-.brain[data-brain-style="orbit"] .b-start { gap: 60px; padding: 12px 22px 12px 32px; border: 0; border-radius: 999px; background: var(--b-ink); color: var(--b-bg); font: 700 18px var(--b-font-sans); letter-spacing: 0; }
-.brain[data-brain-style="orbit"] .b-start:hover { background: var(--b-accent); color: var(--b-on-accent); }
-.brain[data-brain-style="orbit"] .b-start kbd { padding: 5px 16px; background: var(--b-bg); color: var(--b-ink); }
-.brain[data-brain-style="orbit"] .b-stats { display: none; grid-template-columns: repeat(4, auto); justify-content: start; gap: 6px 48px; }
-.brain[data-brain-style="orbit"] .b-stat { flex-direction: column; gap: 6px; }
-.brain[data-brain-style="orbit"] .b-stat dt { font: 12px var(--b-font-mono); }
-.brain[data-brain-style="orbit"] .b-stat dd { font: 600 24px var(--b-font-sans); }
-.brain[data-brain-style="orbit"]:not([data-screen="solving"]) [data-slot="timeline-aside"] { display: none; }
-
-/* Results preserve direction A's hero and number slot. The explanatory
-   sentence stays beside its marker; detailed review can expand below it. */
-.brain[data-brain-style="orbit"][data-screen="results"] .b-stage { display: block; }
-.brain[data-brain-style="orbit"][data-screen="results"] .brain-body { display: block; }
-.brain[data-brain-style="orbit"][data-screen="results"] .brain-hero { display: none; }
-.brain[data-brain-style="orbit"][data-screen="results"] :is(.b-slot-results, .f1-results) { display: contents; }
-.brain[data-brain-style="orbit"][data-screen="results"] .f1-results__time { position: absolute; top: 82%; left: 50%; transform: translateX(-50%); text-align: center; }
-.brain[data-brain-style="orbit"][data-screen="results"] .f1-results__eyebrow { display: none; }
-.brain[data-brain-style="orbit"][data-screen="results"] .f1-results__actions { position: absolute; top: 99%; left: 50%; transform: translateX(-50%); white-space: nowrap; }
-.brain[data-brain-style="orbit"][data-screen="results"] .f1-results__coach { position: absolute; top: 32%; left: 0; width: min(22%, 230px); }
-.brain[data-brain-style="orbit"][data-screen="results"] .f1-results__keys { display: none; }
-.brain[data-brain-style="orbit"][data-screen="results"] .b-results-actions { display: none; }
-.brain[data-brain-style="orbit"][data-screen="results"] .b-foot { padding-top: 80px; }
-
-@media (max-width: 720px) {
-  .brain[data-brain-style="orbit"] .b-tabs { top: 0; }
-  .brain[data-brain-style="orbit"] .brain-body { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
-  .brain[data-brain-style="orbit"] .brain-stage { width: min(100%, calc(100vw - 26px)); aspect-ratio: 1; }
-  .brain[data-brain-style="orbit"] .brain-stage > [data-slot="cube"] { width: 66%; transform: translate(-50%, -50%); }
-  .brain[data-brain-style="orbit"] .brain-hero { position: static; width: 100%; max-width: none; align-items: center; text-align: center; }
-  .brain[data-brain-style="orbit"] .b-clock { font-size: 48px; }
-  .brain[data-brain-style="orbit"] .b-stats { gap: 6px 22px; }
-  .brain[data-brain-style="orbit"][data-screen="results"] .brain-stage { width: min(100%, 390px); }
-}
-
-/* The XL canvas fills its stage; the Orbit's square viewBox stays undistorted. */
 .brain[data-brain-style="orbit"] .b-cube, .brain[data-brain-style="orbit"] .shared-cube--xl { width: 100%; min-width: 0; height: 100%; }
+.brain[data-brain-style="orbit"] .b-cube-reset { right: 0; bottom: 8%; }
+
+/* --- The Orbit: its centre on the canvas centre. The host only has the Orbit's viewBox size so label placement follows resizes. --- */
+.brain[data-brain-style="orbit"] .b-slot-timeline {
+  position: absolute; z-index: 2; margin: 0; animation: none; pointer-events: none;
+  width: calc(var(--c-orbit) * var(--u)); height: calc(var(--c-orbit) * var(--u));
+  left: calc(var(--ox) + (var(--c-x) - var(--c-orbit) / 2) * var(--u));
+  top: calc(var(--oy) + (var(--c-y) - var(--c-orbit) / 2) * var(--u));
+}
+.brain[data-brain-style="orbit"] .b-slot-timeline > .orbit { position: absolute; left: 50%; top: 50%; translate: -50% -50%; pointer-events: auto; }
 .brain[data-brain-style="orbit"][data-screen="connecting"] .orbit:not(.is-morphing) .orbit__svg { animation: solve-connect-sweep 2.4s linear infinite; }
 .brain[data-brain-style="orbit"][data-screen="connecting"] .orbit__segment-track { stroke: var(--b-track); stroke-width: 3; }
-.brain[data-brain-style="orbit"][data-screen="results"] .brain-stage > .b-clock { display: none; }
 @keyframes solve-connect-sweep { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .brain[data-brain-style="orbit"][data-screen="connecting"] .orbit:not(.is-morphing) .orbit__svg { animation: none; } }
-@media (max-width: 720px) { .brain[data-brain-style="orbit"] { width: calc(100% - 32px); } }
-
-.brain[data-brain-style="orbit"] .b-foot { margin-top: 8px; padding-top: 20px; }
-.brain[data-brain-style="orbit"]:is([data-screen="idle"], [data-screen="disconnected"], [data-screen="desynced"]) .b-clock { color: var(--b-track); }
-.brain[data-brain-style="orbit"] .brain-hero .b-coach:has(.b-coach-tag[hidden]) { display: none; }
-
-.brain[data-brain-style="orbit"] .brain-stage > .b-primary { position: absolute; top: 96%; left: 50%; transform: translateX(-50%); z-index: 3; margin: 0; white-space: nowrap; }
-@media (max-width: 720px) {
-  .brain[data-brain-style="orbit"] { min-height: calc(100dvh - 108px); }
-  .brain[data-brain-style="orbit"] .brain-body { flex: 0; align-content: start; }
-  .brain[data-brain-style="orbit"] .brain-hero { margin-top: 50px; }
-  .brain[data-brain-style="orbit"] .b-foot { margin-top: auto; padding-top: 16px; }
-}
-
-@media (max-width: 720px) {
-  .brain[data-brain-style="orbit"][data-screen="results"] .f1-results__coach { position: static; width: 100%; padding-top: 80px; }
-  .brain[data-brain-style="orbit"][data-screen="results"] .f1-results__actions { top: 390px; }
-  .brain[data-brain-style="orbit"][data-screen="results"] .f1-results__time { top: 290px; width: 100%; }
-}
-@media (max-width: 720px) {
-  .brain[data-brain-style="orbit"][data-screen="scramble"] .b-moves { display: block !important; margin-top: 8px; }
-  .brain[data-brain-style="orbit"][data-screen="scramble"] .b-recovery-cue:not([hidden]) { display: flex !important; border: 0; background: none; padding: 0; }
-  .brain[data-brain-style="orbit"][data-screen="scramble"] .orbit__label { display: none; }
-  .brain[data-brain-style="orbit"] .b-moves .mg-strip { flex-wrap: wrap; justify-content: center; overflow: visible; gap: 5px 12px; }
-  .brain[data-brain-style="orbit"] .b-moves .mg-strip i { min-width: 0; padding: 2px 0; border: 0; background: none; font-size: 17px; }
-  .brain[data-brain-style="orbit"] .b-moves .mg-strip i.current { color: var(--b-accent); font-weight: 700; }
-}
-
-.brain[data-brain-style="orbit"] .b-rev-detail:not([hidden]) { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(460px, 100vw); overflow-y: auto; align-content: start; padding: 24px; border: 0; border-radius: 0; background: var(--b-bg); box-shadow: -12px 0 40px #0004; }
-
 /* A bright full-length track would conceal the live remaining/fill arc. */
 .brain[data-brain-style="orbit"][data-screen="inspection"] .orbit__segment-track,
-.brain[data-brain-style="orbit"][data-screen="solving"] .orbit__segment.is-current .orbit__segment-track { stroke: var(--b-track); stroke-width: 4; }
+.brain[data-brain-style="orbit"][data-screen="solving"] .orbit__segment.is-current .orbit__segment-track { stroke: var(--b-track); stroke-width: var(--orbit-w-track, 3); }
 
+/* --- Timer ------------------------------------------------------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] .b-clock {
+  position: absolute; z-index: 3; margin: 0; white-space: nowrap; pointer-events: none; text-align: center;
+  left: calc(var(--ox) + var(--t-x) * var(--u));
+  top: calc(var(--oy) + (var(--t-y) - var(--base-sans) * var(--t-size)) * var(--u));
+  translate: -50% 0;
+  font-family: var(--b-font-num); font-weight: var(--t-weight); font-size: calc(var(--t-size) * var(--u)); line-height: 1; letter-spacing: calc(var(--t-ls) * var(--u));
+  color: var(--b-ink);
+}
+.brain[data-brain-style="orbit"] .b-clock[data-tone="accent"] { color: var(--b-ink); }
+.brain[data-brain-style="orbit"] .b-clock[data-tone="warn"] { color: var(--b-warn); }
+.brain[data-brain-style="orbit"] .b-clock[data-tone="error"] { color: var(--b-dnf); }
+.brain[data-brain-style="orbit"].is-timer-hidden .b-clock { visibility: visible; }
+.brain[data-brain-style="orbit"]:is([data-screen="idle"], [data-screen="disconnected"], [data-screen="desynced"], [data-screen="connecting"]) .b-clock { color: var(--b-faint); }
+.brain[data-brain-style="orbit"]:is([data-screen="scramble"], [data-screen="results"]) .b-clock { display: none; }
+
+/* --- Scramble guidance: glyph, phrase, counter (A-02) and the wrong-turn variant (A-02b) --------------------------------- */
+.brain[data-brain-style="orbit"] .b-guide > * { position: absolute; z-index: 3; margin: 0; white-space: nowrap; pointer-events: none; translate: -50% 0; line-height: 1; }
+.brain[data-brain-style="orbit"] .b-guide-glyph {
+  left: calc(var(--ox) + var(--ds-glyph-x) * var(--u)); top: calc(var(--oy) + (var(--ds-glyph-y) - var(--base-sans) * var(--ds-glyph-size)) * var(--u));
+  font: var(--ds-glyph-weight) calc(var(--ds-glyph-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-accent);
+}
+.brain[data-brain-style="orbit"] .b-guide-line:nth-child(2) {
+  left: calc(var(--ox) + var(--ds-glyph-desc-x) * var(--u)); top: calc(var(--oy) + (var(--ds-glyph-desc-y) - var(--base-sans) * var(--ds-glyph-desc-size)) * var(--u));
+  font: var(--ds-glyph-desc-weight) calc(var(--ds-glyph-desc-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-muted);
+}
+.brain[data-brain-style="orbit"] .b-guide-line:nth-child(3) { display: none; }
+.brain[data-brain-style="orbit"] .b-guide-count {
+  left: calc(var(--ox) + var(--ds-glyph-count-x) * var(--u)); top: calc(var(--oy) + (var(--ds-glyph-count-y) - var(--base-mono) * var(--ds-glyph-count-size)) * var(--u));
+  font: var(--ds-glyph-count-weight) calc(var(--ds-glyph-count-size) * var(--u)) / 1 var(--b-font-mono); color: var(--b-faint);
+}
+.brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-glyph {
+  top: calc(var(--oy) + (var(--ds-wrong-glyph-y) - var(--base-sans) * var(--ds-wrong-glyph-size)) * var(--u));
+  font: var(--ds-wrong-glyph-weight) calc(var(--ds-wrong-glyph-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-warn);
+}
+.brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-line:nth-child(2) {
+  top: calc(var(--oy) + (var(--ds-wrong-head-y) - var(--base-sans) * var(--ds-wrong-head-size)) * var(--u));
+  font: var(--ds-wrong-head-weight) calc(var(--ds-wrong-head-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-warn);
+}
+.brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-line:nth-child(3) {
+  display: block; left: calc(var(--ox) + var(--ds-wrong-hint-x) * var(--u)); top: calc(var(--oy) + (var(--ds-wrong-hint-y) - var(--base-sans) * var(--ds-wrong-hint-size)) * var(--u));
+  font: var(--ds-wrong-hint-weight) calc(var(--ds-wrong-hint-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-muted);
+}
+.brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-count { top: calc(var(--oy) + (var(--ds-wrong-count-y) - var(--base-mono) * var(--ds-wrong-count-size)) * var(--u)); }
+
+/* --- Solving: the live stage title above the timer ---------------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] .b-steptitle { display: none; }
+.brain[data-brain-style="orbit"][data-screen="solving"] .b-steptitle:not(:has(strong:empty)) {
+  display: block; position: absolute; z-index: 3; margin: 0; white-space: nowrap; pointer-events: none; translate: -50% 0;
+  left: calc(var(--ox) + var(--ds-stage-title-x) * var(--u)); top: calc(var(--oy) + (var(--ds-stage-title-y) - var(--base-sans) * var(--ds-stage-title-size)) * var(--u));
+  font: var(--ds-stage-title-weight) calc(var(--ds-stage-title-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-accent);
+}
+.brain[data-brain-style="orbit"] .b-steptitle strong { font-weight: inherit; }
+.brain[data-brain-style="orbit"] .b-steptags { display: none; }
+
+/* --- Inspection: the seconds-left line ---------------------------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] .b-sub { display: none; }
+.brain[data-brain-style="orbit"][data-screen="inspection"] .b-sub:not(:empty) {
+  display: block; position: absolute; z-index: 3; margin: 0; white-space: nowrap; pointer-events: none; translate: -50% 0;
+  left: calc(var(--ox) + var(--ds-insp-hint-x) * var(--u)); top: calc(var(--oy) + (var(--ds-insp-hint-y) - var(--base-sans) * var(--ds-insp-hint-size)) * var(--u));
+  font: var(--ds-insp-hint-weight) calc(var(--ds-insp-hint-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-muted);
+}
+
+/* --- Live callout pill (A-04: "pseudo pair, nice") -------------------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] .b-callout {
+  position: absolute; z-index: 3; margin: 0; display: grid; place-items: center; white-space: nowrap; pointer-events: none;
+  left: calc(var(--ox) + var(--ds-callout-x) * var(--u)); top: calc(var(--oy) + var(--ds-callout-y) * var(--u));
+  width: calc(var(--ds-callout-w) * var(--u)); height: calc(var(--ds-callout-h) * var(--u)); border-radius: 999px; background: var(--b-accent-soft);
+  font: var(--ds-callout-label-weight) calc(var(--ds-callout-label-size) * var(--u)) / 1 var(--b-font-mono); color: var(--b-accent);
+}
+.brain[data-brain-style="orbit"] .b-art--phone { display: none; }
+
+/* --- Inspection: the cross hint block on the left (A-03) --------------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] .b-plan > * { position: absolute; z-index: 3; margin: 0; white-space: nowrap; line-height: 1; left: var(--corner); }
+.brain[data-brain-style="orbit"] .b-plan-eyebrow { top: calc(var(--oy) + (var(--ds-plan-eyebrow-y) - var(--base-mono) * var(--ds-plan-eyebrow-size)) * var(--u)); font: var(--ds-plan-eyebrow-weight) calc(var(--ds-plan-eyebrow-size) * var(--u)) / 1 var(--b-font-mono); color: var(--b-faint); }
+.brain[data-brain-style="orbit"] .b-plan-head { top: calc(var(--oy) + (var(--ds-plan-head-y) - var(--base-sans) * var(--ds-plan-head-size)) * var(--u)); font: var(--ds-plan-head-weight) calc(var(--ds-plan-head-size) * var(--u)) / 1 var(--b-font-sans); color: var(--b-ink); }
+.brain[data-brain-style="orbit"] .b-plan-moves { top: calc(var(--oy) + (var(--ds-plan-moves-y) - var(--base-mono) * var(--ds-plan-moves-size)) * var(--u)); font: var(--ds-plan-moves-weight) calc(var(--ds-plan-moves-size) * var(--u)) / 1 var(--b-font-mono); color: var(--b-accent); }
+.brain[data-brain-style="orbit"] .b-plan-usual { top: calc(var(--oy) + (var(--ds-plan-usual-y) - var(--base-mono) * var(--ds-plan-usual-size)) * var(--u)); font: var(--ds-plan-usual-weight) calc(var(--ds-plan-usual-size) * var(--u)) / 1 var(--b-font-mono); color: var(--b-faint); }
+
+/* --- Start pill (idle / disconnected) ----------------------------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] .b-primary {
+  position: absolute; z-index: 3; margin: 0; display: block;
+  left: calc(var(--ox) + var(--ds-start-x) * var(--u)); top: calc(var(--oy) + var(--ds-start-y) * var(--u));
+  width: calc(var(--ds-start-w) * var(--u)); height: calc(var(--ds-start-h) * var(--u));
+}
+.brain[data-brain-style="orbit"] .b-primary:not(:has(> :not([hidden]):not(#brain-stop))) { pointer-events: none; }
+.brain[data-brain-style="orbit"] #brain-stop { position: absolute; inset: 0; opacity: 0; }   /* esc and the "esc stop" key hint are the visible ways to stop */
+.brain[data-brain-style="orbit"] .b-start {
+  display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%; height: 100%; margin: 0;
+  padding: 0 calc((var(--ds-start-x) + var(--ds-start-w) - var(--ds-start-key-x) - var(--ds-start-key-w)) * var(--u)) 0 calc((var(--ds-start-label-x) - var(--ds-start-x)) * var(--u));
+  border: 0; border-radius: 999px; background: var(--b-ink); color: var(--b-bg);
+  font: var(--ds-start-label-weight) calc(var(--ds-start-label-size) * var(--u)) / 1 var(--b-font-sans); letter-spacing: 0;
+}
+.brain[data-brain-style="orbit"] .b-start:hover { background: var(--b-accent); color: var(--b-on-accent); }
+.brain[data-brain-style="orbit"] .b-start > span { display: block; margin-top: calc(1.2 * var(--u)); }
+.brain[data-brain-style="orbit"] .b-start kbd {
+  display: grid; place-items: center; box-sizing: border-box; padding: 0; margin: 0;
+  width: calc(var(--ds-start-key-w) * var(--u)); height: calc(var(--ds-start-key-h) * var(--u)); border-radius: calc(6 * var(--u));
+  background: var(--b-bg); color: var(--b-key-ink); font: var(--ds-start-key-label-weight) calc(var(--ds-start-key-label-size) * var(--u)) / 1 var(--b-font-mono);
+}
+.brain[data-brain-style="orbit"] .b-start-alt { justify-content: center; padding: 0; }
+
+/* --- Page corners: config line, key hints, stats / note ----------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] :is(.b-config-line, .b-note, .b-stats-1, .b-stats-2) { position: absolute; z-index: 3; margin: 0; white-space: nowrap; font: 400 calc(12 * var(--u)) / 1 var(--b-font-mono); color: var(--b-muted); }
+.brain[data-brain-style="orbit"] .b-stats-line { display: contents; }
+.brain[data-brain-style="orbit"] .b-config-line {
+  left: var(--corner); top: calc(var(--oy) + (var(--ds-config-y) - var(--base-mono) * var(--ds-config-size)) * var(--u)); font-size: calc(var(--ds-config-size) * var(--u));
+}
+.brain[data-brain-style="orbit"] .b-stats-1 { right: var(--corner); top: calc(var(--oy) + (var(--ds-stats-1-y) - var(--base-mono) * var(--ds-stats-1-size)) * var(--u)); font-size: calc(var(--ds-stats-1-size) * var(--u)); }
+.brain[data-brain-style="orbit"] .b-stats-2, .brain[data-brain-style="orbit"] .b-note { right: var(--corner); top: calc(var(--oy) + (var(--ds-stats-2-y) - var(--base-mono) * var(--ds-stats-2-size)) * var(--u)); font-size: calc(var(--ds-stats-2-size) * var(--u)); }
+.brain[data-brain-style="orbit"] .b-stats-2 a { color: inherit; text-decoration: none; }
+.brain[data-brain-style="orbit"] .b-stats-2 a:hover { color: var(--b-ink); }
+.brain[data-brain-style="orbit"]:not([data-screen="idle"]) :is(.b-config-line, .b-stats-line) { display: none; }
+.brain[data-brain-style="orbit"]:is([data-screen="idle"], [data-screen="disconnected"], [data-screen="desynced"], [data-screen="connecting"]) .b-note { display: none; }
+.brain[data-brain-style="orbit"] .b-stats { display: none; }
+
+.brain[data-brain-style="orbit"] .b-foot { display: contents; }
+.brain[data-brain-style="orbit"] .b-keys {
+  position: absolute; z-index: 3; left: var(--corner); top: calc(var(--oy) + var(--keys-y) * var(--u));
+  display: flex; flex-wrap: nowrap; gap: calc(27 * var(--u)); min-height: 0;
+}
+.brain[data-brain-style="orbit"] .b-key { display: inline-flex; align-items: center; gap: calc(8 * var(--u)); height: calc(var(--ds-keys-idle-h) * var(--u)); padding: 0; color: var(--b-muted); font: 500 calc(var(--ds-keys-action-size) * var(--u)) / 1 var(--b-font-sans); white-space: nowrap; }
+.brain[data-brain-style="orbit"] .b-key:hover { color: var(--b-ink); }
+.brain[data-brain-style="orbit"] .b-key kbd {
+  display: inline-grid; place-items: center; box-sizing: border-box; height: calc(var(--ds-keys-idle-h) * var(--u)); min-width: calc(21.4 * var(--u)); padding: 0 calc(7.2 * var(--u)); margin: 0; letter-spacing: calc(.8 * var(--u));
+  border-radius: calc(6 * var(--u)); background: var(--b-key-bg); color: var(--b-key-ink); font: var(--ds-keys-idle-label-weight) calc(var(--ds-keys-idle-label-size) * var(--u)) / 1 var(--b-font-mono);
+}
+.brain[data-brain-style="orbit"] .brain-error { position: fixed; }
+
+/* --- Everything the frames do not draw next to the cube is out of sight (still in the DOM for assistive tech) ------------- */
+.brain[data-brain-style="orbit"] :is(.b-stepline, .b-scramble-head, .b-moves, .b-recovery-cue, .b-guide-tools, .b-progress, .b-aside) { display: none !important; }
+.brain[data-brain-style="orbit"] .b-idle-status, .brain[data-brain-style="orbit"] .b-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.brain[data-brain-style="orbit"] .b-coach { display: none; }
+.brain[data-brain-style="orbit"] :is(.b-toast, #brain-error) { position: fixed; right: 24px; bottom: 56px; z-index: 70; max-width: min(380px, calc(100vw - 48px)); margin: 0; padding: 14px 18px; border-radius: var(--b-radius-control); background: var(--b-surface-2); text-align: left; font: 500 14px var(--b-font-sans); }
+.brain[data-brain-style="orbit"] .b-rev-detail:not([hidden]) { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(460px, 100vw); overflow-y: auto; align-content: start; padding: 24px; border: 0; border-radius: 0; background: var(--b-bg); box-shadow: -12px 0 40px #0004; }
+
+/* --- Results (A-05): time, comparison, pills, coach rail ---------------------------------------------------------------- */
+.brain[data-brain-style="orbit"] :is(.f1-results) { display: contents; max-width: none; padding: 0; }
+.brain[data-brain-style="orbit"] .f1-results__time { display: contents; }
+.brain[data-brain-style="orbit"] .f1-results__eyebrow { display: none; }
+.brain[data-brain-style="orbit"] .f1-results__number {
+  position: absolute; z-index: 3; white-space: nowrap; translate: -50% 0; text-align: center;
+  left: calc(var(--ox) + var(--t-x) * var(--u)); top: calc(var(--oy) + (var(--t-y) - var(--base-sans) * var(--t-size)) * var(--u));
+  font: var(--t-weight) calc(var(--t-size) * var(--u)) / 1 var(--b-font-num); letter-spacing: calc(var(--t-ls) * var(--u)); color: var(--b-ink);
+}
+.brain[data-brain-style="orbit"] .f1-results__time[data-tone="warn"] .f1-results__number { color: var(--b-warn); }
+.brain[data-brain-style="orbit"] .f1-results__time[data-tone="error"] .f1-results__number { color: var(--b-dnf); }
+.brain[data-brain-style="orbit"] .f1-results__compare {
+  position: absolute; z-index: 3; margin: 0; white-space: nowrap; translate: -50% 0;
+  left: calc(var(--ox) + var(--ds-compare-x) * var(--u)); top: calc(var(--oy) + (var(--ds-compare-y) - var(--base-mono) * var(--ds-compare-size)) * var(--u));
+  font: var(--ds-compare-weight) calc(var(--ds-compare-size) * var(--u)) / 1 var(--b-font-mono); color: var(--b-muted);
+}
+.brain[data-brain-style="orbit"] .f1-results__actions {
+  position: absolute; z-index: 3; margin: 0;
+  left: calc(var(--ox) + var(--ds-next-x) * var(--u)); top: calc(var(--oy) + var(--ds-next-y) * var(--u));
+  width: calc(var(--ds-next-w) * var(--u)); height: calc(var(--ds-next-h) * var(--u)); display: block;
+}
+.brain[data-brain-style="orbit"] .f1-results__actions > .ui-actions { display: block; width: 100%; height: 100%; gap: 0; }
+.brain[data-brain-style="orbit"] .f1-results__actions .btn--primary {
+  position: absolute; left: 0; top: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; width: 100%; height: 100%; min-height: 0; margin: 0;
+  padding: 0 calc((var(--ds-next-x) + var(--ds-next-w) - var(--ds-next-key-x) - var(--ds-next-key-w)) * var(--u)) 0 calc((var(--ds-next-label-x) - var(--ds-next-x)) * var(--u));
+  border-radius: 999px; background: var(--b-ink); color: var(--b-bg); font: var(--ds-next-label-weight) calc(var(--ds-next-label-size) * var(--u)) / 1 var(--b-font-sans);
+}
+.brain[data-brain-style="orbit"] .f1-results[data-mode="live"] .f1-results__actions .btn--primary::after {
+  content: 'space'; display: grid; place-items: center; width: calc(var(--ds-next-key-w) * var(--u)); height: calc(var(--ds-next-key-h) * var(--u)); border-radius: calc(6 * var(--u));
+  background: var(--b-bg); color: var(--b-key-ink); font: 500 calc(var(--ds-start-key-label-size) * var(--u)) / 1 var(--b-font-mono);
+}
+.brain[data-brain-style="orbit"] .f1-results__actions .btn--primary[hidden] { display: none; }
+.brain[data-brain-style="orbit"] .f1-results__actions .btn--text, .brain[data-brain-style="orbit"] .f1-results__more {
+  position: absolute; margin: 0; padding: 0; width: calc(80 * var(--u)); text-align: center; translate: -50% 0; text-decoration: none; white-space: nowrap;
+  font: 600 calc(var(--ds-next-review-size) * var(--u)) / 1 var(--b-font-sans);
+}
+.brain[data-brain-style="orbit"] .f1-results__actions .btn--text:nth-child(2) {
+  left: calc((var(--ds-next-review-x) - var(--ds-next-x)) * var(--u)); top: calc((var(--ds-next-review-y) - var(--base-sans) * var(--ds-next-review-size) - var(--ds-next-y)) * var(--u)); color: var(--b-ink);
+}
+.brain[data-brain-style="orbit"] .f1-results__actions .btn--text:nth-child(3), .brain[data-brain-style="orbit"] .f1-results__more {
+  left: calc((var(--ds-next-more-x) - var(--ds-next-x)) * var(--u)); top: calc((var(--ds-next-more-y) - var(--base-sans) * var(--ds-next-more-size) - var(--ds-next-y)) * var(--u)); color: var(--b-muted);
+}
+.brain[data-brain-style="orbit"] .f1-results__more { width: 0; height: 0; }
+.brain[data-brain-style="orbit"] .f1-results__coach {
+  position: absolute; z-index: 3; min-height: 0; width: calc(var(--ds-coach-w) * var(--u)); margin: 0;
+  left: var(--corner); top: calc(var(--oy) + (var(--ds-coach-body-y) - var(--base-sans) * var(--ds-coach-body-size)) * var(--u));
+  font-size: calc(var(--ds-coach-body-size) * var(--u));
+}
+.brain[data-brain-style="orbit"] .f1-results__coach .ui-coach-line__text { font: var(--ds-coach-body-weight) calc(var(--ds-coach-body-size) * var(--u)) / calc(var(--ds-coach-pitch) * var(--u)) var(--b-font-sans); color: var(--b-ink); }
+.brain[data-brain-style="orbit"] .f1-results__coach-tag {
+  position: absolute; z-index: 3; margin: 0; display: flex; align-items: center; gap: calc(9 * var(--u)); white-space: nowrap;
+  left: var(--corner); top: calc(var(--oy) + (var(--ds-coach-tag-y) - var(--base-mono) * var(--ds-coach-tag-size)) * var(--u));
+  font: var(--ds-coach-tag-weight) calc(var(--ds-coach-tag-size) * var(--u)) / 1 var(--b-font-mono); color: var(--b-warn);
+}
+.brain[data-brain-style="orbit"] .f1-results__coach-tag i { display: block; box-sizing: border-box; width: calc(9 * var(--u)); height: calc(9 * var(--u)); border: calc(2 * var(--u)) solid var(--b-warn); border-radius: 50%; }
+.brain[data-brain-style="orbit"] .f1-results__keys, .brain[data-brain-style="orbit"] .b-results-actions { display: none; }
+.brain[data-brain-style="orbit"] .f1-results__case-prompt, .brain[data-brain-style="orbit"] .f1-results__case-menu { position: fixed; right: 24px; bottom: 56px; z-index: 60; }
+.brain[data-brain-style="orbit"] .f1-results__history-nav { position: absolute; z-index: 3; left: var(--corner); top: calc(var(--oy) + 70 * var(--u)); }
+
+/* --- Phone (A-09 / A-12): the 390 x 844 device, 1:1 -- the canvas is the viewport, the Orbit renders at half size (r=150) ---------- */
 @media (max-width: 720px) {
-  /* The same controls remain available in the settings drawer. */
-  .brain[data-brain-style="orbit"] > .b-configbar { display: none; }
-  .brain[data-brain-style="orbit"] .b-configbar-copy .chip { --hc: 44px; min-width: 44px; }
+  .brain[data-brain-style="orbit"] {
+    --u: 1px; --oy: 0px; --corner: 24px;
+    --c-x: var(--ds-phone-cx); --c-y: var(--ds-phone-cy); --c-cube: var(--ds-phone-cube-box); --c-orbit: calc(var(--ds-orbit-view) * var(--ds-phone-scale));
+    --t-x: var(--ds-phone-timer-live-x); --t-y: var(--ds-phone-timer-live-y); --t-size: var(--ds-phone-timer-live-size); --t-weight: var(--ds-phone-timer-live-weight); --t-ls: var(--ds-phone-timer-live-ls);
+  }
+  .brain[data-brain-style="orbit"]:is([data-screen="idle"], [data-screen="disconnected"], [data-screen="desynced"], [data-screen="connecting"], [data-screen="scramble"], [data-screen="inspection"], [data-screen="ready"], [data-screen="solving"]) {
+    --t-x: var(--ds-phone-timer-live-x); --t-y: var(--ds-phone-timer-live-y); --t-size: var(--ds-phone-timer-live-size); --t-weight: var(--ds-phone-timer-live-weight); --t-ls: var(--ds-phone-timer-live-ls);
+  }
+  .brain[data-brain-style="orbit"][data-screen="results"] { --t-x: var(--ds-phone-timer-done-x); --t-y: var(--ds-phone-timer-done-y); --t-size: var(--ds-phone-timer-done-size); --t-weight: var(--ds-phone-timer-done-weight); --t-ls: var(--ds-phone-timer-done-ls); }
+  .brain[data-brain-style="orbit"] .b-art--desktop { display: none; }
+  .brain[data-brain-style="orbit"] .b-art--phone { display: block; width: var(--ds-phone-w); height: var(--ds-phone-h); }
+  .brain[data-brain-style="orbit"] :is(.b-keys, .b-config-line, .b-stats-line, .b-note, .b-cube-reset, .b-plan) { display: none; }
+  .brain[data-brain-style="orbit"] .b-tabs { top: 120px; }
+
+  /* Stage title and callout (A-09 left) */
+  .brain[data-brain-style="orbit"][data-screen="solving"] .b-steptitle:not(:has(strong:empty)) {
+    left: calc(var(--ox) + var(--ds-phone-stage-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-stage-y) - var(--base-sans) * var(--ds-phone-stage-size)) * var(--u));
+    font: var(--ds-phone-stage-weight) calc(var(--ds-phone-stage-size) * var(--u)) / 1 var(--b-font-sans);
+  }
+  .brain[data-brain-style="orbit"] .b-callout {
+    left: calc(var(--ox) + var(--ds-phone-callout-x) * var(--u)); top: calc(var(--oy) + var(--ds-phone-callout-y) * var(--u));
+    width: calc(var(--ds-phone-callout-w) * var(--u)); height: calc(var(--ds-phone-callout-h) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] #brain-stop {
+    position: absolute; inset: auto; opacity: 1; width: auto; height: auto; padding: 0; translate: -50% 0; z-index: 3; white-space: nowrap; color: var(--b-muted);
+    left: calc(var(--ox) + var(--ds-phone-stop-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-stop-y) - var(--base-sans) * var(--ds-phone-stop-size)) * var(--u));
+    font: var(--ds-phone-stop-weight) calc(var(--ds-phone-stop-size) * var(--u)) / 1 var(--b-font-sans);
+  }
+  .brain[data-brain-style="orbit"] .b-primary { position: static; display: contents; }
+  /* Idle: the start button is the phone's large pill (the same box as "next scramble") */
+  .brain[data-brain-style="orbit"] .b-start {
+    position: absolute; z-index: 3; justify-content: center; padding: 0;
+    left: calc(var(--ox) + var(--ds-phone-next-x) * var(--u)); top: calc(var(--oy) + var(--ds-phone-next-y) * var(--u));
+    width: calc(var(--ds-phone-next-w) * var(--u)); height: calc(var(--ds-phone-next-h) * var(--u));
+    font: var(--ds-phone-next-label-weight) calc(var(--ds-phone-next-label-size) * var(--u)) / 1 var(--b-font-sans);
+  }
+  .brain[data-brain-style="orbit"] .b-start kbd { display: none; }
+  .brain[data-brain-style="orbit"] .b-start > span { margin: 0; }
+
+  /* Scramble (no frame): the glyph takes the timer's place and size, its words the compare line, the sequence the coach block */
+  .brain[data-brain-style="orbit"] .b-guide-glyph {
+    left: calc(var(--ox) + var(--t-x) * var(--u)); top: calc(var(--oy) + (var(--t-y) - var(--base-sans) * var(--t-size)) * var(--u));
+    font: 600 calc(var(--t-size) * var(--u)) / 1 var(--b-font-sans);
+  }
+  .brain[data-brain-style="orbit"] .b-guide-line:nth-child(2) {
+    left: calc(var(--ox) + var(--ds-phone-compare-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-compare-y) - var(--base-sans) * var(--ds-glyph-desc-size)) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-line:nth-child(2) { top: calc(var(--oy) + (var(--ds-phone-compare-y) - var(--base-sans) * var(--ds-wrong-head-size)) * var(--u)); }
+  .brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-line:nth-child(3) {
+    left: calc(var(--ox) + var(--ds-phone-compare-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-compare-y) + var(--ds-wrong-hint-y) - var(--ds-wrong-head-y) - var(--base-sans) * var(--ds-wrong-hint-size)) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] .b-guide-count,
+  .brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-count {
+    left: calc(var(--ox) + var(--ds-phone-compare-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-compare-y) + var(--ds-wrong-count-y) - var(--ds-wrong-head-y) - var(--base-mono) * var(--ds-glyph-count-size)) * var(--u));
+  }
+  .brain[data-brain-style="orbit"][data-screen="scramble"] .b-moves {
+    display: block !important; position: absolute; z-index: 3; margin: 0; max-width: none;
+    left: var(--corner); width: calc(100% - 2 * var(--corner)); top: calc(var(--oy) + (var(--ds-phone-coach-body-y) - var(--base-sans) * var(--ds-phone-coach-body-size)) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip { flex-wrap: wrap; justify-content: center; overflow: visible; gap: 6px 12px; }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i { min-width: 0; padding: 2px 0; border: 0; background: none; color: var(--b-ink); font-size: calc(var(--ds-phone-coach-body-size) * var(--u)); }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i.done { color: var(--b-faint); opacity: 1; }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i.current { color: var(--b-accent); font-weight: 700; }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i.mg-gap { width: 16px; }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i.undo { color: var(--b-warn); background: none; font-size: calc(var(--ds-phone-coach-body-size) * var(--u)); }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i.undo.current { font-weight: 700; }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i.wrong { color: var(--b-ink); background: none; }
+  .brain[data-brain-style="orbit"] .b-moves .mg-strip i[data-planned] { text-decoration-color: var(--b-warn); }
+  .brain[data-brain-style="orbit"] .b-recovery-cue { display: none !important; }   /* the way back is inline in the sequence */
+  .brain[data-brain-style="orbit"][data-screen="scramble"] .orbit__label { display: none; }
+  /* Phone stage labels are one 11 px value, coloured by how it went (A-09: 2.08 teal, 1.96 cream, 2.31 amber); names and plan estimates stay off the small ring. */
+  .brain[data-brain-style="orbit"] .orbit__label :is(.orbit__label-name, .orbit__label-delta, .orbit__label-tag) { display: none; }
+  .brain[data-brain-style="orbit"] .orbit__label:is(.is-future, .is-current) { display: none; }
+  .brain[data-brain-style="orbit"] .orbit__label .orbit__label-value { font-size: calc(11px * var(--orbit-label-scale, 1)); font-weight: 400; transform: translateY(-21px); }
+  .brain[data-brain-style="orbit"] .orbit__label.delta-good .orbit__label-value { fill: var(--b-accent); }
+  .brain[data-brain-style="orbit"] .orbit__label.delta-bad .orbit__label-value { fill: var(--b-warn); }
+
+  /* Inspection hint under the digit */
+  .brain[data-brain-style="orbit"][data-screen="inspection"] .b-sub:not(:empty) {
+    left: calc(var(--ox) + var(--ds-phone-compare-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-compare-y) - var(--base-sans) * var(--ds-insp-hint-size)) * var(--u));
+  }
+
+  /* Results (A-09 right) */
+  .brain[data-brain-style="orbit"] .f1-results__compare {
+    left: calc(var(--ox) + var(--ds-phone-compare-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-compare-y) - var(--base-mono) * var(--ds-phone-compare-size)) * var(--u));
+    font: var(--ds-phone-compare-weight) calc(var(--ds-phone-compare-size) * var(--u)) / 1 var(--b-font-mono);
+  }
+  .brain[data-brain-style="orbit"] .f1-results__coach-tag {
+    left: calc(var(--ox) + (var(--ds-phone-coach-tag-x) - 13) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-coach-tag-y) - var(--base-mono) * var(--ds-phone-coach-tag-size)) * var(--u));
+    font: var(--ds-phone-coach-tag-weight) calc(var(--ds-phone-coach-tag-size) * var(--u)) / 1 var(--b-font-mono);
+  }
+  .brain[data-brain-style="orbit"] .f1-results__coach {
+    left: calc(var(--ox) + var(--ds-phone-coach-body-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-coach-body-y) - var(--base-sans) * var(--ds-phone-coach-body-size)) * var(--u));
+    width: calc(var(--ds-phone-w) * var(--u) - 2 * var(--ds-phone-coach-body-x) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] .f1-results__coach .ui-coach-line__text { font: var(--ds-phone-coach-body-weight) calc(var(--ds-phone-coach-body-size) * var(--u)) / calc(24 * var(--u)) var(--b-font-sans); }
+  .brain[data-brain-style="orbit"] .f1-results__actions {
+    left: calc(var(--ox) + var(--ds-phone-next-x) * var(--u)); top: calc(var(--oy) + var(--ds-phone-next-y) * var(--u));
+    width: calc(var(--ds-phone-next-w) * var(--u)); height: calc(var(--ds-phone-next-h) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] .f1-results__actions .btn--primary {
+    justify-content: center; padding: 0; font: var(--ds-phone-next-label-weight) calc(var(--ds-phone-next-label-size) * var(--u)) / 1 var(--b-font-sans);
+  }
+  .brain[data-brain-style="orbit"] .f1-results[data-mode="live"] .f1-results__actions .btn--primary::after { content: none; }
+  .brain[data-brain-style="orbit"] .f1-results__actions .btn--text:nth-child(2) {
+    left: calc((var(--ds-phone-review-x) - var(--ds-phone-next-x)) * var(--u)); top: calc((var(--ds-phone-review-y) - var(--base-sans) * var(--ds-next-review-size) - var(--ds-phone-next-y)) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] .f1-results__actions .btn--text:nth-child(3), .brain[data-brain-style="orbit"] .f1-results__more {
+    left: calc((var(--ds-phone-more-x) - var(--ds-phone-next-x)) * var(--u)); top: calc((var(--ds-phone-more-y) - var(--base-sans) * var(--ds-next-more-size) - var(--ds-phone-next-y)) * var(--u));
+  }
+  .brain[data-brain-style="orbit"] .f1-results__history-nav { top: 100px; }
 }

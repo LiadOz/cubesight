@@ -36,6 +36,7 @@ export function createOrbitResults(host, ctx = {}) {
   const time = el('div', 'f1-results__time');
   time.append(el('span', 'f1-results__eyebrow', 'time'), el('strong', 'f1-results__number'), el('p', 'f1-results__compare'));
   const coachHost = el('div', 'f1-results__coach');
+  const coachTag = el('p', 'f1-results__coach-tag'); coachTag.append(el('i'), document.createTextNode('coach'));
   const casePrompt = el('button', 'ui-action f1-results__case-prompt', 'open case');
   casePrompt.type = 'button'; casePrompt.hidden = true; casePrompt.dataset.action = 'case';
   const detailHost = el('div', 'f1-results__detail-host');
@@ -60,7 +61,7 @@ export function createOrbitResults(host, ctx = {}) {
   moreBody.append(coachDemo, penalty, retry); const moreSummary = document.createElement('summary'); moreSummary.hidden = true; moreSummary.textContent = 'more actions'; more.append(moreSummary, moreBody);
   actions.append(more);
   const keysHost = el('div', 'f1-results__keys');
-  root.append(historyNav, time, coachHost, casePrompt, caseMenu, detailHost, actions, keysHost);
+  root.append(historyNav, time, coachTag, coachHost, casePrompt, caseMenu, detailHost, actions, keysHost);
   host.append(root);
 
   const coach = createCoachLine(coachHost, { orbit: ctx.resultsOrbit, connectorHost: host.closest('.b-stage') ?? coachHost });
@@ -106,6 +107,7 @@ export function createOrbitResults(host, ctx = {}) {
 
   function update(result, previous = null) {
     mode = ctx.mode ?? mode;
+    root.dataset.mode = mode;
     pastNavigation = ctx.pastNavigation ?? pastNavigation;
     const page = result?.screen ? result : null;
     const model = page ? page.results : result;

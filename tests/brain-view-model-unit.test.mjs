@@ -154,7 +154,7 @@ test('solving fixture: the design’s pair-3 moment', () => {
   assert.equal(vm.clock.text, '6.91');
   assert.equal(vm.clock.running, true);
   assert.deepEqual(vm.clock.stepLine.map(s => s.text), ['f2l', 'pair 3', 'pseudo']);
-  assert.equal(vm.clock.stepTitle, 'Pair 3');
+  assert.equal(vm.clock.stepTitle, 'F2L · pair 3');   // A-04: the live stage title reads "F2L · pair 4"
   const t = vm.timeline;
   assert.equal(t.currentIndex, 3);
   assert.deepEqual(t.segments.map(s => s.state), ['done', 'done', 'done', 'current', 'future', 'future', 'future', 'future', 'future']);
@@ -175,7 +175,7 @@ test('skip fixture marks the EO skip as fresh exactly once', () => {
   const eo = f.skip.timeline.segments.find(s => s.key === 'eo');
   assert.equal(eo.state, 'skipped');
   assert.deepEqual(eo.skip, { label: 'eo skip', fresh: true });
-  assert.equal(f.skip.clock.stepTitle, 'CO');
+  assert.equal(f.skip.clock.stepTitle, 'OLL · co');
   assert.equal(f.skip.toast.text, '✦ eo skip');
 });
 

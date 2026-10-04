@@ -132,7 +132,7 @@ for (const theme of ['dark', 'light']) {
       const errors = await open(page, 'results', theme);
       await expect(page.locator('.f1-results')).toBeVisible();
       await expect(page.locator('.f1-results__number')).toHaveText('14.07');
-      await expect(page.locator('.orbit__segment.is-done')).toHaveCount(8);
+      await expect(page.locator('.orbit__segment:is(.is-done, .is-good, .is-bad)')).toHaveCount(8);   // coloured by the plan delta on the results
       await expect(page.locator('.orbit__segment.is-skipped')).toHaveCount(1);
       await expect(page.locator('canvas')).toHaveCount(1);
       const [cube, ring] = await Promise.all([page.locator('#brain-cube').boundingBox(), page.locator('.orbit__svg').boundingBox()]);

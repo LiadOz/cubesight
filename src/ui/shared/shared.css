@@ -14,7 +14,7 @@
   --e-bg:var(--b-surface-2); --e-bd:transparent; --e-bg-h:var(--b-track); --o-bg:var(--b-surface-2); --o-sel-bg:var(--b-fill); --o-sel-ink:var(--b-bg);
   --c-bg:var(--b-surface-2); --c-bd:transparent; --c-ink:var(--b-ink); --c-bg-h:var(--b-track); --c-sel-bg:var(--b-fill); --c-sel-ink:var(--b-bg); --c-sel-bd:transparent;
   --cb-bd:var(--b-muted); --cb-on-bg:var(--b-fill); --cb-on-ink:var(--b-bg); }
-:root[data-theme='dark'] { --orbit-bg:#100f0d; --orbit-ink:#f2eee4; --orbit-muted:#a8a69d; --orbit-track:#45443e; --orbit-key:#272620; --orbit-accent:#52e0ca; --orbit-good:#52e0ca; --orbit-bad:#ed8c70; --b-warn:#e6a642; --b-warn-text:#e6a642; }
+:root[data-theme='dark'] { /* the approved palette: bg, text-primary, text-dim, ring-idle, keycap, teal, coral (src/ui/design-spec.js COLORS) */ --orbit-bg:#141311; --orbit-ink:#ece6d8; --orbit-muted:#9a9486; --orbit-track:#34312b; --orbit-key:#2b2925; --orbit-accent:#3dbfad; --orbit-good:#3dbfad; --orbit-bad:#ec6b5f; --b-warn:#e6a642; --b-warn-text:#e6a642; }
 .site-header.ui-header { position:relative; min-height:56px; padding:8px max(24px,calc((100% - 1200px)/2)); background:transparent; border:0; display:flex; align-items:center; gap:clamp(16px,3vw,44px); color:var(--orbit-muted,#aaa99f); font:500 14px 'Manrope Variable','Manrope',sans-serif; }
 .site-header.ui-header .header-button { min-width:36px; min-height:36px; padding:0 10px; border:0; border-radius:8px; background:transparent; color:inherit; display:inline-flex; align-items:center; justify-content:center; gap:7px; font:400 13px 'DM Mono',monospace; }
 .site-header.ui-header .header-button svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
@@ -77,3 +77,43 @@
 @media (prefers-reduced-motion:reduce) { .ui-coach-line__connector { transition:none; } }
 @media(max-width:520px) { .ui-cube-menu__drawer { width:100vw; padding:20px; border-left:0; } }
 @media(max-width:700px) { .site-header.ui-header { min-width:0; min-height:50px; padding:8px 12px; gap:8px 10px; flex-wrap:wrap; } .site-header.ui-header .header-button, .site-header.ui-header .ui-cube-chip { min-width:44px; min-height:44px; } .site-header.ui-header nav[data-scroll-x='true'] { order:3; flex:0 0 100%; width:100%; gap:9px; overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x; } .site-header.ui-header nav a { min-width:40px; min-height:40px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; white-space:nowrap; } .site-header.ui-header .theme-label { display:none; } .ui-header__brand { flex:1 1 auto; } .ui-header__actions { flex:none; gap:6px; } .ui-cube-chip { gap:5px; font-size:10px; } .ui-cube-chip__name { max-width:90px; overflow:hidden; text-overflow:ellipsis; } .ui-header-status { display:none; } .recording-page { min-height:calc(100dvh - 110px); margin:28px auto; } }
+
+/* The page header as the approved frames draw it (A-01..A-12, desktop): wordmark at x=48, nav from x=198 with 28 px between items, the active item
+   underlined 2 px teal, and on the right a status dot, the cube name and the battery ending at x=1392. Widths of the nav items follow the frames
+   (8.4 px per character), so the items land on the frames' x positions whatever the font measures. Theme toggle and help stay in the DOM and
+   appear when the header is hovered or focused. Phones keep their own header (below 721 px). */
+@media (min-width:721px) {
+  .site-header.ui-header { box-sizing:border-box; height:64px; min-height:64px; padding:0 48px; gap:0; background:transparent; }
+  .site-header.ui-header .ui-header__brand { flex:0 0 150px; min-height:0; height:28px; margin-top:-2px; font:800 20px/28px 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.4px; color:var(--orbit-ink); }
+  .site-header.ui-header nav { flex:0 0 auto; gap:28px; overflow:visible; }
+  .site-header.ui-header nav a { position:relative; box-sizing:border-box; min-height:0; height:28px; padding:0; justify-content:flex-start; font:500 15px/28px 'Manrope Variable','Manrope',sans-serif; color:var(--orbit-muted); }
+  .site-header.ui-header nav a.active, .site-header.ui-header nav a[aria-current='page'] { color:var(--orbit-ink); font-weight:700; box-shadow:none; border-radius:0; }
+  .site-header.ui-header nav a.active::after, .site-header.ui-header nav a[aria-current='page']::after { content:''; position:absolute; left:0; right:0; bottom:-4px; height:2px; border-radius:1px; background:var(--orbit-accent); }
+  .site-header.ui-header nav a[data-nav='solve'] { width:42px; } .site-header.ui-header nav a[data-nav='drills'] { width:50.4px; } .site-header.ui-header nav a[data-nav='algs'] { width:33.6px; }
+  .site-header.ui-header nav a[data-nav='progress'] { width:67.2px; } .site-header.ui-header nav a[data-nav='history'] { width:58.8px; }
+  .site-header.ui-header .ui-header__actions { position:relative; gap:0; }
+  .site-header.ui-header .header-button { position:absolute; top:36px; right:0; z-index:2; opacity:0; transition:opacity .2s; background:var(--orbit-bg); }
+  .site-header.ui-header .theme-button { right:48px; }
+  .site-header.ui-header:is(:hover, :focus-within) .header-button { opacity:1; }
+  .site-header.ui-header .ui-header-status:empty { display:none; }
+  .site-header.ui-header .ui-cube-chip { gap:8px; margin-right:-8px; min-height:0; height:28px; font-size:0; color:var(--orbit-muted); }   /* margin: the hidden caret is a flex item too */
+  .site-header.ui-header .ui-cube-chip__dot { width:8px; height:8px; }
+  .site-header.ui-header .ui-cube-chip__name { max-width:none; font:400 12px/28px 'DM Mono',monospace; color:var(--orbit-muted); }
+  .site-header.ui-header .ui-cube-chip__battery { margin-left:20px; font:400 12px/28px 'DM Mono',monospace; color:var(--orbit-muted); }
+}
+
+/* Phone header on the solve screen (A-09): wordmark at x=24, status dot and cube name ending at x=366, the whole 390 px device row 90 px tall.
+   There is no nav in the frames; it appears (as its own row) only while no solve is under way, so every page stays reachable. */
+@media (max-width:720px) {
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header { box-sizing:border-box; min-height:90px; padding:0 24px; gap:0 10px; align-content:flex-start; background:transparent; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-header__brand { height:90px; min-height:0; font:800 17px/1 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.3px; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-header__actions { height:90px; position:relative; gap:0; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .header-button { position:absolute; top:62px; right:0; z-index:2; opacity:0; background:var(--orbit-bg); }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .theme-button { right:48px; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header:is(:hover, :focus-within) .header-button { opacity:1; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip { min-width:0; min-height:0; height:90px; gap:8px; margin-right:-8px; font-size:0; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__dot { width:7px; height:7px; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__name { max-width:none; font:400 11px/1 'DM Mono',monospace; color:var(--orbit-muted); overflow:visible; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__battery { display:none; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']:is([data-screen='scramble'], [data-screen='inspection'], [data-screen='ready'], [data-screen='solving'], [data-screen='results'])) .site-header.ui-header nav { display:none; }
+}

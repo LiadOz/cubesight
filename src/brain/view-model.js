@@ -24,7 +24,7 @@ import { tpsSeries, splitRows, donutArcs, sparkline } from './series.js';
 import { fmtTime, fmtSeconds, fmtDelta, deltaTone, fmtTps, fmtResult, penaltyTag } from './format.js';
 import { buildSettingsPanel, buildConfigBar, inspectionLabel } from './settings.js';
 import { keyHints } from './keys.js';
-import { describeMove } from '../moves/notation.js';
+import { describeMove, displayMove } from '../moves/notation.js';
 import { resultsCoach } from './coach-lines.js';
 import { buildMarkers } from './review/markers.js';
 import { reviewBaselines } from './review/baselines.js';
@@ -198,7 +198,7 @@ export function inspectionState(config, elapsedMs) {
 }
 
 /** @returns {import('./types.js').InspectionVM|null} */
-function inspectionVM(live, now, optimalCross = null) {
+function inspectionVM(live, now, optimalCross = null, averages = null) {
   if (live?.phase !== 'inspecting' || !live.inspection) return null;
   const config = { ...live.inspectionConfig };
   const st = inspectionState(config, live.inspection.elapsedMs);
@@ -207,7 +207,18 @@ function inspectionVM(live, now, optimalCross = null) {
   const bestStart = crossHint
     ? `${crossHint.proven === false ? 'cross found so far' : 'best cross'}: ${FACE_COLORS[crossHint.face] ?? crossHint.face}, ${crossHint.length}${optimalCross?.bestXcross?.proven ? ` · ${FACE_COLORS[optimalCross.bestXcross.face] ?? optimalCross.bestXcross.face} cross with ${xcrossPairName(optimalCross.bestXcross) ?? optimalCross.bestXcross.slot ?? 'an adjacent'} pair · X-cross possible in ${optimalCross.bestXcross.length}` : ''}`
     : '';
+  const crossMoves = crossHint?.moves?.length ? crossHint.moves.map(displayMove).join(' ') : '';
+  const usual = averages?.byKey?.cross?.source === 'history' ? averages.byKey.cross.avgMoves : null;
+  // A-03: "seconds left · "8 s" called" under the digit; once over the limit the rule that applies.
+  const hint = st.limitMs == null || st.overtimeMs > 0 || st.remainingMs == null ? st.consequence
+    : `seconds left${st.callout ? ` · “${st.callout} s” called` : ''}`;
   return {
+    hint,
+    // The plan block on the left (A-03): the best cross found, its moves, and what the solver usually spends.
+    plan: crossHint ? {
+      eyebrow: 'cross hint', head: `${FACE_COLORS[crossHint.face] ?? crossHint.face} · ${crossHint.length} moves`, moves: crossMoves,
+      usual: usual == null ? '' : `your usual: ${usual.toFixed(1)} moves`,
+    } : null,
     mode: config.mode, overtime: config.overtime,
     limitMs: st.layout.limitMs, elapsedMs: st.elapsedMs, remainingMs: st.remainingMs, overtimeMs: st.overtimeMs,
     penalty: st.penalty, callout: st.callout,
@@ -312,15 +323,19 @@ function clockVM({ screen, live, settings, now, timeline, result, scramble, held
     { text: seg.label, tone: 'accent' },
     ...tags.map(t => ({ text: t, tone: 'sub' })),
   ] : [];
-  const stepTitle = screen === 'solving' && seg ? seg.label.replace(/^./, c => c.toUpperCase()).replace(/^(Eo|Co|Cp|Ep|Oll|Pll|Cmll|L6e)$/, x => x.toUpperCase()) : '';
+  // The live stage title (A-04): "F2L · pair 4", "OLL · eo", "cross".
+  const stepTitle = screen === 'solving' && seg ? (group ? `${group.toUpperCase()} · ${seg.label}` : seg.label) : '';
   if (screen === 'scramble' && scramble?.moves?.length) {
     const move = scramble.moves.find(item => item.state === 'current') ?? scramble.moves[scramble.step];
     if (move) {
       const description = describeMove(move.text, held ?? undefined);
+      const count = `move ${Math.min(scramble.step + 1, scramble.total)} of ${scramble.total}`;
       return {
         text: '0.00', ms: null, startedAt: null, running: false, hidden: true, tone: 'text', sub: '',
-        stepLine: [{ text: `move ${Math.min(scramble.step + 1, scramble.total)} of ${scramble.total}`, tone: 'accent' }, { text: description.text, tone: 'text' }],
+        // Kept for assistive tech and the recordings; the screen draws `guide` instead (A-02: one glyph, one phrase, one counter).
+        stepLine: [{ text: count, tone: 'accent' }, { text: description.text, tone: 'text' }],
         stepTitle: description.display, stepTags: [],
+        guide: guideVM(scramble, move, description, count),
       };
     }
   }
@@ -341,6 +356,30 @@ function clockVM({ screen, live, settings, now, timeline, result, scramble, held
     };
   }
   return { text: '0.00', ms: null, startedAt: null, running: false, hidden: false, tone: 'text', sub: '', stepLine: [], stepTitle: '', stepTags: [] };
+}
+
+const GLOSS_FACE = { U: 'top', D: 'bottom', R: 'right', L: 'left', F: 'front', B: 'back' };
+/** "top face, clockwise" (A-02): a short phrase for the move to turn now. */
+export function glossMove(description) {
+  const direction = /2/.test(description.notation) ? 'half turn' : /['′]/.test(description.notation) ? 'counter-clockwise' : 'clockwise';
+  if (description.kind === 'face') return `${GLOSS_FACE[description.reference]} face, ${direction}`;
+  if (description.kind === 'wide') return `${GLOSS_FACE[description.reference]} two layers, ${direction}`;
+  if (description.kind === 'slice') return `middle layer, ${direction}`;
+  return `rotate the cube, ${direction}`;
+}
+
+/** What the guidance block under the cube shows: the glyph, one phrase (two when a turn was wrong) and the counter. */
+function guideVM(scramble, move, description, count) {
+  if (scramble.recovery?.length) {
+    const way = scramble.recovery.map(item => item.text);
+    const turned = (scramble.detour?.length ? scramble.detour : [scramble.wrongTurn]).filter(Boolean).map(displayMove).join(' ');
+    return {
+      wrong: true, glyph: displayMove(way[0]),
+      lines: [{ text: `you turned ${turned}, the scramble wants ${displayMove(move.text)}`, tone: 'warn' }, { text: `turn ${way.map(displayMove).join(' ')} to fix it, then carry on`, tone: 'dim' }],
+      count,
+    };
+  }
+  return { wrong: false, glyph: description.display, lines: [{ text: glossMove(description), tone: 'dim' }], count };
 }
 
 // --- Scramble --------------------------------------------------------------------------------
@@ -370,6 +409,7 @@ function scrambleVM({ live, settings, scrambleText, held, number }) {
     moves: moves.map((m, i) => ({ key: `s${i}`, text: m, state: !applying ? 'todo' : i < step ? 'done' : i === step ? 'current' : 'todo' })),
     recovery,
     wrongTurn: detour.length ? detour[0] : null,
+    detour: detour.slice(),
     pendingDouble: applying ? live.applyPendingDouble ?? null : null,
     held: held ? { bottom: held.bottom, front: held.front } : null,
     step,
@@ -695,7 +735,10 @@ export function buildViewModel(input, prev = null) {
   const settingsPanel = cached('settingsPanel', [settings, Boolean(input.settingsOpen), themePreference], () => buildSettingsPanel(settings, Boolean(input.settingsOpen), themePreference));
   const configBar = cached('configBar', [settings], () => buildConfigBar(settings));
   const stats = cached('stats', [sourceRecords, activeFocus], () => statsVM(sourceRecords, activeFocus));
-  const keys = cached('keys', [screen, settings.timer, settings.coach], () => keyHints(screen, { timerHidden: settings.timer === 'hide', coach: settings.coach }));
+  const keys = cached('keys', [screen, settings.timer, settings.coach, settings.style], () => keyHints(screen, { timerHidden: settings.timer === 'hide', coach: settings.coach, style: settings.style }));
+  const todayKey = new Date().toDateString();
+  const calloutText = screen === 'solving' && timeline.segments.some(segment => segment.state === 'current' && segment.tags?.includes('pseudo')) ? 'pseudo pair, nice' : '';
+  const chrome = cached('chrome', [screen, settings, focusRecords, scramble?.source, scramble?.recovery ? 1 : 0, result?.record, todayKey, activeFocus, calloutText], () => chromeVM({ screen, settings, records: focusRecords, scramble, result, todayKey, focus: activeFocus, callout: calloutText }));
   const coachIn = input.coach ?? [];
   const coach = prev && sameLines(prev.coach, coachIn) ? prev.coach : coachIn;
   const phase = phaseText(live);
@@ -710,12 +753,13 @@ export function buildViewModel(input, prev = null) {
     settings: settingsPanel,
     scramble,
     clock: clockVM({ screen, live, settings, now, timeline, result, scramble, held: input.held }),
-    inspection: inspectionVM(live, now, optimalCross),
+    inspection: inspectionVM(live, now, optimalCross, averages),
     timeline,
     coach,
     results: result?.vm ?? null,
     stats,
     keys,
+    chrome,
     toast: input.toast ?? null,
     status: input.status ?? (live?.phase === 'interrupted'
       ? `Connection lost. Your solve is paused. ${live.interrupted.canResume ? 'The cube is back. Resume.' : device.detail}`
@@ -734,6 +778,43 @@ export function buildViewModel(input, prev = null) {
   next.inspectionConfig = live?.inspectionConfig ?? null;
   MEMO.set(vm, next);
   return vm;
+}
+
+// --- Chrome around the stage (the frames' bottom corners) ----------------------------------
+
+const lookLabel = value => (value === '1look' ? '1-look' : '2-look');
+/**
+ * Texts the approved frames draw in the page corners: the config line (idle, bottom left) and the stats lines (idle,
+ * bottom right); on the other screens a one-line note replaces the stats ("guided · follow the lit face", the inspection
+ * rule, "solve 23 · today 17:33 · speed · cube").
+ * @returns {{configLine:string, stats:{line1:string, line2:string}, note:string}}
+ */
+function chromeVM({ screen, settings, records, scramble, result, todayKey, focus, callout = '' }) {
+  const parts = [settings.method];
+  if (settings.method === 'cfop') {
+    parts.push(settings.oll === settings.pll ? lookLabel(settings.oll) : `oll ${lookLabel(settings.oll)} · pll ${lookLabel(settings.pll)}`);
+    if (settings.f2l === 'pseudo') parts.push('pseudo pairs');
+  }
+  const inspection = settings.inspection;
+  parts.push(inspection.mode === 'off' ? 'no inspection' : inspection.mode === 'unlimited' ? 'unlimited inspection' : inspection.mode === 'custom' ? `${inspection.seconds}s inspection` : 'wca inspection');
+  const today = records.filter(record => record?.at != null && new Date(record.at).toDateString() === todayKey).length;
+  const stats = {
+    line1: `ao5 ${fmtTime(ao5(records))} · ao12 ${fmtTime(ao12(records))} · pb ${fmtTime(summarize(records).bestSolveMs)}`,
+    line2: `${today} ${today === 1 ? 'solve' : 'solves'} today`,
+  };
+  let note = '';
+  if (screen === 'scramble') note = scramble?.source === 'paste' ? 'pasted scramble · follow the lit face' : 'guided · follow the lit face';
+  else if (screen === 'inspection') {
+    const secs = inspection.mode === 'custom' ? inspection.seconds : 15;
+    note = inspection.mode === 'off' ? '' : inspection.mode === 'unlimited' ? 'start any time. the clock starts on your first turn'
+      : inspection.overtime === 'wca' || inspection.mode === 'wca' ? `start any time. +2 after ${secs}, DNF after ${secs + 2}` : `start any time. ${secs} s of inspection`;
+  } else if (screen === 'results' && result?.record) {
+    const at = new Date(result.record.at);
+    const when = at.toDateString() === todayKey ? 'today' : at.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const clock = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
+    note = `solve ${records.length} · ${when} ${clock} · ${focus} · cube`;
+  }
+  return { configLine: parts.join(' · '), stats, note, callout };
 }
 
 function sameLines(a, b) {

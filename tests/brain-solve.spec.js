@@ -211,7 +211,8 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
   }, [style, state]);
   await expect.poll(() => keys()).toEqual(style === 'orbit' ? ['inspection', 'plus2', 'dnf'] : ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
   const current = async () => (await keys('current'))[0] ?? null;
-  const finished = async () => [...await keys('done'), ...await keys('skipped')];
+  // On the results the done stages are teal / amber by how they went against the plan (is-good / is-bad), cream otherwise.
+  const finished = async () => [...await keys('done'), ...await keys('good'), ...await keys('bad'), ...await keys('skipped')];
   await expect.poll(current).toBe(style === 'orbit' ? 'inspection' : 'cross');
   expect(await finished()).toEqual([]);
   await page.waitForTimeout(600);  // let the swoop-in finish before the screenshot

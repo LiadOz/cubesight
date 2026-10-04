@@ -13,6 +13,8 @@ import { reconcileChildren, setAttr, setText, toggleClass } from './dom.js';
 import { createMoveGuide } from '../moves/move-guide.js';
 import { readGuidePrefs, writeGuidePref } from '../moves/prefs.js';
 import { mountTrainerSettings } from '../trainers/settings-controls.js';
+import { CANVAS, CUBE, COLORS } from '../ui/design-spec.js';
+import { applyLayoutVars } from './layout-spec.js';
 
 // The dev server's log sink (/__devlog) doesn't exist in production builds.
 const DEV = Boolean(import.meta.env?.DEV);
@@ -78,7 +80,6 @@ const TEMPLATE = `
     </div>
   </header>
   <div class="b-banner" data-slot="banner"></div>
-  <nav class="b-configbar" aria-label="Quick settings"></nav>
   <main class="b-stage" aria-label="Live solve">
     <div class="brain-body">
       <div class="brain-stage">
@@ -94,6 +95,16 @@ const TEMPLATE = `
         <p class="b-stepline"></p>
         <div class="b-steptitle"><strong></strong><span class="b-steptags"></span></div>
         <div class="b-clock" aria-hidden="true">0.00</div>
+        <p class="b-callout" hidden></p>
+        <div class="b-plan" hidden>
+          <p class="b-plan-eyebrow"></p><p class="b-plan-head"></p><p class="b-plan-moves"></p><p class="b-plan-usual"></p>
+        </div>
+        <div class="b-guide" hidden>
+          <p class="b-guide-glyph" aria-hidden="true"></p>
+          <p class="b-guide-line"></p>
+          <p class="b-guide-line"></p>
+          <p class="b-guide-count"></p>
+        </div>
         <p class="b-toast" role="status" hidden></p>
         <div class="b-aside" data-slot="inspection-aside"></div>
         <div class="b-aside" data-slot="timeline-aside"></div>
@@ -121,6 +132,9 @@ const TEMPLATE = `
       <div class="b-slot b-results-host" data-slot="results"></div>
     </section>
   </main>
+  <p class="b-config-line" aria-label="current setup"></p>
+  <p class="b-note"></p>
+  <p class="b-stats-line"><span class="b-stats-1"></span><span class="b-stats-2"><span class="b-stats-today"></span> · <a href="#/history">history</a></span></p>
   <div class="b-foot">
     <div class="b-keys"></div>
     <p id="brain-error" class="brain-error" role="alert" hidden></p>
@@ -198,6 +212,22 @@ function renderKeyed(container, items, keyOf, create, patch) {
   }
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+/** The glow and the contact shadow under the cube: ellipses from CUBE.desktop / CUBE.phone, drawn behind the cube like the frames. */
+function createStageArt(kind) {
+  const { glow, shadow } = CUBE[kind];
+  const [width, height] = kind === 'phone' ? [CANVAS.phoneSheet.device.width, CANVAS.phoneSheet.device.height] : [CANVAS.desktop.width, CANVAS.desktop.height];
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', `b-art b-art--${kind}`);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('aria-hidden', 'true');
+  const gradient = COLORS.glowStops.map(stop => `<stop offset="${stop.offset}" stop-color="${stop.color}" stop-opacity="${stop.opacity}"/>`).join('');
+  svg.innerHTML = `<defs><radialGradient id="b-glow-${kind}" cx="50%" cy="50%" r="50%">${gradient}</radialGradient></defs>`
+    + `<ellipse cx="${glow.cx}" cy="${glow.cy}" rx="${glow.rx}" ry="${glow.ry}" fill="url(#b-glow-${kind})"/>`
+    + `<ellipse cx="${shadow.cx}" cy="${shadow.cy}" rx="${shadow.rx}" ry="${shadow.ry}" fill="${shadow.fill}" fill-opacity="${shadow.opacity}"/>`;
+  return svg;
+}
+
 function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -213,6 +243,8 @@ function el(tag, className, text) {
 export function createShell(root, { dispatch }) {
   const brain = el('div', 'brain');
   brain.innerHTML = TEMPLATE;   // one-time mount; updates below are in place
+  applyLayoutVars(brain);       // the approved frames' geometry, as --ds-* custom properties (see layout-spec.js)
+  brain.querySelector('.brain-stage').prepend(createStageArt('desktop'), createStageArt('phone'));
   root.append(brain);
   const $ = selector => brain.querySelector(selector);
   const quickControls = mountTrainerSettings($('.b-quick'));
@@ -221,7 +253,6 @@ export function createShell(root, { dispatch }) {
   if (!DEV) $('#brain-send-log')?.remove();   // Send to dev only exists on the dev server
 
   const parts = {
-    configBar: brain.querySelector(':scope > .b-configbar'),
     configCopy: $('.b-configbar-copy'),
     deviceToggle: $('.b-device-toggle'),
     debug: $('#brain-debug'),
@@ -233,6 +264,16 @@ export function createShell(root, { dispatch }) {
     stepTitle: $('.b-steptitle strong'),
     stepTags: $('.b-steptags'),
     clock: $('.b-clock'),
+    callout: $('.b-callout'),
+    plan: $('.b-plan'),
+    guide: $('.b-guide'),
+    guideGlyph: $('.b-guide-glyph'),
+    guideLines: [...brain.querySelectorAll('.b-guide-line')],
+    guideCount: $('.b-guide-count'),
+    configLine: $('.b-config-line'),
+    note: $('.b-note'),
+    statsLine1: $('.b-stats-1'),
+    statsToday: $('.b-stats-today'),
     sub: $('.b-sub'),
     moves: $('#brain-moves'),
     recoveryCue: $('#brain-recovery'),
@@ -420,7 +461,6 @@ export function createShell(root, { dispatch }) {
 
   function updateConfigBar(bar, prev) {
     if (bar === prev) return;
-    renderOptions(parts.configBar, bar.items);
     renderOptions(parts.configCopy, bar.items);
   }
 
@@ -491,7 +531,7 @@ export function createShell(root, { dispatch }) {
     const { planGuide: plan, recoveryGuide: undo } = guides();
     if (!scramble) {
       setText(parts.scrambleHead, '');
-      plan.update({ moves: [], index: -1, statuses: {}, cube3d });
+      plan.update({ moves: [], index: -1, statuses: {}, undo: null, cube3d });
       undo.update({ moves: [], index: -1, cube3d });
       parts.recoveryCue.hidden = true;
       parts.guideTools.hidden = true;
@@ -506,6 +546,8 @@ export function createShell(root, { dispatch }) {
     plan.update({
       moves: scramble.moves.map(m => m.text), index: started ? done : -1,
       statuses: way && done < scramble.moves.length ? { [done]: 'wrong' } : {},
+      // The way back also sits inline in the sequence (an amber, spaced section before the planned move): see mg-gap / .undo.
+      undo: way && style?.layout === 'orbit' ? { at: done, moves: way } : null,
       held: { bottom: 'D', front: 'F' }, cube3d: way ? null : cube3d,
     });
     parts.recoveryCue.hidden = !way;
@@ -533,7 +575,42 @@ export function createShell(root, { dispatch }) {
       item => el('span', item.dot ? 'b-dot-sep' : 'b-step-part', item.dot ? '·' : ''),
       (node, item) => { if (item.dot) return; setText(node, item.part.text); node.dataset.tone = item.part.tone; });
     setText(parts.stepTitle, clock.stepTitle);
+    updateGuide(clock.guide);
     reconcileChildren(parts.stepTags, clock.stepTags.map((tag, i) => ({ key: `t${i}`, text: tag, className: 'b-tag' })), 'span');
+  }
+
+  // A-02 / A-02b: the big glyph, its words and the move counter, in the same place whether the turn is right or wrong.
+  function updateGuide(guide) {
+    parts.guide.hidden = !guide;
+    toggleClass(parts.guide, 'is-wrong', Boolean(guide?.wrong));
+    if (!guide) return;
+    setText(parts.guideGlyph, guide.glyph);
+    parts.guideLines.forEach((line, index) => {
+      const item = guide.lines[index];
+      line.hidden = !item;
+      setText(line, item?.text ?? '');
+      line.dataset.tone = item?.tone ?? 'dim';
+    });
+    setText(parts.guideCount, guide.count);
+  }
+
+  // A-03: the cross hint block on the left while inspecting.
+  function updatePlan(plan) {
+    parts.plan.hidden = !plan;
+    if (!plan) return;
+    const [eyebrow, head, moves, usual] = parts.plan.children;
+    setText(eyebrow, plan.eyebrow); setText(head, plan.head); setText(moves, plan.moves); setText(usual, plan.usual);
+    usual.hidden = !plan.usual;
+  }
+
+  function updateChrome(chrome, prev) {
+    if (!chrome || chrome === prev) return;
+    setText(parts.configLine, chrome.configLine);
+    setText(parts.note, chrome.note);
+    setText(parts.callout, chrome.callout);
+    parts.callout.hidden = !chrome.callout;
+    setText(parts.statsLine1, chrome.stats.line1);
+    setText(parts.statsToday, chrome.stats.line2);
   }
 
   function updateCoach(coach, prev) {
@@ -562,7 +639,7 @@ export function createShell(root, { dispatch }) {
     renderKeyed(parts.keys, keys.slice(0, 3), k => `${k.key}:${k.action}`,
       () => { const b = el('button', 'b-key'); b.type = 'button'; b.append(el('kbd'), el('span')); return b; },
       (node, k) => { node.dataset.action = k.action; const cap = node.querySelector('kbd');
-        const pair = k.key === '[ ]' ? ['[', ']'] : k.key.includes('–') ? k.key.split('–').map(key => key.trim()) : null;
+        const pair = k.key.includes('–') ? k.key.split('–').map(key => key.trim()) : null;
         cap.className = pair ? 'key key--pair' : 'key';
         if (pair) {
           const signature = pair.join('–');
@@ -600,13 +677,16 @@ export function createShell(root, { dispatch }) {
     if (vm.debugOpen !== p?.debugOpen) syncDebugOpen(Boolean(vm.debugOpen));
     updateDevice(vm.device, p?.device);
     updateConfigBar(vm.configBar, p?.configBar);
+    updateChrome(vm.chrome, p?.chrome);
     updateSettings(vm.settings, p?.settings);
     updateScramble(vm.scramble, p?.scramble);
     updateClock(vm.clock, p?.clock);
     if (style?.layout === 'orbit' && vm.screen === 'inspection' && vm.inspection) {
       setText(parts.clock, vm.inspection.bigText);
       parts.clock.dataset.tone = vm.inspection.tone;
+      setText(parts.sub, vm.inspection.hint);
     }
+    updatePlan(vm.screen === 'inspection' ? vm.inspection?.plan : null);
     updateCoach(vm.coach, p?.coach);
     updateStats(vm.stats, p?.stats);
     updateKeys(vm.keys, p?.keys);

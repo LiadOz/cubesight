@@ -4,7 +4,8 @@ import { mountTestBrain, startGuidedScramble } from './helpers/fake-brain.js';
 // P0 regression: after a WRONG turn, the current plan move stays marked and
 // recovery turns appear on the shared Orbit.
 const SCRAMBLE = "R2 D' F2 U B2 L' U2 F";   // two correct turns (R2, D') put the plan on F2
-const classes = page => page.evaluate(() => [...document.querySelectorAll('#brain-view #brain-moves i')].map(i => i.className));
+// The plan's own chips: in the Orbit style the way back is also drawn inline (amber, spaced: .undo and .mg-gap), which is not part of the plan.
+const classes = page => page.evaluate(() => [...document.querySelectorAll('#brain-view #brain-moves i:not(.undo):not(.mg-gap)')].map(i => i.className));
 const head = (page, n) => classes(page).then(list => list.slice(0, n));
 const recoveryText = (page, style) => style === 'orbit'
   ? page.locator('#brain-view [data-segment^="undo-"]').evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label')?.split(',')[0].replaceAll("'", '′')))
@@ -29,8 +30,14 @@ for (const style of ['orbit', 'mono']) {
       await page.evaluate(w => window.testBrain.emitTurns(w), wrong);
       // The plan move stays marked current, now as wrong; the way back is shown.
       await expect.poll(() => head(page, 4)).toEqual(['done', 'done', 'current wrong', '']);
-      if (style === 'orbit') await expect(brain.locator('[data-segment^="undo-"]')).toHaveCount(undo.length);
-      else await expect(brain.locator('#brain-recovery')).toBeVisible();
+      if (style === 'orbit') {
+        await expect(brain.locator('[data-segment^="undo-"]')).toHaveCount(undo.length);
+        // The same way back sits inline in the wrapped sequence: an amber spaced section right before the planned move, which is marked.
+        const inline = await page.evaluate(() => [...document.querySelectorAll('#brain-view #brain-moves i.undo')].map(i => i.textContent));
+        expect(inline).toEqual(undo);
+        await expect(brain.locator('#brain-moves i[data-planned]')).toHaveText('F2');
+        await expect(brain.locator('#brain-moves i.mg-gap')).toHaveCount(2);
+      } else await expect(brain.locator('#brain-recovery')).toBeVisible();
       expect(await recoveryText(page, style)).toEqual(undo);
 
       // Following the recovery returns to the plan and the underline is back on F2.

@@ -34,11 +34,13 @@ const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-r
  * @param {{bottom:string, front:string}} [options.held]  the hold the moves are written for; without it the cue follows the gyro
  * @param {'held'|'start'} [options.frame] 'start': a rotation in the sequence changes the frame of what follows
  * @param {Record<number,'wrong'>} [options.statuses]
+ * @param {{at:number, moves:string[]}|null} [options.undo]  the way back after a wrong turn, shown INLINE as an amber spaced section
+ *   before move `at` (the planned move, which is marked); decoration only: the cue and the spoken text follow `moves`/`index`
  * @param {object} [options.cube3d]       the live cube: the cue plays the current move on it
  * @param {string} [options.label]        accessible name of the group
  */
 export function createMoveGuide(host, options = {}) {
-  const state = { moves: [], index: 0, held: null, frame: 'held', statuses: {}, cube3d: null, label: 'Move guide', ...options };
+  const state = { moves: [], index: 0, held: null, frame: 'held', statuses: {}, cube3d: null, undo: null, label: 'Move guide', ...options };
   let destroyed = false;
   let keys = [];
   let cueKey = null;
@@ -91,20 +93,35 @@ export function createMoveGuide(host, options = {}) {
     return { ...base, index: i, total, status: status ?? null, sentence: `Move ${i + 1} of ${total}: ${base.display}. ${status ? `${STATUS_WORD[status]} ` : ''}${base.text}` };
   }
 
+  // Items of the strip in order: the moves, with the undo section (a spacer, the way back, a spacer) before move `undo.at`.
+  function stripItems() {
+    const list = state.moves.map((m, i) => ({ key: `${i}:${isMove(m) ? normalizeMove(m) : String(m)}`, text: isMove(m) ? displayMove(m) : String(m), index: i }));
+    const undo = state.undo?.moves?.length ? state.undo : null;
+    if (!undo) return list;
+    const at = Math.max(0, Math.min(list.length, undo.at ?? state.index));
+    const section = [
+      { key: 'gap:before', gap: true },
+      ...undo.moves.map((m, j) => ({ key: `undo${j}:${normalizeMove(m)}`, text: displayMove(m), undo: j })),
+      { key: 'gap:after', gap: true },
+    ];
+    return [...list.slice(0, at), ...section, ...list.slice(at)];
+  }
+
   function syncChips() {
-    const list = state.moves.map(m => (isMove(m) ? normalizeMove(m) : String(m)));
-    const nextKeys = list.map((m, i) => `${i}:${m}`);
+    const items = stripItems();
+    const nextKeys = items.map(item => item.key);
     if (nextKeys.length === keys.length && nextKeys.every((k, i) => k === keys[i])) return;
-    const wanted = nextKeys.map((key, i) => {
-      let chip = chips.get(key);
+    const wanted = items.map(item => {
+      let chip = chips.get(item.key);
       if (!chip) {
-        chip = el('i', '', isMove(state.moves[i]) ? displayMove(state.moves[i]) : String(state.moves[i]));
-        chip.setAttribute('role', 'listitem');
-        chip.dataset.index = String(i);
-        chip.dataset.key = key;
-        chips.set(key, chip);
+        chip = el('i', item.gap ? 'mg-gap' : '', item.gap ? '' : item.text);
+        if (item.gap) chip.setAttribute('aria-hidden', 'true');
+        else if (item.undo != null) { chip.dataset.undo = String(item.undo); chip.setAttribute('aria-hidden', 'true'); }
+        else { chip.setAttribute('role', 'listitem'); chip.dataset.index = String(item.index); }
+        chip.dataset.key = item.key;
+        chips.set(item.key, chip);
       }
-      chips.delete(key); chips.set(key, chip);   // keep map order = document order
+      chips.delete(item.key); chips.set(item.key, chip);   // keep map order = document order
       return chip;
     });
     for (const [key, chip] of [...chips]) if (!nextKeys.includes(key)) { chip.remove(); chips.delete(key); }
@@ -116,9 +133,14 @@ export function createMoveGuide(host, options = {}) {
   }
 
   function syncState() {
-    [...strip.children].forEach((chip, i) => {
-      const cls = [i < state.index ? 'done' : i === state.index ? 'current' : '', state.statuses[i] === 'wrong' ? 'wrong' : ''].filter(Boolean).join(' ');
+    const plannedAt = state.undo?.moves?.length ? Math.max(0, Math.min(state.moves.length - 1, state.undo.at ?? state.index)) : -1;
+    [...strip.children].forEach(chip => {
+      if (chip.classList.contains('mg-gap')) return;
+      if (chip.dataset.undo != null) { const cls = chip.dataset.undo === '0' ? 'undo current' : 'undo'; if (chip.className !== cls) chip.className = cls; return; }
+      const i = Number(chip.dataset.index);
+      const cls = [i < state.index ? 'done' : i === state.index ? 'current' : '', state.statuses[i] === 'wrong' ? 'wrong' : '', ''].filter(Boolean).join(' ');
       if (chip.className !== cls) chip.className = cls;
+      if (i === plannedAt) chip.dataset.planned = 'true'; else delete chip.dataset.planned;   // a data attribute: the class list stays the move's state
       const d = describe(i);
       if (d) setAttr(chip, 'aria-label', d.sentence);
     });
@@ -144,7 +166,7 @@ export function createMoveGuide(host, options = {}) {
   }
 
   function scrollToCurrent() {
-    const chip = strip.children[Math.min(Math.max(state.index, 0), strip.children.length - 1)];
+    const chip = strip.querySelector(`[data-index="${Math.min(Math.max(state.index, 0), Math.max(0, state.moves.length - 1))}"]`) ?? strip.lastElementChild;
     if (!chip || strip.scrollWidth <= strip.clientWidth) return;
     // offsetLeft is relative to the chip's offsetParent (which may be the guide
     // host rather than the scroll strip). Use viewport geometry so nested page

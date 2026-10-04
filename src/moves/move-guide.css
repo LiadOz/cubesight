@@ -13,6 +13,10 @@
 }
 .mg-strip i.done { opacity: .35; }
 .mg-strip i.current { min-width: 64px; padding: 10px 18px; border: 2px solid var(--b-accent); background: var(--b-surface); color: var(--b-accent-text, var(--b-ink)); font-size: 32px; font-weight: 500; }
+.mg-strip i.mg-gap { min-width: 0; width: 18px; padding: 0; border: 0; background: none; }
+.mg-strip i.undo { border-color: var(--b-warn); color: var(--b-warn-text); background: transparent; }
+.mg-strip i.undo.current { border-width: 2px; background: var(--b-plus2-soft); font-size: 32px; font-weight: 500; }
+.mg-strip i[data-planned] { text-decoration: underline dotted; text-underline-offset: 4px; }
 .mg-strip i.wrong { border-color: var(--b-warn); color: var(--b-warn-text); background: var(--b-plus2-soft); }
 
 /* Visible to assistive technology only. */

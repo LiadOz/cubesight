@@ -60,8 +60,23 @@ export function resolveKey(event, screen) {
   return null;
 }
 
-/** Key hints shown at the bottom of each screen. */
-export function keyHints(screen, { timerHidden = false, coach = 'live' } = {}) {
+/**
+ * Key hints shown at the bottom of each screen. The Orbit style draws exactly the ones the approved frames show, bottom left
+ * (A-01: tab settings, esc command; A-02: esc stop; A-03: esc abort; A-04: esc stop, t hide timer; A-05: [ ] markers): space is the
+ * start / next-scramble pill, and the other shortcuts stay live (settings and the command line list them). Mono keeps the full row.
+ */
+export function keyHints(screen, { timerHidden = false, coach = 'live', style = 'mono' } = {}) {
+  if (style === 'orbit') {
+    switch (screen) {
+      case 'disconnected': return [{ key: 'space', label: 'connect', action: 'connect' }, { key: 'tab', label: 'settings', action: 'toggleSettings' }];
+      case 'idle': return [{ key: 'tab', label: 'settings', action: 'toggleSettings' }, { key: 'esc', label: 'command', action: 'command' }];
+      case 'scramble': return [{ key: 'esc', label: 'stop', action: 'cancel' }];
+      case 'inspection': case 'ready': return [{ key: 'esc', label: 'abort', action: 'cancel' }];
+      case 'solving': return [{ key: 'esc', label: 'stop', action: 'cancel' }, { key: 't', label: timerHidden ? 'show timer' : 'hide timer', action: 'toggleTimer' }];
+      case 'results': return [{ key: '[ ]', label: 'markers', action: 'stepMarker' }];
+      default: return [];
+    }
+  }
   const coachLabel = coach === 'live' ? 'coach after solve' : coach === 'after' ? 'coach off' : 'coach live';
   switch (screen) {
     case 'disconnected': return [{ key: 'space', label: 'connect', action: 'connect' }, { key: 'tab', label: 'settings', action: 'toggleSettings' }];

@@ -4,6 +4,7 @@ import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { isMove, toPhysicalTurn } from './moves/notation.js';
 import { convexHull } from './ui/cube/bounds.js';
+import { COLORS, CUBE } from './ui/design-spec.js';
 
 const FACE_NORMALS = {
   U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1],
@@ -11,6 +12,42 @@ const FACE_NORMALS = {
 };
 const DEFAULT_FACE_COLORS = { U: '#ffffff', D: '#ffd500', F: '#009b48', B: '#0051ba', R: '#e7332a', L: '#ff6b00' };
 const FACE_ORDER = ['U', 'D', 'F', 'B', 'R', 'L'];
+
+// Isometric presentation (options.projection === 'isometric'): the solve screen's cube is the approved frames' flat
+// symmetric isometric, not a tilted perspective. Every number comes from design-spec.js (see SPEC-A-EXACT.md section 5).
+const ISO = (() => {
+  const [first, second] = CUBE.stickers[0].points;
+  const cell = -CUBE.hexagon.vertices[1][1] / 3;                    // one cubie's edge on screen (hexagon circumradius / 3)
+  const sticker = (Math.hypot(second[0] - first[0], second[1] - first[1]) + CUBE.desktop.stickerStroke) / cell;   // edge as a fraction of the cell
+  return {
+    sticker,
+    // The frames' hexagon is the full 3x3x3 (cubies touch; the black body is the gap between stickers): corner to corner = 2 * 3 * sqrt(2/3) world units.
+    silhouette: 2 * 3 * Math.sqrt(2 / 3),
+    body: COLORS.tokens['cube-body'].hex,
+    shadeLeft: COLORS.stickerShade.left.mean,
+    shadeRight: COLORS.stickerShade.right.mean,
+    height: CUBE.desktop.height,
+  };
+})();
+
+/** Frames face shading: a sticker's brightness follows its screen-facing normal (top 1, left face shadeLeft, right face shadeRight). */
+function shadeSticker(material) {
+  // f = c0 + cx*nx + cy*ny is exact on the three visible faces' view-space normals (0, .8165, .5774), (-.7071, -.4082, .5774) and (.7071, -.4082, .5774).
+  const cx = (ISO.shadeRight - ISO.shadeLeft) / (2 * Math.SQRT1_2);
+  const cy = (1 - (ISO.shadeLeft + ISO.shadeRight) / 2) / (Math.sqrt(2 / 3) + 1 / Math.sqrt(6));
+  const c0 = 1 - cy * Math.sqrt(2 / 3);
+  material.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vIsoNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvIsoNormal = normalize(normalMatrix * normal);');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vIsoNormal;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float isoShade = clamp(${c0.toFixed(5)} + ${cx.toFixed(5)} * vIsoNormal.x + ${cy.toFixed(5)} * vIsoNormal.y, 0.45, 1.0);
+        diffuseColor.rgb *= pow(isoShade, 2.2);`);
+  };
+  material.customProgramCacheKey = () => 'iso-shade';
+}
 
 function pieceAt(x, y, z) {
   let piece = '';
@@ -115,8 +152,11 @@ function stickerTransform(mesh, face, x, y, z) {
 
 export function createCube3D(container, options = {}) {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
-  const cornerCameraPosition = new THREE.Vector3(6.7, 5.6, 7.7);
+  const iso = options.projection === 'isometric';
+  // Isometric: an orthographic camera on the (1,1,1) diagonal. The cube silhouette fills `isoFill` of the canvas height.
+  const camera = iso ? new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 100) : new THREE.PerspectiveCamera(28, 1, .1, 100);
+  const cornerCameraPosition = iso ? new THREE.Vector3(8, 8, 8) : new THREE.Vector3(6.7, 5.6, 7.7);
+  const isoFill = Number(options.isoFill) > 0 ? Number(options.isoFill) : ISO.height / (ISO.height * 1.3);
   camera.position.copy(cornerCameraPosition);
   camera.lookAt(0, 0, 0);
 
@@ -235,9 +275,9 @@ export function createCube3D(container, options = {}) {
   cubeGroup.add(selectionCage);
   const scoutCages = [];
   const scoutCageMaterial = selectionMaterial.clone();
-  const cubieGeometry = new RoundedBoxGeometry(.96, .96, .96, 3, .08);
-  const cubieMaterial = new THREE.MeshStandardMaterial({ color: 0x10120f, roughness: .48, metalness: .02 });
-  const stickerGeometry = new RoundedBoxGeometry(.805, .805, .018, 3, .055);
+  const cubieGeometry = iso ? new RoundedBoxGeometry(1, 1, 1, 3, .03) : new RoundedBoxGeometry(.96, .96, .96, 3, .08);
+  const cubieMaterial = iso ? new THREE.MeshBasicMaterial({ color: ISO.body, toneMapped: false }) : new THREE.MeshStandardMaterial({ color: 0x10120f, roughness: .48, metalness: .02 });
+  const stickerGeometry = iso ? new RoundedBoxGeometry(ISO.sticker, ISO.sticker, .018, 3, .03) : new RoundedBoxGeometry(.805, .805, .018, 3, .055);
   function frameGeometry(outer, inner) {
     const shape = new THREE.Shape();
     shape.moveTo(-outer, -outer); shape.lineTo(outer, -outer);
@@ -282,6 +322,7 @@ export function createCube3D(container, options = {}) {
           // Recognition colors must not drift with lighting: unlit materials
           // keep white, yellow, and orange visually distinct at every angle.
           const material = new THREE.MeshBasicMaterial({ color: DEFAULT_FACE_COLORS[face], toneMapped: false });
+          if (iso) shadeSticker(material);
           const sticker = new THREE.Mesh(stickerGeometry, material);
           stickerTransform(sticker, face, x, y, z);
           sticker.userData = { face, piece, cubiePosition: [x, y, z], kind: piece.length === 3 ? 'corner' : piece.length === 2 ? 'edge' : 'center' };
@@ -306,7 +347,11 @@ export function createCube3D(container, options = {}) {
   function resize() {
     const width = Math.max(container.clientWidth, 1);
     const height = Math.max(container.clientHeight, 1);
-    camera.aspect = width / height;
+    if (iso) {
+      const viewHeight = ISO.silhouette / isoFill;
+      camera.left = -viewHeight * width / height / 2; camera.right = viewHeight * width / height / 2;
+      camera.top = viewHeight / 2; camera.bottom = -viewHeight / 2;
+    } else camera.aspect = width / height;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     tumbleControls.handleResize();
@@ -358,7 +403,7 @@ export function createCube3D(container, options = {}) {
       renderer.domElement.dataset.rotation = 'free-tumble';
       delete renderer.domElement.dataset.azimuthLimit;
       camera.up.set(0, 1, 0);
-      camera.position.set(6.7, 5.6, 7.7);
+      camera.position.copy(cornerCameraPosition);
       tumbleControls.target.set(0, 0, 0);
       tumbleControls.enabled = true;
       tumbleControls.reset();

@@ -200,6 +200,13 @@ test('keys are ignored while typing, repeating, with modifiers or a dialog open'
 test('key hints follow the screen', () => {
   assert.deepEqual(keyHints('idle').map(h => h.key), ['space', 'tab', 'esc']);
   assert.deepEqual(keyHints('results').map(h => h.key), ['space', '[ ]', 'r', '2', 'd', 'tab']);
+  // The Orbit style draws exactly what the approved frames show bottom left (A-01: tab settings, esc command; A-05: [ ] markers). Space is the pill.
+  const orbit = screen => keyHints(screen, { style: 'orbit' });
+  assert.deepEqual(orbit('idle').map(h => h.key), ['tab', 'esc']);
+  assert.deepEqual(orbit('scramble').map(h => h.key), ['esc']);
+  assert.deepEqual(orbit('inspection').map(h => h.label), ['abort']);
+  assert.deepEqual(orbit('solving').map(h => h.key), ['esc', 't']);
+  assert.deepEqual(orbit('results').map(h => h.key), ['[ ]']);
   assert.equal(keyHints('solving', { timerHidden: true }).find(h => h.key === 't').label, 'show timer');
 });
 
