@@ -39,8 +39,8 @@ function safeReturnHash(hash) {
 function returnLabel(hash) {
   const path = safeReturnHash(hash)?.split(/[?#]/)[0] ?? '';
   if (path === '#/solve' || path.startsWith('#/solve/')) return '‹ back to solve';
+  if (/^#\/history\/\d+\/review\//.test(path) || path.startsWith('#/review/')) return '‹ back to review';
   if (path.startsWith('#/history/')) return '‹ back to history';
-  if (path.startsWith('#/review/')) return '‹ back to review';
   return '‹ back';
 }
 
@@ -222,7 +222,8 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
           if (destroyed || !active || thisRender !== renderId || !root.isConnected) { created.destroy(); return; }
           cubeView = created;
           cubeView.setCaseOrientation(caseColorSetting, { seed: caseData.id });
-          cubeView.highlight(caseData.set === 'f2l' ? { slot: caseData.targetPair } : { pieces: setupState.cubies.filter(cubie => cubie.id.includes('U')).map(cubie => cubie.id) });
+          // F2L: the case's corner + edge and the slot they belong in; OLL/PLL: the last layer; everything else dimmed.
+          cubeView.highlightStage(caseData.set === 'f2l' ? 'pair' : 'll', { slot: caseData.targetPair });
           if (orbitHost) {
             let priorClearance = centerClearance;
             caseGeometryObserver = new ResizeObserver(() => {

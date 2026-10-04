@@ -53,7 +53,7 @@ export function createCrossPlanning(root) {
   if (reviewFrom) {
     const back = $('#cp-return');
     back.hidden = false;
-    back.innerHTML = `<a href="#/review/${reviewFrom[1]}?move=${reviewFrom[2]}">← review · solve · move ${Number(reviewFrom[2]) + 1}</a>`;
+    back.innerHTML = `<a href="#/history/${reviewFrom[1]}?move=${reviewFrom[2]}">← review · solve · move ${Number(reviewFrom[2]) + 1}</a>`;
   }
   const cubeReady = Promise.resolve().then(() => {
     if (detached) return;
@@ -78,6 +78,8 @@ export function createCrossPlanning(root) {
       $('#cp-playback [data-sequence="back"]').id = 'cp-back';
       $('#cp-playback [data-sequence="next"]').id = 'cp-forward';
     }
+    // The four edges of the chosen cross are the point of this stage; everything else steps back.
+    cube.highlightStage('cross', { crossFace: chosen.face });
     player.load({ startState: current.state, moves: chosen.moves });
     player.setActive(active);
     if (autoplay) void player.play();

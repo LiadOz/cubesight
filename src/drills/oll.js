@@ -51,6 +51,8 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     if (disposed) return;
     cube = new Cube($('#oll-cube'), { mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(storage), caseSeed: 'oll:initial', label: 'OLL case' });
     if (renderState) cube.setState(renderState);
+    // The case lives in the last layer: its eight pieces stay vivid, the first two layers dim.
+    cube.highlightStage('oll');
   }).catch(() => { if (!disposed) $('#oll-cube').textContent = '3D cube needs WebGL. The case choices still work.'; });
   roundPanel = createRoundPanel($('#oll-round-host'), {
     drill: 'oll', storage, store: rounds, orbitHost: $('#oll-cube'),

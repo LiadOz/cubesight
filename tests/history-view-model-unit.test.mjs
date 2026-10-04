@@ -14,7 +14,7 @@ test('history route helpers round-trip timestamp and marker routes', () => {
   assert.equal(parseHistoryRoute(`#${replayPath(123)}`).kind, 'replay');
   assert.equal(historyReviewPath(123, 'pause:pair4'), '/history/123/review/pause%3Apair4');
   assert.equal(historyReviewHref(123, 'pause:pair4'), '#/history/123/review/pause%3Apair4');
-  assert.equal(historyReviewHref(123, null), '#/review/123');
+  assert.equal(historyReviewHref(123, null), '#/history/123');
   assert.deepEqual(parseHistoryRoute(`#${historyReviewPath(123, 'pause:pair4')}`), { kind: 'review', at: 123, marker: 'pause:pair4', path: '/history/123/review/pause%3Apair4' });
   assert.equal(parseHistoryRoute('#/history/nope').kind, 'not-found');
 });

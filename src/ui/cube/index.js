@@ -1,6 +1,8 @@
 import { applyMoves, createSolvedState, parseScramble, toRenderData } from '../../cross-cube.js';
 import { resolveSlotPieces } from './slots.js';
+import { stagePieces } from './pieces.js';
 export { resolveSlotPieces } from './slots.js';
+export { crossPieces, f2lPairIds, lastLayerPieces, stagePieces } from './pieces.js';
 import { readStickerPalette, themedRender } from '../../brain/cube-theme.js';
 import { createCube3D } from '../../cube-3d.js';
 import { caseDisplayState, normalizeCaseColorSetting } from './orientation.js';
@@ -71,7 +73,9 @@ export class Cube {
     data.mode = this.interactionMode;
     if (this.interactionMode === 'corner') data.showAllCorners = true;
     data.dimOthers = Boolean(highlight?.dimOthers);
-    data.highlightedPieces = ids;
+    // toRenderData maps each id to the cubicle the piece sits in now; `positions` adds cubicles outright
+    // (the target slot of an F2L case), so both the pieces and where they belong are emphasised.
+    data.highlightedPieces = [...new Set([...data.highlightedPieces, ...(Array.isArray(highlight?.positions) ? highlight.positions : [])])];
     return data;
   }
 
@@ -108,9 +112,20 @@ export class Cube {
     return this;
   }
 
-  highlight({ pieces = [], slot = null, dimOthers = false } = {}) {
+  highlight({ pieces = [], slot = null, positions = [], dimOthers = false } = {}) {
     const slotPieces = resolveSlotPieces(this.state, slot);
-    this.paint({ pieces: [...new Set([...pieces, ...slotPieces])], slot, dimOthers });
+    this.paint({ pieces: [...new Set([...pieces, ...slotPieces])], slot, positions, dimOthers });
+    return this;
+  }
+
+  /** Emphasise what a stage is about ('cross', 'xcross', 'pair2', 'oll', 'pll'...) and dim the rest. */
+  highlightStage(stage, options = {}) {
+    const found = stagePieces(this.state, stage, options);
+    return found ? this.highlight(found) : this.clearHighlight();
+  }
+
+  clearHighlight() {
+    if (this.lastHighlight) this.paint(null);
     return this;
   }
 

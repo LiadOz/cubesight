@@ -35,23 +35,23 @@ for (const style of ['orbit', 'mono']) {
         fs.mkdirSync(output, { recursive: true });
         await page.screenshot({ path: path.join(output, `history-${style}-${theme}-${viewport.name}.png`), fullPage: true });
 
-        await page.evaluate(at => { location.hash = `#/review/${at}`; }, record.at);
-        const review = page.locator('.solve-review-page');
-        await expect(review).toBeVisible();
-        await expect(review).toHaveAttribute('data-brain-style', style);
+        // The replay is the history's other screen; there is no separate review page any more.
+        await page.evaluate(at => { location.hash = `#/history/${at}/replay`; }, record.at);
+        await expect(history).toHaveAttribute('data-view', 'replay');
+        await expect(history).toHaveAttribute('data-brain-style', style);
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-        await expect(review.locator('.sr-cube canvas')).toBeVisible();
-        await expect(review.locator('.sr-player')).toBeVisible();
-        await expect(review.locator('canvas')).toHaveCount(1);
-        await page.getByRole('button', { name: 'Next move' }).click();
-        await expect(review.locator('.sr-step-count')).toHaveText('move 1 / 2');
-        await page.screenshot({ path: path.join(output, `review-${style}-${theme}-${viewport.name}.png`), fullPage: true });
+        await expect(history.locator('.history-stage__cube canvas')).toBeVisible();
+        await expect(history.locator('.history-transport')).toBeVisible();
+        await expect(history.locator('canvas')).toHaveCount(1);
+        await page.keyboard.press('ArrowRight');
+        await expect(history.locator('.history-stage__subline')).toContainText('move 1 of 2');
+        await page.screenshot({ path: path.join(output, `replay-${style}-${theme}-${viewport.name}.png`), fullPage: true });
 
         await page.evaluate(() => { location.hash = '#/history'; });
         await expect(history).toBeVisible();
         await expect(history.locator('canvas')).toHaveCount(1);
-        await page.evaluate(at => { location.hash = `#/review/${at}`; }, record.at);
-        await expect(review.locator('canvas')).toHaveCount(1);
+        await page.evaluate(at => { location.hash = `#/history/${at}/replay`; }, record.at);
+        await expect(history.locator('canvas')).toHaveCount(1);
       }
     }
   });

@@ -158,7 +158,10 @@ export function createPLLTrainer(root) {
   const cubeReady = Promise.resolve().then(() => {
     if (disposed) return;
     cube = new Cube($('#pll-cube'), { mode: 'case', size: 'L', cubeOptions: { mode: 'corner' }, caseColorSetting: readCaseColorSetting(), caseSeed: 'pll:initial', label: 'PLL recognition case' });
-    if (renderData) cube.update(renderData);
+    // Recognition is about the last layer: emphasise it, dim the solved first two layers.
+    cube.highlightStage('pll');
+    if (trial?.state?.cubies) cube.setState(trial.state);
+    else if (renderData) cube.update(renderData);
   }).catch(error => {
     if (disposed) return;
     console.warn('WebGL PLL cube unavailable; using the offline SVG view.', error);
@@ -274,7 +277,7 @@ export function createPLLTrainer(root) {
     const from = /^review:(\d+):(\d+)$/.exec(value.start?.from ?? '');
     if (from) {
       if (!back) { back = document.createElement('a'); back.className = 'pll-review-back'; $('.pll-intro').append(back); }
-      back.href = `#/review/${from[1]}?move=${from[2]}`; back.textContent = 'back to review ›';
+      back.href = `#/history/${from[1]}?move=${from[2]}`; back.textContent = 'back to review ›';
     } else back?.remove();
     return value;
   }
