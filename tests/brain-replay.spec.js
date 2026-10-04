@@ -61,7 +61,8 @@ async function expectCleanDisconnected(page) {
   await chip.click();
   await expect(page.locator('[data-cube-action="connect"]')).toBeEnabled();
   await expect(page.locator('[data-cube-action="disconnect"]')).toBeDisabled();
-  await chip.click();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ui-cube-menu__drawer')).not.toBeVisible();
   await expect(view.locator('#brain-device')).toHaveText('No cube');
   expect(await page.evaluate(() => document.documentElement.dataset.cubePhase)).toBe('disconnected');
   const state = await page.evaluate(async () => {

@@ -3,6 +3,7 @@ import { test, expect } from './helpers/coverage-test.js';
 import { GOLD } from './analysis-golden.mjs';
 import { mountTestBrain, playSolve } from './helpers/fake-brain.js';
 import { prepareScreenRecord, seedSolve, visualCell } from './helpers/seed-solve.js';
+import { selectOrbitMarker } from './helpers/orbit-markers.js';
 
 // The results review: coach markers on the shared Orbit (Mono keeps its lane), stage and marker
 // detail with the real cube jumping to the position, "yours vs better" animated, pins that persist.
@@ -18,14 +19,6 @@ const pinsInDb = page => page.evaluate(async () => {
   return pins;
 });
 
-async function selectOrbitMarker(brain, id) {
-  const clusters = brain.locator('[data-marker-keys]');
-  const entries = await clusters.evaluateAll(nodes => nodes.map(node => JSON.parse(node.dataset.markerKeys)));
-  const index = entries.findIndex(keys => keys.includes(id));
-  expect(index, `Orbit exposes marker ${id}`).toBeGreaterThanOrEqual(0);
-  await clusters.nth(index).press('Enter');
-  if (entries[index].length > 1) await brain.locator(`[data-marker-detail-key="${id}"]`).press('Enter');
-}
 
 const review = page => page.evaluate(() => window.testBrain.handle.getViewModel().results.review);
 const ringMarkerKeys = brain => brain.locator('[data-marker-keys]').evaluateAll(nodes => nodes.flatMap(node => JSON.parse(node.dataset.markerKeys)).sort());

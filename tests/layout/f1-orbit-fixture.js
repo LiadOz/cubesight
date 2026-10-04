@@ -1,6 +1,7 @@
 // Real-page F1 layout driver. The route owns the only Brain controller and
 // header cube session; the replay adapter replaces only the physical device
 // connection behind that shared session.
+import { selectOrbitMarker } from '../helpers/orbit-markers.js';
 import { mountFakeCube, completeScramble, solveReverse } from './fake-cube.js';
 import { getCase } from '../../src/algs/seed/cases.js';
 import { invertAlg } from '../../src/algs/notation.js';
@@ -157,7 +158,7 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
     const marker = page.locator('#brain-view .orbit__marker-cluster, #brain-view [data-marker-detail-key]').first();
     if (f1State === 'marker-detail') {
       if (!(await marker.count())) throw new Error('actual results Orbit did not render any review marker');
-      await marker.click();
+      await selectOrbitMarker(page.locator('#brain-view'), vm.results.review.markers[0].id);
       await page.waitForFunction(() => Boolean(window.__cubesightSnapshot.getViewModel().viewModel.results?.review?.detail));
       return;
     }

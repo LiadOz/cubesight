@@ -5,6 +5,7 @@ import { CROWDED_MARKERS, validateCrowdedMarkerFixture } from './fixtures/crowde
 import { mountFakeCube, startScramble, completeScramble, solveReverse } from './fake-cube.js';
 import { mountTestBrain, playSolve } from '../helpers/fake-brain.js';
 import { GOLD } from '../analysis-golden.mjs';
+import { selectOrbitMarker } from '../helpers/orbit-markers.js';
 import { registerF1OrbitFixture } from './f1-orbit-fixture.js';
 
 const SCRAMBLE = "R2 D' F2 U B2 L' U2 F";
@@ -34,7 +35,8 @@ registerLayoutDriver('fake-cube', async (page, { id }) => {
   if (id === 'guided-scramble') return;
   if (id === 'wrong-turn') {
     await page.evaluate(() => window.testBrain.emitTurns("R2 D' L"));
-    await expect(page.locator('#brain-recovery')).toBeVisible();
+    await expect(page.locator(`${BRAIN} .orbit__segment.is-wrong[data-key^=undo-]`).first()).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.testBrain.handle.getViewModel().scramble.recovery?.length ?? 0)).toBeGreaterThan(0);
     return;
   }
   if (id === 'inspection' || id === 'inspection-overtime' || id === 'solving' || id === 'results') {
@@ -84,8 +86,9 @@ registerLayoutDriver('connection-menu-fixture', async page => {
 registerLayoutDriver('review-fixture', async page => {
   await mountTestBrain(page, 'orbit', { route: true });
   await playSolve(page, GOLD.normal.scramble, GOLD.normal.moves, { brain: BRAIN, base: 1 });
-  await expect(page.locator(`${BRAIN} .b-rev-chip`).first()).toBeVisible({ timeout: 30_000 });
-  await page.locator(`${BRAIN} .b-rev-chip`).first().click();
+  await expect.poll(() => page.evaluate(() => window.testBrain.handle.getViewModel().results?.review?.markers?.length ?? 0), { timeout: 30_000 }).toBeGreaterThan(0);
+  const id = await page.evaluate(() => window.testBrain.handle.getViewModel().results.review.markers[0].id);
+  await selectOrbitMarker(page.locator(BRAIN), id);
   await expect(page.locator(`${BRAIN} .b-rev-detail`)).toBeVisible();
 });
 
@@ -173,15 +176,14 @@ registerLayoutDriver('orbit-fixture', async page => {
     try { window.__f8CrowdedOrbit = module.Orbit(host, options); }
     catch { window.__f8CrowdedOrbit = new module.Orbit(host, options); }
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const labels = [...host.querySelectorAll('[data-orbit-label],.orbit-label,.orbit__label,.o-label,svg text')]
+    const labels = [...host.querySelectorAll('.orbit__label')]
       .map(el => ({ text: el.textContent, rect: el.getBoundingClientRect().toJSON() }))
       .filter(item => item.rect.width && item.rect.height);
-    const cluster = host.querySelector('[data-marker-cluster], [aria-label*="cluster" i], [class*="cluster"]');
-    const clusterCount = cluster ? Number((cluster.textContent || cluster.getAttribute('aria-label') || '').match(/\d+/)?.[0] || 0) : 0;
+    const cluster = [...host.querySelectorAll('[data-marker-keys]')].find(node => JSON.parse(node.dataset.markerKeys).length >= 3);
+    const clusterCount = cluster ? Number(cluster.querySelector('.orbit__marker-count')?.textContent ?? 0) : 0;
     const keyboardOperable = Boolean(cluster && (cluster.tabIndex >= 0 || cluster.matches('button,[role="button"]')));
     if (cluster && keyboardOperable) {
       cluster.focus();
-      cluster.click();
       cluster.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     }
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
