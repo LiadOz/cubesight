@@ -228,7 +228,7 @@
 
 /* --- Screens: what each one shows ------------------------------------------ */
 .brain:not([data-screen="idle"]):not([data-screen="disconnected"]):not([data-screen="desynced"]) > .b-configbar { display: none; }
-.brain:not([data-screen="solving"]):not([data-screen="ready"]) :is(.b-stepline, .b-clock, .b-sub) { display: none; }
+.brain[data-layout="column"]:not([data-screen="solving"]):not([data-screen="ready"]) :is(.b-stepline, .b-clock, .b-sub) { display: none; }
 .brain:not([data-screen="idle"]) .b-stats { display: none; }
 .brain:not([data-screen="scramble"]) .b-scramble-head { display: none; }
 /* The scramble line belongs to the scramble screen; once applied it would crowd the clock. */

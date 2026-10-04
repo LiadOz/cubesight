@@ -51,6 +51,12 @@ export class Orbit {
     this.element.addEventListener('keydown', this.onEscape);
     this.host.append(this.element);
     this.update(this.options, { animate: false });
+    // Label placement must follow the host when a viewport or layout changes,
+    // even when the underlying solve state has not emitted another update.
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.current && !this.element.classList.contains('is-morphing')) this.draw(this.current);
+    });
+    this.resizeObserver.observe(this.host);
   }
 
   update(options = {}, { animate = true } = {}) {
@@ -88,7 +94,7 @@ export class Orbit {
       return { ...marker, angle: part.from + (part.to - part.from) * fill };
     }).filter(Boolean);
     const collision = new Map();
-    const renderWidth = Math.min(mini ? miniGlyphSize(options.glyphSize) : SIZES[options.size] || SIZES.L,
+    const renderWidth = Math.min(mini ? miniGlyphSize(options.glyphSize) : options.fitHost ? Infinity : SIZES[options.size] || SIZES.L,
       this.host.clientWidth || SIZES.L, this.host.clientHeight || SIZES.L);
     const fontScale = Math.max(1, Math.min(2.2, 560 / renderWidth));
     const labelAnchors = segments.map((segment, at) => ({ key: layout[at].key, angle: layout[at].mid,
@@ -163,7 +169,7 @@ export class Orbit {
     const gap = model.interpolatedGap ?? model.gap;
     const mini = options.size === 'mini';
     const hostBox = model.layoutBounds || this.host.getBoundingClientRect();
-    const fittedWidth = Math.min(width, hostBox.width || width, hostBox.height || width);
+    const fittedWidth = Math.min(options.fitHost && !mini ? Infinity : width, hostBox.width || width, hostBox.height || width);
     const renderWidth = fittedWidth;
     this.element.style.width = `${fittedWidth}px`;
     this.element.style.height = `${fittedWidth}px`;
@@ -335,7 +341,7 @@ export class Orbit {
     this.element.dispatchEvent(new CustomEvent('orbitchange', { detail: { orbit: this } }));
   }
 
-  destroy() { this.sequence++; this.element.removeEventListener('focusin', this.onFocusIn); this.element.removeEventListener('keydown', this.onEscape); this.element.remove(); }
+  destroy() { this.resizeObserver?.disconnect(); this.sequence++; this.element.removeEventListener('focusin', this.onFocusIn); this.element.removeEventListener('keydown', this.onEscape); this.element.remove(); }
 }
 
 export const createOrbit = (host, options) => new Orbit(host, options);

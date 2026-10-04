@@ -517,7 +517,7 @@ export function createShell(root, { dispatch }) {
 
   function updateClock(clock, prev) {
     if (clock === prev) return;
-    setText(parts.clock, clock.text);
+    setText(parts.clock, clock.hidden && brain.dataset.layout === 'orbit' ? 'hidden' : clock.text);
     parts.clock.dataset.tone = clock.tone;
     setText(parts.sub, clock.sub);
     toggleClass(brain, 'is-timer-hidden', clock.hidden);
@@ -553,7 +553,7 @@ export function createShell(root, { dispatch }) {
 
   function updateKeys(keys, prev) {
     if (keys === prev) return;
-    renderKeyed(parts.keys, keys, k => `${k.key}:${k.action}`,
+    renderKeyed(parts.keys, keys.slice(0, 3), k => `${k.key}:${k.action}`,
       () => { const b = el('button', 'b-key'); b.type = 'button'; b.append(el('kbd'), el('span')); return b; },
       (node, k) => { node.dataset.action = k.action; setText(node.querySelector('kbd'), k.key); setText(node.querySelector('span'), k.label); });
   }
@@ -591,6 +591,10 @@ export function createShell(root, { dispatch }) {
     updateSettings(vm.settings, p?.settings);
     updateScramble(vm.scramble, p?.scramble);
     updateClock(vm.clock, p?.clock);
+    if (style?.layout === 'orbit' && vm.screen === 'inspection' && vm.inspection) {
+      setText(parts.clock, vm.inspection.bigText);
+      parts.clock.dataset.tone = vm.inspection.tone;
+    }
     updateCoach(vm.coach, p?.coach);
     updateStats(vm.stats, p?.stats);
     updateKeys(vm.keys, p?.keys);
@@ -607,7 +611,7 @@ export function createShell(root, { dispatch }) {
     // Timeline host (aria lives on the host so both styles share it).
     // Orbit keeps its ring host while connecting: the ring sweeps around the cube then.
     const resultsLane = vm.screen === 'results' && style?.layout === 'column';
-    parts.timeline.hidden = !(vm.timeline.visible || resultsLane || (vm.screen === 'connecting' && style?.layout === 'orbit'));
+    parts.timeline.hidden = !(style?.layout === 'orbit' || vm.timeline.visible || resultsLane);
     toggleClass(parts.timeline, 'is-ghost', vm.timeline.ghost);
     setAttr(parts.timeline, 'aria-valuemin', 0);
     setAttr(parts.timeline, 'aria-valuemax', vm.timeline.aria.max);
@@ -625,6 +629,10 @@ export function createShell(root, { dispatch }) {
   /** @param {FrameVM} f */
   function frame(f) {
     if (last?.screen === 'solving' && !last.clock.hidden) setText(parts.clock, f.clockText);
+    if (style?.layout === 'orbit' && last?.screen === 'inspection' && f.inspection) {
+      setText(parts.clock, f.inspection.bigText);
+      parts.clock.dataset.tone = f.inspection.tone;
+    }
     components?.timeline.frame?.(f);
     components?.inspection.frame?.(f);
   }
@@ -636,6 +644,9 @@ export function createShell(root, { dispatch }) {
     style = mod;
     brain.dataset.brainStyle = mod.id;
     brain.dataset.layout = mod.layout;
+    // Direction A keeps the clock/current move in the dial's bottom gap.
+    const numberHost = mod.layout === 'orbit' ? $('.brain-stage') : $('.brain-hero');
+    numberHost.append(parts.clock, parts.stepTitle.parentElement, parts.start.parentElement);
     for (const slot of [slots.timeline, slots.inspection, slots.results, slots.inspectionAside, slots.timelineAside]) slot.replaceChildren();
     // Styles that draw part of a view in the right-hand column (Orbit) get a
     // second host for it; the other style's asides stay empty and hidden.

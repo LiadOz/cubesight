@@ -57,13 +57,13 @@ export function createOrbitResults(host, ctx = {}) {
   const coachDemo = el('button', 'ui-action f1-results__coach-demo', 'copy coach demo link'); coachDemo.type = 'button'; coachDemo.dataset.action = 'coach-demo'; coachDemo.hidden = true;
   const penalty = el('button', 'ui-action', 'edit +2 / DNF'); penalty.type = 'button'; penalty.dataset.action = 'penalty';
   const retry = el('button', 'ui-action', 'retry scramble'); retry.type = 'button'; retry.dataset.action = 'retry';
-  moreBody.append(coachDemo, penalty, retry); more.append(moreBody);
+  moreBody.append(coachDemo, penalty, retry); const moreSummary = document.createElement('summary'); moreSummary.hidden = true; moreSummary.textContent = 'more actions'; more.append(moreSummary, moreBody);
   actions.append(more);
   const keysHost = el('div', 'f1-results__keys');
   root.append(historyNav, time, coachHost, casePrompt, caseMenu, detailHost, actions, keysHost);
   host.append(root);
 
-  const coach = createCoachLine(coachHost, { orbit: ctx.resultsOrbit });
+  const coach = createCoachLine(coachHost, { orbit: ctx.resultsOrbit, connectorHost: host.closest('.b-stage') ?? coachHost });
   const review = createReviewPanel(detailHost, { dispatch: action => ctx.dispatch?.(action), compact: true });
   let keyBar = createKeyBar(keysHost, []);
   let key = null;

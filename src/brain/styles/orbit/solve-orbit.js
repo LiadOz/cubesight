@@ -5,17 +5,20 @@ import { Orbit } from '../../../ui/orbit/index.js';
 const moveSegments = scramble => {
   const moves = scramble?.moves ?? [];
   const recovery = scramble?.recovery ?? [];
-  return [
-    ...moves.map((move, index) => ({
+  const plan = moves.map((move, index) => ({
       key: move.key,
       label: move.text,
       value: move.state === 'current' ? `move ${index + 1} of ${moves.length}` : undefined,
       weight: 1,
       state: move.state === 'current' ? 'current' : move.state === 'done' ? 'done' : 'future',
       importance: move.state === 'current' ? 1000 : Math.max(10, 90 - Math.abs(index - (scramble?.step ?? 0))),
-    })),
-    ...recovery.map((move, index) => ({ key: `undo-${move.key}`, label: move.text, value: index === 0 ? 'undo' : undefined, weight: 1, state: 'wrong', importance: 800 - index })),
-  ];
+    }));
+  if (!recovery.length) return plan;
+  const step = Math.min(scramble.step ?? 0, plan.length);
+  const undo = recovery.map((move, index) => ({ key: `undo-${move.key}`, label: move.text, value: index === 0 ? 'undo' : undefined, weight: 1, state: 'wrong', sectionStart: index === 0, importance: 800 - index }));
+  const upcoming = plan.slice(step);
+  if (upcoming.length) upcoming[0] = { ...upcoming[0], sectionStart: true };
+  return [...plan.slice(0, step), ...undo, ...upcoming];
 };
 
 function inspectionSegments(inspection) {
@@ -37,7 +40,7 @@ function inspectionSegments(inspection) {
 
 export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
   const orbit = new Orbit(host, {
-    size: 'XL', shape: 'open', gap: 70, labelStyle: 'around', label: 'Solve progress',
+    size: 'XL', shape: 'open', gap: 70, fitHost: true, labelStyle: 'around', label: 'Solve progress',
     segments: [], markers: [], onSegment: segment => {
       if (segment.selectable) dispatch({ type: 'openDetail', kind: 'stage', key: segment.key });
     },
@@ -48,12 +51,12 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
 
   function model(vm) {
     const connecting = vm.device?.phase === 'connecting' || vm.device?.phase === 'syncing';
-    if (connecting) return { shape: 'full', gap: 0, segments: [{ key: 'connecting', weight: 1, fill: .18, state: 'current', label: '' }], markers: [], caret: null };
-    if (vm.screen === 'scramble') return { shape: 'full', gap: 0, segments: moveSegments(vm.scramble), markers: [], caret: null };
+    if (connecting) return { shape: 'full', gap: 0, direction: 'clockwise', segments: [{ key: 'connecting', weight: 1, fill: .18, state: 'current', label: '' }], markers: [], caret: null };
+    if (vm.screen === 'scramble') return { shape: 'open', gap: 70, direction: 'clockwise', segments: moveSegments(vm.scramble), markers: [], caret: null };
     if (vm.screen === 'inspection') {
       const i = vm.inspection;
-      const ticks = (i?.ticks ?? []).map(tick => ({ key: `inspection-${tick.kind}-${tick.atMs}`, segment: 'inspection', position: (tick.atMs / Math.max(1, i.scaleMs)) * .95, label: tick.label, tone: 'good', type: 'tick' }));
-      return { shape: 'full', gap: 0, segments: inspectionSegments(i), markers: ticks, direction: 'counterclockwise', caret: 180 - (i?.caret ?? 0) * 360 };
+      const ticks = (i?.ticks ?? []).map(tick => ({ key: `inspection-${tick.kind}-${tick.atMs}`, segment: 'inspection', position: tick.atMs / Math.max(1, i.limitMs), label: tick.label, tone: 'good', type: 'tick' }));
+      return { shape: 'open', gap: 70, segments: inspectionSegments(i), markers: ticks, direction: 'counterclockwise', caret: 145 - (i?.caret ?? 0) * 290 };
     }
     const timeline = vm.timeline;
     const results = vm.screen === 'results' ? vm.results : null;
@@ -76,7 +79,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
       };
     });
     const markers = (results?.review?.markers ?? []).map(marker => ({ key: marker.id, segment: marker.seg, position: marker.frac, label: marker.label, tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'spark' : 'warning' }));
-    return { shape: 'open', gap: 70, segments, markers, caret: null };
+    return { shape: 'open', gap: 70, direction: 'clockwise', segments, markers, caret: null };
   }
 
   return {
@@ -94,7 +97,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
         // is emitted only on state changes; without this frame refinement the
         // +2 and DNF arcs stayed visually empty after the normal zone expired.
         const segments = inspectionSegments({ ...lastInspection, elapsedMs: inspection.elapsedMs });
-        void orbit.update({ segments, caret: 180 - (inspection.caret ?? 0) * 360 }, { animate: false });
+        void orbit.update({ segments, caret: 145 - (inspection.caret ?? 0) * 290 }, { animate: false });
       } else if (frameState?.currentFill != null && lastScreen === 'solving') {
         const segments = orbit.options.segments.map(segment => segment.state === 'current' ? { ...segment, fill: frameState.currentFill } : segment);
         void orbit.update({ segments }, { animate: false });

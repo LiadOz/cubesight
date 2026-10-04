@@ -1,0 +1,62 @@
+import { test, expect } from './helpers/coverage-test.js';
+import { mountTestBrain } from './helpers/fake-brain.js';
+import { startScramble, completeScramble, solveReverse } from './layout/fake-cube.js';
+
+// Exercise the application route: a component gallery can be correct while the
+// mounted screen hides its Orbit or sizes its cube using the legacy layout.
+test('solve keeps its Orbit and dial slot through the real flow', async ({ page }) => {
+  test.setTimeout(30_000);
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await mountTestBrain(page, 'orbit', { route: true, deferConnect: true, awaitConnect: false });
+  const brain = page.locator('#brain-view .brain');
+  await expect(brain).toHaveAttribute('data-brain-style', 'orbit');
+  const orbit = brain.locator('#brain-timeline .orbit');
+  const canvas = brain.locator('#brain-cube canvas');
+  await expect(orbit).toBeVisible();
+  await expect(orbit).toHaveAttribute('data-shape', 'full');
+  const original = await canvas.elementHandle();
+  await page.evaluate(() => window.testBrain.resolveConnection());
+  await expect(brain).toHaveAttribute('data-screen', 'idle');
+  await expect(orbit).toHaveAttribute('data-shape', 'open');
+  await expect(brain.locator('.brain-stage > .b-clock')).toHaveText('0.00');
+
+  async function fits() {
+    for (const [width, height] of [[1280, 720], [1440, 900], [390, 844]]) {
+      await page.setViewportSize({ width, height });
+      await expect(orbit).toBeVisible();
+      await page.waitForFunction(height => innerHeight === height && document.querySelector('#brain-view .brain-stage').getBoundingClientRect().height < height, height);
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const metrics = await page.evaluate(() => {
+        const clock = document.querySelector('#brain-view .brain-stage > .b-clock');
+        const r = clock.getBoundingClientRect();
+        return { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, viewportWidth: innerWidth, viewportHeight: innerHeight, clockBottom: r.bottom };
+      });
+      expect(metrics.width).toBeLessThanOrEqual(width + 2);
+      expect(metrics.height).toBeLessThanOrEqual(height + 2);
+      expect(metrics.clockBottom).toBeLessThanOrEqual(height);
+    }
+  }
+  await fits();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const cubeBox = await canvas.boundingBox();
+  expect(cubeBox.height).toBeGreaterThan(900 * .5); // canvas includes the camera margin
+  const scramble = await startScramble(page, "R U F");
+  await expect(brain).toHaveAttribute('data-screen', 'scramble');
+  await expect(orbit).toHaveAttribute('data-shape', 'open');
+  await expect(brain.locator('.brain-stage > .b-steptitle')).toBeVisible();
+  await fits();
+  await completeScramble(page, scramble);
+  await expect(brain).toHaveAttribute('data-screen', 'inspection');
+  await expect(brain.locator('.brain-stage > .b-clock')).toBeVisible();
+  await expect(brain.locator('.brain-stage > .b-clock')).not.toHaveText('0.00');
+  await fits();
+  await page.evaluate(() => window.testBrain.emitTurns("F'"));
+  await expect(brain).toHaveAttribute('data-screen', 'solving');
+  await fits();
+  await page.evaluate(() => window.testBrain.emitTurns('F'));
+  await solveReverse(page, scramble);
+  await expect(brain).toHaveAttribute('data-screen', 'results');
+  await expect(orbit).toBeVisible();
+  expect(await original.evaluate(node => node === document.querySelector('#brain-cube canvas'))).toBe(true);
+  await expect(brain.locator('canvas')).toHaveCount(1);
+});

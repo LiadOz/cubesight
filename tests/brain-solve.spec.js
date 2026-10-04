@@ -201,11 +201,11 @@ test(`Brain guidance is stable across moves and the timeline tracks the current 
   await expect(timeline).toBeVisible();
   const keys = state => page.evaluate(([style, state]) => {
     const orbit = style === 'orbit';
-    return [...document.querySelectorAll(orbit ? '.orbit__segment[data-key]' : '#brain-timeline :is(.m-seg, .b-oring-seg)')]
+    return [...document.querySelectorAll(orbit ? '#brain-test .orbit__segment[data-key]' : '#brain-timeline :is(.m-seg, .b-oring-seg)')]
       .filter(el => !state || (orbit ? el.classList.contains(`is-${state}`) : el.dataset.state === state))
       .map(el => el.dataset.key);
   }, [style, state]);
-  expect(await keys()).toEqual(style === 'orbit' ? ['inspection', 'plus2', 'dnf'] : ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
+  await expect.poll(() => keys()).toEqual(style === 'orbit' ? ['inspection', 'plus2', 'dnf'] : ['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
   const current = async () => (await keys('current'))[0] ?? null;
   const finished = async () => [...await keys('done'), ...await keys('skipped')];
   await expect.poll(current).toBe(style === 'orbit' ? 'inspection' : 'cross');
