@@ -56,6 +56,8 @@ test('guided scramble exposes the current glyph, move position, and spoken turn 
     records: [], settings: normalizeSettings(), held: { bottom: 'D', front: 'F' }, now: 0,
   });
   assert.equal(vm.screen, 'scramble');
+  assert.equal(vm.scramble.pendingDouble, null);
+  assert.ok(JSON.stringify(vm).includes('"pendingDouble":null'), 'recordable view retains the empty half-turn state');
   assert.equal(vm.clock.stepTitle, 'R′');
   assert.equal(vm.clock.stepLine[0].text, 'move 1 of 2');
   assert.match(vm.clock.stepLine[1].text, /right face.*counterclockwise/i);
