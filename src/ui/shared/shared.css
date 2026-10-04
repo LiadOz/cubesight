@@ -83,7 +83,7 @@
    (8.4 px per character), so the items land on the frames' x positions whatever the font measures. Theme toggle and help stay in the DOM and
    appear when the header is hovered or focused. Phones keep their own header (below 721 px). */
 @media (min-width:721px) {
-  .site-header.ui-header { box-sizing:border-box; height:64px; min-height:64px; padding:0 48px; gap:0; background:transparent; }
+  .site-header.ui-header { box-sizing:border-box; height:60px; min-height:60px; padding:18px 48px 0; align-items:flex-start; gap:0; background:transparent; }   /* items hang from y=18: baselines land on the frames' y=38 whatever the header height */
   .site-header.ui-header .ui-header__brand { flex:0 0 150px; min-height:0; height:28px; margin-top:-2px; font:800 20px/28px 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.4px; color:var(--orbit-ink); }
   .site-header.ui-header nav { flex:0 0 auto; gap:28px; overflow:visible; }
   .site-header.ui-header nav a { position:relative; box-sizing:border-box; min-height:0; height:28px; padding:0; justify-content:flex-start; font:500 15px/28px 'Manrope Variable','Manrope',sans-serif; color:var(--orbit-muted); }
@@ -91,12 +91,15 @@
   .site-header.ui-header nav a.active::after, .site-header.ui-header nav a[aria-current='page']::after { content:''; position:absolute; left:0; right:0; bottom:-4px; height:2px; border-radius:1px; background:var(--orbit-accent); }
   .site-header.ui-header nav a[data-nav='solve'] { width:42px; } .site-header.ui-header nav a[data-nav='drills'] { width:50.4px; } .site-header.ui-header nav a[data-nav='algs'] { width:33.6px; }
   .site-header.ui-header nav a[data-nav='progress'] { width:67.2px; } .site-header.ui-header nav a[data-nav='history'] { width:58.8px; }
-  .site-header.ui-header .ui-header__actions { position:relative; gap:0; }
-  .site-header.ui-header .header-button { position:absolute; top:36px; right:0; z-index:2; opacity:0; transition:opacity .2s; background:var(--orbit-bg); }
-  .site-header.ui-header .theme-button { right:48px; }
-  .site-header.ui-header:is(:hover, :focus-within) .header-button { opacity:1; }
+  /* Theme and help are not in the frames: they sit as two quiet icons in the 48 px right margin, clear of the status line. */
+  .site-header.ui-header .ui-header__actions { position:static; align-items:flex-start; gap:0; }
+  .site-header.ui-header .header-button { position:absolute; top:19px; width:22px; min-width:0; height:26px; min-height:0; padding:0; opacity:.55; transition:opacity .2s; }
+  .site-header.ui-header .theme-button { right:24px; }
+  .site-header.ui-header .help-button { right:2px; }
+  .site-header.ui-header .theme-label { display:none; }
+  .site-header.ui-header .header-button:is(:hover, :focus-visible) { opacity:1; }
   .site-header.ui-header .ui-header-status:empty { display:none; }
-  .site-header.ui-header .ui-cube-chip { gap:8px; margin-right:-8px; min-height:0; height:28px; font-size:0; color:var(--orbit-muted); }   /* margin: the hidden caret is a flex item too */
+  .site-header.ui-header .ui-cube-chip { gap:8px; margin:1px -8px 0 0; min-height:0; height:28px; font-size:0; color:var(--orbit-muted); }   /* margin: the hidden caret is a flex item too */
   .site-header.ui-header .ui-cube-chip__dot { width:8px; height:8px; }
   .site-header.ui-header .ui-cube-chip__name { max-width:none; font:400 12px/28px 'DM Mono',monospace; color:var(--orbit-muted); }
   .site-header.ui-header .ui-cube-chip__battery { margin-left:20px; font:400 12px/28px 'DM Mono',monospace; color:var(--orbit-muted); }
@@ -107,11 +110,11 @@
 @media (max-width:720px) {
   :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header { box-sizing:border-box; min-height:90px; padding:0 24px; gap:0 10px; align-content:flex-start; background:transparent; }
   :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-header__brand { height:90px; min-height:0; font:800 17px/1 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.3px; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-header__actions { height:90px; position:relative; gap:0; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .header-button { position:absolute; top:62px; right:0; z-index:2; opacity:0; background:var(--orbit-bg); }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .theme-button { right:48px; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header:is(:hover, :focus-within) .header-button { opacity:1; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip { min-width:0; min-height:0; height:90px; gap:8px; margin-right:-8px; font-size:0; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-header__actions { height:90px; position:static; gap:0; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .header-button { position:absolute; top:58px; width:28px; min-width:0; height:28px; min-height:0; padding:0; opacity:.55; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .theme-button { right:56px; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .help-button { right:24px; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip { min-width:0; min-height:0; height:28px; gap:8px; margin-right:-8px; font-size:0; }
   :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__dot { width:7px; height:7px; }
   :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__name { max-width:none; font:400 11px/1 'DM Mono',monospace; color:var(--orbit-muted); overflow:visible; }
   :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__battery { display:none; }

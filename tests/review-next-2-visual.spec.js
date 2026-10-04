@@ -64,7 +64,11 @@ for (const style of ['orbit', 'mono']) for (const theme of ['dark', 'light']) fo
     await page.goto('/#/solve');
     const solve = page.locator('#brain-view .brain');
     await expect(solve).toHaveAttribute('data-brain-style', style);
-    if (width === 1280) {
+    if (width === 1280 && style === 'orbit') {
+      // The Orbit style has no chip bar (no frame draws one): the config line sits bottom left, A-01.
+      await expect(solve.locator('.b-config-line')).toHaveText(/^cfop · .*inspection$/);
+      await expect(solve.locator('.b-configbar:visible')).toHaveCount(0);
+    } else if (width === 1280) {
       const config = solve.locator('.b-configbar:visible').first();
       await expect(config).toBeVisible();
       const rows = await config.locator('button:visible').evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().top)));

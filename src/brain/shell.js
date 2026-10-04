@@ -80,6 +80,7 @@ const TEMPLATE = `
     </div>
   </header>
   <div class="b-banner" data-slot="banner"></div>
+  <nav class="b-configbar" aria-label="Quick settings"></nav>
   <main class="b-stage" aria-label="Live solve">
     <div class="brain-body">
       <div class="brain-stage">
@@ -253,6 +254,7 @@ export function createShell(root, { dispatch }) {
   if (!DEV) $('#brain-send-log')?.remove();   // Send to dev only exists on the dev server
 
   const parts = {
+    configBar: brain.querySelector(':scope > .b-configbar'),
     configCopy: $('.b-configbar-copy'),
     deviceToggle: $('.b-device-toggle'),
     debug: $('#brain-debug'),
@@ -461,6 +463,7 @@ export function createShell(root, { dispatch }) {
 
   function updateConfigBar(bar, prev) {
     if (bar === prev) return;
+    renderOptions(parts.configBar, bar.items);   // Mono's one-line bar; the Orbit style hides it (its config line is bottom left, A-01)
     renderOptions(parts.configCopy, bar.items);
   }
 

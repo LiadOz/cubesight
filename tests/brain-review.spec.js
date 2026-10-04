@@ -118,7 +118,7 @@ test('every skipped stage stays represented on the Orbit, and visible labels nev
     }
   }
   fs.mkdirSync(SHOTS, { recursive: true });
-  await brain.locator('.brain-stage').screenshot({ path: `${SHOTS}/ring-many-skips.png` });
+  await brain.locator('.b-slot-timeline').screenshot({ path: `${SHOTS}/ring-many-skips.png` });   // the Orbit's box; .brain-stage is display: contents
   await testInfo.attach('ring-many-skips', { path: `${SHOTS}/ring-many-skips.png`, contentType: 'image/png' });
 });
 
@@ -127,10 +127,11 @@ test('an x-cross shows its merged pairs as "merged", outside the deltas', async 
   await mountTestBrain(page, 'orbit', { route: true });
   await playSolve(page, "B2 F2 R' F2 R B2 R' B'", "B R B2 R' F2 R F2 B2", { brain: BRAIN, base: 80 });
   const brain = page.locator(BRAIN);
+  // Pairs built with the cross end together: the Orbit draws ONE label for the run ("p1·p2 with cross", A-05), on its first stage.
   await expect(brain.locator('[data-label-for=pair1] .orbit__label-value')).toHaveText('with cross');
-  await expect(brain.locator('[data-label-for=pair2] .orbit__label-value')).toHaveText('with cross');
+  await expect(brain.locator('[data-label-for=pair1] .orbit__label-name')).toHaveText(/^p1·p2/);
+  await expect(brain.locator('[data-label-for=pair2]')).toHaveCount(0);
   await expect(brain.locator('[data-label-for=pair1] .orbit__label-delta')).toHaveCount(0);
-  await expect(brain.locator('[data-label-for=pair2] .orbit__label-delta')).toHaveCount(0);
   await expect(brain.locator('.orbit__label', { hasText: '±0.00' })).toHaveCount(0);
   const tail = await brain.locator('.orbit__label').allTextContents();
   expect(tail.filter(t => /^(p\d|pair \d)\s*0\.00/.test(t.trim()) && /[−+-]\d/.test(t))).toEqual([]);

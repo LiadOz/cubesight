@@ -43,7 +43,10 @@ test('solve keeps its Orbit and dial slot through the real flow', async ({ page 
   const scramble = await startScramble(page, "R U F");
   await expect(brain).toHaveAttribute('data-screen', 'scramble');
   await expect(orbit).toHaveAttribute('data-shape', 'open');
-  await expect(brain.locator('.brain-stage > .b-steptitle')).toBeVisible();
+  // A-02: the move to turn is one big glyph under the cube (the verbose paragraph and the old step title are gone).
+  await expect(brain.locator('.b-guide .b-guide-glyph')).toHaveText('R');
+  await expect(brain.locator('.b-guide .b-guide-line').first()).toHaveText('right face, clockwise');
+  await expect(brain.locator('.b-guide .b-guide-count')).toHaveText('move 1 of 3');
   await fits();
   await completeScramble(page, scramble);
   await expect(brain).toHaveAttribute('data-screen', 'inspection');
@@ -52,7 +55,8 @@ test('solve keeps its Orbit and dial slot through the real flow', async ({ page 
   await fits();
   await page.evaluate(() => window.testBrain.emitTurns("F'"));
   await expect(brain).toHaveAttribute('data-screen', 'solving');
-  await expect(brain.locator('.brain-stage > .b-steptitle')).toBeHidden();
+  await expect(brain.locator('.brain-stage > .b-steptitle')).toBeVisible();   // A-04: the live stage title above the timer
+  await expect(brain.locator('.brain-stage > .b-steptitle')).toHaveText('cross');
   await expect(brain.locator('.brain-stage > .b-clock')).toBeVisible();
   await fits();
   await page.evaluate(() => window.testBrain.emitTurns('F'));
@@ -70,12 +74,15 @@ test('a long scramble keeps every move visible, including the return path', asyn
   await expect(page.locator('#brain-view .brain')).toHaveAttribute('data-brain-style', 'orbit');
   const scramble = "R U F2 L D' B U2 R' F D2 L2 B' U R2 D F' L U' B2 D";
   await startScramble(page, scramble);
-  const labels = page.locator('#brain-timeline .orbit__label');
+  // The scramble ring is move labels at r=330 (A-02), one per move.
+  const labels = page.locator('#brain-timeline .orbit__move-label');
   await expect(labels).toHaveCount(20);
   await page.evaluate(() => window.testBrain.emitTurns('U'));
   await expect(page.locator('#brain-timeline .orbit__segment.is-wrong')).not.toHaveCount(0);
-  await expect(labels).toHaveCount(21);
+  await expect(labels).toHaveCount(21);   // the way back joins the ring as its own section
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator('#brain-moves')).toBeVisible();
-  await expect(page.locator('#brain-moves .mg-strip i')).toHaveCount(20);
+  // Phone: the wrapped sequence keeps every move, with the way back inline as an amber spaced section.
+  await expect(page.locator('#brain-moves .mg-strip i:not(.undo):not(.mg-gap)')).toHaveCount(20);
+  await expect(page.locator('#brain-moves .mg-strip i.undo')).toHaveCount(1);
 });
