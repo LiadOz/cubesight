@@ -201,13 +201,16 @@ test('results layout matrix: cube stays below the header on desktop and stacks o
     await expect(page.locator('canvas')).toHaveCount(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     expect(overflow, `${name} has no horizontal overflow`).toBeLessThanOrEqual(1);
-    const stage = page.locator(style === 'orbit' ? '.brain-stage' : '.b-cube-wrap');
+    // The Orbit style's wrappers are display: contents (everything is placed on the frames' canvas), so the cube wrap is the box.
+    const stage = page.locator('.b-cube-wrap');
     const initial = await stage.boundingBox();
-    expect(initial.y, `${name} starts below the header`).toBeGreaterThanOrEqual(0);
+    expect(initial.y, `${name} starts below the top of the page`).toBeGreaterThanOrEqual(0);
     if (style === 'orbit') {
       await expect(page.locator('.orbit__segment')).toHaveCount(9);
-      const cube = await page.locator('#brain-cube').boundingBox();
-      expect(cube.x + cube.width / 2).toBeCloseTo(initial.x + initial.width / 2, 0);
+      // The cube is centred on the Orbit, and the stage ends inside the screen.
+      const [cube, ring] = await Promise.all([page.locator('#brain-cube').boundingBox(), page.locator('.orbit__svg').boundingBox()]);
+      expect(cube.x + cube.width / 2).toBeCloseTo(ring.x + ring.width / 2, 0);
+      expect(cube.y + cube.height / 2).toBeCloseTo(ring.y + ring.height / 2, 0);
       expect(initial.y + initial.height).toBeLessThanOrEqual(SIZES[size].height + 1);
     } else if (size === 'phone') {
       expect(await stage.evaluate(el => getComputedStyle(el).position)).not.toBe('sticky');

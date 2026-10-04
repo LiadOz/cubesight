@@ -27,7 +27,7 @@
   width: 100%;
   height: 100dvh;
   min-height: 0;
-  margin: calc(-1 * var(--site-header-height, 64px)) 0 0;
+  margin: calc(-1 * var(--site-header-height, 0px)) 0 0;
   padding: 0;
   overflow: clip;
   background: var(--b-bg);
@@ -289,6 +289,19 @@
 .brain[data-brain-style="orbit"] .f1-results__case-prompt, .brain[data-brain-style="orbit"] .f1-results__case-menu { position: fixed; right: 24px; bottom: 56px; z-index: 60; }
 .brain[data-brain-style="orbit"] .f1-results__history-nav { position: absolute; z-index: 3; left: var(--corner); top: calc(var(--oy) + 70 * var(--u)); }
 
+/* --- Orbit decorations drawn by solve-orbit.js ------------------------------------------------------------------------------ */
+/* The current move on the scramble ring: a teal pill (amber after a wrong turn) behind its label (A-02 / A-02b). */
+.brain[data-brain-style="orbit"] .orbit__pill { fill: var(--b-accent-soft); stroke: var(--b-accent); stroke-width: 1.5; pointer-events: none; }
+.brain[data-brain-style="orbit"] .orbit__pill.is-wrong { fill: var(--b-plus2-soft); stroke: var(--b-warn); }
+/* Spacers between sections of the scramble ring carry no arc, label or hit area. */
+.brain[data-brain-style="orbit"] .orbit__segment.is-spacer { display: none; }
+/* Stage labels by state: the plan's estimates are quiet (12 px, faint), the live stage is teal. */
+.brain[data-brain-style="orbit"] .orbit__label.is-future .orbit__label-name,
+.brain[data-brain-style="orbit"] .orbit__label.is-future .orbit__label-value { fill: var(--b-faint); font-size: calc(12px * var(--orbit-label-scale, 1)); font-weight: 400; }
+.brain[data-brain-style="orbit"] .orbit__label.is-future .orbit__label-value { transform: translateY(-4px); }
+.brain[data-brain-style="orbit"] .orbit__label.is-current .orbit__label-name { fill: var(--b-accent); font-weight: 500; }
+.brain[data-brain-style="orbit"] .orbit__label.is-current .orbit__label-value { fill: var(--b-accent); font-size: calc(15px * var(--orbit-label-scale, 1)); }
+
 /* --- Phone (A-09 / A-12): the 390 x 844 device, 1:1 -- the canvas is the viewport, the Orbit renders at half size (r=150) ---------- */
 @media (max-width: 720px) {
   .brain[data-brain-style="orbit"] {
@@ -331,7 +344,8 @@
   .brain[data-brain-style="orbit"] .b-start > span { margin: 0; }
 
   /* Scramble (no frame): the glyph takes the timer's place and size, its words the compare line, the sequence the coach block */
-  .brain[data-brain-style="orbit"] .b-guide-glyph {
+  .brain[data-brain-style="orbit"] .b-guide-glyph,
+  .brain[data-brain-style="orbit"] .b-guide.is-wrong .b-guide-glyph {
     left: calc(var(--ox) + var(--t-x) * var(--u)); top: calc(var(--oy) + (var(--t-y) - var(--base-sans) * var(--t-size)) * var(--u));
     font: 600 calc(var(--t-size) * var(--u)) / 1 var(--b-font-sans);
   }
@@ -348,7 +362,7 @@
   }
   .brain[data-brain-style="orbit"][data-screen="scramble"] .b-moves {
     display: block !important; position: absolute; z-index: 3; margin: 0; max-width: none;
-    left: var(--corner); width: calc(100% - 2 * var(--corner)); top: calc(var(--oy) + (var(--ds-phone-coach-body-y) - var(--base-sans) * var(--ds-phone-coach-body-size)) * var(--u));
+    left: var(--corner); width: calc(100% - 2 * var(--corner)); top: calc(var(--oy) + (var(--ds-phone-coach-body-y) + var(--ds-phone-coach-pitch) - var(--base-sans) * var(--ds-phone-coach-body-size)) * var(--u));
   }
   .brain[data-brain-style="orbit"] .b-moves .mg-strip { flex-wrap: wrap; justify-content: center; overflow: visible; gap: 6px 12px; }
   .brain[data-brain-style="orbit"] .b-moves .mg-strip i { min-width: 0; padding: 2px 0; border: 0; background: none; color: var(--b-ink); font-size: calc(var(--ds-phone-coach-body-size) * var(--u)); }
@@ -360,7 +374,7 @@
   .brain[data-brain-style="orbit"] .b-moves .mg-strip i.wrong { color: var(--b-ink); background: none; }
   .brain[data-brain-style="orbit"] .b-moves .mg-strip i[data-planned] { text-decoration-color: var(--b-warn); }
   .brain[data-brain-style="orbit"] .b-recovery-cue { display: none !important; }   /* the way back is inline in the sequence */
-  .brain[data-brain-style="orbit"][data-screen="scramble"] .orbit__label { display: none; }
+  .brain[data-brain-style="orbit"][data-screen="scramble"] :is(.orbit__label, .orbit__move-label, .orbit__pill, .orbit__window-count) { display: none; }   /* the sequence below carries the moves */
   /* Phone stage labels are one 11 px value, coloured by how it went (A-09: 2.08 teal, 1.96 cream, 2.31 amber); names and plan estimates stay off the small ring. */
   .brain[data-brain-style="orbit"] .orbit__label :is(.orbit__label-name, .orbit__label-delta, .orbit__label-tag) { display: none; }
   .brain[data-brain-style="orbit"] .orbit__label:is(.is-future, .is-current) { display: none; }

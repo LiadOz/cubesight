@@ -4,7 +4,7 @@ import { Orbit } from '../../../ui/orbit/index.js';
 import { displayMove } from '../../../moves/notation.js';
 import { inspectionSegments, inspectionMarkers, inspectionCaret } from './inspection-orbit.js';
 import { ORBIT_GEOMETRY } from '../../../ui/orbit/geometry.js';
-import { PILL } from '../../layout-spec.js';
+import { PILL, PLAN_LABEL } from '../../layout-spec.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const stageLabel = segment => [segment.label, ...(segment.tags ?? []).filter(tag => /x-cross/.test(tag))].join(' · ');
@@ -98,9 +98,21 @@ function decorate(orbit) {
   const root = orbit.element.querySelector('.orbit__svg');
   if (!root) return;
   const byKey = new Map((orbit.displayed?.segments ?? []).map((segment, index) => [String(segment.key ?? index), segment]));
+  const layout = new Map((orbit.displayed?.layout ?? []).map(part => [String(part.key), part]));
+  const scale = Number(orbit.element.style.getPropertyValue('--orbit-label-scale')) || 1;
   for (const label of root.querySelectorAll('.orbit__label[data-label-for]')) {
-    const segment = byKey.get(label.dataset.labelFor);
-    if (segment) label.classList.add(`is-${segment.state}`, `delta-${segment.deltaTone ?? 'none'}`);
+    const key = label.dataset.labelFor, segment = byKey.get(key);
+    if (!segment) continue;
+    label.classList.add(`is-${segment.state}`, `delta-${segment.deltaTone ?? 'none'}`);
+    // The Orbit seats every block as if it had four rows. A plan label (two quiet 12 px rows) is shorter: move it down by the difference,
+    // in the Orbit's own proportion (the whole difference at the top of the ring, half of it on the sides, none at the bottom).
+    const placed = /translate\(([-\d.]+)[ ,]+([-\d.]+)\)/.exec(label.getAttribute('transform') ?? '');
+    const part = layout.get(key);
+    if (segment.state === 'future' && !segment.tag && placed && part) {
+      const lift = Math.cos(part.mid * Math.PI / 180), reach = Math.sign(lift) * Math.min(1, Math.abs(lift) * 2.5);
+      const orbitHeight = (10 + 21 + 8) * scale, ownHeight = PLAN_LABEL.height * scale;
+      label.setAttribute('transform', `translate(${placed[1]} ${Number(placed[2]) + (orbitHeight - ownHeight) / 2 * (1 + reach)})`);
+    }
   }
   const first = root.querySelector('.orbit__move-label.is-current, .orbit__move-label.is-wrong');
   for (const text of first ? [first] : []) {

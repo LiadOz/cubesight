@@ -9,7 +9,7 @@
 import { arcPath, fillAngle, placeLabels, polar, ringLayout } from '../../charts/arc.js';
 import { reconcileChildren, setAttr, setText, svg, toggleClass } from '../../dom.js';
 import { CX, CY, R, SPARK_PATH, VB_H, VB_W, VIEWBOX, ringName, secs } from './geometry.js';
-import { groupEndLabels } from './end-labels.js';
+import { groupEndLabels } from '../../../ui/orbit/end-labels.js';
 
 const PSEUDO_R = R - 15;
 const TICK = 14;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { groupEndLabels } from '../src/brain/styles/orbit/end-labels.js';
+import { groupEndLabels } from '../src/ui/orbit/end-labels.js';
 import { fitBandLabels } from '../src/brain/charts/band-labels.js';
 import { buildDetail, compareFor, positionedRows, comparisonDemoHref } from '../src/brain/review/detail.js';
 import { buildMarkers } from '../src/brain/review/markers.js';

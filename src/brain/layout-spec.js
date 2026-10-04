@@ -127,12 +127,23 @@ export function layoutVars() {
   text(vars, 'phone-compare', find(right, { style: 'T70', text: '−0.96 vs ao12 · pb 12.41' }));
   text(vars, 'phone-coach-tag', find(right, { text: 'coach' }));
   text(vars, 'phone-coach-body', find(right, { style: 'T25' }));
+  vars['--ds-phone-coach-pitch'] = find(right, { text: 'the highlights; the cross detour at' }).y - find(right, { text: 'Pseudo pair 3 and the EO skip were' }).y;
   box(vars, 'phone-next', find(right, { k: 'rect', x: 24, y: 722 }));
   text(vars, 'phone-next-label', find(right, { text: 'next scramble' }));
   text(vars, 'phone-review', find(right, { text: 'review' }));
   text(vars, 'phone-more', find(right, { text: 'more…' }));
   return vars;
 }
+
+/**
+ * A stage label that is only a plan (name over ~estimate, 12 px both): the frames space its two rows 17 px apart, the Orbit's
+ * block for a done stage (16 px value) uses 21. `height` is the 12 px block's own height so decorate() can re-seat it on the ring.
+ */
+export const PLAN_LABEL = (() => {
+  const name = anchor('A-01-idle', { text: 'cross' }), estimate = anchor('A-01-idle', { text: '~2.41' });
+  const pitch = estimate.y - name.y, ascent = 10, descent = 2.5;   // ascent / descent: the Orbit's block puts the first baseline 10 below its top; 12 px mono hangs about 2.5 below a baseline
+  return { pitch, height: ascent + pitch + descent };
+})();
 
 /** The current-move pill on the scramble ring (A-02): 54 x 34, fully rounded, 330 px from the ring centre. */
 export const PILL = (() => { const rect = anchor('A-02-scramble', { k: 'rect', width: 54, height: 34 }); return { width: rect.width, height: rect.height }; })();
