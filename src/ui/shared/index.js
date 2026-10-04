@@ -105,40 +105,78 @@ export function createKeyBar(host, keys = []) {
   host.append(bar); return bar;
 }
 
-/** Coach sentence with the A-05 dotted connector to a selected Orbit marker. */
+const coachLines = new WeakMap();
+/** Where the sentence's own text ends: the last line box of its text, not the right edge of the (full width) paragraph. */
+function textEnd(sentence) {
+  const range = document.createRange(); range.selectNodeContents(sentence);
+  const rects = [...range.getClientRects()].filter(rect => rect.width > 0 && rect.height > 0);
+  range.detach?.();
+  const last = rects.at(-1);
+  if (last) return { x: last.right, y: last.top + last.height / 2 };
+  const box = sentence.getBoundingClientRect();
+  return { x: box.left, y: box.top + box.height / 2 };
+}
+
+/**
+ * Coach sentence with the A-05 dotted connector to a selected Orbit marker (W-20: one sentence in the rail and a
+ * dotted curve to its marker). The curve leaves the end of the sentence's text and is always the short Bezier.
+ * Exactly one coach line (and one connector) exists per connector host: creating another replaces the old one.
+ */
 export function createCoachLine(host, { text = '', marker = null, orbit = null, connectorHost = host } = {}) {
+  coachLines.get(connectorHost)?.destroy();
   const wrap = document.createElement('div'); wrap.className = 'ui-coach-line';
   const sentence = document.createElement('p'); sentence.className = 'ui-coach-line__text'; sentence.textContent = text;
-  const connector = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); connector.classList.add('ui-coach-line__connector'); connector.setAttribute('aria-hidden', 'true');
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); connector.append(path); wrap.append(sentence); host.append(wrap);
+  // The connector SVG only exists while there is something to connect: an unlinked line has no dead connector.
+  let connector = null, path = null;
+  wrap.append(sentence); host.append(wrap);
   const restorePosition = connectorHost.style.position;
-  if (getComputedStyle(connectorHost).position === 'static') connectorHost.style.position = 'relative';
-  connectorHost.prepend(connector);
+  let positioned = false;
+  const ensureConnector = () => {
+    if (connector) return;
+    connector = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); connector.classList.add('ui-coach-line__connector'); connector.setAttribute('aria-hidden', 'true');
+    path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); connector.append(path);
+    if (getComputedStyle(connectorHost).position === 'static') { connectorHost.style.position = 'relative'; positioned = true; }
+    connectorHost.prepend(connector);
+    api.connector = connector;
+  };
   let timer;
+  const unlink = () => { connector?.classList.remove('is-linked'); wrap.classList.remove('is-linked'); clearTimeout(timer); };
+  let destroyed = false;
   const repaint = () => {
-    if (!marker || !orbit) return;
-    connector.classList.remove('is-linked'); wrap.classList.remove('is-linked'); clearTimeout(timer);
+    if (destroyed || !marker || !orbit) return;
+    unlink();
     const target = orbit.getMarkerElement?.(marker);
     if (!target) return;
-    const sentenceBox = sentence.getBoundingClientRect(), targetBox = target.getBoundingClientRect(), box = connectorHost.getBoundingClientRect();
-    const x1 = Math.max(0, sentenceBox.right - box.left), y1 = sentenceBox.top + sentenceBox.height / 2 - box.top;
+    ensureConnector();
+    const targetBox = target.getBoundingClientRect(), box = connectorHost.getBoundingClientRect(), start = textEnd(sentence);
+    const x1 = Math.max(0, start.x - box.left), y1 = start.y - box.top;
     const x2 = targetBox.left + targetBox.width / 2 - box.left, y2 = targetBox.top + targetBox.height / 2 - box.top;
     connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`); connector.setAttribute('width', String(Math.max(1, box.width))); connector.setAttribute('height', String(Math.max(1, box.height)));
+    // Still the approved curve: if it would cut through the Cube, its control points bow over (or under) the cube
+    // instead of the old orthogonal detour.
+    let d = null;
+    const c1 = [x1 + (x2 - x1) * .32, y1], c2 = [x1 + (x2 - x1) * .68, y2];
     const cube = orbit.element.closest('.f0-stage')?.querySelector('.f0-cube canvas') || document.querySelector('.shared-cube canvas');
     const cubeBox = cube?.getBoundingClientRect();
-    const minX = Math.min(sentenceBox.right, targetBox.left), maxX = Math.max(sentenceBox.right, targetBox.left);
-    const minY = Math.min(sentenceBox.top + sentenceBox.height / 2, targetBox.top + targetBox.height / 2);
-    const maxY = Math.max(sentenceBox.top + sentenceBox.height / 2, targetBox.top + targetBox.height / 2);
-    const crossesCube = cubeBox && minX < cubeBox.right && maxX > cubeBox.left && minY < cubeBox.bottom && maxY > cubeBox.top;
-    if (crossesCube) {
-      const topRoute = cubeBox.top - box.top - 12, bottomRoute = cubeBox.bottom - box.top + 12;
-      const routeY = topRoute > 8 && (topRoute < box.height - 8 || bottomRoute > box.height - 8) ? topRoute : bottomRoute;
-      path.setAttribute('d', `M ${x1} ${y1} L ${x1} ${routeY} L ${x2} ${routeY} L ${x2} ${y2}`);
-    } else path.setAttribute('d', `M ${x1} ${y1} C ${x1 + (x2 - x1) * .32} ${y1}, ${x1 + (x2 - x1) * .68} ${y2}, ${x2} ${y2}`);
+    if (cubeBox) {
+      const left = cubeBox.left - box.left, right = cubeBox.right - box.left, top = cubeBox.top - box.top, bottom = cubeBox.bottom - box.top;
+      let blocked = false;
+      for (let step = 0; step <= 40 && !blocked; step++) {
+        const t = step / 40, u = 1 - t, x = u ** 3 * x1 + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * x2, y = u ** 3 * y1 + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * y2;
+        blocked = x > left && x < right && y > top && y < bottom;
+      }
+      if (blocked) {
+        // Only when the Cube is in the way: pass over (or under) it with rounded corners and come straight in to the marker.
+        const lane = top - 24 > 8 ? top - 24 : bottom + 24, vertical = Math.sign(y2 - lane) || 1, horizontal = Math.sign(x2 - x1) || 1;
+        const corner = Math.max(4, Math.min(36, Math.abs(y2 - lane) / 2, Math.abs(x2 - x1) / 2));
+        d = `M ${x1} ${y1} C ${x1 + horizontal * 24} ${y1}, ${x1 + horizontal * 24} ${lane}, ${x1 + horizontal * 48} ${lane} L ${x2 - horizontal * corner} ${lane} C ${x2} ${lane}, ${x2} ${lane}, ${x2} ${lane + vertical * corner} L ${x2} ${y2}`;
+      }
+    }
+    path.setAttribute('d', d ?? `M ${x1} ${y1} C ${c1[0]} ${c1[1]}, ${c2[0]} ${c2[1]}, ${x2} ${y2}`);
     timer = setTimeout(() => { connector.classList.add('is-linked'); wrap.classList.add('is-linked'); }, 30);
   };
   const link = (nextMarker, nextOrbit = orbit) => {
-    marker = nextMarker; orbit = nextOrbit; connector.classList.remove('is-linked'); wrap.classList.remove('is-linked'); clearTimeout(timer);
+    marker = nextMarker; orbit = nextOrbit; unlink();
     if (!marker || !orbit) return;
     requestAnimationFrame(repaint);
   };
@@ -147,7 +185,10 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null, 
   const subscribe = orbit?.element;
   subscribe?.addEventListener('orbitchange', follow);
   if (marker) requestAnimationFrame(() => link(marker, orbit));
-  return { element: wrap, sentence, connector, link, update({ text: nextText, marker: nextMarker, orbit: nextOrbit } = {}) { if (nextText != null) sentence.textContent = nextText; if (nextMarker !== undefined) link(nextMarker, nextOrbit ?? orbit); else follow(); }, destroy() { clearTimeout(timer); window.removeEventListener('resize', follow); window.removeEventListener('scroll', follow, true); subscribe?.removeEventListener('orbitchange', follow); connector.remove(); wrap.remove(); connectorHost.style.position = restorePosition; } };
+  const api = { element: wrap, sentence, connector: null, link, update({ text: nextText, marker: nextMarker, orbit: nextOrbit } = {}) { if (nextText != null) sentence.textContent = nextText; if (nextMarker !== undefined) link(nextMarker, nextOrbit ?? orbit); else follow(); },
+    destroy() { destroyed = true; clearTimeout(timer); window.removeEventListener('resize', follow); window.removeEventListener('scroll', follow, true); subscribe?.removeEventListener('orbitchange', follow); connector?.remove(); wrap.remove(); if (positioned) connectorHost.style.position = restorePosition; if (coachLines.get(connectorHost) === api) coachLines.delete(connectorHost); } };
+  coachLines.set(connectorHost, api);
+  return api;
 }
 
 export function createActions(host, actions = []) {

@@ -1,21 +1,39 @@
 .orbit { position: relative; display: grid; place-items: center; color: var(--orbit-ink, #eeeae1); }
-.orbit__svg { overflow: visible; max-width: 100%; }
-.orbit__track { fill: none; stroke: var(--orbit-track, #373a36); stroke-width: 3; stroke-linecap: round; }
-.orbit__segment-track { fill: none; stroke: var(--orbit-track, #373a36); stroke-width: 4; stroke-linecap: round; }
-.orbit__segment-fill { fill: none; stroke-width: 8; stroke-linecap: round; }
-.orbit__segment.is-current .orbit__segment-track { stroke: var(--orbit-accent, #52e0ca); stroke-width: 8; }
-.orbit__segment.is-done .orbit__segment-track { stroke: var(--orbit-ink, #eeeae1); stroke-width: 6; }
-.orbit__segment.is-skipped .orbit__segment-track { stroke: var(--orbit-muted, #a7c7b9); stroke-width: 5; stroke-dasharray: 3 3; }
-.orbit__segment.is-wrong .orbit__segment-track, .orbit__segment.is-bad .orbit__segment-track { stroke: #ed8c70; stroke-width: 7; }
-.orbit__segment.is-good .orbit__segment-track { stroke: #52e0ca; stroke-width: 7; }
+.orbit__svg { overflow: visible; max-width: none; }
+/* Stroke ladder from the approved frames (design-spec ORBIT.stroke): track 3, done 6, lit 8, round caps.
+   --orbit-w-* are set per Orbit in rendered px divided by the scale, so the widths stay at spec size. */
+.orbit__track { fill: none; stroke: #2a2823; stroke-width: var(--orbit-w-track, 3); stroke-linecap: round; }
+.orbit__segment-track { fill: none; stroke: var(--orbit-track, #34312b); stroke-width: var(--orbit-w-track, 3); stroke-linecap: round; }
+.orbit__segment-fill { fill: none; stroke-width: var(--orbit-w-lit, 8); stroke-linecap: round; }
+.orbit__segment.is-current .orbit__segment-track { stroke: var(--orbit-accent, #3dbfad); stroke-width: var(--orbit-w-lit, 8); }
+.orbit__segment.is-done .orbit__segment-track { stroke: var(--orbit-ink, #ece6d8); stroke-width: var(--orbit-w-done, 6); }
+.orbit__segment.is-done .orbit__segment-fill, .orbit__segment.is-good .orbit__segment-fill, .orbit__segment.is-bad .orbit__segment-fill, .orbit__segment.is-quiet .orbit__segment-fill { stroke-width: var(--orbit-w-done, 6); }
+.orbit__segment.is-quiet .orbit__segment-track { stroke: #6d675c; stroke-width: var(--orbit-w-quiet, 5); }
+.orbit__segment.is-skipped .orbit__segment-track { stroke: var(--orbit-accent, #3dbfad); stroke-width: var(--orbit-w-skip, 3); }
+.orbit__segment.is-wrong .orbit__segment-track { stroke: #e6a642; stroke-width: var(--orbit-w-lit, 8); }
+.orbit__segment.is-bad .orbit__segment-track { stroke: #e6a642; stroke-width: var(--orbit-w-done, 6); }
+.orbit__segment.is-good .orbit__segment-track { stroke: #3dbfad; stroke-width: var(--orbit-w-done, 6); }
 .orbit__hit { fill: none; stroke: transparent; stroke-width: 26; cursor: pointer; pointer-events: stroke; outline: none; }
 .orbit__hit:focus-visible { stroke: currentColor; stroke-opacity: .38; }
 .orbit__current-dot { stroke: var(--orbit-bg, #141512); stroke-width: 3; }
 .orbit__label { fill: currentColor; font: 500 15px/1.1 'DM Mono', monospace; pointer-events: none; }
-.orbit__label-name { fill: var(--orbit-muted, #aaa99f); font-size: calc(12px * var(--orbit-label-scale, 1)); }
-.orbit__label-value { fill: var(--orbit-ink, #eeeae1); font-size: calc(15px * var(--orbit-label-scale, 1)); }
-.orbit__label-delta { fill: var(--orbit-muted, #aaa99f); font-size: calc(12px * var(--orbit-label-scale, 1)); }
-.orbit__label-bg { fill: var(--orbit-bg, #141512); }
+.orbit__label-name { fill: var(--orbit-muted, #9a9486); font-size: calc(12px * var(--orbit-label-scale, 1)); font-weight: 400; }
+.orbit__label-value { fill: var(--orbit-ink, #ece6d8); font-size: calc(16px * var(--orbit-label-scale, 1)); font-weight: 500; }
+.orbit__label-value.is-skip { fill: var(--orbit-accent, #3dbfad); font-size: calc(15px * var(--orbit-label-scale, 1)); }
+.orbit__label-delta { fill: var(--orbit-ink, #ece6d8); font-size: calc(12px * var(--orbit-label-scale, 1)); font-weight: 400; }
+.orbit__label-delta.is-good { fill: var(--orbit-accent, #3dbfad); }
+.orbit__label-delta.is-bad { fill: #e6a642; }
+.orbit__label-tag { font-size: calc(12px * var(--orbit-label-scale, 1)); font-weight: 500; fill: var(--orbit-accent, #3dbfad); }
+.orbit__label-tag.is-bad { fill: #e6a642; }
+.orbit__label-tag.is-neutral { fill: var(--orbit-muted, #9a9486); }
+/* Scramble / review move labels: centred on their segment at radius 330 (A-02). */
+.orbit__move-label { font: 400 calc(14px * var(--orbit-label-scale, 1)) 'DM Mono', monospace; fill: #6d675c; opacity: .8; pointer-events: none; }
+.orbit__move-label.is-future { fill: var(--orbit-ink, #ece6d8); opacity: 1; font-size: calc(16px * var(--orbit-label-scale, 1)); }
+.orbit__move-label.is-current { fill: var(--orbit-accent, #3dbfad); opacity: 1; font-weight: 500; font-size: calc(21px * var(--orbit-label-scale, 1)); }
+.orbit__move-label.is-wrong { fill: #e6a642; opacity: 1; font-weight: 500; font-size: calc(21px * var(--orbit-label-scale, 1)); }
+.orbit__window-count { font: 400 calc(12px * var(--orbit-label-scale, 1)) 'DM Mono', monospace; fill: #6d675c; pointer-events: none; }
+.orbit__marker-leader { stroke: #6d675c; stroke-width: 1.2; pointer-events: none; }
+.orbit__marker-origin { fill: #6d675c; pointer-events: none; }
 .orbit__caret { stroke: var(--orbit-ink, #eeeae1); stroke-width: 2; }
 .orbit__marker-cluster, .orbit__marker-expanded { cursor: pointer; outline: none; }
 .orbit__marker-ring { stroke: var(--orbit-bg, #141512); stroke-width: 3; }

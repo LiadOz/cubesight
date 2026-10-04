@@ -1,4 +1,11 @@
 // Pure geometry for Orbit. Angles start at 12 o'clock; positive direction is clockwise.
+import { ORBIT } from '../design-spec.js';
+/** The approved numbers (design-spec.js, extracted from the A-frames). VIEW is the square viewBox centred on the ring. */
+export const ORBIT_GEOMETRY = Object.freeze({
+  view: 760, radius: ORBIT.radius, startDeg: ORBIT.startDeg, sweepDeg: ORBIT.sweepDeg, gapDeg: ORBIT.gaps[0].spanDeg, moveGapDeg: ORBIT.gapSpanByFrame['A-02-scramble'].min,
+  stageLabelRadius: Math.round(ORBIT.labelRadius.stageIdle), moveLabelRadius: Math.round(ORBIT.labelRadius.currentMovePill), moveWindow: 22,
+  stroke: Object.freeze(Object.fromEntries(Object.entries(ORBIT.stroke).map(([key, value]) => [key, value.width]))),
+});
 const round = value => Math.round(value * 1000) / 1000;
 export const MINI_GLYPH_RANGE = Object.freeze({ min: 17, max: 48 });
 export const miniGlyphSize = value => Math.max(MINI_GLYPH_RANGE.min, Math.min(MINI_GLYPH_RANGE.max, Number(value) || MINI_GLYPH_RANGE.max));
@@ -33,11 +40,12 @@ export function ringLayout(segments = [], { gapDeg = 2.5, startDeg = 0, sweepDeg
   const weights = total > 0 ? raw.map(weight => weight / total) : raw.map(() => 1 / raw.length);
   let cursor = startDeg;
   return segments.map((segment, index) => {
-    cursor += directionSign * gaps[index] / 2;
+    // The gap sits between two segments, in full: it used to be split half before / half after, which halved the
+    // first gap and left the ring short at its far end.
+    cursor += directionSign * gaps[index];
     const from = cursor;
     cursor += directionSign * available * weights[index];
     const to = cursor;
-    cursor += directionSign * gaps[index] / 2;
     return { key: segment.key ?? String(index), from, to, mid: (from + to) / 2, direction };
   });
 }
@@ -123,4 +131,102 @@ export function clusterMarkers(markers = [], thresholdDeg = 5) {
   return groups.map((items, index) => ({ key: items.map(item => item.key ?? item.id ?? item._index).join('|'),
     items: items.map(({ _index, ...item }) => item), count: items.length,
     angle: round(items.reduce((sum, item) => sum + item.angle, 0) / items.length), index }));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Anchored ring labels and marker fan-out (the approved behaviour; numbers come from design-spec).
+// Pure: no DOM, unit-tested in node.
+// ---------------------------------------------------------------------------------------------
+const norm = degrees => ((degrees % 360) + 360) % 360;
+const MOVE_RE = /^[URFDLBMESxyzurfdlb]w?[2'\u2032\u2019]?$/;
+/** True when every labelled segment is a bare move (R, U2, F\u2032): the scramble / review rings. */
+export function looksLikeMoves(segments = []) {
+  const labelled = segments.filter(segment => segment.label);
+  return labelled.length > 0 && labelled.every(segment => segment.value == null && segment.delta == null && !segment.tag && MOVE_RE.test(String(segment.label)));
+}
+
+/** Window of labels that follows the current move: `size` labels with the rest counted as before/after. */
+export function labelWindow(count, currentIndex = 0, size = 22) {
+  if (count <= size) return { from: 0, to: count - 1, before: 0, after: 0, windowed: false };
+  const at = Math.max(0, Math.min(count - 1, currentIndex));
+  const from = Math.max(0, Math.min(count - size, at - Math.floor(size / 2)));
+  const to = from + size - 1;
+  return { from, to, before: from, after: count - 1 - to, windowed: true };
+}
+
+/**
+ * Place every label ON its own angle. Stage blocks sit with their anchor edge on `stageRadius`;
+ * move labels are centred on `moveRadius`. Nothing slides sideways and nothing is dropped for
+ * crowding: when move labels are tighter than `pitch` px they fan across `lanes` radii instead.
+ * Only a scramble too long for one radius (`maxSingle`) is windowed to `windowSize` around the current move.
+ * items: {key, angle, kind:'move'|'stage', width?, height?, current?}
+ */
+export function ringLabels(items, { cx, cy, stageRadius, moveRadius, pitch = 22, lanes = 3, windowSize = 22, ringStart = 215, ringSweep = 290, view = 760, clampToView = false } = {}) {
+  const moves = items.filter(item => item.kind === 'move');
+  const arc = moveRadius * ringSweep * Math.PI / 180;
+  const maxSingle = Math.floor(arc / pitch);
+  const currentAt = Math.max(0, moves.findIndex(item => item.current));
+  const win = moves.length > maxSingle ? labelWindow(moves.length, currentAt, windowSize) : { from: 0, to: moves.length - 1, before: 0, after: 0, windowed: false };
+  const inWindow = new Map(moves.map((item, at) => [item.key, at >= win.from && at <= win.to]));
+  const visibleMoves = moves.filter(item => inWindow.get(item.key));
+  const minPitch = visibleMoves.length > 1 ? Math.min(...visibleMoves.slice(1).map((item, at) => {
+    const distance = Math.abs(((item.angle - visibleMoves[at].angle + 540) % 360) - 180);
+    return distance * Math.PI / 180 * moveRadius;
+  })) : Infinity;
+  const fan = minPitch < pitch;
+  const laneOf = new Map(visibleMoves.map((item, at) => [item.key, fan ? at % lanes : 0]));
+  const placed = items.map(item => {
+    const angle = norm(item.angle);
+    if (item.kind === 'move') {
+      const lane = laneOf.get(item.key) ?? 0, radius = moveRadius + lane * pitch;
+      const point = polar(cx, cy, radius, angle);
+      return { key: item.key, kind: 'move', angle, radius, lane, x: point.x, y: point.y, anchor: 'middle', side: 'center', hidden: !inWindow.get(item.key) };
+    }
+    const point = polar(cx, cy, stageRadius, angle);
+    const pole = angle < 9 || angle > 351 ? 'top' : Math.abs(angle - 180) < 9 ? 'bottom' : null;
+    const height = item.height ?? 44;
+    // The block's nearest edge, not its centre, sits on the radius: push it away from the ring by half its height.
+    const lift = Math.cos(angle * Math.PI / 180);
+    const y = point.y - Math.sign(lift) * Math.min(1, Math.abs(lift) * 2.5) * height / 2;
+    const anchor = pole ? 'middle' : angle < 180 ? 'start' : 'end';
+    // On a narrow screen (clampToView) the block is pulled inside the drawing rather than dropped or slid along the ring.
+    const width = item.width ?? 0;
+    const x = !clampToView ? point.x : anchor === 'start' ? Math.min(point.x, view - width) : anchor === 'end' ? Math.max(point.x, width) : Math.max(width / 2, Math.min(view - width / 2, point.x));
+    return { key: item.key, kind: 'stage', angle, radius: stageRadius, lane: 0, x: round(x), y: round(y), anchor, side: pole ? `center-${pole}` : angle < 180 ? 'right' : 'left', hidden: false };
+  });
+  return { labels: placed, window: win, fanned: fan };
+}
+
+/**
+ * Fan a crowded run of markers out instead of merging them. Each marker keeps its own badge: lane 0 is the
+ * ring itself, further lanes step inward by `pitch`, and markers inside a lane are spread along the arc to be
+ * at least `pitch` apart (centred back on where they belong). `trueAngle` is where the leader line points.
+ */
+export function fanMarkers(markers = [], { radius, pitch = 26, maxLanes = 4, thresholdDeg } = {}) {
+  const linkDeg = thresholdDeg ?? (pitch / radius) * 180 / Math.PI;
+  const sorted = markers.map((marker, index) => ({ ...marker, angle: Number(marker.angle) || 0, _index: index }))
+    .sort((a, b) => a.angle - b.angle);
+  const runs = [];
+  for (const marker of sorted) {
+    const run = runs.at(-1);
+    if (run && marker.angle - run.at(-1).angle < linkDeg) run.push(marker); else runs.push([marker]);
+  }
+  const out = [];
+  for (const run of runs) {
+    if (run.length === 1) { const { _index, ...marker } = run[0]; out.push({ ...marker, trueAngle: marker.angle, radius, lane: 0, key: marker.key ?? marker.id ?? _index }); continue; }
+    const lanes = Math.max(1, Math.min(maxLanes, run.length, Math.floor(radius * 0.45 / pitch) + 1));   // lanes stay clear of the cube
+    const buckets = Array.from({ length: lanes }, () => []);
+    run.forEach((marker, at) => buckets[at % lanes].push(marker));
+    buckets.forEach((bucket, lane) => {
+      const laneRadius = radius - lane * pitch, step = (pitch / laneRadius) * 180 / Math.PI;
+      const centre = bucket.reduce((sum, marker) => sum + marker.angle, 0) / bucket.length;
+      // Stagger odd lanes by half a pitch so neighbours on adjacent lanes never touch.
+      const stagger = lane % 2 ? step / 2 : 0;
+      bucket.forEach((marker, at) => {
+        const { _index, ...rest } = marker;
+        out.push({ ...rest, trueAngle: marker.angle, angle: round(centre + (at - (bucket.length - 1) / 2) * step + stagger), radius: laneRadius, lane, key: rest.key ?? rest.id ?? _index });
+      });
+    });
+  }
+  return out.sort((a, b) => a.trueAngle - b.trueAngle || a.lane - b.lane);
 }

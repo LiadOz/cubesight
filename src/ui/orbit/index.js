@@ -1,14 +1,16 @@
-import { arcPath, clusterMarkers, miniGlyphSize, placeLabels, polar, ringLayout } from './geometry.js';
+import { arcPath, clusterMarkers, fanMarkers, looksLikeMoves, miniGlyphSize, ORBIT_GEOMETRY, polar, ringLabels, ringLayout } from './geometry.js';
+import { groupEndLabels } from './end-labels.js';
+import { CANVAS, ORBIT } from '../design-spec.js';
 import './orbit.css';
 
 const NS = 'http://www.w3.org/2000/svg';
 const SIZES = { XL: 520, L: 420, M: 300, S: 210, mini: 44 };
-const COLORS = { track: '#494b47', future: '#777a74', current: '#52e0ca', done: '#e8e4da', skipped: '#a7c7b9', wrong: '#edae62', good: '#52e0ca', bad: '#ed8c70' };
-const cubeLabelSafeArea = (cx, cy, clearance = 112) => [{ left: cx - clearance, right: cx + clearance, top: cy - clearance, bottom: cy + clearance }];
-const markerSafeAreas = (cx, cy, radius, markers, hitRadius = 20) => clusterMarkers(markers, 5).map(cluster => {
-  const point = polar(cx, cy, radius, cluster.angle), padding = Math.max(hitRadius, cluster.count > 1 ? 17 : 13);
-  return { left: point.x - padding, right: point.x + padding, top: point.y - padding, bottom: point.y + padding };
-});
+// Every number below is read from design-spec.js (extracted from the approved A-frames): the ring is r=300 on a
+// 900 px canvas, so a square viewBox of VIEW units centred on the ring renders 1:1 at width VIEW. Smaller hosts
+// scale the whole thing; strokes and type are divided by that scale so they stay at their specified pixel size.
+const { view: VIEW, radius: RING_RADIUS, stageLabelRadius: STAGE_RADIUS, moveLabelRadius: MOVE_RADIUS, stroke: STROKE, gapDeg: SEGMENT_GAP_DEG, moveGapDeg: MOVE_GAP_DEG, moveWindow: MOVE_WINDOW } = ORBIT_GEOMETRY;
+const MINI_VIEW = { view: 560, radius: 190 };
+const COLORS = { current: ORBIT.stroke.active.stroke, done: ORBIT.stroke.done.stroke, quiet: ORBIT.stroke.doneQuiet.stroke, skipped: ORBIT.stroke.skip.stroke, wrong: ORBIT.stroke.activeWrong.stroke, good: ORBIT.stroke.doneGood.stroke, bad: ORBIT.stroke.doneWarn.stroke };
 const svg = (name, attrs = {}) => { const node = document.createElementNS(NS, name); for (const [key, value] of Object.entries(attrs)) if (value != null) node.setAttribute(key, String(value)); return node; };
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const deltaText = value => {
@@ -17,8 +19,23 @@ const deltaText = value => {
   if (/^[+-−]?0\.00$/.test(String(value).trim())) return '';
   return String(value);
 };
-const labelWidth = segment => Math.min(260, Math.max(52, String(segment.label || '').length * 7.5, String(segment.value ?? '').length * 9, String(deltaText(segment.delta)).length * 7.2) + 16);
-const labelHeight = segment => segment.delta != null && deltaText(segment.delta) ? 64 : segment.value != null ? 44 : 24;
+const round2 = value => Math.round(value * 100) / 100;
+/** The stage label block (A-05): name 12 / value 16 / delta 12 / tag 12 (inset 16), baselines 0, 21, 38, 55 apart, scaled with the Orbit. */
+function stageBlock(segment, group, scale = 1) {
+  const merged = group && group.keys.length > 1;
+  const name = merged ? group.name : segment.short ?? segment.label;
+  const value = merged ? group.value : segment.value;
+  const delta = merged ? '' : deltaText(segment.delta);
+  const tone = segment.deltaTone || (String(delta).startsWith('\u2212') || String(delta).startsWith('-') ? 'good' : 'neutral');
+  const rows = []; let y = 10 * scale;
+  const push = (cls, text, step, inset = 0) => { if (text == null || text === '') return; if (rows.length) y += step * scale; rows.push({ cls, text: String(text), y, inset }); };
+  push('orbit__label-name', name, 0);
+  push(`orbit__label-value${merged && group.kind === 'skip' ? ' is-skip' : ''}`, value, 21);
+  push(`orbit__label-delta is-${tone}`, delta, value == null || value === '' ? 21 : 17);
+  push(`orbit__label-tag is-${segment.tagTone || 'good'}`, segment.tag, rows.length > 1 ? 17 : 21, 16 * scale);
+  const size = cls => (cls.includes('label-value') ? 16 : 12) * scale * 0.7;   // DM Mono advance, with a little slack
+  return { rows, height: y + 8 * scale, width: Math.max(0, ...rows.map(row => row.text.length * size(row.cls) + row.inset)) };
+}
 /** One accessible SVG Orbit. Instantiate once and call update() as its view changes. */
 export class Orbit {
   constructor(host, options = {}) {
@@ -75,15 +92,16 @@ export class Orbit {
 
   normalize(options) {
     const mini = options.size === 'mini';
-    const viewSize = 560;
-    const cx = viewSize / 2, cy = viewSize / 2, radius = mini ? 190 : 190;
+    const viewSize = mini ? MINI_VIEW.view : VIEW;
+    const cx = viewSize / 2, cy = viewSize / 2, radius = mini ? MINI_VIEW.radius : RING_RADIUS;
     const gap = options.shape === 'full' ? 0 : clamp(Number(options.gap) || 70, 0, 170);
     const sweep = 360 - gap;
     const direction = options.direction === 'counterclockwise' ? 'counterclockwise' : 'clockwise';
     const start = Number.isFinite(Number(options.start)) ? Number(options.start) : 180;
     const startAngle = start + (gap ? gap / 2 : 0) * (direction === 'counterclockwise' ? -1 : 1);
     const segments = Array.isArray(options.segments) ? options.segments : [];
-    const layout = ringLayout(segments, { gapDeg: Number(options.segmentGap ?? 2.5), startDeg: startAngle, sweepDeg: sweep, direction, sections: options.sections || [] });
+    const moveGap = options.labelKind === 'move' || (options.labelKind == null && looksLikeMoves(segments)) ? MOVE_GAP_DEG : SEGMENT_GAP_DEG;
+    const layout = ringLayout(segments, { gapDeg: Number(options.segmentGap ?? moveGap), startDeg: startAngle, sweepDeg: sweep, direction, sections: options.sections || [] });
     const index = new Map(layout.map((item, at) => [item.key, at]));
     const markers = (options.markers || []).map(marker => {
       if (marker.angle != null) return marker;
@@ -93,16 +111,7 @@ export class Orbit {
       const fill = clamp(Number(marker.position ?? marker.fill ?? .5), 0, 1);
       return { ...marker, angle: part.from + (part.to - part.from) * fill };
     }).filter(Boolean);
-    const collision = new Map();
-    const renderWidth = Math.min(mini ? miniGlyphSize(options.glyphSize) : options.fitHost ? Infinity : SIZES[options.size] || SIZES.L,
-      this.host.clientWidth || SIZES.L, this.host.clientHeight || SIZES.L);
-    const fontScale = Math.max(1, Math.min(2.2, 560 / renderWidth));
-    const labelAnchors = segments.map((segment, at) => ({ key: layout[at].key, angle: layout[at].mid,
-      width: labelWidth(segment) * fontScale, height: labelHeight(segment) * fontScale,
-      rank: Math.max(Number(segment.importance) || 0, segment.selected ? 1000 : 0, segment.state === 'current' ? 500 : 0) }));
-    const labels = mini ? [] : placeLabels(labelAnchors, { cx, cy, radius, offset: 82, minGap: 24, top: 18, bottom: 542, obstacles: [...cubeLabelSafeArea(cx, cy, options.centerClearance), ...markerSafeAreas(cx, cy, radius, markers)] });
-    labels.forEach((label, at) => collision.set(label.key, label));
-    return { cx, cy, radius, gap, sweep, startAngle, direction, segments, layout, labels: collision, markers, options };
+    return { cx, cy, radius, viewSize, gap, sweep, startAngle, direction, segments, layout, markers, options };
   }
 
   duration() { return clamp(Number(this.options.duration) || 360, 300, 450); }
@@ -169,12 +178,20 @@ export class Orbit {
     const gap = model.interpolatedGap ?? model.gap;
     const mini = options.size === 'mini';
     const hostBox = model.layoutBounds || this.host.getBoundingClientRect();
-    const fittedWidth = Math.min(options.fitHost && !mini ? Infinity : width, hostBox.width || width, hostBox.height || width);
+    // fitHost Orbits are sized from the canvas, not squeezed into whatever box the layout left: the frames put the
+    // ring at r=300 on a 1440x900 canvas (r=150 on the 390 px phone), so the SVG is VIEW wide at canvas scale 1.
+    const canvasSized = !mini && (options.canvasScale ?? (options.fitHost === true && options.labelStyle === 'around')) === true;
+    const canvasUnit = window.innerWidth <= 640 ? 0.5 : Math.min(1.25, window.innerWidth / CANVAS.desktop.width, window.innerHeight / CANVAS.desktop.height);
+    const fittedWidth = canvasSized ? Math.round(VIEW * canvasUnit) : Math.min(options.fitHost && !mini ? Infinity : width, hostBox.width || width, hostBox.height || width);
     const renderWidth = fittedWidth;
-    this.element.style.width = `${fittedWidth}px`;
-    this.element.style.height = `${fittedWidth}px`;
-    this.element.style.maxWidth = '100%';
-    this.element.style.maxHeight = '100%';
+    // Important, so a screen stylesheet that stretches the element to its slot cannot undo the canvas size.
+    // min(.., 100vw): a viewport that shrinks before the next redraw (rotation, resize) cannot produce a horizontal scroll.
+    const cssWidth = canvasSized ? `min(${fittedWidth}px, 100vw)` : `${fittedWidth}px`;
+    this.element.style.setProperty('width', cssWidth, canvasSized ? 'important' : '');
+    this.element.style.setProperty('height', cssWidth, canvasSized ? 'important' : '');
+    this.element.style.maxWidth = canvasSized ? 'none' : '100%';
+    this.element.style.maxHeight = canvasSized ? 'none' : '100%';
+    this.element.style.flex = canvasSized ? 'none' : '';
     const sideLabels = options.labelStyle === 'side';
     const currentFocus = this.element.querySelector('[data-segment]:focus,[data-marker-cluster]:focus,[data-marker-expanded]:focus,[data-marker-detail-key]:focus,.orbit__marker-details-close:focus');
     const focusKey = currentFocus?.dataset.segment
@@ -190,24 +207,46 @@ export class Orbit {
     const sweep = 360 - gap;
     const dir = model.direction === 'counterclockwise' ? -1 : 1;
     const startAngle = (Number(options.start) || 180) + (gap ? gap / 2 : 0) * (model.direction === 'counterclockwise' ? -1 : 1);
-    const layout = model.layout || ringLayout(segments, { gapDeg: Number(options.segmentGap ?? 2.5), startDeg: startAngle, sweepDeg: sweep, direction: model.direction, sections: options.sections || [] });
+    const layout = model.layout || ringLayout(segments, { gapDeg: Number(options.segmentGap ?? SEGMENT_GAP_DEG), startDeg: startAngle, sweepDeg: sweep, direction: model.direction, sections: options.sections || [] });
     const layoutByKey = new Map(layout.map(part => [String(part.key), part]));
-    const activeKey = focusKey;
-    const fontScale = Math.max(1, Math.min(2.2, 560 / renderWidth));
-    const hitRadius = Math.max(20.2, 20.2 * 560 / renderWidth);
-    const labelObstacles = [...cubeLabelSafeArea(cx, cy, options.centerClearance), ...markerSafeAreas(cx, cy, radius, markers, hitRadius)];
-    const labelPositions = mini || sideLabels ? new Map() : new Map(placeLabels(segments.map((segment, index) => ({ key: String(segment.key ?? index), angle: layoutByKey.get(String(segment.key ?? index))?.mid ?? layout[index].mid, width: labelWidth(segment) * fontScale + 6, height: labelHeight(segment) * fontScale + 6, rank: Math.max(Number(segment.importance) || 0, segment.selected ? 1000 : 0, segment.state === 'current' ? 500 : 0, String(segment.key ?? index) === activeKey ? 2000 : 0) })), { cx, cy, radius, offset: 82, minGap: 24, top: 18, bottom: 542, obstacles: labelObstacles }).map(label => [label.key, label]));
-    const root = svg('svg', { class: `orbit__svg${mini ? ' orbit__svg--mini' : ''}`, viewBox: '0 0 560 560', role: 'list', 'aria-label': options.label || 'orbit segments', preserveAspectRatio: 'xMidYMid meet', focusable: 'false' });
+    const view = model.viewSize ?? (mini ? MINI_VIEW.view : VIEW);
+    const k = view / renderWidth;                       // viewBox units per rendered px
+    const fontScale = Math.max(1, Math.min(2.2, k));
+    const markerR = 11 * fontScale;
+    const fanned = options.markerFan !== false && !mini;
+    // Every marker is its own hit target: 40 px on a phone, 22 px (the badge itself) elsewhere. The fan spaces markers by that diameter.
+    const hitPx = window.innerWidth <= 640 ? 40 : 22;
+    const hitRadius = fanned ? hitPx / 2 * k : Math.max(20.2, 20.2 * k);
+    const root = svg('svg', { class: `orbit__svg${mini ? ' orbit__svg--mini' : ''}`, viewBox: `0 0 ${view} ${view}`, role: 'list', 'aria-label': options.label || 'orbit segments', preserveAspectRatio: 'xMidYMid meet', focusable: 'false' });
     // Fit the SVG and Orbit frame to constrained hosts so preserveAspectRatio
     // keeps the ring centered within the available slot.
-    root.style.width = `${renderWidth}px`; root.style.height = `${renderWidth}px`;
-    const track = svg('path', { class: 'orbit__track', d: arcPath(cx, cy, radius, startAngle, startAngle + dir * sweep, model.direction) });
-    root.append(track);
+    root.style.setProperty('width', cssWidth, canvasSized ? 'important' : ''); root.style.setProperty('height', cssWidth, canvasSized ? 'important' : '');
+    // The stroke ladder (track 3, done 6, lit 8) is in rendered px, as in the frames: divide by the scale.
+    const stroke = value => String(round2(value * Math.max(1, k)));
+    const ladder = mini ? { track: 9, quiet: 9, done: 9, lit: 9, skip: 9 } : { track: STROKE.idle, quiet: STROKE.doneQuiet, done: STROKE.done, lit: STROKE.active, skip: STROKE.skip };
+    for (const [name, width] of Object.entries(ladder)) this.element.style.setProperty(`--orbit-w-${name}`, mini ? String(width) : stroke(width));
+    // The full-sweep track is NOT drawn under the segments: it filled the 2.5 degree gaps and turned the halo into one circle.
+    // It only appears when there are no segments at all, in the template colour.
+    if (!segments.length) root.append(svg('path', { class: 'orbit__track', d: arcPath(cx, cy, radius, startAngle, startAngle + dir * sweep, model.direction) }));
+    const moveRing = !mini && !sideLabels && (options.labelKind === 'move' || (options.labelKind == null && looksLikeMoves(segments)));
+    // Skipped / merged stages end together: one label between their arcs instead of one each.
+    const groups = !mini && !sideLabels && !moveRing ? groupEndLabels(segments.map((segment, index) => ({ key: String(segment.key ?? index), state: segment.state, merged: segment.merged })), segment => { const original = segments.find((candidate, at) => String(candidate.key ?? at) === segment.key); return original?.short ?? original?.label ?? segment.key; }) : [];
+    const groupOf = new Map(); groups.forEach(group => group.keys.forEach(key => groupOf.set(key, group)));
+    const angleOf = key => layoutByKey.get(key)?.mid ?? 0;
+    const labelItems = mini || sideLabels ? [] : segments.map((segment, index) => {
+      const key = String(segment.key ?? index);
+      const group = groupOf.get(key);
+      const spanAngle = group && group.keys.length > 1 ? group.keys.reduce((sum, member) => sum + angleOf(member), 0) / group.keys.length : angleOf(key);
+      return { key, angle: spanAngle, kind: moveRing ? 'move' : 'stage', current: segment.state === 'current', height: stageBlock(segment, group, fontScale).height, width: stageBlock(segment, group, fontScale).width };
+    });
+    const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: window.innerWidth <= 640 });
+    const labelPositions = new Map(placedLabels.labels.map(label => [label.key, label]));
+    this.labelModel = placedLabels;
     const parts = [];
     segments.forEach((segment, index) => {
       const key = String(segment.key ?? index), arc = layoutByKey.get(key);
       if (!arc) return;
-      const state = segment.state || 'future', color = segment.fillColor || segment.color || COLORS[state] || COLORS.future;
+      const state = segment.state === 'done' && moveRing ? 'quiet' : segment.state || 'future', color = segment.fillColor || segment.color || COLORS[state] || COLORS.done;
       const group = svg('g', { class: `orbit__segment is-${state}`, 'data-key': key, role: 'listitem', 'aria-label': [segment.label, segment.value, deltaText(segment.delta)].filter(Boolean).join(', ') || key });
       const trackPath = svg('path', { class: 'orbit__segment-track', d: arcPath(cx, cy, radius, arc.from, arc.to, model.direction) });
       const ratio = clamp(Number(segment.fill) || 0, 0, 1);
@@ -220,43 +259,59 @@ export class Orbit {
       hit.addEventListener('pointerleave', event => options.onSegmentLeave?.(segment, event));
       hit.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.onSegment?.(segment, event); } });
       group.append(hit);
-      if (state === 'current') {
+      if (state === 'current' && !moveRing) {
         const end = arc.from + (arc.to - arc.from) * (segment.caretPosition ?? Math.min(1, offset + ratio)), point = polar(cx, cy, radius, end);
-        group.append(svg('circle', { class: 'orbit__current-dot', cx: point.x, cy: point.y, r: 5.5, fill: color }));
+        group.append(svg('circle', { class: 'orbit__current-dot', cx: point.x, cy: point.y, r: 5.5 * fontScale, fill: color }));
       }
       root.append(group); parts.push({ segment, arc });
       if (!mini && (segment.label || segment.value != null || segment.delta != null)) {
         const placement = labelPositions.get(key);
         if (!sideLabels && placement?.hidden) return;
-        const label = svg('g', { class: `orbit__label${sideLabels ? ' is-side' : ''}`, 'data-label-for': key,
-          transform: sideLabels ? `translate(${cx + radius + 30} ${38 + index * 25})` : `translate(${placement?.x ?? cx} ${placement?.y ?? cy})`,
-          'text-anchor': sideLabels ? 'start' : placement?.anchor || 'middle' });
-        if (!sideLabels) {
-          const width = labelWidth(segment) * fontScale, height = labelHeight(segment) * fontScale;
-          const x = placement?.anchor === 'start' ? -3 : placement?.anchor === 'end' ? -width - 3 : -width / 2 - 3;
-          label.append(svg('rect', { class: 'orbit__label-bg', x, y: -height / 2 - 3, width: width + 6, height: height + 6, rx: 4 }));
+        // Merged groups draw one label, on their first member.
+        const merge = groupOf.get(key);
+        if (!sideLabels && merge && merge.keys.length > 1 && merge.keys[0] !== key) return;
+        if (moveRing) {
+          const label = svg('text', { class: `orbit__move-label is-${state}`, x: placement.x, y: placement.y, 'data-label-for': key, 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+          label.textContent = segment.label; root.append(label);
+          return;
         }
+        const block = stageBlock(segment, merge, fontScale);
+        const label = svg('g', { class: `orbit__label${sideLabels ? ' is-side' : ''}`, 'data-label-for': key,
+          transform: sideLabels ? `translate(${cx + radius + 30} ${38 + index * 25})` : `translate(${placement?.x ?? cx} ${(placement?.y ?? cy) - block.height / 2})`,
+          'text-anchor': sideLabels ? 'start' : placement?.anchor || 'middle' });
         const title = svg('title'); title.textContent = segment.ariaLabel || [segment.label, segment.value, deltaText(segment.delta)].filter(Boolean).join(' · '); label.append(title);
-        const text = (className, value, y) => { if (value == null || value === '') return; const row = svg('text', { class: className, x: 0, y }); row.textContent = value; label.append(row); };
-        if (sideLabels) { text('orbit__label-name', segment.label || '', -12); text('orbit__label-value', [segment.value, deltaText(segment.delta)].filter(Boolean).join(' · '), 8); }
-        else {
-          const hasDetails = segment.value != null || Boolean(deltaText(segment.delta));
-          text('orbit__label-name', segment.label || '', hasDetails ? -14 : 4);
-          text('orbit__label-value', segment.value ?? '', 10);
-          text('orbit__label-delta', deltaText(segment.delta), 31);
+        if (sideLabels) {
+          const text = (className, value, y) => { if (value == null || value === '') return; const row = svg('text', { class: className, x: 0, y }); row.textContent = value; label.append(row); };
+          text('orbit__label-name', segment.label || '', -12); text('orbit__label-value', [segment.value, deltaText(segment.delta)].filter(Boolean).join(' · '), 8);
+        } else {
+          const sign = placement?.anchor === 'end' ? -1 : placement?.anchor === 'start' ? 1 : 0;
+          for (const row of block.rows) { const node = svg('text', { class: row.cls, x: sign * row.inset, y: row.y }); node.textContent = row.text; label.append(node); }
         }
         root.append(label);
       }
     });
+    if (moveRing && placedLabels.window.windowed) {
+      const { before, after } = placedLabels.window;
+      const near = (angle, text, anchor) => { const point = polar(cx, cy, MOVE_RADIUS + 14, angle); const node = svg('text', { class: 'orbit__window-count', x: point.x, y: point.y, 'text-anchor': anchor, 'dominant-baseline': 'central' }); node.textContent = text; root.append(node); };
+      if (before) near(startAngle - dir * 12, `‹ ${before}`, 'end');
+      if (after) near(startAngle + dir * (sweep + 12), `${after} ›`, 'start');
+    }
     if (options.caret != null && !mini) {
       const at = Number(options.caret), p = polar(cx, cy, radius, at), p1 = polar(cx, cy, radius + 10, at);
       root.append(svg('line', { class: 'orbit__caret', x1: p.x, y1: p.y, x2: p1.x, y2: p1.y }));
     }
-    for (const cluster of clusterMarkers(markers, Number(options.markerClusterDegrees) || 5)) {
-      const p = polar(cx, cy, radius, cluster.angle);
+    const clusters = fanned
+      ? fanMarkers(markers, { radius, pitch: Math.max(2 * markerR + 4, hitPx * k), maxLanes: 5 }).map(marker => ({ key: String(marker.key), items: [marker], count: 1, angle: marker.angle, radius: marker.radius, trueAngle: marker.trueAngle, lane: marker.lane }))
+      : clusterMarkers(markers, Number(options.markerClusterDegrees) || 5);
+    for (const cluster of clusters) {
+      const p = polar(cx, cy, cluster.radius ?? radius, cluster.angle);
+      if (fanned && (cluster.lane > 0 || Math.abs(cluster.angle - cluster.trueAngle) > 0.01)) {
+        const origin = polar(cx, cy, radius, cluster.trueAngle);
+        root.append(svg('line', { class: 'orbit__marker-leader', x1: origin.x, y1: origin.y, x2: p.x, y2: p.y }), svg('circle', { class: 'orbit__marker-origin', cx: origin.x, cy: origin.y, r: 2.5 * fontScale }));
+      }
       const group = svg('g', { class: `orbit__marker-cluster${cluster.count > 1 ? ' is-cluster' : ''}`, transform: `translate(${p.x} ${p.y})`, tabindex: '0', role: 'button', 'aria-label': cluster.count > 1 ? `${cluster.count} markers; activate to inspect facts` : cluster.items[0].label || 'marker', 'data-marker-cluster': cluster.key, 'data-marker-keys': JSON.stringify(cluster.items.map(item => String(item.key ?? item.id ?? ''))) });
       const title = svg('title'); title.textContent = cluster.items.map(item => item.label).filter(Boolean).join(' · ') || `${cluster.count} markers`;
-      group.append(title, svg('circle', { class: 'orbit__marker-hit', cx: 0, cy: 0, r: hitRadius }), svg('circle', { class: 'orbit__marker-ring', r: cluster.count > 1 ? 13 : 10, fill: cluster.items.some(item => item.type === 'bad' || item.tone === 'bad') ? COLORS.bad : COLORS.good }));
+      group.append(title, svg('circle', { class: 'orbit__marker-hit', cx: 0, cy: 0, r: hitRadius }), svg('circle', { class: 'orbit__marker-ring', r: cluster.count > 1 ? markerR + 3 : markerR, fill: cluster.items.some(item => item.type === 'bad' || item.tone === 'bad') ? COLORS.bad : COLORS.good }));
       if (cluster.count > 1) { const count = svg('text', { class: 'orbit__marker-count', x: 0, y: 4 }); count.textContent = String(cluster.count); group.append(count); }
       else { const mark = svg('text', { class: 'orbit__marker-mark', x: 0, y: 4 }); mark.textContent = cluster.items[0].type === 'bad' || cluster.items[0].tone === 'bad' ? '!' : '✦'; group.append(mark); }
       const expand = event => {
@@ -281,7 +336,7 @@ export class Orbit {
       if (section.label && !mini) { const labelPoint = polar(cx, cy, radius + 17, boundary.from); const text = svg('text', { class: 'orbit__section-label', x: labelPoint.x, y: labelPoint.y }); text.textContent = section.label; root.append(text); }
     });
     this.element.replaceChildren(root);
-    const activeCluster = clusterMarkers(markers, Number(options.markerClusterDegrees) || 5).find(cluster => this.expandedClusters.has(cluster.key) && cluster.count > 1);
+    const activeCluster = clusters.find(cluster => this.expandedClusters.has(cluster.key) && cluster.count > 1);
     if (activeCluster) {
       const details = document.createElement('section');
       details.className = 'orbit__marker-details';
@@ -322,7 +377,7 @@ export class Orbit {
       const left = Math.max(8, Math.min(Math.max(8, orbitBox.width - width - 8), (anchorBox?.left ?? rootBox.left) - orbitBox.left + (anchorBox?.width ?? 0) / 2 - width / 2));
       const top = Math.max(8, Math.min(orbitBox.height - 180, (anchorBox?.bottom ?? rootBox.top) - orbitBox.top + 10));
       details.style.left = `${left}px`; details.style.top = `${top}px`;
-      const ratio = rootBox.width / 560;
+      const ratio = rootBox.width / view;
       root.append(svg('line', { class: 'orbit__marker-detail-connector', x1: (anchorBox.left + anchorBox.width / 2 - rootBox.left) / ratio, y1: (anchorBox.top + anchorBox.height / 2 - rootBox.top) / ratio, x2: (orbitBox.left + left + width / 2 - rootBox.left) / ratio, y2: (orbitBox.top + top - rootBox.top) / ratio }));
       details.addEventListener('pointerdown', event => event.stopPropagation());
     }
@@ -356,4 +411,4 @@ export function createMiniOrbit(host, { label = '', value = '', size = 38, ...op
   const orbit = new Orbit(glyphHost, { ...options, size: 'mini', glyphSize: size, label: label || 'mini orbit' });
   return { element: row, orbit, update(next = {}) { if (next.label != null) name.textContent = next.label; if (next.value != null) detail.textContent = next.value; return orbit.update(next); }, destroy() { orbit.destroy(); row.remove(); } };
 }
-export { arcPath, clusterMarkers, MINI_GLYPH_RANGE, miniGlyphSize, placeLabels, polar, ringLayout } from './geometry.js';
+export { arcPath, clusterMarkers, fanMarkers, labelWindow, ORBIT_GEOMETRY, looksLikeMoves, MINI_GLYPH_RANGE, miniGlyphSize, placeLabels, polar, ringLabels, ringLayout } from './geometry.js';

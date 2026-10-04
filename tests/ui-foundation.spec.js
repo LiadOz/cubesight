@@ -47,38 +47,33 @@ test('Orbit takes fresh host bounds when a resize interrupts a morph', async ({ 
   expect(fitted.renderedWidth).toBeLessThanOrEqual(fitted.hostWidth);
 });
 
-test('crowded Orbit markers expand by keyboard and preserve exact marker lookup', async ({ page }) => {
+test('crowded Orbit markers fan out onto their own badges and stay reachable by keyboard with exact marker lookup', async ({ page }) => {
+  // Approved (W-20, TC-00 Q3 B): a crowded ring fans markers out instead of merging them into one count badge.
   await page.goto('/src/ui/gallery.html?flow=results');
-  const cluster = page.locator('.f0-orbit [data-marker-cluster].is-cluster').first();
-  await expect(cluster).toBeVisible();
-  const clusterSize = await cluster.evaluate(node => JSON.parse(node.dataset.markerKeys).length);
+  const total = await page.evaluate(() => window.__f0Orbit.current.markers.length);
+  expect(total).toBeGreaterThan(2);
+  await expect(page.locator('.f0-orbit [data-marker-cluster]')).toHaveCount(total);
+  await expect(page.locator('.f0-orbit [data-marker-cluster].is-cluster')).toHaveCount(0);
   const key = await page.evaluate(() => window.__f0Orbit.current.markers.find(marker => marker.key === 'mark-1')?.key);
   expect(await page.evaluate(keyValue => window.__f0Orbit.getMarkerElement(keyValue)?.dataset.markerKeys, key)).toContain('mark-1');
-  await cluster.focus();
-  await page.keyboard.press('Enter');
-  await expect(page.locator('.f0-orbit [data-marker-expanded]')).toHaveCount(clusterSize);
-  await page.locator('.f0-orbit [data-marker-expanded="mark-1"]').focus();
+  await page.locator('.f0-orbit [data-marker-cluster]').filter({ has: page.locator('title') }).first().waitFor();
+  await page.evaluate(() => window.__f0Orbit.getMarkerElement('mark-1').focus());
   await page.keyboard.press('Space');
   await expect(page.locator('.f0-coach .ui-coach-line__text')).toContainText(/pause|efficient/);
 });
 
-test('phone Orbit markers expose a 40px target and scrollable full-fact details that stay in the viewport', async ({ page }) => {
+test('phone Orbit markers each expose their own 40px target and stay in the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/src/ui/gallery.html?flow=results');
   await page.waitForTimeout(420);
-  const cluster = page.locator('.f0-orbit [data-marker-cluster].is-cluster').first();
-  const hit = cluster.locator('.orbit__marker-hit');
-  const target = await hit.evaluate(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; });
-  expect(target.width).toBeGreaterThanOrEqual(40);
-  expect(target.height).toBeGreaterThanOrEqual(40);
-  await cluster.focus();
-  await cluster.evaluate(node => node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-  const items = page.locator('.orbit__marker-details-item');
-  await expect(items).toHaveCount(2);
-  await expect(page.locator('.orbit__marker-details')).toBeInViewport();
-  await page.keyboard.press('Escape');
-  await expect(page.locator('.orbit__marker-details')).toHaveCount(0);
-  await expect(cluster).toBeFocused();
+  const badges = page.locator('.f0-orbit [data-marker-cluster]');
+  const count = await badges.count();
+  expect(count).toBeGreaterThan(2);
+  const targets = await badges.evaluateAll(nodes => nodes.map(node => { const rect = node.querySelector('.orbit__marker-hit').getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, width: rect.width, height: rect.height }; }));
+  for (const target of targets) { expect(target.width).toBeGreaterThanOrEqual(40 - 0.5); expect(target.height).toBeGreaterThanOrEqual(40 - 0.5); }
+  for (let a = 0; a < targets.length; a++) for (let b = a + 1; b < targets.length; b++) expect(Math.hypot(targets[a].x - targets[b].x, targets[a].y - targets[b].y)).toBeGreaterThanOrEqual(39.5);
+  await badges.first().focus();
+  await expect(badges.first()).toBeFocused();
 });
 
 test('phone flow scroller is keyboard focusable and keeps the selected scenario fully visible without moving the page', async ({ page }) => {
@@ -127,33 +122,21 @@ test('Orbit morph interpolates segment and marker geometry and lays out dense ma
     const markers = Array.from({ length: 12 }, (_, index) => ({ key: `stress-${index}`, segment: 'pair 3', position: .48 + index * .001,
       label: `coach fact ${index + 1} with detail`, tone: index % 2 ? 'good' : 'bad' }));
     await orbit.update({ ...orbit.options, markers, animate: false });
-    const cluster = orbit.element.querySelector('[data-marker-cluster].is-cluster');
-    cluster.focus(); cluster.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-    const detailItems = [...orbit.element.querySelectorAll('.orbit__marker-details-item')];
-    detailItems[6].focus();
-    const list = orbit.element.querySelector('.orbit__marker-details-list');
-    list.scrollTop = 80;
+    const badges = [...orbit.element.querySelectorAll('[data-marker-cluster]')];
+    const points = badges.map(node => { const rect = node.querySelector('.orbit__marker-hit').getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, r: rect.width / 2 }; });
+    const overlaps = points.some((p, i) => points.slice(i + 1).some(q => Math.hypot(p.x - q.x, p.y - q.y) < p.r + q.r - 0.5));
+    const reachable = points.filter(p => document.elementFromPoint(p.x, p.y)?.closest('[data-marker-cluster]')).length;
     await orbit.update({ ...orbit.options, accent: '#52e0ca', animate: false });
-    const focusedDetail = document.activeElement?.dataset.markerDetailKey;
-    const scrollTop = orbit.element.querySelector('.orbit__marker-details-list').scrollTop;
-    const labelBoxes = [...orbit.element.querySelectorAll('.orbit__marker-details-item')].map(item => { const rect = item.getBoundingClientRect(); return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }; });
-    const overlaps = labelBoxes.some((a, i) => labelBoxes.slice(i + 1).some(b => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height));
-    return { before, during, target, expanded: JSON.parse(cluster.dataset.markerKeys).length, detailItems: detailItems.length, detailText: [...orbit.element.querySelectorAll('.orbit__marker-details-item')].map(item => item.textContent),
-      focusedDetail, scrollTop, panel: orbit.element.querySelector('.orbit__marker-details').getBoundingClientRect().toJSON(), overlaps,
-      duplicateRingLabels: orbit.element.querySelectorAll('.orbit__marker-expanded-label').length };
+    return { before, during, target, badges: badges.length, overlaps, reachable, clusters: orbit.element.querySelectorAll('.is-cluster').length, details: orbit.element.querySelectorAll('.orbit__marker-details').length };
   });
   expect(mid.during).not.toBeCloseTo(mid.before, 1);
   expect(mid.during).not.toBeCloseTo(mid.target, 1);
-  expect(mid.expanded).toBe(12);
-  expect(mid.detailItems).toBe(12);
-  expect(mid.detailText).toEqual(expect.arrayContaining(['stress-0 · coach fact 1 with detail · pair 3', 'stress-11 · coach fact 12 with detail · pair 3']));
-  expect(mid.focusedDetail).toBe('stress-6');
-  expect(mid.scrollTop).toBeGreaterThan(0);
-  expect(mid.panel.left).toBeGreaterThanOrEqual(0);
-  expect(mid.panel.right).toBeLessThanOrEqual(1280);
-  expect(mid.panel.bottom).toBeLessThanOrEqual(900);
-  expect(mid.duplicateRingLabels).toBe(0);
+  // Twelve markers within a few degrees fan out: twelve badges, none merged, none overlapping, all hittable.
+  expect(mid.badges).toBe(12);
+  expect(mid.clusters).toBe(0);
+  expect(mid.details).toBe(0);
   expect(mid.overlaps).toBe(false);
+  expect(mid.reachable).toBe(12);
 });
 
 test('stage labels keep names, values and deltas on separate collision-free rows around the centered Cube', async ({ page }) => {
@@ -173,7 +156,8 @@ test('stage labels keep names, values and deltas on separate collision-free rows
     expect(Math.abs((layout.cube.left + layout.cube.right - layout.ring.left - layout.ring.right) / 2)).toBeLessThan(1);
     expect(Math.abs((layout.cube.top + layout.cube.bottom - layout.ring.top - layout.ring.bottom) / 2)).toBeLessThan(1);
     expect(layout.visibleKeys.sort()).toEqual(layout.expectedKeys.sort());
-    expect(layout.labelKnockouts).toBe(layout.expectedKeys.length);
+    // The approved labels sit 20 px outside the ring on the plain background: no knockout rectangle is drawn behind them.
+    expect(layout.labelKnockouts).toBe(0);
     for (let i = 0; i < layout.labels.length; i++) for (let j = i + 1; j < layout.labels.length; j++) {
       const a = layout.labels[i].box, b = layout.labels[j].box;
       expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top,
@@ -195,7 +179,7 @@ test('stage labels keep names, values and deltas on separate collision-free rows
     readableKnockouts: document.querySelectorAll('.orbit__label-bg').length,
   }));
   expect(phone.visible).toEqual(phone.expected);
-  expect(phone.readableKnockouts).toBe(phone.expected.length);
+  expect(phone.readableKnockouts).toBe(0);
 });
 
 test('activating a stage preserves its full label, value and delta in the visible slot detail', async ({ page }) => {
