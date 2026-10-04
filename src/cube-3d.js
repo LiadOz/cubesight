@@ -102,6 +102,11 @@ function makeAnswerBadge() {
   return { sprite, texture, draw };
 }
 
+/** Half the height of the orthographic frustum: the cube silhouette (4.85 tall) is .844 of a square canvas (measured). */
+const ISO_HALF_HEIGHT = 2.82;
+/** A sticker's brightness by where its face points in view space: top 1, left .86, right .72 (the frames' shadeF / shadeR). */
+const faceShade = (x, y) => Math.max(.5, Math.min(1, .86 - .099 * x + .1715 * y));
+
 function stickerTransform(mesh, face, x, y, z) {
   const offset = 0.506;
   mesh.position.set(x, y, z);
@@ -115,8 +120,13 @@ function stickerTransform(mesh, face, x, y, z) {
 
 export function createCube3D(container, options = {}) {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
-  const cornerCameraPosition = new THREE.Vector3(6.7, 5.6, 7.7);
+  // The approved frames (docs/design/orbit-v3, SPEC-A-EXACT section 5) draw the cube as a symmetric isometric: a hexagon
+  // 372.4 x 430 (aspect .866) with the top face lit full and the two side faces at .86 / .72 of it. That is an orthographic
+  // camera looking down the body diagonal; the f2l piece-picking drill keeps its perspective view.
+  const perspectiveCamera = new THREE.PerspectiveCamera(28, 1, .1, 100);
+  const isometricCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 100);
+  let camera = isometricCamera;
+  const cornerCameraPosition = new THREE.Vector3(7, 7, 7);
   camera.position.copy(cornerCameraPosition);
   camera.lookAt(0, 0, 0);
 
@@ -285,6 +295,7 @@ export function createCube3D(container, options = {}) {
           const sticker = new THREE.Mesh(stickerGeometry, material);
           stickerTransform(sticker, face, x, y, z);
           sticker.userData = { face, piece, cubiePosition: [x, y, z], kind: piece.length === 3 ? 'corner' : piece.length === 2 ? 'edge' : 'center' };
+          sticker.userData.baseColor = new THREE.Color(DEFAULT_FACE_COLORS[face]);
           cubeGroup.add(sticker);
           stickerMeshes.push(sticker);
           pickMeshes.push(sticker);
@@ -306,8 +317,13 @@ export function createCube3D(container, options = {}) {
   function resize() {
     const width = Math.max(container.clientWidth, 1);
     const height = Math.max(container.clientHeight, 1);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+    const aspect = width / height;
+    perspectiveCamera.aspect = aspect;
+    perspectiveCamera.updateProjectionMatrix();
+    // The silhouette (~4.85 tall) fills ~.844 of the canvas height, or of its width when the canvas is tall and narrow.
+    const half = ISO_HALF_HEIGHT * Math.max(1, 1 / aspect);
+    isometricCamera.left = -half * aspect; isometricCamera.right = half * aspect; isometricCamera.top = half; isometricCamera.bottom = -half;
+    isometricCamera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     tumbleControls.handleResize();
   }
@@ -337,11 +353,19 @@ export function createCube3D(container, options = {}) {
     }
   });
 
+  function useCamera(next) {
+    if (camera === next) return;
+    camera = next;
+    controls.object = next; tumbleControls.object = next;
+    resize();
+  }
   function setMode(mode) {
     interactionMode = mode;
     renderer.domElement.dataset.interactionMode = mode;
     controls.enabled = false;
     tumbleControls.enabled = false;
+    useCamera(mode === 'f2l' ? perspectiveCamera : isometricCamera);
+    camera.up.set(0, 1, 0);
     if (mode === 'f2l') {
       renderer.domElement.dataset.rotation = 'limited-horizontal';
       renderer.domElement.dataset.azimuthLimit = '0.62';
@@ -357,8 +381,7 @@ export function createCube3D(container, options = {}) {
     } else if (mode === 'scout') {
       renderer.domElement.dataset.rotation = 'free-tumble';
       delete renderer.domElement.dataset.azimuthLimit;
-      camera.up.set(0, 1, 0);
-      camera.position.set(6.7, 5.6, 7.7);
+      camera.position.copy(cornerCameraPosition);
       tumbleControls.target.set(0, 0, 0);
       tumbleControls.enabled = true;
       tumbleControls.reset();
@@ -519,6 +542,20 @@ export function createCube3D(container, options = {}) {
     moveAnimation = null;
     current.cancel();
   }
+  const shadeQuaternion = new THREE.Quaternion(), shadeNormal = new THREE.Vector3(), shadeRgb = { r: 0, g: 0, b: 0 };
+  /** Stickers are unlit (their colours must not drift), so the frames' face shading is applied to the colour itself, in sRGB. */
+  function shadeStickers() {
+    camera.updateMatrixWorld();
+    const view = camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+    cubeGroup.updateWorldMatrix(true, true);
+    for (const sticker of stickerMeshes) {
+      sticker.getWorldQuaternion(shadeQuaternion);
+      shadeNormal.set(0, 0, 1).applyQuaternion(shadeQuaternion).transformDirection(view);
+      const shade = faceShade(shadeNormal.x, shadeNormal.y);
+      sticker.userData.baseColor.getRGB(shadeRgb, THREE.SRGBColorSpace);
+      sticker.material.color.setRGB(shadeRgb.r * shade, shadeRgb.g * shade, shadeRgb.b * shade, THREE.SRGBColorSpace);
+    }
+  }
   function frame() {
     if (stopped) return;
     animationFrame = requestAnimationFrame(frame);
@@ -539,6 +576,7 @@ export function createCube3D(container, options = {}) {
       if (!moveAnimation) scoutCages.forEach(cage => cage.scale.setScalar(1 + pulse * .025));
     }
     tickCue(performance.now());
+    shadeStickers();
     renderer.render(scene, camera);
   }
   frame();
@@ -618,7 +656,7 @@ export function createCube3D(container, options = {}) {
         sticker.material.map = nextMap;
         sticker.material.needsUpdate = true;
       }
-      sticker.material.color.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
+      sticker.userData.baseColor.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
       const dimmedTarget = Boolean(target && !active && !showAllCorners);
       const matched = interactionMode === 'f2l' && matchedPieces.has(piece);
       // Emphasis belongs to the cube, not to one interaction mode: corner and f2l cubes honour it too.
