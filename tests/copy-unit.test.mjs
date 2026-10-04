@@ -49,7 +49,9 @@ async function violations() {
   for (const file of await sourceFiles(path.join(root, 'src'))) {
     // The legacy shell is not imported by the app; protocol adapters and the
     // debug harness contain wire-format words that are not user-facing copy.
-    if (file.endsWith('/brain-legacy.js') || /recording-(harness|replay)\.js$/.test(file)) continue;
+    // design-spec.js is generated from the design mock-ups: its strings are the
+    // sample text drawn in the SVG frames (identifiers for anchors), not app copy.
+    if (file.endsWith('/brain-legacy.js') || /recording-(harness|replay)\.js$/.test(file) || file.endsWith('/ui/design-spec.js')) continue;
     const source = await readFile(file, 'utf8');
     for (const token of literals(source)) {
       const context = source.slice(Math.max(0, token.start - 100), token.start);
