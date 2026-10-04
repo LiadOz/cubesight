@@ -1,4 +1,5 @@
-.progress-page { gap: 22px; }
+.cs-page.progress-page { display: grid; gap: 22px; grid-template-columns: minmax(240px, 440px) minmax(0, 1fr); }
+.progress-page > .progress-heading, .progress-filters { grid-column: 1 / -1; }
 .progress-heading { width: 100%; }
 .progress-filters { display: flex; flex-wrap: wrap; gap: 12px; }
 .progress-filters .ui-field, .progress-session-filter, .progress-period-filter { min-width: 0; flex: 1 1 150px; }
@@ -8,7 +9,7 @@
 .progress-period-filter::before { content: 'period'; }
 .progress-chip-group__choices { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .progress-chip-group .chip { max-width: 100%; height: auto; min-height: var(--hc, 32px); padding-block: 6px; white-space: normal; text-align: left; }
-.progress-visual { position: relative; display: grid; justify-items: center; gap: 6px; align-self: center; width: 100%; min-width: 0; padding: 8px 0; background: var(--b-bg); }
+.progress-visual { position: sticky; top: 8px; display: grid; justify-items: center; gap: 6px; align-self: start; width: 100%; min-width: 0; padding: 8px 0; background: var(--b-bg); }
 .progress-orbit-wrap { position: relative; width: min(100%, 440px, var(--progress-orbit-fit, 440px)); aspect-ratio: 1; }
 .progress-orbit-host { position: absolute; inset: 0; display: grid; place-items: center; }
 .progress-cube-mount { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 36%; aspect-ratio: 1; transform: translate(-50%, -50%); }
@@ -33,9 +34,10 @@
 .progress-goals form { display: grid; grid-template-columns: minmax(180px, 1fr); gap: 10px; }
 .progress-goal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 @media (width <= 700px) {
-  .progress-page { gap: 18px; }
-  .progress-visual { top: 4px; }
-  .progress-orbit-wrap { width: min(100%, 390px, var(--progress-orbit-fit, 390px)); }
+  .cs-page.progress-page { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  .progress-visual { z-index: 2; }
+  .progress-orbit-wrap { width: min(100%, 220px, 28dvh, var(--progress-orbit-fit, 220px)); }
+  .progress-content :where(a, input, button) { scroll-margin-top: calc(var(--site-header-height, 104px) + 300px); }
   .progress-chart-grid { grid-template-columns: minmax(0, 1fr); }
   .progress-filters .ui-field { flex: 1 1 130px; }
   .progress-session-filter, .progress-period-filter { flex: 1 1 100%; }

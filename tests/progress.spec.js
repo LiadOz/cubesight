@@ -75,7 +75,7 @@ test('the shared goal controls save, switch to the ao12 Orbit, and clear locally
   expect(await page.evaluate(() => localStorage.getItem('cubesight-goal-v1'))).toBeNull();
 });
 
-test('progress rows remain readable while the Cube and Orbit scroll without covering them', async ({ page }) => {
+test('progress keeps the Cube and Orbit in view while every drill row remains reachable', async ({ page }, testInfo) => {
   await page.goto('/#/progress');
   await expect(page.getByRole('region', { name: 'Progress Orbit' })).toBeVisible();
   await expect(page.locator('.progress-page')).toHaveAttribute('data-ready', 'true');
@@ -83,7 +83,8 @@ test('progress rows remain readable while the Cube and Orbit scroll without cove
   await expect(page.locator('.progress-cube-mount')).toBeVisible();
   await expect(page.locator('.progress-chart')).toHaveCount(3);
   await page.evaluate(() => document.fonts.ready);
-  for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+  for (const viewport of [{ width: 1280, height: 720, theme: 'dark' }, { width: 1280, height: 720, theme: 'light' }, { width: 390, height: 844, theme: 'dark' }]) {
+    await page.evaluate(async theme => (await import('/src/theme.js')).setThemePreference(theme), viewport.theme);
     await page.setViewportSize(viewport);
     const maxScroll = await page.evaluate(() => document.scrollingElement.scrollHeight - innerHeight);
     for (const fraction of [0, 0.5, 1]) {
@@ -98,14 +99,13 @@ test('progress rows remain readable while the Cube and Orbit scroll without cove
         return { orbit: { top: orbit.top, bottom: orbit.bottom }, cube: { top: cube.top, bottom: cube.bottom }, header: { top: header.top, bottom: header.bottom }, height: innerHeight, width: innerWidth, scrollWidth: document.scrollingElement.scrollWidth };
       });
       expect(boxes.scrollWidth).toBeLessThanOrEqual(boxes.width);
-      if (fraction === 0) {
         expect(boxes.orbit.top).toBeGreaterThanOrEqual(-1);
         expect(boxes.orbit.bottom).toBeLessThanOrEqual(boxes.height + 1);
         expect(boxes.cube.top).toBeGreaterThanOrEqual(boxes.header.bottom - 1);
         expect(boxes.cube.bottom).toBeLessThanOrEqual(boxes.height + 1);
-      }
     }
     expect(maxScroll).toBeGreaterThan(0);
+    await page.screenshot({ path: testInfo.outputPath(`progress-${viewport.width}-${viewport.theme}.png`) });
     for (const row of await page.locator('.progress-drill-name').all()) {
       await row.scrollIntoViewIfNeeded();
       expect(await row.evaluate(el => {
