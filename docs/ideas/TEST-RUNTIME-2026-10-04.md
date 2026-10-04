@@ -140,6 +140,14 @@ Tier 2 failure blocker remain pending.
 
 ## Remaining work before integration
 
+The review suite now checks every marker on the shared Orbit, including
+expanded clusters; stage comparisons, cube playback and persisted pins still
+run through a real solve. The four existing screenshot cells are retained,
+with Orbit history cells seeded from real Node analysis instead of replaying
+the solve for every image. This exposed and fixed Escape failing to close
+history review details. The screenshot groups passed in 21.0 s; the live
+solve/reload and skipped/merged-stage checks passed separately in 35.4 s.
+
 - Reconcile the remaining legacy review and Orbit visual assertions with the
   shared Orbit and approved results layout; preserve their behavioral coverage.
 - Finish the F9 baseline rollout and prove repeat-run determinism. No F9 PNG,

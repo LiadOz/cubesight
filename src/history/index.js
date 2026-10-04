@@ -404,10 +404,8 @@ export function initHistory(host) {
               reviewPlaybackGeneration++; cube?.stop(); inlineReviewDetail = { kind: 'stage', key: action.key }; reviewVariant = 'yours'; reviewCursor = null;
               void renderPast(currentRecord);
             }
-          } else if (action.type === 'closeDetail') {
-            if (route.kind === 'review') location.hash = href(historyPath(currentRecord.at));
-            else { reviewPlaybackGeneration++; cube?.stop(); inlineReviewDetail = null; reviewVariant = 'yours'; reviewCursor = null; void renderPast(currentRecord); }
-          } else if (action.type === 'playVariant') void playReviewVariant(action.variant);
+          } else if (action.type === 'closeDetail') closeReviewDetail();
+          else if (action.type === 'playVariant') void playReviewVariant(action.variant);
         },
         onReplay: () => { location.hash = href(replayPath(currentRecord.at)); },
         pastNavigation: navigationFor(currentRecord),
@@ -530,7 +528,16 @@ export function initHistory(host) {
   function onInput(event) {
     if (event.target.name === 'query') { filters.query = event.target.value; render(); }
   }
+  function closeReviewDetail() {
+    if (!currentRecord) return;
+    reviewPlaybackGeneration++; cube?.stop(); inlineReviewDetail = null; reviewVariant = 'yours'; reviewCursor = null;
+    if (route.kind === 'review') location.hash = href(historyPath(currentRecord.at));
+    else void renderPast(currentRecord);
+  }
   function onKeyDown(event) {
+    if (active && event.key === 'Escape' && (route.kind === 'review' || inlineReviewDetail)) {
+      event.preventDefault(); closeReviewDetail(); return;
+    }
     if (!active || route.kind !== 'replay' || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
     if (event.key === ' ') { event.preventDefault(); playing ? (stopPlayback(), updateReplayControls()) : play(); }
     else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); seekMove(replayMove + (event.key === 'ArrowRight' ? 1 : -1), { updateUrl: false }); }
