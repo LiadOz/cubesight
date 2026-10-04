@@ -564,7 +564,7 @@ export function createCube3D(container, options = {}) {
     selectablePieces = new Set(data.selectablePieces || []);
     if (data.mode && data.mode !== interactionMode) setMode(data.mode);
     scoutCages.forEach(cage => {
-      cage.visible = interactionMode === 'scout' && [...highlightedPieces].some(piece => samePiece(piece, cage.userData.piece));
+      cage.visible = [...highlightedPieces].some(piece => samePiece(piece, cage.userData.piece));
     });
     renderer.domElement.dataset.highlightCages = String(scoutCages.filter(cage => cage.visible).length);
     renderer.domElement.dataset.cornerPresentation = showAllCorners ? 'full' : 'isolated';
@@ -621,22 +621,27 @@ export function createCube3D(container, options = {}) {
       sticker.material.color.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
       const dimmedTarget = Boolean(target && !active && !showAllCorners);
       const matched = interactionMode === 'f2l' && matchedPieces.has(piece);
-      const scoutHighlight = interactionMode === 'scout' && [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
-      const dimmed = interactionMode === 'scout' && dimOthers && !scoutHighlight;
+      // Emphasis belongs to the cube, not to one interaction mode: corner and f2l cubes honour it too.
+      const scoutHighlight = [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
+      const dimmed = dimOthers && !scoutHighlight;
       if (dimmed) dimmedStickerCount++;
       if (scoutHighlight) highlightedStickerCount++;
-      sticker.material.transparent = dimmedTarget || matched || dimmed;
+      // three.js only honours a flipped `transparent` flag after the material is flagged for an update; without it
+      // the dim (and every highlight's "everything else steps back") was counted but never drawn.
+      const translucent = dimmedTarget || matched || dimmed;
+      if (sticker.material.transparent !== translucent) { sticker.material.transparent = translucent; sticker.material.needsUpdate = true; }
       sticker.material.opacity = dimmedTarget ? .2 : matched ? .38 : dimmed ? .16 : 1;
       sticker.material.depthWrite = !(dimmedTarget || matched || dimmed);
       const f2lEmphasis = interactionMode === 'f2l' && (piece === f2lSelected || piece === f2lFeedback?.piece);
       const correction = interactionMode === 'f2l' && f2lFeedback?.correctPieces?.includes(piece);
-      sticker.userData.border.visible = interactionMode === 'f2l' ? Boolean(f2lEmphasis || correction) : interactionMode === 'scout' ? scoutHighlight : Boolean(active && (isKnown || isHiddenTarget));
+      sticker.userData.border.visible = scoutHighlight || (interactionMode === 'f2l' ? Boolean(f2lEmphasis || correction) : interactionMode === 'scout' ? false : Boolean(active && (isKnown || isHiddenTarget)));
       sticker.userData.borderInk.material.color.set(scoutHighlight ? '#65e8ff' : correction ? '#55d88b'
         : f2lFeedback && piece === f2lFeedback.piece ? (f2lFeedback.status === 'correct' ? '#55d88b' : '#ff625a')
         : feedback && active ? (feedback.status === 'correct' ? '#55d88b' : '#ff625a') : '#65e8ff');
-      sticker.scale.setScalar(interactionMode === 'scout' && scoutHighlight ? 1.045 : active && (isKnown || isHiddenTarget) ? 1.045 : f2lEmphasis ? 1.055 : 1);
+      sticker.scale.setScalar(scoutHighlight ? 1.045 : active && (isKnown || isHiddenTarget) ? 1.045 : f2lEmphasis ? 1.055 : 1);
       sticker.renderOrder = active ? 2 : 0;
     });
+    renderer.domElement.dataset.highlightedPieces = [...highlightedPieces].sort().join(',');
     renderer.domElement.dataset.dimmedStickers = String(dimmedStickerCount);
     renderer.domElement.dataset.highlightedStickers = String(highlightedStickerCount);
     renderer.domElement.setAttribute('aria-label', interactionMode === 'f2l'

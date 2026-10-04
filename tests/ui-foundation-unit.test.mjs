@@ -128,8 +128,8 @@ test('Cube highlight resolves cross, pair and exact piece ids to real cubies', (
   assert.equal(cross.length, 4);
   assert.ok(cross.every(id => id.length === 2 && id.includes('D')));
   const pair = resolveSlotPieces(state, 'pair:FR');
-  assert.ok(pair.includes('FR'));
-  assert.equal(pair.filter(id => id.length === 3).length, 2);
+  // An F2L pair is one corner and one edge (cross on D), not every piece that touches F and R.
+  assert.deepEqual([...pair].sort(), ['DFR', 'FR']);
   assert.deepEqual(resolveSlotPieces(state, { type: 'pair', cornerId: 'UFR', edgeId: 'FR' }), ['UFR', 'FR']);
   assert.deepEqual(resolveSlotPieces(state, 'UFR'), ['UFR']);
   assert.deepEqual(resolveSlotPieces(state, { type: 'cross', face: 'U' }).filter(id => id.includes('U')).length, 4);
