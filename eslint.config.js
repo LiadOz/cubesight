@@ -82,6 +82,11 @@ export default [
     languageOptions: { globals: { ...globals.node } },
   },
   {
+    // design:diff capture spec: Node plus page.evaluate() browser callbacks.
+    files: ['scripts/design-diff/**/*.{js,mjs}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     // Design mockup generators: Node scripts that also run code in a headless
     // browser page (page.evaluate).
     files: ['docs/**/*.{js,mjs}'],

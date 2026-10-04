@@ -26,6 +26,7 @@
     "test:snapshots": "playwright test --config=playwright.snapshots.config.js",
     "snapshots:update": "playwright test --config=playwright.snapshots.config.js --update-snapshots=missing",
     "snapshots:compare": "node scripts/snapshots-compare.mjs",
+    "design:diff": "node scripts/design-diff.mjs",
     "test:affected": "node scripts/test-affected.mjs",
     "test:shard": "node scripts/test-shard.mjs",
     "test:impact-map": "node scripts/test-impact-map.mjs",
