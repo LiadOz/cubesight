@@ -1,0 +1,381 @@
+{
+  "schemaVersion": 1,
+  "owner": "F4",
+  "dataOwner": "F4",
+  "route": "/drills/scout",
+  "state": "trainer",
+  "viewModel": {
+    "screen": "trainer",
+    "drill": "cross-scout",
+    "phase": "idle",
+    "currentCase": {
+      "id": "R' D2 F2 B' U2 D2 L2 F' D F2 D' L2 F U2 L2 R' D' U2 L2 F2 L F B D2 L2",
+      "seed": "scout:R' D2 F2 B' U2 D2 L2 F' D F2 D' L2 F U2 L2 R' D' U2 L2 F2 L F B D2 L2",
+      "topColor": "#ffd500",
+      "orientation": "yellow top",
+      "targets": null
+    },
+    "answers": [
+      {
+        "logicalKey": "found",
+        "displayKey": "found",
+        "label": "found",
+        "selected": false,
+        "correct": true
+      },
+      {
+        "logicalKey": "missed",
+        "displayKey": "missed",
+        "label": "missed",
+        "selected": false,
+        "correct": false
+      }
+    ],
+    "round": {
+      "page": "round",
+      "drill": "cross",
+      "phase": "idle",
+      "display": {
+        "mode": "case",
+        "caseColor": "yellow top",
+        "topColor": "yellow",
+        "caseSeed": "cross:idle",
+        "orbitShape": "open"
+      },
+      "currentCase": null,
+      "round": null,
+      "setup": null
+    },
+    "cube": {
+      "mode": "case",
+      "state": null,
+      "displayState": null,
+      "caseColorSetting": "yellow top",
+      "caseSeed": "scout:R' D2 F2 B' U2 D2 L2 F' D F2 D' L2 F U2 L2 R' D' U2 L2 F2 L F B D2 L2",
+      "highlight": null,
+      "renderData": {
+        "mode": "scout",
+        "colors": {
+          "U": "#ffd500",
+          "D": "#ffffff",
+          "F": "#009b48",
+          "B": "#0051ba",
+          "R": "#ff6b00",
+          "L": "#e7332a"
+        },
+        "cornerStickers": {
+          "R:UFR": "#ffd500",
+          "U:UFR": "#009b48",
+          "F:UFR": "#ff6b00",
+          "F:DFR": "#ffd500",
+          "R:DFR": "#0051ba",
+          "D:DFR": "#ff6b00",
+          "B:DBL": "#ffd500",
+          "D:DBL": "#0051ba",
+          "L:DBL": "#e7332a",
+          "F:DFL": "#ffd500",
+          "D:DFL": "#009b48",
+          "L:DFL": "#e7332a",
+          "L:UBL": "#ffffff",
+          "B:UBL": "#009b48",
+          "U:UBL": "#ff6b00",
+          "L:UFL": "#ffffff",
+          "F:UFL": "#0051ba",
+          "U:UFL": "#ff6b00",
+          "R:UBR": "#ffffff",
+          "U:UBR": "#0051ba",
+          "B:UBR": "#e7332a",
+          "B:DBR": "#ffffff",
+          "R:DBR": "#009b48",
+          "D:DBR": "#e7332a"
+        },
+        "stickerColors": {
+          "U:UL": "#ffd500",
+          "L:UL": "#009b48",
+          "B:BL": "#ffd500",
+          "L:BL": "#ff6b00",
+          "D:DF": "#ffd500",
+          "F:DF": "#0051ba",
+          "R:BR": "#ffd500",
+          "B:BR": "#e7332a",
+          "B:UB": "#009b48",
+          "U:UB": "#ff6b00",
+          "F:FR": "#0051ba",
+          "R:FR": "#ff6b00",
+          "U:UF": "#0051ba",
+          "F:UF": "#e7332a",
+          "R:DR": "#009b48",
+          "D:DR": "#e7332a",
+          "D:DB": "#ffffff",
+          "B:DB": "#009b48",
+          "D:DL": "#ffffff",
+          "L:DL": "#ff6b00",
+          "L:FL": "#ffffff",
+          "F:FL": "#0051ba",
+          "U:UR": "#ffffff",
+          "R:UR": "#e7332a"
+        },
+        "targets": [],
+        "showAllCorners": true,
+        "highlightedPieces": [],
+        "corners": [
+          {
+            "id": "UFR",
+            "position": "UFR",
+            "stickers": {
+              "R": "yellow",
+              "U": "green",
+              "F": "orange"
+            }
+          },
+          {
+            "id": "UBR",
+            "position": "DFR",
+            "stickers": {
+              "F": "yellow",
+              "R": "blue",
+              "D": "orange"
+            }
+          },
+          {
+            "id": "UBL",
+            "position": "DBL",
+            "stickers": {
+              "B": "yellow",
+              "D": "blue",
+              "L": "red"
+            }
+          },
+          {
+            "id": "UFL",
+            "position": "DFL",
+            "stickers": {
+              "F": "yellow",
+              "D": "green",
+              "L": "red"
+            }
+          },
+          {
+            "id": "DFR",
+            "position": "UBL",
+            "stickers": {
+              "L": "white",
+              "B": "green",
+              "U": "orange"
+            }
+          },
+          {
+            "id": "DBR",
+            "position": "UFL",
+            "stickers": {
+              "L": "white",
+              "F": "blue",
+              "U": "orange"
+            }
+          },
+          {
+            "id": "DBL",
+            "position": "UBR",
+            "stickers": {
+              "R": "white",
+              "U": "blue",
+              "B": "red"
+            }
+          },
+          {
+            "id": "DFL",
+            "position": "DBR",
+            "stickers": {
+              "B": "white",
+              "R": "green",
+              "D": "red"
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "UF",
+            "position": "UL",
+            "stickers": {
+              "U": "yellow",
+              "L": "green"
+            }
+          },
+          {
+            "id": "UR",
+            "position": "BL",
+            "stickers": {
+              "B": "yellow",
+              "L": "orange"
+            }
+          },
+          {
+            "id": "UB",
+            "position": "DF",
+            "stickers": {
+              "D": "yellow",
+              "F": "blue"
+            }
+          },
+          {
+            "id": "UL",
+            "position": "BR",
+            "stickers": {
+              "R": "yellow",
+              "B": "red"
+            }
+          },
+          {
+            "id": "FR",
+            "position": "UB",
+            "stickers": {
+              "B": "green",
+              "U": "orange"
+            }
+          },
+          {
+            "id": "BR",
+            "position": "FR",
+            "stickers": {
+              "F": "blue",
+              "R": "orange"
+            }
+          },
+          {
+            "id": "BL",
+            "position": "UF",
+            "stickers": {
+              "U": "blue",
+              "F": "red"
+            }
+          },
+          {
+            "id": "FL",
+            "position": "DR",
+            "stickers": {
+              "R": "green",
+              "D": "red"
+            }
+          },
+          {
+            "id": "DF",
+            "position": "DB",
+            "stickers": {
+              "D": "white",
+              "B": "green"
+            }
+          },
+          {
+            "id": "DR",
+            "position": "DL",
+            "stickers": {
+              "D": "white",
+              "L": "orange"
+            }
+          },
+          {
+            "id": "DB",
+            "position": "FL",
+            "stickers": {
+              "L": "white",
+              "F": "blue"
+            }
+          },
+          {
+            "id": "DL",
+            "position": "UR",
+            "stickers": {
+              "U": "white",
+              "R": "red"
+            }
+          }
+        ],
+        "dimOthers": false
+      }
+    },
+    "feedback": "Apply the scramble to your cube, then compare plans. No timer or score.",
+    "settings": {
+      "caseColor": "yellow top",
+      "colors": [
+        "U"
+      ]
+    }
+  },
+  "shared": {
+    "route": "/drills/scout",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "drills",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/drills/scout?mode=explore",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

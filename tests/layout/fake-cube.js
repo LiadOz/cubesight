@@ -1,3 +1,4 @@
+import { expect } from 'playwright/test';
 import { mountTestBrain } from '../helpers/fake-brain.js';
 
 export async function mountFakeCube(page, { delayed = false } = {}) {
@@ -15,6 +16,11 @@ export async function startScramble(page, scramble = "R2 D' F2 U B2 L' U2 F") {
 
 export async function completeScramble(page, scramble) {
   await page.evaluate(moves => window.testBrain.emitTurns(moves), scramble);
+  // Snapshot captures must resolve the real cross suggestion before a move
+  // leaves inspection; later phases no longer expose that asynchronous hint.
+  if (await page.evaluate(() => Boolean(window.__cubesightSnapshotReplayClock))) {
+    await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot?.getViewModel()?.viewModel?.inspection?.bestStart), { timeout: 10000 }).toBeTruthy();
+  }
 }
 
 export async function solveReverse(page, scramble) {

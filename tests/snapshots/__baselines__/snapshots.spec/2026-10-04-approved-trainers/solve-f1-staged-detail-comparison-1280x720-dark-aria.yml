@@ -1,0 +1,118 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve results":
+          - listitem "cross, 0.16, −2.86":
+            - button "cross, 0.16, −2.86"
+          - text: cross 0.16 −2.86
+          - listitem "pair 1 · F2L 4, 0.07, −2.35":
+            - button "pair 1 · F2L 4"
+          - text: pair 1 · F2L 4 0.07 −2.35
+          - listitem "pair 2, 0.09, −2.33":
+            - button "pair 2, 0.09, −2.33"
+          - text: pair 2 0.09 −2.33
+          - listitem "pair 3, 0.09, −2.33":
+            - button "pair 3, 0.09, −2.33"
+          - text: pair 3 0.09 −2.33
+          - listitem "pair 4, 0.09, −2.33":
+            - button "pair 4, 0.09, −2.33"
+          - text: pair 4 0.09 −2.33
+          - listitem "eo, 0.34, −0.86":
+            - button "eo, 0.34, −0.86"
+          - text: eo 0.34 −0.86
+          - listitem "co · Runway, Blank, skip":
+            - button "co · Runway, Blank · recog 0.02 s · exec 0.32 s"
+          - text: co · Runway, Blank skip
+          - listitem "cp, 0.35, −1.66":
+            - button "cp, 0.35, −1.66"
+          - text: cp 0.35 −1.66
+          - listitem "ep · T, skip":
+            - button "ep · T · recog 0.02 s · exec 0.33 s"
+          - text: ep · T skip
+          - button "detour": "!"
+          - button "3 markers; activate to inspect facts": "3"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "co skip": ✦
+    - region "Solve results":
+      - navigation
+      - strong: "1.23"
+      - paragraph: ao5 — · PB 1.23
+      - paragraph: "Move 4, D: that turned you away from the cross. The shortest way home from here was R D′ F, 3 more moves; you took 5 more (6 vs your 8)."
+      - region "Solve review":
+        - region "Stage detail":
+          - strong: cross
+          - button "Close detail": close esc
+          - group "Moves of this stage":
+            - button "start"
+            - button "F′"
+            - button "D′"
+            - button "F"
+            - button "D"
+            - button "B"
+            - button "D′"
+            - button "R"
+            - button "D′"
+          - term: time
+          - definition: "0.16"
+          - definition
+          - term: moves
+          - definition: "8"
+          - definition
+          - term: tps
+          - definition: "47.62"
+          - definition: avg 4.00
+          - term: pauses
+          - definition: none
+          - definition
+          - list:
+            - listitem: detour
+            - listitem: missed x-cross
+          - paragraph: yours 8 · better 6
+          - button "yours ▶"
+          - button "better ▶" [pressed]
+          - button "pin"
+          - button "copy your demo link"
+          - button "copy better demo link"
+          - paragraph:
+            - text: yours
+            - code: F′ D′ F D B D′ R D′
+          - paragraph:
+            - text: better
+            - code: F′ D′ F R D′ F
+      - button "next scramble"
+      - link "review":
+        - /url: "#/review/1768478400000"
+      - button "more…"
+      - group
+  - button "space next scramble"
+  - button "[ – ] moments"
+  - button "r retry this scramble"
+  - heading "solved" [level=2]
+  - paragraph: 49 moves · 39.77 TPS · 1.23 s · 4/4

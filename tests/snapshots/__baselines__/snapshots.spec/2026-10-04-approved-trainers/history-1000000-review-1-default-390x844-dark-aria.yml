@@ -1,0 +1,65 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "history" [level=1]
+  - form "Filter history":
+    - group: filters & data…
+  - region "Selected solve":
+    - group "selected solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - group "solve orbit":
+      - list "Past solve results":
+        - listitem "cross":
+          - button "cross"
+        - text: cross
+        - listitem "pair 1":
+          - button "pair 1"
+        - text: pair 1
+        - listitem "pair 2":
+          - button "pair 2"
+        - text: pair 2
+        - listitem "pair 3":
+          - button "pair 3"
+        - text: pair 3
+        - listitem "pair 4":
+          - button "pair 4"
+        - text: pair 4
+        - listitem "eo":
+          - button "eo"
+        - text: eo
+        - listitem "co":
+          - button "co"
+        - text: co
+        - listitem "cp":
+          - button "cp"
+        - text: cp
+        - listitem "ep":
+          - button "ep"
+        - text: ep
+    - region "Solve results":
+      - navigation:
+        - link "‹ history · 12.34":
+          - /url: "#/history"
+      - region "Solve review"
+      - button "replay"
+      - link "review":
+        - /url: "#/review/1000000"
+      - button "more…"
+      - text: "[ – ] markers"
+    - group: more…

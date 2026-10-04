@@ -1,0 +1,49 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - paragraph: demo
+  - heading "Snapshot pair" [level=1]
+  - paragraph: Snapshot pair
+  - button "previous case" [disabled]
+  - button "next case" [disabled]
+  - region "Demo playback":
+    - group "Snapshot pair move sequence":
+      - list "Snapshot pair move sequence":
+        - listitem "R'":
+          - button "R' · Turn the right face (red center) counterclockwise (looking directly at that face)."
+        - text: R'
+        - listitem "U'":
+          - button "U' · Turn the top face (white center) counterclockwise (looking directly at that face)."
+        - text: U'
+    - group "Snapshot pair demonstration":
+      - 'img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front. Highlighted pieces: UFR, DFR, FR."'
+    - button "restart" [disabled]
+    - button "previous move" [disabled]
+    - button "play"
+    - button "next move"
+    - text: speed
+    - combobox "speed": 1×
+  - paragraph: Move 1 · Turn the right face (red center) counterclockwise (looking directly at that face).
+  - paragraph
+  - button "copy demo link"
+  - status
+  - link "open case page":
+    - /url: "#/algs/f2l/1"
+  - group: paste a demo

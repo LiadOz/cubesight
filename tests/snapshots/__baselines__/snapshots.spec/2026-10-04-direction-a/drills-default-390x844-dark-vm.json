@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "owner": "F4",
+  "dataOwner": "F4",
+  "route": "/drills",
+  "state": "active",
+  "viewModel": {
+    "page": "hub",
+    "drill": null,
+    "phase": "active",
+    "display": {
+      "mode": "case",
+      "caseColor": "yellow top",
+      "topColor": "yellow",
+      "caseSeed": "drills:0",
+      "orbitShape": "open"
+    },
+    "currentCase": null,
+    "round": null,
+    "setup": null
+  },
+  "shared": {
+    "route": "/drills",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "drills",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/drills",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

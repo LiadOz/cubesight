@@ -1,0 +1,31 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - text: timer
+  - paragraph: U R′ B2 U D R′ F′ B′ L B2 D′ R2 F2 B2 D R2 D′ R2 F2 U2 F2
+  - 'button "timer: touch and hold, release to start"':
+    - group "Manual timer":
+      - list "Manual timer":
+        - listitem "solve, 0.05":
+          - button "solve, 0.05"
+        - text: solve 0.05
+    - text: "0.05"
+    - paragraph
+  - text: no manual speed solves yet any key stop esc stop
+  - paragraph

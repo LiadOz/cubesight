@@ -7,10 +7,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getLayoutMatrix } from '../tests/layout/matrix.js';
 import { FIXTURE_NAMES } from '../src/brain/fixtures.js';
-import { SNAPSHOT_ROUTES, SNAPSHOT_STATES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from '../tests/snapshots/capture-matrix.js';
+import { snapshotCellName, SNAPSHOT_BASELINE_REVISION, SNAPSHOT_ROUTES, SNAPSHOT_STATES, SNAPSHOT_THEMES, SNAPSHOT_VIEWPORTS } from '../tests/snapshots/capture-matrix.js';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const snapshotBaselineRelative = path.join('tests', 'snapshots', '__baselines__', path.basename(fileURLToPath(new URL('../tests/snapshots/snapshots.spec.js', import.meta.url)), '.js'));
+const snapshotBaselineRelative = path.join('test-results', 'comparison-baselines', path.basename(fileURLToPath(new URL('../tests/snapshots/snapshots.spec.js', import.meta.url)), '.js'), SNAPSHOT_BASELINE_REVISION);
 const [baseArg, headArg = 'HEAD'] = process.argv.slice(2);
 if (!baseArg) {
   console.error('Usage: npm run snapshots:compare -- <base-ref> [<head-ref>]');
@@ -32,8 +32,8 @@ function run(command, args, cwd) {
   if (result.status !== 0) throw new Error(`${path.basename(command)} ${args.join(' ')} failed in ${cwd} (exit ${result.status ?? result.signal})`);
 }
 
-function runCaptured(command, args, cwd, logFile) {
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8', env: process.env });
+function runCaptured(command, args, cwd, logFile, env = process.env) {
+  const result = spawnSync(command, args, { cwd, encoding: 'utf8', env });
   const output = `${result.stdout || ''}${result.stderr || ''}`;
   writeFileSync(logFile, output);
   process.stdout.write(output);
@@ -58,9 +58,13 @@ const HARNESS_PATHS = [
   'tests/snapshots',
   'tests/layout',
   'tests/helpers/fake-brain.js',
+  'tests/helpers/orbit-markers.js',
   'tests/helpers/goal-progress-state.js',
   'tests/analysis-golden.mjs',
   'tests/fixtures/rotation-cross-recording.json',
+  'tests/fixtures/rotation-cross-recording-with-analysis.json',
+  'tests/fixtures/cross-suggestion-replay-inputs.json',
+  'tests/fixtures/solve-analysis-replay-inputs.json',
 ];
 
 async function overlayHarness(worktree, ref) {
@@ -71,9 +75,7 @@ async function overlayHarness(worktree, ref) {
     await cp(source, destination, { recursive: true, force: true });
   }
 
-  // Always capture a clean reference run. A baseline committed on either ref
-  // must not mask an incomplete or stale capture from this comparison.
-  await rm(path.join(worktree, 'tests/snapshots/__baselines__'), { recursive: true, force: true });
+  // Capture into a new artifact directory, preserving all committed frames.
 
   const dependencyDirectory = path.join(worktree, 'node_modules');
   let dependencyInfo;
@@ -121,8 +123,8 @@ function encodePath(value) {
 
 function cellFor(filename) {
   return filename
-    .replace(/\.aria\.yml$/, '')
-    .replace(/\.vm\.json$/, '')
+    .replace(/[.-]aria\.yml$/, '')
+    .replace(/[.-]vm\.json$/, '')
     .replace(/\.png$/, '');
 }
 
@@ -151,10 +153,10 @@ async function assertCompleteCapture(directory, label) {
   const name = value => String(value).toLowerCase().replaceAll(/[^a-z0-9]+/g, '-').replaceAll(/^-|-$/g, '');
   const fileSet = new Set();
   const addCell = (route, state, viewport, theme) => {
-    const cell = name(`${route}-${state}-${viewport.width}x${viewport.height}-${theme}`);
+    const cell = snapshotCellName({ route, state, ...viewport, theme });
     fileSet.add(`${cell}.png`);
-    fileSet.add(`${cell}.aria.yml`);
-    fileSet.add(`${cell}.vm.json`);
+    fileSet.add(`${cell}-aria.yml`);
+    fileSet.add(`${cell}-vm.json`);
   };
   const statesById = new Map(getLayoutMatrix().states.map(fixture => [fixture.id, fixture]));
   for (const stateId of SNAPSHOT_STATES) {
@@ -169,7 +171,7 @@ async function assertCompleteCapture(directory, label) {
     for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) addCell(route.path, 'default', viewport, theme);
   }
   for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) addCell('/brain', 'rotation-cross-recording', viewport, theme);
-  for (const fixtureName of FIXTURE_NAMES) fileSet.add(`${name(fixtureName)}.vm.json`);
+  for (const fixtureName of FIXTURE_NAMES) fileSet.add(`${name(fixtureName)}-vm.json`);
   const expected = new Set(fileSet);
   if (expected.size !== expectedCount) throw new Error(`F9 expected artifact registration collision: ${expected.size}/${expectedCount}`);
   const actual = new Set(files);
@@ -269,7 +271,15 @@ try {
     const playwright = path.join(entry.dir, 'node_modules', 'playwright', 'cli.js');
     const runOutput = path.join(comparisonRoot, 'runs', entry.side);
     await mkdir(runOutput, { recursive: true });
-    runCaptured(process.execPath, [playwright, 'test', '--config=playwright.snapshots.config.js', '--update-snapshots', `--output=${runOutput}`], entry.dir, path.join(comparisonRoot, `${entry.side}-playwright.log`));
+    const baselineRoot = path.join(entry.dir, 'test-results', 'comparison-baselines');
+    const existingCapture = await lstat(baselineRoot).catch(error => {
+      if (error.code !== 'ENOENT') throw error;
+      return null;
+    });
+    if (existingCapture) throw new Error(`Refusing to overwrite comparison frames: ${baselineRoot}`);
+    runCaptured(process.execPath, [playwright, 'test', '--config=playwright.snapshots.config.js', '--update-snapshots=all', `--output=${runOutput}`], entry.dir, path.join(comparisonRoot, `${entry.side}-playwright.log`), {
+      ...process.env, CUBESIGHT_SNAPSHOT_BASELINE_ROOT: baselineRoot,
+    });
     await assertCompleteCapture(path.join(entry.dir, snapshotBaselineRelative), entry.side);
   }
 

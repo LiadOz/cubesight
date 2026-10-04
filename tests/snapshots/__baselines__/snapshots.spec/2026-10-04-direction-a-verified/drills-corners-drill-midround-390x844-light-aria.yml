@@ -1,0 +1,49 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - region "Quick round":
+    - text: 1 cases left
+    - strong: combo 19
+    - strong: avg 0.50 s
+    - button "finish round"
+    - text: every round counts ✓ fixture-1✓ fixture-2✓ fixture-3✓ fixture-4✓ fixture-5✓ fixture-6✓ fixture-7✓ fixture-8✓ fixture-9✓ fixture-10✓ fixture-11✓ fixture-12✓ fixture-13✓ fixture-14✓ fixture-15✓ fixture-16✓ fixture-17✓ fixture-18✓ fixture-19
+  - heading "Corner recognition" [level=1]
+  - text: case colors
+  - combobox "case colors": yellow top
+  - group: settings drill, round & glance
+  - text: find the hidden color locked · varied angle
+  - group "corner recognition case":
+    - 'img "Three-dimensional corner-recognition cube in a locked left and below solve view. Current target: UBR. Hidden stickers remain masked."'
+  - text: Yellow top · Green front 0 combo
+  - group "corners round":
+    - list "corners round":
+      - listitem "case-1":
+        - button "case-1"
+  - text: single corner recog · includes key 2.36 Accuracy before speed
+  - paragraph: Which color completes this corner?
+  - group "Choose the hidden color":
+    - button "White"
+    - button "Yellow"
+    - button "Green"
+    - button "Blue"
+    - button "Red"
+    - button "Orange"
+  - status: Tap or press a color key.
+  - button "skip"
+  - group: Progress · recognition profile

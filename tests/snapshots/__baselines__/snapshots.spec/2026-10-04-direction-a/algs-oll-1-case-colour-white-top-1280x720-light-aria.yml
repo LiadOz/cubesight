@@ -1,0 +1,95 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - link "‹ OLL cases":
+    - /url: "#/algs/oll"
+  - paragraph: OLL case
+  - heading "Runway, Blank" [level=1]
+  - paragraph: The first two layers stay solved.
+  - group: paste a demo link
+  - region "Case and playback":
+    - group "Runway, Blank algorithm progress":
+      - list "Runway, Blank algorithm progress":
+        - listitem "moves":
+          - button "moves"
+        - text: moves
+        - listitem "sledgehammer":
+          - button "sledgehammer"
+        - text: sledgehammer
+    - group "Runway, Blank case":
+      - 'img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front. Highlighted pieces: UFR, UBR, UBL, UFL, UF, UR, UB, UL, U."'
+    - group "Runway, Blank alg":
+      - list "Moves for Runway, Blank alg":
+        - 'listitem "Move 1 of 11: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 2 of 11: U2. Turn the top face (white center) 180° (looking directly at that face)."': U2
+        - 'listitem "Move 3 of 11: R2. Turn the right face (red center) 180° (looking directly at that face)."': R2
+        - 'listitem "Move 4 of 11: F. Turn the front face (green center) clockwise (looking directly at that face)."': F
+        - 'listitem "Move 5 of 11: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 6 of 11: F′. Turn the front face (green center) counterclockwise (looking directly at that face)."': F′
+        - 'listitem "Move 7 of 11: U2. Turn the top face (white center) 180° (looking directly at that face)."': U2
+        - 'listitem "Move 8 of 11: R′. Turn the right face (red center) counterclockwise (looking directly at that face)."': R′
+        - 'listitem "Move 9 of 11: F. Turn the front face (green center) clockwise (looking directly at that face)."': F
+        - 'listitem "Move 10 of 11: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 11 of 11: F′. Turn the front face (green center) counterclockwise (looking directly at that face)."': F′
+      - status: "Move 1 of 11: R. Turn the right face (red center) clockwise (looking directly at that face)."
+    - button "reset r"
+    - button "Previous move" [disabled]: ←
+    - button "play space"
+    - button "Next move": →
+    - text: speed
+    - combobox "Playback speed":
+      - option "0.5×"
+      - option "1×" [selected]
+      - option "2×"
+      - option "4×"
+    - status: 0 / 11
+    - radiogroup "Cube display":
+      - radio "case ✓" [checked]
+      - radio "your cube"
+    - button "case colors · white top"
+    - paragraph: Connect a smart cube to mirror its turns.
+  - complementary:
+    - paragraph: virtual case · setup stays on screen
+    - article:
+      - strong: alg 1
+      - text: 11 moves
+      - code: R U2 R2 F R F′ U2 R′ F R F′
+      - paragraph:
+        - text: SpeedSolving Wiki community contributors ·
+        - link "source ↗":
+          - /url: https://www.speedsolving.com/wiki/index.php/OLL
+      - button "choose"
+      - button "drill"
+      - button "copy demo link"
+    - article:
+      - strong: alg 2
+      - text: 12 moves
+      - code: U R U′ R2 D′ Rw U′ Rw′ D R2 U R′
+      - paragraph:
+        - text: SpeedSolving Wiki community contributors ·
+        - link "source ↗":
+          - /url: https://www.speedsolving.com/wiki/index.php/OLL
+      - button "choose"
+      - button "drill"
+      - button "copy demo link"
+    - button "drill alg"
+    - button "start smart-cube drill" [disabled]
+    - text: No imported reconstructions use this case yet
+    - group: add your alg

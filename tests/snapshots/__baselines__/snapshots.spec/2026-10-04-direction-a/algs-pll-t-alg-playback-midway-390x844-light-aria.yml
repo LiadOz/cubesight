@@ -1,0 +1,103 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - link "‹ PLL cases":
+    - /url: "#/algs/pll"
+  - paragraph: PLL case
+  - heading "T" [level=1]
+  - paragraph: The first two layers stay solved.
+  - group: paste a demo link
+  - region "Case and playback":
+    - group "T algorithm progress":
+      - list "T algorithm progress":
+        - listitem "sexy move":
+          - button "sexy move"
+        - text: sexy move
+        - listitem "moves":
+          - button "moves"
+        - text: moves
+        - listitem "trigger":
+          - button "trigger"
+        - text: trigger
+        - listitem "moves":
+          - button "moves"
+        - text: moves
+    - group "T case":
+      - 'img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front. Highlighted pieces: UFR, UBR, UBL, UFL, UF, UR, UB, UL, U."'
+    - group "T alg":
+      - list "Moves for T alg":
+        - 'listitem "Move 1 of 14: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 2 of 14: U. Turn the top face (white center) clockwise (looking directly at that face)."': U
+        - 'listitem "Move 3 of 14: R′. Turn the right face (red center) counterclockwise (looking directly at that face)."': R′
+        - 'listitem "Move 4 of 14: U′. Turn the top face (white center) counterclockwise (looking directly at that face)."': U′
+        - 'listitem "Move 5 of 14: R′. Turn the right face (red center) counterclockwise (looking directly at that face)."': R′
+        - 'listitem "Move 6 of 14: F. Turn the front face (green center) clockwise (looking directly at that face)."': F
+        - 'listitem "Move 7 of 14: R2. Turn the right face (red center) 180° (looking directly at that face)."': R2
+        - 'listitem "Move 8 of 14: U′. Turn the top face (white center) counterclockwise (looking directly at that face)."': U′
+        - 'listitem "Move 9 of 14: R′. Turn the right face (red center) counterclockwise (looking directly at that face)."': R′
+        - 'listitem "Move 10 of 14: U′. Turn the top face (white center) counterclockwise (looking directly at that face)."': U′
+        - 'listitem "Move 11 of 14: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 12 of 14: U. Turn the top face (white center) clockwise (looking directly at that face)."': U
+        - 'listitem "Move 13 of 14: R′. Turn the right face (red center) counterclockwise (looking directly at that face)."': R′
+        - 'listitem "Move 14 of 14: F′. Turn the front face (green center) counterclockwise (looking directly at that face)."': F′
+      - status: "Move 2 of 14: U. Turn the top face (white center) clockwise (looking directly at that face)."
+    - button "reset r"
+    - button "Previous move": ←
+    - button "play space"
+    - button "Next move": →
+    - text: speed
+    - combobox "Playback speed":
+      - option "0.5×"
+      - option "1×" [selected]
+      - option "2×"
+      - option "4×"
+    - status: 1 / 14
+    - radiogroup "Cube display":
+      - radio "case ✓" [checked]
+      - radio "your cube"
+    - button "case colors · yellow top"
+    - paragraph: Connect a smart cube to mirror its turns.
+  - complementary:
+    - paragraph: virtual case · setup stays on screen
+    - article:
+      - strong: alg 1
+      - text: 14 moves
+      - code: R U R′ U′ R′ F R2 U′ R′ U′ R U R′ F′
+      - paragraph:
+        - text: SpeedSolving Wiki community contributors ·
+        - link "source ↗":
+          - /url: https://www.speedsolving.com/wiki/index.php/PLL
+      - button "choose"
+      - button "drill"
+      - button "copy demo link"
+    - article:
+      - strong: alg 2
+      - text: 14 moves
+      - code: F R U′ R′ U R U R2 F′ R U R U′ R′
+      - paragraph:
+        - text: SpeedSolving Wiki community contributors ·
+        - link "source ↗":
+          - /url: https://www.speedsolving.com/wiki/index.php/PLL
+      - button "choose"
+      - button "drill"
+      - button "copy demo link"
+    - button "drill alg"
+    - button "start smart-cube drill" [disabled]
+    - text: No imported reconstructions use this case yet
+    - group: add your alg

@@ -161,3 +161,28 @@ solve/reload and skipped/merged-stage checks passed separately in 35.4 s.
 
 No pushes, trunk merges or live-checkout edits were performed. There are no new
 design questions: the approved widgets remain the source of truth.
+
+## Current GUI verification and snapshot rollout
+
+Cross Scout's centred desktop/phone cube, approved settings/buttons/input and
+full phone targets are committed (ecca664, 818e625, 7078792). The added Explore
+route passes the full F8 viewport/theme matrix, including 320 px. Its real
+mounted view model and PLL's are now registered in the snapshot bridge.
+The combined trainer-fit and WP6 browser batch passed 23 tests in 24.4 s;
+Scout/smart-cube/theme/chart behavior passed 19 tests in 35.1 s. These focused
+timings are verification evidence, not a full regression measurement.
+
+The full F9 suite passes 104 tests (2.4 min, two workers), with unchanged prior
+images retained. Captures explicitly load bundled fonts, pin the Scout setup
+and WCA scramble input, pause the recording-page clock, and replay real
+cross/analysis replies. The rotation fixture preserves all original events and
+appends two actual solver replies; independent node checks verify continuations
+and segmentation. Pixel canvases, exact accessibility trees and every semantic
+model field remain checked. Only validated render revision and solver CPU
+profiling fields are omitted. Log: test-results/f9-current-complete.log.
+
+The current npm run check passed all 641 node tests, lint (zero errors), build
+and gallery coverage (zero uncovered images). Complete default browser, PWA,
+full F8, performance and the combined 600 s regression still need verification.
+Automatic merge selection and the Tier 2 failure blocker remain pending; the
+merge queue's existing full gate has not been weakened.

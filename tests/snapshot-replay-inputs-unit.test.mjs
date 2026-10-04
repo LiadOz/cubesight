@@ -3,7 +3,22 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { stateFromScramble, applyMoves } from '../src/cross-cube.js';
 import { crossSolved, f2lPairSlots, pairSolved } from '../src/solve-tracker.js';
-const inputs = JSON.parse(readFileSync(new URL('./fixtures/cross-suggestion-replay-inputs.json', import.meta.url), 'utf8'));
+const readFixture = name => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'));
+const rotationRecording = readFixture('rotation-cross-recording-with-analysis.json');
+const rotationInputs = Object.fromEntries(rotationRecording.events.filter(event => event.kind === 'read'
+  && /^(brain\.analysis|brain\.crossSuggestion):/.test(event.data.kind)).map(event => [event.data.kind, event.data.value]));
+const inputs = { ...readFixture('cross-suggestion-replay-inputs.json'),
+  ...Object.fromEntries(Object.entries(rotationInputs).filter(([key]) => key.startsWith('brain.crossSuggestion:'))) };
+
+test('visual rotation recording preserves every original event and adds only solver replies', () => {
+  const original = readFixture('rotation-cross-recording.json');
+  assert.deepEqual(rotationRecording.events.slice(0, original.events.length), original.events);
+  assert.deepEqual({ ...rotationRecording, events: [] }, { ...original, events: [] });
+  assert.equal(rotationRecording.events.length, original.events.length + 2);
+  assert.equal(Object.keys(rotationInputs).length, 2);
+  assert.ok(Object.keys(rotationInputs).some(key => key.startsWith('brain.analysis:')));
+  assert.ok(Object.keys(rotationInputs).some(key => key.startsWith('brain.crossSuggestion:')));
+});
 
 test('recorded solver inputs contain valid cross and X-cross continuations on every face', () => {
   for (const [key, reply] of Object.entries(inputs)) {
@@ -24,7 +39,8 @@ test('recorded solver inputs contain valid cross and X-cross continuations on ev
 test('recorded analysis inputs retain the real segmentation and timing semantics', async () => {
   const { segmentSolve } = await import('../src/analysis/segment.js');
   const { analysisReplayKey } = await import('../src/analysis/record.js');
-  const analyses = JSON.parse(readFileSync(new URL('./fixtures/solve-analysis-replay-inputs.json', import.meta.url), 'utf8'));
+  const analyses = { ...readFixture('solve-analysis-replay-inputs.json'),
+    ...Object.fromEntries(Object.entries(rotationInputs).filter(([key]) => key.startsWith('brain.analysis:'))) };
   for (const [key, summary] of Object.entries(analyses)) {
     const { input, config } = JSON.parse(key.slice('brain.analysis:'.length));
     const segment = segmentSolve(input);

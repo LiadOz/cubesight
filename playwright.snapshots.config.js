@@ -1,4 +1,5 @@
 import { defineConfig } from 'playwright/test';
+import { SNAPSHOT_BASELINE_REVISION } from './tests/snapshots/capture-matrix.js';
 
 export default defineConfig({
   testDir: './tests',
@@ -7,7 +8,7 @@ export default defineConfig({
   timeout: 60_000,
   fullyParallel: true,
   workers: 2,
-  snapshotPathTemplate: '{testDir}/snapshots/__baselines__/{testFileBaseName}/{arg}{ext}',
+  snapshotPathTemplate: `${process.env.CUBESIGHT_SNAPSHOT_BASELINE_ROOT || '{testDir}/snapshots/__baselines__'}/{testFileBaseName}/${SNAPSHOT_BASELINE_REVISION}/{arg}{ext}`,
   expect: {
     timeout: 5000,
     toMatchAriaSnapshot: { children: 'equal' },

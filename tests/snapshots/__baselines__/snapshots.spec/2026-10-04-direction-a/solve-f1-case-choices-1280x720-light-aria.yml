@@ -1,0 +1,116 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve results":
+          - listitem "cross, 0.54, −2.49":
+            - button "cross, 0.54, −2.49"
+          - text: cross 0.54 −2.49
+          - listitem "pair 1 · F2L 4, 0.19, −2.23":
+            - button "pair 1 · F2L 4"
+          - text: pair 1 · F2L 4 0.19 −2.23
+          - listitem "pair 2, 0.39, −2.03":
+            - button "pair 2, 0.39, −2.03"
+          - text: pair 2 0.39 −2.03
+          - listitem "pair 3, 0.39, −2.03":
+            - button "pair 3, 0.39, −2.03"
+          - text: pair 3 0.39 −2.03
+          - listitem "pair 4, 0.23, −2.19":
+            - button "pair 4, 0.23, −2.19"
+          - text: pair 4 0.23 −2.19
+          - listitem "eo, 0.73, −0.48":
+            - button "eo, 0.73, −0.48"
+          - text: eo 0.73 −0.48
+          - listitem "co · Runway, Blank, skip":
+            - button "co · Runway, Blank · recog 0.07 s · exec 0.66 s"
+          - text: co · Runway, Blank skip
+          - listitem "cp, 1.11, −0.91":
+            - button "cp, 1.11, −0.91"
+          - text: cp 1.11 −0.91
+          - listitem "ep · T, skip":
+            - button "ep · T · recog 0.13 s · exec 0.98 s"
+          - text: ep · T skip
+          - button "detour": "!"
+          - button "3 markers; activate to inspect facts": "3"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "co skip": ✦
+    - region "Solve results":
+      - navigation
+      - strong: "3.60"
+      - paragraph: ao5 — · PB 3.60
+      - paragraph: "Move 4, D: that turned you away from the cross. The shortest way home from here was R D′ F, 3 more moves; you took 5 more (6 vs your 8)."
+      - button "open F2L 4 case"
+      - region "Solve review":
+        - region "Stage detail":
+          - strong: pair 1
+          - button "Close detail": close esc
+          - group "Moves of this stage":
+            - button "start"
+            - button "R"
+            - button "U"
+            - button "R′"
+          - term: time
+          - definition: "0.19"
+          - definition
+          - term: moves
+          - definition: "3"
+          - definition
+          - term: tps
+          - definition: "15.38"
+          - definition: avg 4.00
+          - term: pauses
+          - definition: none
+          - definition
+          - list:
+            - listitem: best pair chosen
+            - listitem: efficient pair
+          - paragraph: yours 3 · minimum 3 moves proven
+          - button "yours ▶" [pressed]
+          - button "pin"
+          - button "copy your demo link"
+          - paragraph:
+            - text: yours
+            - code: R U R′
+          - list "Ranked pair completions":
+            - listitem:
+              - button "FR · 3 moves R U R'":
+                - text: FR · 3 moves
+                - code: R U R'
+      - button "next scramble"
+      - link "review":
+        - /url: "#/review/1768478400000"
+      - button "more…"
+      - group
+  - button "space next scramble"
+  - button "[ – ] moments"
+  - button "r retry this scramble"
+  - heading "solved" [level=2]
+  - paragraph: 49 moves · 13.58 TPS · 3.61 s · 4/4
+  - button "rebuild view"
+  - 'button "dev `"'

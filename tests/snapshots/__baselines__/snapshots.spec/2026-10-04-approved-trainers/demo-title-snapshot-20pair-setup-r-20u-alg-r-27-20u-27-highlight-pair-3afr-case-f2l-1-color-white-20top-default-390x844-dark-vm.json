@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "owner": "F17",
+  "dataOwner": "F17",
+  "route": "/demo",
+  "state": "active",
+  "viewModel": {
+    "kind": "demo",
+    "title": "Snapshot pair",
+    "partIndex": 0,
+    "partCount": 1,
+    "part": {
+      "title": "Snapshot pair",
+      "setup": [
+        "R",
+        "U"
+      ],
+      "alg": [
+        "R'",
+        "U'"
+      ],
+      "steps": [],
+      "highlight": [
+        "pair:FR"
+      ],
+      "caseId": "f2l/1",
+      "speed": 1,
+      "colorSetting": "white top"
+    },
+    "moveIndex": 0,
+    "moveCount": 2,
+    "playing": false,
+    "displayState": {
+      "cubies": [
+        {
+          "id": "UFR",
+          "position": [
+            1,
+            1,
+            1
+          ],
+          "stickers": {
+            "R": "white",
+            "U": "green",
+            "F": "red"
+          }
+        },
+        {
+          "id": "UBR",
+          "position": [
+            1,
+            -1,
+            -1
+          ],
+          "stickers": {
+            "B": "white",
+            "D": "blue",
+            "R": "red"
+          }
+        },
+        {
+          "id": "UBL",
+          "position": [
+            1,
+            1,
+            -1
+          ],
+          "stickers": {
+            "U": "white",
+            "R": "blue",
+            "B": "orange"
+          }
+        },
+        {
+          "id": "UFL",
+          "position": [
+            -1,
+            1,
+            -1
+          ],
+          "stickers": {
+            "U": "white",
+            "L": "green",
+            "B": "orange"
+          }
+        },
+        {
+          "id": "DFR",
+          "position": [
+            -1,
+            1,
+            1
+          ],
+          "stickers": {
+            "L": "yellow",
+            "U": "green",
+            "F": "red"
+          }
+        },
+        {
+          "id": "DBR",
+          "position": [
+            1,
+            -1,
+            1
+          ],
+          "stickers": {
+            "F": "yellow",
+            "D": "blue",
+            "R": "red"
+          }
+        },
+        {
+          "id": "DBL",
+          "position": [
+            -1,
+            -1,
+            -1
+          ],
+          "stickers": {
+            "D": "yellow",
+            "B": "blue",
+            "L": "orange"
+          }
+        },
+        {
+          "id": "DFL",
+          "position": [
+            -1,
+            -1,
+            1
+          ],
+          "stickers": {
+            "D": "yellow",
+            "F": "green",
+            "L": "orange"
+          }
+        },
+        {
+          "id": "UF",
+          "position": [
+            -1,
+            1,
+            0
+          ],
+          "stickers": {
+            "U": "white",
+            "L": "green"
+          }
+        },
+        {
+          "id": "UR",
+          "position": [
+            1,
+            0,
+            -1
+          ],
+          "stickers": {
+            "B": "white",
+            "R": "red"
+          }
+        },
+        {
+          "id": "UB",
+          "position": [
+            1,
+            1,
+            0
+          ],
+          "stickers": {
+            "U": "white",
+            "R": "blue"
+          }
+        },
+        {
+          "id": "UL",
+          "position": [
+            0,
+            1,
+            -1
+          ],
+          "stickers": {
+            "U": "white",
+            "B": "orange"
+          }
+        },
+        {
+          "id": "FR",
+          "position": [
+            0,
+            1,
+            1
+          ],
+          "stickers": {
+            "U": "green",
+            "F": "red"
+          }
+        },
+        {
+          "id": "BR",
+          "position": [
+            1,
+            -1,
+            0
+          ],
+          "stickers": {
+            "D": "blue",
+            "R": "red"
+          }
+        },
+        {
+          "id": "BL",
+          "position": [
+            -1,
+            0,
+            -1
+          ],
+          "stickers": {
+            "B": "blue",
+            "L": "orange"
+          }
+        },
+        {
+          "id": "FL",
+          "position": [
+            -1,
+            0,
+            1
+          ],
+          "stickers": {
+            "F": "green",
+            "L": "orange"
+          }
+        },
+        {
+          "id": "DF",
+          "position": [
+            0,
+            -1,
+            1
+          ],
+          "stickers": {
+            "D": "yellow",
+            "F": "green"
+          }
+        },
+        {
+          "id": "DR",
+          "position": [
+            1,
+            0,
+            1
+          ],
+          "stickers": {
+            "F": "yellow",
+            "R": "red"
+          }
+        },
+        {
+          "id": "DB",
+          "position": [
+            0,
+            -1,
+            -1
+          ],
+          "stickers": {
+            "D": "yellow",
+            "B": "blue"
+          }
+        },
+        {
+          "id": "DL",
+          "position": [
+            -1,
+            -1,
+            0
+          ],
+          "stickers": {
+            "D": "yellow",
+            "L": "orange"
+          }
+        },
+        {
+          "id": "U",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "stickers": {
+            "U": "white"
+          }
+        },
+        {
+          "id": "D",
+          "position": [
+            0,
+            -1,
+            0
+          ],
+          "stickers": {
+            "D": "yellow"
+          }
+        },
+        {
+          "id": "F",
+          "position": [
+            0,
+            0,
+            1
+          ],
+          "stickers": {
+            "F": "green"
+          }
+        },
+        {
+          "id": "B",
+          "position": [
+            0,
+            0,
+            -1
+          ],
+          "stickers": {
+            "B": "blue"
+          }
+        },
+        {
+          "id": "R",
+          "position": [
+            1,
+            0,
+            0
+          ],
+          "stickers": {
+            "R": "red"
+          }
+        },
+        {
+          "id": "L",
+          "position": [
+            -1,
+            0,
+            0
+          ],
+          "stickers": {
+            "L": "orange"
+          }
+        }
+      ]
+    },
+    "color": {
+      "setting": "white top",
+      "topColor": "white",
+      "allowedColors": [
+        "white"
+      ]
+    }
+  },
+  "shared": {
+    "route": "/demo",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/demo?title=Snapshot%20pair&setup=R%20U&alg=R%27%20U%27&highlight=pair%3AFR&case=f2l/1&color=white%20top",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

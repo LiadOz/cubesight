@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "owner": "F2",
+  "dataOwner": "F2",
+  "route": "/history/1000000/replay",
+  "state": "replay",
+  "viewModel": {
+    "screen": "replay",
+    "route": {
+      "kind": "replay",
+      "path": "/history/1000000/replay",
+      "at": 1000000,
+      "marker": null
+    },
+    "filters": {
+      "query": "",
+      "session": "all",
+      "focus": "all",
+      "source": "all",
+      "statsSource": "smart"
+    },
+    "summary": {
+      "count": 1,
+      "focus": "all",
+      "pb": "12.34",
+      "ao5": "—",
+      "ao12": "—"
+    },
+    "sessions": [
+      {
+        "id": "s1000000",
+        "focus": "speed",
+        "firstAt": 1000000,
+        "lastAt": 1000000,
+        "count": 1,
+        "period": "morning",
+        "startTime": "00:16",
+        "ao12": "—",
+        "ao5": "—",
+        "solves": [
+          {
+            "at": 1000000,
+            "href": "/history/1000000",
+            "result": "12.34",
+            "penalty": null,
+            "solveMs": 12340,
+            "focus": "speed",
+            "source": "smart",
+            "moveCount": 2,
+            "pb": true,
+            "segments": []
+          }
+        ],
+        "firstSolveAt": 1000000
+      }
+    ],
+    "results": null,
+    "selected": {
+      "at": 1000000,
+      "result": "12.34",
+      "solveMs": 12340,
+      "penalty": null,
+      "focus": "speed",
+      "source": "smart",
+      "moveCount": 2,
+      "analysis": null,
+      "sessionId": "s1000000",
+      "scramble": "R U",
+      "case": null,
+      "hasReplay": true,
+      "hasTiming": false,
+      "timingLabel": "timing not recorded",
+      "moveCountTotal": 2,
+      "move": 0,
+      "elapsedMs": 0,
+      "durationMs": 12340,
+      "speed": 1,
+      "playing": false,
+      "stages": [],
+      "rotationMarks": [],
+      "markers": []
+    },
+    "now": 0
+  },
+  "shared": {
+    "route": "/history/1000000/replay",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "history",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/history/1000000/replay",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

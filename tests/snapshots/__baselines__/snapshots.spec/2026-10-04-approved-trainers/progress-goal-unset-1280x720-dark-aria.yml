@@ -1,0 +1,109 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "progress" [level=1]
+  - paragraph: stage averages, drills, and your ao12 goal.
+  - form "Progress filters":
+    - group "session":
+      - text: session
+      - button "all sessions ✓" [pressed]
+      - button "Jan 15 · 12 solves · speed"
+    - group "period":
+      - text: period
+      - button "7 days"
+      - button "30 days ✓" [pressed]
+      - button "all time"
+    - text: solve source
+    - combobox "solve source": cube
+    - text: focus
+    - combobox "focus": speed
+    - text: view
+    - combobox "view": ao12 goal
+  - region "Progress Orbit":
+    - group "average split by stage":
+      - list "ao12 goal progress":
+        - listitem "ao12, waiting":
+          - button "ao12 goal not set"
+        - text: ao12 waiting
+    - group "3D cube at the center of the progress Orbit":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - paragraph: Set an ao12 target to use this Orbit for goal progress.
+  - region "Solve trends and split comparisons":
+    - heading "trends and comparisons" [level=2]
+    - figure "1 rolling ao12 samples · selected cohort":
+      - heading "long-term ao12" [level=3]
+      - img "ao12 trend across selected solves"
+      - text: 1 rolling ao12 samples · selected cohort
+    - figure "12 most recent timed solves · lower is faster":
+      - heading "recent solves" [level=3]
+      - img "recent solve times"
+      - text: 12 most recent timed solves · lower is faster
+    - figure "stage splits unavailable · Stage averages · no previous period data for comparison.":
+      - heading "stage averages" [level=3]
+      - paragraph: "stage split comparison: no data yet"
+      - text: stage splits unavailable · Stage averages · no previous period data for comparison.
+  - region "Drills":
+    - heading "drills · 0 cases due" [level=2]
+    - paragraph: Round totals use the selected period. Due cases follow each drill schedule.
+    - list:
+      - listitem:
+        - link "corner recognition":
+          - /url: "#/drills/corners"
+        - text: 1 round · 8 cases · 88% correct · 0 cases due
+      - listitem:
+        - link "PLL recognition":
+          - /url: "#/drills/pll"
+        - text: 0 rounds · 0 cases · 0 cases due
+      - listitem:
+        - link "F2L deduction":
+          - /url: "#/drills/f2l"
+        - text: 0 rounds · 0 cases · 0 cases due
+      - listitem:
+        - link "cross planning":
+          - /url: "#/drills/scout"
+        - text: 0 rounds · 0 cases · 0 cases due
+      - listitem:
+        - link "OLL recognition":
+          - /url: "#/drills/oll"
+        - text: 0 rounds · 0 cases · 0 cases due
+      - listitem:
+        - link "lookahead":
+          - /url: "#/drills/lookahead"
+        - text: 0 rounds · 0 cases · 0 cases due
+      - listitem:
+        - link "alg drills":
+          - /url: "#/algs"
+        - text: 0 rounds · 0 cases · 0 cases due
+    - link "start a round ›":
+      - /url: "#/drills?review=due"
+  - region "ao12 goal":
+    - heading "goal" [level=2]
+    - paragraph: ao12 goal · not set
+    - paragraph: Set an ao12 target to follow it on this Orbit.
+    - text: ao12 target in seconds
+    - spinbutton "ao12 target in seconds"
+    - button "save goal"
+    - button "clear" [disabled]
+  - region "This week":
+    - heading "this week" [level=2]
+    - paragraph: 12 solves · 1 round · 8 cases · ao12 17.00
+    - button "share latest solve · PNG"
+    - link "export or import data ›":
+      - /url: "#/history"

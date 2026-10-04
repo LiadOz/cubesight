@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "owner": "F15",
+  "dataOwner": "F15",
+  "route": "/drills/corners",
+  "state": "trainer",
+  "viewModel": {
+    "screen": "trainer",
+    "drill": "corner",
+    "phase": "recognition",
+    "currentCase": {
+      "id": "ubr",
+      "seed": "corner:practice:0:0:2",
+      "topColor": "yellow",
+      "orientation": {
+        "green": "yellow",
+        "blue": "white",
+        "red": "green",
+        "orange": "blue",
+        "white": "orange",
+        "yellow": "red"
+      },
+      "targets": [
+        {
+          "id": "ubr"
+        }
+      ]
+    },
+    "answers": [
+      {
+        "logicalKey": "white",
+        "displayKey": "white",
+        "label": "White",
+        "selected": false,
+        "correct": true
+      },
+      {
+        "logicalKey": "yellow",
+        "displayKey": "yellow",
+        "label": "Yellow",
+        "selected": false,
+        "correct": false
+      },
+      {
+        "logicalKey": "green",
+        "displayKey": "green",
+        "label": "Green",
+        "selected": false,
+        "correct": false
+      },
+      {
+        "logicalKey": "blue",
+        "displayKey": "blue",
+        "label": "Blue",
+        "selected": false,
+        "correct": false
+      },
+      {
+        "logicalKey": "red",
+        "displayKey": "red",
+        "label": "Red",
+        "selected": false,
+        "correct": false
+      },
+      {
+        "logicalKey": "orange",
+        "displayKey": "orange",
+        "label": "Orange",
+        "selected": false,
+        "correct": false
+      }
+    ],
+    "round": {
+      "page": "round",
+      "drill": "corners",
+      "phase": "active",
+      "display": {
+        "mode": "case",
+        "caseColor": "yellow top",
+        "topColor": "yellow",
+        "caseSeed": "corners:1791103680174:19",
+        "orbitShape": "open"
+      },
+      "currentCase": "fixture-19",
+      "round": {
+        "status": "active",
+        "kind": "cases",
+        "total": 20,
+        "answered": 19,
+        "answers": [
+          {
+            "caseId": "fixture-1",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-2",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-3",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-4",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-5",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-6",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-7",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-8",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-9",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-10",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-11",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-12",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-13",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-14",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-15",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-16",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-17",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-18",
+            "correct": true,
+            "ms": 500
+          },
+          {
+            "caseId": "fixture-19",
+            "correct": true,
+            "ms": 500
+          }
+        ],
+        "combo": 19,
+        "bestCombo": 19,
+        "averageMs": 500,
+        "segments": [
+          {
+            "key": "case-1",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-2",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-3",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-4",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-5",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-6",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-7",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-8",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-9",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-10",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-11",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-12",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-13",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-14",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-15",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-16",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-17",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-18",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-19",
+            "state": "good",
+            "weight": 1,
+            "fill": 1
+          },
+          {
+            "key": "case-20",
+            "state": "current",
+            "weight": 1,
+            "fill": 0
+          }
+        ]
+      },
+      "setup": null
+    },
+    "cube": {
+      "mode": "case",
+      "state": null,
+      "displayState": null,
+      "caseColorSetting": "yellow top",
+      "caseSeed": "corner:practice:0:0:2",
+      "highlight": null,
+      "renderData": {
+        "mode": "corner",
+        "targets": [
+          {
+            "targetCorner": "UBR",
+            "knownFaces": [
+              "U",
+              "R"
+            ],
+            "hiddenFace": "B",
+            "knownStickers": {
+              "U": "#ff6b00",
+              "R": "#009b48"
+            }
+          }
+        ],
+        "activeTargetIndex": 0,
+        "stickerColors": {
+          "U:UF": "#0051ba",
+          "F:UF": "#ffd500",
+          "U:UR": "#ffd500",
+          "R:UR": "#ff6b00",
+          "U:UB": "#ffffff",
+          "B:UB": "#e7332a",
+          "U:UL": "#009b48",
+          "L:UL": "#ffd500",
+          "F:FR": "#ff6b00",
+          "R:FR": "#0051ba",
+          "R:BR": "#ffffff",
+          "B:BR": "#009b48",
+          "B:BL": "#0051ba",
+          "L:BL": "#ffffff",
+          "L:FL": "#e7332a",
+          "F:FL": "#009b48",
+          "D:DF": "#ffffff",
+          "F:DF": "#ff6b00",
+          "D:DR": "#009b48",
+          "R:DR": "#ff6b00",
+          "D:DB": "#e7332a",
+          "B:DB": "#0051ba",
+          "D:DL": "#ffd500",
+          "L:DL": "#e7332a"
+        },
+        "cornerStickers": {},
+        "showAllCorners": false,
+        "colors": {
+          "U": "#ffd500",
+          "D": "#ffffff",
+          "F": "#009b48",
+          "B": "#0051ba",
+          "R": "#ff6b00",
+          "L": "#e7332a"
+        },
+        "feedback": null
+      }
+    },
+    "feedback": "",
+    "settings": {
+      "mode": "single",
+      "glance": false,
+      "exposureMode": "adaptive",
+      "exposureMs": 600,
+      "caseColor": "yellow top"
+    }
+  },
+  "shared": {
+    "route": "/drills/corners",
+    "theme": "light",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "drills",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/drills/corners",
+    "fixtureState": "drill-midround",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "light",
+    "cubeState": {
+      "cameraPose": "6.0437,4.9664,8.6225",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

@@ -1,0 +1,41 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - region "recording":
+    - paragraph: developer tools
+    - heading "recording" [level=1]
+    - paragraph: CubeSight keeps a bounded local ring of cube input, connection events and page changes. Exported recordings mask device identifiers and coarse browser details.
+    - group "current smart cube recording preview":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - status: 4 events · 0.1 s recording duration · local buffer
+    - button "save anonymized recording"
+    - button "clear recording"
+    - list "recent recorded events":
+      - listitem:
+        - strong: view.mount
+        - text: +95 ms
+      - listitem:
+        - strong: view.unmount
+        - text: +95 ms
+      - listitem:
+        - strong: navigation.route
+        - text: +94 ms
+      - listitem:
+        - strong: observe.session
+        - text: +1 ms

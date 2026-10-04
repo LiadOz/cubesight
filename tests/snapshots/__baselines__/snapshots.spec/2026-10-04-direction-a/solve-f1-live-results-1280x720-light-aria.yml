@@ -1,0 +1,77 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve results":
+          - listitem "cross · xxxx-cross, 0.05, −2.97":
+            - button "cross · xxxx-cross, 0.05, −2.97"
+          - text: cross · xxxx-cross 0.05 −2.97
+          - listitem "pair 1, with cross":
+            - button "pair 1, with cross"
+          - text: pair 1 with cross
+          - listitem "pair 2, with cross":
+            - button "pair 2, with cross"
+          - text: pair 2 with cross
+          - listitem "pair 3, with cross":
+            - button "pair 3, with cross"
+          - text: pair 3 with cross
+          - listitem "pair 4, with cross":
+            - button "pair 4, with cross"
+          - text: pair 4 with cross
+          - listitem "eo, skip":
+            - button "eo, skip"
+          - text: eo skip
+          - listitem "co, skip":
+            - button "co, skip"
+          - text: co skip
+          - listitem "cp, skip":
+            - button "cp, skip"
+          - text: cp skip
+          - listitem "ep, 0.01, −2.00":
+            - button "ep, 0.01, −2.00"
+          - text: ep 0.01 −2.00
+          - button "2 markers; activate to inspect facts": "2"
+          - button "oll skip": ✦
+          - button "pll skip": ✦
+    - region "Solve results":
+      - navigation
+      - strong: "0.07"
+      - paragraph: ao5 — · PB 0.07
+      - paragraph: "Xx-cross: two pairs came with the cross. Estimated saving: about 14 moves for a typical pair insertion."
+      - region "Solve review"
+      - button "next scramble"
+      - link "review":
+        - /url: "#/review/1768478400000"
+      - button "more…"
+      - group
+  - button "space next scramble"
+  - button "[ – ] moments"
+  - button "r retry this scramble"
+  - heading "solved" [level=2]
+  - paragraph: 8 moves · 105.26 TPS · 0.08 s · 4/4
+  - button "rebuild view"
+  - 'button "dev `"'

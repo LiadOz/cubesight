@@ -1,6 +1,7 @@
 // Real-page F1 layout driver. The route owns the only Brain controller and
 // header cube session; the replay adapter replaces only the physical device
 // connection behind that shared session.
+import { expect } from 'playwright/test';
 import { selectOrbitMarker } from '../helpers/orbit-markers.js';
 import { mountFakeCube, completeScramble, solveReverse } from './fake-cube.js';
 import { getCase } from '../../src/algs/seed/cases.js';
@@ -163,13 +164,25 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
       return;
     }
     const at = vm.results.record.at;
-    await page.waitForFunction(async solveAt => {
+    if (await page.evaluate(() => Boolean(window.__cubesightSnapshotReplayClock))) {
+      // Production replay correctly keeps history ephemeral. This fresh-page
+      // history fixture imports its real analysed replay result explicitly;
+      // ordinary live drivers still verify the application's persisted write.
+      await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.results.review.status), { timeout: 30000 }).toBe('done');
+      await page.evaluate(async () => {
+        const record = window.__cubesightSnapshot.getViewModel().viewModel.results.record;
+        const backend = await (await import('/src/store/idb.js')).openIdbBackend();
+        try { await backend.apply({ put: [record], meta: { schema: 2 } }); }
+        finally { await backend.close(); }
+      });
+    }
+    await expect.poll(() => page.evaluate(async solveAt => {
       const backend = await (await import('/src/store/idb.js')).openIdbBackend();
       try { return (await backend.getAll()).some(record => record.at === solveAt); }
       finally { await backend.close(); }
-    }, at);
+    }, at)).toBe(true);
     await page.goto(`/#/history/${at}`);
-    await page.locator('#history-view .f1-results').waitFor({ state: 'visible' });
+    await page.locator('#history-view .f1-results').waitFor({ state: 'visible', timeout: 10000 });
     const review = page.locator('#history-view .f1-results__actions a[href*="/review/"]').first();
     const href = await review.getAttribute('href');
     if (!href?.startsWith(`#/history/${at}/review/`)) throw new Error('past results review link is not a history marker deep link');
@@ -201,21 +214,27 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
   if (f1State === 'inspection-normal' || f1State === 'inspection-plus2' || f1State === 'inspection-dnf-ticks') {
     await finishInspection(page);
     if (f1State !== 'inspection-normal') {
-      await page.clock.fastForward(f1State === 'inspection-plus2' ? 16_000 : 18_000);
+      const elapsed = f1State === 'inspection-plus2' ? 16_000 : 18_000;
+      await page.evaluate(ms => { if (window.__cubesightSnapshotReplayClock) window.__cubesightSnapshotReplayClock.ms += ms; }, elapsed);
+      await page.clock.fastForward(elapsed);
       await page.waitForTimeout(60);
     }
     const vm = await requireView(page, 'inspection');
     const fills = await page.locator('#brain-view .orbit__segment[data-key]')
       .evaluateAll(groups => Object.fromEntries(groups.map(group => [group.dataset.key, group.querySelector('.orbit__segment-fill')?.getAttribute('d') ?? ''])));
     if (f1State === 'inspection-normal' && vm.inspection?.penalty) throw new Error(`normal inspection unexpectedly has ${vm.inspection.penalty}`);
-    if (f1State === 'inspection-plus2' && (vm.inspection?.penalty !== '+2' || !fills.inspection || !fills.plus2 || fills.dnf)) throw new Error('at 16s, mounted model and Orbit paths must show normal complete, +2 filling, and DNF empty');
-    if (f1State === 'inspection-dnf-ticks' && (vm.inspection?.penalty !== 'DNF' || !(vm.inspection?.ticks ?? []).some(tick => tick.passed) || !fills.inspection || !fills.plus2 || !fills.dnf)) throw new Error('at 18s, mounted model and Orbit paths must show DNF with passed ticks and all three zone fills');
+    if (f1State === 'inspection-plus2' && (vm.inspection?.penalty !== '+2' || fills.inspection || !fills.plus2 || fills.dnf)) throw new Error('at 16s, mounted model and Orbit paths must show remaining time drained, +2 filling, and DNF empty');
+    if (f1State === 'inspection-dnf-ticks' && (vm.inspection?.penalty !== 'DNF' || !(vm.inspection?.ticks ?? []).some(tick => tick.passed) || fills.inspection || !fills.plus2 || !fills.dnf)) throw new Error('at 18s, mounted model and Orbit paths must show drained remaining time, passed ticks, +2 complete and DNF filling');
     return;
   }
 
   if (f1State === 'solving-fill') {
     await finishInspection(page);
     await page.evaluate(() => window.testBrain.emitTurns('F\''));
+    if (await page.evaluate(() => Boolean(window.__cubesightSnapshotReplayClock))) {
+      await page.evaluate(() => { window.__cubesightSnapshotReplayClock.ms += 1200; });
+      await page.waitForFunction(() => document.querySelector('#brain-view .b-clock')?.textContent === '1.20');
+    }
     await page.waitForFunction(() => window.__cubesightSnapshot.getViewModel().viewModel.screen === 'solving');
     const vm = await requireView(page, 'solving');
     if (!vm.timeline?.segments?.some(segment => segment.state === 'current')) throw new Error('solve in progress has no current stage');

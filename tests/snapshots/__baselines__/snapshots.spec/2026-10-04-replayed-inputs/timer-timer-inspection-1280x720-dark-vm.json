@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "owner": "F4",
+  "dataOwner": "F4",
+  "route": "/timer",
+  "state": "inspecting",
+  "viewModel": {
+    "phase": "inspecting",
+    "hold": null,
+    "scramble": "F2 D2 L2 U' D L F B U R U2 L' D2 L2 U2 B2 R B2 D2 L' B2",
+    "scrambleState": "ready",
+    "elapsedMs": 0,
+    "inspectionElapsedMs": 2075,
+    "penalty": null,
+    "display": {
+      "cube": "case",
+      "caseColor": "yellow top",
+      "orbitShape": "open",
+      "orbitSegments": [
+        {
+          "key": "inspection",
+          "state": "current",
+          "label": "inspection",
+          "value": "13",
+          "fill": 0.13793333333333332
+        }
+      ]
+    },
+    "stats": [],
+    "notice": ""
+  },
+  "shared": {
+    "route": "/timer",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "solve",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/timer",
+    "fixtureState": "timer-inspection",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

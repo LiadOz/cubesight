@@ -1,0 +1,952 @@
+{
+  "schemaVersion": 1,
+  "owner": "F2",
+  "dataOwner": "F2",
+  "route": "/history/1000000/review/1",
+  "state": "review-detail",
+  "viewModel": {
+    "screen": "review-detail",
+    "route": {
+      "kind": "review",
+      "path": "/history/1000000/review/1",
+      "at": 1000000,
+      "marker": "1"
+    },
+    "filters": {
+      "query": "",
+      "session": "all",
+      "focus": "all",
+      "source": "all",
+      "statsSource": "smart"
+    },
+    "summary": {
+      "count": 1,
+      "focus": "all",
+      "pb": "12.34",
+      "ao5": "—",
+      "ao12": "—"
+    },
+    "sessions": [
+      {
+        "id": "s1000000",
+        "focus": "speed",
+        "firstAt": 1000000,
+        "lastAt": 1000000,
+        "count": 1,
+        "period": "morning",
+        "startTime": "00:16",
+        "ao12": "—",
+        "ao5": "—",
+        "solves": [
+          {
+            "at": 1000000,
+            "href": "/history/1000000",
+            "result": "12.34",
+            "penalty": null,
+            "solveMs": 12340,
+            "focus": "speed",
+            "source": "smart",
+            "moveCount": 2,
+            "pb": true,
+            "segments": []
+          }
+        ],
+        "firstSolveAt": 1000000
+      }
+    ],
+    "results": {
+      "key": "1000000",
+      "record": {
+        "at": 1000000,
+        "focus": "speed",
+        "sessionId": "s1000000",
+        "scramble": "R U",
+        "free": false,
+        "crossFace": null,
+        "crossColor": null,
+        "solveMs": 12340,
+        "moveCount": 2,
+        "solveMoves": [
+          "U'",
+          "R'"
+        ],
+        "tps": null,
+        "scrambleTurns": [],
+        "phases": null,
+        "xcross": null,
+        "rotations": 0,
+        "gyro": false,
+        "detours": 0,
+        "mistakes": 0,
+        "pllCase": null,
+        "ollCase": null,
+        "ollRecognitionMs": null,
+        "ollExecutionMs": null,
+        "pllRecognitionMs": null,
+        "pllExecutionMs": null,
+        "solved": true,
+        "reviewAccuracy": null,
+        "penalty": null,
+        "inspectionMs": null,
+        "inspectionMode": null,
+        "splits": null,
+        "moveTimes": null,
+        "rotationMarks": null,
+        "dFixMs": null,
+        "analysis": null,
+        "config": null
+      },
+      "time": {
+        "text": "12.34",
+        "resultText": "12.34",
+        "penalty": null,
+        "tone": "accent"
+      },
+      "moves": "2",
+      "tps": "—",
+      "inspection": "—",
+      "method": "cfop · 2-look",
+      "caseLinks": {},
+      "timeline": {
+        "visible": true,
+        "currentIndex": 9,
+        "planKey": "cross,pair1,pair2,pair3,pair4,eo,co,cp,ep",
+        "segments": [
+          {
+            "key": "cross",
+            "label": "cross",
+            "short": "x",
+            "weight": 0.1515151515151515,
+            "avgMs": 3030.3030303030305,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair1",
+            "label": "pair 1",
+            "short": "p1",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair2",
+            "label": "pair 2",
+            "short": "p2",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair3",
+            "label": "pair 3",
+            "short": "p3",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair4",
+            "label": "pair 4",
+            "short": "p4",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "eo",
+            "label": "eo",
+            "short": "eo",
+            "weight": 0.0606060606060606,
+            "avgMs": 1212.1212121212122,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "co",
+            "label": "co",
+            "short": "co",
+            "weight": 0.10101010101010101,
+            "avgMs": 2020.2020202020205,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "cp",
+            "label": "cp",
+            "short": "cp",
+            "weight": 0.10101010101010101,
+            "avgMs": 2020.2020202020205,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "ep",
+            "label": "ep",
+            "short": "ep",
+            "weight": 0.10101010101010101,
+            "avgMs": 2020.2020202020205,
+            "state": "future",
+            "fill": 0,
+            "skipped": false,
+            "merged": false,
+            "splitMs": null,
+            "splitText": "",
+            "delta": null,
+            "moves": null,
+            "selectable": true,
+            "caseKey": null
+          }
+        ],
+        "markers": []
+      },
+      "vsAo12": null,
+      "tpsSeries": {
+        "points": [
+          {
+            "tMs": 0,
+            "tps": 0
+          },
+          {
+            "tMs": 100,
+            "tps": 0
+          },
+          {
+            "tMs": 200,
+            "tps": 0
+          },
+          {
+            "tMs": 300,
+            "tps": 0
+          },
+          {
+            "tMs": 400,
+            "tps": 0
+          },
+          {
+            "tMs": 500,
+            "tps": 0
+          },
+          {
+            "tMs": 600,
+            "tps": 0
+          },
+          {
+            "tMs": 700,
+            "tps": 0
+          },
+          {
+            "tMs": 800,
+            "tps": 0
+          },
+          {
+            "tMs": 900,
+            "tps": 0
+          },
+          {
+            "tMs": 1000,
+            "tps": 0
+          },
+          {
+            "tMs": 1100,
+            "tps": 0
+          },
+          {
+            "tMs": 1200,
+            "tps": 0
+          },
+          {
+            "tMs": 1300,
+            "tps": 0
+          },
+          {
+            "tMs": 1400,
+            "tps": 0
+          },
+          {
+            "tMs": 1500,
+            "tps": 0
+          },
+          {
+            "tMs": 1600,
+            "tps": 0
+          },
+          {
+            "tMs": 1700,
+            "tps": 0
+          },
+          {
+            "tMs": 1800,
+            "tps": 0
+          },
+          {
+            "tMs": 1900,
+            "tps": 0
+          },
+          {
+            "tMs": 2000,
+            "tps": 0
+          },
+          {
+            "tMs": 2100,
+            "tps": 0
+          },
+          {
+            "tMs": 2200,
+            "tps": 0
+          },
+          {
+            "tMs": 2300,
+            "tps": 0
+          },
+          {
+            "tMs": 2400,
+            "tps": 0
+          },
+          {
+            "tMs": 2500,
+            "tps": 0
+          },
+          {
+            "tMs": 2600,
+            "tps": 0
+          },
+          {
+            "tMs": 2700,
+            "tps": 0
+          },
+          {
+            "tMs": 2800,
+            "tps": 0
+          },
+          {
+            "tMs": 2900,
+            "tps": 0
+          },
+          {
+            "tMs": 3000,
+            "tps": 0
+          },
+          {
+            "tMs": 3100,
+            "tps": 0
+          },
+          {
+            "tMs": 3200,
+            "tps": 0
+          },
+          {
+            "tMs": 3300,
+            "tps": 0
+          },
+          {
+            "tMs": 3400,
+            "tps": 0
+          },
+          {
+            "tMs": 3500,
+            "tps": 0
+          },
+          {
+            "tMs": 3600,
+            "tps": 0
+          },
+          {
+            "tMs": 3700,
+            "tps": 0
+          },
+          {
+            "tMs": 3800,
+            "tps": 0
+          },
+          {
+            "tMs": 3900,
+            "tps": 0
+          },
+          {
+            "tMs": 4000,
+            "tps": 0
+          },
+          {
+            "tMs": 4100,
+            "tps": 0
+          },
+          {
+            "tMs": 4200,
+            "tps": 0
+          },
+          {
+            "tMs": 4300,
+            "tps": 0
+          },
+          {
+            "tMs": 4400,
+            "tps": 0
+          },
+          {
+            "tMs": 4500,
+            "tps": 0
+          },
+          {
+            "tMs": 4600,
+            "tps": 0
+          },
+          {
+            "tMs": 4700,
+            "tps": 0
+          },
+          {
+            "tMs": 4800,
+            "tps": 0
+          },
+          {
+            "tMs": 4900,
+            "tps": 0
+          },
+          {
+            "tMs": 5000,
+            "tps": 0
+          },
+          {
+            "tMs": 5100,
+            "tps": 0
+          },
+          {
+            "tMs": 5200,
+            "tps": 0
+          },
+          {
+            "tMs": 5300,
+            "tps": 0
+          },
+          {
+            "tMs": 5400,
+            "tps": 0
+          },
+          {
+            "tMs": 5500,
+            "tps": 0
+          },
+          {
+            "tMs": 5600,
+            "tps": 0
+          },
+          {
+            "tMs": 5700,
+            "tps": 0
+          },
+          {
+            "tMs": 5800,
+            "tps": 0
+          },
+          {
+            "tMs": 5900,
+            "tps": 0
+          },
+          {
+            "tMs": 6000,
+            "tps": 0
+          },
+          {
+            "tMs": 6100,
+            "tps": 0
+          },
+          {
+            "tMs": 6200,
+            "tps": 0
+          },
+          {
+            "tMs": 6300,
+            "tps": 0
+          },
+          {
+            "tMs": 6400,
+            "tps": 0
+          },
+          {
+            "tMs": 6500,
+            "tps": 0
+          },
+          {
+            "tMs": 6600,
+            "tps": 0
+          },
+          {
+            "tMs": 6700,
+            "tps": 0
+          },
+          {
+            "tMs": 6800,
+            "tps": 0
+          },
+          {
+            "tMs": 6900,
+            "tps": 0
+          },
+          {
+            "tMs": 7000,
+            "tps": 0
+          },
+          {
+            "tMs": 7100,
+            "tps": 0
+          },
+          {
+            "tMs": 7200,
+            "tps": 0
+          },
+          {
+            "tMs": 7300,
+            "tps": 0
+          },
+          {
+            "tMs": 7400,
+            "tps": 0
+          },
+          {
+            "tMs": 7500,
+            "tps": 0
+          },
+          {
+            "tMs": 7600,
+            "tps": 0
+          },
+          {
+            "tMs": 7700,
+            "tps": 0
+          },
+          {
+            "tMs": 7800,
+            "tps": 0
+          },
+          {
+            "tMs": 7900,
+            "tps": 0
+          },
+          {
+            "tMs": 8000,
+            "tps": 0
+          },
+          {
+            "tMs": 8100,
+            "tps": 0
+          },
+          {
+            "tMs": 8200,
+            "tps": 0
+          },
+          {
+            "tMs": 8300,
+            "tps": 0
+          },
+          {
+            "tMs": 8400,
+            "tps": 0
+          },
+          {
+            "tMs": 8500,
+            "tps": 0
+          },
+          {
+            "tMs": 8600,
+            "tps": 0
+          },
+          {
+            "tMs": 8700,
+            "tps": 0
+          },
+          {
+            "tMs": 8800,
+            "tps": 0
+          },
+          {
+            "tMs": 8900,
+            "tps": 0
+          },
+          {
+            "tMs": 9000,
+            "tps": 0
+          },
+          {
+            "tMs": 9100,
+            "tps": 0
+          },
+          {
+            "tMs": 9200,
+            "tps": 0
+          },
+          {
+            "tMs": 9300,
+            "tps": 0
+          },
+          {
+            "tMs": 9400,
+            "tps": 0
+          },
+          {
+            "tMs": 9500,
+            "tps": 0
+          },
+          {
+            "tMs": 9600,
+            "tps": 0
+          },
+          {
+            "tMs": 9700,
+            "tps": 0
+          },
+          {
+            "tMs": 9800,
+            "tps": 0
+          },
+          {
+            "tMs": 9900,
+            "tps": 0
+          },
+          {
+            "tMs": 10000,
+            "tps": 0
+          },
+          {
+            "tMs": 10100,
+            "tps": 0
+          },
+          {
+            "tMs": 10200,
+            "tps": 0
+          },
+          {
+            "tMs": 10300,
+            "tps": 0
+          },
+          {
+            "tMs": 10400,
+            "tps": 0
+          },
+          {
+            "tMs": 10500,
+            "tps": 0
+          },
+          {
+            "tMs": 10600,
+            "tps": 0
+          },
+          {
+            "tMs": 10700,
+            "tps": 0
+          },
+          {
+            "tMs": 10800,
+            "tps": 0
+          },
+          {
+            "tMs": 10900,
+            "tps": 0
+          },
+          {
+            "tMs": 11000,
+            "tps": 0
+          },
+          {
+            "tMs": 11100,
+            "tps": 0
+          },
+          {
+            "tMs": 11200,
+            "tps": 0
+          },
+          {
+            "tMs": 11300,
+            "tps": 0
+          },
+          {
+            "tMs": 11400,
+            "tps": 0
+          },
+          {
+            "tMs": 11500,
+            "tps": 0
+          },
+          {
+            "tMs": 11600,
+            "tps": 0
+          },
+          {
+            "tMs": 11700,
+            "tps": 0
+          },
+          {
+            "tMs": 11800,
+            "tps": 0
+          },
+          {
+            "tMs": 11900,
+            "tps": 0
+          },
+          {
+            "tMs": 12000,
+            "tps": 0
+          },
+          {
+            "tMs": 12100,
+            "tps": 0
+          },
+          {
+            "tMs": 12200,
+            "tps": 0
+          },
+          {
+            "tMs": 12300,
+            "tps": 0
+          },
+          {
+            "tMs": 12340,
+            "tps": 0
+          }
+        ],
+        "avg": [],
+        "avgFlat": null,
+        "bands": [],
+        "marks": [],
+        "durationMs": 12340,
+        "maxTps": 2
+      },
+      "splits": [],
+      "donut": {
+        "centerValue": "2",
+        "centerLabel": "moves",
+        "arcs": []
+      },
+      "session": {
+        "ao5": "—",
+        "ao12": "—",
+        "pb": "12.34",
+        "mean": "12.34",
+        "tones": {
+          "ao5": "none",
+          "ao12": "none",
+          "pb": "faster",
+          "mean": "none"
+        },
+        "count": 1,
+        "worst": "12.34",
+        "mo3": "—",
+        "ao50": "—",
+        "ao100": "—"
+      },
+      "spark": {
+        "points": [
+          {
+            "i": 0,
+            "ms": 12340,
+            "kind": "current"
+          }
+        ],
+        "min": 12340,
+        "max": 12340
+      },
+      "recent": [
+        {
+          "key": "1000000",
+          "text": "12.34",
+          "penaltyTag": "",
+          "current": true
+        }
+      ],
+      "coach": [],
+      "review": {
+        "status": "none",
+        "markers": [],
+        "selectedId": null,
+        "coach": {
+          "markerId": null,
+          "tag": "clean",
+          "tone": "good",
+          "text": "No review for this solve.",
+          "compare": null,
+          "better": null
+        },
+        "detail": null,
+        "focus": "speed",
+        "pin": {
+          "available": false,
+          "pinned": false,
+          "trainer": null,
+          "count": 0,
+          "payload": null
+        }
+      }
+    },
+    "selected": {
+      "at": 1000000,
+      "result": "12.34",
+      "solveMs": 12340,
+      "penalty": null,
+      "focus": "speed",
+      "source": "smart",
+      "moveCount": 2,
+      "analysis": null,
+      "sessionId": "s1000000",
+      "scramble": "R U",
+      "case": null,
+      "hasReplay": true,
+      "hasTiming": false,
+      "timingLabel": "timing not recorded",
+      "moveCountTotal": 2,
+      "move": 2,
+      "elapsedMs": 12340,
+      "durationMs": 12340,
+      "speed": 1,
+      "playing": false,
+      "stages": [],
+      "rotationMarks": [],
+      "markers": []
+    },
+    "now": 0
+  },
+  "shared": {
+    "route": "/history/1000000/review/1",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "history",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/history/1000000/review/1",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

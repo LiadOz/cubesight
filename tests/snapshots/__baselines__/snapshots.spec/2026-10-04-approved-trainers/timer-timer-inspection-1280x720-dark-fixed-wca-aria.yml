@@ -1,0 +1,33 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - text: timer
+  - paragraph: U′ F B′ U R′ F D R′ L F2 D B2 D L2 B2 D2 R2 F2 U R′
+  - 'button "timer: touch and hold, release to start"':
+    - group "Manual timer":
+      - list "Manual timer":
+        - listitem "inspection, 15":
+          - button "inspection, 15"
+        - text: inspection 15
+    - text: "15"
+    - paragraph: +2 after 15 s · dnf after 17 s
+    - paragraph
+  - text: no manual speed solves yet space hold, release to start esc stop
+  - paragraph

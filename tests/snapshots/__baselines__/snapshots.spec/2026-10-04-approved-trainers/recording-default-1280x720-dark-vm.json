@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "owner": "F0",
+  "dataOwner": "F0",
+  "route": "/recording",
+  "state": "recording",
+  "viewModel": {
+    "state": "recording",
+    "eventCount": 4,
+    "durationMs": 123,
+    "localBuffer": true,
+    "events": [
+      {
+        "kind": "view.mount",
+        "elapsedMs": 124
+      },
+      {
+        "kind": "view.unmount",
+        "elapsedMs": 124
+      },
+      {
+        "kind": "navigation.route",
+        "elapsedMs": 123
+      },
+      {
+        "kind": "observe.session",
+        "elapsedMs": 1
+      }
+    ]
+  },
+  "shared": {
+    "route": "/recording",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": {
+      "state": "recording",
+      "eventCount": 4,
+      "durationMs": 123,
+      "localBuffer": true,
+      "events": [
+        {
+          "kind": "view.mount",
+          "elapsedMs": 124
+        },
+        {
+          "kind": "view.unmount",
+          "elapsedMs": 124
+        },
+        {
+          "kind": "navigation.route",
+          "elapsedMs": 123
+        },
+        {
+          "kind": "observe.session",
+          "elapsedMs": 1
+        }
+      ]
+    }
+  },
+  "capture": {
+    "fixtureRoute": "/recording",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

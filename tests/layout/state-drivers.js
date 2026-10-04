@@ -28,7 +28,7 @@ registerLayoutDriver('demo-fixture', async (page, { fixture, clockInstalled }) =
   await expect(page.locator('#demo-view .demo-move-description')).toContainText('Move 2');
 });
 
-registerLayoutDriver('fake-cube', async (page, { id }) => {
+registerLayoutDriver('fake-cube', async (page, { id, clockInstalled }) => {
   await mountFakeCube(page, { delayed: id === 'connecting' });
   if (id === 'connecting') return;
   if (id === 'idle') return;
@@ -44,10 +44,15 @@ registerLayoutDriver('fake-cube', async (page, { id }) => {
   await completeScramble(page, scramble);
     await expect(page.locator('#brain-phase-label')).toContainText('inspection');
     if (id === 'inspection-overtime') {
-      await page.clock.install();
+      if (!clockInstalled) await page.clock.install();
+      await page.evaluate(() => { if (window.__cubesightSnapshotReplayClock) window.__cubesightSnapshotReplayClock.ms += 16000; });
       await page.clock.fastForward(16_000);
     } else if (id === 'solving') {
       await page.evaluate(() => window.testBrain.emitTurns("F'"));
+    if (await page.evaluate(() => Boolean(window.__cubesightSnapshotReplayClock))) {
+      await page.evaluate(() => { window.__cubesightSnapshotReplayClock.ms += 1200; });
+      await page.waitForFunction(() => document.querySelector('#brain-view .b-clock')?.textContent === '1.20');
+    }
     } else if (id === 'results') {
       await solveReverse(page, scramble);
       await expect(page.locator('#brain-phase-label')).toHaveText(/solved/i);
@@ -71,6 +76,7 @@ registerLayoutDriver('fake-cube-settings', async page => {
 
 registerLayoutDriver('fake-cube-debug', async page => {
   await mountFakeCube(page);
+  await page.locator('.brain-pill-setup > summary').click();
   await page.locator('#brain-debug-toggle').click();
   await expect(page.locator('#brain-debug')).toBeVisible();
 });
@@ -103,8 +109,8 @@ registerLayoutDriver('recording-fixture', async page => {
   await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.selected.move)).toBe(midpoint);
 });
 
-registerLayoutDriver('drill-fixture', async page => {
-  await page.addInitScript(seed => localStorage.setItem('cubesight-shell-v1', JSON.stringify(seed)), quickRoundSeed());
+registerLayoutDriver('drill-fixture', async (page, { fixedNow } = {}) => {
+  await page.addInitScript(seed => localStorage.setItem('cubesight-shell-v1', JSON.stringify(seed)), quickRoundSeed('corners', fixedNow ?? Date.now()));
   await readyForRoute(page, '/drills/corners');
   await expect(page.locator('.quick-round')).toContainText('1 cases left');
 });
@@ -117,10 +123,12 @@ registerLayoutDriver('alg-fixture', async (page, { fixture }) => {
   await expect.poll(() => sequence.getAttribute('data-case-sequence-index')).toBe('1');
 });
 
-registerLayoutDriver('manual-timer', async (page, { id, fixture, clockInstalled }) => {
+registerLayoutDriver('manual-timer', async (page, { id, fixture, clockInstalled, clockTime }) => {
   await readyForRoute(page, '/timer', { clockInstalled });
   await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready', { timeout: 30000 });
   if (!clockInstalled) await page.clock.install();
+  await page.clock.pauseAt(clockTime ? new Date(new Date(clockTime).getTime() + 60000) : await page.evaluate(() => new Date(Date.now() + 1000)));
+  await page.evaluate(() => { window.__cubesightSnapshotClockPaused = true; });
   const startHold = async () => {
     await page.keyboard.down(' ');
     await page.clock.fastForward(350);

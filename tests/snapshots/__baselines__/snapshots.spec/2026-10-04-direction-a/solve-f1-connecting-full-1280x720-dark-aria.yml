@@ -1,0 +1,38 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "cube, connecting; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve progress":
+          - listitem "connecting":
+            - button "connecting"
+    - paragraph
+    - paragraph
+    - paragraph: Select your cube…
+  - heading "connect cube" [level=2]
+  - paragraph: Cross follows the first face you solve.
+  - button "rebuild view"
+  - 'button "dev `"'

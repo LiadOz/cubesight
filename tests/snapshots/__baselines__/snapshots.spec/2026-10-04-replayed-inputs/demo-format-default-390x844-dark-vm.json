@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "owner": "F17",
+  "dataOwner": "F17",
+  "route": "/demo/format",
+  "state": "active",
+  "viewModel": {
+    "kind": "format",
+    "title": "demo link format",
+    "examples": [
+      "#/demo?title=F2L%20pair&setup=R%20U%20R%27&alg=U%27%20R%20U%20R%27&highlight=pair%3AFR",
+      "#/demo?title=Two%20cases&part1.title=case%201&part1.setup=R%20U&part1.alg=R%27%20U%27&part2.title=case%202&part2.setup=F%20R&part2.alg=R%27%20F%27"
+    ]
+  },
+  "shared": {
+    "route": "/demo/format",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/demo/format",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "dark",
+    "cubeState": null
+  }
+}

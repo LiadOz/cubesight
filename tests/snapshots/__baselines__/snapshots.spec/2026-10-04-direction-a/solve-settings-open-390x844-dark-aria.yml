@@ -1,0 +1,208 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to light mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group:
+      - text: settings
+      - region "settings":
+        - heading "settings" [level=2]
+        - button "close settings": close tab
+        - navigation "Quick settings":
+          - button "pseudo pairs"
+          - text: "| oll"
+          - button "1-look"
+          - button "2-look ✓" [pressed]
+          - text: "| pll"
+          - button "1-look"
+          - button "2-look ✓" [pressed]
+          - text: "| insp"
+          - button "15s ✓" [pressed]
+          - button "15s"
+          - button "∞"
+          - button "off"
+          - text: "|"
+          - button "wca penalties ✓" [pressed]
+          - text: "| focus"
+          - button "speed ✓" [pressed]
+          - button "flow"
+          - button "learning"
+        - paragraph: quick settings above · defaults follow WCA rules
+        - heading "look ● = default" [level=3]
+        - paragraph: style
+        - paragraph: "Orbit: ring timeline around the cube. Mono: compact lanes."
+        - button "orbit ✓" [pressed]
+        - button "mono"
+        - paragraph: mode
+        - paragraph: Light or dark for the whole site. System follows your device.
+        - button "light"
+        - button "dark ✓" [pressed]
+        - button "system"
+        - heading "method" [level=3]
+        - paragraph: F2L pairs
+        - paragraph: Pseudo pairs count pairs solved with a D offset.
+        - button "standard ✓" [pressed]
+        - button "pseudo pairs"
+        - paragraph: OLL
+        - paragraph: 2-look splits OLL into edges (EO) then corners (CO).
+        - button "oll 2-look ✓" [pressed]
+        - button "oll 1-look"
+        - paragraph: PLL
+        - paragraph: 2-look splits PLL into corners (CP) then edges (EP).
+        - button "pll 2-look ✓" [pressed]
+        - button "pll 1-look"
+        - heading "inspection" [level=3]
+        - paragraph: inspection
+        - paragraph: WCA gives 15 s. Off starts the clock on your first turn.
+        - button "WCA 15 s ✓" [pressed]
+        - button "custom"
+        - button "unlimited"
+        - button "off"
+        - paragraph: overtime
+        - paragraph: What happens when inspection runs over.
+        - button "WCA +2 / DNF ✓" [pressed]
+        - button "count only"
+        - button "grace"
+        - button "auto-start"
+        - paragraph: callouts
+        - paragraph: Judge calls at 8 s and 12 s.
+        - button "8 s + 12 s ✓" [pressed]
+        - button "off"
+        - paragraph: voice
+        - paragraph: Speak the callouts with a local device voice. no offline voice installed; callouts stay silent.
+        - button "on"
+        - button "off ✓" [pressed]
+        - paragraph: penalties
+        - paragraph: Count +2 and DNF in averages.
+        - button "wca penalties ✓" [pressed]
+        - button "no penalties"
+        - heading "solve" [level=3]
+        - paragraph: scramble
+        - paragraph: Guided cues each move. Paste uses your scramble. Free starts from your scramble.
+        - button "guided ✓" [pressed]
+        - button "paste"
+        - button "free"
+        - paragraph: coach
+        - paragraph: When coach insights appear.
+        - button "live ✓" [pressed]
+        - button "after solve"
+        - button "off"
+        - paragraph: cross hint
+        - paragraph: Show a suggested cross during inspection.
+        - button "on tab ✓" [pressed]
+        - button "always"
+        - button "off"
+        - paragraph: cross color
+        - paragraph: Search all six faces for the shortest cross, or choose one color to limit the search.
+        - button "all colors ✓" [pressed]
+        - button "white"
+        - button "yellow"
+        - button "green"
+        - button "blue"
+        - button "red"
+        - button "orange"
+        - paragraph: timer
+        - paragraph: Hide the running clock to focus on the cube.
+        - button "visible ✓" [pressed]
+        - button "hide while solving"
+        - paragraph: timeline
+        - paragraph: Show the stage timeline.
+        - button "on ✓" [pressed]
+        - button "off"
+        - paragraph: split compare
+        - paragraph: What split deltas compare against.
+        - button "vs avg ✓" [pressed]
+        - button "vs PB"
+        - button "raw"
+        - heading "stats" [level=3]
+        - paragraph: stats source
+        - paragraph: Choose which solve sources appear in comparisons and stats.
+        - button "smart cube ✓" [pressed]
+        - button "manual timer"
+        - button "all"
+        - region "Quick toggles":
+          - heading "quick" [level=3]
+          - checkbox "pseudo pairs · D offset"
+          - text: pseudo pairs · D offset
+          - checkbox "inspection countdown" [checked]
+          - text: inspection countdown
+          - group: use a specific scramble
+          - text: type
+          - textbox "Settings command":
+            - /placeholder: “insp 10” · “oll 1” · “style orbit”
+  - navigation "Quick settings":
+    - button "pseudo pairs"
+    - text: "| oll"
+    - button "1-look"
+    - button "2-look ✓" [pressed]
+    - text: "| pll"
+    - button "1-look"
+    - button "2-look ✓" [pressed]
+    - text: "| insp"
+    - button "15s ✓" [pressed]
+    - button "15s"
+    - button "∞"
+    - button "off"
+    - text: "|"
+    - button "wca penalties ✓" [pressed]
+    - text: "| focus"
+    - button "speed ✓" [pressed]
+    - button "flow"
+    - button "learning"
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve progress":
+          - listitem "cross":
+            - button "cross"
+          - text: cross
+          - listitem "pair 1":
+            - button "pair 1"
+          - text: pair 1
+          - listitem "pair 2":
+            - button "pair 2"
+          - text: pair 2
+          - listitem "pair 3":
+            - button "pair 3"
+          - text: pair 3
+          - listitem "pair 4":
+            - button "pair 4"
+          - text: pair 4
+          - listitem "eo":
+            - button "eo"
+          - text: eo
+          - listitem "co":
+            - button "co"
+          - text: co
+          - listitem "cp":
+            - button "cp"
+          - text: cp
+          - listitem "ep":
+            - button "ep"
+          - text: ep
+    - button "start space"
+    - paragraph
+    - paragraph
+    - paragraph: Cube synced. Turns are mirrored live.
+  - heading "connect cube" [level=2]
+  - paragraph: Cross follows the first face you solve.
+  - button "rebuild view"
+  - 'button "dev `"'

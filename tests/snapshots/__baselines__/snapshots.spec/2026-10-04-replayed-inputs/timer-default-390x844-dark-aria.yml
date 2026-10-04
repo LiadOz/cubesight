@@ -1,0 +1,72 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - text: timer
+  - button "inspection WCA 15 s": WCA 15 s
+  - button "overtime WCA +2 / DNF"
+  - button "hold 300 ms"
+  - paragraph: D R F′ B2 U′ R2 F R B2 L2 U D2 L2 U F2 D2 R2 B2 D2 B2 L
+  - button "new scramble"
+  - region "3D cube scramble preview":
+    - group "scramble case":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - group "scramble":
+      - list "Moves for scramble":
+        - 'listitem "Move 1 of 21: D. Turn the bottom face (yellow center) clockwise (looking directly at that face)."': D
+        - 'listitem "Move 2 of 21: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 3 of 21: F′. Turn the front face (green center) counterclockwise (looking directly at that face)."': F′
+        - 'listitem "Move 4 of 21: B2. Turn the back face (blue center) 180° (looking directly at that face)."': B2
+        - 'listitem "Move 5 of 21: U′. Turn the top face (white center) counterclockwise (looking directly at that face)."': U′
+        - 'listitem "Move 6 of 21: R2. Turn the right face (red center) 180° (looking directly at that face)."': R2
+        - 'listitem "Move 7 of 21: F. Turn the front face (green center) clockwise (looking directly at that face)."': F
+        - 'listitem "Move 8 of 21: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 9 of 21: B2. Turn the back face (blue center) 180° (looking directly at that face)."': B2
+        - 'listitem "Move 10 of 21: L2. Turn the left face (orange center) 180° (looking directly at that face)."': L2
+        - 'listitem "Move 11 of 21: U. Turn the top face (white center) clockwise (looking directly at that face)."': U
+        - 'listitem "Move 12 of 21: D2. Turn the bottom face (yellow center) 180° (looking directly at that face)."': D2
+        - 'listitem "Move 13 of 21: L2. Turn the left face (orange center) 180° (looking directly at that face)."': L2
+        - 'listitem "Move 14 of 21: U. Turn the top face (white center) clockwise (looking directly at that face)."': U
+        - 'listitem "Move 15 of 21: F2. Turn the front face (green center) 180° (looking directly at that face)."': F2
+        - 'listitem "Move 16 of 21: D2. Turn the bottom face (yellow center) 180° (looking directly at that face)."': D2
+        - 'listitem "Move 17 of 21: R2. Turn the right face (red center) 180° (looking directly at that face)."': R2
+        - 'listitem "Move 18 of 21: B2. Turn the back face (blue center) 180° (looking directly at that face)."': B2
+        - 'listitem "Move 19 of 21: D2. Turn the bottom face (yellow center) 180° (looking directly at that face)."': D2
+        - 'listitem "Move 20 of 21: B2. Turn the back face (blue center) 180° (looking directly at that face)."': B2
+        - 'listitem "Move 21 of 21: L. Turn the left face (orange center) clockwise (looking directly at that face)."': L
+      - status
+    - button "reset"
+    - button "Previous move": ←
+    - button "play"
+    - button "Next move" [disabled]: →
+    - text: speed
+    - combobox "Playback speed":
+      - option "0.5×"
+      - option "1×" [selected]
+      - option "2×"
+      - option "4×"
+    - status: 21 / 21
+  - 'button "timer: touch and hold, release to start"':
+    - group "Manual timer":
+      - list "Manual timer"
+    - text: "0.00"
+    - paragraph: touch and hold, or hold space
+  - text: no manual speed solves yet
+  - button "stats · manual solves"
+  - text: space hold to start
+  - paragraph

@@ -1,0 +1,96 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to light mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve results":
+          - listitem "cross, 0.59, −2.44":
+            - button "cross, 0.59, −2.44"
+          - listitem "pair 1 · F2L 4, 0.19, −2.23":
+            - button "pair 1 · F2L 4"
+          - listitem "pair 2, 0.26, −2.16":
+            - button "pair 2, 0.26, −2.16"
+          - text: pair 2 0.26 −2.16
+          - listitem "pair 3, 0.36, −2.06":
+            - button "pair 3, 0.36, −2.06"
+          - text: pair 3 0.36 −2.06
+          - listitem "pair 4, 0.30, −2.12":
+            - button "pair 4, 0.30, −2.12"
+          - text: pair 4 0.30 −2.12
+          - listitem "eo, 0.83, −0.38":
+            - button "eo, 0.83, −0.38"
+          - text: eo 0.83 −0.38
+          - listitem "co · Runway, Blank, skip":
+            - button "co · Runway, Blank · recog 0.08 s · exec 0.75 s"
+          - text: co · Runway, Blank skip
+          - listitem "cp, 1.21, −0.81":
+            - button "cp, 1.21, −0.81"
+          - listitem "ep · T, skip":
+            - button "ep · T · recog 0.09 s · exec 1.12 s"
+          - button "detour": "!"
+          - button "3 markers; activate to inspect facts": "3"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "2 markers; activate to inspect facts": "2"
+          - button "co skip": ✦
+    - region "Solve results":
+      - navigation
+      - strong: "3.76"
+      - paragraph: ao5 — · PB 3.76
+      - paragraph: "CO skip. That step was done for you. Estimated saving: about 8 moves for a typical CO algorithm."
+      - button "open Runway, Blank case"
+      - region "Solve review":
+        - region "Stage detail":
+          - strong: co skip · co
+          - button "Close detail": close esc
+          - group "Moves of this stage":
+            - button "start"
+          - term: time
+          - definition: skip
+          - definition
+          - term: moves
+          - definition: "0"
+          - definition
+          - term: tps
+          - definition: —
+          - definition: avg 4.00
+          - term: pauses
+          - definition: none
+          - definition
+          - list:
+            - listitem: skip
+            - listitem: oll/1 · recognition 0.08 s · execution 0.75 s
+            - listitem: co skip
+          - paragraph: skipped, nothing to improve
+          - button "pin"
+      - button "next scramble"
+      - link "review":
+        - /url: "#/review/1768478400000"
+      - button "more…"
+      - group
+  - heading "solved" [level=2]
+  - paragraph: 49 moves · 13.02 TPS · 3.76 s · 4/4
+  - button "rebuild view"
+  - 'button "dev `"'

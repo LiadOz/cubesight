@@ -1,0 +1,142 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - navigation "Quick settings":
+    - button "pseudo pairs"
+    - text: "| oll"
+    - button "1-look"
+    - button "2-look ✓" [pressed]
+    - text: "| pll"
+    - button "1-look"
+    - button "2-look ✓" [pressed]
+    - text: "| insp"
+    - button "15s ✓" [pressed]
+    - button "15s"
+    - button "∞"
+    - button "off"
+    - text: "|"
+    - button "wca penalties ✓" [pressed]
+    - text: "| focus"
+    - button "speed ✓" [pressed]
+    - button "flow"
+    - button "learning"
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve progress":
+          - listitem "cross":
+            - button "cross"
+          - text: cross
+          - listitem "pair 1":
+            - button "pair 1"
+          - text: pair 1
+          - listitem "pair 2":
+            - button "pair 2"
+          - text: pair 2
+          - listitem "pair 3":
+            - button "pair 3"
+          - text: pair 3
+          - listitem "pair 4":
+            - button "pair 4"
+          - text: pair 4
+          - listitem "eo":
+            - button "eo"
+          - text: eo
+          - listitem "co":
+            - button "co"
+          - text: co
+          - listitem "cp":
+            - button "cp"
+          - text: cp
+          - listitem "ep":
+            - button "ep"
+          - text: ep
+    - button "start space"
+    - paragraph
+    - paragraph
+    - paragraph: Cube synced. Turns are mirrored live.
+  - button "space start"
+  - button "tab settings"
+  - button "esc command"
+  - heading "connect cube" [level=2]
+  - paragraph: Cross follows the first face you solve.
+  - button "rebuild view"
+  - 'button "dev `" [expanded]'
+  - dialog "dev":
+    - heading "dev" [level=2]
+    - button "close dev": close esc
+    - paragraph:
+      - link "open studio":
+        - /url: "#/dev/studio"
+      - text: · raw cube events, gyro and scramble rehearsal
+    - region "Connection diagnostics":
+      - heading "connection" [level=3]
+      - paragraph: what the attach is doing
+      - button "send to dev"
+      - button "clear log"
+      - list:
+        - listitem: "12:00:00session: phase=disconnected moves=0 lastMove=- detail=Connect a smart cube to mirror its turns."
+        - listitem: "12:00:00session: phase=connecting moves=0 lastMove=- detail=Select your cube…"
+        - listitem: "12:00:00session: phase=awaiting-solved moves=0 lastMove=- detail=connected · checking whether the cube is solved…"
+        - listitem: "12:00:00session: phase=tracking moves=0 lastMove=- detail=Cube synced. Turns are mirrored live."
+      - status
+    - region "Recordings":
+      - heading "recordings" [level=3]
+      - paragraph: save a recording to share a cube issue with the dev team
+      - button "export recording"
+      - button "start fresh recording"
+      - button "import recording…"
+      - combobox "replay speed":
+        - option "1×" [selected]
+        - option "4×"
+        - option "instant"
+      - status
+    - region "Coach and data":
+      - heading "coach & data" [level=3]
+      - paragraph: choose which insights appear
+      - checkbox "cross hint" [checked]
+      - text: cross hint
+      - checkbox "crossHindsight" [checked]
+      - text: crossHindsight
+      - checkbox "next pair hint" [checked]
+      - text: next pair hint
+      - checkbox "PLL cue" [checked]
+      - text: PLL cue
+      - checkbox "OLL stages" [checked]
+      - text: OLL stages
+      - checkbox "rotation flag" [checked]
+      - text: rotation flag
+      - checkbox "efficiency" [checked]
+      - text: efficiency
+      - checkbox "auto cross" [checked]
+      - text: auto cross Everything stays on this device.
+      - button "export data"
+      - button "import data"
+      - status
+- dialog "developer drawer":
+  - button "close"
+  - heading "developer drawer" [level=2]
+  - paragraph: The local recording buffer is always on.
+  - button "save recording"

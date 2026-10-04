@@ -1,8 +1,20 @@
+// Start a new revision for intentional image changes; preserve previous captures.
+export const SNAPSHOT_BASELINE_REVISION = '2026-10-04-approved-trainers';
+
+export function snapshotCellName({ route, state, width, height, theme }) {
+  const revision = route === '/timer' ? '-fixed-wca'
+    : route === '/drills/scout?mode=explore' ? '-filled-pinned-setup'
+      : route === '/recording' ? '-paused-input-clock'
+        : state === 'rotation-cross-recording' ? '-recorded-analysis' : '';
+  return `${route}-${state}-${width}x${height}-${theme}${revision}`.toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, '-').replaceAll(/^-|-$/g, '');
+}
+
 // Default product routes captured by the F9 route matrix. State captures are
 // derived from the complete F8 registration in tests/layout/matrix.js.
 export const SNAPSHOT_ROUTES = Object.freeze([
   'solve', 'drills', 'algs', 'demo', 'demo-format', 'history', 'past-solve',
-  'replay', 'review-detail', 'progress', 'timer', 'recording',
+  'replay', 'review-detail', 'progress', 'timer', 'recording', 'cross-scout-explore',
 ]);
 
 export const SNAPSHOT_VIEWPORTS = Object.freeze([

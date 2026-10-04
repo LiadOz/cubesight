@@ -1,0 +1,2428 @@
+{
+  "schemaVersion": 1,
+  "owner": "F1",
+  "dataOwner": "F1",
+  "route": "/solve",
+  "state": "results",
+  "viewModel": {
+    "rev": 70,
+    "style": "orbit",
+    "theme": "light",
+    "screen": "results",
+    "phaseText": {
+      "label": "solved",
+      "detail": "8 moves · 1.13 TPS · 7.08 s · 4/4"
+    },
+    "device": {
+      "phase": "tracking",
+      "name": "GAN test cube",
+      "protocol": "GAN Gen4",
+      "battery": null,
+      "supported": false,
+      "gyro": false,
+      "detail": "Live cube updated.",
+      "busy": false,
+      "failed": false,
+      "actions": {
+        "connect": false,
+        "sync": true,
+        "recenter": false,
+        "disconnect": true,
+        "clearSaved": false,
+        "reconnect": false,
+        "resume": false
+      }
+    },
+    "configBar": {
+      "items": [
+        {
+          "id": "f2l",
+          "options": [
+            {
+              "value": "pseudo",
+              "label": "pseudo pairs",
+              "active": false
+            }
+          ]
+        },
+        {
+          "id": "oll",
+          "label": "oll",
+          "options": [
+            {
+              "value": "1look",
+              "label": "1-look",
+              "active": false
+            },
+            {
+              "value": "2look",
+              "label": "2-look",
+              "active": true
+            }
+          ]
+        },
+        {
+          "id": "pll",
+          "label": "pll",
+          "options": [
+            {
+              "value": "1look",
+              "label": "1-look",
+              "active": false
+            },
+            {
+              "value": "2look",
+              "label": "2-look",
+              "active": true
+            }
+          ]
+        },
+        {
+          "id": "inspection.mode",
+          "label": "insp",
+          "options": [
+            {
+              "value": "wca",
+              "label": "15s",
+              "active": true
+            },
+            {
+              "value": "custom",
+              "label": "15s",
+              "active": false
+            },
+            {
+              "value": "unlimited",
+              "label": "∞",
+              "active": false
+            },
+            {
+              "value": "off",
+              "label": "off",
+              "active": false
+            }
+          ]
+        },
+        {
+          "id": "penalties",
+          "options": [
+            {
+              "value": "ignore",
+              "label": "wca penalties",
+              "active": true
+            }
+          ]
+        },
+        {
+          "id": "session.focus",
+          "label": "focus",
+          "options": [
+            {
+              "value": "speed",
+              "label": "speed",
+              "active": true
+            },
+            {
+              "value": "flow",
+              "label": "flow",
+              "active": false
+            },
+            {
+              "value": "learning",
+              "label": "learning",
+              "active": false
+            }
+          ]
+        }
+      ]
+    },
+    "settings": {
+      "open": false,
+      "sections": [
+        {
+          "id": "look",
+          "label": "look",
+          "rows": [
+            {
+              "id": "style",
+              "label": "style",
+              "help": "Orbit: ring timeline around the cube. Mono: compact lanes.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "orbit",
+                  "label": "orbit",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "mono",
+                  "label": "mono",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "theme",
+              "label": "mode",
+              "help": "Light or dark for the whole site. System follows your device.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "light",
+                  "label": "light",
+                  "active": true,
+                  "isDefault": false
+                },
+                {
+                  "value": "dark",
+                  "label": "dark",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "system",
+                  "label": "system",
+                  "active": false,
+                  "isDefault": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "method",
+          "label": "method",
+          "rows": [
+            {
+              "id": "f2l",
+              "label": "F2L pairs",
+              "help": "Pseudo pairs count pairs solved with a D offset.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "standard",
+                  "label": "standard",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "pseudo",
+                  "label": "pseudo pairs",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "oll",
+              "label": "OLL",
+              "help": "2-look splits OLL into edges (EO) then corners (CO).",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "2look",
+                  "label": "oll 2-look",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "1look",
+                  "label": "oll 1-look",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "pll",
+              "label": "PLL",
+              "help": "2-look splits PLL into corners (CP) then edges (EP).",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "2look",
+                  "label": "pll 2-look",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "1look",
+                  "label": "pll 1-look",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "inspection",
+          "label": "inspection",
+          "rows": [
+            {
+              "id": "inspection.mode",
+              "label": "inspection",
+              "help": "WCA gives 15 s. Off starts the clock on your first turn.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "wca",
+                  "label": "WCA 15 s",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "custom",
+                  "label": "custom",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "unlimited",
+                  "label": "unlimited",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "off",
+                  "label": "off",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "inspection.overtime",
+              "label": "overtime",
+              "help": "What happens when inspection runs over.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "wca",
+                  "label": "WCA +2 / DNF",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "count",
+                  "label": "count only",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "grace",
+                  "label": "grace",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "autostart",
+                  "label": "auto-start",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "inspection.callouts",
+              "label": "callouts",
+              "help": "Judge calls at 8 s and 12 s.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "true",
+                  "label": "8 s + 12 s",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "false",
+                  "label": "off",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "voice",
+              "label": "voice",
+              "help": "Speak the callouts with a local device voice. no offline voice installed; callouts stay silent.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "true",
+                  "label": "on",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "false",
+                  "label": "off",
+                  "active": true,
+                  "isDefault": true
+                }
+              ]
+            },
+            {
+              "id": "penalties",
+              "label": "penalties",
+              "help": "Count +2 and DNF in averages.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "apply",
+                  "label": "wca penalties",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "ignore",
+                  "label": "no penalties",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "solve",
+          "label": "solve",
+          "rows": [
+            {
+              "id": "scramble",
+              "label": "scramble",
+              "help": "Guided cues each move. Paste uses your scramble. Free starts from your scramble.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "guided",
+                  "label": "guided",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "paste",
+                  "label": "paste",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "free",
+                  "label": "free",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "coach",
+              "label": "coach",
+              "help": "When coach insights appear.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "live",
+                  "label": "live",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "after",
+                  "label": "after solve",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "off",
+                  "label": "off",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "crossHint",
+              "label": "cross hint",
+              "help": "Show a suggested cross during inspection.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "tab",
+                  "label": "on tab",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "always",
+                  "label": "always",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "off",
+                  "label": "off",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "crossColor",
+              "label": "cross color",
+              "help": "Search all six faces for the shortest cross, or choose one color to limit the search.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "neutral",
+                  "label": "all colors",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "white",
+                  "label": "white",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "yellow",
+                  "label": "yellow",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "green",
+                  "label": "green",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "blue",
+                  "label": "blue",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "red",
+                  "label": "red",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "orange",
+                  "label": "orange",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "timer",
+              "label": "timer",
+              "help": "Hide the running clock to focus on the cube.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "visible",
+                  "label": "visible",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "hide",
+                  "label": "hide while solving",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "timeline",
+              "label": "timeline",
+              "help": "Show the stage timeline.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "on",
+                  "label": "on",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "off",
+                  "label": "off",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            },
+            {
+              "id": "compare",
+              "label": "split compare",
+              "help": "What split deltas compare against.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "avg",
+                  "label": "vs avg",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "pb",
+                  "label": "vs PB",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "raw",
+                  "label": "raw",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "stats",
+          "label": "stats",
+          "rows": [
+            {
+              "id": "stats.source",
+              "label": "stats source",
+              "help": "Choose which solve sources appear in comparisons and stats.",
+              "control": "segmented",
+              "options": [
+                {
+                  "value": "smart",
+                  "label": "smart cube",
+                  "active": true,
+                  "isDefault": true
+                },
+                {
+                  "value": "manual",
+                  "label": "manual timer",
+                  "active": false,
+                  "isDefault": false
+                },
+                {
+                  "value": "all",
+                  "label": "all",
+                  "active": false,
+                  "isDefault": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "scramble": {
+      "source": "guided",
+      "moves": [
+        {
+          "key": "s0",
+          "text": "R2",
+          "state": "todo"
+        },
+        {
+          "key": "s1",
+          "text": "D'",
+          "state": "todo"
+        },
+        {
+          "key": "s2",
+          "text": "F2",
+          "state": "todo"
+        },
+        {
+          "key": "s3",
+          "text": "U",
+          "state": "todo"
+        },
+        {
+          "key": "s4",
+          "text": "B2",
+          "state": "todo"
+        },
+        {
+          "key": "s5",
+          "text": "L'",
+          "state": "todo"
+        },
+        {
+          "key": "s6",
+          "text": "U2",
+          "state": "todo"
+        },
+        {
+          "key": "s7",
+          "text": "F",
+          "state": "todo"
+        }
+      ],
+      "recovery": null,
+      "wrongTurn": null,
+      "pendingDouble": null,
+      "held": null,
+      "step": 0,
+      "total": 8,
+      "editable": false,
+      "text": "R2 D' F2 U B2 L' U2 F",
+      "number": 1
+    },
+    "clock": {
+      "text": "7.08",
+      "ms": 7080,
+      "startedAt": null,
+      "running": false,
+      "hidden": false,
+      "tone": "accent",
+      "sub": "8 moves · 1.13 tps · cube clock",
+      "stepLine": [],
+      "stepTitle": "",
+      "stepTags": []
+    },
+    "inspection": null,
+    "timeline": {
+      "visible": true,
+      "ghost": false,
+      "planKey": "cross,pair1,pair2,pair3,pair4,eo,co,cp,ep|standard",
+      "groups": [
+        {
+          "id": "f2l",
+          "label": "f2l",
+          "sub": "",
+          "from": 1,
+          "to": 4
+        },
+        {
+          "id": "oll",
+          "label": "oll",
+          "sub": "2-look",
+          "from": 5,
+          "to": 6
+        },
+        {
+          "id": "pll",
+          "label": "pll",
+          "sub": "2-look",
+          "from": 7,
+          "to": 8
+        }
+      ],
+      "segments": [
+        {
+          "key": "cross",
+          "label": "cross",
+          "short": "x",
+          "group": null,
+          "weight": 0.15151515151515152,
+          "avgMs": 3030.3030303030305,
+          "avgSource": "default",
+          "state": "done",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 6060,
+          "splitText": "6.06",
+          "merged": false,
+          "xcross": "xxxx-cross",
+          "delta": {
+            "ms": 3029.6969696969695,
+            "text": "+3.03",
+            "tone": "slower"
+          },
+          "moves": 7,
+          "tags": [
+            "xxxx-cross"
+          ],
+          "skip": null,
+          "over": false
+        },
+        {
+          "key": "pair1",
+          "label": "pair 1",
+          "short": "p1",
+          "group": "f2l",
+          "weight": 0.12121212121212122,
+          "avgMs": 2424.2424242424245,
+          "avgSource": "default",
+          "state": "done",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 0,
+          "splitText": "with cross",
+          "merged": true,
+          "xcross": null,
+          "delta": null,
+          "moves": 0,
+          "tags": [],
+          "skip": null,
+          "over": false
+        },
+        {
+          "key": "pair2",
+          "label": "pair 2",
+          "short": "p2",
+          "group": "f2l",
+          "weight": 0.12121212121212122,
+          "avgMs": 2424.2424242424245,
+          "avgSource": "default",
+          "state": "done",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 0,
+          "splitText": "with cross",
+          "merged": true,
+          "xcross": null,
+          "delta": null,
+          "moves": 0,
+          "tags": [],
+          "skip": null,
+          "over": false
+        },
+        {
+          "key": "pair3",
+          "label": "pair 3",
+          "short": "p3",
+          "group": "f2l",
+          "weight": 0.12121212121212122,
+          "avgMs": 2424.2424242424245,
+          "avgSource": "default",
+          "state": "done",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 0,
+          "splitText": "with cross",
+          "merged": true,
+          "xcross": null,
+          "delta": null,
+          "moves": 0,
+          "tags": [],
+          "skip": null,
+          "over": false
+        },
+        {
+          "key": "pair4",
+          "label": "pair 4",
+          "short": "p4",
+          "group": "f2l",
+          "weight": 0.12121212121212122,
+          "avgMs": 2424.2424242424245,
+          "avgSource": "default",
+          "state": "done",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 0,
+          "splitText": "with cross",
+          "merged": true,
+          "xcross": null,
+          "delta": null,
+          "moves": 0,
+          "tags": [],
+          "skip": null,
+          "over": false
+        },
+        {
+          "key": "eo",
+          "label": "eo",
+          "short": "eo",
+          "group": "oll",
+          "weight": 0.06060606060606061,
+          "avgMs": 1212.1212121212122,
+          "avgSource": "default",
+          "state": "skipped",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 0,
+          "splitText": "skip",
+          "merged": false,
+          "xcross": null,
+          "delta": null,
+          "moves": 0,
+          "tags": [],
+          "skip": {
+            "label": "eo skip",
+            "fresh": false
+          },
+          "over": false
+        },
+        {
+          "key": "co",
+          "label": "co",
+          "short": "co",
+          "group": "oll",
+          "weight": 0.10101010101010102,
+          "avgMs": 2020.2020202020205,
+          "avgSource": "default",
+          "state": "skipped",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 0,
+          "splitText": "skip",
+          "merged": false,
+          "xcross": null,
+          "delta": null,
+          "moves": 0,
+          "tags": [],
+          "skip": {
+            "label": "co skip",
+            "fresh": false
+          },
+          "over": false
+        },
+        {
+          "key": "cp",
+          "label": "cp",
+          "short": "cp",
+          "group": "pll",
+          "weight": 0.10101010101010102,
+          "avgMs": 2020.2020202020205,
+          "avgSource": "default",
+          "state": "skipped",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 0,
+          "splitText": "skip",
+          "merged": false,
+          "xcross": null,
+          "delta": null,
+          "moves": 0,
+          "tags": [],
+          "skip": {
+            "label": "cp skip",
+            "fresh": false
+          },
+          "over": false
+        },
+        {
+          "key": "ep",
+          "label": "ep",
+          "short": "ep",
+          "group": "pll",
+          "weight": 0.10101010101010102,
+          "avgMs": 2020.2020202020205,
+          "avgSource": "default",
+          "state": "done",
+          "fill": 1,
+          "startedAt": null,
+          "splitMs": 1020,
+          "splitText": "1.02",
+          "merged": false,
+          "xcross": null,
+          "delta": {
+            "ms": -1000.2020202020205,
+            "text": "−1.00",
+            "tone": "faster"
+          },
+          "moves": 1,
+          "tags": [],
+          "skip": null,
+          "over": false
+        }
+      ],
+      "currentIndex": 9,
+      "totalAvgMs": 20000.000000000004,
+      "insp": {
+        "text": "insp 1.0"
+      },
+      "aria": {
+        "now": 9,
+        "max": 9,
+        "text": "solved"
+      }
+    },
+    "coach": [
+      {
+        "key": "xcross",
+        "tone": "good",
+        "text": "xx-cross! The cross came together with pairs. The scramble allowed it and you took it."
+      },
+      {
+        "key": "info:Best cross: green, 4",
+        "tone": "info",
+        "text": "Best cross: green, 4"
+      },
+      {
+        "key": "efficiency",
+        "tone": "good",
+        "text": "efficiency 95"
+      }
+    ],
+    "results": {
+      "key": "1768478400000",
+      "record": {
+        "at": 1768478400000,
+        "focus": "speed",
+        "sessionId": "s1768478400000",
+        "scramble": "R2 D' F2 U B2 L' U2 F",
+        "free": false,
+        "crossFace": "L",
+        "crossColor": "orange",
+        "solveMs": 7080,
+        "moveCount": 8,
+        "solveMoves": [
+          "F'",
+          "U2",
+          "L",
+          "B2",
+          "U'",
+          "F2",
+          "D",
+          "R2"
+        ],
+        "tps": 1.1299435028248588,
+        "scrambleTurns": [
+          "R2",
+          "D'",
+          "F2",
+          "U",
+          "B2",
+          "L'",
+          "U2",
+          "F"
+        ],
+        "phases": {
+          "crossMs": 6060,
+          "f2lMs": 0,
+          "ollMs": 0,
+          "pllMs": 1020
+        },
+        "xcross": "xxcross",
+        "rotations": 0,
+        "gyro": false,
+        "detours": 0,
+        "mistakes": 0,
+        "pllCase": null,
+        "ollCase": null,
+        "ollRecognitionMs": null,
+        "ollExecutionMs": null,
+        "pllRecognitionMs": null,
+        "pllExecutionMs": null,
+        "solved": true,
+        "reviewAccuracy": null,
+        "penalty": null,
+        "inspectionMs": 1000,
+        "inspectionMode": "wca",
+        "splits": [
+          {
+            "key": "cross",
+            "ms": 6060,
+            "moves": 7,
+            "skipped": false,
+            "pseudo": false
+          },
+          {
+            "key": "pair1",
+            "ms": 0,
+            "moves": 0,
+            "skipped": false,
+            "pseudo": false,
+            "merged": true
+          },
+          {
+            "key": "pair2",
+            "ms": 0,
+            "moves": 0,
+            "skipped": false,
+            "pseudo": false,
+            "merged": true
+          },
+          {
+            "key": "pair3",
+            "ms": 0,
+            "moves": 0,
+            "skipped": false,
+            "pseudo": false,
+            "merged": true
+          },
+          {
+            "key": "pair4",
+            "ms": 0,
+            "moves": 0,
+            "skipped": false,
+            "pseudo": false,
+            "merged": true
+          },
+          {
+            "key": "eo",
+            "ms": 0,
+            "moves": 0,
+            "skipped": true,
+            "pseudo": false
+          },
+          {
+            "key": "co",
+            "ms": 0,
+            "moves": 0,
+            "skipped": true,
+            "pseudo": false
+          },
+          {
+            "key": "cp",
+            "ms": 0,
+            "moves": 0,
+            "skipped": true,
+            "pseudo": false
+          },
+          {
+            "key": "ep",
+            "ms": 1020,
+            "moves": 1,
+            "skipped": false,
+            "pseudo": false
+          }
+        ],
+        "moveTimes": [
+          0,
+          1000,
+          2020,
+          3020,
+          4040,
+          5040,
+          6060,
+          7060
+        ],
+        "rotationMarks": [],
+        "dFixMs": null,
+        "analysis": null,
+        "config": {
+          "method": "cfop",
+          "f2l": "standard",
+          "oll": "2look",
+          "pll": "2look",
+          "inspectionMode": "wca"
+        }
+      },
+      "time": {
+        "text": "7.08",
+        "resultText": "7.08",
+        "penalty": null,
+        "tone": "accent"
+      },
+      "moves": "8",
+      "tps": "1.13",
+      "inspection": "1.00",
+      "method": "cfop · 2-look",
+      "caseLinks": {},
+      "timeline": {
+        "visible": true,
+        "currentIndex": 9,
+        "planKey": "cross,pair1,pair2,pair3,pair4,eo,co,cp,ep",
+        "segments": [
+          {
+            "key": "cross",
+            "label": "cross",
+            "short": "x",
+            "weight": 0.1515151515151515,
+            "avgMs": 3030.3030303030305,
+            "state": "done",
+            "fill": 1,
+            "skipped": false,
+            "merged": false,
+            "splitMs": 6060,
+            "splitText": "6.06",
+            "delta": {
+              "ms": 3029.6969696969695,
+              "text": "+3.03",
+              "tone": "slower"
+            },
+            "moves": 7,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair1",
+            "label": "pair 1",
+            "short": "p1",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "done",
+            "fill": 1,
+            "skipped": false,
+            "merged": true,
+            "splitMs": 0,
+            "splitText": "with cross",
+            "delta": null,
+            "moves": 0,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair2",
+            "label": "pair 2",
+            "short": "p2",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "done",
+            "fill": 1,
+            "skipped": false,
+            "merged": true,
+            "splitMs": 0,
+            "splitText": "with cross",
+            "delta": null,
+            "moves": 0,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair3",
+            "label": "pair 3",
+            "short": "p3",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "done",
+            "fill": 1,
+            "skipped": false,
+            "merged": true,
+            "splitMs": 0,
+            "splitText": "with cross",
+            "delta": null,
+            "moves": 0,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "pair4",
+            "label": "pair 4",
+            "short": "p4",
+            "weight": 0.1212121212121212,
+            "avgMs": 2424.2424242424245,
+            "state": "done",
+            "fill": 1,
+            "skipped": false,
+            "merged": true,
+            "splitMs": 0,
+            "splitText": "with cross",
+            "delta": null,
+            "moves": 0,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "eo",
+            "label": "eo",
+            "short": "eo",
+            "weight": 0.0606060606060606,
+            "avgMs": 1212.1212121212122,
+            "state": "skipped",
+            "fill": 1,
+            "skipped": true,
+            "merged": false,
+            "splitMs": 0,
+            "splitText": "skip",
+            "delta": null,
+            "moves": 0,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "co",
+            "label": "co",
+            "short": "co",
+            "weight": 0.10101010101010101,
+            "avgMs": 2020.2020202020205,
+            "state": "skipped",
+            "fill": 1,
+            "skipped": true,
+            "merged": false,
+            "splitMs": 0,
+            "splitText": "skip",
+            "delta": null,
+            "moves": 0,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "cp",
+            "label": "cp",
+            "short": "cp",
+            "weight": 0.10101010101010101,
+            "avgMs": 2020.2020202020205,
+            "state": "skipped",
+            "fill": 1,
+            "skipped": true,
+            "merged": false,
+            "splitMs": 0,
+            "splitText": "skip",
+            "delta": null,
+            "moves": 0,
+            "selectable": true,
+            "caseKey": null
+          },
+          {
+            "key": "ep",
+            "label": "ep",
+            "short": "ep",
+            "weight": 0.10101010101010101,
+            "avgMs": 2020.2020202020205,
+            "state": "done",
+            "fill": 1,
+            "skipped": false,
+            "merged": false,
+            "splitMs": 1020,
+            "splitText": "1.02",
+            "delta": {
+              "ms": -1000.2020202020205,
+              "text": "−1.00",
+              "tone": "faster"
+            },
+            "moves": 1,
+            "selectable": true,
+            "caseKey": null
+          }
+        ],
+        "markers": []
+      },
+      "vsAo12": null,
+      "tpsSeries": {
+        "points": [
+          {
+            "tMs": 0,
+            "tps": 1.9232565942699058
+          },
+          {
+            "tMs": 100,
+            "tps": 1.6753629144455522
+          },
+          {
+            "tMs": 200,
+            "tps": 1.4680089388708235
+          },
+          {
+            "tMs": 300,
+            "tps": 1.3041695200351524
+          },
+          {
+            "tMs": 400,
+            "tps": 1.184588151785922
+          },
+          {
+            "tMs": 500,
+            "tps": 1.1068646444648202
+          },
+          {
+            "tMs": 600,
+            "tps": 1.0649068252171077
+          },
+          {
+            "tMs": 700,
+            "tps": 1.0491347116835361
+          },
+          {
+            "tMs": 800,
+            "tps": 1.047720405248857
+          },
+          {
+            "tMs": 900,
+            "tps": 1.0488170808697197
+          },
+          {
+            "tMs": 1000,
+            "tps": 1.0432576822431934
+          },
+          {
+            "tMs": 1100,
+            "tps": 1.0268170486981578
+          },
+          {
+            "tMs": 1200,
+            "tps": 1.001095712149021
+          },
+          {
+            "tMs": 1300,
+            "tps": 0.9725114317459418
+          },
+          {
+            "tMs": 1400,
+            "tps": 0.9496217760428967
+          },
+          {
+            "tMs": 1500,
+            "tps": 0.9397032170685283
+          },
+          {
+            "tMs": 1600,
+            "tps": 0.9458476869543482
+          },
+          {
+            "tMs": 1700,
+            "tps": 0.965660785580935
+          },
+          {
+            "tMs": 1800,
+            "tps": 0.9920415243757088
+          },
+          {
+            "tMs": 1900,
+            "tps": 1.0157396885876524
+          },
+          {
+            "tMs": 2000,
+            "tps": 1.0287235591627164
+          },
+          {
+            "tMs": 2100,
+            "tps": 1.0270921461837392
+          },
+          {
+            "tMs": 2200,
+            "tps": 1.0124402250008802
+          },
+          {
+            "tMs": 2300,
+            "tps": 0.9911663685210699
+          },
+          {
+            "tMs": 2400,
+            "tps": 0.9719874557233003
+          },
+          {
+            "tMs": 2500,
+            "tps": 0.9625980159491272
+          },
+          {
+            "tMs": 2600,
+            "tps": 0.9667347014340353
+          },
+          {
+            "tMs": 2700,
+            "tps": 0.9827531650424357
+          },
+          {
+            "tMs": 2800,
+            "tps": 1.0042540897234336
+          },
+          {
+            "tMs": 2900,
+            "tps": 1.0225221786904397
+          },
+          {
+            "tMs": 3000,
+            "tps": 1.0298579878113263
+          },
+          {
+            "tMs": 3100,
+            "tps": 1.0225454154656548
+          },
+          {
+            "tMs": 3200,
+            "tps": 1.0023343563325378
+          },
+          {
+            "tMs": 3300,
+            "tps": 0.9758762048896258
+          },
+          {
+            "tMs": 3400,
+            "tps": 0.9523181613187796
+          },
+          {
+            "tMs": 3500,
+            "tps": 0.9399512380989221
+          },
+          {
+            "tMs": 3600,
+            "tps": 0.9431593208670096
+          },
+          {
+            "tMs": 3700,
+            "tps": 0.9608035392925174
+          },
+          {
+            "tMs": 3800,
+            "tps": 0.9866421045043123
+          },
+          {
+            "tMs": 3900,
+            "tps": 1.0116296898480623
+          },
+          {
+            "tMs": 4000,
+            "tps": 1.0272419741202679
+          },
+          {
+            "tMs": 4100,
+            "tps": 1.0285888714464886
+          },
+          {
+            "tMs": 4200,
+            "tps": 1.0161577426860333
+          },
+          {
+            "tMs": 4300,
+            "tps": 0.9955392814993618
+          },
+          {
+            "tMs": 4400,
+            "tps": 0.9752446140512697
+          },
+          {
+            "tMs": 4500,
+            "tps": 0.9634390955773291
+          },
+          {
+            "tMs": 4600,
+            "tps": 0.964825588686134
+          },
+          {
+            "tMs": 4700,
+            "tps": 0.9788531190788009
+          },
+          {
+            "tMs": 4800,
+            "tps": 0.9999266810202679
+          },
+          {
+            "tMs": 4900,
+            "tps": 1.0195390965735216
+          },
+          {
+            "tMs": 5000,
+            "tps": 1.0295208168670238
+          },
+          {
+            "tMs": 5100,
+            "tps": 1.0251817482724428
+          },
+          {
+            "tMs": 5200,
+            "tps": 1.0071595585435638
+          },
+          {
+            "tMs": 5300,
+            "tps": 0.9812757900022026
+          },
+          {
+            "tMs": 5400,
+            "tps": 0.9564502895049931
+          },
+          {
+            "tMs": 5500,
+            "tps": 0.9414539840844768
+          },
+          {
+            "tMs": 5600,
+            "tps": 0.9417173892332305
+          },
+          {
+            "tMs": 5700,
+            "tps": 0.9573954214752036
+          },
+          {
+            "tMs": 5800,
+            "tps": 0.9834235891854519
+          },
+          {
+            "tMs": 5900,
+            "tps": 1.0115560586095163
+          },
+          {
+            "tMs": 6000,
+            "tps": 1.0336290590782111
+          },
+          {
+            "tMs": 6100,
+            "tps": 1.0448342406285296
+          },
+          {
+            "tMs": 6200,
+            "tps": 1.0458104952545308
+          },
+          {
+            "tMs": 6300,
+            "tps": 1.042869611797062
+          },
+          {
+            "tMs": 6400,
+            "tps": 1.0464351071407083
+          },
+          {
+            "tMs": 6500,
+            "tps": 1.0684344665260828
+          },
+          {
+            "tMs": 6600,
+            "tps": 1.119646171619596
+          },
+          {
+            "tMs": 6700,
+            "tps": 1.207806109995695
+          },
+          {
+            "tMs": 6800,
+            "tps": 1.3368131071096638
+          },
+          {
+            "tMs": 6900,
+            "tps": 1.5069196943028498
+          },
+          {
+            "tMs": 7000,
+            "tps": 1.7155389987838081
+          },
+          {
+            "tMs": 7080,
+            "tps": 1.7155389987838081
+          }
+        ],
+        "avg": [
+          {
+            "fromMs": 0,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 6060,
+            "tps": 4
+          },
+          {
+            "fromMs": 6060,
+            "toMs": 7080,
+            "tps": 4
+          }
+        ],
+        "avgFlat": null,
+        "bands": [
+          {
+            "key": "cross",
+            "label": "cross",
+            "short": "x",
+            "fromMs": 0,
+            "toMs": 6060
+          },
+          {
+            "key": "pair1",
+            "label": "pair 1",
+            "short": "p1",
+            "fromMs": 6060,
+            "toMs": 6060
+          },
+          {
+            "key": "pair2",
+            "label": "pair 2",
+            "short": "p2",
+            "fromMs": 6060,
+            "toMs": 6060
+          },
+          {
+            "key": "pair3",
+            "label": "pair 3",
+            "short": "p3",
+            "fromMs": 6060,
+            "toMs": 6060
+          },
+          {
+            "key": "pair4",
+            "label": "pair 4",
+            "short": "p4",
+            "fromMs": 6060,
+            "toMs": 6060
+          },
+          {
+            "key": "eo",
+            "label": "eo",
+            "short": "eo",
+            "fromMs": 6060,
+            "toMs": 6060
+          },
+          {
+            "key": "co",
+            "label": "co",
+            "short": "co",
+            "fromMs": 6060,
+            "toMs": 6060
+          },
+          {
+            "key": "cp",
+            "label": "cp",
+            "short": "cp",
+            "fromMs": 6060,
+            "toMs": 6060
+          },
+          {
+            "key": "ep",
+            "label": "ep",
+            "short": "ep",
+            "fromMs": 6060,
+            "toMs": 7080
+          }
+        ],
+        "marks": [
+          {
+            "tMs": 1510,
+            "kind": "pause",
+            "label": "1.0 s pause"
+          },
+          {
+            "tMs": 3530,
+            "kind": "pause",
+            "label": "1.0 s pause"
+          },
+          {
+            "tMs": 6060,
+            "kind": "skip",
+            "label": "eo skip"
+          },
+          {
+            "tMs": 6060,
+            "kind": "skip",
+            "label": "co skip"
+          },
+          {
+            "tMs": 6060,
+            "kind": "skip",
+            "label": "cp skip"
+          }
+        ],
+        "durationMs": 7080,
+        "maxTps": 4
+      },
+      "splits": [
+        {
+          "key": "cross",
+          "label": "cross",
+          "ms": 6060,
+          "text": "6.06",
+          "deltaText": "+3.03",
+          "tone": "slower",
+          "moves": 7,
+          "avgMs": 3030.3030303030305,
+          "ratio": 1,
+          "avgRatio": 0.5000500050005001,
+          "skipped": false,
+          "merged": false,
+          "pseudo": false
+        },
+        {
+          "key": "pair1",
+          "label": "pair 1",
+          "ms": 0,
+          "text": "merged",
+          "deltaText": "",
+          "tone": "none",
+          "moves": 0,
+          "avgMs": 2424.2424242424245,
+          "ratio": 0,
+          "avgRatio": 0.4000400040004001,
+          "skipped": false,
+          "merged": true,
+          "pseudo": false
+        },
+        {
+          "key": "pair2",
+          "label": "pair 2",
+          "ms": 0,
+          "text": "merged",
+          "deltaText": "",
+          "tone": "none",
+          "moves": 0,
+          "avgMs": 2424.2424242424245,
+          "ratio": 0,
+          "avgRatio": 0.4000400040004001,
+          "skipped": false,
+          "merged": true,
+          "pseudo": false
+        },
+        {
+          "key": "pair3",
+          "label": "pair 3",
+          "ms": 0,
+          "text": "merged",
+          "deltaText": "",
+          "tone": "none",
+          "moves": 0,
+          "avgMs": 2424.2424242424245,
+          "ratio": 0,
+          "avgRatio": 0.4000400040004001,
+          "skipped": false,
+          "merged": true,
+          "pseudo": false
+        },
+        {
+          "key": "pair4",
+          "label": "pair 4",
+          "ms": 0,
+          "text": "merged",
+          "deltaText": "",
+          "tone": "none",
+          "moves": 0,
+          "avgMs": 2424.2424242424245,
+          "ratio": 0,
+          "avgRatio": 0.4000400040004001,
+          "skipped": false,
+          "merged": true,
+          "pseudo": false
+        },
+        {
+          "key": "eo",
+          "label": "eo",
+          "ms": 0,
+          "text": "skip",
+          "deltaText": "",
+          "tone": "none",
+          "moves": 0,
+          "avgMs": 1212.1212121212122,
+          "ratio": 0,
+          "avgRatio": 0.20002000200020004,
+          "skipped": true,
+          "merged": false,
+          "pseudo": false
+        },
+        {
+          "key": "co",
+          "label": "co",
+          "ms": 0,
+          "text": "skip",
+          "deltaText": "",
+          "tone": "none",
+          "moves": 0,
+          "avgMs": 2020.2020202020205,
+          "ratio": 0,
+          "avgRatio": 0.33336667000033343,
+          "skipped": true,
+          "merged": false,
+          "pseudo": false
+        },
+        {
+          "key": "cp",
+          "label": "cp",
+          "ms": 0,
+          "text": "skip",
+          "deltaText": "",
+          "tone": "none",
+          "moves": 0,
+          "avgMs": 2020.2020202020205,
+          "ratio": 0,
+          "avgRatio": 0.33336667000033343,
+          "skipped": true,
+          "merged": false,
+          "pseudo": false
+        },
+        {
+          "key": "ep",
+          "label": "ep",
+          "ms": 1020,
+          "text": "1.02",
+          "deltaText": "−1.00",
+          "tone": "faster",
+          "moves": 1,
+          "avgMs": 2020.2020202020205,
+          "ratio": 0.16831683168316833,
+          "avgRatio": 0.33336667000033343,
+          "skipped": false,
+          "merged": false,
+          "pseudo": false
+        }
+      ],
+      "donut": {
+        "centerValue": "8",
+        "centerLabel": "moves",
+        "arcs": [
+          {
+            "key": "cross",
+            "label": "x",
+            "fraction": 0.8559322033898306,
+            "tone": "slower"
+          },
+          {
+            "key": "pair1",
+            "label": "p1",
+            "fraction": 0,
+            "tone": "none"
+          },
+          {
+            "key": "pair2",
+            "label": "p2",
+            "fraction": 0,
+            "tone": "none"
+          },
+          {
+            "key": "pair3",
+            "label": "p3",
+            "fraction": 0,
+            "tone": "none"
+          },
+          {
+            "key": "pair4",
+            "label": "p4",
+            "fraction": 0,
+            "tone": "none"
+          },
+          {
+            "key": "eo",
+            "label": "eo",
+            "fraction": 0,
+            "tone": "skip"
+          },
+          {
+            "key": "co",
+            "label": "co",
+            "fraction": 0,
+            "tone": "skip"
+          },
+          {
+            "key": "cp",
+            "label": "cp",
+            "fraction": 0,
+            "tone": "skip"
+          },
+          {
+            "key": "ep",
+            "label": "ep",
+            "fraction": 0.1440677966101695,
+            "tone": "faster"
+          }
+        ]
+      },
+      "session": {
+        "ao5": "—",
+        "ao12": "—",
+        "pb": "7.08",
+        "mean": "7.08",
+        "tones": {
+          "ao5": "none",
+          "ao12": "none",
+          "pb": "faster",
+          "mean": "none"
+        },
+        "count": 1,
+        "worst": "7.08",
+        "mo3": "—",
+        "ao50": "—",
+        "ao100": "—"
+      },
+      "spark": {
+        "points": [
+          {
+            "i": 0,
+            "ms": 7080,
+            "kind": "current"
+          }
+        ],
+        "min": 7080,
+        "max": 7080
+      },
+      "recent": [
+        {
+          "key": "1768478400000",
+          "text": "7.08",
+          "penaltyTag": "",
+          "current": true
+        }
+      ],
+      "coach": [
+        {
+          "key": "xcross",
+          "tag": "xxcross",
+          "tone": "good",
+          "text": "xx-cross built with the cross."
+        },
+        {
+          "key": "skip-eo",
+          "tag": "eo skip",
+          "tone": "good",
+          "text": "EO skip."
+        },
+        {
+          "key": "skip-co",
+          "tag": "co skip",
+          "tone": "good",
+          "text": "CO skip."
+        },
+        {
+          "key": "skip-cp",
+          "tag": "cp skip",
+          "tone": "good",
+          "text": "CP skip."
+        }
+      ],
+      "review": {
+        "status": "pending",
+        "markers": [],
+        "selectedId": null,
+        "coach": {
+          "markerId": null,
+          "tag": "review",
+          "tone": "info",
+          "text": "reviewing this solve…",
+          "compare": null,
+          "better": null
+        },
+        "detail": null,
+        "focus": "speed",
+        "pin": {
+          "available": false,
+          "pinned": false,
+          "trainer": null,
+          "count": 0,
+          "payload": null
+        }
+      }
+    },
+    "stats": {
+      "focus": "speed",
+      "solves": "1",
+      "best": "7.08 s",
+      "ao5": "—",
+      "ao12": "—",
+      "medianTps": "1.13",
+      "medianMoves": "8",
+      "worst": "7.08 s",
+      "mo3": "—",
+      "ao50": "—",
+      "ao100": "—",
+      "pb": {
+        "mo3": "—",
+        "ao5": "—",
+        "ao12": "—",
+        "ao50": "—",
+        "ao100": "—"
+      },
+      "allTime": {
+        "solves": "1",
+        "best": "7.08 s",
+        "worst": "7.08 s",
+        "mean": "7.08 s",
+        "mo3": "—",
+        "ao5": "—",
+        "ao12": "—",
+        "ao50": "—",
+        "ao100": "—",
+        "pb": {
+          "mo3": "—",
+          "ao5": "—",
+          "ao12": "—",
+          "ao50": "—",
+          "ao100": "—"
+        },
+        "flow": {
+          "meanTps": "1.13",
+          "tpsStd": "—",
+          "gapCv": "1%",
+          "pauses": "0",
+          "pausesPerSolve": "0.0"
+        },
+        "learning": {
+          "meanMoves": "8.0",
+          "medianMoves": "8",
+          "bestMoves": "8",
+          "reviewAccuracy": "—"
+        }
+      },
+      "session": {
+        "solves": "1",
+        "best": "7.08 s",
+        "worst": "7.08 s",
+        "mean": "7.08 s",
+        "mo3": "—",
+        "ao5": "—",
+        "ao12": "—",
+        "ao50": "—",
+        "ao100": "—",
+        "pb": {
+          "mo3": "—",
+          "ao5": "—",
+          "ao12": "—",
+          "ao50": "—",
+          "ao100": "—"
+        },
+        "flow": {
+          "meanTps": "1.13",
+          "tpsStd": "—",
+          "gapCv": "1%",
+          "pauses": "0",
+          "pausesPerSolve": "0.0"
+        },
+        "learning": {
+          "meanMoves": "8.0",
+          "medianMoves": "8",
+          "bestMoves": "8",
+          "reviewAccuracy": "—"
+        }
+      },
+      "byFocus": {
+        "speed": {
+          "allTime": {
+            "solves": "1",
+            "best": "7.08 s",
+            "worst": "7.08 s",
+            "mean": "7.08 s",
+            "mo3": "—",
+            "ao5": "—",
+            "ao12": "—",
+            "ao50": "—",
+            "ao100": "—",
+            "pb": {
+              "mo3": "—",
+              "ao5": "—",
+              "ao12": "—",
+              "ao50": "—",
+              "ao100": "—"
+            },
+            "flow": {
+              "meanTps": "1.13",
+              "tpsStd": "—",
+              "gapCv": "1%",
+              "pauses": "0",
+              "pausesPerSolve": "0.0"
+            },
+            "learning": {
+              "meanMoves": "8.0",
+              "medianMoves": "8",
+              "bestMoves": "8",
+              "reviewAccuracy": "—"
+            }
+          },
+          "session": {
+            "solves": "1",
+            "best": "7.08 s",
+            "worst": "7.08 s",
+            "mean": "7.08 s",
+            "mo3": "—",
+            "ao5": "—",
+            "ao12": "—",
+            "ao50": "—",
+            "ao100": "—",
+            "pb": {
+              "mo3": "—",
+              "ao5": "—",
+              "ao12": "—",
+              "ao50": "—",
+              "ao100": "—"
+            },
+            "flow": {
+              "meanTps": "1.13",
+              "tpsStd": "—",
+              "gapCv": "1%",
+              "pauses": "0",
+              "pausesPerSolve": "0.0"
+            },
+            "learning": {
+              "meanMoves": "8.0",
+              "medianMoves": "8",
+              "bestMoves": "8",
+              "reviewAccuracy": "—"
+            }
+          }
+        },
+        "flow": {
+          "allTime": {
+            "solves": "0",
+            "best": "—",
+            "worst": "—",
+            "mean": "—",
+            "mo3": "—",
+            "ao5": "—",
+            "ao12": "—",
+            "ao50": "—",
+            "ao100": "—",
+            "pb": {
+              "mo3": "—",
+              "ao5": "—",
+              "ao12": "—",
+              "ao50": "—",
+              "ao100": "—"
+            },
+            "flow": {
+              "meanTps": "—",
+              "tpsStd": "—",
+              "gapCv": "—",
+              "pauses": "—",
+              "pausesPerSolve": "—"
+            },
+            "learning": {
+              "meanMoves": "—",
+              "medianMoves": "—",
+              "bestMoves": "—",
+              "reviewAccuracy": "—"
+            }
+          },
+          "session": {
+            "solves": "0",
+            "best": "—",
+            "worst": "—",
+            "mean": "—",
+            "mo3": "—",
+            "ao5": "—",
+            "ao12": "—",
+            "ao50": "—",
+            "ao100": "—",
+            "pb": {
+              "mo3": "—",
+              "ao5": "—",
+              "ao12": "—",
+              "ao50": "—",
+              "ao100": "—"
+            },
+            "flow": {
+              "meanTps": "—",
+              "tpsStd": "—",
+              "gapCv": "—",
+              "pauses": "—",
+              "pausesPerSolve": "—"
+            },
+            "learning": {
+              "meanMoves": "—",
+              "medianMoves": "—",
+              "bestMoves": "—",
+              "reviewAccuracy": "—"
+            }
+          }
+        },
+        "learning": {
+          "allTime": {
+            "solves": "0",
+            "best": "—",
+            "worst": "—",
+            "mean": "—",
+            "mo3": "—",
+            "ao5": "—",
+            "ao12": "—",
+            "ao50": "—",
+            "ao100": "—",
+            "pb": {
+              "mo3": "—",
+              "ao5": "—",
+              "ao12": "—",
+              "ao50": "—",
+              "ao100": "—"
+            },
+            "flow": {
+              "meanTps": "—",
+              "tpsStd": "—",
+              "gapCv": "—",
+              "pauses": "—",
+              "pausesPerSolve": "—"
+            },
+            "learning": {
+              "meanMoves": "—",
+              "medianMoves": "—",
+              "bestMoves": "—",
+              "reviewAccuracy": "—"
+            }
+          },
+          "session": {
+            "solves": "0",
+            "best": "—",
+            "worst": "—",
+            "mean": "—",
+            "mo3": "—",
+            "ao5": "—",
+            "ao12": "—",
+            "ao50": "—",
+            "ao100": "—",
+            "pb": {
+              "mo3": "—",
+              "ao5": "—",
+              "ao12": "—",
+              "ao50": "—",
+              "ao100": "—"
+            },
+            "flow": {
+              "meanTps": "—",
+              "tpsStd": "—",
+              "gapCv": "—",
+              "pauses": "—",
+              "pausesPerSolve": "—"
+            },
+            "learning": {
+              "meanMoves": "—",
+              "medianMoves": "—",
+              "bestMoves": "—",
+              "reviewAccuracy": "—"
+            }
+          }
+        }
+      },
+      "mixed": {
+        "mixed": true,
+        "solves": "1",
+        "best": "7.08 s",
+        "worst": "7.08 s",
+        "mean": "7.08 s",
+        "mo3": "—",
+        "ao5": "—",
+        "ao12": "—",
+        "ao50": "—",
+        "ao100": "—",
+        "pb": {
+          "mo3": "—",
+          "ao5": "—",
+          "ao12": "—",
+          "ao50": "—",
+          "ao100": "—"
+        },
+        "flow": {
+          "meanTps": "1.13",
+          "tpsStd": "—",
+          "gapCv": "1%",
+          "pauses": "0",
+          "pausesPerSolve": "0.0"
+        },
+        "learning": {
+          "meanMoves": "8.0",
+          "medianMoves": "8",
+          "bestMoves": "8",
+          "reviewAccuracy": "—"
+        }
+      }
+    },
+    "keys": [
+      {
+        "key": "space",
+        "label": "next scramble",
+        "action": "next"
+      },
+      {
+        "key": "[ ]",
+        "label": "moments",
+        "action": "stepMarker"
+      },
+      {
+        "key": "r",
+        "label": "retry this scramble",
+        "action": "retry"
+      },
+      {
+        "key": "2",
+        "label": "+2",
+        "action": "togglePenalty",
+        "penalty": "+2"
+      },
+      {
+        "key": "d",
+        "label": "dnf",
+        "action": "togglePenalty",
+        "penalty": "DNF"
+      },
+      {
+        "key": "tab",
+        "label": "settings",
+        "action": "toggleSettings"
+      }
+    ],
+    "toast": {
+      "text": "✦ xxxx-cross",
+      "tone": "info"
+    },
+    "status": "Solve saved · 7.08 s · 8 moves.",
+    "error": "",
+    "chromeDimmed": false,
+    "commandOpen": false,
+    "debugOpen": false,
+    "caseChoice": null
+  },
+  "shared": {
+    "route": "/solve",
+    "theme": "light",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "solve",
+      "connection": {
+        "phase": "tracking",
+        "statusText": "connected",
+        "name": "GAN test cube",
+        "batteryPercent": null,
+        "canSync": true,
+        "canDisconnect": true
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": false
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": true
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": true
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": true
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/solve",
+    "fixtureState": "f1-live-results",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "light",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

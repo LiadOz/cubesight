@@ -1,0 +1,77 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - text: timer
+  - button "inspection WCA 15 s": WCA 15 s
+  - button "overtime WCA +2 / DNF"
+  - button "hold 300 ms"
+  - paragraph: R2 B′ L′ F′ L D′ R B′ R′ F′ U2 B U2 L2 F D2 B2 D2 B′ R2
+  - button "new scramble"
+  - region "3D cube scramble preview":
+    - group "scramble case":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - group "scramble":
+      - list "Moves for scramble":
+        - 'listitem "Move 1 of 20: R2. Turn the right face (red center) 180° (looking directly at that face)."': R2
+        - 'listitem "Move 2 of 20: B′. Turn the back face (blue center) counterclockwise (looking directly at that face)."': B′
+        - 'listitem "Move 3 of 20: L′. Turn the left face (orange center) counterclockwise (looking directly at that face)."': L′
+        - 'listitem "Move 4 of 20: F′. Turn the front face (green center) counterclockwise (looking directly at that face)."': F′
+        - 'listitem "Move 5 of 20: L. Turn the left face (orange center) clockwise (looking directly at that face)."': L
+        - 'listitem "Move 6 of 20: D′. Turn the bottom face (yellow center) counterclockwise (looking directly at that face)."': D′
+        - 'listitem "Move 7 of 20: R. Turn the right face (red center) clockwise (looking directly at that face)."': R
+        - 'listitem "Move 8 of 20: B′. Turn the back face (blue center) counterclockwise (looking directly at that face)."': B′
+        - 'listitem "Move 9 of 20: R′. Turn the right face (red center) counterclockwise (looking directly at that face)."': R′
+        - 'listitem "Move 10 of 20: F′. Turn the front face (green center) counterclockwise (looking directly at that face)."': F′
+        - 'listitem "Move 11 of 20: U2. Turn the top face (white center) 180° (looking directly at that face)."': U2
+        - 'listitem "Move 12 of 20: B. Turn the back face (blue center) clockwise (looking directly at that face)."': B
+        - 'listitem "Move 13 of 20: U2. Turn the top face (white center) 180° (looking directly at that face)."': U2
+        - 'listitem "Move 14 of 20: L2. Turn the left face (orange center) 180° (looking directly at that face)."': L2
+        - 'listitem "Move 15 of 20: F. Turn the front face (green center) clockwise (looking directly at that face)."': F
+        - 'listitem "Move 16 of 20: D2. Turn the bottom face (yellow center) 180° (looking directly at that face)."': D2
+        - 'listitem "Move 17 of 20: B2. Turn the back face (blue center) 180° (looking directly at that face)."': B2
+        - 'listitem "Move 18 of 20: D2. Turn the bottom face (yellow center) 180° (looking directly at that face)."': D2
+        - 'listitem "Move 19 of 20: B′. Turn the back face (blue center) counterclockwise (looking directly at that face)."': B′
+        - 'listitem "Move 20 of 20: R2. Turn the right face (red center) 180° (looking directly at that face)."': R2
+      - status
+    - button "reset"
+    - button "Previous move": ←
+    - button "play"
+    - button "Next move" [disabled]: →
+    - text: speed
+    - combobox "Playback speed":
+      - option "0.5×"
+      - option "1×" [selected]
+      - option "2×"
+      - option "4×"
+    - status: 20 / 20
+  - 'button "timer: touch and hold, release to start"':
+    - group "Manual timer":
+      - list "Manual timer":
+        - listitem "solve, 1.50":
+          - button "solve, 1.50"
+        - text: solve 1.50
+    - text: "1.50"
+    - paragraph
+  - text: PB 1.50 1 solve
+  - button "stats · manual solves"
+  - button "2 +2"
+  - button "d dnf"
+  - button "del delete"
+  - text: space next scramble r retry
+  - paragraph: "1.50"

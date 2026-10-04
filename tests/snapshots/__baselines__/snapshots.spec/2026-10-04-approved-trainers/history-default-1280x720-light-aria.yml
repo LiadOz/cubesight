@@ -1,0 +1,46 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "history" [level=1]
+  - paragraph: 1 solves · PB 12.34 · ao5 — · ao12 —
+  - form "Filter history":
+    - group: filters & data…
+  - status
+  - region "Solve sessions":
+    - paragraph: 1 solves
+    - heading "morning · 00:16" [level=2]
+    - paragraph: 1 solve · ao12 —
+    - list:
+      - listitem:
+        - link "solve orbit 12.34 00:16 · PB":
+          - /url: "#/history/1000000"
+          - group "solve orbit":
+            - list "solve orbit"
+          - text: 12.34 00:16 · PB
+  - region "Selected solve":
+    - group "selected solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - group "solve orbit":
+      - list "solve orbit"
+    - paragraph: "12.34"
+    - paragraph: 1 jan 1970 · speed · cube
+    - link "open this solve":
+      - /url: "#/history/1000000"
+    - group: more…

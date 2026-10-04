@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "owner": "F5",
+  "dataOwner": "F6",
+  "route": "/progress",
+  "state": "split-progress",
+  "viewModel": {
+    "route": "/progress",
+    "state": "split-progress",
+    "filters": {
+      "session": "all",
+      "source": "smart",
+      "focus": "speed",
+      "days": "30",
+      "view": "splits"
+    },
+    "selectedView": "splits",
+    "sessions": [],
+    "orbit": {
+      "label": "average split by stage",
+      "shape": "full",
+      "size": "L",
+      "centerClearance": 105,
+      "segments": []
+    },
+    "splits": [],
+    "splitCaption": "Stage averages · no previous period data for comparison.",
+    "charts": {
+      "ao12": [],
+      "recent": [],
+      "splitCurrent": [],
+      "splitPrevious": [],
+      "splitLabels": []
+    },
+    "emptySplits": true,
+    "goal": {
+      "targetSeconds": null,
+      "baselineSeconds": null,
+      "currentSeconds": null,
+      "currentLabel": "—",
+      "targetLabel": "not set",
+      "baselineLabel": null,
+      "mode": "waiting",
+      "percent": null,
+      "reached": false,
+      "message": "Set an ao12 target to follow it on this Orbit.",
+      "caption": "Set an ao12 target to use this Orbit for goal progress.",
+      "formError": ""
+    },
+    "drills": [
+      {
+        "id": "corners",
+        "title": "corner recognition",
+        "href": "#/drills/corners",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "corners",
+          "label": "corner recognition",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "pll",
+        "title": "PLL recognition",
+        "href": "#/drills/pll",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "pll",
+          "label": "PLL recognition",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "f2l",
+        "title": "F2L deduction",
+        "href": "#/drills/f2l",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "f2l",
+          "label": "F2L deduction",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "cross",
+        "title": "cross planning",
+        "href": "#/drills/scout",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "cross",
+          "label": "cross planning",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "oll",
+        "title": "OLL recognition",
+        "href": "#/drills/oll",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "oll",
+          "label": "OLL recognition",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "lookahead",
+        "title": "lookahead",
+        "href": "#/drills/lookahead",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "lookahead",
+          "label": "lookahead",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "algs",
+        "title": "alg drills",
+        "href": "#/algs",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "algs",
+          "label": "alg drills",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      }
+    ],
+    "due": 0,
+    "drillCaption": "Round totals use the selected period. Due cases follow each drill schedule.",
+    "weekly": {
+      "start": 1768176000000,
+      "end": 1768780800000,
+      "solves": 0,
+      "ao12Ms": null,
+      "trendMs": null,
+      "improvedMost": null,
+      "rounds": 0,
+      "cases": 0,
+      "correct": 0,
+      "summary": "0 solves · 0 rounds · 0 cases"
+    },
+    "shareStatus": "share latest solve · PNG",
+    "historyHref": "#/history"
+  },
+  "shared": {
+    "route": "/progress",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "progress",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/progress",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

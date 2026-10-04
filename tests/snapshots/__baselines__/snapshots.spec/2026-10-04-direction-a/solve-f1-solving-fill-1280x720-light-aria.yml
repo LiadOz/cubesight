@@ -1,0 +1,68 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve progress":
+          - listitem "cross":
+            - button "cross"
+          - text: cross
+          - listitem "pair 1":
+            - button "pair 1"
+          - text: pair 1
+          - listitem "pair 2":
+            - button "pair 2"
+          - text: pair 2
+          - listitem "pair 3":
+            - button "pair 3"
+          - text: pair 3
+          - listitem "pair 4":
+            - button "pair 4"
+          - text: pair 4
+          - listitem "eo":
+            - button "eo"
+          - text: eo
+          - listitem "co":
+            - button "co"
+          - text: co
+          - listitem "cp":
+            - button "cp"
+          - text: cp
+          - listitem "ep":
+            - button "ep"
+          - text: ep
+    - strong: Cross
+    - button "stop"
+    - paragraph: cross
+    - paragraph: 1 moves · 0.13 tps
+    - paragraph
+  - button "esc stop"
+  - button "t hide timer"
+  - button "c coach after solve"
+  - heading "cross" [level=2]
+  - paragraph: 1 move · 0.13 TPS · 7.76 s
+  - button "rebuild view"
+  - 'button "dev `"'

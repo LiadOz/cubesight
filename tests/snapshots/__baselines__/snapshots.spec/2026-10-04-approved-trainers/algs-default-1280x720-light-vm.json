@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "owner": "F4",
+  "dataOwner": "F4",
+  "route": "/algs",
+  "state": "active",
+  "viewModel": {
+    "page": "browser",
+    "route": "#/algs",
+    "set": null,
+    "caseId": null,
+    "display": {
+      "mode": "case",
+      "caseColor": "yellow top",
+      "topColor": "yellow",
+      "cubeState": null,
+      "gyro": null
+    },
+    "selectedAlg": null,
+    "algorithms": [],
+    "playback": {
+      "index": 0,
+      "moveCount": 0,
+      "playing": false,
+      "speed": 1,
+      "groups": []
+    },
+    "drill": null,
+    "context": {
+      "from": null,
+      "usedAlg": null,
+      "recognitionMs": null,
+      "executionMs": null
+    }
+  },
+  "shared": {
+    "route": "/algs",
+    "theme": "light",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "algs",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/algs",
+    "fixtureState": "default",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "theme": "light",
+    "cubeState": null
+  }
+}

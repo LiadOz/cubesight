@@ -35,6 +35,16 @@ the same encoding to pure fixture snapshots that do not pass through the
 runtime bridge. A cell's fixture ID, viewport, theme, and canvas camera data
 are stored in a separate `capture` object next to the bridge envelope.
 
+Browser comparisons validate, then omit two diagnostic fields: F1's `rev`
+counts render calls, and `analysis.pairs[].ms` measures solver CPU time (see
+`src/analysis/pairs.js`). Both must remain finite and nonnegative. Solve times,
+move gaps, recognition/execution times, analysis answers and proof flags remain
+in full. The 47 pure model fixtures still snapshot their render revision.
+Scripted browser solves use the recorder's existing replay clock, advanced by
+known input gaps; ordinary browser tests retain real timing and animations.
+Capture waits for completed analysis and cross suggestions rather than racing
+their workers while changing viewport and theme.
+
 ## Owner implementation points
 
 | Owner | Pure serializer export | Mounted capture handle |
@@ -105,3 +115,33 @@ F2/F4/F5/F14/F17 implement the same runtime getter on their page handle; the app
 snapshot bridge exposes the active handle through the common API above. F5
 combines its progress view-model with the F6 goal result, but keeps the two
 owners labelled separately in test metadata.
+
+Cross suggestions are bounded CPU searches. The F9 real controller consumes
+recorded solver replies through `recordAsyncRead`, the same seam used by saved
+recordings; it retains every face, move, proof flag and X-cross result. The input
+fixtures were captured from the real WASM solver with a 15 s budget on 2026-10-04.
+Node checks replay every continuation to verify its cross and pair geometrically.
+The solver's real-search browser and unit tests remain in the regression suite.
+Solving fixtures advance the replay clock to 1.20 s and wait for the real frame.
+
+The analysis worker reply also crosses `recordAsyncRead`, keyed by scramble,
+solve moves, move timings, cross face and last-layer configuration. Its three
+real captured replies retain bounded-search proof flags and partial results;
+F9 replays them instead of rerunning CPU budgets. Node checks independently
+recompute segmentation and compare every stage boundary and the solved state.
+The real analysis browser and golden-unit suites continue to run separately.
+Manual-timer visual fixtures use one real captured WCA random-state scramble
+as the scramble-module input. The separate scramble and offline tests still
+exercise the actual cubing worker. Fonts are explicitly loaded before capture,
+including faces not yet used by a closed disclosure. Comparison captures write
+fresh artifact directories and preserve every committed baseline image.
+Cross Scout uses its normal linked-setup input (`R U F`), avoiding random crypto
+scramble input while retaining all displayed stickers and case seed fields.
+The recording page starts with a paused browser clock, keeping real recorder
+timestamps in the captured model; capture frames advance that clock explicitly.
+The old rotation recording is preserved in full in a separate visual fixture,
+with two real solver replies appended as recorded reads. Node checks verify
+that every original event is unchanged and independently validate those replies.
+A replay's history is intentionally ephemeral. The past-results fixture imports
+its real analysed replay record into IndexedDB, then loads the fresh history
+page; live persistence tests still use the application's normal save path.

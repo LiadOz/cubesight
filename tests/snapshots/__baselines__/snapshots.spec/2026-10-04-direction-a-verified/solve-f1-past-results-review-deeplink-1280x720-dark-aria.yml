@@ -1,0 +1,115 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "history" [level=1]
+  - paragraph: 1 solves · PB 1.23 · ao5 — · ao12 —
+  - form "Filter history":
+    - group: filters & data…
+  - status
+  - region "Selected solve":
+    - group "selected solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - group "solve orbit":
+      - list "Past solve results":
+        - listitem "cross, 0.16, −2.86":
+          - button "cross, 0.16, −2.86"
+        - text: cross 0.16 −2.86
+        - listitem "pair 1 · F2L 4, 0.07, −2.35":
+          - button "pair 1 · F2L 4"
+        - text: pair 1 · F2L 4 0.07 −2.35
+        - listitem "pair 2, 0.09, −2.33":
+          - button "pair 2, 0.09, −2.33"
+        - text: pair 2 0.09 −2.33
+        - listitem "pair 3, 0.09, −2.33":
+          - button "pair 3, 0.09, −2.33"
+        - text: pair 3 0.09 −2.33
+        - listitem "pair 4, 0.09, −2.33":
+          - button "pair 4, 0.09, −2.33"
+        - text: pair 4 0.09 −2.33
+        - listitem "eo, 0.34, −0.86":
+          - button "eo, 0.34, −0.86"
+        - text: eo 0.34 −0.86
+        - listitem "co · Runway, Blank, skip":
+          - button "co · Runway, Blank · recog 0.02 s · exec 0.32 s"
+        - text: co · Runway, Blank skip
+        - listitem "cp, 0.35, −1.66":
+          - button "cp, 0.35, −1.66"
+        - text: cp 0.35 −1.66
+        - listitem "ep · T, skip":
+          - button "ep · T · recog 0.02 s · exec 0.33 s"
+        - text: ep · T skip
+        - button "detour": "!"
+        - button "3 markers; activate to inspect facts": "3"
+        - button "2 markers; activate to inspect facts": "2"
+        - button "2 markers; activate to inspect facts": "2"
+        - button "2 markers; activate to inspect facts": "2"
+        - button "co skip": ✦
+    - paragraph: today · speed · cube
+    - region "Solve results":
+      - navigation:
+        - link "‹ history · 1.23":
+          - /url: "#/history"
+      - region "Solve review":
+        - region "Stage detail":
+          - strong: detour · cross
+          - button "Close detail": close esc
+          - group "Moves of this stage":
+            - button "start"
+            - button "F′"
+            - button "D′"
+            - button "F"
+            - button "D"
+            - button "B"
+            - button "D′"
+            - button "R"
+            - button "D′"
+          - term: time
+          - definition: "0.16"
+          - definition
+          - term: moves
+          - definition: "8"
+          - definition
+          - term: tps
+          - definition: "47.62"
+          - definition: avg 4.00
+          - term: pauses
+          - definition: none
+          - definition
+          - list:
+            - listitem: detour
+            - listitem: missed x-cross
+          - paragraph: yours 5 · better 3
+          - button "yours ▶" [pressed]
+          - button "better ▶"
+          - button "pin"
+          - button "copy your demo link"
+          - button "copy better demo link"
+          - paragraph:
+            - text: yours
+            - code: D B D′ R D′
+          - paragraph:
+            - text: better
+            - code: R D′ F
+      - button "replay"
+      - link "review":
+        - /url: "#/history/1768478400000/review/cross-detour-3"
+      - button "more…"
+      - text: "[ – ] markers"
+    - group: more…

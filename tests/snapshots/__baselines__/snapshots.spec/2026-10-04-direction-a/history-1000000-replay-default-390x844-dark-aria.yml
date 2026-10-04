@@ -1,0 +1,40 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "history" [level=1]
+  - form "Filter history":
+    - group: filters & data…
+  - region "Selected solve":
+    - group "selected solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - group "solve orbit":
+      - list "solve orbit"
+    - paragraph: 0.00 / 12.34 s
+    - paragraph: move 0 of 2 · timing not recorded
+    - button "play"
+    - button "‹ marker"
+    - button "next marker ›"
+    - button "0.5×"
+    - button "1×" [pressed]
+    - button "2×"
+    - paragraph: timing not recorded
+    - link "‹ past solve":
+      - /url: "#/history/1000000"
+    - group: more…
+  - text: space play ‹ › move esc back

@@ -1,0 +1,84 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "drills" [level=1]
+  - paragraph: short rounds, one key to start. no cube needed unless marked.
+  - group "Drills orbit":
+    - list "Drills orbit"
+  - group "Drills cube preview":
+    - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+  - link "start here corner recognition single corner start":
+    - /url: "#/drills/corners"
+    - text: start here
+    - strong: corner recognition
+    - text: single corner start
+  - list "drills":
+    - listitem:
+      - link "corner recognition orbit corner recognition name the hidden sticker at a glance no cube needed":
+        - /url: "#/drills/corners"
+        - group "corner recognition orbit":
+          - list "corner recognition orbit":
+            - listitem "corners"
+        - strong: corner recognition
+        - text: name the hidden sticker at a glance no cube needed
+    - listitem:
+      - link "PLL recognition orbit PLL recognition call the PLL from two sides no cube needed":
+        - /url: "#/drills/pll"
+        - group "PLL recognition orbit":
+          - list "PLL recognition orbit":
+            - listitem "pll"
+        - strong: PLL recognition
+        - text: call the PLL from two sides no cube needed
+    - listitem:
+      - link "F2L deduction orbit F2L deduction spot pairs, then pick the best next one no cube needed":
+        - /url: "#/drills/f2l"
+        - group "F2L deduction orbit":
+          - list "F2L deduction orbit":
+            - listitem "f2l"
+        - strong: F2L deduction
+        - text: spot pairs, then pick the best next one no cube needed
+    - listitem:
+      - link "cross planning orbit cross planning choose a cross before you see the verified plans no cube needed":
+        - /url: "#/drills/scout"
+        - group "cross planning orbit":
+          - list "cross planning orbit":
+            - listitem "scout"
+        - strong: cross planning
+        - text: choose a cross before you see the verified plans no cube needed
+    - listitem:
+      - link "OLL recognition orbit OLL recognition name the last-layer pattern before you turn no cube needed":
+        - /url: "#/drills/oll"
+        - group "OLL recognition orbit":
+          - list "OLL recognition orbit":
+            - listitem "oll"
+        - strong: OLL recognition
+        - text: name the last-layer pattern before you turn no cube needed
+    - listitem:
+      - link "lookahead orbit lookahead choose what to solve while tracking the next pair no cube needed":
+        - /url: "#/drills/lookahead"
+        - group "lookahead orbit":
+          - list "lookahead orbit":
+            - listitem "lookahead"
+        - strong: lookahead
+        - text: choose what to solve while tracking the next pair no cube needed
+  - navigation "More pages":
+    - link "manual timer":
+      - /url: "#/timer"
+    - link "history":
+      - /url: "#/history"

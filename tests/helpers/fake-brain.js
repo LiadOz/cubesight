@@ -12,6 +12,19 @@ function installTestCubeFactory(config = null) {
   if (!keepStorage) localStorage.clear();
   localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
   window.__CUBESIGHT_TEST_CUBE_FACTORY__ = async () => {
+    // Snapshot replay uses the production recorder's injectable replay clock.
+    // Real frame scheduling stays available, while solve timings come from
+    // deterministic event gaps instead of browser/CDP latency.
+    const replayClock = window.__cubesightSnapshotReplayClock;
+    if (replayClock) {
+      const { setReplayHooks } = await import('/src/recorder.js');
+      setReplayHooks({ now: () => replayClock.ms, speed: 0, read: (kind, fallback) => {
+        if (!kind.startsWith('brain.crossSuggestion:') && !kind.startsWith('brain.analysis:')) return fallback();
+        const input = window.__cubesightSnapshotReplayInputs?.[kind];
+        if (!input) throw new Error(`Snapshot replay has no recorded input for ${kind}`);
+        return structuredClone(input);
+      } });
+    }
     const solved = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
     let observer;
     let resolveConnection;
@@ -30,10 +43,12 @@ function installTestCubeFactory(config = null) {
     };
     // A double is two quarter-turn MOVE events a few cube ticks apart; separate turns are far apart.
     const emitTurn = raw => {
+      if (replayClock) replayClock.ms += 1000;
       const move = raw.replace('2', '');
       if (raw.endsWith('2')) {
         tick += 1000; observer?.next({ type: 'MOVE', move, cubeTimestamp: tick });
-        tick += 20; observer?.next({ type: 'MOVE', move, cubeTimestamp: tick });
+        tick += 20; if (replayClock) replayClock.ms += 20;
+        observer?.next({ type: 'MOVE', move, cubeTimestamp: tick });
       } else {
         tick += 1000; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick });
       }
@@ -44,11 +59,13 @@ function installTestCubeFactory(config = null) {
       const list = moves.split(/\s+/).filter(Boolean);
       for (let i = 0; i < list.length; i++) {
         const gap = Math.max(1, gapFor(i, list[i]));
-        await new Promise(resolve => setTimeout(resolve, gap));
+        if (replayClock) replayClock.ms += gap;
+        else await new Promise(resolve => setTimeout(resolve, gap));
         const raw = list[i];
         if (raw.endsWith('2')) {
           tick += gap; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
-          tick += 20; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
+          tick += 20; if (replayClock) replayClock.ms += 20;
+          observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
         } else { tick += gap; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick }); }
       }
     };
@@ -159,6 +176,9 @@ export async function playSolve(page, scramble, solution, { gaps = {}, base = 60
   await root.locator('#brain-start-custom').click();
   await page.evaluate(s => window.testBrain.emitTurns(s), scramble);
   await root.locator('#brain-phase-label').filter({ hasText: 'inspection' }).waitFor();
+  if (await page.evaluate(() => Boolean(window.__cubesightSnapshotReplayClock))) {
+    await page.waitForFunction(() => Boolean(window.__cubesightSnapshot.getViewModel().viewModel.inspection?.bestStart));
+  }
   await page.evaluate(([s, gaps, base]) => window.testBrain.emitTimed(s, i => gaps[i] ?? base), [solution, gaps, base]);
   await root.locator('#brain-phase-label').filter({ hasText: 'solved' }).waitFor();
 }

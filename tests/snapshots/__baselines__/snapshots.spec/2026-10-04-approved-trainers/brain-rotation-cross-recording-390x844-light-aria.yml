@@ -1,0 +1,69 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to dark mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - status: Replay finished. Connect your cube to start.
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve results":
+          - listitem "cross, 3.46, +0.43":
+            - button "cross, 3.46, +0.43"
+          - listitem "pair 1, 28.39, +25.97":
+            - button "pair 1, 28.39, +25.97"
+          - listitem "pair 2, 9.99, +7.57":
+            - button "pair 2, 9.99, +7.57"
+          - text: pair 2 9.99 +7.57
+          - listitem "pair 3, 17.59, +15.17":
+            - button "pair 3, 17.59, +15.17"
+          - text: pair 3 17.59 +15.17
+          - listitem "pair 4, skip":
+            - button "pair 4, skip"
+          - text: pair 4 skip
+          - listitem "eo, 3.46, +2.25":
+            - button "eo, 3.46, +2.25"
+          - text: eo 3.46 +2.25
+          - listitem "co, 1.98, −0.04":
+            - button "co, 1.98, −0.04"
+          - listitem "cp, 4.45, +2.44":
+            - button "cp, 4.45, +2.44"
+          - listitem "ep, skip":
+            - button "ep, skip"
+          - button "rotation": "!"
+          - button "rotation": "!"
+          - button "rotation": "!"
+          - button "rotation": "!"
+          - button "2 markers; activate to inspect facts": "2"
+    - region "Solve results":
+      - navigation
+      - strong: 1:09.36
+      - paragraph: ao5 — · PB —
+      - paragraph: "6 rotations this solve. This one: the cube turned in your hands before move 7."
+      - region "Solve review"
+      - button "next scramble"
+      - link "review":
+        - /url: "#/review/1768478400000"
+      - button "more…"
+      - group
+  - heading "solved" [level=2]
+  - paragraph: 95 moves · 1.37 TPS · 1:09.36 · 4/4

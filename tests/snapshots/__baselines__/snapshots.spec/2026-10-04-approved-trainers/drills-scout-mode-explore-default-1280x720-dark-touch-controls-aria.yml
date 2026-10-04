@@ -1,0 +1,66 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "cross scout" [level=1]
+  - text: case colors
+  - combobox "case colors": yellow top
+  - region "Quick round":
+    - text: quick round
+    - strong: combo 0
+    - strong: avg —
+    - button "20 cases"
+    - button "2 min"
+    - button "30 s"
+    - text: every round counts
+  - region "Cross calculator input":
+    - text: your scramble
+    - textbox "your scramble":
+      - /placeholder: Paste a scramble, or generate one…
+      - text: R' D2 F2 B' U2 D2 L2 F' D F2 D' L2 F U2 L2 R' D' U2 L2 F2 L F B D2 L2
+    - button "New scramble"
+    - group: Inspection orientation · cube connection
+    - group: Cross colors
+    - button "find plans"
+    - status: Apply the scramble to your cube, then compare plans. No timer or score.
+  - group "Cross Scout case":
+    - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+  - group "move guidance":
+    - text: scramble move 1 of 25
+    - strong: R′
+    - paragraph: Turn the right face (orange center) counterclockwise (looking directly at that face).
+    - button "previous scramble move" [disabled]: ←
+    - button "next scramble move": next
+  - group "cross round":
+    - list "cross round":
+      - listitem "case-1":
+        - button "case-1"
+  - text: "1"
+  - paragraph: your plan
+  - text: Start with the cross
+  - heading "What can you spot?" [level=2]
+  - paragraph: Find plans for cross, x-cross, and xx-cross. Select one to see which pieces matter.
+  - paragraph
+  - button "restart" [disabled]
+  - button "previous move" [disabled]: ←
+  - button "Play" [disabled]
+  - button "next move" [disabled]: →
+  - text: Scrambled state
+  - button "drill this plan" [disabled]
+  - group: Plans found · 0

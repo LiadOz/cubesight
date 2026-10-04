@@ -1,0 +1,63 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - button "Switch to light mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve progress":
+          - listitem "R2, move 1 of 8":
+            - button "R2, move 1 of 8"
+          - listitem "D'":
+            - button "D'"
+          - listitem "F2":
+            - button "F2"
+          - listitem "U":
+            - button "U"
+          - listitem "B2":
+            - button "B2"
+          - listitem "L'":
+            - button "L'"
+          - listitem "U2":
+            - button "U2"
+          - listitem "F":
+            - button "F"
+    - strong: R2
+    - button "stop"
+    - paragraph: move 1 of 8 · Turn the right face (red center) 180° (looking directly at that face).
+    - paragraph
+    - group "Scramble moves":
+      - list "Moves for Scramble moves":
+        - 'listitem "Move 1 of 8: R2. Turn the right face (red center) 180° (looking directly at that face)."': R2
+        - 'listitem "Move 2 of 8: D′. Turn the bottom face (yellow center) counterclockwise (looking directly at that face)."': D′
+        - 'listitem "Move 3 of 8: F2. Turn the front face (green center) 180° (looking directly at that face)."': F2
+        - 'listitem "Move 4 of 8: U. Turn the top face (white center) clockwise (looking directly at that face)."': U
+        - 'listitem "Move 5 of 8: B2. Turn the back face (blue center) 180° (looking directly at that face)."': B2
+        - 'listitem "Move 6 of 8: L′. Turn the left face (orange center) counterclockwise (looking directly at that face)."': L′
+        - 'listitem "Move 7 of 8: U2. Turn the top face (white center) 180° (looking directly at that face)."': U2
+        - 'listitem "Move 8 of 8: F. Turn the front face (green center) clockwise (looking directly at that face)."': F
+      - status: "Move 1 of 8: R2. Turn the right face (red center) 180° (looking directly at that face)."
+    - button "Show the current move on the 3D cube" [pressed]: cue
+    - paragraph
+  - heading "apply scramble" [level=2]
+  - paragraph: Scramble move 1 of 8.

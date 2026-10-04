@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 1,
+  "owner": "F5",
+  "dataOwner": "F6",
+  "route": "/progress",
+  "state": "goal-progress",
+  "viewModel": {
+    "route": "/progress",
+    "state": "goal-progress",
+    "filters": {
+      "session": "all",
+      "source": "smart",
+      "focus": "speed",
+      "days": "30",
+      "view": "goal"
+    },
+    "selectedView": "goal",
+    "sessions": [
+      {
+        "id": "s1768478040000",
+        "label": "Jan 15 · 6 solves · speed",
+        "focus": "speed",
+        "firstAt": 1768478040000,
+        "lastAt": 1768478340000,
+        "count": 6
+      }
+    ],
+    "orbit": {
+      "label": "ao12 goal progress",
+      "shape": "full",
+      "size": "L",
+      "centerClearance": 105,
+      "segments": [
+        {
+          "key": "ao12-goal",
+          "label": "ao12",
+          "value": "waiting",
+          "weight": 1,
+          "fill": 0,
+          "state": "future",
+          "ariaLabel": "ao12 goal waiting"
+        }
+      ]
+    },
+    "splits": [],
+    "splitCaption": "Stage averages · no previous period data for comparison.",
+    "charts": {
+      "ao12": [],
+      "recent": [
+        17000,
+        17000,
+        17000,
+        17000,
+        17000,
+        17000
+      ],
+      "splitCurrent": [],
+      "splitPrevious": [],
+      "splitLabels": []
+    },
+    "emptySplits": true,
+    "goal": {
+      "targetSeconds": 15,
+      "baselineSeconds": null,
+      "currentSeconds": null,
+      "currentLabel": "—",
+      "targetLabel": "15.00 s",
+      "baselineLabel": null,
+      "mode": "waiting",
+      "percent": null,
+      "reached": false,
+      "message": "6 of 12 timed solves toward ao12.",
+      "caption": "ao12 — · target 15.00 s · 6 of 12 timed solves.",
+      "formError": ""
+    },
+    "drills": [
+      {
+        "id": "corners",
+        "title": "corner recognition",
+        "href": "#/drills/corners",
+        "rounds": 1,
+        "cases": 8,
+        "accuracy": 0.875,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "corners",
+          "label": "corner recognition",
+          "value": "1 rounds",
+          "weight": 1,
+          "fill": 0.875,
+          "state": "done"
+        }
+      },
+      {
+        "id": "pll",
+        "title": "PLL recognition",
+        "href": "#/drills/pll",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "pll",
+          "label": "PLL recognition",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "f2l",
+        "title": "F2L deduction",
+        "href": "#/drills/f2l",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "f2l",
+          "label": "F2L deduction",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "cross",
+        "title": "cross planning",
+        "href": "#/drills/scout",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "cross",
+          "label": "cross planning",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "oll",
+        "title": "OLL recognition",
+        "href": "#/drills/oll",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "oll",
+          "label": "OLL recognition",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "lookahead",
+        "title": "lookahead",
+        "href": "#/drills/lookahead",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "lookahead",
+          "label": "lookahead",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      },
+      {
+        "id": "algs",
+        "title": "alg drills",
+        "href": "#/algs",
+        "rounds": 0,
+        "cases": 0,
+        "accuracy": null,
+        "medianMs": null,
+        "medianKind": "round medians",
+        "trendMs": null,
+        "due": 0,
+        "lifetime": {
+          "attempts": 0,
+          "correct": 0,
+          "accuracy": null,
+          "medianMs": null
+        },
+        "glyph": {
+          "key": "algs",
+          "label": "alg drills",
+          "value": "—",
+          "weight": 1,
+          "fill": 0,
+          "state": "future"
+        }
+      }
+    ],
+    "due": 0,
+    "drillCaption": "Round totals use the selected period. Due cases follow each drill schedule.",
+    "weekly": {
+      "start": 1768176000000,
+      "end": 1768780800000,
+      "solves": 6,
+      "ao12Ms": null,
+      "trendMs": 0,
+      "improvedMost": null,
+      "rounds": 1,
+      "cases": 8,
+      "correct": 7,
+      "summary": "6 solves · 1 round · 8 cases"
+    },
+    "shareStatus": "share latest solve · PNG",
+    "historyHref": "#/history"
+  },
+  "shared": {
+    "route": "/progress",
+    "theme": "dark",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "progress",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/progress",
+    "fixtureState": "goal-insufficient",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "dark",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

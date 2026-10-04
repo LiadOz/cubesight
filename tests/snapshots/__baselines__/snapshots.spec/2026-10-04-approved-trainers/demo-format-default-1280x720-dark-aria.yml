@@ -1,0 +1,27 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - heading "Make a CubeSight demo link" [level=1]
+  - paragraph: Write a link with a setup and alg. CubeSight opens it here and plays each turn on the cube.
+  - text: "#/demo?title=F2L%20pair&setup=R%20U%20R%27&alg=U%27%20R%20U%20R%27&highlight=pair%3AFR #/demo?title=Two%20cases&part1.title=case%201&part1.setup=R%20U&part1.alg=R%27%20U%27&part2.title=case%202&part2.setup=F%20R&part2.alg=R%27%20F%27"
+  - paragraph: "Use #/demo?title=…&setup=…&alg=… . Values use ordinary URL escaping; use a prime apostrophe (') or prime mark (′) in move notation. Unknown parameters are ignored."
+  - paragraph: "Add step1.moves=R%20U and step1.note=extract for a move group; add step2.moves and step2.note for another group. Lesson parts use part1.title/setup/alg, part2.title/setup/alg, and so on; their step fields start part1.step1.moves. Optional fields: highlight=UFR,FR or pair:FR, case=f2l/8, speed=1.5, color=white%20top."
+  - paragraph: The CubeSight format plays locally. A pasted alg.cubing.net or Twizzle link is converted on this device without fetching it.
+  - group: paste a demo

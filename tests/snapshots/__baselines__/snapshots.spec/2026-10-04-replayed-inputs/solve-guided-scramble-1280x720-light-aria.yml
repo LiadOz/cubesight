@@ -1,0 +1,62 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to dark mode"
+  - button "GAN test cube, connected; open cube and recording actions": GAN test cube ⌄
+  - button "help": "?"
+- main:
+  - navigation "solve views":
+    - group: settings
+  - main "Live solve":
+    - group "Live solve cube":
+      - img "Interactive Cross Scout cube showing all stickers. D is held on the bottom and F in front."
+    - button "reset view"
+    - progressbar "Solve stage timeline":
+      - group "Solve progress":
+        - list "Solve progress":
+          - listitem "R2, move 1 of 8":
+            - button "R2, move 1 of 8"
+          - text: R2 move 1 of 8
+          - listitem "D'":
+            - button "D'"
+          - text: D'
+          - listitem "F2":
+            - button "F2"
+          - text: F2
+          - listitem "U":
+            - button "U"
+          - text: U
+          - listitem "B2":
+            - button "B2"
+          - text: B2
+          - listitem "L'":
+            - button "L'"
+          - text: L'
+          - listitem "U2":
+            - button "U2"
+          - text: U2
+          - listitem "F":
+            - button "F"
+          - text: F
+    - strong: R2
+    - button "stop"
+    - paragraph: move 1 of 8 · Turn the right face (red center) 180° (looking directly at that face).
+    - paragraph
+    - button "Show the current move on the 3D cube" [pressed]: cue
+    - paragraph
+  - button "esc stop"
+  - heading "apply scramble" [level=2]
+  - paragraph: Scramble move 1 of 8.

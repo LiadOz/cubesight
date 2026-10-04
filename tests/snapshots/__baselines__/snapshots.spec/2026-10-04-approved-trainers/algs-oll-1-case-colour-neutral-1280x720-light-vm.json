@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "owner": "F4",
+  "dataOwner": "F4",
+  "route": "/algs/oll/1",
+  "state": "active",
+  "viewModel": {
+    "page": "case",
+    "route": "#/algs/oll/1",
+    "set": "oll",
+    "caseId": "oll/1",
+    "display": {
+      "mode": "case",
+      "caseColor": "any colour",
+      "topColor": "white",
+      "cubeState": {
+        "cubies": [
+          {
+            "id": "UFR",
+            "position": [
+              -1,
+              1,
+              1
+            ],
+            "stickers": {
+              "L": "white",
+              "F": "green",
+              "U": "red"
+            }
+          },
+          {
+            "id": "UBR",
+            "position": [
+              1,
+              1,
+              1
+            ],
+            "stickers": {
+              "R": "white",
+              "F": "blue",
+              "U": "red"
+            }
+          },
+          {
+            "id": "UBL",
+            "position": [
+              -1,
+              1,
+              -1
+            ],
+            "stickers": {
+              "L": "white",
+              "U": "blue",
+              "B": "orange"
+            }
+          },
+          {
+            "id": "UFL",
+            "position": [
+              1,
+              1,
+              -1
+            ],
+            "stickers": {
+              "R": "white",
+              "U": "green",
+              "B": "orange"
+            }
+          },
+          {
+            "id": "DFR",
+            "position": [
+              1,
+              -1,
+              1
+            ],
+            "stickers": {
+              "D": "yellow",
+              "F": "green",
+              "R": "red"
+            }
+          },
+          {
+            "id": "DBR",
+            "position": [
+              1,
+              -1,
+              -1
+            ],
+            "stickers": {
+              "D": "yellow",
+              "B": "blue",
+              "R": "red"
+            }
+          },
+          {
+            "id": "DBL",
+            "position": [
+              -1,
+              -1,
+              -1
+            ],
+            "stickers": {
+              "D": "yellow",
+              "B": "blue",
+              "L": "orange"
+            }
+          },
+          {
+            "id": "DFL",
+            "position": [
+              -1,
+              -1,
+              1
+            ],
+            "stickers": {
+              "D": "yellow",
+              "F": "green",
+              "L": "orange"
+            }
+          },
+          {
+            "id": "UF",
+            "position": [
+              1,
+              1,
+              0
+            ],
+            "stickers": {
+              "R": "white",
+              "U": "green"
+            }
+          },
+          {
+            "id": "UR",
+            "position": [
+              0,
+              1,
+              1
+            ],
+            "stickers": {
+              "F": "white",
+              "U": "red"
+            }
+          },
+          {
+            "id": "UB",
+            "position": [
+              -1,
+              1,
+              0
+            ],
+            "stickers": {
+              "L": "white",
+              "U": "blue"
+            }
+          },
+          {
+            "id": "UL",
+            "position": [
+              0,
+              1,
+              -1
+            ],
+            "stickers": {
+              "B": "white",
+              "U": "orange"
+            }
+          },
+          {
+            "id": "FR",
+            "position": [
+              1,
+              0,
+              1
+            ],
+            "stickers": {
+              "F": "green",
+              "R": "red"
+            }
+          },
+          {
+            "id": "BR",
+            "position": [
+              1,
+              0,
+              -1
+            ],
+            "stickers": {
+              "B": "blue",
+              "R": "red"
+            }
+          },
+          {
+            "id": "BL",
+            "position": [
+              -1,
+              0,
+              -1
+            ],
+            "stickers": {
+              "B": "blue",
+              "L": "orange"
+            }
+          },
+          {
+            "id": "FL",
+            "position": [
+              -1,
+              0,
+              1
+            ],
+            "stickers": {
+              "F": "green",
+              "L": "orange"
+            }
+          },
+          {
+            "id": "DF",
+            "position": [
+              0,
+              -1,
+              1
+            ],
+            "stickers": {
+              "D": "yellow",
+              "F": "green"
+            }
+          },
+          {
+            "id": "DR",
+            "position": [
+              1,
+              -1,
+              0
+            ],
+            "stickers": {
+              "D": "yellow",
+              "R": "red"
+            }
+          },
+          {
+            "id": "DB",
+            "position": [
+              0,
+              -1,
+              -1
+            ],
+            "stickers": {
+              "D": "yellow",
+              "B": "blue"
+            }
+          },
+          {
+            "id": "DL",
+            "position": [
+              -1,
+              -1,
+              0
+            ],
+            "stickers": {
+              "D": "yellow",
+              "L": "orange"
+            }
+          },
+          {
+            "id": "U",
+            "position": [
+              0,
+              1,
+              0
+            ],
+            "stickers": {
+              "U": "white"
+            }
+          },
+          {
+            "id": "D",
+            "position": [
+              0,
+              -1,
+              0
+            ],
+            "stickers": {
+              "D": "yellow"
+            }
+          },
+          {
+            "id": "F",
+            "position": [
+              0,
+              0,
+              1
+            ],
+            "stickers": {
+              "F": "green"
+            }
+          },
+          {
+            "id": "B",
+            "position": [
+              0,
+              0,
+              -1
+            ],
+            "stickers": {
+              "B": "blue"
+            }
+          },
+          {
+            "id": "R",
+            "position": [
+              1,
+              0,
+              0
+            ],
+            "stickers": {
+              "R": "red"
+            }
+          },
+          {
+            "id": "L",
+            "position": [
+              -1,
+              0,
+              0
+            ],
+            "stickers": {
+              "L": "orange"
+            }
+          }
+        ]
+      },
+      "gyro": null
+    },
+    "selectedAlg": "s.oll.1.1",
+    "algorithms": [
+      {
+        "id": "s.oll.1.1",
+        "moves": "R U2 R2 F R F' U2 R' F R F'",
+        "verified": true
+      },
+      {
+        "id": "s.oll.1.2",
+        "moves": "U R U' R2 D' r U' r' D R2 U R'",
+        "verified": true
+      }
+    ],
+    "playback": {
+      "index": 0,
+      "moveCount": 11,
+      "playing": false,
+      "speed": 1,
+      "groups": [
+        {
+          "label": "sledgehammer",
+          "start": 7,
+          "end": 10
+        }
+      ]
+    },
+    "drill": null,
+    "context": {
+      "from": null,
+      "usedAlg": null,
+      "recognitionMs": null,
+      "executionMs": null
+    }
+  },
+  "shared": {
+    "route": "/algs/oll/1",
+    "theme": "light",
+    "header": {
+      "title": "CubeSight",
+      "activeRoute": "algs",
+      "connection": {
+        "phase": "disconnected",
+        "statusText": "disconnected",
+        "name": "cube",
+        "batteryPercent": null,
+        "canSync": false,
+        "canDisconnect": false
+      }
+    },
+    "connectionMenu": {
+      "open": false,
+      "actions": [
+        {
+          "id": "connect",
+          "label": "connect",
+          "enabled": true
+        },
+        {
+          "id": "sync",
+          "label": "sync solved cube",
+          "enabled": false
+        },
+        {
+          "id": "recenter",
+          "label": "recenter",
+          "enabled": false
+        },
+        {
+          "id": "disconnect",
+          "label": "disconnect",
+          "enabled": false
+        },
+        {
+          "id": "forget",
+          "label": "forget saved cube",
+          "enabled": false
+        },
+        {
+          "id": "save-recording",
+          "label": "save recording",
+          "enabled": true
+        },
+        {
+          "id": "report-problem",
+          "label": "report a problem",
+          "enabled": true
+        }
+      ]
+    },
+    "developerDrawer": {
+      "available": true,
+      "open": false,
+      "recordingBuffer": null
+    },
+    "recording": null
+  },
+  "capture": {
+    "fixtureRoute": "/algs/oll/1",
+    "fixtureState": "case-colour-neutral",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "theme": "light",
+    "cubeState": {
+      "cameraPose": "6.7000,5.6000,7.7000",
+      "cameraUp": "0.0000,1.0000,0.0000",
+      "gyroPose": null,
+      "gyroTarget": null
+    }
+  }
+}

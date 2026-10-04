@@ -1,0 +1,163 @@
+- banner:
+  - link "CubeSight home":
+    - /url: "#/"
+    - text: cubesight
+  - navigation "Main":
+    - link "solve":
+      - /url: "#/solve"
+    - link "drills":
+      - /url: "#/drills"
+    - link "algs":
+      - /url: "#/algs"
+    - link "progress":
+      - /url: "#/progress"
+    - link "history":
+      - /url: "#/history"
+  - status
+  - button "Switch to light mode"
+  - button "cube, disconnected; open cube and recording actions": cube ⌄
+  - button "help": "?"
+- main:
+  - paragraph: OFFLINE ALGORITHM LIBRARY
+  - heading "Algorithm library" [level=1]
+  - paragraph: Find a case, compare algs, then drill your choice.
+  - text: find a case
+  - searchbox "find a case"
+  - button "find"
+  - group: paste a demo link
+  - navigation "Algorithm sets":
+    - link "PLL 21 ✓":
+      - /url: "#/algs/pll"
+    - link "OLL 57":
+      - /url: "#/algs/oll"
+    - link "2-look 16":
+      - /url: "#/algs/oll2"
+    - link "F2L 41":
+      - /url: "#/algs/f2l"
+  - link "Case orbit PLL H H 2 algs":
+    - /url: "#/algs/pll/H"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL H H 2 algs
+  - link "Case orbit PLL Ua Ua 2 algs":
+    - /url: "#/algs/pll/Ua"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Ua Ua 2 algs
+  - link "Case orbit PLL Ub Ub 2 algs":
+    - /url: "#/algs/pll/Ub"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Ub Ub 2 algs
+  - link "Case orbit PLL Z Z 2 algs":
+    - /url: "#/algs/pll/Z"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Z Z 2 algs
+  - link "Case orbit PLL Aa Aa 2 algs":
+    - /url: "#/algs/pll/Aa"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Aa Aa 2 algs
+  - link "Case orbit PLL Ab Ab 2 algs":
+    - /url: "#/algs/pll/Ab"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Ab Ab 2 algs
+  - link "Case orbit PLL E E 2 algs":
+    - /url: "#/algs/pll/E"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL E E 2 algs
+  - link "Case orbit PLL F F 2 algs":
+    - /url: "#/algs/pll/F"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL F F 2 algs
+  - link "Case orbit PLL Ga Ga 2 algs":
+    - /url: "#/algs/pll/Ga"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Ga Ga 2 algs
+  - link "Case orbit PLL Gb Gb 2 algs":
+    - /url: "#/algs/pll/Gb"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Gb Gb 2 algs
+  - link "Case orbit PLL Gc Gc 2 algs":
+    - /url: "#/algs/pll/Gc"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Gc Gc 2 algs
+  - link "Case orbit PLL Gd Gd 2 algs":
+    - /url: "#/algs/pll/Gd"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Gd Gd 2 algs
+  - link "Case orbit PLL Ja Ja 2 algs":
+    - /url: "#/algs/pll/Ja"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Ja Ja 2 algs
+  - link "Case orbit PLL Jb Jb 2 algs":
+    - /url: "#/algs/pll/Jb"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Jb Jb 2 algs
+  - link "Case orbit PLL Na Na 2 algs":
+    - /url: "#/algs/pll/Na"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Na Na 2 algs
+  - link "Case orbit PLL Nb Nb 2 algs":
+    - /url: "#/algs/pll/Nb"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Nb Nb 2 algs
+  - link "Case orbit PLL Ra Ra 2 algs":
+    - /url: "#/algs/pll/Ra"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Ra Ra 2 algs
+  - link "Case orbit PLL Rb Rb 2 algs":
+    - /url: "#/algs/pll/Rb"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Rb Rb 2 algs
+  - link "Case orbit PLL T T 2 algs":
+    - /url: "#/algs/pll/T"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL T T 2 algs
+  - link "Case orbit PLL V V 2 algs":
+    - /url: "#/algs/pll/V"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL V V 2 algs
+  - link "Case orbit PLL Y Y 2 algs":
+    - /url: "#/algs/pll/Y"
+    - group "Case orbit":
+      - list "Case orbit":
+        - listitem "case"
+    - text: PLL Y Y 2 algs
+  - navigation "Case pages": 21 cases · 1 of 1
