@@ -720,7 +720,7 @@ export function buildViewModel(input, prev = null) {
     status: input.status ?? (live?.phase === 'interrupted'
       ? `Connection lost. Your solve is paused. ${live.interrupted.canResume ? 'The cube is back. Resume.' : device.detail}`
       : live?.notice && screen === 'disconnected' ? live.notice
-        : screen === 'disconnected' && device.actions.connect ? 'Connect a cube from the header to start a solve.' : device.detail),
+        : screen === 'disconnected' && device.actions.connect && !device.failed ? 'Connect a cube from the header to start a solve.' : device.detail),
     error: input.error ?? '',
     chromeDimmed: ['scramble', 'inspection', 'ready', 'solving'].includes(screen),
     commandOpen: Boolean(input.commandOpen),

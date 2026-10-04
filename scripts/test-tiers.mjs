@@ -7,10 +7,10 @@ import { fileURLToPath } from 'node:url';
 export const TIER_BUDGETS = Object.freeze({ merge: 60_000, regression: 600_000 });
 export const REGRESSION_STAGES = Object.freeze([
   ['check', 'npm', ['run', 'check']],
-  ['browser', 'npx', ['playwright', 'test', '--update-snapshots=none']],
-  ['pwa', 'npm', ['run', 'test:pwa', '--', '--update-snapshots=none']],
-  ['layout', 'npm', ['run', 'test:layout', '--', '--update-snapshots=none']],
-  ['snapshots', 'npm', ['run', 'test:snapshots', '--', '--update-snapshots=none']],
+  ['browser', 'npx', ['playwright', 'test', '--update-snapshots=none', '--max-failures=1']],
+  ['pwa', 'npm', ['run', 'test:pwa', '--', '--update-snapshots=none', '--max-failures=1']],
+  ['layout', 'npm', ['run', 'test:layout', '--', '--update-snapshots=none', '--max-failures=1']],
+  ['snapshots', 'npm', ['run', 'test:snapshots', '--', '--update-snapshots=none', '--max-failures=1']],
   ['performance-capture', 'npm', ['run', 'perf']],
   ['performance-budgets', 'npm', ['run', 'perf:check']],
 ]);
@@ -66,11 +66,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (!['merge', 'regression'].includes(tier)) throw new Error('Usage: test-tiers.mjs merge|regression');
   const stages = tier === 'regression' ? REGRESSION_STAGES : [
     ['check', 'npm', ['run', 'check']],
-    ['smoke-and-affected', 'npx', ['playwright', 'test', '--config=playwright.merge.config.js', '--update-snapshots=none', 'tests/merge-smoke.spec.js', ...process.argv.slice(3)]],
+    ['smoke-and-affected', 'npx', ['playwright', 'test', '--config=playwright.merge.config.js', '--update-snapshots=none', '--max-failures=1', 'tests/merge-smoke.spec.js', ...process.argv.slice(3)]],
   ];
   const result = await runTier({ tier, stages, parallel: tier === 'merge' });
   result.commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' }).trim());
+  result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim());
   result.generatedAt = new Date().toISOString();
   const output = path.resolve('test-results/health');
   await mkdir(output, { recursive: true });

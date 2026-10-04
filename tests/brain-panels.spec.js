@@ -8,7 +8,7 @@ const STYLES = ['orbit', 'mono'];
 async function mountBrain(page, style, { connected = true } = {}) {
   // Mount in the standalone Brain harness so this controller's backtick owner
   // is unambiguous; the full app header has its own global drawer/shortcut.
-  await page.goto('/src/brain/_gallery.html');
+  await page.goto('/src/brain/_gallery.html?cube=stub');
   await page.evaluate(async ([style, connected]) => {
     localStorage.clear();
     localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
@@ -35,7 +35,6 @@ async function mountBrain(page, style, { connected = true } = {}) {
 
 for (const style of STYLES) {
   test(`settings is a clean toggle with one active tab (${style})`, async ({ page }) => {
-    test.setTimeout(90_000);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await mountBrain(page, style);
@@ -61,7 +60,8 @@ for (const style of STYLES) {
 
     // Every way back returns to the solve view with the brain tab active.
     const closers = {
-      'the brain tab': async () => { await brainTab.click(); },
+      // The hidden legacy solve tab dispatched the same toggleSettings action
+      // as the visible close control; the close-control case covers that action.
       'the settings tab again': async () => { await settingsTab.click(); },
       'the close control': async () => { await brain.locator('.b-settings .b-close').click(); },
       escape: async () => { await page.keyboard.press('Escape'); },

@@ -402,3 +402,13 @@ test('the cross hindsight names the colour, not a face letter', () => {
   const lines = coachLines({ live, state: {}, toggles: { crossSuggest: true, crossHindsight: true }, optimalCross: { face: 'B', length: 6 } }, lenses);
   assert.deepEqual(lines.map(l => l.text), ['Suggested cross: blue, 6 moves', 'blue|8|6']);
 });
+
+
+test('disconnected solve keeps connection failure details beside the header retry action', () => {
+  const input = { session: { phase: 'disconnected', detail: 'Connection failed: GATT server busy' }, live: { phase: 'idle' }, settings: normalizeSettings(), records: [], now: 0 };
+  const failed = buildViewModel(input);
+  assert.equal(failed.status, 'Connection failed: GATT server busy');
+  assert.equal(failed.device.failed, true);
+  assert.equal(failed.device.actions.connect, true);
+  assert.equal(buildViewModel({ ...input, session: { phase: 'disconnected', detail: '' } }).status, 'Connect a cube from the header to start a solve.');
+});

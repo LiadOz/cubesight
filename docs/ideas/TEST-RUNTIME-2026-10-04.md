@@ -96,3 +96,24 @@ tests, lint/build/gallery checks). The first subsequent regression attempt was
 stopped after discovering that Playwright reused an old server with cached
 worktree modules. Default gates now start a fresh server instead; that aborted
 run is not evidence about the committed UI or the full regression budget.
+
+The fresh-server regression diagnosed legacy solve specs still waiting for
+hidden controls (60–90 seconds per failed scenario); the run was stopped on
+those confirmed failures rather than spending the full budget on stale waits.
+It is **not green**, and no Tier 2 success is claimed. Regression stages now
+stop Playwright at its first failure, retain the full test selection, and mark
+the whole tier failed. This reduces failure diagnosis time without removing
+coverage: a successful tier still executes every configured test.
+
+Connection scenarios now drive the actual app header and shared session through
+a gated fake adapter. The newest-status, busy/disabled action, static header,
+single animated indicator, three connection steps, failure reason and retry
+attempt assertions are preserved. All four pass in 9.3 seconds. They uncovered
+a real status-priority defect: the generic disconnected prompt was hiding the
+connection error. The failure message now wins; a node regression assertion
+checks both failure and ordinary disconnected wording.
+
+The settings harness uses a stub only for its unrelated background gallery
+cube. The hidden legacy solve-tab close action is redundant with the visible
+close control (both dispatch toggleSettings in shell.js); the visible control
+and every other close path remain covered. Its 90-second override was removed.
