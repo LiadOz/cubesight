@@ -30,6 +30,9 @@ test('history filters, opens past solves, replays and edits stored records', asy
   await page.locator('.f1-results__actions a', { hasText: 'review' }).click();
   await expect(page).toHaveURL(/#\/history\/1100000\/review\/pause-0$/);
   await expect(page.locator('.b-rev-detail')).toBeVisible();
+  // the review is its own screen (A-06): back out to the solve, whose primary action is the replay
+  await page.keyboard.press('Escape');
+  await expect(page).toHaveURL(/#\/history\/1100000$/);
   await page.locator('.f1-results__actions [data-action="next"]').click();
   await expect(page).toHaveURL(/#\/history\/1100000\/replay$/);
   await page.keyboard.press('ArrowRight');
@@ -48,9 +51,10 @@ test('history filters, opens past solves, replays and edits stored records', asy
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.history-stage__subline')).toContainText('move 2 of 2');
 
-  await page.goto('/#/history/1000000');
-  await page.locator('.history-data summary').click();
+  // the filters live on the list; the past solve (A-10) has none
+  await page.goto('/#/history');
   await page.locator('select[name="source"]').selectOption('all');
+  await page.goto('/#/history/1000000');
   await page.locator('.history-more > summary').click();
   await page.locator('[data-action="plus2"]').click();
   await expect(page.locator('.history-stage__number')).toHaveText('14.34+');

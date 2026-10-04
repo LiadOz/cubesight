@@ -1,13 +1,14 @@
-import { ao5, ao12, resultMs } from '../solve-metrics.js';
+import { ao5, ao12, isDnf, resultMs } from '../solve-metrics.js';
 import { listSessions } from '../store/sessions.js';
 import { focusOf, inStatsSource } from '../store/focus.js';
-import { fmtResult, fmtTime } from '../brain/format.js';
+import { deltaTone, fmtDelta, fmtResult, fmtTime } from '../brain/format.js';
 import { buildMarkers } from '../brain/review/markers.js';
 import { buildStagePlan } from '../brain/stage-plan.js';
 import { normalizeSettings } from '../brain/settings.js';
 import { filterHistory } from './cstimer.js';
 
-const DAY_PART = hour => hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+// A-07 labels the 17:33 session "evening".
+const DAY_PART = hour => hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
 const clockTime = at => {
   const date = new Date(at);
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
@@ -21,6 +22,7 @@ export function parseHistoryRoute(hash = '') {
   const raw = hash.startsWith('#') ? hash.slice(1) : hash;
   const path = raw.split('?')[0].replace(/\/$/, '') || '/history';
   if (path === '/history') return { kind: 'list', at: null, marker: null, path };
+  if (path === '/history/import') return { kind: 'import', at: null, marker: null, path };
   const match = path.match(/^\/history\/(\d+)(?:\/(replay|review\/([^/]+)))?$/);
   if (!match) return { kind: 'not-found', at: null, marker: null, path };
   let marker = null;
@@ -36,7 +38,7 @@ export const replayPath = at => `${historyPath(at)}/replay`;
 export const historyReviewPath = (at, marker) => `${historyPath(at)}/review/${encodeURIComponent(String(marker))}`;
 export const historyReviewHref = (at, marker) => marker
   ? `#${historyReviewPath(at, marker)}`
-  : `#/review/${encodeURIComponent(String(at))}`;
+  : `#${historyPath(at)}`;
 
 /**
  * Stable, JSON-safe model for the session timeline, selected solve and replay.
@@ -56,6 +58,7 @@ export function buildHistoryViewModel({ records = [], route = { kind: 'list' }, 
   const currentFocusRecords = inStatsSource(focusRecords, statsSource);
   const finite = currentFocusRecords.filter(record => Number.isFinite(resultMs(record)));
   const pb = finite.reduce((best, record) => !best || resultMs(record) < resultMs(best) ? record : best, null);
+  const rowContext = rowContextFor({ all, filtered, statsSource, settings });
   const summaries = listSessions(filtered).map(session => {
     const solves = chronological(filtered.filter(record => (record.sessionId ?? `s${record.at}`) === session.id));
     const first = solves[0];
@@ -66,7 +69,8 @@ export function buildHistoryViewModel({ records = [], route = { kind: 'list' }, 
     return {
       id: session.id, focus: session.focus, firstAt: session.firstAt, lastAt: session.lastAt,
       count: solves.length, period: DAY_PART(date.getHours()), startTime: clockTime(session.firstAt),
-      ao12: fmtTime(latest12), ao5: fmtTime(recent5), solves: [...solves].reverse().map(record => cardModel(record, pb)),
+      ao12: fmtTime(latest12), ao5: fmtTime(recent5), solves: [...solves].reverse().map(record => cardModel(record, pb, rowContext)),
+      lastTime: clockTime(session.lastAt),
       firstSolveAt: first?.at ?? session.firstAt,
     };
   }).sort((a, b) => b.firstAt - a.firstAt);
@@ -91,7 +95,7 @@ export function buildHistoryViewModel({ records = [], route = { kind: 'list' }, 
   const markerRecord = active && analysis ? { ...active, analysis } : active;
   const markers = active ? buildMarkers({ record: markerRecord, stages: active.splits || [], plan: buildStagePlan(settings), focus: focusOf(active), crossColor: settings.crossColor }).markers : [];
   return {
-    screen: route.kind === 'list' ? 'history' : route.kind === 'past' ? 'past-solve' : route.kind === 'review' ? 'review-detail' : 'replay',
+    screen: route.kind === 'list' || route.kind === 'import' ? 'history' : route.kind === 'past' ? 'past-solve' : route.kind === 'review' ? 'review-detail' : 'replay',
     route: { kind: route.kind || 'list', path: route.path || '/history', at: route.at ?? null, marker: route.marker ?? null },
     filters: { query: filters.query || '', session: filters.session || 'all', focus: filters.focus || 'all', source: filters.source || 'all', statsSource },
     summary: {
@@ -116,19 +120,77 @@ export function buildHistoryViewModel({ records = [], route = { kind: 'list' }, 
   };
 }
 
-function cardModel(record, pb) {
+// Everything a list row needs besides the record itself: its number, its delta against the ao12 before
+// it, its two most telling moments and how each stage compares with the user's own average.
+function rowContextFor({ all, filtered, statsSource, settings }) {
+  const numbers = new Map(chronological(filtered).map((record, index) => [record.at, index + 1]));
+  const scoped = focus => inStatsSource(all.filter(record => focusOf(record) === focus), statsSource);
+  const scopes = new Map();
+  const scopeOf = record => {
+    const focus = focusOf(record);
+    if (!scopes.has(focus)) scopes.set(focus, scoped(focus));
+    return scopes.get(focus);
+  };
+  const stageAverage = new Map();
+  for (const record of all) for (const split of record.splits ?? []) {
+    if (split.skipped || !(split.ms > 0)) continue;
+    const entry = stageAverage.get(split.key) ?? { sum: 0, count: 0 };
+    entry.sum += split.ms; entry.count++; stageAverage.set(split.key, entry);
+  }
+  return { numbers, scopeOf, stageAverage, settings, plan: buildStagePlan(settings) };
+}
+
+const momentCache = new WeakMap();
+/** The two moments that matter most in a solve, as the A-07 row annotations ("EO skip", "slow pair 4"). */
+function rowMoments(record, context) {
+  if (!record.analysis) return [];
+  if (momentCache.has(record)) return momentCache.get(record);
+  let chips = [];
+  try {
+    const { markers } = buildMarkers({ record, stages: record.splits || [], plan: context.plan, focus: focusOf(record), crossColor: context.settings.crossColor });
+    chips = [...markers].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 2).sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
+      .map(marker => ({ label: String(marker.label || ''), tone: marker.tone === 'good' ? 'good' : 'bad' })).filter(chip => chip.label);
+  } catch { chips = []; }
+  momentCache.set(record, chips);
+  return chips;
+}
+
+/** Result against the ao12 of the solves just before it (the ao5 while there are fewer than twelve). */
+function deltaFor(record, context) {
+  const own = resultMs(record);
+  if (!Number.isFinite(own)) return null;
+  const scope = context.scopeOf(record);
+  const index = scope.findIndex(item => item.at === record.at);
+  if (index < 1) return null;
+  const before = scope.slice(Math.max(0, index - 12), index);
+  const reference = before.length >= 12 ? ao12(before) : before.length >= 5 ? ao5(before.slice(-5)) : null;
+  if (!Number.isFinite(reference)) return null;
+  const delta = own - reference;
+  return { ms: delta, text: fmtDelta(delta), tone: deltaTone(delta) };
+}
+
+function cardModel(record, pb, context) {
   const ms = resultMs(record);
   const isPb = Number.isFinite(ms) && Number.isFinite(resultMs(pb)) && ms === resultMs(pb);
+  const average = key => { const entry = context.stageAverage.get(key); return entry ? entry.sum / entry.count : null; };
+  const delta = context ? deltaFor(record, context) : null;
   return {
     at: record.at, href: historyPath(record.at), result: fmtResult(record), penalty: record.penalty ?? null,
     solveMs: record.solveMs, focus: focusOf(record), source: record.source ?? 'smart',
-    moveCount: record.moveCount ?? record.solveMoves?.length ?? 0, pb: isPb,
-    segments: Array.isArray(record.splits) ? record.splits.map((split, index) => ({
-      key: String(split.key || `stage-${index}`), weight: Math.max(1, Number(split.ms) || 1),
-      state: split.skipped ? 'skipped' : isPb ? 'good' : 'done', fill: 1,
-      label: split.label || split.short || split.key || '', value: Number.isFinite(split.ms) ? (split.ms / 1000).toFixed(2) : '',
-      ...(split.skipped ? { marker: 'good' } : {}),
-    })) : [],
+    moveCount: record.moveCount ?? record.solveMoves?.length ?? 0, pb: isPb, dnf: isDnf(ms),
+    number: context?.numbers.get(record.at) ?? null, delta, moments: context ? rowMoments(record, context) : [],
+    segments: Array.isArray(record.splits) ? record.splits.map((split, index) => {
+      // Teal when the stage beat the user's own average by 5 %, amber when it ran 8 % over, ivory otherwise.
+      const mean = average(split.key);
+      const relative = mean && split.ms > 0 ? split.ms / mean : 1;
+      const state = split.skipped ? 'skipped' : relative <= 0.95 ? 'good' : relative >= 1.08 ? 'wrong' : 'done';
+      return {
+        key: String(split.key || `stage-${index}`), weight: Math.max(1, Number(split.ms) || 1),
+        state, fill: 1,
+        label: split.label || split.short || split.key || '', value: Number.isFinite(split.ms) ? (split.ms / 1000).toFixed(2) : '',
+        ...(split.skipped ? { marker: 'good' } : {}),
+      };
+    }) : [],
   };
 }
 

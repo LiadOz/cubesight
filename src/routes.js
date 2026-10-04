@@ -20,7 +20,6 @@ export const TOOL_PATHS = Object.freeze({
   progress: '/progress',
   history: '/history',
   timer: '/timer',
-  review: '/review',
   smart: '/dev/studio',
   recording: '/recording',
   help: '/help',
@@ -43,6 +42,18 @@ export const REDIRECTS = Object.freeze({
   '/dev': '/dev/studio',
 });
 
+/**
+ * The legacy `#/review/<at>` page is gone: the history review is the only review screen.
+ * `#/review` -> history, `#/review/import` -> the import form on the history page,
+ * `#/review/<at>[/retry]` -> that solve in history (the query, e.g. ?move=7, is kept).
+ */
+export function legacyReviewTarget(path) {
+  if (path === '/review') return '/history';
+  if (path === '/review/import') return '/history/import';
+  const match = path.match(/^\/review\/(\d+)(?:\/retry)?$/);
+  return match ? `/history/${match[1]}` : null;
+}
+
 /** Only the legacy drills own the global drill keys. */
 const KEY_SCOPES = Object.freeze({ corner: 'corner', f2l: 'f2l' });
 /**
@@ -63,8 +74,7 @@ const PATH_TOOLS = Object.fromEntries(Object.entries(TOOL_PATHS).map(([tool, pat
 // base hash parser or collapse the selected case back to its section root.
 const DYNAMIC_ROUTES = [
   { tool: 'demo', match: path => path === '/demo/format' },
-  { tool: 'history', match: path => /^\/history\/\d+(?:\/(?:replay|review\/[^/]+))?$/.test(path) },
-  { tool: 'review', match: path => path === '/review/import' || /^\/review\/\d+(?:\/retry)?$/.test(path) },
+  { tool: 'history', match: path => path === '/history/import' || /^\/history\/\d+(?:\/(?:replay|review\/[^/]+))?$/.test(path) },
   { tool: 'algs', match: path => /^\/algs\/(?:pll|oll|oll2|f2l)(?:\/[a-z0-9-]+(?:\/drill)?)?$/i.test(path) },
 ];
 
@@ -97,6 +107,8 @@ export function resolveRoute(hash, context = {}) {
   if (!tool) tool = DYNAMIC_ROUTES.find(route => route.match(path))?.tool;
   if (!tool) tool = DEV_ROUTES.find(route => route.match(path))?.tool;
   if (!tool && Object.hasOwn(REDIRECTS, path)) tool = PATH_TOOLS[REDIRECTS[path]];
+  const legacyReview = tool ? null : legacyReviewTarget(path);
+  if (legacyReview) return { tool: 'history', hash: `#${legacyReview}${query}` };
   // Only the empty home hash is context-sensitive. Preserve unknown route and
   // query text so a not-found view does not hide the address the user entered.
   if (!tool && (path === '' || path === '/')) tool = PATH_TOOLS[chooseHome(context)];
