@@ -754,6 +754,7 @@ function renderCurrentCase() {
   }
   const palette = Object.fromEntries(['U', 'D', 'F', 'B', 'R', 'L'].map((face) => [face, colorHex(displayColorKey(current.orientation[face], current.displayColorMap))]));
   const cubeData = {
+    mode: 'corner',
     targets: current.targets.map(cubeTargetData),
     activeTargetIndex: current.activeIndex,
     stickerColors: recolorStickers(current.edgeStickers, current.displayColorMap),
@@ -1158,7 +1159,11 @@ function updateStatsUI() {
 function updateLearningUI() {
   document.querySelector('.retention-panel').hidden = !keyScope(activeTool);
   if (!keyScope(activeTool)) return;
-  document.querySelector(`#${activeTool}-view .trainer-shell`)?.after(document.querySelector('.retention-panel'));
+  const retentionPanel = document.querySelector('.retention-panel');
+  // copy-ok: DOM selector for the existing progress disclosure, not display copy
+  const progressSummary = document.querySelector(`#${activeTool}-view .trainer-progress-details > summary`);
+  if (progressSummary) progressSummary.after(retentionPanel);
+  else document.querySelector(`#${activeTool}-view .trainer-shell`)?.after(retentionPanel);
   const items = Object.fromEntries(Object.entries(learning.items).filter(([key]) => key.startsWith(`${activeTool === 'corner' ? 'corner' : 'f2l'}|`)));
   const summary = sessionSummary({ ...learning, items });
   const due = document.querySelector('#review-due');
@@ -1197,14 +1202,24 @@ function setMode(mode) {
   if (sprintLength !== state.sprintLength) { state.sprintLength = sprintLength; resetSession(); }
   document.querySelector('[data-session="sprint"]').textContent = `${sprintLength}-case round`;
   glancePacing.reset();
-  document.querySelectorAll('[data-mode]').forEach((button) => button.classList.toggle('active', button.dataset.mode === mode));
+  document.querySelectorAll('[data-mode]').forEach((button) => {
+    const selected = button.dataset.mode === mode;
+    button.classList.add('chip');
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
   startCase();
 }
 
 function setSession(type) {
   state.sprint = type === 'sprint';
   resetSession();
-  document.querySelectorAll('[data-session]').forEach((button) => button.classList.toggle('active', button.dataset.session === type));
+  document.querySelectorAll('[data-session]').forEach((button) => {
+    const selected = button.dataset.session === type;
+    button.classList.add('chip');
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
   startCase();
 }
 

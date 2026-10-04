@@ -18,7 +18,9 @@ test('loads the 3D trainer and Rust engine', async ({ page }) => {
 test('accepts color initials and advances all three corners', async ({ page }) => {
   await page.addInitScript(() => { Math.random = () => 0; });
   await page.goto('/#/drills/corners');
+  await page.locator('#corner-view .training-settings > summary').click();
   await page.getByRole('button', { name: 'three corners' }).click();
+  await page.locator('#corner-view .training-settings > summary').click();
   await expect(page.locator('#corner-sequence span')).toHaveCount(3);
   await expect(page.locator('#case-mode')).toContainText('1/3');
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-corner-presentation', 'full');
@@ -42,11 +44,11 @@ test('F2L is always color neutral with a limited camera and three drills', async
   await expect(page.locator('[data-f2l-drill]')).toHaveCount(3);
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-azimuth-limit', '0.62');
-  await expect(page.locator('#f2l-total')).not.toHaveText('0');
+  await expect.poll(() => page.evaluate(() => window.__cubesightLegacyTrainerHandles.f2l.getViewModel().answers.length)).toBeGreaterThan(0);
 
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-preference', 'neutral');
   const firstBottom = await page.locator('#f2l-view').getAttribute('data-bottom-color');
-  await page.getByRole('button', { name: /next case/ }).click();
+  await page.locator('#f2l-continue').click();
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-preference', 'neutral');
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-bottom-color', /^(white|yellow|green|blue|red|orange)$/);
   expect(firstBottom).toMatch(/^(white|yellow|green|blue|red|orange)$/);

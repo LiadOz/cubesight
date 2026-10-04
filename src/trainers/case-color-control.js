@@ -1,29 +1,21 @@
 import { CASE_COLORS, CASE_COLOR_CHANGE_EVENT, readCaseColorSetting, writeCaseColorSetting } from '../ui/cube/case-color.js';
+import { createFilledSelect } from '../ui/shared/index.js';
 
 /** Mount the shared, persistent case-color control in a trainer's settings area. */
 export function mountCaseColorControl(host, storage = globalThis.localStorage) {
   if (!host) return () => {};
-  const label = document.createElement('label');
+  const label = document.createElement('div');
   label.className = 'trainer-case-color-control';
-  const caption = document.createElement('span');
-  caption.textContent = 'case colors';
-  const select = document.createElement('select');
-  select.setAttribute('aria-label', 'Case colors');
-  for (const setting of CASE_COLORS) {
-    const option = document.createElement('option');
-    option.value = setting;
-    option.textContent = setting;
-    select.append(option);
-  }
-  select.value = readCaseColorSetting(storage);
-  const onChange = () => writeCaseColorSetting(select.value, storage);
-  const onSetting = event => { select.value = event.detail?.setting || readCaseColorSetting(storage); };
-  select.addEventListener('change', onChange);
+  const select = createFilledSelect(label, {
+    label: 'case colors', value: readCaseColorSetting(storage),
+    options: CASE_COLORS.map(setting => ({ value: setting, label: setting })),
+    onChange: value => writeCaseColorSetting(value, storage),
+  });
+  const onSetting = event => { select.setValue(event.detail?.setting || readCaseColorSetting(storage)); };
   window.addEventListener(CASE_COLOR_CHANGE_EVENT, onSetting);
-  label.append(caption, select);
   host.append(label);
   return () => {
-    select.removeEventListener('change', onChange);
+    select.destroy();
     window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onSetting);
     label.remove();
   };

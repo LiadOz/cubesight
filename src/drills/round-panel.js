@@ -22,7 +22,7 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
   const content = document.createElement('div'); content.className = 'quick-round-content';
   if (!sharedOrbitHost) panel.append(orbitHost);
   panel.append(content);
-  const orbit = createOrbit(orbitHost, { size: 'S', shape: 'open', gap: 72, label: `${drill} round`, segments: [] });
+  const orbit = createOrbit(orbitHost, { size: sharedOrbitHost ? 'L' : 'S', shape: 'open', gap: 72, label: `${drill} round`, segments: [] });
   let store = sharedStore || createRoundStore(storage, { now }), active = false, timer = null, summary = null, preset = QUICK_ROUNDS[drill];
   let completed = false;
   function finish(result) {
@@ -49,6 +49,7 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
     content.innerHTML = completed && summary
       ? `<div class="quick-round-result" role="status"><strong>round complete</strong><span>${summary.correct} of ${summary.total} correct · ${summary.medianMs == null ? '—' : (summary.medianMs / 1000).toFixed(2) + ' s median'} · best combo ${summary.bestCombo}</span><span class="quick-round-metrics"><strong>combo ${round?.combo ?? summary.bestCombo}</strong><strong>avg ${average}</strong></span><div class="quick-round-answers" aria-label="Round answers">${chips}</div><div><button type="button" data-round="again">one more round</button><a href="#/drills">change drill</a><button type="button" data-round="done">done</button></div></div>`
       : `<div class="quick-round-line"><span data-round-remaining>${running ? remaining : 'quick round'}</span><span class="quick-round-metrics"><strong>combo ${round?.combo ?? 0}</strong><strong>avg ${average}</strong></span>${running ? `<button type="button" data-round="stop">finish round</button>` : Object.entries(PRESETS).map(([key, value]) => `<button type="button" data-round="${key}">${key === '2m' ? '2 min' : label(value)}</button>`).join('')}<small>${store.streak ? `${store.streak} day${store.streak === 1 ? '' : 's'} active` : 'every round counts'}</small></div><div class="quick-round-answers" aria-label="Round answers">${chips}</div>`;
+    content.querySelectorAll('button, a').forEach(control => control.classList.add('act'));
     syncPageTokens(panel);
   }
   panel.addEventListener('click', event => {

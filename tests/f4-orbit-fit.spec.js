@@ -18,3 +18,30 @@ test('Orbit SVG uses the fitted host dimensions in a constrained cube stage', as
   expect(Math.abs(sizes.hostCenterX - sizes.svgCenterX)).toBeLessThan(1);
   expect(Math.abs(sizes.hostCenterY - sizes.svgCenterY)).toBeLessThan(1);
 });
+
+test('corner recognition keeps its Orbit outside the cube and all six answers reachable at 1280 × 720', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/#/drills/corners');
+  await expect(page.locator('#cube canvas')).toHaveAttribute('data-rotation', 'locked');
+  await expect(page.locator('#corner-view .orbit__svg')).toBeVisible();
+  await expect(page.locator('#answers button')).toHaveCount(6);
+  const geometry = await page.evaluate(() => {
+    const orbit = document.querySelector('#corner-view .orbit__svg').getBoundingClientRect();
+    const cube = document.querySelector('#cube .shared-cube').getBoundingClientRect();
+    const stage = document.querySelector('#corner-view .trainer-shell');
+    return { orbit: orbit.width, cube: cube.width, frame: getComputedStyle(stage).borderTopWidth,
+      height: document.documentElement.scrollHeight, width: document.documentElement.scrollWidth };
+  });
+  expect(geometry.orbit).toBeGreaterThan(geometry.cube);
+  expect(geometry.frame).toBe('0px');
+  expect(geometry.width).toBeLessThanOrEqual(1280);
+  expect(geometry.height).toBeLessThanOrEqual(720);
+  for (const answer of await page.locator('#answers button').all()) {
+    await expect(answer).toBeInViewport();
+    expect(await answer.evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return node.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+    })).toBe(true);
+  }
+  await expect(page.locator('[data-action="skip"]')).toBeInViewport();
+});

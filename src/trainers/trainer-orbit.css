@@ -63,3 +63,43 @@
   #oll-cube, #la-cube { width: min(100%, 310px); min-height: 0; }
   #oll-cube > .shared-cube, #la-cube > .shared-cube { width: min(var(--cube-size), 220px); }
 }
+
+/* The case cube and answer rail are sections, using the approved frameless
+   container. Compact heights must fit the actual answer controls as well as
+   the cube; clipping an oversized grid hid four of the six choices. */
+.legacy-drill-view :is(.trainer-shell, .pll-trainer-shell, .cube-stage, .pll-cube-stage, .answer-stage, .pll-answer-stage) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+@media (min-width: 701px) and (max-height: 780px) {
+  #corner-view .trainer-shell { height: 360px; }
+  #corner-view :is(.cube-stage, .answer-stage) { min-height: 0; }
+  #corner-view .timer-wrap { margin: 8px 0; }
+  #corner-view .timer { font-size: 38px; letter-spacing: -2px; }
+  #corner-view .timing-note { margin-top: 4px; }
+  #corner-view .prompt-block { margin: 6px 0 10px; }
+  #corner-view .prompt-block p { font-size: 18px; }
+  #corner-view .answer-button { min-height: 44px; }
+  #corner-view .answer-stage > .skip-button { margin-top: 8px; }
+  #corner-view .cube-caption { display: none; }
+  #corner-view .cube-mount > .shared-cube { width: min(100%, 280px); }
+}
+#corner-view.legacy-drill-view :is(.trainer-shell, .cube-stage, .answer-stage),
+#f2l-view.legacy-drill-view :is(.trainer-shell, .cube-stage, .answer-stage),
+#pll-view.legacy-drill-view :is(.pll-trainer-shell, .pll-cube-stage, .pll-answer-stage) { background: transparent; }
+.trainer-case-color-control .ui-field { display: flex; align-items: center; gap: 8px; }
+.trainer-case-color-control .sel { width: auto; min-width: 150px; }
+@media (min-width: 701px) and (max-height: 780px) {
+  :root:has(#corner-view:not([hidden])) #corner-view .brain.quick-round { border: 0; background: transparent; padding: 0; margin-bottom: 4px; }
+  #corner-view .training-settings > summary { min-height: 40px; padding: 8px 12px; }
+  #corner-view .feedback-line { margin-top: 6px; padding-top: 0; border: 0; }
+  #corner-view .retention-panel { border: 0; background: transparent; padding: 4px 0; }
+  #corner-view .trainer-progress-details { margin-top: 4px; margin-bottom: 0; }
+}
+.brain.quick-round :is(button, a).act { border: 0; border-radius: var(--b-radius-control); background: var(--b-surface-2); color: var(--b-ink); }
+#corner-view .segmented { border: 0; background: transparent; padding: 0; gap: 6px; }
+#corner-view .segment.chip { border: 1px solid var(--k-bd); border-radius: var(--b-radius-control); background: var(--k-bg); color: var(--k-ink); box-shadow: none; }
+#corner-view .segment.chip[aria-pressed="true"] { border-color: var(--s-bd); background: var(--s-bg); color: var(--s-ink); }

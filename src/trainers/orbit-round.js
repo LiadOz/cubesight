@@ -12,6 +12,7 @@ export function createTrainerOrbit(stage) {
   slot.setAttribute('aria-live', 'polite');
   const coachHost = document.createElement('div');
   coachHost.className = 'trainer-coach-host';
+  coachHost.hidden = true;
   stage.append(slot, coachHost);
   const coach = createCoachLine(coachHost, { text: '' });
   let activeIndex = 0, generation = 0, lastCoachText = '', lastCoachMarker = null;
@@ -30,6 +31,7 @@ export function createTrainerOrbit(stage) {
     if (currentMarker) lastCoachMarker = currentMarker;
     if (text) lastCoachText = text;
     else if (state === 'current') { lastCoachMarker = null; lastCoachText = ''; }
+    coachHost.hidden = !lastCoachText;
     const update = orbit.update({ segments, markers });
     if (value || elapsed != null) slot.textContent = value || `${(elapsed / 1000).toFixed(2)} s`;
     else slot.textContent = round ? `${round.answered} / ${round.total}` : `${activeIndex + 1}`;
