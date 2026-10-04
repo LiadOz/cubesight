@@ -4,6 +4,7 @@
 // labels, "yours vs better" with a play button for each, and the pin). The cube itself is the
 // shell's live cube: the controller puts it on the position this panel asks for.
 import '../css/review.css';
+import { comparisonDemoHref } from './detail.js';
 import { setAttr, setText, toggleClass } from '../dom.js';
 
 const el = (tag, className, text) => {
@@ -76,8 +77,8 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     dispatch({ type: 'selectMarker', id: markerId });
     const compare = shown?.detail?.compare;
     const moves = compare?.status === 'better' && compare.better.length ? compare.better : compare?.yours;
-    if (!moves?.length || typeof compare.demoHref !== 'function') return false;
-    const href = compare.demoHref(moves);
+    if (!moves?.length || !compare.demoTitle) return false;
+    const href = comparisonDemoHref(compare, moves);
     const link = `${location.origin}${location.pathname}${location.search}${href}`;
     const copy = navigator.clipboard?.writeText?.(link);
     if (copy) copy.then(() => { if (target) target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
@@ -91,10 +92,10 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     if (target.dataset.marker) dispatch({ type: 'selectMarker', id: target.dataset.marker });
     else if (target.dataset.at != null) dispatch({ type: 'jumpTo', at: Number(target.dataset.at) });
     else if (target.dataset.act === 'copy-coach-demo') copyCoachDemo(target);
-    else if (target.dataset.act === 'copy-demo' && shown?.detail?.compare?.demoHref) {
+    else if (target.dataset.act === 'copy-demo' && shown?.detail?.compare?.demoTitle) {
       const moves = target.dataset.variant === 'better' ? shown.detail.compare.better : shown.detail.compare.yours;
       if (!moves?.length) return;
-      const href = shown.detail.compare.demoHref(moves);
+      const href = comparisonDemoHref(shown.detail.compare, moves);
       const copy = navigator.clipboard?.writeText?.(`${location.origin}${location.pathname}${location.search}${href}`);
       if (copy) copy.then(() => { target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
       else location.hash = href;
@@ -166,7 +167,7 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     setText($('.b-rev-alg-better code'), cmp.betterText);
     for (const node of root.querySelectorAll('[data-act="copy-demo"]')) {
       const hasMoves = node.dataset.variant === 'better' ? better && cmp.better.length : cmp.yours.length > 0;
-      node.hidden = !hasMoves || typeof cmp.demoHref !== 'function';
+      node.hidden = !hasMoves || !cmp.demoTitle;
     }
     const options = (cmp.options ?? []).slice(0, 8).map((option, index) => {
       const li = el('li');

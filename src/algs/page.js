@@ -75,7 +75,7 @@ function caseDetail(row, context = {}) {
   return `<section class="cs-page brain alg-page" data-brain-style="orbit">
     <section class="alg-detail alg-case-shell">
       <header class="alg-case-head">${back}<div><p class="alg-eyebrow">${esc(row.set.toUpperCase())} case</p><h1>${esc(row.name)}</h1><p>${note}</p></div></header>
-      ${demoPasteMarkup()}
+      <details class="alg-paste-disclosure"><summary>paste a demo link</summary>${demoPasteMarkup()}</details>
       <div class="alg-case-layout">
         <section class="alg-case-focus" aria-label="Case and playback">
           <div class="alg-case-orbit" data-alg-orbit></div>
@@ -209,8 +209,8 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       const cubeMount = root.querySelector('[data-alg-cube]');
       const cubeWidth = cubeMount?.getBoundingClientRect().width || 250;
       const orbitWidth = orbitHost?.getBoundingClientRect().width || 340;
-      const clearanceForGeometry = () => Math.ceil(((cubeMount?.getBoundingClientRect().width || 250) / Math.max(1, orbitHost?.getBoundingClientRect().width || 340)) * 280 + 14);
-      const centerClearance = Math.ceil((cubeWidth / orbitWidth) * 280 + 14);
+      const clearanceForGeometry = () => Math.ceil(((cubeMount?.getBoundingClientRect().width || 250) / Math.max(1, orbitHost?.getBoundingClientRect().width || 340)) * 180 + 14);
+      const centerClearance = Math.ceil((cubeWidth / orbitWidth) * 180 + 14);
       if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, centerClearance, label: `${caseData.name} algorithm progress`, segments: [] });
       if (!supportsVirtualRepaint(caseData)) repaintReady = false;
       try { setupState = caseSetupState(caseData); }

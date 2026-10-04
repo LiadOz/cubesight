@@ -12,6 +12,14 @@ import { serializeDemo } from '../../demo/model.js';
 
 const words = text => (text ? text.split(' ') : []);
 
+export function comparisonDemoHref(compare, moves) {
+  return serializeDemo({ title: compare.demoTitle, parts: [{
+    title: compare.demoTitle, setup: words(compare.setup), alg: moves, steps: [],
+    highlight: compare.highlight ? [compare.highlight] : [], caseId: compare.caseId,
+    speed: 1, colorSetting: compare.colorSetting,
+  }] });
+}
+
 /** Stage rows with their move positions: [{..row, from, to, label}] (skipped and merged stages have no moves). */
 export function positionedRows(rows = [], plan = []) {
   let at = 0;
@@ -128,10 +136,7 @@ export function buildDetail({ kind, key, record, markers = [], rows = [], plan =
   compare.caseId = caseId;
   compare.highlight = targetSlot ? `pair:${targetSlot}` : '';
   compare.colorSetting = record.colorSetting ?? 'yellow top';
-  compare.demoHref = moves => serializeDemo({ title: `${stageKey} solve moment`, parts: [{
-    title: `${stageKey} solve moment`, setup: words(compare.setup), alg: moves, steps: [], highlight: compare.highlight ? [compare.highlight] : [], caseId,
-    speed: 1, colorSetting: compare.colorSetting,
-  }] });
+  compare.demoTitle = `${stageKey} solve moment`;
   const stageMarkers = markers.filter(m => m.stage === stageKey);
   const moves = row ? movesView(row, stageMarkers, record) : [];
   const avg = averages?.byKey?.[stageKey] ?? null;
