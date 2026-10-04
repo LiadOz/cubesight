@@ -320,3 +320,6 @@
   .b-stats { gap: 8px 20px; }
   .b-keys { display: none; grid-column: 1; }
 }
+
+/* Parts only the Orbit layout draws (the frames' corner texts, the guidance glyph, the cube's glow and shadow): Mono never shows them. */
+.brain:not([data-layout="orbit"]) :is(.b-config-line, .b-note, .b-stats-line, .b-plan, .b-guide, .b-callout, .b-art) { display: none; }
