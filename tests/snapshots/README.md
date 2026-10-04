@@ -12,7 +12,8 @@ The matrix currently includes the F1 Orbit states and F17 demo playback route.
 
 ## Baselines
 
-The committed PNG, ARIA YAML, and view-model JSON files live in
+Baseline rollout is incomplete: this branch has no committed F9 PNG, ARIA YAML
+or view-model JSON baselines yet. The intended location is
 `tests/snapshots/__baselines__/`. Only `npm run snapshots:update` writes them.
 Review the comparison gallery before committing changed baselines, and name
 the intended cells in the commit message. Pixel checks include the WebGL cube

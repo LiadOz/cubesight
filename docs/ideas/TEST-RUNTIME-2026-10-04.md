@@ -130,5 +130,26 @@ with 632 node tests and two browser smoke tests, with workingTreeDirty=false.
 Adding connection/settings/progress specs then caught a merge-config issue:
 reduced motion was forced onto affected tests that explicitly check animation.
 Reduced motion is now scoped to smoke itself; affected specs keep their normal
-configuration and animation assertions. No affected-selection budget success
-is claimed until the combined rerun is green.
+configuration and animation assertions. The clean combined rerun passed at commit f0c30bf in **40.5 seconds**:
+lint, 632 node tests, build/gallery checks and all **16** smoke plus explicitly
+selected connection/settings/progress browser tests (browser stage 39.8 s).
+Logs: `.agents/artifacts/merge-affected-motion-final.log`; exact source commit
+and workingTreeDirty=false are recorded in test-results/health/merge-latest.json.
+This proves this explicit selection fits; automatic selection and the queue's
+Tier 2 failure blocker remain pending.
+
+## Remaining work before integration
+
+- Reconcile the remaining legacy review and Orbit visual assertions with the
+  shared Orbit and approved results layout; preserve their behavioral coverage.
+- Finish the F9 baseline rollout and prove repeat-run determinism. No F9 PNG,
+  YAML or JSON baselines are committed in the inherited tree; focused captures
+  are experimental artifacts, not accepted full-suite baselines.
+- Validate automatic affected-test selection, the scheduled regression and
+  Tier 2 failure blocker before changing the existing queue's gate.
+- Run layout, snapshot and performance checks and prove the complete regression
+  is green within 600 seconds. The stopped diagnostic is a failed run, not a
+  successful full-regression measurement.
+
+No pushes, trunk merges or live-checkout edits were performed. There are no new
+design questions: the approved widgets remain the source of truth.
