@@ -118,6 +118,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     activeCaseSeed = `lookahead:${round?.answers?.length || 0}:${currentSeed}`;
     cube?.setCaseOrientation(readCaseColorSetting(storage), { seed: activeCaseSeed });
     cube?.setState(current.setup.state);
+    cube?.clearHighlight();
     trainerOrbit?.update({ index: round?.answers?.length || 0, state: 'current', value: `${round?.combo || 0} combo` });
     const choices = $('#la-choices');
     choices.replaceChildren();
@@ -208,6 +209,8 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     if (!choice || !cube || !current || disposed || !active) return;
     if (!player) player = createSequencePlayer($('#la-playback'), { cube3d: cube, label: 'Verified pair continuation' });
     $('#la-playback').hidden = false;
+    // The corner + edge of the candidate pair and its slot; the rest dims.
+    cube.highlightStage('pair', { slot: choice.slot });
     player.load({ startState: current.setup.state, moves: choice.moves });
     player.setActive(active);
     void player.play();

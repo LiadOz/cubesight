@@ -1,4 +1,7 @@
-.sequence-player { display: grid; gap: 12px; min-width: 0; }
+.sequence-player { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; max-width: 100%; }
+/* A long solve scrolls inside its own strip; it must never push the page sideways. */
+.sequence-player > * { min-width: 0; max-width: 100%; }
+.sequence-player [data-sequence-guide] { overflow-x: auto; }
 .sequence-progress { max-width: 240px; width: 100%; margin-inline: auto; }
 .has-sequence-ring > canvas { position: relative; z-index: 1; transform: scale(.68); transform-origin: center; }
 .has-sequence-ring > .sequence-progress {

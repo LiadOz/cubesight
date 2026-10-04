@@ -102,6 +102,11 @@ function makeAnswerBadge() {
   return { sprite, texture, draw };
 }
 
+/** Half the height of the orthographic frustum: the cube silhouette (4.85 tall) is .844 of a square canvas (measured). */
+const ISO_HALF_HEIGHT = 2.82;
+/** A sticker's brightness by where its face points in view space: top 1, left .86, right .72 (the frames' shadeF / shadeR). */
+const faceShade = (x, y) => Math.max(.5, Math.min(1, .86 - .099 * x + .1715 * y));
+
 function stickerTransform(mesh, face, x, y, z) {
   const offset = 0.506;
   mesh.position.set(x, y, z);
@@ -115,8 +120,13 @@ function stickerTransform(mesh, face, x, y, z) {
 
 export function createCube3D(container, options = {}) {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, 1, .1, 100);
-  const cornerCameraPosition = new THREE.Vector3(6.7, 5.6, 7.7);
+  // The approved frames (docs/design/orbit-v3, SPEC-A-EXACT section 5) draw the cube as a symmetric isometric: a hexagon
+  // 372.4 x 430 (aspect .866) with the top face lit full and the two side faces at .86 / .72 of it. That is an orthographic
+  // camera looking down the body diagonal; the f2l piece-picking drill keeps its perspective view.
+  const perspectiveCamera = new THREE.PerspectiveCamera(28, 1, .1, 100);
+  const isometricCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 100);
+  let camera = isometricCamera;
+  const cornerCameraPosition = new THREE.Vector3(7, 7, 7);
   camera.position.copy(cornerCameraPosition);
   camera.lookAt(0, 0, 0);
 
@@ -285,6 +295,7 @@ export function createCube3D(container, options = {}) {
           const sticker = new THREE.Mesh(stickerGeometry, material);
           stickerTransform(sticker, face, x, y, z);
           sticker.userData = { face, piece, cubiePosition: [x, y, z], kind: piece.length === 3 ? 'corner' : piece.length === 2 ? 'edge' : 'center' };
+          sticker.userData.baseColor = new THREE.Color(DEFAULT_FACE_COLORS[face]);
           cubeGroup.add(sticker);
           stickerMeshes.push(sticker);
           pickMeshes.push(sticker);
@@ -306,8 +317,13 @@ export function createCube3D(container, options = {}) {
   function resize() {
     const width = Math.max(container.clientWidth, 1);
     const height = Math.max(container.clientHeight, 1);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+    const aspect = width / height;
+    perspectiveCamera.aspect = aspect;
+    perspectiveCamera.updateProjectionMatrix();
+    // The silhouette (~4.85 tall) fills ~.844 of the canvas height, or of its width when the canvas is tall and narrow.
+    const half = ISO_HALF_HEIGHT * Math.max(1, 1 / aspect);
+    isometricCamera.left = -half * aspect; isometricCamera.right = half * aspect; isometricCamera.top = half; isometricCamera.bottom = -half;
+    isometricCamera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     tumbleControls.handleResize();
   }
@@ -337,11 +353,19 @@ export function createCube3D(container, options = {}) {
     }
   });
 
+  function useCamera(next) {
+    if (camera === next) return;
+    camera = next;
+    controls.object = next; tumbleControls.object = next;
+    resize();
+  }
   function setMode(mode) {
     interactionMode = mode;
     renderer.domElement.dataset.interactionMode = mode;
     controls.enabled = false;
     tumbleControls.enabled = false;
+    useCamera(mode === 'f2l' ? perspectiveCamera : isometricCamera);
+    camera.up.set(0, 1, 0);
     if (mode === 'f2l') {
       renderer.domElement.dataset.rotation = 'limited-horizontal';
       renderer.domElement.dataset.azimuthLimit = '0.62';
@@ -357,8 +381,7 @@ export function createCube3D(container, options = {}) {
     } else if (mode === 'scout') {
       renderer.domElement.dataset.rotation = 'free-tumble';
       delete renderer.domElement.dataset.azimuthLimit;
-      camera.up.set(0, 1, 0);
-      camera.position.set(6.7, 5.6, 7.7);
+      camera.position.copy(cornerCameraPosition);
       tumbleControls.target.set(0, 0, 0);
       tumbleControls.enabled = true;
       tumbleControls.reset();
@@ -519,6 +542,20 @@ export function createCube3D(container, options = {}) {
     moveAnimation = null;
     current.cancel();
   }
+  const shadeQuaternion = new THREE.Quaternion(), shadeNormal = new THREE.Vector3(), shadeRgb = { r: 0, g: 0, b: 0 };
+  /** Stickers are unlit (their colours must not drift), so the frames' face shading is applied to the colour itself, in sRGB. */
+  function shadeStickers() {
+    camera.updateMatrixWorld();
+    const view = camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+    cubeGroup.updateWorldMatrix(true, true);
+    for (const sticker of stickerMeshes) {
+      sticker.getWorldQuaternion(shadeQuaternion);
+      shadeNormal.set(0, 0, 1).applyQuaternion(shadeQuaternion).transformDirection(view);
+      const shade = faceShade(shadeNormal.x, shadeNormal.y);
+      sticker.userData.baseColor.getRGB(shadeRgb, THREE.SRGBColorSpace);
+      sticker.material.color.setRGB(shadeRgb.r * shade, shadeRgb.g * shade, shadeRgb.b * shade, THREE.SRGBColorSpace);
+    }
+  }
   function frame() {
     if (stopped) return;
     animationFrame = requestAnimationFrame(frame);
@@ -539,6 +576,7 @@ export function createCube3D(container, options = {}) {
       if (!moveAnimation) scoutCages.forEach(cage => cage.scale.setScalar(1 + pulse * .025));
     }
     tickCue(performance.now());
+    shadeStickers();
     renderer.render(scene, camera);
   }
   frame();
@@ -564,7 +602,7 @@ export function createCube3D(container, options = {}) {
     selectablePieces = new Set(data.selectablePieces || []);
     if (data.mode && data.mode !== interactionMode) setMode(data.mode);
     scoutCages.forEach(cage => {
-      cage.visible = interactionMode === 'scout' && [...highlightedPieces].some(piece => samePiece(piece, cage.userData.piece));
+      cage.visible = [...highlightedPieces].some(piece => samePiece(piece, cage.userData.piece));
     });
     renderer.domElement.dataset.highlightCages = String(scoutCages.filter(cage => cage.visible).length);
     renderer.domElement.dataset.cornerPresentation = showAllCorners ? 'full' : 'isolated';
@@ -618,25 +656,30 @@ export function createCube3D(container, options = {}) {
         sticker.material.map = nextMap;
         sticker.material.needsUpdate = true;
       }
-      sticker.material.color.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
+      sticker.userData.baseColor.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
       const dimmedTarget = Boolean(target && !active && !showAllCorners);
       const matched = interactionMode === 'f2l' && matchedPieces.has(piece);
-      const scoutHighlight = interactionMode === 'scout' && [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
-      const dimmed = interactionMode === 'scout' && dimOthers && !scoutHighlight;
+      // Emphasis belongs to the cube, not to one interaction mode: corner and f2l cubes honour it too.
+      const scoutHighlight = [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
+      const dimmed = dimOthers && !scoutHighlight;
       if (dimmed) dimmedStickerCount++;
       if (scoutHighlight) highlightedStickerCount++;
-      sticker.material.transparent = dimmedTarget || matched || dimmed;
+      // three.js only honours a flipped `transparent` flag after the material is flagged for an update; without it
+      // the dim (and every highlight's "everything else steps back") was counted but never drawn.
+      const translucent = dimmedTarget || matched || dimmed;
+      if (sticker.material.transparent !== translucent) { sticker.material.transparent = translucent; sticker.material.needsUpdate = true; }
       sticker.material.opacity = dimmedTarget ? .2 : matched ? .38 : dimmed ? .16 : 1;
       sticker.material.depthWrite = !(dimmedTarget || matched || dimmed);
       const f2lEmphasis = interactionMode === 'f2l' && (piece === f2lSelected || piece === f2lFeedback?.piece);
       const correction = interactionMode === 'f2l' && f2lFeedback?.correctPieces?.includes(piece);
-      sticker.userData.border.visible = interactionMode === 'f2l' ? Boolean(f2lEmphasis || correction) : interactionMode === 'scout' ? scoutHighlight : Boolean(active && (isKnown || isHiddenTarget));
+      sticker.userData.border.visible = scoutHighlight || (interactionMode === 'f2l' ? Boolean(f2lEmphasis || correction) : interactionMode === 'scout' ? false : Boolean(active && (isKnown || isHiddenTarget)));
       sticker.userData.borderInk.material.color.set(scoutHighlight ? '#65e8ff' : correction ? '#55d88b'
         : f2lFeedback && piece === f2lFeedback.piece ? (f2lFeedback.status === 'correct' ? '#55d88b' : '#ff625a')
         : feedback && active ? (feedback.status === 'correct' ? '#55d88b' : '#ff625a') : '#65e8ff');
-      sticker.scale.setScalar(interactionMode === 'scout' && scoutHighlight ? 1.045 : active && (isKnown || isHiddenTarget) ? 1.045 : f2lEmphasis ? 1.055 : 1);
+      sticker.scale.setScalar(scoutHighlight ? 1.045 : active && (isKnown || isHiddenTarget) ? 1.045 : f2lEmphasis ? 1.055 : 1);
       sticker.renderOrder = active ? 2 : 0;
     });
+    renderer.domElement.dataset.highlightedPieces = [...highlightedPieces].sort().join(',');
     renderer.domElement.dataset.dimmedStickers = String(dimmedStickerCount);
     renderer.domElement.dataset.highlightedStickers = String(highlightedStickerCount);
     renderer.domElement.setAttribute('aria-label', interactionMode === 'f2l'

@@ -220,7 +220,7 @@ let cube3D = null;
 let wasmReady = false;
 let activeTool = 'corner';
 // tool id -> the element that shows it (routes live in src/routes.js).
-const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', review: 'review-view', recording: 'recording-view', help: 'help-view', demo: 'demo-view', notfound: 'not-found-view' };
+const TOOL_VIEWS = { corner: 'corner-view', f2l: 'f2l-view', pll: 'pll-view', scout: 'scout-view', oll: 'oll-view', lookahead: 'lookahead-view', brain: 'brain-view', smart: 'smart-view', drills: 'drills-view', algs: 'algs-view', progress: 'progress-view', history: 'history-view', timer: 'timer-view', recording: 'recording-view', help: 'help-view', demo: 'demo-view', notfound: 'not-found-view' };
 let drillsHub = null;
 let drillsHubLoad = null;
 let algsPage = null;
@@ -233,9 +233,6 @@ let historyPage = null;
 let historyPageLoad = null;
 let timerPage = null;
 let timerPageLoad = null;
-let reviewPage = null;
-let reviewPageLoad = null;
-let reviewRouteHash = '';
 const drillPages = Object.create(null);
 const drillPageHashes = Object.create(null);
 const drillPageLoads = Object.create(null);
@@ -423,7 +420,6 @@ document.querySelector('#app').innerHTML = `
     <div id="progress-view" class="cs-host" hidden></div>
     <div id="history-view" class="cs-host" hidden></div>
     <div id="timer-view" class="cs-host" hidden></div>
-    <div id="review-view" class="cs-host" hidden></div>
     <section id="not-found-view" class="brain not-found-page" data-brain-style="orbit" hidden aria-labelledby="not-found-title">
       <p class="not-found-kicker">route unavailable</p>
       <h1 id="not-found-title">not found</h1>
@@ -1777,13 +1773,12 @@ const SNAPSHOT_OWNER = {
   lookahead: { owner: 'F4', dataOwner: 'F4' },
   progress: { owner: 'F5', dataOwner: 'F6' },
   demo: { owner: 'F17', dataOwner: 'F17' },
-  review: { owner: 'F1', dataOwner: 'F1' },
   recording: { owner: 'F0', dataOwner: 'F0' },
 };
 const recordingSnapshotHandle = { getViewModel: () => recordingViewModel };
 function activeSnapshotHandle(tool) {
   return ({ brain, history: historyPage, drills: drillsHub, algs: algsPage, timer: timerPage,
-    progress: progressPage, review: reviewPage, recording: recordingSnapshotHandle, demo: demoPage,
+    progress: progressPage, recording: recordingSnapshotHandle, demo: demoPage,
     corner: window.__cubesightLegacyTrainerHandles?.corner, f2l: window.__cubesightLegacyTrainerHandles?.f2l,
     oll: drillPages.oll, lookahead: drillPages.lookahead, scout, pll })[tool] || null;
 }
@@ -1803,10 +1798,6 @@ function syncRoute(initial = false) {
   const { tool, hash } = resolveRoute(incomingHash, { isPhone: isPhone(), cubeConnected: cubeConnected() });
   if (location.hash !== hash) history.replaceState(null, '', `${location.pathname}${location.search}${hash}`);
   recordNavigation({ hash: incomingHash, resolvedHash: hash, tool, initial });
-  if (tool === 'review' && reviewRouteHash && reviewRouteHash !== hash) {
-    reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
-  }
-  reviewRouteHash = tool === 'review' ? hash : '';
   setTool(tool, initial || routedHash !== hash);
   routedHash = hash;
   mountSnapshotPage(tool);
@@ -1873,7 +1864,7 @@ function setTool(tool, initial = false) {
     historyPage?.setRoute?.(location.hash);
     return;
   }
-  if (!isKnownTool(tool) || (tool === activeTool && !initial && tool !== 'review')) return;
+  if (!isKnownTool(tool) || (tool === activeTool && !initial)) return;
   snapshotBridge.clear();
   if ((tool === 'oll' || tool === 'lookahead') && drillPages[tool] && drillPageHashes[tool] !== location.hash) {
     drillPages[tool].detach();
@@ -1896,11 +1887,7 @@ function setTool(tool, initial = false) {
   demoPage?.setActive(false);
   progressPage?.setActive(false);
   timerPage?.setActive(false);
-  reviewPage?.setActive(false);
   Object.values(drillPages).forEach(page => page?.setActive(false));
-  if (activeTool === 'review' && tool !== 'review') {
-    reviewPage?.detach(); reviewPage = null; reviewPageLoad = null;
-  }
   Object.values(legacyRounds).forEach(panel => panel.setActive(false));
   const previousTool = activeTool;
   if (previousTool !== tool || initial) {
@@ -1995,7 +1982,7 @@ function setTool(tool, initial = false) {
         brainLoad = null;
       });
     } else brain?.setActive(true);
-  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer' || tool === 'review' || tool === 'oll' || tool === 'lookahead' || tool === 'demo') {
+  } else if (tool === 'drills' || tool === 'algs' || tool === 'progress' || tool === 'history' || tool === 'timer' || tool === 'oll' || tool === 'lookahead' || tool === 'demo') {
     state.locked = true;
     f2lState.locked = true;
     mountPage(tool);
@@ -2153,35 +2140,6 @@ function mountPage(tool) {
         timerPage.setActive(activeTool === 'timer');
         return timerPage.ready;
       }).catch((error) => { timerPageLoad = null; failed(error); });
-    }
-    return;
-  }
-  if (tool === 'review') {
-    if (reviewPage) { reviewPage.setActive(true); return; }
-    if (!reviewPageLoad) {
-      const routeHash = location.hash;
-      const { path, query } = parseHash(location.hash);
-      const params = new URLSearchParams(query);
-      const segments = path.split('/').filter(Boolean);
-      const context = { path, query, params: { at: Number(segments[1]) || null, move: Number(params.get('move')) || 0 }, at: Number(segments[1]) || null, move: Number(params.get('move')) || 0 };
-      const load = import('./review/index.js').then(({ createSolveReview }) => {
-        const page = createSolveReview(document.querySelector('#review-view'), context);
-        if (routeHash !== reviewRouteHash || activeTool !== 'review') {
-          page.detach();
-          if (reviewPageLoad === load) reviewPageLoad = null;
-          if (activeTool === 'review') mountPage('review');
-          return null;
-        }
-        reviewPage = page;
-        mountSnapshotPage('review', reviewPage);
-        reviewPage.setActive(activeTool === 'review');
-        syncPageTokens(document.querySelector('#review-view'));
-        return reviewPage.ready;
-      }).catch((error) => {
-        if (reviewPageLoad === load) reviewPageLoad = null;
-        if (routeHash === reviewRouteHash && activeTool === 'review') document.querySelector('#review-view').textContent = MSG.loadFailed('review');
-      });
-      reviewPageLoad = load;
     }
     return;
   }

@@ -1,4 +1,5 @@
 import { planPieceIds } from '../../cross-cube.js';
+import { f2lPairIds } from './pieces.js';
 
 /** Resolve user-facing cross/pair/slot references to stable cubie ids. */
 export function resolveSlotPieces(state, slot) {
@@ -7,6 +8,11 @@ export function resolveSlotPieces(state, slot) {
     if (slot.type === 'cross') return planPieceIds(state, String(slot.face || 'D').toUpperCase());
     if (slot.type === 'pair') return [slot.cornerId, slot.edgeId].filter(id => id && state.cubies.some(cubie => cubie.id === id));
     if (slot.id) return resolveSlotPieces(state, slot.id);
+  }
+  if (/^pair[:/\s-]*[UDFBRL]{2}$/i.test(String(slot))) {
+    // 'pair:FR' is the F2L pair of that slot (its corner and its edge), not every piece touching F and R.
+    const { corner, edge } = f2lPairIds(slot);
+    return [corner, edge].filter(id => id && state.cubies.some(cubie => cubie.id === id));
   }
   const label = String(slot).toUpperCase().replace(/^PAIR[:/\s-]*/, '').replace(/[^A-Z]/g, '');
   if (label === 'CROSS' || label === 'CROSSD') return planPieceIds(state, 'D');

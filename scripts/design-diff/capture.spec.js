@@ -8,7 +8,8 @@ import { test, expect } from 'playwright/test';
 import { getLayoutDriver, getLayoutMatrix } from '../../tests/layout/matrix.js';
 import { HISTORY_SEED } from '../../tests/layout/fixtures/state-seeds.js';
 import '../../tests/layout/state-drivers.js';
-import { FRAMES } from './frames.mjs';
+import { FRAMES, RICH_AT } from './frames.mjs';
+import { buildRichSeed } from './rich-seed.mjs';
 
 const readJson = name => JSON.parse(readFileSync(new URL(`../../tests/fixtures/${name}`, import.meta.url), 'utf8'));
 // Recorded cross-suggestion / analysis answers, so the app never waits on the real solver worker.
@@ -51,12 +52,20 @@ for (const frame of FRAMES) {
       }
       if (fixture.route !== frame.route) throw new Error(`fixture ${fixture.id} lives on ${fixture.route}, table says ${frame.route}`);
     } else {
-      await page.addInitScript(records => localStorage.setItem('cubesight-solves-v1', JSON.stringify(records)), HISTORY_SEED);
+      const seed = frame.driver.seed === 'rich' ? await buildRichSeed() : HISTORY_SEED;
+      const selectedAt = frame.driver.seed === 'rich' ? RICH_AT : HISTORY_SEED.records[0].at;
+      await page.addInitScript(records => localStorage.setItem('cubesight-solves-v1', JSON.stringify(records)), seed);
       await page.goto(`/#${frame.route}`);
       await page.waitForFunction(hash => location.hash === hash, `#${frame.route}`);
       await expect.poll(() => page.evaluate(() => Boolean(window.__cubesightSnapshot?.getViewModel()?.viewModel)), { timeout: 20_000 }).toBe(true);
       if (/^\/history\/\d/.test(frame.route)) {
-        await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.selected?.at), { timeout: 20_000 }).toBe(HISTORY_SEED.records[0].at);
+        await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.selected?.at), { timeout: 20_000 }).toBe(selectedAt);
+      }
+      if (frame.driver.replayFraction != null) {
+        const total = seed.records.find(record => record.at === selectedAt).solveMoves.length;
+        const target = Math.round(total * frame.driver.replayFraction);
+        for (let index = 0; index < target; index++) await page.keyboard.press('ArrowRight');
+        await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.selected.move)).toBe(target);
       }
     }
 
