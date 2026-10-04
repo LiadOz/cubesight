@@ -27,7 +27,6 @@ import { buildStagePlan, xcrossLabel } from './stage-plan.js';
 import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './milestones.js';
 import { buildViewModel, frameState } from './view-model.js';
 import { coachLines } from './coach-lines.js';
-import { CUBE_FILL } from './layout-spec.js';
 import { resolveKey } from './keys.js';
 import { fmtSeconds, fmtResult } from './format.js';
 import { getThemePreference, setThemePreference, THEME_EVENT } from '../theme.js';
@@ -109,7 +108,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
   const theme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
   let cube = null;
-  try { cube = new Cube(shell.slots.cube, { mode: 'live', state: cubeSession.getSnapshot().state ?? createSolvedState(), size: 'XL', label: 'Live solve cube', cubeOptions: { projection: 'isometric', isoFill: CUBE_FILL } }); }
+  try { cube = new Cube(shell.slots.cube, { mode: 'live', state: cubeSession.getSnapshot().state ?? createSolvedState(), size: 'XL', label: 'Live solve cube' }); }
   catch { shell.slots.cube.textContent = 'Solve needs WebGL. Enable hardware acceleration or try another browser.'; }
   shell.setCube?.(cube);   // the move guide plays its ghost on this cube
 
