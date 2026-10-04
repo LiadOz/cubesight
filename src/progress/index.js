@@ -25,7 +25,10 @@ function drillMeta(row) {
   if (Number.isFinite(row.medianMs)) parts.push(`${seconds(row.medianMs)} s median`);
   if (row.trendMs != null) parts.push(`${seconds(Math.abs(row.trendMs))} s ${row.trendMs <= 0 ? 'faster' : 'slower'} in recent rounds`);
   parts.push(`${plural(row.due, 'case')} due`);
-  if (row.lifetime?.attempts) parts.push(`${plural(row.lifetime.attempts, 'answer')} all time`);
+  if (row.lifetime?.attempts) {
+    parts.push(`${plural(row.lifetime.attempts, 'answer')} all time`);
+    if (row.lifetime.accuracy != null) parts.push(`${percent(row.lifetime.accuracy)} correct all time`);
+  }
   return parts.join(' · ');
 }
 

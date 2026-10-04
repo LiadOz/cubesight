@@ -17,7 +17,7 @@ test('algorithm case cold-load, self drill, and IndexedDB history survive offlin
   await page.goto('/#/algs/oll/45');
   await expect(page.getByRole('heading', { name: 'Suit up, T' })).toBeVisible();
   await expect(page.locator('.alg-entry')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Start no-cube drill' }).click();
+  await page.getByRole('button', { name: 'drill alg', exact: true }).click();
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await page.waitForTimeout(25);
   await page.getByRole('button', { name: 'Done', exact: true }).click();
@@ -49,7 +49,19 @@ test('algorithm case cold-load, self drill, and IndexedDB history survive offlin
   }));
   expect(attemptsAfterReload).toBe(attemptsBeforeReload);
   await page.goto('/#/algs/f2l?slot=BL');
-  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(41);
+  const links = new Set();
+  for (;;) {
+    await page.locator('.alg-case-grid').waitFor();
+    for (const href of await page.locator('.alg-case-card').evaluateAll(nodes => nodes.map(node => node.getAttribute('href')))) links.add(href);
+    const next = page.getByRole('link', { name: 'next ›', exact: true });
+    if (!(await next.count())) break;
+    const target = await next.getAttribute('href');
+    const targetPage = new URLSearchParams(target.split('?')[1]).get('page');
+    await next.click();
+    await expect(page.locator('.alg-pagination')).toContainText(` · ${targetPage} of `);
+  }
+  expect(links.size).toBe(41);
+  await page.goto('/#/algs/f2l?slot=BL');
   await page.locator('#algs-view .alg-case-card').first().click();
   await expect(page).toHaveURL(/#\/algs\/f2l\/1-bl$/);
   await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);

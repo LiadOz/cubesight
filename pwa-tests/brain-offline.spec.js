@@ -34,9 +34,15 @@ test('Brain renders offline in both styles and modes', async ({ page, context })
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await expect(brain.locator('#brain-cube canvas')).toBeVisible();
       await expect(brain).toHaveAttribute('data-screen', 'disconnected');
-      await expect(brain.locator('#brain-connect')).toBeVisible();
+      const cubeMenu = page.getByRole('button', { name: /open cube and recording actions/ });
+      await expect(cubeMenu).toBeVisible();
+      await cubeMenu.click();
+      const actions = page.getByRole('dialog', { name: 'Cube and recording actions' });
+      await expect(actions.getByRole('menuitem', { name: 'connect', exact: true })).toBeVisible();
+      await expect(actions.getByRole('menuitem', { name: 'save recording', exact: true })).toBeVisible();
+      await actions.getByRole('button', { name: 'close', exact: true }).click();
       // The style's own parts mounted (its lazy chunk loaded from the cache).
-      await expect(brain.locator(style === 'orbit' ? '.b-oring' : '.m-tl')).toHaveCount(1);
+      await expect(brain.locator(style === 'orbit' ? '.orbit' : '.m-tl')).toHaveCount(1);
       // Its fonts are available offline too.
       const font = style === 'mono' ? '300 20px "DM Mono"' : '400 20px "Manrope Variable"';
       expect(await page.evaluate(async f => { await document.fonts.load(f); return document.fonts.check(f); }, font)).toBe(true);

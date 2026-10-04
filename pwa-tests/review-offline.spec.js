@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { ENGINE_VERSION } from '../src/analysis/segment.js';
 import { getCase } from '../src/algs/seed/cases.js';
 import { invertAlg } from '../src/algs/notation.js';
 
@@ -59,6 +60,6 @@ test('canonical OLL and PLL analysis cold-loads in the offline worker', async ({
       request.onsuccess=()=>{const record=request.result.at(-1);db.close();resolve({oll:record.ollCase,pll:record.pllCase,engine:record.analysis?.engine});};
     };
   }));
-  expect(captured).toEqual({oll:'oll/27',pll:'pll/T',engine:4});
+  expect(captured).toEqual({oll:'oll/27',pll:'pll/T',engine:ENGINE_VERSION});
   expect(errors).toEqual([]);
 });

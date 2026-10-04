@@ -137,13 +137,13 @@ test('saved unsolved D-cross pin loads and replans a distinct variation offline'
   expect(firstRequests.some(item => item.scramble === 'F' && item.face === 'D')).toBe(true);
 
   await page.locator('#cp-faces [data-face="D"]').click();
-  await expect(page.locator('#cp-reveal')).toContainText('Yellow cross');
+  await expect(page.locator('#cp-reveal')).toContainText('White cross');
   await expect(page.locator('#cp-next')).toBeVisible();
   await page.locator('#cp-next').click();
-  await expect(page.locator('#cp-case')).toHaveText('case 2');
+  await expect.poll(() => page.evaluate(() => window.__workerPosts.filter(item => item.type === 'solve' && item.kind === 'cross').length)).toBeGreaterThan(firstRequests.length);
   await expect(page.locator('#cp-faces [data-face="D"]')).toBeEnabled({ timeout: 30_000 });
   const replans = await page.evaluate(() => window.__workerPosts.filter(item => item.type === 'solve' && item.kind === 'cross'));
   expect(replans.some(item => item.scramble && item.scramble !== 'F' && item.face === 'D')).toBe(true);
   await page.locator('#cp-faces [data-face="D"]').click();
-  await expect(page.locator('#cp-reveal')).toContainText('Yellow cross');
+  await expect(page.locator('#cp-reveal')).toContainText('White cross');
 });

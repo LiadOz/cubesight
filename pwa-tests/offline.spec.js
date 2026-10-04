@@ -52,9 +52,11 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
 
   await page.goto('/#/help');
-  await expect(page.locator('#help-view')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'help', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'one cube, one orbit' })).toBeVisible();
+  await page.getByRole('link', { name: 'offline and data', exact: true }).click();
   await expect(page.locator('[data-help-export]')).toBeVisible();
+  await page.getByRole('button', { name: 'close', exact: true }).click();
   await page.goto('/#/drills');
   await page.locator('#drills-view a[href="#/drills/f2l"]').click();
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm');
@@ -63,7 +65,7 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await expect(page.locator('#pll-view')).toBeVisible();
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
   await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
-  await expect(page.locator('.pll-trainer-shell')).toHaveCSS('display', 'flex');
+  await expect(page.locator('.pll-trainer-shell')).toHaveCSS('display', 'grid');
   const pllCase = await page.locator('#pll-view').getAttribute('data-pll-case');
   await page.locator(`[data-pll-answer="${pllCase}"]`).tap();
   await expect(page.locator('#pll-feedback')).toContainText('Nice');

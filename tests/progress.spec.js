@@ -75,7 +75,7 @@ test('the shared goal controls save, switch to the ao12 Orbit, and clear locally
   expect(await page.evaluate(() => localStorage.getItem('cubesight-goal-v1'))).toBeNull();
 });
 
-test('the primary Cube and Orbit stay on screen while progress scrolls', async ({ page }) => {
+test('progress rows remain readable while the Cube and Orbit scroll without covering them', async ({ page }) => {
   await page.goto('/#/progress');
   await expect(page.getByRole('region', { name: 'Progress Orbit' })).toBeVisible();
   await expect(page.locator('.progress-page')).toHaveAttribute('data-ready', 'true');
@@ -98,11 +98,21 @@ test('the primary Cube and Orbit stay on screen while progress scrolls', async (
         return { orbit: { top: orbit.top, bottom: orbit.bottom }, cube: { top: cube.top, bottom: cube.bottom }, header: { top: header.top, bottom: header.bottom }, height: innerHeight, width: innerWidth, scrollWidth: document.scrollingElement.scrollWidth };
       });
       expect(boxes.scrollWidth).toBeLessThanOrEqual(boxes.width);
-      expect(boxes.orbit.top).toBeGreaterThanOrEqual(-1);
-      expect(boxes.orbit.bottom).toBeLessThanOrEqual(boxes.height + 1);
-      expect(boxes.cube.top).toBeGreaterThanOrEqual(boxes.header.bottom - 1);
-      expect(boxes.cube.bottom).toBeLessThanOrEqual(boxes.height + 1);
+      if (fraction === 0) {
+        expect(boxes.orbit.top).toBeGreaterThanOrEqual(-1);
+        expect(boxes.orbit.bottom).toBeLessThanOrEqual(boxes.height + 1);
+        expect(boxes.cube.top).toBeGreaterThanOrEqual(boxes.header.bottom - 1);
+        expect(boxes.cube.bottom).toBeLessThanOrEqual(boxes.height + 1);
+      }
     }
     expect(maxScroll).toBeGreaterThan(0);
+    for (const row of await page.locator('.progress-drill-name').all()) {
+      await row.scrollIntoViewIfNeeded();
+      expect(await row.evaluate(el => {
+        const box = el.getBoundingClientRect();
+        return el.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+      }), 'each drill link remains unobstructed').toBe(true);
+    }
+    await expect(page.locator('.progress-cube-mount canvas')).toHaveCount(1);
   }
 });
