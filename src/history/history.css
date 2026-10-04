@@ -16,7 +16,7 @@
   --u: calc(100svh / 900);
   --hdr: var(--site-header-height, 60px);
   --cube-fill: .844; /* the isometric cube's silhouette is .844 of its square canvas (measured; cube-3d.js ISO_HALF_HEIGHT) */
-  --stage: calc(884 * var(--u)); /* the Orbit's square: its ring (r 190 of 560) is then the frame's r 300 */
+  --stage: calc(878 * var(--u)); /* the Orbit's square: its ring (r 190 of 560) is then the frame's r 300 (884 u; 878 keeps the square inside the viewport) */
   --faint: var(--b-faint, #6d675c);
   display: block; gap: 0; min-height: 0; position: relative; width: 100vw; margin: 0 calc(50% - 50vw); padding: 0; color: var(--b-ink); background: var(--b-bg);
   font-family: var(--b-font-sans); overflow-x: clip;
@@ -109,9 +109,9 @@
 .history-stage__cube::before { z-index: -2; top: calc(50% + .51 * var(--cube-sil)); width: calc(1.35 * var(--cube-sil)); height: calc(.30 * var(--cube-sil)); background: radial-gradient(closest-side, rgb(61 191 173 / .22), rgb(61 191 173 / .07) 55%, rgb(61 191 173 / 0)); }
 .history-stage__cube::after { z-index: -1; top: calc(50% + .40 * var(--cube-sil)); width: calc(.78 * var(--cube-sil)); height: calc(.10 * var(--cube-sil)); background: rgb(0 0 0 / .35); }
 .history-stage__cube canvas { width: 100% !important; height: 100% !important; }
-.history-stage__number { position: absolute; z-index: 2; left: var(--cx, 50%); transform: translateX(-50%); margin: 0; text-align: center; font: 300 calc(76 * var(--u))/1 var(--b-font-sans); font-variant-numeric: tabular-nums; letter-spacing: -.04em; color: var(--b-ink) !important; pointer-events: none; white-space: nowrap; }
+.history-stage__number { position: absolute; z-index: 2; left: var(--cx, 50%); transform: translateX(-50%); width: max-content; margin: 0; text-align: center; font: 300 calc(76 * var(--u))/1 var(--b-font-sans); font-variant-numeric: tabular-nums; letter-spacing: -.04em; color: var(--b-ink) !important; pointer-events: none; }
 .history-stage__number small { margin-left: .35em; font: 400 14px var(--b-font-mono); letter-spacing: 0; color: var(--b-muted); }
-.history-stage__subline { position: absolute; z-index: 2; left: var(--cx, 50%); transform: translateX(-50%); margin: 0; text-align: center; font: 12px/1 var(--b-font-mono); pointer-events: none; white-space: nowrap; }
+.history-stage__subline { position: absolute; z-index: 2; left: var(--cx, 50%); transform: translateX(-50%); width: max-content; max-width: 100vw; margin: 0; text-align: center; font: 12px/1 var(--b-font-mono); pointer-events: none; white-space: nowrap; }
 .history-counter { font: 500 13px/1 var(--b-font-sans); color: var(--b-muted); }
 .history-counter:empty { display: none; }
 .history-back { display: none; }
@@ -165,7 +165,7 @@
 
 /* ---- past solve, review, replay on a desktop: one frame, laid out at the frame's own coordinates ------ */
 @media (min-width: 900px) {
-  .cs-page.brain.history-page { height: calc(100svh - var(--hdr)); --cx: 50vw; --cy: calc(440 * var(--u) - var(--hdr)); --stage: calc(884 * var(--u)); }
+  .cs-page.brain.history-page { height: calc(100svh - var(--hdr)); --cx: 50vw; --cy: calc(440 * var(--u) - var(--hdr)); --stage: min(calc(878 * var(--u)), 100vw); }
   .history-layout { position: absolute; inset: 0; pointer-events: none; }
   .history-layout > * { pointer-events: auto; }
   .history-top, .history-list-panel, .history-focus, .history-keybar-host, .history-counter, .history-replay-controls, .history-actions-host { position: absolute; }
@@ -273,7 +273,7 @@
 
 /* ---- phone (A-12): one column, laid out at the frame's own coordinates in units of the screen width ---- */
 @media (max-width: 899px) {
-  .cs-page.brain.history-page { --pu: calc(min(100vw, 430px) / 390); --phdr: var(--site-header-height, 72px); --stage: calc(442 * var(--pu)); }
+  .cs-page.brain.history-page { --pu: calc(min(100vw, 430px) / 390); --phdr: var(--site-header-height, 72px); --stage: min(calc(442 * var(--pu)), 100vw); }
   .history-keybar-host { display: none; }
 
   /* past solve, review and replay: the frame, positioned in phone units */
@@ -366,3 +366,18 @@
 
 /* the list's stage is the glyph of the selected solve: A-07 draws no stage labels on it */
 .history-page[data-view="list"] .orbit__label { display: none; }
+
+/* touch: every control is at least 40 x 40 where the viewport is a phone (the frames' pills are 30 px on a desktop) */
+@media (max-width: 899px) {
+  .history-page.brain .history-pill select { height: 40px; line-height: 38px; border-radius: 20px; }
+  .history-pill { height: 40px; }
+  .history-pill::after { top: 15px; }
+  .history-data > summary { display: inline-flex; align-items: center; min-height: 40px; padding: 0 8px; }
+  .history-replay-link, .history-more > summary, .f1-results__crumb { display: inline-flex; align-items: center; min-height: 40px; }
+  .history-transport button { min-width: 40px; min-height: 40px; }
+  .history-page[data-view="replay"] .history-back { align-items: center; min-height: 40px; }
+  .history-speeds button { min-width: 40px; }
+  .history-speeds button { position: relative; isolation: isolate; min-height: 40px; background: none !important; border-color: transparent !important; }
+  .history-speeds button::before { content: ''; position: absolute; z-index: -1; inset: 7px 0; border: 1px solid var(--b-hairline); border-radius: 13px; }
+  .history-speeds button[aria-pressed="true"]::before { border-color: transparent; background: var(--b-accent-soft, #16403a); }
+}

@@ -641,7 +641,12 @@ export function initHistory(host) {
       let analysis = null;
       try { analysis = await analysisClient().analyze(imported); } catch { /* the solve still opens; its review says it is unanalysed */ }
       if (analysis) {
-        store.update(imported.at, { analysis, ollCase: analysis.lastLayer?.oll?.caseId ?? null, pllCase: analysis.lastLayer?.pll?.caseId ?? null });
+        const oll = analysis.lastLayer?.oll, pll = analysis.lastLayer?.pll;
+        store.update(imported.at, {
+          analysis, ollCase: oll?.caseId ?? null, pllCase: pll?.caseId ?? null,
+          ollRecognitionMs: oll?.recognitionMs ?? null, ollExecutionMs: oll?.executionMs ?? null,
+          pllRecognitionMs: pll?.recognitionMs ?? null, pllExecutionMs: pll?.executionMs ?? null,
+        });
         await store.flush();
       }
       location.hash = href(historyPath(imported.at));
