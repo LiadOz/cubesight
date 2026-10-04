@@ -17,7 +17,7 @@
   color: var(--b-ink, var(--ink));
 }
 
-.legacy-drill-view.brain {
+.legacy-drill-view.brain[data-brain-style] {
   display: block;
   width: 100%;
   min-height: 0;
@@ -211,7 +211,7 @@
 .legacy-drill-view .recognition-profile :is(.rp-point, .rp-trend-point) { stroke: var(--b-surface); }
 
 @media (max-width: 700px) {
-  .legacy-drill-view.brain { padding: 0; }
+  .legacy-drill-view.brain[data-brain-style] { padding: 0; }
   .legacy-drill-view :is(.cube-mount, .pll-cube-mount) { max-height: 28svh; }
   .legacy-drill-view :is(.answer-grid, .pll-answer-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .legacy-drill-view :is(.answer-button, .pll-answer) { min-width: 0; }

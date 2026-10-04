@@ -45,9 +45,10 @@ test('a pinned pseudo scan scores a pseudo pair from the exact saved cube state'
   await page.goto(`/#/drills/f2l?setup=review%3A${fixture.at}%3A0&drill=scan&pseudo=1`);
   await expect(page.locator('#f2l-cube canvas')).toBeVisible();
   await expect(page.locator('#f2l-status')).toContainText('Tap start');
-  await page.locator('#f2l-scan-start').click();
+  await expect(page.locator('#f2l-continue')).toHaveAttribute('data-action', 'start-scan');
+  await page.locator('#f2l-continue').click();
   await clickPiece(page, fixture.pair.cornerPiece);
   await clickPiece(page, fixture.pair.edgePiece);
-  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect(page.locator('#f2l-timings')).toContainText('1 pairs');
   await expect(page.locator('#f2l-status')).toContainText('Pseudo pair!');
 });

@@ -105,7 +105,7 @@
 #corner-view .segment.chip[aria-pressed="true"] { border-color: var(--s-bd); background: var(--s-bg); color: var(--s-ink); }
 
 .quick-round-metrics { display: inline-flex; align-items: center; gap: 10px; font: 500 11px var(--b-font-mono); }
-.legacy-drill-view .brain.quick-round { border: 0; background: transparent; padding: 0; }
+.legacy-drill-view .brain.quick-round { display: block; width: 100%; min-height: 0; border: 0; background: transparent; padding: 0; }
 #pll-view .pll-cube-mount { display: grid; place-items: center; overflow: visible; }
 #pll-view .pll-cube-mount > .shared-cube { margin-inline: auto; }
 #pll-view :is(.pll-stage-topline, .pll-cube-caption) { display: none; }
@@ -142,4 +142,40 @@
   #corner-view .pause-overlay > div { padding: 12px; }
   #corner-view .pause-overlay h2 { font-size: 18px; }
   #corner-view .pause-overlay p:not(.eyebrow) { margin: 6px 0 10px; font-size: 11px; }
+}
+/* Keep legacy case geometry centred when the shared solve stylesheet arrives. */
+@media (min-width: 701px) {
+  .legacy-drill-view:is(#corner-view, #f2l-view)[data-brain-style] .cube-stage > .cube-mount { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; min-height: 0; flex: none; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .cube-stage > .orbit { width: 420px !important; height: 420px !important; max-width: none !important; max-height: none !important; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .cube-stage > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .cube-caption { position: absolute; bottom: 8px; left: 24px; right: 24px; }
+}
+#corner-view .timer-wrap :is(#timer, .timer-label) { display: none; }
+#corner-view .timer-wrap { margin: 4px 0; }
+#corner-view .timing-note { margin-top: 4px; }
+@media (max-width: 700px) {
+  .legacy-drill-view:is(#corner-view, #f2l-view)[data-brain-style] .trainer-shell { display: flex; flex-direction: column; height: auto; }
+  .legacy-drill-view:is(#corner-view, #f2l-view)[data-brain-style] .cube-stage { height: 280px; padding: 0; align-items: center; justify-content: center; }
+  .legacy-drill-view:is(#corner-view, #f2l-view)[data-brain-style] .cube-mount { flex: none; width: 220px; height: 220px; min-height: 0; max-height: 220px; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .cube-stage > .orbit { width: 280px !important; height: 280px !important; max-width: none !important; max-height: none !important; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .cube-stage > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) :is(.stage-topline, .cube-caption) { display: none; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .answer-stage { padding: 8px 0; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .intro-row { padding: 8px 0; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .intro-row h1 { font-size: 22px; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .trainer-case-color-control .ui-field__label { display: none; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .quick-round-line { gap: 6px; font-size: 11px; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .training-settings > summary { min-height: 40px; padding: 8px 12px; }
+  #corner-view .prompt-block { margin: 6px 0 10px; }
+  #corner-view .prompt-block p { font-size: 18px; }
+  #corner-view .answer-button { min-height: 44px; }
+}
+@media (max-width: 700px) {
+  :root:has(.legacy-drill-view:not([hidden])) .legacy-drill-view:is(#corner-view, #f2l-view) .brain.quick-round { padding: 0; margin-bottom: 4px; }
+  :root:has(.legacy-drill-view:not([hidden])) .legacy-drill-view:is(#corner-view, #f2l-view) .intro-row { gap: 10px; padding: 4px 0; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .intro-row h1 { white-space: nowrap; font-size: 20px; }
+  :root:has(#corner-view:not([hidden])) #corner-view .answer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  :root:has(#corner-view:not([hidden])) #corner-view .answer-button { font-size: 11px; }
+  :root:has(#corner-view:not([hidden])) #corner-view .feedback-line { margin-top: 6px; padding-top: 0; border: 0; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .trainer-progress-details { margin: 6px 0 0; }
 }

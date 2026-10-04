@@ -19,8 +19,9 @@ test('Orbit SVG uses the fitted host dimensions in a constrained cube stage', as
   expect(Math.abs(sizes.hostCenterY - sizes.svgCenterY)).toBeLessThan(1);
 });
 
-test('corner recognition keeps its Orbit outside the cube and all six answers reachable at 1280 × 720', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
+for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+test(`corner recognition keeps its Orbit outside the cube and all six answers reachable at ${viewport.width} × ${viewport.height}`, async ({ page }) => {
+  await page.setViewportSize(viewport);
   await page.goto('/#/drills/corners');
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-rotation', 'locked');
   await expect(page.locator('#corner-view .orbit__svg')).toBeVisible();
@@ -34,8 +35,8 @@ test('corner recognition keeps its Orbit outside the cube and all six answers re
   });
   expect(geometry.orbit).toBeGreaterThan(geometry.cube);
   expect(geometry.frame).toBe('0px');
-  expect(geometry.width).toBeLessThanOrEqual(1280);
-  expect(geometry.height).toBeLessThanOrEqual(720);
+  expect(geometry.width).toBeLessThanOrEqual(viewport.width);
+  expect(geometry.height).toBeLessThanOrEqual(viewport.height);
   for (const answer of await page.locator('#answers button').all()) {
     await expect(answer).toBeInViewport();
     expect(await answer.evaluate(node => {
@@ -44,7 +45,9 @@ test('corner recognition keeps its Orbit outside the cube and all six answers re
     })).toBe(true);
   }
   await expect(page.locator('[data-action="skip"]')).toBeInViewport();
+  await expect(page.locator('#corner-view .trainer-progress-details > summary')).toBeInViewport();
 });
+}
 
 for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
   test(`PLL keeps its locked cube centred in a square Orbit at ${viewport.width} × ${viewport.height}`, async ({ page }) => {
@@ -68,5 +71,26 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 
       await expect(answer).toBeInViewport();
       expect(await answer.evaluate(node => { const box = node.getBoundingClientRect(); return node.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)); })).toBe(true);
     }
+  });
+}
+
+for (const viewport of [{ width: 1280, height: 720 }, { width: 1280, height: 900 }, { width: 390, height: 844 }]) {
+  test(`F2L remains fitted after the solve styles load at ${viewport.width} × ${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/#/drills/f2l');
+    await expect(page.locator('#f2l-cube canvas')).toBeVisible();
+    await page.evaluate(async () => { const { loadStyle } = await import('/src/brain/index.js'); await loadStyle('orbit'); await document.fonts.ready; });
+    const geometry = await page.evaluate(() => {
+      const orbit = document.querySelector('#f2l-view .orbit__svg').getBoundingClientRect();
+      const cube = document.querySelector('#f2l-cube .shared-cube').getBoundingClientRect();
+      return { orbit: orbit.toJSON(), cube: cube.toJSON(), height: document.documentElement.scrollHeight };
+    });
+    expect(geometry.height).toBeLessThanOrEqual(viewport.height);
+    expect(geometry.orbit.width).toBeCloseTo(geometry.orbit.height, 0);
+    expect(geometry.orbit.width).toBeGreaterThan(geometry.cube.width);
+    expect(geometry.orbit.x + geometry.orbit.width / 2).toBeCloseTo(geometry.cube.x + geometry.cube.width / 2, 0);
+    expect(geometry.orbit.y + geometry.orbit.height / 2).toBeCloseTo(geometry.cube.y + geometry.cube.height / 2, 0);
+    await expect(page.locator('#f2l-continue')).toBeInViewport();
+    await expect(page.locator('#f2l-view .trainer-progress-details > summary')).toBeInViewport();
   });
 }

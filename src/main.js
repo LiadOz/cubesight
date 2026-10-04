@@ -415,6 +415,7 @@ document.querySelector('#app').innerHTML = `
           <div class="f2l-footer-actions"><span>back and bottom faces are locked</span><button id="f2l-continue" class="skip-button" data-action="new-f2l">skip <kbd>s</kbd></button></div>
         </div>
       </section>
+      <details class="trainer-progress-details"><summary>Progress · F2L deduction</summary></details>
     </div>
     <div id="drills-view" class="cs-host" hidden></div>
     <div id="algs-view" class="cs-host" hidden></div>
