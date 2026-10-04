@@ -1,4 +1,5 @@
 import './pll-trainer.css';
+import { mountTrainerSettings } from './trainers/settings-controls.js';
 import { createRoundPanel } from './drills/round-panel.js';
 import { Cube } from './ui/cube/index.js';
 import { readCaseColorSetting, CASE_COLOR_CHANGE_EVENT } from './ui/cube/case-color.js';
@@ -251,6 +252,7 @@ export function createPLLTrainer(root) {
     paceWindow = [];
     localStorage.setItem('cubesight-pll-glance-ms', String(glanceMs));
     $('#pll-glance-ms').value = String(glanceMs);
+    settingsControls.sync();
     $('#pll-glance-caption').textContent = `Adaptive · ${glanceMs} ms · 0/10`;
   }
   function scheduleRetry(id) {
@@ -296,6 +298,7 @@ export function createPLLTrainer(root) {
     return weighted[Math.floor(Math.random() * weighted.length)];
   }
   async function newTrial() {
+    settingsControls.sync();
     if (roundPanel.complete) return;
     const token = ++trialToken; stopClock(); trial = null; locked = false; paused = false; elapsed = 0; $('#pll-pause').hidden = true; $('#pll-cube').classList.remove('is-paused'); $('#pll-next').hidden = true; setTimerText(0); setGlance(true); setMessage('Choose the case you see.');
     const start = await readLinkedStart();
@@ -446,6 +449,7 @@ export function createPLLTrainer(root) {
   const roundPanel = createRoundPanel($('#pll-round-host'), {drill:'pll',orbitHost:$('.pll-cube-stage'),getSettings:()=>({mode,family,glanceEnabled,glanceMs}),onRestart:()=>newTrial(),onComplete:()=>{locked=true;stopClock();$('#pll-answers').querySelectorAll('button').forEach(button=>button.disabled=true);}});
   trainerOrbit.connect(roundPanel.orbit, () => roundPanel.getViewModel());
   roundPanel.setActive(true);
+  const settingsControls = mountTrainerSettings($('.pll-settings'));
   refreshStats(); renderAnswers(); newTrial();
 
   return {
@@ -469,7 +473,7 @@ export function createPLLTrainer(root) {
     },
     handleKey(event) { onKey(event); },
     updateHelp() {},
-    destroy() { disposed = true; active = false; roundPanel.destroy(); trainerOrbit?.destroy(); stopClock(); window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange); window.removeEventListener('keydown', onKey); disposeCaseColorControl(); cube?.destroy(); root.replaceChildren(); },
+    destroy() { disposed = true; active = false; roundPanel.destroy(); trainerOrbit?.destroy(); stopClock(); window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange); window.removeEventListener('keydown', onKey); disposeCaseColorControl(); settingsControls.destroy(); cube?.destroy(); root.replaceChildren(); },
   };
 }
 

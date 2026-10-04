@@ -16,6 +16,8 @@ test('one glimpse, three immediate inputs, no interim reveal or feedback', async
   await startRecall(page);
   await expect(page.locator('#glance-toggle')).toBeChecked();
   await expect(page.locator('#glance-toggle')).toBeDisabled();
+  await expect(page.locator('#glance-toggle + .trainer-settings-control [role="switch"]')).toBeDisabled();
+  await expect(page.locator('#glance-toggle + .trainer-settings-control [role="switch"]')).toHaveAttribute('aria-checked', 'true');
   await page.keyboard.press('w');
   await expect(page.locator('#case-mode')).toContainText('1/3');
   expect(await history(page)).toHaveLength(0);
@@ -66,6 +68,8 @@ test('switching drill during recall cancels its cover timer; controls fit mobile
   await page.clock.runFor(1000);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('#glance-toggle')).toBeEnabled();
+  await expect(page.locator('#glance-toggle + .trainer-settings-control [role="switch"]')).toBeEnabled();
+  await expect(page.locator('#glance-toggle + .trainer-settings-control [role="switch"]')).toHaveAttribute('aria-checked', 'false');
   await expect(page.locator('#glance-toggle')).not.toBeChecked();
   expect(await history(page)).toHaveLength(0);
 });

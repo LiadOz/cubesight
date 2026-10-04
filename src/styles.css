@@ -51,7 +51,8 @@ h1 { margin: 0; font-size: 31px; letter-spacing: -1.2px; line-height: 1.2; font-
 .cube-mount svg { width: min(100%,520px); height: auto; overflow: visible; }
 .cube-mount canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
 .cube-mount canvas[data-rotation="limited-horizontal"]:active { cursor: grabbing !important; }
-.cube-mount.glance-mask > canvas, .cube-mount.glance-mask > svg { visibility: hidden; }
+.cube-mount.glance-mask > canvas, .cube-mount.glance-mask > svg,
+.cube-mount.glance-mask > .shared-cube { visibility: hidden; }
 .corner-result { position: absolute; z-index: 4; top: 54px; right: 24px; max-width: calc(100% - 48px); padding: 9px 13px; border: 2px solid #55d88b; border-radius: 9px; background: #f8f7f1; color: #155b38; box-shadow: 0 8px 24px #0005; font: 700 12px/1.35 var(--mono); pointer-events: none; animation: corner-result-flash .7s ease-out both; }
 .corner-result.is-wrong { border-color: #ff625a; color: #a9342d; animation-duration: 1.05s; }
 @keyframes corner-result-flash { 0% { opacity: 0; transform: translateY(-8px) scale(.94); } 13%, 72% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-4px) scale(.98); } }

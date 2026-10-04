@@ -32,6 +32,7 @@ import { createPageCube } from './pages/cube-view.js';
 import { createHelpPage } from './help/index.js';
 import { createTrainerOrbit } from './trainers/orbit-round.js';
 import { mountCaseColorControl } from './trainers/case-color-control.js';
+import { mountTrainerSettings } from './trainers/settings-controls.js';
 import initWasm, { f2l_case as wasmF2LCase } from './wasm/cubesight_core.js';
 import { createF2LCase, createF2LCaseFromWasm, createF2LCaseFromCubeState, createPseudoScanCase, createPinnedPseudoScanCase, colorNeutralOrientation } from './f2l-logic.js';
 import { solveCross } from './cross-solver.js';
@@ -469,6 +470,8 @@ const cornerTrainerOrbit = createTrainerOrbit(document.querySelector('#corner-vi
 const f2lTrainerOrbit = createTrainerOrbit(document.querySelector('#f2l-view .cube-stage'));
 mountCaseColorControl(document.querySelector('#corner-view .intro-row'));
 mountCaseColorControl(document.querySelector('#f2l-view .intro-row'));
+const cornerSettings = mountTrainerSettings(document.querySelector('#corner-view .training-settings'));
+const f2lSettings = mountTrainerSettings(document.querySelector('#f2l-view .training-settings'));
 
 function legacyTrainerViewModel(tool) {
   const roundPanelModel = legacyRounds[tool]?.getViewModel?.() || null;
@@ -492,7 +495,7 @@ function legacyTrainerViewModel(tool) {
     ? current?.displayColorMap || createCaseDisplayMap(orientation, readCaseColorSetting(), `f2l-planner:${f2lState.caseNumber}`)
     : {};
   return { screen: 'trainer', drill: 'f2l', phase: f2lState.locked ? 'feedback' : current || planner ? 'recognition' : 'idle',
-    currentCase: current || planner ? { id: current?.id || `f2l-planner:${f2lState.caseNumber}`, seed: `f2l:${current?.id || f2lState.caseNumber}`, topColor: orientation?.U ? displayColorKey(orientation.U, displayMap) : null, orientation: displayMap, targets: current?.targetPairIds || planner?.choices?.map(choice => choice.slot) || null } : null,
+    currentCase: current || planner ? { number: f2lState.caseNumber, id: current?.id || `f2l-planner:${f2lState.caseNumber}`, seed: `f2l:${current?.id || f2lState.caseNumber}`, topColor: orientation?.U ? displayColorKey(orientation.U, displayMap) : null, orientation: displayMap, targets: current?.targetPairIds || planner?.choices?.map(choice => choice.slot) || null } : null,
     answers: planner ? buttons.map(button => { const choice = planner.choices[Number(button.dataset.plannerChoice)]; return { logicalKey: choice?.slot, displayKey: choice ? plannerPairLabel(choice, planner.orientation) : '', label: button.querySelector('strong')?.textContent || '', selected: Number(button.dataset.plannerChoice) === planner.answer, correct: choice?.weight === planner.choices[0]?.weight }; }) : selectable.map(id => ({ logicalKey: id, displayKey: id, label: id, selected: f2lState.selected === id, correct: f2lState.matchedPieces?.includes?.(id) || matchedPieces().includes(id) })),
     round: roundPanelModel, cube: f2lCube3D?.getSnapshot?.() || null, feedback: document.querySelector('#f2l-status')?.textContent || '', settings: { mode: f2lState.drill, scanDuration: f2lState.scanDuration, pseudo: f2lState.scanPseudo, plannerShiftD: f2lState.plannerShiftD, caseColor: readCaseColorSetting() } };
 }
@@ -746,6 +749,7 @@ function cubeTargetData(item) {
 }
 
 function renderCurrentCase() {
+  cornerSettings.sync();
   const current = state.current;
   const active = activeTarget();
   const caseColorSetting = readCaseColorSetting();
@@ -830,6 +834,7 @@ function syncExposureSelect() {
     select.append(option);
   }
   select.value = value;
+  cornerSettings.sync();
   try { localStorage.setItem('cubesight-corner-exposure-ms', value); } catch { /* Keep the current pace for this page. */ }
 }
 
@@ -1304,6 +1309,7 @@ function renderF2LControls() {
   document.querySelector('#f2l-scan-duration').value = String(f2lState.scanDuration);
   document.querySelector('#f2l-planner-choices').hidden = f2lState.drill !== 'planner';
   document.querySelector('#f2l-selection').hidden = f2lState.drill === 'planner';
+  f2lSettings.sync();
 }
 
 function recolorPlannerData(state, orientation, displayMap = {}) {

@@ -1,3 +1,4 @@
+import { chooseTrainerSetting, enableTrainerSetting } from './helpers/trainer-settings.js';
 import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 import { readFileSync } from 'node:fs';
 import { initSync, f2l_case } from '../src/wasm/cubesight_core.js';
@@ -8,6 +9,8 @@ let fixture;
 let pseudoFixture;
 const colorFaces = { white: 'U', yellow: 'D', green: 'F', blue: 'B', red: 'R', orange: 'L' };
 const colors = Object.keys(colorFaces);
+const f2lModel = page => page.evaluate(() => window.__cubesightLegacyTrainerHandles.f2l.getViewModel());
+const matchedCount = async page => (await f2lModel(page)).answers.filter(answer => answer.correct).length / 2;
 for (let seed = 1; seed < 200; seed++) {
   const bottom = colors[seed % colors.length];
   const current = createF2LCaseFromWasm(JSON.parse(f2l_case(BigInt(seed), colorFaces[bottom])), seed, 'neutral');
@@ -31,6 +34,7 @@ async function prepareF2L(page, selectedFixture = fixture) {
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
   await page.goto('/#/drills/f2l');
   await expect(page.locator('#f2l-cube canvas')).toBeVisible();
+  await page.locator('#f2l-view .training-settings > summary').click();
 }
 
 async function clickPiece(page, piece) {
@@ -58,8 +62,8 @@ async function clickPiece(page, piece) {
 test('glance shows the cube first, covers it, and times from reveal', async ({ page }) => {
   await page.clock.install();
   await page.goto('/#/drills/corners');
-  await page.locator('#exposure-select').selectOption('1500');
-  await page.locator('#glance-toggle').check();
+  await chooseTrainerSetting(page, 'exposure-select', '1500');
+  await enableTrainerSetting(page, 'glance-toggle');
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('#cube canvas')).toBeVisible();
   await page.clock.runFor(1_600);
@@ -89,12 +93,12 @@ test('F2L matches visible pieces without duplicate scoring during feedback', asy
   await clickPiece(page, a);
   await expect(page.locator('#f2l-selection')).toContainText(a);
   await clickPiece(page, b);
-  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect.poll(() => matchedCount(page)).toBe(1);
   await clickPiece(page, b);
-  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect.poll(() => matchedCount(page)).toBe(1);
   await expect(page.locator('#f2l-status')).toContainText('Find another');
   for (const piece of fixture.pairs[1]) await clickPiece(page, piece);
-  await expect(page.locator('#f2l-found')).toHaveText('2');
+  await expect.poll(() => matchedCount(page)).toBe(2);
 });
 
 test('F2L mistakes persist for inspection and continue explicitly', async ({ page }) => {
@@ -104,11 +108,11 @@ test('F2L mistakes persist for inspection and continue explicitly', async ({ pag
   await clickPiece(page, corner);
   await clickPiece(page, wrongEdge);
   await expect(page.locator('#f2l-status')).toContainText('Those do not match');
-  const caseNumber = await page.locator('#f2l-case-number').textContent();
+  const caseNumber = (await f2lModel(page)).currentCase.number;
   await page.waitForTimeout(1700);
-  await expect(page.locator('#f2l-case-number')).toHaveText(caseNumber);
+  expect((await f2lModel(page)).currentCase.number).toBe(caseNumber);
   await page.locator('#f2l-continue').click();
-  await expect(page.locator('#f2l-case-number')).not.toHaveText(caseNumber);
+  await expect.poll(async () => (await f2lModel(page)).currentCase.number).not.toBe(caseNumber);
 });
 
 test('F2L allows completing a partially selected pair after ten seconds', async ({ page }) => {
@@ -121,7 +125,7 @@ test('F2L allows completing a partially selected pair after ten seconds', async 
   await expect(page.locator('#pause-overlay')).toBeHidden();
   expect(await page.evaluate(() => JSON.stringify(localStorage))).toBe(before);
   await clickPiece(page, fixture.pairs[0][1]);
-  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect.poll(() => matchedCount(page)).toBe(1);
 });
 
 test('F2L correction inspection is not interrupted by the trial timeout', async ({ page }) => {
@@ -150,11 +154,11 @@ test('timed F2L scan scores matching pieces and keeps the limited camera', async
   await prepareF2L(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-f2l-drill="scan"]').click();
-  await page.locator('#f2l-scan-duration').selectOption('15');
+  await chooseTrainerSetting(page, 'f2l-scan-duration', '15');
   await expect(page.locator('#f2l-status')).toContainText('Tap start 15 s scan above the cube');
   await page.locator('#f2l-scan-start').click();
   for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
-  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect(page.locator('#f2l-timings')).toContainText('1 pairs');
   await expect(page.locator('#f2l-timings')).toHaveText(/\d+\.\d s ·/);
   await expect(page.locator('#f2l-cube canvas')).toHaveAttribute('data-rotation', 'limited-horizontal');
 });
@@ -164,11 +168,10 @@ test('timed scan accepts real touch taps on a phone-sized canvas', async ({ brow
   const page = await context.newPage();
   const finishCoverage = await beginCoverage(page, testInfo);
   await prepareF2L(page);
-  await page.locator('#f2l-view summary').tap();
   await page.locator('[data-f2l-drill="scan"]').click();
   await page.locator('#f2l-scan-start').tap();
   for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
-  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect(page.locator('#f2l-timings')).toContainText('1 pairs');
   await finishCoverage();
   await context.close();
 });
@@ -178,9 +181,8 @@ test('timed scan scores a pseudo pair with phone taps under a visible D offset',
   const page = await context.newPage();
   const finishCoverage = await beginCoverage(page, testInfo);
   await prepareF2L(page, pseudoFixture);
-  await page.locator('#f2l-view summary').tap();
   await page.locator('[data-f2l-drill="scan"]').tap();
-  await page.locator('#f2l-scan-pseudo').check();
+  await enableTrainerSetting(page, 'f2l-scan-pseudo');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'wasm-pseudo-scan');
   await expect(page.locator('#f2l-orientation')).toContainText(`${pseudoFixture.current.dShift} offset`);
@@ -188,7 +190,7 @@ test('timed scan scores a pseudo pair with phone taps under a visible D offset',
   const [, pair] = pseudoFixture.pairs[0];
   await clickPiece(page, pair.cornerPiece);
   await clickPiece(page, pair.edgePiece);
-  await expect(page.locator('#f2l-found')).toHaveText('1');
+  await expect(page.locator('#f2l-timings')).toContainText('1 pairs');
   await expect(page.locator('#f2l-status')).toContainText('Pseudo pair!');
   await finishCoverage();
   await context.close();
@@ -203,7 +205,7 @@ test('best-next-pair drill shows locally verified weighted choices', async ({ pa
   await page.locator('.planner-choice').nth(1).click();
   await expect.poll(() => page.locator('.planner-choice.best').count()).toBeGreaterThanOrEqual(1);
   await expect(page.locator('#f2l-timings')).toContainText('F/B = 5');
-  await page.locator('#planner-shift-d').check();
+  await enableTrainerSetting(page, 'planner-shift-d');
   await expect(page.locator('#f2l-view')).toHaveAttribute('data-case-source', 'verified-planner', { timeout: 25_000 });
   await expect(page.locator('#f2l-status')).toContainText('D layer starts shifted');
 });
@@ -211,8 +213,9 @@ test('best-next-pair drill shows locally verified weighted choices', async ({ pa
 test('opening help pauses the trial until explicit resume', async ({ page }) => {
   await page.goto('/#/drills/corners');
   await page.getByRole('button', { name: 'help' }).click();
-  await expect(page.locator('#help-view')).toBeVisible();
-  await page.getByRole('link', { name: 'return to corner recognition' }).click();
+  await expect(page.locator('.ui-cube-menu__drawer:has(.help-page)')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page).toHaveURL(/#\/drills\/corners$/);
   await expect(page.locator('#pause-overlay')).toBeVisible();
   await page.getByRole('button', { name: 'resume', exact:true }).click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
@@ -250,8 +253,10 @@ test.describe('phone touch layout', () => {
       const box = await button.boundingBox();
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
-    await page.locator('[data-color="white"]').tap();
-    await expect(page.locator('#case-number')).toHaveText('case 2');
+    const current = await page.evaluate(() => window.__cubesightLegacyTrainerHandles.corner.getViewModel());
+    const answer = current.answers.find(option => option.correct).displayKey;
+    await page.locator(`[data-color="${answer}"]`).tap();
+    await expect.poll(() => page.evaluate(() => window.__cubesightLegacyTrainerHandles.corner.getViewModel().currentCase.seed)).not.toBe(current.currentCase.seed);
     await page.locator('#corner-view .training-settings > summary').tap();
     await page.locator('[data-mode="triple"]').tap();
     await expect(page.locator('#corner-sequence')).toBeVisible();
@@ -261,8 +266,7 @@ test.describe('phone touch layout', () => {
   test('F2L pairs respond to real touch taps and CN drill controls fit', async ({ page }) => {
     await prepareF2L(page);
     for (const piece of fixture.pairs[0]) await clickPiece(page, piece);
-    await expect(page.locator('#f2l-found')).toHaveText('1');
-    await page.locator('#f2l-view summary').tap();
+    await expect.poll(() => matchedCount(page)).toBe(1);
     await expect(page.locator('[data-f2l-drill="scan"]')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   });

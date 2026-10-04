@@ -1,5 +1,9 @@
 /* Mono style (design A): linear timeline, inspection lane, results. */
 
+.brain[data-brain-style="mono"] > .b-configbar { gap: 4px; max-width: 100%; padding: 0; background: none; }
+.brain[data-brain-style="mono"] > .b-configbar .chip { --hc: 32px; padding-inline: 6px; font-size: 11px; }
+.brain[data-brain-style="mono"] > .b-configbar .b-sep { width: 8px; font-size: 0; }
+
 /* --- Timeline ------------------------------------------------------------ */
 .m-tl { width: 100%; }
 .m-tl-insp { color: var(--b-faint); font-size: 12px; height: 16px; }

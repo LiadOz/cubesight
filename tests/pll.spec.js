@@ -1,3 +1,4 @@
+import { enableTrainerSetting } from './helpers/trainer-settings.js';
 import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 
 async function openPLL(page) {
@@ -45,7 +46,7 @@ test('PLL errors become a contrastive retry only after two intervening answers',
 test('PLL adaptive glance is accuracy-gated and slow attempts stay usable without being logged', async ({ page }) => {
   await openPLL(page);
   await page.locator('.pll-settings > summary').click();
-  await page.locator('#pll-glance').check();
+  await enableTrainerSetting(page, 'pll-glance');
   await page.locator('.pll-settings > summary').click();
   for (let index = 0; index < 10; index += 1) {
     await answerCurrent(page, true);

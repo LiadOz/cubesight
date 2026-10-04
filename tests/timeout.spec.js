@@ -1,3 +1,4 @@
+import { enableTrainerSetting } from './helpers/trainer-settings.js';
 import { test, expect } from './helpers/coverage-test.js';
 
 const savedProgress = page => page.evaluate(() => Object.fromEntries(Object.entries(localStorage).filter(([key]) => key !== 'cubesight-theme')));
@@ -6,7 +7,7 @@ test('ten-second corner trials pause without logging or changing adaptive pace',
   await page.clock.install();
   await page.goto('/#/drills/corners');
   await page.locator('#corner-view .training-settings > summary').click();
-  await page.locator('#glance-toggle').check();
+  await enableTrainerSetting(page, 'glance-toggle');
   const firstCase = await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.currentCase.seed);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   const before = await savedProgress(page);

@@ -173,9 +173,20 @@
 @media (max-width: 700px) {
   :root:has(.legacy-drill-view:not([hidden])) .legacy-drill-view:is(#corner-view, #f2l-view) .brain.quick-round { padding: 0; margin-bottom: 4px; }
   :root:has(.legacy-drill-view:not([hidden])) .legacy-drill-view:is(#corner-view, #f2l-view) .intro-row { gap: 10px; padding: 4px 0; }
-  .legacy-drill-view:is(#corner-view, #f2l-view) .intro-row h1 { white-space: nowrap; font-size: 20px; }
+  .legacy-drill-view:is(#corner-view, #f2l-view) .intro-row h1 { white-space: nowrap; font-size: clamp(16px, 5vw, 20px); }
   :root:has(#corner-view:not([hidden])) #corner-view .answer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   :root:has(#corner-view:not([hidden])) #corner-view .answer-button { font-size: 11px; }
   :root:has(#corner-view:not([hidden])) #corner-view .feedback-line { margin-top: 6px; padding-top: 0; border: 0; }
   .legacy-drill-view:is(#corner-view, #f2l-view) .trainer-progress-details { margin: 6px 0 0; }
 }
+
+.trainer-settings-control { display: inline-block; max-width: 100%; }
+.trainer-settings-control .ui-field__label { display: none; }
+.trainer-settings-control .sel { min-width: 130px; width: auto; }
+.trainer-settings-control .sel__btn { min-height: 40px; }
+.legacy-drill-view .trainer-settings-control .sw { min-height: 44px; }
+.legacy-drill-view:is(#corner-view, #f2l-view, #pll-view) :is(.segmented, .pll-segmented) { flex-wrap: wrap; border: 0; background: transparent; }
+.legacy-drill-view:is(#corner-view, #f2l-view, #pll-view) :is(.segment.chip, .pll-segment.chip) { border-radius: var(--b-radius-control); background: var(--k-bg); color: var(--k-ink); border-color: var(--k-bd); box-shadow: none; }
+.legacy-drill-view:is(#corner-view, #f2l-view, #pll-view) :is(.segment.chip, .pll-segment.chip)[aria-pressed="true"] { background: var(--s-bg); color: var(--s-ink); border-color: var(--s-bd); }
+
+.legacy-drill-view[data-brain-style] :is(.training-settings, .pll-settings, .trainer-progress-details, .pll-progress-details) { border: 0; background: transparent; box-shadow: none; }

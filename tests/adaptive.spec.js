@@ -1,3 +1,4 @@
+import { chooseTrainerSetting, enableTrainerSetting } from './helpers/trainer-settings.js';
 import { test, expect } from './helpers/coverage-test.js';
 
 test.setTimeout(35_000);
@@ -7,7 +8,7 @@ async function settings(page, open) {
 }
 async function pacing(page, value) {
   await settings(page, true);
-  await page.locator('#exposure-mode').selectOption(value);
+  await chooseTrainerSetting(page, 'exposure-mode', value);
   await settings(page, false);
 }
 async function mode(page, value) {
@@ -35,8 +36,8 @@ async function startGlance(page, exposure = '1500') {
   await page.clock.install();
   await page.goto('/#/drills/corners');
   await settings(page, true);
-  await page.locator('#exposure-select').selectOption(exposure);
-  await page.locator('#glance-toggle').check();
+  await chooseTrainerSetting(page, 'exposure-select', exposure);
+  await enableTrainerSetting(page, 'glance-toggle');
   await settings(page, false);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', /^(visible|covered)$/, { timeout: 4_000 });
 }
@@ -61,13 +62,14 @@ test('Adaptive glance eases slower after ten skipped outcomes', async ({ page })
   for (let i = 0; i < 10; i++) await skipAndWait(page);
 
   await expect(page.locator('#exposure-select')).toHaveValue('700');
+  await expect(page.locator('#exposure-select + .trainer-settings-control [role="combobox"]')).toHaveText('700 ms');
   await expect(page.locator('#exposure-note')).toContainText('adaptive glance · 700 ms');
 });
 
 test('Changing pacing mode resets adaptive evidence progress', async ({ page }) => {
   await startGlance(page, '1500');
   await settings(page, true);
-  await page.locator('#exposure-select').selectOption('600');
+  await chooseTrainerSetting(page, 'exposure-select', '600');
   await settings(page, false);
 
   for (let i = 0; i < 3; i++) await skipAndWait(page);

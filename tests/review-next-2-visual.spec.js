@@ -67,7 +67,7 @@ for (const style of ['orbit', 'mono']) for (const theme of ['dark', 'light']) fo
     if (width === 1280) {
       const config = solve.locator('.b-configbar:visible').first();
       await expect(config).toBeVisible();
-      const rows = await config.locator('button').evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().top)));
+      const rows = await config.locator('button:visible').evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().top)));
       expect(rows.length).toBeGreaterThan(0);
       expect(Math.max(...rows) - Math.min(...rows)).toBeLessThanOrEqual(2);
       await expect(config.locator('[data-setting="stats.source"]')).toHaveCount(0);

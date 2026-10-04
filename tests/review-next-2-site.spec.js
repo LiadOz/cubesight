@@ -21,9 +21,9 @@ test('solve settings stay on one desktop line and unknown routes have a styled r
         await expect(brain).toHaveAttribute('data-brain-style', style);
         const quickBar = page.locator('#brain-view .brain > .b-configbar');
         await expect(quickBar.locator('[data-setting="stats.source"]')).toHaveCount(0);
-        await expect(page.locator('#brain-view .b-results-source select')).toHaveCount(1);
+        await expect(page.locator('#brain-view [data-setting="stats.source"]')).toHaveCount(3);
         if (viewport.name === 'desktop') {
-          const rowTops = await quickBar.locator('button').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().top));
+          const rowTops = await quickBar.locator('button:visible').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().top));
           expect(Math.max(...rowTops) - Math.min(...rowTops)).toBeLessThan(3);
         } else {
           const dimensions = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
@@ -32,14 +32,19 @@ test('solve settings stay on one desktop line and unknown routes have a styled r
         await page.screenshot({ path: path.join(output, `solve-${style}-${theme}-${viewport.name}.png`), fullPage: true });
 
         // The relocated source choice remains available and persists in settings.
-        await page.locator('#brain-view .brain-pill-setup').evaluate(details => { details.open = true; });
+        await page.locator('#brain-view .brain-pill-setup > summary').click();
         const allSource = page.locator('#brain-view [data-setting="stats.source"][data-value="all"]');
         await expect(allSource).toBeVisible();
         await allSource.click();
         await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-brain-settings-v2')).stats.source)).toBe('all');
-        await page.locator('#brain-view #brain-review').evaluate(review => { review.hidden = false; });
-        await page.locator('#brain-results-source').selectOption('smart');
+        const smartSource = page.locator('#brain-view [data-setting="stats.source"][data-value="smart"]');
+        await smartSource.click();
+        await expect(smartSource).toHaveAttribute('aria-pressed', 'true');
         await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-brain-settings-v2')).stats.source)).toBe('smart');
+
+        await page.reload();
+        await page.locator('#brain-view .brain-pill-setup > summary').click();
+        await expect(page.locator('#brain-view [data-setting="stats.source"][data-value="smart"]')).toHaveAttribute('aria-pressed', 'true');
 
         await page.goto('/#/drills/cross?from=matrix');
         const missing = page.locator('#not-found-view');
