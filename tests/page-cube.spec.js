@@ -17,7 +17,11 @@ for (const [path, view] of [['/drills', 'drills'], ['/progress', 'progress']]) {
         await expect(pageCanvases).toHaveCount(1);
         await canvas.evaluate(node => { window.__pageHeroCanvas = node; });
 
-        if (view === 'progress') await page.getByLabel('solve source', { exact: true }).selectOption('all');
+        if (view === 'progress') {
+          await page.getByRole('combobox', { name: 'solve source', exact: true }).click();
+          await page.getByRole('option', { name: 'all solves', exact: true }).click();
+          await expect(page.getByRole('combobox', { name: 'solve source', exact: true })).toContainText('all solves');
+        }
         else await page.evaluate(() => document.dispatchEvent(new Event('cubesight-theme')));
         expect(await canvas.evaluate(node => node === window.__pageHeroCanvas)).toBe(true);
         await expect(pageCanvases).toHaveCount(1);

@@ -116,6 +116,7 @@
 .brain[data-brain-style="orbit"].is-timer-hidden .b-clock { visibility: visible; font-size: 32px; }
 .brain[data-brain-style="orbit"][data-screen="scramble"] .b-clock { display: none; }
 .brain[data-brain-style="orbit"] .brain-stage > .b-steptitle { display: none; }
+.brain[data-brain-style="orbit"][data-screen="solving"] .brain-stage > .b-steptitle { display: none; }
 .brain[data-brain-style="orbit"][data-screen="scramble"] .brain-stage > .b-steptitle { display: block; font: 600 56px var(--b-font-mono); }
 .brain[data-brain-style="orbit"] .b-steptitle:not(:has(strong:empty)) { order: 21; display: flex; align-items: center; gap: 26px; margin-bottom: 30px; color: var(--b-ink); font: 700 var(--b-fs-step) var(--b-font-sans); }
 .brain[data-brain-style="orbit"] .b-tag { padding: 6px 12px; border-radius: 999px; background: var(--b-accent-soft); color: var(--b-accent-text); font: 400 14px var(--b-font-mono); }
@@ -203,3 +204,7 @@
 }
 
 .brain[data-brain-style="orbit"] .b-rev-detail:not([hidden]) { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(460px, 100vw); overflow-y: auto; align-content: start; padding: 24px; border: 0; border-radius: 0; background: var(--b-bg); box-shadow: -12px 0 40px #0004; }
+
+/* A bright full-length track would conceal the live remaining/fill arc. */
+.brain[data-brain-style="orbit"][data-screen="inspection"] .orbit__segment-track,
+.brain[data-brain-style="orbit"][data-screen="solving"] .orbit__segment.is-current .orbit__segment-track { stroke: var(--b-track); stroke-width: 4; }

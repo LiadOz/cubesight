@@ -657,6 +657,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'toggleSettings': settingsOpen = !settingsOpen; render(); break;
       case 'toggleDebug': {
         debugOpen = !debugOpen;
+        if (debugOpen) settingsOpen = false;
         if (debugOpen) pendingLog ??= getConnectionLog();
         render();
         if (debugOpen) paintConnectionLog();

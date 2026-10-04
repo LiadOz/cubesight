@@ -1,7 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inspection } from '../src/brain/styles/orbit/_dev-fixtures.js';
-import { inspectionSegments, inspectionMarkers } from '../src/brain/styles/orbit/inspection-orbit.js';
+import { inspectionSegments, inspectionMarkers, inspectionCaret } from '../src/brain/styles/orbit/inspection-orbit.js';
+import { ringLayout } from '../src/ui/orbit/geometry.js';
+
+test('inspection shows remaining time and keeps the caret at its draining edge', () => {
+  for (const elapsedMs of [0, 8000, 12000, 15000]) {
+    const vm = inspection({ elapsedMs });
+    const segments = inspectionSegments(vm), normal = segments[0];
+    assert.equal(normal.fill, 1 - elapsedMs / 15000);
+    assert.equal(normal.fillOffset, elapsedMs / 15000);
+    assert.equal(normal.caretPosition, elapsedMs / 15000);
+    if (elapsedMs < 15000) {
+      const arc = ringLayout(segments, { gapDeg: 2.5, startDeg: 145, sweepDeg: 290, direction: 'counterclockwise' })[0];
+      assert.equal(inspectionCaret(vm), arc.from + (arc.to - arc.from) * elapsedMs / 15000);
+    }
+  }
+});
 
 test('custom grace stays on the dial before its penalty becomes active', () => {
   const vm = inspection({ overtime: 'grace', graceMs: 3000, elapsedMs: 16600 });

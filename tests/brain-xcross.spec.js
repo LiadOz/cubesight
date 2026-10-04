@@ -1,11 +1,12 @@
 import { test, expect } from './helpers/coverage-test.js';
+import { mkdir } from 'node:fs/promises';
 
 // X-cross is an opportunity, not a stage: the timeline always plans the cross
 // and four pairs; when the cross completes together with a pair the cross
 // segment is tagged, the merged pair is done at the same moment (not a skip),
 // and the coach and a toast celebrate it.
 const STYLES = ['orbit', 'mono'];
-const SEGMENTS = '#brain-timeline :is(.m-seg, .b-oring-seg)';
+const SEGMENTS = '#brain-timeline :is(.m-seg, .orbit__segment)';
 
 // Solving "B R B2 R' F2 R F2 B2": after "B R" the cross is complete together with one F2L pair (found by search).
 const SCRAMBLE = "B2 F2 R' F2 R B2 R' B'";
@@ -41,7 +42,8 @@ async function mountTestBrain(page, style) {
     const root = document.createElement('div');
     root.id = 'brain-test';
     document.body.append(root);
-    await createBrain(root, session).ready;
+    window.testBrain.brain = createBrain(root, session);
+    await window.testBrain.brain.ready;
     await session.connect();
   }, style);
 }
@@ -53,7 +55,7 @@ for (const style of STYLES) {
     page.on('pageerror', error => errors.push(error.message));
     await mountTestBrain(page, style);
     const brain = page.locator('#brain-test');
-    const states = () => page.evaluate(sel => Object.fromEntries([...document.querySelectorAll(sel)].map(el => [el.dataset.key, el.dataset.state])), SEGMENTS);
+    const states = () => page.evaluate(sel => Object.fromEntries([...document.querySelectorAll(sel)].map(el => [el.dataset.key, el.dataset.state ?? [...el.classList].find(name => name.startsWith('is-'))?.slice(3)])), SEGMENTS);
 
     // No cross target anywhere: the bar, the panel and the command line.
     await expect(brain.locator('[data-setting="cross"]')).toHaveCount(0);
@@ -63,7 +65,7 @@ for (const style of STYLES) {
     await brain.locator('#brain-start-custom').click();
     await page.evaluate(s => window.testBrain.emitTurns(s), SCRAMBLE);
     await expect(brain.locator('#brain-phase-label')).toHaveText('inspection');
-    expect(Object.keys(await states())).toEqual(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
+    expect(await page.evaluate(() => window.testBrain.brain.getViewModel().timeline.segments.map(segment => segment.key))).toEqual(['cross', 'pair1', 'pair2', 'pair3', 'pair4', 'eo', 'co', 'cp', 'ep']);
 
     // "B R": crosses complete on two faces at once (D with one pair, B with two).
     // The cross locks to the face with more solved pairs (the same rule as
@@ -76,9 +78,17 @@ for (const style of STYLES) {
     await expect(brain.locator('.b-toast')).toContainText('x-cross');
     const tags = await brain.locator(`${SEGMENTS}[data-key="cross"]`).evaluate((node, style) => {
       if (style === 'mono') return node.querySelector('.m-seg-tags').textContent;
-      return [...document.querySelectorAll('.b-oring-name')].map(n => n.textContent).join('|');
+      return node.getAttribute('aria-label');
     }, style);
     expect(tags).toContain('x-cross');
+    if (style === 'orbit') {
+      await expect(brain.locator('.orbit__label[data-label-for="cross"]')).toContainText('x-cross');
+      if (await brain.getByRole('button', { name: 'close settings', exact: true }).isVisible()) {
+        await brain.getByRole('button', { name: 'close settings', exact: true }).click();
+      }
+      await mkdir('test-results/xcross', { recursive: true });
+      await brain.screenshot({ path: 'test-results/xcross/orbit-live-tag.png' });
+    }
 
     // Finish the solve: the stored splits keep the merged pair out of the skips.
     await page.evaluate(s => window.testBrain.emitTurns(s), "B2 R' F2 R F2 B2");

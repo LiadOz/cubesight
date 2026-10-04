@@ -48,6 +48,11 @@ const TEMPLATE = `
             </details>
             <form class="b-command" autocomplete="off"><label><kbd>type</kbd><input name="command" placeholder="“insp 10” · “oll 1” · “style orbit”" aria-label="Settings command"></label></form>
           </section>
+          <section class="b-settings-section b-settings-tools" aria-label="Developer tools">
+            <h3><span>dev</span></h3>
+            <button class="b-textbtn" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">rebuild view</button>
+            <button class="b-textbtn" id="brain-debug-toggle" type="button" aria-expanded="false" aria-controls="brain-debug" title="Connection log and settings"><span>dev</span><kbd>\`</kbd></button>
+          </section>
         </div>
       </details>
       <a class="b-tab b-tab-timer" href="#/timer">manual timer</a>
@@ -119,10 +124,6 @@ const TEMPLATE = `
     <div class="b-keys"></div>
     <p id="brain-error" class="brain-error" role="alert" hidden></p>
     <div class="b-sr" aria-live="polite"><h2 id="brain-phase-label">connect cube</h2><p id="brain-phase-detail" class="brain-phase-detail"></p></div>
-    <div class="b-foot-tools">
-      <button class="b-textbtn" id="brain-rebuild-view" type="button" title="Rebuild this view without reloading (keeps the cube connected)">rebuild view</button>
-      <button class="b-textbtn" id="brain-debug-toggle" type="button" aria-expanded="false" aria-controls="brain-debug" title="Connection log and settings"><span>dev</span><kbd>\`</kbd></button>
-    </div>
   </div>
   <aside class="b-debug" id="brain-debug" role="dialog" aria-label="dev" hidden>
     <div class="b-panel-head"><h2>dev</h2><button class="b-textbtn b-close" type="button" data-action="toggleDebug" aria-label="close dev"><span>close</span><kbd>esc</kbd></button></div>

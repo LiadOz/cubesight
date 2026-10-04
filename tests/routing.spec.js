@@ -7,6 +7,7 @@ test('exposes the installed build and a network version marker', async ({ page, 
   expect(response.ok()).toBe(true);
   const server = await response.json();
   await page.goto('/#/help');
+  await page.getByRole('link', { name: 'build and credits', exact: true }).click();
   await expect(page.locator('[data-help-build]')).toHaveText(server.revision === 'development' ? server.revision : server.revision.slice(0, 7));
   await page.locator('[data-help-update]').click();
   await expect(page.locator('[data-help-update-status]')).toContainText('is current');
@@ -34,7 +35,7 @@ for (const [path, tool, nav, title] of routes) {
   test(`#/${path} supports direct links and refresh`, async ({ page }) => {
     await page.goto(`/?source=bookmark#/${path}`);
     for (let i = 0; i < 2; i++) {
-      await expect(page.locator(`#${tool}-view`)).toBeVisible();
+      await expect(tool === 'help' ? page.getByRole('dialog', { name: 'help', exact: true }) : page.locator(`#${tool}-view`)).toBeVisible();
       if (nav) await expect(page.getByRole('link', { name: nav, exact: true })).toHaveAttribute('aria-current', 'page');
       else await expect(page.locator('.main-nav [aria-current]')).toHaveCount(0);
       await expect(page).toHaveTitle(`${title} · CubeSight`);
@@ -64,11 +65,11 @@ for (const [oldPath, newPath, tool] of redirects) {
   test(`old #/${oldPath} redirects to #/${newPath}, keeping query parameters`, async ({ page }) => {
     await page.goto(`/?source=test#/${oldPath}?cases=Aa,Ab&mode=mix`);
     await expect(page).toHaveURL(new RegExp(`\\?source=test#/${newPath}\\?cases=Aa,Ab&mode=mix$`));
-    await expect(page.locator(`#${tool}-view`)).toBeVisible();
+    await expect(tool === 'help' ? page.getByRole('dialog', { name: 'help', exact: true }) : page.locator(`#${tool}-view`)).toBeVisible();
     await page.goto(`/#/${oldPath}`);
     await page.reload();
     await expect(page).toHaveURL(new RegExp(`#/${newPath}$`));
-    await expect(page.locator(`#${tool}-view`)).toBeVisible();
+    await expect(tool === 'help' ? page.getByRole('dialog', { name: 'help', exact: true }) : page.locator(`#${tool}-view`)).toBeVisible();
   });
 }
 
@@ -118,6 +119,7 @@ test('unknown routes show recovery without dropping query parameters', async ({ 
 
 test('the solve screen debug drawer links to the studio', async ({ page }) => {
   await page.goto('/#/solve');
+  await page.locator('.brain-pill-setup > summary').click();
   await page.locator('#brain-debug-toggle').click();
   await expect(page.getByTestId('open-studio')).toBeVisible();
   await page.getByTestId('open-studio').click();

@@ -1,4 +1,5 @@
 // Pure inspection zones and ticks for the shared solve Orbit.
+import { ringLayout } from '../../../ui/orbit/geometry.js';
 export function inspectionSegments(inspection) {
   const limit = inspection.limitMs;
   const elapsed = inspection.elapsedMs ?? 0;
@@ -11,14 +12,28 @@ export function inspectionSegments(inspection) {
   return zones.map(zone => {
     const from = zone.fromMs ?? 0;
     const end = zone.toMs ?? scale;
-    const fill = Math.min(1, Math.max(0, (elapsed - from) / Math.max(1, end - from)));
+    const progress = Math.min(1, Math.max(0, (elapsed - from) / Math.max(1, end - from)));
+    const fill = zone.kind === 'normal' ? 1 - progress : progress;
     const active = elapsed >= from;
     const label = { normal: `${limit / 1000} s`, plus2: '+2', dnf: 'DNF', grace: 'grace', count: 'overtime' }[zone.kind];
     const state = !active ? 'future' : zone.kind === 'dnf' ? 'bad'
       : zone.toMs != null && elapsed >= end ? (zone.kind === 'plus2' ? 'bad' : 'done')
       : zone.kind === 'plus2' ? 'wrong' : 'current';
-    return { key: zone.kind === 'normal' ? 'inspection' : zone.kind, fromMs: from, toMs: end, label, weight: Math.max(.04, (end - from) / scale), fill, state, importance: zone.kind === 'normal' ? 100 : 90 };
+    return { key: zone.kind === 'normal' ? 'inspection' : zone.kind, fromMs: from, toMs: end, label, weight: Math.max(.04, (end - from) / scale), fill,
+      ...(zone.kind === 'normal' ? { fillOffset: progress, caretPosition: progress } : {}),
+      state, importance: zone.kind === 'normal' ? 100 : 90 };
   });
+}
+
+export function inspectionCaret(inspection) {
+  const segments = inspectionSegments(inspection);
+  const layout = ringLayout(segments, { gapDeg: 2.5, startDeg: 145, sweepDeg: 290, direction: 'counterclockwise' });
+  const elapsed = inspection.elapsedMs ?? 0;
+  const index = Math.max(0, segments.findLastIndex(segment => elapsed >= (segment.fromMs ?? 0)));
+  const segment = segments[index], arc = layout[index];
+  const position = segment.fromMs == null ? inspection.caret ?? elapsed / 60000
+    : Math.min(1, Math.max(0, (elapsed - segment.fromMs) / Math.max(1, segment.toMs - segment.fromMs)));
+  return arc.from + (arc.to - arc.from) * position;
 }
 
 export function inspectionMarkers(inspection) {
@@ -32,4 +47,3 @@ export function inspectionMarkers(inspection) {
     return { key: `inspection-${tick.kind}-${tick.atMs}`, segment: key, position: Math.min(1, Math.max(0, (tick.atMs - from) / Math.max(1, duration))), label: tick.label, tone: 'good', type: 'tick' };
   });
 }
-

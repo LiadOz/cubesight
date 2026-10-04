@@ -52,6 +52,8 @@ test('solve keeps its Orbit and dial slot through the real flow', async ({ page 
   await fits();
   await page.evaluate(() => window.testBrain.emitTurns("F'"));
   await expect(brain).toHaveAttribute('data-screen', 'solving');
+  await expect(brain.locator('.brain-stage > .b-steptitle')).toBeHidden();
+  await expect(brain.locator('.brain-stage > .b-clock')).toBeVisible();
   await fits();
   await page.evaluate(() => window.testBrain.emitTurns('F'));
   await solveReverse(page, scramble);

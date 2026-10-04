@@ -1,7 +1,9 @@
 // The solve's one Orbit. Its segments change meaning with the solve state;
 // the shared Cube and this SVG stay mounted for the page lifetime.
 import { Orbit } from '../../../ui/orbit/index.js';
-import { inspectionSegments, inspectionMarkers } from './inspection-orbit.js';
+import { inspectionSegments, inspectionMarkers, inspectionCaret } from './inspection-orbit.js';
+
+const stageLabel = segment => [segment.label, ...(segment.tags ?? []).filter(tag => /x-cross/.test(tag))].join(' · ');
 
 const moveSegments = scramble => {
   const moves = scramble?.moves ?? [];
@@ -40,7 +42,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
     if (vm.screen === 'inspection') {
       const i = vm.inspection;
       const ticks = inspectionMarkers(i);
-      return { shape: 'open', gap: 70, segments: inspectionSegments(i), markers: ticks, direction: 'counterclockwise', caret: 145 - (i?.caret ?? 0) * 290 };
+      return { shape: 'open', gap: 70, segments: inspectionSegments(i), markers: ticks, direction: 'counterclockwise', caret: inspectionCaret(i) };
     }
     const timeline = vm.timeline;
     const results = vm.screen === 'results' ? vm.results : null;
@@ -50,13 +52,13 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
       const splitValue = results ? (segment.skipped ? 'skip' : segment.splitText) : segment.state === 'skipped' ? 'skip' : segment.state === 'done' ? segment.splitText : '';
       return {
         key: segment.key,
-        label: caseInfo ? `${segment.label} · ${caseInfo.name}` : segment.label,
+        label: caseInfo ? `${stageLabel(segment)} · ${caseInfo.name}` : stageLabel(segment),
         value: splitValue || undefined,
         delta: results && segment.delta?.text ? segment.delta.text : undefined,
         weight: segment.weight,
         fill: segment.fill,
         state: segment.state === 'skipped' ? 'skipped' : segment.state,
-        importance: segment.state === 'current' ? 100 : 10,
+        importance: segment.state === 'current' ? 100 : (segment.tags ?? []).some(tag => /x-cross/.test(tag)) ? 80 : 10,
         ariaLabel: caseInfo ? `${segment.label} · ${caseInfo.name}${caseInfo.recognitionMs != null ? ` · recog ${(caseInfo.recognitionMs / 1000).toFixed(2)} s` : ''}${caseInfo.executionMs != null ? ` · exec ${(caseInfo.executionMs / 1000).toFixed(2)} s` : ''}` : undefined,
         selectable: Boolean(results),
         caseKey: caseInfo ? (/^pair\d$/.test(segment.key) ? segment.key : caseInfo.kind) : undefined,
@@ -81,7 +83,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
         // is emitted only on state changes; without this frame refinement the
         // +2 and DNF arcs stayed visually empty after the normal zone expired.
         const segments = inspectionSegments({ ...lastInspection, elapsedMs: inspection.elapsedMs });
-        void orbit.update({ segments, markers: inspectionMarkers({ ...lastInspection, elapsedMs: inspection.elapsedMs }), caret: 145 - (inspection.caret ?? 0) * 290 }, { animate: false });
+        void orbit.update({ segments, markers: inspectionMarkers({ ...lastInspection, elapsedMs: inspection.elapsedMs }), caret: inspectionCaret({ ...lastInspection, ...inspection }) }, { animate: false });
       } else if (frameState?.currentFill != null && lastScreen === 'solving') {
         const segments = orbit.options.segments.map(segment => segment.state === 'current' ? { ...segment, fill: frameState.currentFill } : segment);
         void orbit.update({ segments }, { animate: false });
@@ -98,7 +100,7 @@ export function presentResultsOrbit(orbit, vm, { dispatch = () => {} } = {}) {
   const segments = (vm.timeline.segments ?? []).map(segment => {
     const info = segment.caseKey ? caseLinks[segment.caseKey] ?? caseLinks[segment.caseKey.split(':')[0]] : null;
     return {
-      key: segment.key, label: info ? `${segment.label} · ${info.name}` : segment.label,
+      key: segment.key, label: info ? `${stageLabel(segment)} · ${info.name}` : stageLabel(segment),
       value: segment.splitText || undefined, delta: segment.delta?.text || undefined,
       weight: segment.weight, fill: segment.fill, state: segment.state,
       importance: segment.state === 'done' ? 20 : 10, selectable: true,

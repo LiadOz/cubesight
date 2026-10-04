@@ -109,7 +109,8 @@ for (const style of STYLES) {
     expect(rows.below).toBeLessThan(60);
     await expect(brain.locator('#brain-debug-toggle')).toHaveAttribute('aria-expanded', 'false');
 
-    // The footer button and the backtick key open it; the log is painted; esc or close shuts it.
+    // Settings and the backtick key open it; the log is painted; esc or close shuts it.
+    await brain.locator('.brain-pill-setup > summary').click();
     await brain.locator('#brain-debug-toggle').click();
     await expect(drawer).toBeVisible();
     await expect(brain.locator('#brain-debug-toggle')).toHaveAttribute('aria-expanded', 'true');

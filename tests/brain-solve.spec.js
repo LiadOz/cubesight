@@ -38,15 +38,17 @@ async function mountTestBrain(page, style = 'orbit') {
     const root = document.createElement('div');
     root.id = 'brain-test';
     document.body.append(root);
-    await createBrain(root, session).ready;
+    window.testBrain.brain = createBrain(root, session);
+    await window.testBrain.brain.ready;
     await session.connect();
   }, style);
 }
 
 async function openBrainSettings(page, brain) {
   const settings = brain.locator('.brain-pill-setup');
-  if (!await settings.evaluate(node => node.open)) await page.keyboard.press(',');
+  if (!await page.evaluate(() => window.testBrain.brain.getViewModel().settings.open)) await settings.locator('summary').first().click();
   await expect(settings).toHaveJSProperty('open', true);
+  await expect(brain.getByRole('button', { name: 'close settings', exact: true })).toBeVisible();
 }
 
 // Regression: the first solving move after a guided scramble used to throw
@@ -104,12 +106,14 @@ test(`Brain survives the scramble-to-solve transition and tracks the solve (${st
   await page.waitForTimeout(300);
   expect(await storedSolves()).toBe(1);
   await brain.getByRole('button', { name: /next scramble/ }).last().click();
+  await expect(brain.locator('.brain')).toHaveAttribute('data-screen', 'scramble');
   await expect(brain.locator('#brain-generate')).toBeEnabled();
 
   // Reset view rebuilds the Brain in place: the old WebGL cube is destroyed and the new
   // view keeps tracking the same connected cube.
   const canvases = () => page.evaluate(() => document.querySelectorAll('canvas').length);
   const before = await canvases();
+  await openBrainSettings(page, brain);
   await brain.locator('#brain-rebuild-view').click();
   await expect(brain.locator('canvas')).toHaveCount(1);
   expect(await canvases()).toBe(before);

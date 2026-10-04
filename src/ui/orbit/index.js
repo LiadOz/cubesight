@@ -211,7 +211,8 @@ export class Orbit {
       const group = svg('g', { class: `orbit__segment is-${state}`, 'data-key': key, role: 'listitem', 'aria-label': [segment.label, segment.value, deltaText(segment.delta)].filter(Boolean).join(', ') || key });
       const trackPath = svg('path', { class: 'orbit__segment-track', d: arcPath(cx, cy, radius, arc.from, arc.to, model.direction) });
       const ratio = clamp(Number(segment.fill) || 0, 0, 1);
-      const filledPath = ratio > 0 ? svg('path', { class: 'orbit__segment-fill', d: arcPath(cx, cy, radius, arc.from, arc.from + (arc.to - arc.from) * ratio, model.direction), stroke: color }) : null;
+      const offset = clamp(Number(segment.fillOffset) || 0, 0, 1);
+      const filledPath = ratio > 0 ? svg('path', { class: 'orbit__segment-fill', d: arcPath(cx, cy, radius, arc.from + (arc.to - arc.from) * offset, arc.from + (arc.to - arc.from) * Math.min(1, offset + ratio), model.direction), stroke: color }) : null;
       group.append(trackPath); if (filledPath) group.append(filledPath);
       const hit = svg('path', { class: 'orbit__hit', d: arcPath(cx, cy, radius, arc.from, arc.to, model.direction), tabindex: '0', role: 'button', 'aria-label': segment.ariaLabel || [segment.label, segment.value, deltaText(segment.delta)].filter(Boolean).join(', ') || key, 'data-segment': key });
       hit.addEventListener('click', event => options.onSegment?.(segment, event));
@@ -220,7 +221,7 @@ export class Orbit {
       hit.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.onSegment?.(segment, event); } });
       group.append(hit);
       if (state === 'current') {
-        const end = arc.from + (arc.to - arc.from) * ratio, point = polar(cx, cy, radius, end);
+        const end = arc.from + (arc.to - arc.from) * (segment.caretPosition ?? Math.min(1, offset + ratio)), point = polar(cx, cy, radius, end);
         group.append(svg('circle', { class: 'orbit__current-dot', cx: point.x, cy: point.y, r: 5.5, fill: color }));
       }
       root.append(group); parts.push({ segment, arc });
