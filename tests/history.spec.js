@@ -236,7 +236,7 @@ test('mobile marker review keeps close, variant, and primary actions in the init
   const close = page.locator('.b-rev-close');
   const variants = page.locator('.b-rev-variant');
   const algorithms = page.locator('.b-rev-alg:visible');
-  const primary = page.locator('.f1-results__actions .ui-action.is-primary');
+  const primary = page.locator('.f1-results__actions [data-action="next"]');
   await expect(page.locator('.f1-results__history-nav')).toContainText('15.00 +2');
   await expect(close).toBeInViewport();
   await expect(variants).toHaveCount(2);

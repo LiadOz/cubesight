@@ -92,7 +92,9 @@
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-layout { grid-template-columns: minmax(0, 1fr); }
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-focus { display: grid; }
   .history-page:is([data-view="past"], [data-view="review"]) .history-stage { grid-column: 1; grid-row: auto; width: min(100%, 212px); z-index: 2; background: var(--b-bg); }
+  .history-page[data-view="review"] .history-stage { width: min(100%, 204px); }
   .history-page[data-view="review"] .b-rev-detail { gap: 4px; padding: 6px; }
+  .history-page[data-view="review"] .b-rev-detail :is(p, dl) { margin-block: 0; }
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-results-host,
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-replay-controls,
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-actions-host { grid-column: 1; grid-row: auto; }
@@ -113,6 +115,7 @@
   .history-page[data-view="review"] .b-rev-options { grid-column: 1 / -1; }
   .history-page[data-view="review"] .b-rev-alg-yours { grid-column: 1; }
   .history-page[data-view="review"] .b-rev-alg-better { grid-column: 2; }
+  .history-page[data-view="review"] .b-rev-demo-links { grid-column: 1 / -1; order: 1; }
   .history-page[data-view="replay"] .history-stage { width: min(100%, 270px); }
   .history-stage__cube { width: 36%; height: 42%; left: 32%; top: 29%; }
   .history-page[data-view="replay"] .history-stage__cube { width: 34%; height: 38%; left: 33%; top: 27%; }
