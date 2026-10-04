@@ -148,11 +148,14 @@ export const PLAN_LABEL = (() => {
 /** The current-move pill on the scramble ring (A-02): 54 x 34, fully rounded, 330 px from the ring centre. */
 export const PILL = (() => { const rect = anchor('A-02-scramble', { k: 'rect', width: 54, height: 34 }); return { width: rect.width, height: rect.height }; })();
 
-/** The WebGL canvas is this many cube heights tall (room for a turning layer); cube-3d frames the silhouette to the cube height. */
-export const CUBE_CANVAS_SCALE = 1.3;
+/**
+ * The cube's WebGL canvas is a square a little larger than the cube. cube-3d.js frames the isometric silhouette (hexagon height) to
+ * CUBE_SILHOUETTE_FILL of the canvas height (its ISO_HALF_HEIGHT: 4.85 world units in a 2 x 2.82 frustum), so a canvas of
+ * height / fill px shows the hexagon at exactly the frames' 430 px.
+ */
+export const CUBE_SILHOUETTE_FILL = 4.85 / (2 * 2.82);
+export const CUBE_CANVAS_SCALE = 1 / CUBE_SILHOUETTE_FILL;
 export const CUBE_BOX = Math.round(CUBE.desktop.height * CUBE_CANVAS_SCALE);
-/** Camera framing for the isometric cube: the hexagon's height as a share of the square canvas. */
-export const CUBE_FILL = CUBE.desktop.height / CUBE_BOX;
 
 let cached = null;
 export function applyLayoutVars(element) {

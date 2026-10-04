@@ -28,7 +28,6 @@ import { relabelMoves } from './analysis/normalize.js';
 import { currentDShift } from './solve-tracker.js';
 import { loadSettings } from './brain/settings.js';
 import { renderCube } from './cube-renderer.js';
-import { createPageCube } from './pages/cube-view.js';
 import { createHelpPage } from './help/index.js';
 import { createTrainerOrbit } from './trainers/orbit-round.js';
 import { mountCaseColorControl } from './trainers/case-color-control.js';

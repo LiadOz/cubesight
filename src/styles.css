@@ -17,7 +17,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible, select:focus-visib
 /* The icon and the word show the mode you are in; the button label says what a click does. */
 .theme-moon, :root[data-theme="dark"] .theme-sun { display: none; }
 :root[data-theme="dark"] .theme-moon { display: block; }
-main { width: min(1200px, calc(100% - 56px)); margin: auto; }
+/* Page content runs between the frames' 48 px margins (wordmark x=48 .. status x=W-48) at every width: no centred 1200 px column. */
+main { width: calc(100% - 96px); margin: auto; }
 .intro-row { display: flex; justify-content: space-between; align-items: center; padding: 30px 0 24px; gap: 24px; }
 .eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 h1 { margin: 0; font-size: 31px; letter-spacing: -1.2px; line-height: 1.2; font-weight: 750; }
@@ -199,7 +200,7 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
   .main-nav { gap: 0; min-width: 0; margin-right: 2px; } .nav-link { padding: 8px 7px; font-size: 13px; }
   .header-actions { gap: 6px; }
   .header-button { padding: 0 6px; min-width: 40px; min-height: 40px; } .theme-label { display: none; }
-  main { width: calc(100% - 24px); }
+  main { width: calc(100% - 48px); }
   .intro-row { padding: 17px 4px; } .intro-row .eyebrow, .intro-copy { display: none; } h1 { font-size: 23px; letter-spacing: -.7px; }
   .training-settings { margin-bottom: 12px; border-radius: 10px; } .training-settings summary { min-height: 44px; padding: 11px 13px; gap: 10px; font-size: 11px; } .training-settings summary small { font-size: 9px; }
   .mode-bar { flex-direction: column; align-items: stretch; padding: 13px; gap: 12px; } .mode-group { justify-content: space-between; gap: 8px; }

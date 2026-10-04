@@ -51,5 +51,5 @@ test('a long sequence scrolls inside its own strip instead of widening the page'
   }, moves);
   expect(result.stripScrolls, 'the 95 moves really are wider than the player').toBe(true);
   expect(result.page).toBeLessThanOrEqual(0);
-  expect(result.player).toBeLessThanOrEqual(1200);
+  expect(result.player).toBeLessThanOrEqual(1440 - 2 * 48);   // the page content runs between the frames' 48 px margins
 });
