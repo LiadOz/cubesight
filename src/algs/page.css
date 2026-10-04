@@ -67,7 +67,11 @@
 .alg-turn-bars i { display: block; height: 100%; }
 .alg-drill [data-cube-metrics] > p { color: var(--b-muted); font-size: 12px; }
 .alg-case-focus { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 340px auto auto auto; align-items: start; min-width: 0; }
-.alg-case-orbit { grid-column: 1; grid-row: 1; width: min(100%, 340px); aspect-ratio: 1; margin: 0 auto; }
+/* The ring and the Cube share grid row 1 and must stay concentric. The row is a
+   fixed 340px, so when a narrow viewport shrinks the ring below that the ring
+   has to centre itself too: the Cube is already `align-self: center`, and
+   `align-items: start` would otherwise leave the ring sitting high. */
+.alg-case-orbit { grid-column: 1; grid-row: 1; align-self: center; width: min(100%, 340px); aspect-ratio: 1; margin: 0 auto; }
 .alg-case-focus .alg-cube-card { display: contents; }
 .alg-case-focus .alg-cube { grid-column: 1; grid-row: 1; z-index: 1; width: min(250px, 72%); align-self: center; }
 .alg-case-focus .alg-cube-card [data-case-sequence] { grid-column: 1; grid-row: 2; min-width: 0; }
