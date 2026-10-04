@@ -53,6 +53,7 @@ export function createBrain(root, cubeSession = smartCube) {
     reset() { if (createShell) mount(); return this; },
     /** The current view-model (tests and the dev console). */
     getViewModel: () => view?.getViewModel() ?? null,
+    getCubeState: () => view?.getCubeState() ?? null,
     dispatch: action => view?.dispatch(action),
   };
 }

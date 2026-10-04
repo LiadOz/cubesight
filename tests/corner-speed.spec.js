@@ -23,11 +23,18 @@ test('a correct single-corner answer makes the next case ready without a feedbac
   const first = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1));
   expect(first.correct).toBe(true);
   await page.clock.runFor(50);
-  await expect(page.locator('#case-number')).toHaveText('case 2');
+  // The round Orbit owns progress; readiness means the new case can accept
+  // its answer immediately, rather than waiting for the feedback animation.
+  const nextCase = await page.evaluate(() => {
+    const vm = window.__cubesightLegacyTrainerHandles.corner.getViewModel();
+    return { phase: vm.phase, answer: vm.answers.find(answer => answer.correct) };
+  });
+  expect(nextCase.phase).toBe('recognition');
+  expect(nextCase.answer).toBeTruthy();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('#feedback')).toContainText('Nice');
-  const flash = await page.locator('[data-color="white"]').evaluate(button => { button.click(); return document.querySelector('.corner-result')?.textContent; });
-  expect(flash).toContain('Nice · white');
+  const flash = await page.locator(`[data-color="${nextCase.answer.displayKey}"]`).evaluate(button => { button.click(); return document.querySelector('.corner-result')?.textContent; });
+  expect(flash).toContain(`Nice · ${nextCase.answer.label.toLowerCase()}`);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).attempts)).toBe(2);
   await page.clock.runFor(50);
   await page.locator('[data-action="skip"]').click();
@@ -38,16 +45,19 @@ test('correct three-corner answers accept the next input within one frame', asyn
   await page.clock.install();
   await page.addInitScript(() => { Math.random = () => 0; });
   await page.goto('/#/drills/corners');
+  await page.locator('#corner-view .training-settings > summary').click();
   await page.getByRole('button', { name: 'three corners', exact: true }).click();
+  await page.locator('#corner-view .training-settings > summary').click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await page.clock.pauseAt(await page.evaluate(() => new Date(Date.now() + 1000).toISOString()));
-  await page.keyboard.press('r');
+  const correctKey = () => page.evaluate(() => window.__cubesightLegacyTrainerHandles.corner.getViewModel().answers.find(answer => answer.correct).label[0].toLowerCase());
+  await page.keyboard.press(await correctKey());
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1).correct)).toBe(true);
   await page.clock.runFor(50);
   await expect(page.locator('#case-mode')).toContainText('2/3');
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('.corner-result')).toContainText('Nice');
-  await page.keyboard.press('o');
+  await page.keyboard.press(await correctKey());
   const second = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1));
   expect(second).toMatchObject({ correct: true, position: 2, ms: 50 });
 });
