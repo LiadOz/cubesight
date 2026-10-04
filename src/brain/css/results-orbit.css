@@ -27,3 +27,8 @@
   .f1-results { max-width: none; gap: 10px; padding: 10px 0 20px; }
   .f1-results__number { font-size: 56px; }
 }
+
+@media (max-width: 720px) {
+  .f1-results__crumb, .f1-results__neighbors a { display: inline-flex; align-items: center; min-width: 40px; min-height: 40px; }
+  .f1-results .b-rev-detail :is(button, a) { min-width: 40px; min-height: 40px; }
+}

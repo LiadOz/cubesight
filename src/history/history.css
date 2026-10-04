@@ -15,7 +15,7 @@
 .history-page label { display: flex; flex-direction: column; gap: 6px; color: var(--b-muted); font-size: 13px; }
 .history-filters input { min-width: 160px; }
 .history-data { width: 100%; padding: 10px 0; border-block: 1px solid var(--b-hairline); }
-.history-data > summary { min-height: 28px; color: var(--b-muted) !important; font-size: 13px; }
+  .history-data > summary { min-height: 40px; display: flex; align-items: center; color: var(--b-muted) !important; font-size: 13px; }
 .history-file { max-width: 220px; }
 .history-file input { width: 100%; box-sizing: border-box; }
 .history-status { min-height: 1.5em; }
@@ -73,6 +73,7 @@
 .history-actions-host { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
 .history-actions-host .ui-actions { margin: 0; }
 .history-more__menu { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; }
+.history-more > summary { display: inline-flex; align-items: center; min-height: 40px; }
 .history-keybar-host { display: flex; justify-content: center; }
 .history-back-link { margin-right: 8px; }
 @media (max-width: 720px) {

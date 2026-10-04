@@ -3,6 +3,8 @@ import { mountTestBrain } from '../helpers/fake-brain.js';
 
 export async function mountFakeCube(page, { delayed = false } = {}) {
   await mountTestBrain(page, 'orbit', { route: true, awaitConnect: !delayed, deferConnect: delayed });
+  await expect(page.locator('#brain-view .brain')).toHaveAttribute('data-brain-style', 'orbit');
+  await page.evaluate(() => document.fonts.ready);
 }
 
 export async function startScramble(page, scramble = "R2 D' F2 U B2 L' U2 F") {

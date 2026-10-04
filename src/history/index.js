@@ -131,7 +131,7 @@ export function initHistory(host) {
     const markers = markerData(record);
     orbit.update({
       segments, markers, size: 'XL', shape: 'open', gap: 70, direction: 'clockwise', labelStyle: 'around',
-      centerClearance: 115, label: 'solve orbit', duration: 360,
+      centerClearance: 150, label: 'solve orbit', duration: 360,
       onSegment: segment => {
         if (suppressOrbitClick) { suppressOrbitClick = false; return; }
         const stage = selected?.stages?.find(item => item.key === segment.key);
@@ -375,7 +375,7 @@ export function initHistory(host) {
     root.querySelector('.history-stage__subline').textContent = record ? `${fmt.date(record.at)} · ${record.focus || 'speed'}` : 'select a solve';
     if (record) updateStage(record, { move: record.solveMoves?.length || 0, animate: false });
     else {
-      orbit?.update({ segments: [], markers: [], size: 'XL', shape: 'open', gap: 70, centerClearance: 115, label: 'solve orbit' }, { animate: false });
+      orbit?.update({ segments: [], markers: [], size: 'XL', shape: 'open', gap: 70, centerClearance: 150, label: 'solve orbit' }, { animate: false });
       cube?.setState(createSolvedState());
     }
     makeActions(record, false);
@@ -589,7 +589,7 @@ export function initHistory(host) {
       if (next.kind === 'list') requestAnimationFrame(() => window.scrollTo(0, listScrollTop));
     }
   };
-  orbit = new Orbit(orbitHost, { segments: [], size: 'XL', shape: 'open', gap: 70, centerClearance: 115, label: 'solve orbit' });
+  orbit = new Orbit(orbitHost, { segments: [], size: 'XL', shape: 'open', gap: 70, centerClearance: 150, label: 'solve orbit' });
   const view = () => viewModel();
   return {
     ready,

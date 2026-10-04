@@ -204,12 +204,12 @@ export async function inspectLayout(page, cell) {
   const sticky = await page.evaluate(async ({ routeFamily }) => {
     if (!['scroll', 'results', 'history', 'progress'].includes(routeFamily)) return [];
     const root = document.scrollingElement;
-    const header = document.querySelector('.site-header')?.getBoundingClientRect();
     const positions = [0, Math.max(0, (root.scrollHeight - innerHeight) / 2), Math.max(0, root.scrollHeight - innerHeight)];
     const found = [];
     for (const top of positions) {
       scrollTo(0, top);
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const header = document.querySelector('.site-header')?.getBoundingClientRect();
       for (const el of document.querySelectorAll('body *')) {
         const pos = getComputedStyle(el).position;
         if (pos !== 'sticky' && pos !== 'fixed') continue;
@@ -220,7 +220,7 @@ export async function inspectLayout(page, cell) {
         if (header && el !== document.querySelector('.site-header') && r.top < header.bottom - 1 && r.bottom > header.top + 1) found.push({ selector: el.id ? `#${el.id}` : el.tagName.toLowerCase(), box, detail: 'sticky element covers the header' });
       }
       if (['results', 'history', 'progress'].includes(routeFamily)) {
-        for (const [name, selector] of [['cube', '#brain-cube canvas, .tm-preview canvas, .history-cube canvas, .progress-cube-mount canvas, [data-cube] canvas'], ['orbit', '#brain-timeline, [data-orbit], .orbit, .tm-orbit, .tm-ring']]) {
+        for (const [name, selector] of [['cube', '#brain-cube canvas, .tm-preview canvas, .history-stage__cube canvas, .history-cube canvas, .progress-cube-mount canvas, [data-cube] canvas'], ['orbit', '#brain-timeline, [data-orbit], .orbit, .tm-orbit, .tm-ring']]) {
           const target = [...document.querySelectorAll(selector)].find(el => {
             const r = el.getBoundingClientRect();
             return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
