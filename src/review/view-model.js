@@ -27,7 +27,7 @@ export function labelsFor(record, { inferred = false } = {}) {
     const [face, length] = alternateCross, loss = Math.min(3, chosenCrossLength - length - 1);
     push(0, 'Better cross', 'warn', `${face} cross was ${length} moves; your inferred ${a.face} cross needs ${chosenCrossLength}.`, loss, { face });
   }
-  for (const row of losses) if (row.loss > 0) push(row.i, row.loss >= 2 ? 'Detour' : 'Extra move', 'warn', `Cross distance ${row.d} → ${row.after}; suggested continuation: ${row.best || 'no suggestion yet'}.`, row.loss);
+  for (const row of losses) if (row.loss > 0) push(row.i, row.loss >= 2 ? 'Detour' : 'Extra move', 'warn', `Cross distance ${row.d} → ${row.after}; shortest finish from here: ${row.best || 'not found yet'}.`, row.loss);
 
   if (allCrossLosses) for (let i = 0; i <= a.marks?.cross && i < count; i++) if (!labels[i].length) push(i, 'Optimal', 'good', 'This move stays on a shortest path to the cross.');
   for (const cancel of a.cancels ?? []) {
