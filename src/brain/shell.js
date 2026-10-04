@@ -12,6 +12,7 @@ import './css/base.css';
 import { reconcileChildren, setAttr, setText, toggleClass } from './dom.js';
 import { createMoveGuide } from '../moves/move-guide.js';
 import { readGuidePrefs, writeGuidePref } from '../moves/prefs.js';
+import { mountTrainerSettings } from '../trainers/settings-controls.js';
 
 // The dev server's log sink (/__devlog) doesn't exist in production builds.
 const DEV = Boolean(import.meta.env?.DEV);
@@ -214,6 +215,9 @@ export function createShell(root, { dispatch }) {
   brain.innerHTML = TEMPLATE;   // one-time mount; updates below are in place
   root.append(brain);
   const $ = selector => brain.querySelector(selector);
+  const quickControls = mountTrainerSettings($('.b-quick'));
+  $('.b-command input').classList.add('ui-input');
+  $('#brain-scramble').classList.add('ui-input');
   if (!DEV) $('#brain-send-log')?.remove();   // Send to dev only exists on the dev server
 
   const parts = {
@@ -473,6 +477,7 @@ export function createShell(root, { dispatch }) {
     const inspection = /** @type {HTMLInputElement} */ ($('#brain-inspection'));
     const mode = rowValue('inspection.mode') ?? rowValue('inspection');
     if (mode != null) inspection.checked = mode === 'wca' || mode === 'custom';
+    quickControls.sync();
   }
 
   // The scramble line is the move guide's chip strip. Chips are <i> elements whose
@@ -672,6 +677,7 @@ export function createShell(root, { dispatch }) {
   }
 
   function destroy() {
+    quickControls.destroy();
     planGuide?.destroy(); recoveryGuide?.destroy();
     planGuide = recoveryGuide = null;
     if (components) for (const c of Object.values(components)) c.destroy();

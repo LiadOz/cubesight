@@ -31,7 +31,7 @@
 .ui-key-bar span { display:inline-flex; align-items:center; gap:8px; min-height:44px; }
 .ui-coach-line { position:relative; width:fit-content; max-width:100%; }
 .ui-coach-line__text { position:relative; z-index:1; margin:0; color:var(--orbit-ink,#eeeae1); font:500 15px/1.45 'Manrope',sans-serif; }
-.ui-coach-line__connector { position:absolute; inset:0; overflow:visible; opacity:0; transition:opacity 180ms ease; pointer-events:none; }
+.ui-coach-line__connector { position:absolute; inset:0; width:100%; height:100%; overflow:visible; opacity:0; transition:opacity 180ms ease; pointer-events:none; }
 .ui-coach-line__connector path { fill:none; stroke:var(--orbit-accent,#52e0ca); stroke-width:1.2; stroke-dasharray:2 5; }
 .ui-coach-line__connector.is-linked { opacity:.55; }
 .ui-actions { display:flex; align-items:center; flex-wrap:wrap; gap:18px; }

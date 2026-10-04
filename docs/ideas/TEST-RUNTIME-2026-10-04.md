@@ -186,3 +186,25 @@ and gallery coverage (zero uncovered images). Complete default browser, PWA,
 full F8, performance and the combined 600 s regression still need verification.
 Automatic merge selection and the Tier 2 failure blocker remain pending; the
 merge queue's existing full gate has not been weakened.
+
+## Solve settings and layout corrections
+
+Solve idle and open-settings each pass all 16 F8 viewport/theme cells. Phone
+quick settings stay in the drawer, whose grid rows now retain their content
+height; controls use 44 px targets and the existing approved toggle adapter.
+The filled scramble/command fields preserve their native IDs and dispatches.
+The settings action test passes. Gallery: solve-settings-phone-fit-2026-10-04.
+
+F8 now ignores closed disclosure contents, measures SVG stroke hit areas in
+screen pixels, and tests focus outlines for keyboard-visible focus. Cube
+collisions use a projected silhouette read only when requested, not the
+canvas's camera padding. Two browser probes prove that real collisions and
+opened tiny controls still fail; two node geometry tests pass. The current
+check passes 644 node tests, zero lint errors, build and zero uncovered gallery
+images. Logs: solve-settings-layout-verified.log, f8-drawer-rows-verified.log,
+solve-settings-actions.log and check-solve-settings.log under test-results.
+
+The broader F8 diagnostic reached history review and failed there: small phone
+controls and the sticky-cube selector remain to fix. Full regression and hard
+runtime budgets are still unproven. F9's 104-test green run precedes these latest
+GUI changes; its next baseline revision must preserve the previous captures.

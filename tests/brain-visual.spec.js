@@ -78,7 +78,8 @@ test('the shell updates in place and turns clicks into actions', async ({ page }
 test('settings rows keep the first UI\'s hooks and dispatch settings', async ({ page }) => {
   await openFixture(page, 'mono', 'dark', 'idle');
   await page.locator('.brain-pill-setup > summary').click();
-  await page.locator('#brain-pseudo').uncheck();
+  await page.locator('#brain-pseudo + .trainer-settings-control').getByRole('switch').click();
+  await expect(page.locator('#brain-pseudo')).not.toBeChecked();
   await page.locator('.b-configbar-copy .b-cfg[data-setting="oll"][data-value="1look"]').click();
   const actions = await page.evaluate(() => window.gallery.actions);
   expect(actions).toEqual([

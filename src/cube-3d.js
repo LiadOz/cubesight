@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { isMove, toPhysicalTurn } from './moves/notation.js';
+import { convexHull } from './ui/cube/bounds.js';
 
 const FACE_NORMALS = {
   U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1],
@@ -859,6 +860,25 @@ export function createCube3D(container, options = {}) {
       direction: Math.sign(spec.angle), target: spec.angle, angle: live?.angle ?? 0, active: Boolean(live),
     };
   }
+
+  // Read the projected puzzle bounds on demand; the canvas includes empty
+  // camera framing space that is not a label collision obstacle.
+  renderer.domElement.getRenderedCubeBounds = () => {
+    scene.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
+    const rect = renderer.domElement.getBoundingClientRect();
+    const points = [];
+    for (const mesh of pickMeshes) {
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+      const bounds = mesh.geometry.boundingBox;
+      for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
+        const point = new THREE.Vector3(x, y, z).applyMatrix4(mesh.matrixWorld).project(camera);
+        points.push({ x: rect.left + (point.x + 1) * rect.width / 2, y: rect.top + (1 - point.y) * rect.height / 2 });
+      }
+    }
+    return { points: convexHull(points), left: Math.min(...points.map(point => point.x)), right: Math.max(...points.map(point => point.x)),
+      top: Math.min(...points.map(point => point.y)), bottom: Math.max(...points.map(point => point.y)) };
+  };
 
   return {
     update,

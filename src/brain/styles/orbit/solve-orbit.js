@@ -26,7 +26,7 @@ const moveSegments = scramble => {
 
 export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
   const orbit = new Orbit(host, {
-    size: 'XL', shape: 'open', gap: 70, fitHost: true, labelStyle: 'around', label: 'Solve progress',
+    size: 'XL', shape: 'open', gap: 70, fitHost: true, centerClearance: 160, labelStyle: 'around', label: 'Solve progress',
     segments: [], markers: [], onSegment: segment => {
       if (segment.selectable) dispatch({ type: 'openDetail', kind: 'stage', key: segment.key });
     },

@@ -262,7 +262,7 @@
 .b-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
 .b-panel-head h2 { font: 500 14px var(--b-font-mono); color: var(--b-muted); }
 .b-close { display: inline-flex; align-items: center; gap: 10px; }
-.b-settings-body { display: grid; align-content: start; gap: 8px; }
+.b-settings-body { display: grid; grid-auto-rows: max-content; align-content: start; gap: 8px; }
 .b-configbar-copy { order: 0; margin-top: 0; justify-self: center; }
 .b-settings-caption { text-align: center; color: var(--b-muted); font-size: 12px; margin-bottom: 36px; }
 .b-settings-sections { display: grid; gap: 44px; }
@@ -287,11 +287,11 @@
 .b-check input { accent-color: var(--b-accent); width: 16px; height: 16px; }
 .brain-advanced-scramble > summary { cursor: pointer; color: var(--b-muted); font-size: 14px; }
 .brain-scramble-wrap { display: grid; gap: 10px; margin-top: 12px; width: min(640px, 100%); }
-.brain-scramble-wrap textarea { width: 100%; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); padding: 10px 12px; background: var(--b-surface); color: var(--b-ink); font: 15px/1.5 var(--b-font-mono); resize: vertical; }
+.brain-scramble-wrap textarea { box-sizing: border-box; width: 100%; border: 0; border-radius: 24px; padding: 10px 16px; background: var(--b-surface-2); color: var(--b-ink); font: 15px/1.5 var(--b-font-mono); resize: vertical; }
 .brain-scramble-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .b-command label { display: inline-flex; align-items: center; gap: 12px; color: var(--b-muted); }
-.b-command input { width: 320px; max-width: 70vw; border: 0; border-bottom: 1px solid var(--b-hairline); background: none; padding: 6px 2px; color: var(--b-ink); font: 14px var(--b-font-mono); }
-.b-command input:focus { outline: none; border-bottom-color: var(--b-accent); }
+.b-command input { box-sizing: border-box; width: 320px; max-width: 70vw; border: 0; border-radius: 999px; background: var(--b-surface-2); padding: 10px 16px; color: var(--b-ink); font: 14px var(--b-font-mono); }
+.b-command input:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 3px; }
 
 /* --- Footer: key hints and two small tools ------------------------------------ */
 .b-foot { order: 4; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px 24px; margin-top: 32px; }
@@ -333,6 +333,13 @@
 
 /* --- Phone ------------------------------------------------------------------- */
 @media (max-width: 640px) {
+  .brain .brain-pill-setup > summary { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
+  .brain .b-settings-body { box-sizing: border-box; max-width: 100vw; }
+  .brain .b-settings-body :is(button, summary, input:not([type="checkbox"])) { min-height: 44px; min-width: 44px; }
+  .brain .b-settings-body .chip { --hc: 44px; }
+  .brain .b-quick { width: 100%; min-width: 0; }
+  .brain .b-command { width: 100%; }
+  .brain .b-command input { min-width: 0; width: 100%; }
   .brain { --b-cube-size: 130px; width: calc(100% - 32px); padding-top: 12px; min-height: calc(100vh - 140px); }
   :root .brain[data-brain-style] { --b-fs-clock: 104px; --b-fs-countdown: 132px; --b-fs-move: 22px; --b-fs-result: 68px; }
   .brain[data-screen="idle"], .brain[data-screen="disconnected"], .brain[data-screen="connecting"] { --b-cube-size: 200px; }

@@ -11,6 +11,14 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const brand = document.createElement('a'); brand.className = 'brand ui-header__brand'; brand.href = '#/'; brand.textContent = title.toLowerCase(); brand.setAttribute('aria-label', `${title} home`);
   const nav = document.createElement('nav'); nav.className = 'main-nav'; nav.setAttribute('aria-label', 'Main');
   nav.dataset.scrollX = 'true'; nav.tabIndex = 0;
+  nav.addEventListener('keydown', event => {
+    if (event.target !== nav || !['Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.key === 'Home') nav.scrollLeft = 0;
+    else if (event.key === 'End') nav.scrollLeft = nav.scrollWidth - nav.clientWidth;
+    else nav.scrollLeft += event.key === 'ArrowLeft' ? -80 : 80;
+  });
   sections.forEach((section, index) => {
     const item = typeof section === 'string' ? { id: section, href: `#/${section === 'solve' ? '' : section}`, label: section } : section;
     const link = document.createElement('a'); link.className = 'nav-link'; link.dataset.nav = item.id; link.href = item.href; link.textContent = item.label;

@@ -40,3 +40,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .orbit__marker-cluster { transition: transform 120ms ease-out; }
 }
+
+@media (max-width: 640px) {
+  .orbit__hit { vector-effect: non-scaling-stroke; stroke-width: 40px; }
+}

@@ -1,5 +1,6 @@
 export async function inspectLayout(page, cell) {
-  const result = await page.evaluate(({ width, height, routeId, routeFamily, routePath, expectedView, expectedBrainStyle, expectDebugDrawer, expectSettingsDrawer, expectConnectionMenu, expectedCanvasCount = 1, driverFailure, state, theme }) => {
+  const result = await page.evaluate(async ({ width, height, routeId, routeFamily, routePath, expectedView, expectedBrainStyle, expectDebugDrawer, expectSettingsDrawer, expectConnectionMenu, expectedCanvasCount = 1, driverFailure, state, theme }) => {
+    const { polygonIntersectsRect } = await import('/src/ui/cube/bounds.js');
     const errors = [];
     if (driverFailure) {
       const r = document.body?.getBoundingClientRect();
@@ -49,6 +50,10 @@ export async function inspectLayout(page, cell) {
       for (let ancestor = el; ancestor; ancestor = ancestor.parentElement) {
         const parentStyle = getComputedStyle(ancestor);
         if (parentStyle.display === 'none' || (ancestor !== el && +parentStyle.opacity === 0)) return false;
+        if (ancestor instanceof HTMLDetailsElement && !ancestor.open) {
+          const summary = ancestor.querySelector(':scope > summary');
+          if (ancestor !== el && !summary?.contains(el)) return false;
+        }
       }
       if (el.matches('[data-hit-area]')) return style.visibility !== 'hidden' && r.width > 0 && r.height > 0;
       return style.visibility !== 'hidden' && +style.opacity !== 0 && r.width > 0 && r.height > 0;
@@ -93,8 +98,11 @@ export async function inspectLayout(page, cell) {
         const hit = el.closest('[data-hit-area]') || el.closest('button,a,[role="button"],input,select,summary') || el;
         const hitRect = hit.getBoundingClientRect();
         let hitWidth = hitRect.width, hitHeight = hitRect.height;
-        if (el instanceof SVGGraphicsElement && !el.closest('[data-hit-area],button,a,[role="button"]')) {
-          const stroke = parseFloat(getComputedStyle(el).strokeWidth) || 0;
+        if (el instanceof SVGGraphicsElement && hit === el) {
+          const style = getComputedStyle(el);
+          const matrix = el.getScreenCTM();
+          const scale = style.vectorEffect === 'non-scaling-stroke' ? 1 : Math.min(Math.hypot(matrix?.a ?? 1, matrix?.b ?? 0), Math.hypot(matrix?.c ?? 0, matrix?.d ?? 1));
+          const stroke = (parseFloat(style.strokeWidth) || 0) * scale;
           hitWidth = Math.max(hitWidth, stroke); hitHeight = Math.max(hitHeight, stroke);
         }
         if (hitWidth < 40 || hitHeight < 40) add('small-touch-target', hit, `${hitWidth.toFixed(1)}×${hitHeight.toFixed(1)}; minimum 40×40 including hit padding/stroke`);
@@ -109,6 +117,13 @@ export async function inspectLayout(page, cell) {
 
     const visible = selector => [...document.querySelectorAll(selector)].filter(isVisible).map(el => ({ el, r: el.getBoundingClientRect() }));
     const intersects = (a, b) => a.r.left < b.r.right - 1 && a.r.right > b.r.left + 1 && a.r.top < b.r.bottom - 1 && a.r.bottom > b.r.top + 1;
+    for (const drawer of document.querySelectorAll('.b-settings-body')) {
+      if (!isVisible(drawer)) continue;
+      const rows = [...drawer.children].filter(isVisible).map(el => ({ el, r: el.getBoundingClientRect() }));
+      for (let i = 0; i < rows.length; i++) for (let j = i + 1; j < rows.length; j++) {
+        if (intersects(rows[i], rows[j])) add('settings-content-overlap', rows[j].el, `overlaps ${selectorFor(rows[i].el)}`);
+      }
+    }
     const keyGroups = [
       ['header', '.site-header, .ui-header, [data-shared-header]'], ['cube', '#brain-cube canvas, .cube-stage canvas, .tm-preview canvas, .history-cube canvas, .progress-cube-mount canvas, [data-cube] canvas, .shared-cube canvas'],
       ['rail', '.b-aside, [data-ui-rail]'], ['actions', '.b-results-actions, .ui-actions, [data-ui-actions]'], ['key-bar', '.b-keybar, .b-keys, .ui-key-bar, [data-key-bar]'],
@@ -119,8 +134,12 @@ export async function inspectLayout(page, cell) {
     }
     const labels = visible('[data-orbit-label], .orbit-label, .orbit__label, .o-label, .ui-orbit-label, .shared-orbit [data-label], .tm-orbit-label, #brain-timeline .m-label, #brain-timeline .b-oring-label');
     for (let i = 0; i < labels.length; i++) for (let j = i + 1; j < labels.length; j++) if (intersects(labels[i], labels[j])) add('orbit-label-overlap', labels[i].el, `overlaps ${labels[j].el.className || labels[j].el.tagName}`);
-    for (const [name, selector] of keyGroups) if (name !== 'header') for (const label of labels) for (const box of visible(selector)) {
-      if (intersects(label, box)) add('orbit-label-key-overlap', label.el, `orbit label overlaps ${name}`);
+    const labelObstacles = keyGroups.filter(([name]) => name !== 'header').flatMap(([name, selector]) => visible(selector).map(box => ({ name, ...box,
+      r: name === 'cube' && typeof box.el.getRenderedCubeBounds === 'function' ? box.el.getRenderedCubeBounds() || box.r : box.r,
+    })));
+    for (const label of labels) for (const obstacle of labelObstacles) {
+      const overlaps = obstacle.r.points ? polygonIntersectsRect(obstacle.r.points, label.r) : intersects(label, obstacle);
+      if (overlaps) add('orbit-label-key-overlap', label.el, `orbit label overlaps ${obstacle.name}`);
     }
 
     const canvases = [...document.querySelectorAll('canvas')];
@@ -130,11 +149,12 @@ export async function inspectLayout(page, cell) {
       add('vertical-scroll-main-page', scrolling, `scrollHeight ${scrolling.scrollHeight} > ${innerHeight} + 2`);
     }
     const focused = document.activeElement;
-    if (focused && focused !== document.body && focused !== document.documentElement) {
+    if (focused?.matches(':focus-visible') && focused !== document.body && focused !== document.documentElement) {
       const style = getComputedStyle(focused);
       if ((style.outlineStyle === 'none' || parseFloat(style.outlineWidth) === 0) && style.boxShadow === 'none') add('focus-outline-missing', focused, 'focused control has no outline or focus shadow');
     }
     for (const scroller of document.querySelectorAll('[data-scroll-x]')) {
+      if (!isVisible(scroller)) continue;
       const style = getComputedStyle(scroller);
       const box = scroller.getBoundingClientRect();
       if (box.left < -1 || box.right > innerWidth + 1) add('scroller-offscreen', scroller, `scroller bounds [${box.left.toFixed(1)}, ${box.right.toFixed(1)}] outside viewport`);

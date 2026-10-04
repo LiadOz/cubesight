@@ -29,9 +29,10 @@
 .brain[data-brain-style="orbit"] .b-stage { width: 100%; margin: 0; text-align: left; }
 .brain[data-brain-style="orbit"] > .b-configbar {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 4px 6px;
   max-width: 100%;
+  min-width: 0;
   margin: 34px 0 0;
   padding: 0;
   overflow-x: auto;
@@ -208,3 +209,9 @@
 /* A bright full-length track would conceal the live remaining/fill arc. */
 .brain[data-brain-style="orbit"][data-screen="inspection"] .orbit__segment-track,
 .brain[data-brain-style="orbit"][data-screen="solving"] .orbit__segment.is-current .orbit__segment-track { stroke: var(--b-track); stroke-width: 4; }
+
+@media (max-width: 720px) {
+  /* The same controls remain available in the settings drawer. */
+  .brain[data-brain-style="orbit"] > .b-configbar { display: none; }
+  .brain[data-brain-style="orbit"] .b-configbar-copy .chip { --hc: 44px; min-width: 44px; }
+}
