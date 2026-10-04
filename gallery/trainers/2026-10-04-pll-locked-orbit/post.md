@@ -3,7 +3,7 @@ id: pll-locked-orbit-2026-10-04
 title: PLL · locked cube inside the Orbit
 date: 2026-10-04
 branch: trainers
-status: built
+status: superseded
 author: Codex
 ---
-The locked cube stays centred in a square Orbit. Desktop uses the answer rail; phone stacks the answers below the cube. Both fit one screen, with frameless round controls.
+Diagnostic frames from restoring the locked camera. The centred final frames are in pll-centred-final-2026-10-04.
