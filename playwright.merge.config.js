@@ -7,5 +7,4 @@ export default defineConfig({
   ...config,
   testMatch: '**/*.spec.js',
   outputDir: 'test-results/merge-smoke',
-  use: { ...config.use, reducedMotion: 'reduce' },
 });

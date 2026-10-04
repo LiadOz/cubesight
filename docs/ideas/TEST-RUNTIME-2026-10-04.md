@@ -124,3 +124,11 @@ descendants even if Playwright creates separate server process groups; a
 detached-child test proves that an escaped server cannot remain running. Tier
 browser temporary files are under the worktree's test-results/runtime-tmp,
 keeping them on the required host-backed filesystem.
+
+The clean check-and-smoke prototype passed at commit dbe53fd in **27.0 seconds**
+with 632 node tests and two browser smoke tests, with workingTreeDirty=false.
+Adding connection/settings/progress specs then caught a merge-config issue:
+reduced motion was forced onto affected tests that explicitly check animation.
+Reduced motion is now scoped to smoke itself; affected specs keep their normal
+configuration and animation assertions. No affected-selection budget success
+is claimed until the combined rerun is green.

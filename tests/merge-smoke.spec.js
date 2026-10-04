@@ -1,6 +1,8 @@
 import { test, expect } from 'playwright/test';
 import { mountFakeCube, startScramble, completeScramble, solveReverse } from './layout/fake-cube.js';
 
+test.use({ reducedMotion: 'reduce' });
+
 test('connected cube reaches scramble, inspection and live results', async ({ page }) => {
   await mountFakeCube(page);
   await expect.poll(() => page.evaluate(() => window.testBrain.handle.getViewModel()?.screen)).toBe('idle');
