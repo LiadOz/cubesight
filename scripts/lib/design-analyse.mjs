@@ -100,7 +100,6 @@ function buildColors(frames) {
     for (const e of f.parsed.elements) consider(e.attrs);
     for (const g of Object.values(f.parsed.gradients)) for (const s of g.stops) consider(s);
     for (const p of Object.values(f.parsed.patterns)) for (const c of p.children) consider(c.attrs);
-    for (const m of f.css.matchAll(/stroke:(#[0-9a-f]+)/g)) bump(m[1], 'stroke', f.id);
   }
   // sticker shades: classify by face below; here only name known tokens
   const faces = stickerShades(frames);
@@ -283,7 +282,7 @@ function ringOf(cl) {
     return {
       startDeg: r2(start), endDeg: r2(end), spanDeg: r2(spanOf(start, end)),
       stroke: el.attrs.stroke, strokeWidth: sw, opacity: op === '' ? null : Number(op), linecap: el.attrs['stroke-linecap'] ?? null,
-      role: SEGMENT_ROLES[key] ?? 'unlabelled', _s: start, _e: end,
+      role: SEGMENT_ROLES[key]?.[0] ?? 'unlabelled', _note: SEGMENT_ROLES[key]?.[1], _s: start, _e: end,
     };
   });
   // overlays: an arc wholly inside another arc of the same ring
@@ -297,12 +296,13 @@ function ringOf(cl) {
   const base = segs.filter((s) => !s.overlay);
   const gaps = base.map((s, i) => {
     const n = base[(i + 1) % base.length];
-    return { fromDeg: s.endDeg, toDeg: n.startDeg, spanDeg: r2(spanOf(s._e, n._s)) };
+    const g = (((n._s - s._e) % 360) + 360) % 360;
+    return { fromDeg: s.endDeg, toDeg: n.startDeg, spanDeg: r2(g > 359.9 ? 0 : g) };
   });
   const out = segs.map(({ _s, _e, ...rest }) => rest);
   return {
     r: cl.r, offset: [cl.off.x, cl.off.y], centre: [r2(cx), r2(cy)], centreMethod: method, residual: res,
-    originDeg: r2(origin), segments: out, gaps,
+    originDeg: r2(origin), segments: out, gaps, _pts: pts,
   };
 }
 

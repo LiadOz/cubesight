@@ -118,25 +118,30 @@ export const TYPE_ROLES = {
   'mono|28|500|#ece6d8': 'replay move glyph',
 };
 
-/** "stroke|width|opacity" -> role of a ring segment. */
+/** "stroke|width|opacity" -> [token, description] of a ring segment. */
 export const SEGMENT_ROLES = {
-  '#34312b|3|': 'idle (not reached)',
-  '#6d675c|5|': 'done, quiet (scramble progress)',
-  '#3dbfad|8|': 'active / lit',
-  '#e6a642|8|': 'active, wrong turn',
-  '#ece6d8|6|': 'done',
-  '#3dbfad|6|': 'done, better than plan',
-  '#e6a642|6|': 'done, worse than plan',
-  '#9a9486|6|': 'review: later segment',
-  '#e6a642|9|': 'review: current segment',
-  '#3dbfad|3|0.9': 'skip bridge',
-  '#4d3715|7|': 'inspection +2 window',
-  'url(#hatch)|7|': 'inspection DNF window (hatched)',
-  '#2a2823|3|': 'inspection template (inner ring)',
-  '#6d675c|5|0': 'review inner: not on better line',
-  '#3dbfad|5|': 'review inner: better line',
-  '#ec6b5f|6|1': 'history mini-ring, DNF',
-  '#3dbfad|6|1': 'history mini-ring, selected',
+  '#34312b|3|': ['idle', 'not reached yet'],
+  '#6d675c|5|': ['doneQuiet', 'scramble progress: move done'],
+  '#3dbfad|8|': ['active', 'active / lit'],
+  '#e6a642|8|': ['activeWrong', 'active, wrong turn'],
+  '#ece6d8|6|': ['done', 'done'],
+  '#3dbfad|6|': ['doneGood', 'done, better than plan'],
+  '#e6a642|6|': ['doneWarn', 'done, worse than plan'],
+  '#9a9486|6|': ['reviewLater', 'review: later segment of the outer ring'],
+  '#e6a642|9|': ['reviewCurrent', 'review: current segment'],
+  '#3dbfad|3|0.9': ['skip', 'skip bridge'],
+  '#4d3715|7|': ['plusTwoWindow', 'inspection: +2 window'],
+  'url(#hatch)|7|': ['dnfWindow', 'inspection: DNF window (hatched)'],
+  '#2a2823|3|': ['template', 'inspection: template of the stage layout (inner ring)'],
+  '#3dbfad|5|': ['reviewInnerGood', 'review inner ring: better line'],
+  '#e6a642|6|0.85': ['miniWarn', 'mini ring (history), worse than plan'],
+  '#ece6d8|6|0.85': ['miniDone', 'mini ring (history), done'],
+  '#3dbfad|6|0.85': ['miniGood', 'mini ring (history), better than plan'],
+  '#ec6b5f|6|1': ['miniDnf', 'mini ring (history), DNF'],
+  '#3dbfad|6|1': ['miniSelected', 'mini ring (history), selected'],
+  '#e6a642|2.8333333333333335|': ['rowWarn', 'row mini ring (history), worse than plan'],
+  '#ece6d8|2.8333333333333335|': ['rowDone', 'row mini ring (history), done'],
+  '#3dbfad|2.8333333333333335|': ['rowGood', 'row mini ring (history), better than plan'],
 };
 
 /** First-line prose per frame: what the screen is. Numbers are generated elsewhere. */
