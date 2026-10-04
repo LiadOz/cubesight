@@ -103,3 +103,43 @@
 #corner-view .segmented { border: 0; background: transparent; padding: 0; gap: 6px; }
 #corner-view .segment.chip { border: 1px solid var(--k-bd); border-radius: var(--b-radius-control); background: var(--k-bg); color: var(--k-ink); box-shadow: none; }
 #corner-view .segment.chip[aria-pressed="true"] { border-color: var(--s-bd); background: var(--s-bg); color: var(--s-ink); }
+
+.quick-round-metrics { display: inline-flex; align-items: center; gap: 10px; font: 500 11px var(--b-font-mono); }
+.legacy-drill-view .brain.quick-round { border: 0; background: transparent; padding: 0; }
+#pll-view .pll-cube-mount { display: grid; place-items: center; overflow: visible; }
+#pll-view .pll-cube-mount > .shared-cube { margin-inline: auto; }
+#pll-view :is(.pll-stage-topline, .pll-cube-caption) { display: none; }
+/* The fit-to-host inline limits would squash the square dial and shift its centre. */
+#pll-view .pll-cube-stage > .orbit { max-width: none !important; max-height: none !important; }
+#pll-view .pll-cube-stage > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
+/* The pause prompt is pinned to the cube stage, including its padding. */
+#corner-view .cube-stage > .pause-overlay { position: absolute; z-index: 5; }
+@media (min-width: 701px) {
+  #pll-view .pll-cube-stage > .orbit { width: 420px !important; height: 420px !important; }
+}
+@media (max-width: 700px) {
+  :root:has(#pll-view:not([hidden])) #pll-view .pll-trainer-shell { display: flex; flex-direction: column; height: auto; }
+  :root:has(#pll-view:not([hidden])) #pll-view .pll-cube-stage { height: 280px; padding: 0; align-items: center; justify-content: center; }
+  :root:has(#pll-view:not([hidden])) #pll-view .pll-cube-mount { flex: none; width: 220px; height: 220px; min-height: 0; max-height: 220px; }
+  #pll-view .pll-cube-mount > .shared-cube { width: min(100%, clamp(185px, 23svh, 220px)); }
+  #pll-view .pll-cube-stage > .orbit { width: 280px !important; height: 280px !important; }
+  #pll-view .pll-settings summary { min-height: 40px; padding: 8px 12px; }
+  #pll-view .pll-answer-stage { padding: 0; }
+  #pll-view .pll-prompt { margin: 0; }
+  #pll-view .pll-prompt p { font-size: 18px; }
+  #pll-view .pll-prompt > small { margin-top: 4px; }
+  #pll-view .pll-case-meta { margin-bottom: 4px; }
+  #pll-view .pll-answer-grid { margin-top: 10px; }
+  #pll-view .pll-feedback-row { margin-top: 8px; padding-top: 6px; }
+  #pll-view .brain.quick-round { border: 0; background: transparent; padding: 0; margin-bottom: 8px; }
+  #pll-view .quick-round-line { gap: 6px; font-size: 11px; }
+  #pll-view .pll-intro { margin: 8px 0; }
+  #pll-view .pll-intro h1 { white-space: nowrap; font-size: 22px; }
+  #pll-view .pll-intro .eyebrow { white-space: nowrap; font-size: 9px; }
+  #pll-view .trainer-case-color-control .ui-field__label { display: none; }
+  #pll-view .pll-progress-details { margin-bottom: 0; }
+  #corner-view .cube-stage > .pause-overlay { padding: 8px; }
+  #corner-view .pause-overlay > div { padding: 12px; }
+  #corner-view .pause-overlay h2 { font-size: 18px; }
+  #corner-view .pause-overlay p:not(.eyebrow) { margin: 6px 0 10px; font-size: 11px; }
+}

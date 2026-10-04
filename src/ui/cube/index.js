@@ -17,6 +17,7 @@ export class Cube {
     if (!host) throw new Error('Cube needs a host element.');
     this.host = host;
     this.mode = mode;
+    this.interactionMode = cubeOptions.mode ?? 'scout';
     this.state = state;
     this.size = size;
     this.caseColorSetting = normalizeCaseColorSetting(caseColorSetting);
@@ -67,7 +68,8 @@ export class Cube {
     const ids = Array.isArray(highlight?.pieces) ? highlight.pieces : [];
     const display = this.mode === 'case' ? caseDisplayState(state, this.caseColorSetting, this.caseSeed).state : state;
     const data = toRenderData(display, ids);
-    data.mode = 'scout';
+    data.mode = this.interactionMode;
+    if (this.interactionMode === 'corner') data.showAllCorners = true;
     data.dimOthers = Boolean(highlight?.dimOthers);
     data.highlightedPieces = ids;
     return data;
@@ -76,7 +78,7 @@ export class Cube {
   setMode(mode) {
     this.mode = mode;
     this.element.dataset.mode = mode;
-    this.cube.setMode('scout');
+    this.cube.setMode(this.interactionMode);
     this.paint();
     return this;
   }

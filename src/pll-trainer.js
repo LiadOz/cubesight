@@ -156,7 +156,7 @@ export function createPLLTrainer(root) {
   let cube = null, renderData = null, disposed = false, activeCaseSeed = '';
   const cubeReady = Promise.resolve().then(() => {
     if (disposed) return;
-    cube = new Cube($('#pll-cube'), { mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(), caseSeed: 'pll:initial', label: 'PLL recognition case' });
+    cube = new Cube($('#pll-cube'), { mode: 'case', size: 'L', cubeOptions: { mode: 'corner' }, caseColorSetting: readCaseColorSetting(), caseSeed: 'pll:initial', label: 'PLL recognition case' });
     if (renderData) cube.update(renderData);
   }).catch(error => {
     if (disposed) return;

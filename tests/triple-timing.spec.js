@@ -4,7 +4,9 @@ test('three-corner clock includes feedback between answers in displayed and logg
   await page.clock.install();
   await page.addInitScript(() => { Math.random = () => 0; });
   await page.goto('/#/drills/corners');
+  await page.locator('#corner-view .training-settings > summary').click();
   await page.getByRole('button',{name:'three corners',exact:true}).click();
+  await page.locator('#corner-view .training-settings > summary').click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state','visible');
   // Freeze at the currently running fake clock so exact answer-to-answer
   // intervals can be checked without wall-clock/CDP latency.
@@ -16,10 +18,11 @@ test('three-corner clock includes feedback between answers in displayed and logg
   await page.clock.runFor(1200);
   await expect(page.locator('#case-mode')).toContainText('2/3');
   expect(parseFloat(await page.locator('#timer').textContent())).toBeGreaterThanOrEqual(1.48);
+  const selected = await page.locator('[data-color=white]').getAttribute('data-logical-color');
   await page.keyboard.press('w');
   const second=await page.evaluate(()=>JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1));
   expect(second.ms).toBe(1500);
-  expect(second).toMatchObject({ mode: 'triple', position: 2, target: 'UBR', selected: 'white', glance: false, exposureMs: null });
+  expect(second).toMatchObject({ mode: 'triple', position: 2, target: 'UBR', selected, glance: false, exposureMs: null });
   expect(second.visible).toHaveLength(2);
   expect(second.family.split('-')).toContain(second.missing);
   await page.clock.runFor(1500);
@@ -31,7 +34,9 @@ test('three-corner clock includes feedback between answers in displayed and logg
 
 test('timeout for the next corner is measured from the previous input',async({page})=>{
   await page.clock.install();await page.goto('/#/drills/corners');
+  await page.locator('#corner-view .training-settings > summary').click();
   await page.getByRole('button',{name:'three corners',exact:true}).click();
+  await page.locator('#corner-view .training-settings > summary').click();
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state','visible');
   await page.clock.pauseAt(await page.evaluate(()=>new Date(Date.now()+1000).toISOString()));
   await page.keyboard.press('w');

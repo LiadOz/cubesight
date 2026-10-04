@@ -17,7 +17,7 @@ async function answerCurrent(page, correct = true) {
 test('PLL recognition uses a fixed full cube and beginner-sized learn block', async ({ page }) => {
   await openPLL(page);
   await expect(page.locator('#pll-cube canvas')).toHaveAttribute('data-rotation', 'locked');
-  await expect(page.locator('#pll-case-number')).toContainText('case');
+  await expect(page.locator('#pll-view')).toHaveAttribute('data-pll-case', /.+/);
   await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
   await page.waitForTimeout(700);
   await expect(page.locator('#pll-glance-overlay')).toBeHidden();
@@ -44,7 +44,9 @@ test('PLL errors become a contrastive retry only after two intervening answers',
 
 test('PLL adaptive glance is accuracy-gated and slow attempts stay usable without being logged', async ({ page }) => {
   await openPLL(page);
+  await page.locator('.pll-settings > summary').click();
   await page.locator('#pll-glance').check();
+  await page.locator('.pll-settings > summary').click();
   for (let index = 0; index < 10; index += 1) {
     await answerCurrent(page, true);
     if (index < 9) await page.locator('#pll-next').click();

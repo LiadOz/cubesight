@@ -3,7 +3,7 @@ import { test, expect } from './helpers/coverage-test.js';
 // Brain v2 visual matrix: every style × site mode × key screen, rendered from
 // the sample view-models through the real shell and style (no cube needed).
 // Baselines live in tests/brain-visual.spec.js-snapshots/. Regenerate after an
-// intended visual change with: npx playwright test tests/brain-visual.spec.js --update-snapshots
+// intended visual change with: npx playwright test tests/brain-visual.spec.js --update-snapshots=missing
 
 const STYLES = ['mono', 'orbit'];
 const THEMES = ['dark', 'light'];
@@ -27,7 +27,7 @@ for (const style of STYLES) {
       test(`${style} · ${theme} · ${screen}`, async ({ page }) => {
         const errors = await openFixture(page, style, theme, fixture);
         await expect(page.locator('.brain')).toHaveAttribute('data-brain-style', style);
-        await expect(page).toHaveScreenshot(`${style}-${theme}-${screen}-direction-a-20261004-orbit-visible.png`, {
+        await expect(page).toHaveScreenshot(`${style}-${theme}-${screen}-direction-a-20261004-clear-dial.png`, {
           fullPage: screen === 'results',
           animations: 'disabled',
           mask: [page.locator('#brain-cube canvas')],

@@ -45,3 +45,28 @@ test('corner recognition keeps its Orbit outside the cube and all six answers re
   }
   await expect(page.locator('[data-action="skip"]')).toBeInViewport();
 });
+
+for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+  test(`PLL keeps its locked cube centred in a square Orbit at ${viewport.width} × ${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/#/drills/pll');
+    await expect(page.locator('#pll-cube canvas')).toHaveAttribute('data-rotation', 'locked');
+    const geometry = await page.evaluate(() => {
+      const orbit = document.querySelector('#pll-view .orbit__svg').getBoundingClientRect();
+      const cube = document.querySelector('#pll-cube .shared-cube').getBoundingClientRect();
+      return { orbit: orbit.toJSON(), cube: cube.toJSON(), frame: getComputedStyle(document.querySelector('.pll-trainer-shell')).borderTopWidth,
+        height: document.documentElement.scrollHeight, width: document.documentElement.scrollWidth };
+    });
+    expect(geometry.orbit.width).toBeCloseTo(geometry.orbit.height, 0);
+    expect(geometry.orbit.width).toBeGreaterThan(geometry.cube.width);
+    expect(geometry.orbit.x + geometry.orbit.width / 2).toBeCloseTo(geometry.cube.x + geometry.cube.width / 2, 0);
+    expect(geometry.orbit.y + geometry.orbit.height / 2).toBeCloseTo(geometry.cube.y + geometry.cube.height / 2, 0);
+    expect(geometry.frame).toBe('0px');
+    expect(geometry.width).toBeLessThanOrEqual(viewport.width);
+    expect(geometry.height).toBeLessThanOrEqual(viewport.height);
+    for (const answer of await page.locator('[data-pll-answer]').all()) {
+      await expect(answer).toBeInViewport();
+      expect(await answer.evaluate(node => { const box = node.getBoundingClientRect(); return node.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)); })).toBe(true);
+    }
+  });
+}

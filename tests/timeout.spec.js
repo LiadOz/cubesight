@@ -5,7 +5,9 @@ const savedProgress = page => page.evaluate(() => Object.fromEntries(Object.entr
 test('ten-second corner trials pause without logging or changing adaptive pace', async ({ page }) => {
   await page.clock.install();
   await page.goto('/#/drills/corners');
+  await page.locator('#corner-view .training-settings > summary').click();
   await page.locator('#glance-toggle').check();
+  const firstCase = await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.currentCase.seed);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   const before = await savedProgress(page);
   await page.clock.fastForward(10_001);
@@ -16,7 +18,8 @@ test('ten-second corner trials pause without logging or changing adaptive pace',
   await expect(page.locator('#exposure-select')).toHaveValue('600');
   await page.getByRole('button', { name: 'resume' }).click();
   await expect(page.locator('#pause-overlay')).toBeHidden();
-  await expect(page.locator('#case-number')).toHaveText('case 1');
+  expect(await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.currentCase.seed)).not.toBe(firstCase);
+  expect(await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.round.round?.answers.length ?? 0)).toBe(0);
   await expect(page.locator('#cube')).toHaveAttribute('data-learning-state', 'visible');
   await expect(page.locator('#exposure-note')).toContainText('0/10');
 });
@@ -51,12 +54,13 @@ test('F2L search has no ten-second cutoff', async ({ page }) => {
   await page.goto('/#/drills/f2l');
   await expect(page.locator('#f2l-cube canvas')).toBeVisible();
   const before = await savedProgress(page);
-  const previousCase = await page.locator('#f2l-case-number').textContent();
+  await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.currentCase?.seed)).toBeTruthy();
+  const previousCase = await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.currentCase.seed);
   await page.clock.fastForward(30_000);
   await expect(page.locator('#pause-overlay')).toBeHidden();
   expect(await savedProgress(page)).toEqual(before);
-  await expect(page.locator('#f2l-case-number')).toHaveText(previousCase);
-  await expect(page.locator('#f2l-found')).toHaveText('0');
+  expect(await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.currentCase.seed)).toBe(previousCase);
+  expect(await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.round.round?.answers.length ?? 0)).toBe(0);
   await expect(page.locator('#f2l-timings')).toContainText('Find a pair');
 });
 
