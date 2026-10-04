@@ -22,7 +22,7 @@ While iterating, run `npm run test:affected` (once it exists; F11) instead of th
 
 ## 4. Product rules (short form; the full list is in SPEC-FLEET.md)
 - Offline-first PWA: no backend, no calls to other origins; imports via paste/file.
-- Design: direction A of `docs/design/orbit-v3/`; the cube is the centrepiece; **only approved widgets** from `docs/design/WIDGETS.md`; progress only via the Orbit; one animation at a time; full-turn demonstrations; no footer; no horizontal scroll; the main pages fit one screen.
+- Design: direction A of `docs/design/orbit-v3/` is the **exact** spec — take values from `docs/design/orbit-v3/SPEC-A-EXACT.md` and `src/ui/design-spec.js`, never by eye, and check with `npm run design:diff`; the cube is the centrepiece; **only approved widgets** from `docs/design/WIDGETS.md`; progress only via the Orbit; one animation at a time; full-turn demonstrations; no site-chrome footer block (the frames DO have a bottom keycap row and a bottom-right stats line — build those); no horizontal scroll; the main pages fit one screen.
 - Wording per `docs/design/VOICE.md`.
 - Behaviour must stay replayable (`src/recorder.js`, `scripts/replay-recording.mjs`); saved recordings are anonymized.
 

@@ -199,13 +199,16 @@ still imports `createRingTimeline`, so **alg and drill playback use the legacy r
 `.b-oring` / `.b-slot` markup in `brain/shell.js:89-90,121`. Migrate to the shared Orbit and delete.
 Good news: `#/solve` has no competing ring.
 
-## 3. Open questions for the user — do not guess
+## 3. Decisions (user, 2026-10-04) — these are settled
 
-1. **"No footer" vs the frames.** `AGENTS.md` says no footer, but **every** desktop A-frame draws a
-   bottom keycap row and a bottom-right stats line. Item 6 asks to build them. Confirm the frames win.
-2. **The timer size ladder.** 120 idle / 168 inspection / 128 solving / 124 results / 96 replay /
-   76 history. Deliberate, or drift in the mock-ups?
-3. **Two review screens** (item 12) — which one survives?
+1. **The frames win over "no footer".** Build the bottom keycap row and the bottom-right stats
+   line on every desktop screen. `AGENTS.md`'s "no footer" means no site-chrome footer block; it
+   does not mean an empty bottom edge. `AGENTS.md` has been reworded to say so.
+2. **The timer size ladder is deliberate — implement all six.** 120 idle / 168 inspection /
+   128 solving / 124 results / 96 replay / 76 history, weight 300, letter-spacing per the spec.
+3. **`#/history/<at>/review/<marker>` survives.** Delete the legacy `src/review/index.js` screen
+   (item 12) and rebuild `/review/import` so importing a solve lands you in the history review.
+   This removes the 5370 px overflow with it.
 
 ## 4. Process
 
