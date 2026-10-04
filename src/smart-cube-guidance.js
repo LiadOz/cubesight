@@ -55,7 +55,7 @@ export function appendDetour(detour, move) {
   return [...rest, `${layerOf(move)}${total === 2 ? '2' : total === 3 ? "'" : ''}`];
 }
 
-export function describeTurn(move, bottom='D', front='F') {
+export function describeTurn(move, bottom='D', front='F', faceColors=FACE_COLORS) {
   if (typeof move === 'string') move = move.replace(/[′’]/g, "'");   // accept the display and phone primes
   // Slices (M E S), rotations (x y z) and lowercase wide (r) are described by the
   // notation core; faces and Rw keep the wording below.
@@ -67,7 +67,7 @@ export function describeTurn(move, bottom='D', front='F') {
   if (!position) return null;
   const held = inspectionOrientation(bottom, front);
   const physicalFace = { U: held.top, D: held.bottom, F: held.front, B: OPPOSITE[held.front], R: held.right, L: OPPOSITE[held.right] }[move[0]];
-  const color = FACE_COLORS[physicalFace];
+  const color = faceColors[physicalFace] || FACE_COLORS[physicalFace];
   const double = move.includes('2');
   const prime = move.includes("'");
   const wide = move[1] === 'w';

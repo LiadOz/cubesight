@@ -128,7 +128,6 @@
 #scout-view .scout-results-details[open] .scout-result .scout-family { grid-column: 1 / -1; }
 #scout-view .scout-results-details[open] .scout-result > small,
 #scout-view .scout-results-details[open] .scout-results-head h2,
-#scout-view .scout-results-details[open] .scout-guide,
 #scout-view .scout-results-details[open] .scout-footnote { display: none; }
 #scout-view .scout-results-details[open] .scout-result-grid { max-height: min(25svh,190px); overflow-y: auto; }
 #scout-view .scout-empty, #scout-view .scout-footnote { display: none; }
@@ -146,7 +145,7 @@
 #scout-view .scout-shell .cube-mount { min-height: 0; height: auto; flex: 1; }
 #scout-view .scout-shell .cube-caption { font-size: 9px; }
 #scout-view #scout-cube > .shared-cube { width: min(var(--cube-size),240px); }
-#scout-view .scout-plan { padding: 12px; }
+#scout-view .scout-plan { padding: 12px; overflow-y: auto; }
 #scout-view .scout-plan h2 { margin: 6px 0; font-size: 18px; }
 #scout-view .scout-plan p { font-size: 11px; line-height: 1.45; }
 #scout-view .scout-moves { margin: 8px 0; }
@@ -176,6 +175,7 @@
 #scout-view:has(#scout-round-host .quick-round-result) .scout-plan > .scout-results-details,
 #scout-view:has(#scout-round-host .quick-round-result) .scout-practice-panel { display: none; }
 #scout-view .scout-plan > .scout-results-details { display: block; flex: 1 1 0; min-height: 0; height: 100%; max-height: 100%; overflow-y: auto; margin: 0; }
+#scout-view .scout-plan > .scout-results-details:not([open]) { flex: 0 0 auto; height: auto; max-height: none; min-height: 44px; overflow: visible; }
 #scout-view .scout-results-details[open] > .scout-results { display: block; height: auto; overflow: visible; padding: 8px 10px; }
 @media (max-width: 700px) {
   #scout-view { gap: 8px; }
@@ -208,4 +208,33 @@
   #scout-view .scout-results-details[open] .scout-result-grid { max-height: min(16svh,140px); }
   #scout-view .scout-options { align-items: start; }
   #scout-view .scout-options-actions { width: auto; }
+}
+
+#scout-view.cs-page.brain { width: 100%; margin: 0; padding: 0; min-height: 0; background: transparent; }
+#scout-view .brain.quick-round { border: 0; background: transparent; padding: 0; }
+#scout-view .btn { border: 0; border-radius: var(--b-radius-control); background: var(--bg); color: var(--fg); box-shadow: var(--edge); font-family: var(--b-font-sans); }
+#scout-view .btn:hover { background: var(--bg-hover); color: var(--fg-hover); }
+#scout-view .btn[aria-pressed="true"] { background: var(--s-bg); color: var(--s-ink); }
+#scout-view :is(.scout-input, .scout-shell, .cube-stage, .scout-plan, .scout-smart-cube, .scout-orientation, .scout-guide) { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+#scout-view .scout-view-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+#scout-view .scout-view-actions button { min-height: 44px; }
+#scout-view .scout-colors .chip { border-radius: var(--b-radius-control); background: var(--k-bg); color: var(--k-ink); border-color: var(--k-bd); box-shadow: none; }
+#scout-view .scout-colors .chip[aria-pressed="true"] { background: var(--s-bg); color: var(--s-ink); border-color: var(--s-bd); }
+#scout-view .cube-stage { position: relative; }
+#scout-view .cube-stage > .orbit { max-width: none !important; max-height: none !important; width: 420px !important; height: 420px !important; }
+#scout-view .cube-stage > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
+#scout-view .cube-stage > .cube-mount { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; min-height: 0; }
+#scout-view #scout-cube > .shared-cube { width: 300px; }
+#scout-view .cube-stage > :is(.stage-topline, .cube-caption) { display: none; }
+@media (max-width: 700px) {
+  #scout-view > .scout-shell { display: flex; flex-direction: column; height: auto; min-height: 0; }
+  #scout-view .scout-shell .cube-stage { flex: none; height: 280px; padding: 0; }
+  #scout-view .cube-stage > .cube-mount { width: 220px; height: 220px; }
+  #scout-view #scout-cube > .shared-cube { width: 220px; }
+  #scout-view .cube-stage > .orbit { width: 280px !important; height: 280px !important; }
+  #scout-view .scout-plan { max-height: 250px; min-height: 0; padding: 8px 0; }
+  #scout-view .scout-view-actions { display: flex; }
+  #scout-view .intro-row h1 { font-size: 22px; }
+  #scout-view:not([data-scout-found="true"]) .scout-plan { display: none; }
+  #scout-view .scout-colors .chip { --hc: 44px; min-height: 44px; }
 }

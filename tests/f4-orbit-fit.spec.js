@@ -1,5 +1,25 @@
 import { expect, test } from 'playwright/test';
 
+for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
+  test(`Cross Scout keeps its cube centred and settings reachable at ${viewport.width} × ${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/#/drills/scout?mode=explore');
+    await expect(page.locator('#scout-cube canvas')).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const orbit = document.querySelector('#scout-view .orbit__svg').getBoundingClientRect();
+      const cube = document.querySelector('#scout-cube .shared-cube').getBoundingClientRect();
+      return { orbit: orbit.toJSON(), cube: cube.toJSON(), height: document.documentElement.scrollHeight, width: document.documentElement.scrollWidth };
+    });
+    expect(geometry.width).toBeLessThanOrEqual(viewport.width);
+    expect(geometry.height).toBeLessThanOrEqual(viewport.height);
+    expect(geometry.orbit.width).toBeGreaterThan(geometry.cube.width);
+    expect(geometry.orbit.x + geometry.orbit.width / 2).toBeCloseTo(geometry.cube.x + geometry.cube.width / 2, 0);
+    expect(geometry.orbit.y + geometry.orbit.height / 2).toBeCloseTo(geometry.cube.y + geometry.cube.height / 2, 0);
+    await expect(page.locator('.scout-input-settings > summary')).toBeInViewport();
+    await page.screenshot({ path: `test-results/scout-centred-${viewport.width}.png` });
+  });
+}
+
 test('Orbit SVG uses the fitted host dimensions in a constrained cube stage', async ({ page }) => {
   await page.goto('/src/ui/gallery.html?flow=results');
   const sizes = await page.evaluate(async () => {

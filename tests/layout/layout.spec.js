@@ -63,7 +63,7 @@ const viewFor = {
   'review-import': '#review-view', 'review-record': '#review-view', progress: '#progress-view', history: '#history-view',
   review: '#review-view', recording: '#recording-view', 'not-found': '#not-found-view',
   'past-solve': '#history-view', replay: '#history-view', 'review-detail': '#history-view', timer: '#timer-view',
-  'debug-studio': '#smart-view', help: '#help-view', unknown: '#not-found-view',
+  'debug-studio': '#smart-view', help: '.ui-cube-menu__drawer:has(.help-page)', unknown: '#not-found-view',
 };
 
 const stateView = {

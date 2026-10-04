@@ -1,4 +1,7 @@
 import './cross-scout.css';
+import { mountTrainerSettings } from './trainers/settings-controls.js';
+import { loadSettings } from './brain/settings.js';
+import { syncPageTokens } from './pages/tokens.js';
 import { Cube } from './ui/cube/index.js';
 import { readCaseColorSetting, CASE_COLOR_CHANGE_EVENT } from './ui/cube/case-color.js';
 import { displayFaceColor, colorHex } from './trainers/case-display.js';
@@ -32,6 +35,9 @@ const PRACTICE_STORE = 'cubesight-scout-practice-v1';
 const practiceSummary = value => value ? fmt.time(value, { unit: true }) : '—';
 
 export function createCrossScout(root, cubeSession = smartCube) {
+  root.classList.add('cs-host', 'cs-page', 'brain', 'scout-page');
+  root.dataset.brainStyle = loadSettings(globalThis.localStorage).style;
+  syncPageTokens(root);
   let allowed=['U'];
   try { const saved=JSON.parse(localStorage.getItem('cubesight-scout-colors')); if(Array.isArray(saved) && saved.length && saved.every(f=>Object.hasOwn(FACE_COLORS,f))) allowed=[...new Set(saved)]; } catch { /* Use white initially. */ }
   const routeQuery = new URLSearchParams((globalThis.location?.hash ?? '').split('?')[1] ?? '');
@@ -76,7 +82,11 @@ export function createCrossScout(root, cubeSession = smartCube) {
     </section>
     <details class="scout-results-details"><summary>Plans found · 0</summary><section class="scout-results"><div class="scout-results-head"><h2>plans found</h2><select id="scout-sort" aria-label="sort plans"><option value="cue">easiest cues first</option><option value="moves">fewest moves first</option></select></div><div id="scout-results" class="scout-result-grid"></div><p id="scout-empty" class="scout-empty">Choose cross colors and find plans for candidates.</p><p class="scout-footnote">Recognition labels describe structural cues in the plan, not measured human difficulty. They do not account for what was visible from your chosen viewing angle. Search is bounded: “not found” does not mean impossible. Move counts use face turns (R2 counts as one). These are random-move scrambles, not competition random-state scrambles.</p><p class="scout-footnote">Search uses the MIT-licensed <a href="https://github.com/vangie/cube-xcross" target="_blank" rel="noopener noreferrer">cube-xcross engine</a>, which runs locally. Smart-cube moves stay on your device. Bluetooth needs a compatible cube and a supported browser on a secure page.</p></section></details>`;
   const $=selector=>root.querySelector(selector);
+  // copy-ok: CSS selectors for existing controls, not user-facing wording.
+  root.querySelectorAll('.scout-button, .scout-practice-launch, .scout-practice-reveal, .scout-highlight, #scout-analyze, .scout-view-actions button').forEach(button => button.classList.add('btn', 'btn--secondary', 'btn--s'));
   const disposeCaseColorControl = mountCaseColorControl($('.intro-row'));
+  const settingsControls = mountTrainerSettings(root);
+  $('.scout-orientation').after($('.scout-view-actions'));
   $('.scout-plan').append($('.scout-results-details'));
   const scoutColorOptions = $('.scout-options > div:first-child');
   const colorSettings = document.createElement('details');
@@ -85,7 +95,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
   colorSettings.append(scoutColorOptions);
   $('.scout-options').prepend(colorSettings);
   const roundPanel = createRoundPanel($('#scout-round-host'), {
-    drill: 'cross', orbitHost: root.querySelector('#scout-cube'),
+    drill: 'cross', orbitHost: root.querySelector('.scout-shell .cube-stage'),
     getSettings: () => ({ faces: allowed, practice: 'cross planning' }),
     onRestart: () => { if (selected) beginPractice(); else message('Find plans and choose one to start recall.'); },
     onComplete: () => { stopPlayback(); message('Round complete. Your result is in the quick-round strip.'); },
@@ -114,9 +124,10 @@ export function createCrossScout(root, cubeSession = smartCube) {
   highlightButton.textContent='Highlight pieces';
   highlightButton.setAttribute('aria-label','Highlight cross and F2L pieces');
   highlightButton.setAttribute('aria-pressed','false');highlightButton.disabled=true;
-  $('.stage-topline .view-lock').replaceWith(highlightButton);
+  $('.scout-view-actions').append(highlightButton);
+  $('.stage-topline .view-lock').remove();
   const cube=new Cube($('#scout-cube'),{mode:'case',size:'L',state:source,caseColorSetting:readCaseColorSetting(),caseSeed:`scout:${currentScramble}`,label:'Cross Scout case'});
-  const trainerOrbit = createTrainerOrbit($('#scout-cube'));
+  const trainerOrbit = createTrainerOrbit($('.scout-shell .cube-stage'));
   trainerOrbit.connect(roundPanel.orbit, () => roundPanel.getViewModel());
   let activeCaseSeed = `scout:${currentScramble}`;
   const visibleColor = face => cube.mode === 'live' ? FACE_COLORS[face] : displayFaceColor(face, readCaseColorSetting(), activeCaseSeed);
@@ -142,6 +153,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
       $('#scout-front').disabled=true;
       $('#scout-front-reason').textContent=`${title(visibleColor('U'))} stays on top, ${title(visibleColor('F'))} in front, and ${title(visibleColor('R'))} on the right until you choose a plan.`;
       $('#scout-view-caption').textContent=`${title(visibleColor('U'))} top · ${title(visibleColor('F'))} front · ${title(visibleColor('R'))} right`;
+      settingsControls.sync();
       return;
     }
     viewBottom=selected.face;
@@ -157,9 +169,10 @@ export function createCrossScout(root, cubeSession = smartCube) {
     $('#scout-front-reason').textContent=`Suggested ${title(visibleColor(suggestedFront.face))} because it shows ${suggestedFront.crossStickers} of 4 cross-color stickers and ${suggestedFront.visiblePieces} of ${targets.length} plan pieces from the starting angle. Cross stickers count first, then visible plan pieces.${tieNote}`;
     const held=inspectionOrientation(viewBottom,viewFront);
     $('#scout-view-caption').textContent=`${title(visibleColor(held.top))} top · ${title(visibleColor(held.front))} front · ${title(visibleColor(held.right))} right · ${title(visibleColor(held.bottom))} bottom`;
+    settingsControls.sync();
   }
   function renderColors(){
-    $('#scout-colors').innerHTML=`<button data-scout-color="CN" aria-pressed="${allowed.length===6}">color neutral · all six</button>`+Object.entries(FACE_COLORS).map(([face,color])=>`<button data-scout-color="${face}" aria-pressed="${allowed.includes(face)}"><i style="--color:${COLOR_HEX[color]}" aria-hidden="true"></i>${title(color)}</button>`).join('');
+    $('#scout-colors').innerHTML=`<button class="chip" data-scout-color="CN" aria-pressed="${allowed.length===6}">color neutral · all six</button>`+Object.entries(FACE_COLORS).map(([face,color])=>`<button class="chip" data-scout-color="${face}" aria-pressed="${allowed.includes(face)}"><i style="--color:${COLOR_HEX[color]}" aria-hidden="true"></i>${title(color)}</button>`).join('');
   }
   function stopPlayback(){playing=false;playbackGeneration++;renderPlayback();}
   function cancelSearch(){ requestGeneration++; controller?.abort();controller=null;terminateCrossSolver();busy=false;$('#scout-stop').hidden=true;$('#scout-analyze').disabled=false; }
@@ -291,7 +304,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
       scrambleGuideIndex=Math.min(scrambleGuideIndex,moves.length);
       move=moves[scrambleGuideIndex];index=scrambleGuideIndex;total=moves.length;mode='scramble';
     }
-    turnGuide.render({mode:practice&&!practice.revealedAt?null:mode,move,index,total,bottom:viewBottom,front:viewFront,recovery});
+    turnGuide.render({mode:practice&&!practice.revealedAt?null:mode,move,index,total,bottom:viewBottom,front:viewFront,recovery,faceColors:Object.fromEntries(Object.keys(FACE_COLORS).map(face=>[face,visibleColor(face)]))});
   }
   function renderPlan(){
     highlightButton.disabled=!selected;
@@ -393,7 +406,7 @@ export function createCrossScout(root, cubeSession = smartCube) {
     else if(allowed.includes(face)){if(allowed.length===1){message('Keep at least one cross color selected.');return;}allowed=allowed.filter(f=>f!==face);}
     else allowed.push(face);
     try{localStorage.setItem('cubesight-scout-colors',JSON.stringify(allowed));}catch{/* Keep in memory. */}
-    cancelSearch();clearPlans();cube.update(planData(source));renderColors();message(`Cross colors updated. The cube stays white-top / green-front until you choose a plan.`);
+    cancelSearch();clearPlans();cube.update(planData(source));renderColors();message(`Cross colors updated. The preview keeps its current orientation until you choose a plan.`);
   });
   $('#scout-front').addEventListener('change',event=>{if(!selected)return;stopPlayback();viewFront=event.target.value;updateOrientation(false);cube.update(planData(states[step]||source));renderPlayback();message(`${title(visibleColor(viewFront))} is now in front. The displayed solution notation has been remapped to this held view.`);});
   $('#scout-results').addEventListener('click',event=>{const button=event.target.closest('[data-scout-result]');if(button)selectPlan(Number(button.dataset.scoutResult));});
@@ -476,6 +489,6 @@ export function createCrossScout(root, cubeSession = smartCube) {
         round: roundPanel.getViewModel(), cube: snapshot, feedback: $('#scout-message')?.textContent || '', settings: { caseColor: cube.mode === 'live' ? 'physical' : readCaseColorSetting(), colors: allowed } };
     },
     setActive(value){active=value;roundPanel.setActive(value);if(!value){stopPlayback();if(selected)cube.update(planData(states[step]));if(busy){cancelSearch();message('Search stopped while away. Existing results are kept.');}}},
-    destroy(){window.removeEventListener(CASE_COLOR_CHANGE_EVENT,onCaseColorChange);disposeCaseColorControl();roundPanel.destroy();trainerOrbit?.destroy();cube.destroy();}
+    destroy(){window.removeEventListener(CASE_COLOR_CHANGE_EVENT,onCaseColorChange);disposeCaseColorControl();settingsControls.destroy();roundPanel.destroy();trainerOrbit?.destroy();cube.destroy();}
   };
 }

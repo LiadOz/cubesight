@@ -11,6 +11,7 @@ async function seed(page) {
     localStorage.setItem('cubesight-progress-v2', JSON.stringify({ history }));
   });
   await page.goto('/#/drills/corners');
+  await page.locator('#corner-view .trainer-progress-details > summary').click();
 }
 
 test('trend uses actual date gaps, aligned attempt dots, and inspectable points', async ({ page }) => {
@@ -76,6 +77,7 @@ test('a slow outlier is pinned without flattening the useful timing range', asyn
     })) }));
   });
   await page.goto('/#/drills/corners');
+  await page.locator('#corner-view .trainer-progress-details > summary').click();
   await page.getByRole('button', { name: 'Show entries' }).click();
   await expect(page.locator('.rp-trend-note')).toContainText('chart ceiling is 500 ms');
   const ys = await page.locator('.rp-trend-point').evaluateAll(points => points.map(point => +point.getAttribute('cy')));

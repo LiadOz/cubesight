@@ -8,7 +8,11 @@ test('the OLL drill opens the selected canonical case, scores it, and reveals a 
   await page.getByRole('button', { name: /1 · Runway, Blank/ }).click();
   await expect(page.locator('#oll-reveal')).toContainText('OLL 1 · Runway, Blank');
   await expect(page.locator('#oll-reveal a')).toHaveAttribute('href', /speedsolving\.com/);
-  await expect(page.locator('#oll-combo')).toHaveText('combo 1');
+  await expect(page.locator('#oll-view .quick-round-metrics')).toContainText('combo 1');
+  const round = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-shell-v1')).round);
+  expect(round.combo).toBe(1);
+  expect(round.answers).toHaveLength(1);
+  expect(round.answers[0].correct).toBe(true);
 });
 
 test('changing the OLL case query while staying on the route loads the new setup', async ({ page }) => {
@@ -30,11 +34,11 @@ test('the canonical OLL 26 setup with a whole-cube rotation loads and reveals', 
 test('the lookahead drill offers planner-verified next-pair choices', async ({ page }) => {
   await page.goto('/#/drills/lookahead');
   await expect(page.locator('#lookahead-view')).toBeVisible();
-  await page.getByRole('button', { name: 'start 20-case round' }).click();
+  await page.getByRole('button', { name: '20 cases', exact: true }).click();
   const choices = page.locator('.lookahead-choice');
   await expect(choices.first()).toBeVisible({ timeout: 18_000 });
   await expect(choices.first()).toContainText('verified');
-  await expect(page.locator('#la-clock')).toHaveText(/^[0-3]\.\d{2} s$/);
+  await expect(page.locator('#lookahead-view .trainer-orbit-slot')).toContainText(/^[0-3]\.\d{2} s$/);
   await choices.first().click();
   await expect(page.locator('#la-feedback')).not.toHaveText('Pick the pair you would solve first.');
 });

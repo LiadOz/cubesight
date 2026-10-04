@@ -14,11 +14,11 @@ export function createSmartCubeTurnGuide(container, { onPrevious = () => {}, onN
   $('.smart-turn-prev').addEventListener('click', onPrevious);
   $('.smart-turn-next').addEventListener('click', onNext);
   return {
-    render({ mode = null, move, index = 0, total = 0, bottom = 'D', front = 'F', recovery = [] } = {}) {
+    render({ mode = null, move, index = 0, total = 0, bottom = 'D', front = 'F', recovery = [], faceColors } = {}) {
       container.hidden = !mode;
       if (!mode) return;
       container.dataset.guideMode = mode;
-      const cue = describeTurn(move, bottom, front);
+      const cue = describeTurn(move, bottom, front, faceColors);
       const label = mode === 'plan' ? 'plan' : mode === 'guide' ? 'guide' : 'scramble';
       const heading = mode === 'recovery' ? `back on plan · ${total} ${total === 1 ? 'move' : 'moves'}`
         : move ? `${label} move ${index + 1} of ${total}` : `${label} complete`;

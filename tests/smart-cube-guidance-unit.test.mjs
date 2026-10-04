@@ -77,3 +77,10 @@ test('a coalesced double re-evaluated from the step before its first quarter mat
   // replaces: pass the step/detour from before the first quarter plus the double
   assert.deepEqual(followPlanTurn(states, 0, [], states[1], 'F2'), { step: 1, detour: [], onPlan: true });
 });
+
+test('case turn cues use the displayed palette while live-cube cues keep physical centers', () => {
+  const palette = { U: 'yellow', D: 'white', F: 'green', B: 'blue', R: 'orange', L: 'red' };
+  assert.match(describeTurn('R', 'D', 'F', palette).text, /right face \(orange center\) clockwise/);
+  assert.match(describeTurn("U'", 'D', 'F', palette).text, /top face \(yellow center\) counterclockwise/);
+  assert.match(describeTurn('R', 'D', 'F').text, /right face \(red center\) clockwise/);
+});

@@ -1,3 +1,4 @@
+import { chooseTrainerSetting } from './helpers/trainer-settings.js';
 import { test, expect, beginCoverage } from './helpers/coverage-test.js';
 
 test.setTimeout(60_000);
@@ -5,6 +6,8 @@ async function openScout(page){
   await page.goto('/#/drills/corners');
   await page.goto('/#/drills/scout?mode=explore');
   await expect(page.locator('#scout-cube canvas')).toBeVisible();
+  await page.locator('.scout-color-settings > summary').click();
+  await page.locator('.scout-input-settings > summary').click();
 }
 
 test('color selection keeps the canonical preview until a plan is chosen',async({page})=>{
@@ -13,13 +16,13 @@ test('color selection keeps the canonical preview until a plan is chosen',async(
   await expect(canvas).toHaveAttribute('data-bottom-face','D');
   await expect(canvas).toHaveAttribute('data-front-face','F');
   await expect(page.locator('#scout-bottom-label')).toHaveText('Default cube view');
-  await expect(page.locator('#scout-front-reason')).toContainText('White stays on top, green in front, and red on the right');
+  await expect(page.locator('#scout-front-reason')).toContainText('Yellow stays on top, Green in front, and Orange on the right');
   await expect(page.locator('#scout-front')).toBeDisabled();
   await page.locator('[data-scout-color="R"]').click();
   await expect(canvas).toHaveAttribute('data-bottom-face','D');
   await expect(canvas).toHaveAttribute('data-front-face','F');
-  await expect(page.locator('#scout-view-caption')).toHaveText('White top · Green front · Red right');
-  await expect(page.locator('#scout-message')).toContainText('stays white-top / green-front');
+  await expect(page.locator('#scout-view-caption')).toHaveText('Yellow top · Green front · Orange right');
+  await expect(page.locator('#scout-message')).toContainText('keeps its current orientation');
 });
 
 test('calculator analyzes, highlights pieces, and plays a verified plan',async({page})=>{
@@ -44,7 +47,7 @@ test('calculator analyzes, highlights pieces, and plays a verified plan',async({
   await expect(page.locator('.scout-move')).toHaveText(expectedMoves);
   const oldFront=await page.locator('#scout-front').inputValue();
   const newFront=await page.locator('#scout-front option').evaluateAll((options,current)=>options.map(option=>option.value).find(value=>value!==current),oldFront);
-  await page.locator('#scout-front').selectOption(newFront);
+  await chooseTrainerSetting(page, 'scout-front', newFront);
   const remappedMoves=await page.evaluate(async()=>{
     const {movesForInspection}=await import('/src/cross-cube.js');
     const root=document.querySelector('#scout-view'),canvas=document.querySelector('#scout-cube canvas');
@@ -66,6 +69,7 @@ test('calculator analyzes, highlights pieces, and plays a verified plan',async({
   await expect(page.locator('#scout-step')).toContainText('Move 0');
   await expect(page.locator('#scout-results')).not.toContainText('verified on the cube');
   await expect(page.locator('.scout-result').first()).toContainText('Look for:');
+  await page.locator('.scout-results-details > summary').click();
   await page.getByText('What do the plan labels mean?',{exact:true}).click();
   await expect(page.locator('.scout-guide')).toContainText('cross + two F2L pairs');
   await expect(page.locator('.scout-guide')).toContainText('not different solving methods');
@@ -161,6 +165,7 @@ test('mobile can switch from page scrolling to unrestricted touch rotation',asyn
   const canvas=page.locator('#scout-cube canvas');
   await expect(canvas).toBeVisible();
   await expect(canvas).toHaveAttribute('data-touch-mode','page-scroll');
+  if (!await page.locator('.scout-input-settings').evaluate(node => node.open)) await page.locator('.scout-input-settings > summary').click();
   await page.locator('#scout-touch-mode').click();
   await expect(page.locator('#scout-touch-mode')).toHaveAttribute('aria-pressed','true');
   await expect(canvas).toHaveAttribute('data-touch-mode','full-rotation');
@@ -175,6 +180,7 @@ test('mobile can switch from page scrolling to unrestricted touch rotation',asyn
   await page.waitForTimeout(250);
   expect(await canvas.getAttribute('data-camera-pose')).not.toBe(beforePose);
   expect(await page.evaluate(()=>scrollY)).toBe(beforeScroll);
+  if (!await page.locator('.scout-input-settings').evaluate(node => node.open)) await page.locator('.scout-input-settings > summary').click();
   await page.locator('#scout-touch-mode').click();
   await expect(canvas).toHaveCSS('touch-action','pan-y');
   await finishCoverage();

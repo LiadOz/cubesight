@@ -6,6 +6,7 @@ test('Cross Scout explains how to find a GAN MAC in Chrome', async ({ page }) =>
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText(value) { window.copiedMacHelpAddress = value; return Promise.resolve(); } } });
   });
   await page.goto('/#/drills/scout?mode=explore');
+  await page.locator('.scout-input-settings > summary').click();
   await page.locator('#scout-mac-help summary').click();
   await expect(page.locator('#scout-mac-help')).toContainText('chrome://bluetooth-internals/#devices');
   await expect(page.locator('#scout-mac-help')).toContainText('start scan');
@@ -29,6 +30,7 @@ test('smart-cube picker does not hide devices behind name filters', async ({ pag
     });
   });
   await page.goto('/#/drills/scout?mode=explore');
+  await page.locator('.scout-input-settings > summary').click();
   await page.locator('#scout-smart-connect').click();
   await expect.poll(() => page.evaluate(() => window.smartCubePickerOptions?.acceptAllDevices)).toBe(true);
 });
@@ -38,9 +40,9 @@ test('scramble turn guide names the next face and direction', async ({ page }) =
   const scramble = page.locator('#scout-scramble');
   await scramble.fill("R U' F2");
   await expect(page.locator('#scout-turn-guide')).toContainText('scramble move 1 of 3');
-  await expect(page.locator('#scout-turn-guide')).toContainText('right face (red center) clockwise');
+  await expect(page.locator('#scout-turn-guide')).toContainText('right face (orange center) clockwise');
   await page.locator('#scout-turn-guide .smart-turn-next').click();
-  await expect(page.locator('#scout-turn-guide')).toContainText('top face (white center) counterclockwise');
+  await expect(page.locator('#scout-turn-guide')).toContainText('top face (yellow center) counterclockwise');
   await page.locator('#scout-turn-guide .smart-turn-next').click();
   await expect(page.locator('#scout-turn-guide')).toContainText('front face (green center) 180°');
 });
@@ -56,6 +58,7 @@ test('Reset view restores the Cross Scout camera after a drag', async ({ page })
   await page.mouse.move(box.x + box.width * .5, box.y + box.height * .05, { steps: 12 });
   await page.mouse.up();
   await expect.poll(() => canvas.getAttribute('data-camera-pose')).not.toBe(initial);
+  await page.locator('.scout-input-settings > summary').click();
   await page.locator('#scout-reset-view').click();
   await expect.poll(() => canvas.getAttribute('data-camera-pose')).toBe(initial);
 });
@@ -89,6 +92,7 @@ test('Cross Scout mirrors smart-cube turns and advances a selected plan', async 
     createCrossScout(root, session);
   });
   const scout = page.locator('#smart-scout-test');
+  await scout.locator('.scout-input-settings > summary').click();
   await scout.locator('#scout-smart-connect').click();
   await expect(scout.locator('#scout-smart-title')).toContainText('GAN test cube');
   await expect(scout.locator('#scout-smart-status')).toContainText('Cube synced');

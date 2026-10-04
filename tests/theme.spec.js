@@ -20,15 +20,16 @@ test('theme switch preserves the current cube and its sticker colors', async ({ 
   await page.goto('/#/drills/corners');
   await page.locator('#cube canvas').waitFor();
   const before = await page.locator('#cube canvas').getAttribute('data-camera-pose');
+  const caseSeed = await page.evaluate(() => window.__cubesightLegacyTrainerHandles.corner.getViewModel().currentCase.seed);
   const swatches = await page.locator('.answer-button > i').evaluateAll(els => els.map(el => getComputedStyle(el).backgroundColor));
   await page.locator('#theme-toggle').click();
-  await expect(page.locator('#case-number')).toHaveText('case 1');
+  expect(await page.evaluate(() => window.__cubesightLegacyTrainerHandles.corner.getViewModel().currentCase.seed)).toBe(caseSeed);
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-camera-pose', before);
   expect(await page.locator('.answer-button > i').evaluateAll(els => els.map(el => getComputedStyle(el).backgroundColor))).toEqual(swatches);
   await page.goto('/#/drills/f2l');
   await expect(page.locator('#f2l-cube canvas')).toBeVisible();
   await page.getByRole('button', { name: 'help' }).click();
-  await expect(page.locator('#help-view')).toBeVisible();
+  await expect(page.locator('.ui-cube-menu__drawer:has(.help-page)')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'one cube, one orbit' })).toBeVisible();
 });
 
