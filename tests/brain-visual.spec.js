@@ -15,7 +15,7 @@ test.use({ viewport: { width: 1440, height: 900 } });
 async function openFixture(page, style, theme, fixture) {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto(`${GALLERY}?style=${style}&fx=${fixture}&theme=${theme}`);
+  await page.goto(`${GALLERY}?cube=stub&style=${style}&fx=${fixture}&theme=${theme}`);
   await page.waitForSelector('html[data-gallery-ready]');
   await page.evaluate(() => document.fonts.ready);
   return errors;

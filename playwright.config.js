@@ -3,6 +3,8 @@ import { defineConfig } from 'playwright/test';
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.js',
+  // Dedicated Tier 2 commands own these suites; do not execute them twice.
+  testIgnore: ['**/layout/**', '**/snapshots/**'],
   timeout: 20_000,
   retries: 0,
   outputDir: 'test-results/playwright',

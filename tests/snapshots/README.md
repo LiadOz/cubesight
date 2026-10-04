@@ -1,8 +1,8 @@
 # Deterministic snapshot suite
 
 Run `npm run test:snapshots` for the small pixel/structure matrix and the full
-Brain view-model fixture set. These specs are also part of the regular
-`npx playwright test` run. The default visual subset covers solve, drills,
+Brain view-model fixture set. These specs run once through their dedicated configuration in Tier 2
+(`npm run test:regression`); the regular Playwright command excludes them. The default visual subset covers solve, drills,
 algs, history, past-solve, replay, history review, progress, timer, representative
 fake-cube states, colour-neutral case settings, all four goal-progress states,
 the shared recording route, and the recorded rotation-cross replay at 390×844

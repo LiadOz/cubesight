@@ -61,7 +61,8 @@ async function installDeterminism(page, theme, viewport) {
   await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
-    return SERVER_ORIGINS.has(url.origin) ? route.continue() : route.abort();
+    const configuredOrigin = new URL(test.info().project.use.baseURL).origin;
+    return SERVER_ORIGINS.has(url.origin) || url.origin === configuredOrigin ? route.continue() : route.abort();
   });
   await page.addInitScript(({ themeMode, fixedNow }) => {
     if (!localStorage.getItem('cubesight-theme')) localStorage.setItem('cubesight-theme', themeMode);
@@ -150,6 +151,22 @@ async function snapshotCell(page, cell) {
   await expect(page.locator('body')).toMatchAriaSnapshot({ name: `${name}.aria.yml` });
 }
 
+async function captureVariants(page, capture) {
+  const failures = [];
+  for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) {
+    await test.step(`${viewport.id} · ${theme}`, async () => {
+      try {
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+        await capture(viewport, theme);
+      } catch (error) {
+        failures.push(`${viewport.id} · ${theme}: ${error.stack || error}`);
+      }
+    });
+  }
+  expect(failures, failures.join('\n')).toEqual([]);
+}
+
 for (const fixtureId of SNAPSHOT_STATES) {
   const fixture = FIXTURE_BY_ID.get(fixtureId);
   if (!fixture) throw new Error(`F9 state ${fixtureId} is missing from the shared F8 matrix`);
@@ -159,13 +176,14 @@ for (const fixtureId of SNAPSHOT_STATES) {
       : fixture.route.startsWith('/drills') || fixture.route.startsWith('/algs') || fixture.route.startsWith('/timer') ? 'F4'
         : fixture.route.startsWith('/progress') ? 'F5' : fixture.route.startsWith('/demo') ? 'F17' : 'F1');
 
-  for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) {
-    test(`fixture ${fixture.id} · ${viewport.id} · ${theme}`, async ({ page }) => {
+  {
+    test(`fixture ${fixture.id} · all cells`, async ({ page }) => {
+      const viewport = SNAPSHOT_VIEWPORTS[1], theme = 'dark';
       if (missingDriver) throw new Error(`F9 state ${fixture.id} is missing fixture driver "${fixture.driver}"; see tests/layout/F1-FIXTURES.md`);
       test.setTimeout(90_000);
       await installDeterminism(page, theme, viewport);
       const clockInstalled = await freezeTime(page, fixture);
-      await driver(page, { id: fixture.id, fixture, fixedNow: FIXED_NOW, clockInstalled, clockTime: FIXED_TIME });
+      await driver(page, { ...fixture, id: fixture.id, fixture, fixedNow: FIXED_NOW, clockInstalled, clockTime: FIXED_TIME });
       if (fixture.id === 'debug-open') {
         await page.keyboard.press('Backquote');
         await expect(page.locator('[data-global-dev-drawer]'), 'the shared debug drawer opens from the keyboard').toBeVisible();
@@ -174,10 +192,10 @@ for (const fixtureId of SNAPSHOT_STATES) {
       const expectedView = EXPECTED_VIEW[routeEntry?.id];
       if (!expectedView) throw new Error(`F9 state ${fixture.id} route ${fixture.route} has no visible view selector`);
       await expect(page.locator(expectedView), `${fixture.id} route view`).toBeVisible();
-      await snapshotCell(page, {
+      await captureVariants(page, (viewport, theme) => snapshotCell(page, {
         route: fixture.route, state: fixture.id, width: viewport.width, height: viewport.height, theme,
         owner, dataOwner: fixture.dataOwner, expectCube: true, expectedCanvasCount: 1,
-      });
+      }));
     });
   }
 }
@@ -191,8 +209,10 @@ for (const routeId of SNAPSHOT_ROUTES) {
         : ['drills', 'algs', 'timer'].includes(route.page) ? 'F4'
         : route.page === 'progress' ? 'F5' : 'F1';
 
-  for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) {
-    test(`route ${route.id} · ${viewport.id} · ${theme}`, async ({ page }) => {
+  {
+    test(`route ${route.id} · all cells`, async ({ page }) => {
+      test.setTimeout(90_000);
+      const viewport = SNAPSHOT_VIEWPORTS[1], theme = 'dark';
       await installDeterminism(page, theme, viewport);
       await page.addInitScript(records => localStorage.setItem('cubesight-solves-v1', JSON.stringify(records)), HISTORY_SEED);
       await freezeTime(page);
@@ -201,17 +221,18 @@ for (const routeId of SNAPSHOT_ROUTES) {
       const expectedView = EXPECTED_VIEW[route.id];
       if (!expectedView) throw new Error(`F9 route ${route.id} has no registered visible view selector`);
       await expect(page.locator(expectedView), `${route.id} route view`).toBeVisible();
-      await snapshotCell(page, {
+      await captureVariants(page, (viewport, theme) => snapshotCell(page, {
         route: route.path, state: 'default', width: viewport.width, height: viewport.height, theme,
         owner, dataOwner: route.id === 'progress' ? 'F6' : null, expectCube: route.id === 'demo' || ['solve', 'history', 'timer'].includes(route.page),
         expectedCanvasCount: route.id === 'demo-format' ? 0 : 1,
-      });
+      }));
     });
   }
 }
 
-for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) {
-  test(`recorded rotation-cross replay · ${viewport.id} · ${theme}`, async ({ page }) => {
+{
+  test('recorded rotation-cross replay · all cells', async ({ page }) => {
+    const viewport = SNAPSHOT_VIEWPORTS[1], theme = 'dark';
     test.setTimeout(90_000);
     await installDeterminism(page, theme, viewport);
     await freezeTime(page);
@@ -219,10 +240,10 @@ for (const viewport of SNAPSHOT_VIEWPORTS) for (const theme of SNAPSHOT_THEMES) 
     await page.goto('/?replay=/replay-fixture.json&replaySpeed=0#/brain');
     await page.waitForFunction(() => document.documentElement.dataset.replay === 'done', null, { timeout: 60_000, polling: 20 });
     await expect(page.locator('#brain-view #brain-phase-label')).toHaveText('solved');
-    await snapshotCell(page, {
+    await captureVariants(page, (viewport, theme) => snapshotCell(page, {
       route: '/brain', state: 'rotation-cross-recording', width: viewport.width, height: viewport.height,
       theme, owner: 'F1', expectCube: true,
-    });
+    }));
   });
 }
 

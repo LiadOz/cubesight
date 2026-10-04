@@ -95,7 +95,7 @@ for (const fixture of STATE_FIXTURES) {
     let driverFailure = '';
     try {
       if (!driver) throw new Error(`missing F8 state driver ${fixture.driver}`);
-      await driver(page, { id: fixture.id, fixture });
+      await driver(page, { ...fixture, id: fixture.id, fixture });
     } catch (error) {
       driverFailure = error?.stack || error?.message || String(error);
     }

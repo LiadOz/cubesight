@@ -43,7 +43,13 @@ if (at != null) shell.frame(frameState(vm, at));
 document.body.style.background = getComputedStyle(shell.root).getPropertyValue('--b-bg');
 
 const SOLVED = new Set(['disconnected', 'connecting', 'idle', 'settings']);
-try {
+if (params.get('cube') === 'stub') {
+  // Layout-only visual tests mask this canvas; genuine WebGL specs use the default.
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'width:100%;height:100%';
+  canvas.setAttribute('aria-label', '3D cube');
+  shell.slots.cube.append(canvas);
+} else try {
   const cube = createCube3D(shell.slots.cube, { mode: 'scout' });
   cube.update(toRenderData(SOLVED.has(fx) ? createSolvedState() : stateFromScramble("D2 F2 U' B2 R2 U2 F2 U' L2 D' B'")));
 } catch (error) { console.warn('[gallery] no WebGL', error); }

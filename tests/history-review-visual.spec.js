@@ -1,6 +1,9 @@
 import { test, expect } from './helpers/coverage-test.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { seedSolve, visualCell } from './helpers/seed-solve.js';
+
+test.describe.configure({ mode: 'parallel' });
 
 const output = path.resolve('test-results/r1-history-review');
 const record = {
@@ -9,17 +12,16 @@ const record = {
 };
 
 for (const style of ['orbit', 'mono']) {
-  for (const theme of ['dark', 'light']) {
-    for (const viewport of [{ name: 'desktop', width: 1280, height: 900 }, { name: 'phone', width: 390, height: 844 }]) {
-      test(`history and review lifecycle: ${style} ${theme} ${viewport.name}`, async ({ page }) => {
+  test(`history and review lifecycle: ${style} · all cells`, async ({ page }) => {
+    test.setTimeout(60_000);
+    await seedSolve(page, { record, style });
+    await page.goto('/#/history');
+    for (const theme of ['dark', 'light']) {
+      for (const viewport of [{ name: 'desktop', width: 1280, height: 900 }, { name: 'phone', width: 390, height: 844 }]) {
+        await visualCell(page, { ...viewport, theme });
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
-        await page.addInitScript(({ record, style, theme }) => {
-          localStorage.setItem('cubesight-solves-v1', JSON.stringify({ version: 1, records: [record] }));
-          localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
-          localStorage.setItem('cubesight-theme', theme);
-        }, { record, style, theme });
 
-        await page.goto('/#/history');
+        await page.evaluate(() => { location.hash = '#/history'; });
         const history = page.locator('.history-page');
         await expect(history).toBeVisible();
         await expect(history).toHaveAttribute('data-brain-style', style);
@@ -33,7 +35,7 @@ for (const style of ['orbit', 'mono']) {
         fs.mkdirSync(output, { recursive: true });
         await page.screenshot({ path: path.join(output, `history-${style}-${theme}-${viewport.name}.png`), fullPage: true });
 
-        await page.goto(`/#/review/${record.at}`);
+        await page.evaluate(at => { location.hash = `#/review/${at}`; }, record.at);
         const review = page.locator('.solve-review-page');
         await expect(review).toBeVisible();
         await expect(review).toHaveAttribute('data-brain-style', style);
@@ -45,12 +47,12 @@ for (const style of ['orbit', 'mono']) {
         await expect(review.locator('.sr-step-count')).toHaveText('move 1 / 2');
         await page.screenshot({ path: path.join(output, `review-${style}-${theme}-${viewport.name}.png`), fullPage: true });
 
-        await page.goto('/#/history');
+        await page.evaluate(() => { location.hash = '#/history'; });
         await expect(history).toBeVisible();
         await expect(history.locator('canvas')).toHaveCount(1);
-        await page.goto(`/#/review/${record.at}`);
+        await page.evaluate(at => { location.hash = `#/review/${at}`; }, record.at);
         await expect(review.locator('canvas')).toHaveCount(1);
-      });
+      }
     }
-  }
+  });
 }

@@ -1,9 +1,26 @@
 import { test, expect, beginCoverage } from './helpers/coverage-test.js';
+import { visualCell } from './helpers/seed-solve.js';
 import { mkdir } from 'node:fs/promises';
+
+async function allCaseLinks(page) {
+  const links = new Set();
+  for (;;) {
+    await page.locator('.alg-case-grid').waitFor();
+    for (const href of await page.locator('.alg-case-card').evaluateAll(nodes => nodes.map(node => node.getAttribute('href')))) links.add(href);
+    const next = page.getByRole('link', { name: 'next ›', exact: true });
+    if (!(await next.count())) break;
+    const target = await next.getAttribute('href');
+    const targetPage = new URLSearchParams(target.split('?')[1]).get('page');
+    await next.click();
+    await expect(page.locator('.alg-pagination')).toContainText(` · ${targetPage} of `);
+  }
+  return links;
+}
 
 test('curated OLL case page shows verified sources, setup repaint, picked alg and no-cube drill', async ({ page }) => {
   await page.goto('/#/algs/oll');
-  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(57);
+  expect((await allCaseLinks(page)).size).toBe(57);
+  await page.goto('/#/algs/oll');
   await page.locator('#algs-view .alg-case-card').first().click();
   await expect(page).toHaveURL(/#\/algs\/oll\/1$/);
   await expect(page.getByRole('heading', { name: 'Runway, Blank' })).toBeVisible();
@@ -12,7 +29,7 @@ test('curated OLL case page shows verified sources, setup repaint, picked alg an
   await expect(page.locator('.alg-entry a').first()).toHaveAttribute('href', /speedsolving\.com/);
   await page.locator('[data-pick]').last().click();
   await expect(page.locator('.alg-entry.is-picked')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Start no-cube drill' }).click();
+  await page.getByRole('button', { name: 'drill alg', exact: true }).click();
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await page.waitForTimeout(20);
   await page.getByRole('button', { name: 'Done', exact: true }).click();
@@ -39,16 +56,15 @@ test('changing to a different algorithm case resets scroll to the page top', asy
 
 test('algorithm drill labels, move counts, theme contrast, and touch targets stay readable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const style of ['orbit', 'mono']) for (const theme of ['light', 'dark']) {
-    await page.goto('/');
-    await page.evaluate(([style, theme]) => {
-      localStorage.setItem('cubesight-theme', theme);
-      localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style }));
-    }, [style, theme]);
-    await page.reload();
+  for (const style of ['orbit', 'mono']) {
+    await page.addInitScript(style => localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style })), style);
     await page.goto('/#/algs/oll');
+    for (const theme of ['light', 'dark']) {
+    await visualCell(page, { width: 390, height: 844, theme });
+    await page.evaluate(() => { location.hash = '#/algs/oll'; });
+    await page.locator('.alg-case-grid').waitFor();
     const radius = await page.locator('.alg-case-card').first().evaluate(node => getComputedStyle(node).borderRadius);
-    expect(radius).toBe(style === 'mono' ? '8px' : '12px');
+    expect(radius).toBe('0px'); // Approved open rows replace framed cards in both styles.
     await page.locator('.alg-case-card').first().click();
     const firstAlg = page.locator('.alg-entry').first();
     await expect(firstAlg).toContainText('11 moves');
@@ -65,9 +81,11 @@ test('algorithm drill labels, move counts, theme contrast, and touch targets sta
       return [style.color, style.backgroundColor];
     });
     expect(colors[0]).not.toBe(colors[1]);
-    await page.goto('/#/algs/oll');
+    await page.evaluate(() => { location.hash = '#/algs/oll'; });
+    await page.locator('.alg-case-grid').waitFor();
     const tab = page.locator('.alg-set-tabs a.is-active');
     expect(await tab.evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+  }
   }
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/#/algs/oll');
@@ -78,56 +96,70 @@ test('algorithm drill labels, move counts, theme contrast, and touch targets sta
 
 test('all standard F2L cases, back-slot variants and staged two-look routes are functional', async ({ page }) => {
   await page.goto('/#/algs/f2l');
-  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(41);
+  expect((await allCaseLinks(page)).size).toBe(41);
+  await page.goto('/#/algs/f2l'+(page.url().includes('slot=BR')?'?slot=BR':''));
+  await page.locator('.alg-browser__scope > summary').click();
   await expect(page.locator('#algs-view')).toContainText('All 41 standard F2L cases');
   await page.locator('#algs-view .alg-case-card').first().click();
-  await expect(page.locator('.alg-cube-card')).toContainText('Set up this F2L case on your cube before each round');
-  await expect(page.locator('.alg-cube-card')).toContainText('do not use the no-reset virtual repaint flow');
+  await expect(page.locator('.alg-case-note')).toContainText('physical setup');
+  await page.locator('[data-action="start-case-drill"]').click();
+  await expect(page.locator('[data-drill]')).toContainText('self-timed round');
+  await expect(page.locator('[data-action="start-cube-drill"]')).toBeDisabled();
   await page.goto('/#/algs/f2l');
   await page.getByRole('navigation', { name: 'F2L slot' }).getByRole('link', { name: 'back right', exact: true }).click();
-  await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(41);
+  expect((await allCaseLinks(page)).size).toBe(41);
+  await page.goto('/#/algs/f2l'+(page.url().includes('slot=BR')?'?slot=BR':''));
   await page.locator('#algs-view .alg-case-card').first().click();
   await expect(page).toHaveURL(/#\/algs\/f2l\/1-br$/);
-  await expect(page.locator('.alg-detail__head')).toContainText('BR pair needs insertion');
+  await expect(page.locator('.alg-case-head')).toContainText('Target: BR');
   await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
   await page.goto('/#/algs/oll2');
   await expect(page.locator('#algs-view .alg-case-card')).toHaveCount(16);
   await page.goto('/#/algs/oll2/eo-line');
   await expect(page.getByRole('heading', { name: 'EO · Line' })).toBeVisible();
-  await expect(page.locator('.alg-detail__head')).toContainText('All four last-layer edges oriented');
+  await expect(page.locator('.alg-case-head')).toContainText('All four last-layer edges oriented');
 });
 
 test('algorithm case screens render across Orbit/Mono and light/dark at desktop and mobile widths', async ({ browser }, testInfo) => {
   await mkdir('test-results/review-next-2-player', { recursive: true });
-  for (const width of [1280, 390]) for (const style of ['orbit', 'mono']) for (const theme of ['light', 'dark']) {
+  test.setTimeout(60_000);
+  for (const style of ['orbit', 'mono']) {
     const context = await browser.newContext({
       baseURL: testInfo.project.use.baseURL,
-      viewport: { width, height: width === 390 ? 844 : 900 },
+      viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce',
     });
     try {
       await context.addInitScript(([preferredStyle, preferredTheme]) => {
         localStorage.setItem('cubesight-theme', preferredTheme);
         localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: preferredStyle }));
-      }, [style, theme]);
+      }, [style, 'light']);
       const page = await context.newPage();
       const finishCoverage = await beginCoverage(page, testInfo);
       try {
         await page.goto('/#/algs/oll/1');
-        const screen = page.locator('#algs-view .alg-detail');
-        await expect(screen).toBeVisible();
-        await expect(page.locator('#algs-view .alg-page')).toHaveAttribute('data-brain-style', style);
-        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-        await expect(page.locator('.alg-cube-card')).toBeVisible();
-        await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
-        const cubeWidth = await page.locator('[data-alg-cube] canvas').evaluate(node => node.getBoundingClientRect().width);
-        expect(cubeWidth).toBeGreaterThanOrEqual(width === 390 ? 190 : 240);
-        // F4 puts move-group names on the case Orbit, not in a second legacy strip.
-        const orbitLabels = await page.locator('.alg-case-orbit .orbit__label-name').allTextContents();
-        expect(orbitLabels).toContain('sledgehammer');
-        expect(orbitLabels.join(' ')).not.toMatch(/[−-]0\.00|\d+–\d+\s*[−-]/);
-        await expect(page.locator('.alg-entry-grid .alg-entry')).toHaveCount(2);
-        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
-        await page.screenshot({ path: `test-results/review-next-2-player/algs-case-${style}-${theme}-${width}.png`, fullPage: true });
+        await page.locator('.alg-entry.is-picked').waitFor();
+        for (const width of [1280, 390]) for (const theme of ['light', 'dark']) {
+          await visualCell(page, { width, height: width === 390 ? 844 : 900, theme });
+          const screen = page.locator('#algs-view .alg-detail');
+          await expect(screen).toBeVisible();
+          await expect(page.locator('#algs-view .alg-page')).toHaveAttribute('data-brain-style', style);
+          await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+          await expect(page.locator('.alg-cube-card')).toBeVisible();
+          await expect(page.locator('[data-alg-cube] canvas')).toHaveCount(1);
+          const cubeWidth = await page.locator('[data-alg-cube] canvas').evaluate(node => node.getBoundingClientRect().width);
+          expect(cubeWidth).toBeGreaterThanOrEqual(width === 390 ? 190 : 240);
+          const [ringBox, cubeBox] = await Promise.all([page.locator('.alg-case-orbit').boundingBox(), page.locator('[data-alg-cube] canvas').boundingBox()]);
+          expect(Math.abs(ringBox.x + ringBox.width / 2 - cubeBox.x - cubeBox.width / 2)).toBeLessThan(4);
+          expect(Math.abs(ringBox.y + ringBox.height / 2 - cubeBox.y - cubeBox.height / 2)).toBeLessThan(4);
+          // F4 puts move-group names on the case Orbit, not in a second legacy strip.
+          await expect(page.locator('.alg-case-orbit .orbit__label-name').filter({ hasText: 'sledgehammer' })).toBeVisible();
+          const orbitLabels = await page.locator('.alg-case-orbit .orbit__label-name').allTextContents();
+          expect(orbitLabels).toContain('sledgehammer');
+          expect(orbitLabels.join(' ')).not.toMatch(/[−-]0\.00|\d+–\d+\s*[−-]/);
+          await expect(page.locator('.alg-entry-grid .alg-entry')).toHaveCount(2);
+          expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+          await page.screenshot({ path: `test-results/review-next-2-player/algs-case-${style}-${theme}-${width}.png`, fullPage: true });
+        }
       } finally {
         await finishCoverage();
       }
@@ -219,7 +251,7 @@ test('a completed no-cube attempt plays its chosen alg on the same cube', async 
   await page.goto('/#/algs/oll/1');
   const canvas = page.locator('#algs-view [data-alg-cube] canvas');
   await expect(canvas).toHaveCount(1);
-  await page.getByRole('button', { name: 'Start no-cube drill' }).click();
+  await page.getByRole('button', { name: 'drill alg', exact: true }).click();
   await page.getByRole('button', { name: 'Start', exact: true }).click();
   await page.waitForTimeout(20);
   await page.getByRole('button', { name: 'Done', exact: true }).click();

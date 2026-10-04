@@ -63,7 +63,7 @@ async function finishCaseSolve(page) {
   await startGuided(page, scramble);
   await completeScramble(page, scramble);
   await page.waitForFunction(() => window.__cubesightSnapshot.getViewModel().viewModel.screen === 'inspection');
-  await page.evaluate(moves => window.testBrain.emitTimed(moves.join(' '), 24), solution);
+  await page.evaluate(moves => window.testBrain.emitTimed(moves.join(' '), () => 24), solution);
   await page.waitForFunction(() => window.__cubesightSnapshot.getViewModel().viewModel.screen === 'results');
   await page.waitForFunction(() => {
     const record = window.__cubesightSnapshot.getViewModel().viewModel.results?.record;

@@ -92,9 +92,10 @@ registerLayoutDriver('review-fixture', async page => {
 registerLayoutDriver('recording-fixture', async page => {
   await page.addInitScript(record => localStorage.setItem('cubesight-solves-v1', JSON.stringify(record)), HISTORY_SEED);
   await readyForRoute(page, '/history/1000000/replay');
-  const playhead = page.locator('[data-replay-playhead], [data-replay-scrubber]');
-  if (!(await playhead.count())) throw new Error('F2 replay route has no visible midpoint scrubber');
-  await playhead.evaluate(el => { el.value = String(Math.floor(Number(el.max || 100) / 2)); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  await expect(page.locator('.history-stage__orbit .orbit'), 'the replay Orbit is the visible scrub control').toBeVisible();
+  const midpoint = Math.floor(HISTORY_SEED.records[0].solveMoves.length / 2);
+  for (let index = 0; index < midpoint; index++) await page.keyboard.press('ArrowRight');
+  await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.selected.move)).toBe(midpoint);
 });
 
 registerLayoutDriver('drill-fixture', async page => {
