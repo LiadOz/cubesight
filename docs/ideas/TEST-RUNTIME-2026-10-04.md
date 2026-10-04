@@ -77,8 +77,7 @@ is claimed from discovery counts or focused runs.
 
 Offline checks were reconciled with the actual approved header drawer, paged
 algorithm lists, Orbit replay controls, current engine version and cross colours.
-All 13 scenarios have passed (12 together, the final header scenario separately);
-a final combined run is pending. A broader browser run exposed an intermittent
+All 13 scenarios passed together in 51.5 seconds against the production build. A broader browser run exposed an intermittent
 paging race: URL changes preceded DOM updates. Waiting for the rendered page
 number retained the 41-case assertion and passed three repeated runs.
 
@@ -117,3 +116,11 @@ The settings harness uses a stub only for its unrelated background gallery
 cube. The hidden legacy solve-tab close action is redundant with the visible
 close control (both dispatch toggleSettings in shell.js); the visible control
 and every other close path remain covered. Its 90-second override was removed.
+
+All six settings/drawer tests pass in 20.3 seconds after reconciling the hidden
+close-tab action. The following merge-tier attempt correctly rejected a port
+still owned by an interrupted older run. Deadline and signal cleanup now kills
+descendants even if Playwright creates separate server process groups; a
+detached-child test proves that an escaped server cannot remain running. Tier
+browser temporary files are under the worktree's test-results/runtime-tmp,
+keeping them on the required host-backed filesystem.

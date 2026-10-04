@@ -15,6 +15,27 @@ export const REGRESSION_STAGES = Object.freeze([
   ['performance-budgets', 'npm', ['run', 'perf:check']],
 ]);
 
+// Playwright web servers can create their own process groups. Include every
+// descendant before terminating the runner, so an expired tier leaves no server.
+export function terminateProcessTree(pid) {
+  if (process.platform !== 'win32') {
+    const rows = execFileSync('ps', ['-eo', 'pid=,ppid='], { encoding: 'utf8' })
+      .trim().split('\n').map(row => row.trim().split(/\s+/).map(Number));
+    const owned = new Set([pid]);
+    let added = true;
+    while (added) {
+      added = false;
+      for (const [child, parent] of rows) if (owned.has(parent) && !owned.has(child)) { owned.add(child); added = true; }
+    }
+    for (const child of [...owned].reverse()) {
+      try { process.kill(child, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') throw error; }
+    }
+    try { process.kill(-pid, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') throw error; }
+  } else {
+    execFileSync('taskkill', ['/pid', String(pid), '/T', '/F']);
+  }
+}
+
 // Kill the process group on timeout: npm, Vite and browser children must not
 // survive a failed budget and continue consuming resources in the next run.
 export async function runStage([name, command, args], { remainingMs, cwd = process.cwd(), env = process.env } = {}) {
@@ -25,17 +46,19 @@ export async function runStage([name, command, args], { remainingMs, cwd = proce
   let timedOut = false;
   const kill = () => {
     timedOut = true;
-    try {
-      if (process.platform === 'win32') child.kill('SIGKILL');
-      else process.kill(-child.pid, 'SIGKILL');
-    } catch (error) { if (error.code !== 'ESRCH') throw error; }
+    terminateProcessTree(child.pid);
   };
+  const interrupted = () => terminateProcessTree(child.pid);
+  process.once('SIGINT', interrupted);
+  process.once('SIGTERM', interrupted);
   const deadline = setTimeout(kill, remainingMs);
   const exitCode = await new Promise(resolve => {
     child.once('error', error => { console.error(error.message); resolve(127); });
     child.once('close', code => resolve(code ?? 1));
   });
   clearTimeout(deadline);
+  process.removeListener('SIGINT', interrupted);
+  process.removeListener('SIGTERM', interrupted);
   return { name, exitCode: timedOut ? 1 : exitCode, durationMs: Math.round(performance.now() - start), timedOut };
 }
 
@@ -68,7 +91,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     ['check', 'npm', ['run', 'check']],
     ['smoke-and-affected', 'npx', ['playwright', 'test', '--config=playwright.merge.config.js', '--update-snapshots=none', '--max-failures=1', 'tests/merge-smoke.spec.js', ...process.argv.slice(3)]],
   ];
-  const result = await runTier({ tier, stages, parallel: tier === 'merge' });
+  const runtimeTmp = path.resolve('test-results/runtime-tmp');
+  await mkdir(runtimeTmp, { recursive: true });
+  const result = await runTier({ tier, stages, parallel: tier === 'merge', env: { ...process.env, TMPDIR: runtimeTmp } });
   result.commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim());
   result.generatedAt = new Date().toISOString();

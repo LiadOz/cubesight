@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdir, readFile, unlink } from 'node:fs/promises';
+import path from 'node:path';
 import { runTier, TIER_BUDGETS } from '../scripts/test-tiers.mjs';
 
 test('test tiers enforce the user budgets', () => {
@@ -29,4 +31,22 @@ test('independent merge checks can share the deadline in parallel', async () => 
   ] });
   assert.equal(result.passed, true);
   assert.equal(result.stages.length, 2);
+});
+
+
+test('a tier deadline also terminates a server in a separate process group', async () => {
+  await mkdir('test-results/health', { recursive: true });
+  const pidFile = path.resolve(`test-results/health/escaped-server-${process.pid}.pid`);
+  const script = `const {spawn}=require('node:child_process'); const fs=require('node:fs'); const server=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{detached:true,stdio:'inherit'}); fs.writeFileSync(process.argv[1],String(server.pid)); setInterval(()=>{},1000);`;
+  const result = await runTier({ tier: 'proof', budgetMs: 1000, stages: [
+    ['escaped-server', process.execPath, ['-e', script, pidFile]],
+  ] });
+  assert.equal(result.passed, false);
+  assert.equal(result.stages[0].timedOut, true);
+  assert.ok(result.durationMs < 5000);
+  const serverPid = Number(await readFile(pidFile, 'utf8'));
+  // A killed child may briefly remain a zombie until its parent is reaped.
+  const status = await readFile(`/proc/${serverPid}/status`, 'utf8').catch(() => null);
+  assert.ok(status === null || /State:\s+Z/.test(status), 'escaped server cannot remain running');
+  await unlink(pidFile);
 });
