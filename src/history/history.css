@@ -52,7 +52,7 @@
 .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-list-panel { display: none; }
 .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
 .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-focus { display: contents; }
-.history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-stage { position: relative; top: auto; grid-column: 1; grid-row: 1 / span 2; width: min(100%, 500px); align-self: start; }
+.history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-stage { position: sticky; top: 8px; grid-column: 1; grid-row: 1 / span 2; width: min(100%, 500px); align-self: start; }
 .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-results-host { grid-column: 2; grid-row: 1; min-width: 0; }
 .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-replay-controls,
 .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-actions-host { grid-column: 2; grid-row: 2; align-self: start; }
@@ -91,19 +91,19 @@
   .history-page:is([data-view="past"], [data-view="review"]) .history-layout { gap: 8px; }
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-layout { grid-template-columns: minmax(0, 1fr); }
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-focus { display: grid; }
-  .history-page:is([data-view="past"], [data-view="review"]) .history-stage { grid-column: 1; grid-row: auto; width: min(100%, 212px); }
+  .history-page:is([data-view="past"], [data-view="review"]) .history-stage { grid-column: 1; grid-row: auto; width: min(100%, 212px); z-index: 2; background: var(--b-bg); }
   .history-page[data-view="review"] .b-rev-detail { gap: 4px; padding: 6px; }
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-results-host,
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-replay-controls,
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) .history-actions-host { grid-column: 1; grid-row: auto; }
   .history-page:is([data-view="past"], [data-view="review"]) .history-stage__cube { width: 48%; height: 52%; left: 26%; top: 24%; }
   .history-page:is([data-view="past"], [data-view="review"]) :is(.history-stage__number, .history-stage__subline) { display: none; }
-  .history-page[data-view="review"] .b-rev-dstats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px 4px; }
+  .history-page[data-view="review"] .b-rev-dstats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
   .history-page[data-view="review"] .b-rev-dstats dt { font-size: 12px; grid-column: 1; grid-row: 1; }
   .history-page[data-view="review"] .b-rev-dstats dd { font-size: 20px; }
-  .history-page[data-view="review"] .b-rev-dstats .b-rev-sub { font-size: 12px; grid-column: 1 / -1; white-space: nowrap; }
-  .history-page[data-view="review"] .b-rev-dstats > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 2px; }
-  .history-page[data-view="review"] .b-rev-dstats dd:not(.b-rev-sub) { grid-column: 2; grid-row: 1; justify-self: end; margin-top: 0; }
+  .history-page[data-view="review"] .b-rev-dstats .b-rev-sub { font-size: 12px; grid-column: 1 / -1; white-space: normal; }
+  .history-page[data-view="review"] .b-rev-dstats > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .history-page[data-view="review"] .b-rev-dstats dd:not(.b-rev-sub) { grid-column: 1; grid-row: 2; justify-self: start; margin-top: 0; }
   .history-page[data-view="review"] .b-rev-dstats > div:last-child { grid-template-columns: minmax(0, 1fr); }
   .history-page[data-view="review"] .b-rev-dstats > div:last-child dt,
   .history-page[data-view="review"] .b-rev-dstats > div:last-child dd { grid-column: 1; grid-row: auto; justify-self: start; }
