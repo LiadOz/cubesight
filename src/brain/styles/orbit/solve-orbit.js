@@ -1,6 +1,7 @@
 // The solve's one Orbit. Its segments change meaning with the solve state;
 // the shared Cube and this SVG stay mounted for the page lifetime.
 import { Orbit } from '../../../ui/orbit/index.js';
+import { inspectionSegments, inspectionMarkers } from './inspection-orbit.js';
 
 const moveSegments = scramble => {
   const moves = scramble?.moves ?? [];
@@ -21,23 +22,6 @@ const moveSegments = scramble => {
   return [...plan.slice(0, step), ...undo, ...upcoming];
 };
 
-function inspectionSegments(inspection) {
-  const limit = inspection.limitMs;
-  const zones = inspection.zones ?? [];
-  if (!limit) return [{ key: 'elapsed', label: 'inspection', weight: 1, fill: inspection.caret, state: 'current', importance: 100 }];
-  const scale = Math.max(limit + 2000, inspection.scaleMs || limit + 2000);
-  const normal = zones.find(zone => zone.kind === 'normal');
-  const plus2 = zones.find(zone => zone.kind === 'plus2');
-  const dnf = zones.find(zone => zone.kind === 'dnf');
-  const elapsed = inspection.elapsedMs ?? 0;
-  const result = [
-    { key: 'inspection', label: `${limit / 1000} s`, weight: Math.max(1, (normal?.toMs ?? limit) / scale), fill: Math.min(1, elapsed / limit), state: elapsed < limit ? 'current' : 'done', importance: 100 },
-  ];
-  if (plus2) result.push({ key: 'plus2', label: '+2', weight: Math.max(.04, (plus2.toMs - plus2.fromMs) / scale), fill: Math.min(1, Math.max(0, (elapsed - plus2.fromMs) / (plus2.toMs - plus2.fromMs))), state: elapsed >= plus2.toMs ? 'bad' : elapsed >= plus2.fromMs ? 'wrong' : 'future', importance: 90 });
-  if (dnf) result.push({ key: 'dnf', label: 'DNF', weight: Math.max(.04, (scale - (dnf.fromMs ?? limit + 2000)) / scale), fill: elapsed >= dnf.fromMs ? 1 : 0, state: elapsed >= dnf.fromMs ? 'bad' : 'future', importance: 85 });
-  return result;
-}
-
 export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
   const orbit = new Orbit(host, {
     size: 'XL', shape: 'open', gap: 70, fitHost: true, labelStyle: 'around', label: 'Solve progress',
@@ -55,7 +39,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
     if (vm.screen === 'scramble') return { shape: 'open', gap: 70, direction: 'clockwise', segments: moveSegments(vm.scramble), markers: [], caret: null };
     if (vm.screen === 'inspection') {
       const i = vm.inspection;
-      const ticks = (i?.ticks ?? []).map(tick => ({ key: `inspection-${tick.kind}-${tick.atMs}`, segment: 'inspection', position: tick.atMs / Math.max(1, i.limitMs), label: tick.label, tone: 'good', type: 'tick' }));
+      const ticks = inspectionMarkers(i);
       return { shape: 'open', gap: 70, segments: inspectionSegments(i), markers: ticks, direction: 'counterclockwise', caret: 145 - (i?.caret ?? 0) * 290 };
     }
     const timeline = vm.timeline;
@@ -63,7 +47,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
     const caseLinks = results?.caseLinks ?? {};
     const segments = (timeline?.segments ?? []).map(segment => {
       const caseInfo = caseLinks[segment.key] ?? (segment.key === 'pll' || segment.key === 'ep' ? caseLinks.pll : segment.key === 'oll' || segment.key === 'co' ? caseLinks.oll : null);
-      const splitValue = results ? (segment.skipped ? 'skip' : segment.splitText) : segment.state === 'done' ? segment.splitText : '';
+      const splitValue = results ? (segment.skipped ? 'skip' : segment.splitText) : segment.state === 'skipped' ? 'skip' : segment.state === 'done' ? segment.splitText : '';
       return {
         key: segment.key,
         label: caseInfo ? `${segment.label} · ${caseInfo.name}` : segment.label,
@@ -97,7 +81,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
         // is emitted only on state changes; without this frame refinement the
         // +2 and DNF arcs stayed visually empty after the normal zone expired.
         const segments = inspectionSegments({ ...lastInspection, elapsedMs: inspection.elapsedMs });
-        void orbit.update({ segments, caret: 145 - (inspection.caret ?? 0) * 290 }, { animate: false });
+        void orbit.update({ segments, markers: inspectionMarkers({ ...lastInspection, elapsedMs: inspection.elapsedMs }), caret: 145 - (inspection.caret ?? 0) * 290 }, { animate: false });
       } else if (frameState?.currentFill != null && lastScreen === 'solving') {
         const segments = orbit.options.segments.map(segment => segment.state === 'current' ? { ...segment, fill: frameState.currentFill } : segment);
         void orbit.update({ segments }, { animate: false });

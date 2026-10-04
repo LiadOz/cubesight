@@ -195,15 +195,16 @@ function mountVariants() {
   const grid = h('div', 'h-variants');
   for (const v of INSPECTION_VARIANTS) {
     const cell = h('div', 'h-variant');
+    cell.dataset.mode = v.i.mode; cell.dataset.overtime = v.i.overtime;
     const stage = h('div', 'brain-stage');
     const num = h('div', '', v.i.bigText); num.dataset.slot = 'cube';
-    const slot = h('div'); slot.dataset.slot = 'inspection';
+    const slot = h('div'); slot.dataset.slot = 'timeline';
     stage.append(num, slot);
     cell.append(stage, h('h3', '', v.title), h('p', '', v.note));
     grid.append(cell);
     const vm = fixture('inspection').vm;
     vm.inspection = v.i;
-    const c = orbitStyle.inspection(slot, {});
+    const c = orbitStyle.timeline(slot, {});
     c.update(vm, null);
     c.frame(frameFor(v.i));
   }
