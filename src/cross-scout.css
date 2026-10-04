@@ -213,6 +213,7 @@
 #scout-view.cs-page.brain { width: 100%; margin: 0; padding: 0; min-height: 0; background: transparent; }
 #scout-view > .intro-row { padding-block: 0; }
 #scout-view .brain.quick-round { border: 0; background: transparent; padding: 0; }
+#scout-view .scout-scramble-row textarea.ui-input { border: 0; border-radius: var(--b-radius-control); background: var(--b-surface-2); color: var(--b-ink); }
 #scout-view .btn { border: 0; border-radius: var(--b-radius-control); background: var(--bg); color: var(--fg); box-shadow: var(--edge); font-family: var(--b-font-sans); }
 #scout-view .btn:hover { background: var(--bg-hover); color: var(--fg-hover); }
 #scout-view .btn[aria-pressed="true"] { background: var(--s-bg); color: var(--s-ink); }
