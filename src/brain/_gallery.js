@@ -46,7 +46,7 @@ const SOLVED = new Set(['disconnected', 'connecting', 'idle', 'settings']);
 if (params.get('cube') === 'stub') {
   // Layout-only visual tests mask this canvas; genuine WebGL specs use the default.
   const canvas = document.createElement('canvas');
-  canvas.style.cssText = 'width:100%;height:100%';
+  canvas.style.cssText = 'position:absolute;left:25%;top:25%;width:50%;height:50%';
   canvas.setAttribute('aria-label', '3D cube');
   shell.slots.cube.append(canvas);
 } else try {

@@ -27,7 +27,7 @@ for (const style of STYLES) {
       test(`${style} · ${theme} · ${screen}`, async ({ page }) => {
         const errors = await openFixture(page, style, theme, fixture);
         await expect(page.locator('.brain')).toHaveAttribute('data-brain-style', style);
-        await expect(page).toHaveScreenshot(`${style}-${theme}-${screen}.png`, {
+        await expect(page).toHaveScreenshot(`${style}-${theme}-${screen}-direction-a-20261004-orbit-visible.png`, {
           fullPage: screen === 'results',
           animations: 'disabled',
           mask: [page.locator('#brain-cube canvas')],
@@ -55,7 +55,9 @@ test('the shell updates in place and turns clicks into actions', async ({ page }
     // A frame moves only the clock and the live segment.
     shell.frame({ startedAtSolve: 0, clockText: '7.40', currentFill: 0.3, currentSplitText: '0.21', currentOver: false, inspection: null });
     root.querySelector('.b-key[data-action="cancel"]').click();
-    root.querySelector('#brain-review-close').click();
+    // F1 removes the old dismiss button; controller dismissal remains covered
+    // in brain-controller.spec.js. Exercise the shared drawer action here.
+    root.querySelector('.b-debug [data-action=toggleDebug]').click();
     return {
       sameSegment: root.querySelector('.m-seg[data-key="pair3"]') === segment,
       sameCoach: root.querySelector('#brain-coach .brain-coach-line') === coachLine,
@@ -70,7 +72,7 @@ test('the shell updates in place and turns clicks into actions', async ({ page }
   expect(result.states).toEqual(['done', 'current']);
   expect(result.clock).toBe('7.40');
   expect(Number(result.fill)).toBeCloseTo(0.3, 3);
-  expect(result.actions).toEqual(['cancel', 'dismissResults']);
+  expect(result.actions).toEqual(['cancel', 'toggleDebug']);
 });
 
 test('settings rows keep the first UI\'s hooks and dispatch settings', async ({ page }) => {
@@ -98,10 +100,10 @@ test('switching style keeps the cube mount and moves the parts between layouts',
     const { shell, vm, styles } = window.gallery;
     const cube = shell.slots.cube;
     const canvases = () => shell.root.querySelectorAll('canvas').length;
-    const before = { canvases: canvases(), ring: Boolean(shell.root.querySelector('.b-oring')), aside: !shell.slots.timelineAside.hidden };
+    const before = { canvases: canvases(), ring: Boolean(shell.root.querySelector('.orbit__svg')), aside: !shell.slots.timelineAside.hidden };
     shell.setStyle(styles.mono);
     shell.update({ ...vm, style: 'mono' }, null);
-    const mono = { canvases: canvases(), ring: Boolean(shell.root.querySelector('.b-oring')), linear: Boolean(shell.root.querySelector('.m-seg')), aside: !shell.slots.timelineAside.hidden, layout: shell.root.dataset.layout };
+    const mono = { canvases: canvases(), ring: Boolean(shell.root.querySelector('.orbit__svg')), linear: Boolean(shell.root.querySelector('.m-seg')), aside: !shell.slots.timelineAside.hidden, layout: shell.root.dataset.layout };
     shell.setStyle(styles.orbit);
     return { before, mono, sameCube: shell.slots.cube === cube && document.querySelector('#brain-cube') === cube, layout: shell.root.dataset.layout };
   });
