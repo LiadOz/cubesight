@@ -90,3 +90,9 @@ is unobstructed on desktop and phone, initial cube/Orbit visibility and a single
 canvas. This change is unrelated to runtime pruning. Lifetime accuracy is now
 shown beside lifetime answer counts. Earlier failed captures remain superseded
 in the gallery; the final row capture is visually checked.
+
+The committed runtime change passed `npm run check` in 24.2 seconds (630 unit
+tests, lint/build/gallery checks). The first subsequent regression attempt was
+stopped after discovering that Playwright reused an old server with cached
+worktree modules. Default gates now start a fresh server instead; that aborted
+run is not evidence about the committed UI or the full regression budget.
