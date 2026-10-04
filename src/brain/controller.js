@@ -8,7 +8,7 @@
 import { Cube } from '../ui/cube/index.js';
 import { FACE_COLORS, toRenderData, applyMoves, createSolvedState } from '../cross-cube.js';
 import { stateAfter } from '../review/replay.js';
-import { analysisInputFromRecord } from '../analysis/record.js';
+import { analysisInputFromRecord, analysisReplayKey } from '../analysis/record.js';
 import { createSolveLive } from '../solve-live.js';
 import { crossSuggestion, crossHindsight, f2lNextPairHint, ollStage, pllLens, efficiencyScore } from '../solve-coach.js';
 import { openHistory } from '../store/history.js';
@@ -354,14 +354,14 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         pllExecutionMs: summary.lastLayer?.pll?.executionMs ?? entry.pllExecutionMs ?? null,
       }); });
     };
-    void import('../analysis/client.js').then(({ analysisClient }) => analysisClient().analyze(entry, {
+    void recordAsyncRead(analysisReplayKey(entry), () => import('../analysis/client.js').then(({ analysisClient }) => analysisClient().analyze(entry, {
       onProgress: summary => {
         if (detached || !['pending', 'partial'].includes(analysisState.get(at))) return;
         analysisState.set(at, 'partial');
         saveSummary(summary);
         if (active) render();
       },
-    })).catch(() => null).then(summary => {
+    }))).catch(() => null).then(summary => {
       if (detached) return;
       analysisState.set(at, summary ? 'done' : 'none');
       saveSummary(summary);

@@ -18,3 +18,10 @@ export function analysisInputFromRecord(record) {
   const input = { scramble: record.scramble, moves, ...(times ? { moveTimes: times } : {}), ...(FACES.has(record.crossFace) ? { crossFace: record.crossFace } : {}) };
   return { input };
 }
+
+/** Key the recorded worker reply by the complete semantic analysis input. */
+export function analysisReplayKey(record) {
+  const { input } = analysisInputFromRecord(record);
+  const config = record?.config ? { oll: record.config.oll, pll: record.config.pll } : null;
+  return `brain.analysis:${JSON.stringify({ input, config })}`;
+}
