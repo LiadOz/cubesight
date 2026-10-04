@@ -211,6 +211,7 @@
 }
 
 #scout-view.cs-page.brain { width: 100%; margin: 0; padding: 0; min-height: 0; background: transparent; }
+#scout-view > .intro-row { padding-block: 0; }
 #scout-view .brain.quick-round { border: 0; background: transparent; padding: 0; }
 #scout-view .btn { border: 0; border-radius: var(--b-radius-control); background: var(--bg); color: var(--fg); box-shadow: var(--edge); font-family: var(--b-font-sans); }
 #scout-view .btn:hover { background: var(--bg-hover); color: var(--fg-hover); }
@@ -221,6 +222,11 @@
 #scout-view .scout-colors .chip { border-radius: var(--b-radius-control); background: var(--k-bg); color: var(--k-ink); border-color: var(--k-bd); box-shadow: none; }
 #scout-view .scout-colors .chip[aria-pressed="true"] { background: var(--s-bg); color: var(--s-ink); border-color: var(--s-bd); }
 #scout-view .cube-stage { position: relative; }
+#scout-view .cube-stage > .orbit { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) !important; }
+#scout-view summary { min-height: 44px; padding-block: 12px; }
+#scout-view #scout-mac-copy { min-height: 44px; }
+#scout-view #scout-mac-help a { display: inline-flex; align-items: center; min-height: 44px; }
+#scout-view .quick-round button { min-width: 44px; }
 #scout-view .cube-stage > .orbit { max-width: none !important; max-height: none !important; width: 420px !important; height: 420px !important; }
 #scout-view .cube-stage > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
 #scout-view .cube-stage > .cube-mount { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; min-height: 0; }

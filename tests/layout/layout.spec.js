@@ -57,7 +57,7 @@ async function checkCell(page, cell, testInfo) {
 
 const viewFor = {
   solve: '#brain-view', drills: '#drills-view', corners: '#corner-view', 'pll-drill': '#pll-view',
-  f2l: '#f2l-view', 'cross-planning': '#scout-view', 'oll-drill': '#oll-view', lookahead: '#lookahead-view',
+  f2l: '#f2l-view', 'cross-planning': '#scout-view', 'cross-scout-explore': '#scout-view', 'oll-drill': '#oll-view', lookahead: '#lookahead-view',
   algs: '#algs-view', demo: '#demo-view', 'demo-format': '#demo-view', 'alg-case-pll': '#algs-view', 'alg-case-oll': '#algs-view',
   'alg-case-oll2': '#algs-view', 'alg-case-f2l': '#algs-view', 'alg-drill': '#algs-view',
   'review-import': '#review-view', 'review-record': '#review-view', progress: '#progress-view', history: '#history-view',
@@ -141,6 +141,8 @@ for (const route of ROUTES) {
     }, HISTORY_SEED);
     await page.goto(`/#${route.path}`);
     await page.waitForFunction(hash => location.hash === hash, `#${route.path}`);
+    await expect(page.locator(viewFor[route.id])).toBeVisible();
+    await expect(page.locator('canvas')).toHaveCount(canvasCountFor(route.path));
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(() => { window.__layoutShiftCheckpoint = (window.__layoutShiftSamples || []).length; });
     await page.keyboard.press('Tab');

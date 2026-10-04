@@ -1772,6 +1772,8 @@ const SNAPSHOT_OWNER = {
   algs: { owner: 'F4', dataOwner: 'F4' },
   timer: { owner: 'F4', dataOwner: 'F4' },
   oll: { owner: 'F4', dataOwner: 'F4' },
+  scout: { owner: 'F4', dataOwner: 'F4' },
+  pll: { owner: 'F4', dataOwner: 'F4' },
   lookahead: { owner: 'F4', dataOwner: 'F4' },
   progress: { owner: 'F5', dataOwner: 'F6' },
   demo: { owner: 'F17', dataOwner: 'F17' },
@@ -1783,7 +1785,7 @@ function activeSnapshotHandle(tool) {
   return ({ brain, history: historyPage, drills: drillsHub, algs: algsPage, timer: timerPage,
     progress: progressPage, review: reviewPage, recording: recordingSnapshotHandle, demo: demoPage,
     corner: window.__cubesightLegacyTrainerHandles?.corner, f2l: window.__cubesightLegacyTrainerHandles?.f2l,
-    oll: drillPages.oll, lookahead: drillPages.lookahead })[tool] || null;
+    oll: drillPages.oll, lookahead: drillPages.lookahead, scout, pll })[tool] || null;
 }
 function mountSnapshotPage(tool, handle = activeSnapshotHandle(tool)) {
   const owner = SNAPSHOT_OWNER[tool];
@@ -2028,6 +2030,7 @@ function setTool(tool, initial = false) {
         scout = explore ? module.createCrossScout(document.querySelector('#scout-view')) : module.createCrossPlanning(document.querySelector('#scout-view'));
         scoutRouteHash = location.hash;
         scout.setActive(activeTool === 'scout');
+        mountSnapshotPage('scout', scout);
       }).catch((error) => {
         document.querySelector('#scout-view').textContent = MSG.loadFailed('cross planning');
         if (scoutLoad === load) scoutLoad = null;
@@ -2042,6 +2045,7 @@ function setTool(tool, initial = false) {
       pllLoad = import('./pll-trainer.js').then(({ createPLLTrainer }) => {
         pll = createPLLTrainer(document.querySelector('#pll-view'));
         pll.setActive(activeTool === 'pll');
+        mountSnapshotPage('pll', pll);
       }).catch((error) => {
         document.querySelector('#pll-view').textContent = MSG.loadFailed('PLL recognition');
         pllLoad = null;

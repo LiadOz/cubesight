@@ -8,6 +8,7 @@ export const ROUTES = [
   { id: 'pll-drill', path: '/drills/pll', page: 'drills' },
   { id: 'f2l', path: '/drills/f2l', page: 'drills' },
   { id: 'cross-planning', path: '/drills/scout', page: 'drills' },
+  { id: 'cross-scout-explore', path: '/drills/scout?mode=explore', page: 'drills' },
   { id: 'oll-drill', path: '/drills/oll', page: 'drills' },
   { id: 'lookahead', path: '/drills/lookahead', page: 'drills' },
   { id: 'algs', path: '/algs', page: 'algs' },

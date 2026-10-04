@@ -5,6 +5,7 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 
     await page.setViewportSize(viewport);
     await page.goto('/#/drills/scout?mode=explore');
     await expect(page.locator('#scout-cube canvas')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel()?.viewModel.drill)).toBe('cross-scout');
     const geometry = await page.evaluate(() => {
       const orbit = document.querySelector('#scout-view .orbit__svg').getBoundingClientRect();
       const cube = document.querySelector('#scout-cube .shared-cube').getBoundingClientRect();
@@ -74,6 +75,7 @@ for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 
     await page.setViewportSize(viewport);
     await page.goto('/#/drills/pll');
     await expect(page.locator('#pll-cube canvas')).toHaveAttribute('data-rotation', 'locked');
+    await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot.getViewModel()?.viewModel.drill)).toBe('pll');
     const geometry = await page.evaluate(() => {
       const orbit = document.querySelector('#pll-view .orbit__svg').getBoundingClientRect();
       const cube = document.querySelector('#pll-cube .shared-cube').getBoundingClientRect();
