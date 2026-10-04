@@ -182,14 +182,12 @@ export function initHistory(host) {
   }
   const chronologicalRows = () => filterHistory(storageRecords(), filters).sort((a, b) => a.at - b.at);
   const selectedIndex = record => chronologicalRows().findIndex(item => item.at === record.at) + 1;
-  /** What to emphasise on the cube: the stage being replayed, or the stage of the reviewed moment. Everything else dims. */
+  /** What to emphasise on the cube: the stage of the reviewed moment or the opened stage. Everything else dims. */
   function emphasisFor(record, cursor) {
     const selected = viewModel().selected, analysis = selected?.analysis;
+    // The approved replay frame (A-11) shows the whole cube plain, so only a review moment or an opened stage emphasises pieces.
     let key = null;
-    if (route.kind === 'replay') {
-      const stage = selected?.stages?.find(item => cursor < item.end) ?? selected?.stages?.at(-1);
-      key = stage?.key ?? null;
-    } else if (route.kind === 'review') key = selected?.markers?.find(item => item.id === route.marker)?.stage ?? null;
+    if (route.kind === 'review') key = selected?.markers?.find(item => item.id === route.marker)?.stage ?? null;
     else if (inlineReviewDetail?.kind === 'stage') key = inlineReviewDetail.key;
     if (!key) return null;
     const pairNumber = /^pair(\d)$/.exec(key)?.[1];
@@ -416,6 +414,12 @@ export function initHistory(host) {
     const info = replayHost.querySelector('.history-replay-info');
     if (!info) return;
     info.querySelector('.history-replay-info__move').textContent = move ? fmt.moves(move) : '—';
+    // "pseudo pair · tap to see": the moment under the playhead, one tap from its review
+    const pill = replayHost.querySelector('.history-replay-marker');
+    const near = (viewModel().selected?.markers || []).filter(marker => Math.abs((marker.at ?? (marker.idx ?? 0) + 1) - replayMove) <= 2)
+      .sort((a, b) => Math.abs((a.at ?? 0) - replayMove) - Math.abs((b.at ?? 0) - replayMove))[0];
+    pill.hidden = !near;
+    if (near) { pill.textContent = `${near.tone === 'good' ? '✦' : '○'} ${near.label} · tap to see`; pill.href = href(historyReviewPath(record.at, near.id)); pill.dataset.tone = near.tone === 'good' ? 'good' : 'bad'; }
   }
   function updateReplayControls() {
     if (!currentRecord || route.kind !== 'replay') { replayHost.hidden = true; replayHost.replaceChildren(); return; }
@@ -439,7 +443,8 @@ export function initHistory(host) {
     const speeds = make('div', undefined, 'history-speeds'); speeds.setAttribute('role', 'group'); speeds.setAttribute('aria-label', 'playback speed');
     [0.5, 1, 2].forEach(speed => { const button = make('button', `${speed}×`); button.type = 'button'; button.dataset.speed = String(speed); button.setAttribute('aria-pressed', String(speed === replaySpeed)); speeds.append(button); });
     const timing = make('p', viewModel().selected?.hasTiming ? '' : 'timing not recorded', 'history-timing-note');
-    replayHost.append(info, transport, speeds, timing);
+    const pill = make('a', undefined, 'history-replay-marker'); pill.hidden = true;
+    replayHost.append(info, transport, speeds, pill, timing);
     updateReplayInfo(); updateKeys();
   }
   function markerMove(record, direction) {

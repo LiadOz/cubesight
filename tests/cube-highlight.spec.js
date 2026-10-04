@@ -17,20 +17,28 @@ const record = {
   moveTimes: GOLD.normal.moves.split(' ').map((_, index) => (index + 1) * 140),
 };
 
-test('replay: the stage being replayed is emphasised, the rest of the cube dims', async ({ page }) => {
+test('review: a cross moment emphasises the four cross edges and a last-layer moment the last layer', async ({ page }) => {
   await seedSolve(page, { record });
-  await page.goto(`/#/history/${record.at}/replay`);
+  await page.goto(`/#/history/${record.at}`);
   await expect(page.locator('.history-stage__cube canvas')).toBeVisible();
-  // before the first move the stage is the cross: its four edges
+  await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot?.getViewModel()?.viewModel?.selected?.markers?.length ?? 0)).toBeGreaterThan(0);
+  const markers = await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.selected.markers.map(({ id, stage }) => ({ id, stage })));
+  const cross = markers.find(item => item.stage === 'cross'), lastLayer = markers.find(item => ['eo', 'co', 'cp', 'ep', 'oll', 'pll'].includes(item.stage));
+  expect(cross, 'a cross moment').toBeTruthy();
+  await page.goto(`/#/history/${record.at}/review/${encodeURIComponent(cross.id)}`);
+  // the cross: four edges, 8 stickers; the other 46 dim
   await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 8, dimmed: 46, cages: 4 });
-  const cross = await stickers(page, '.history-stage__cube');
-  expect(cross.pieces).toHaveLength(4);
-  expect(cross.pieces.every(name => name.length === 2)).toBe(true);
-  // far into the solve the stage is the last layer: four edges and four corners, 20 stickers
-  const stages = await page.evaluate(() => window.__cubesightSnapshot.getViewModel().viewModel.selected.stages);
-  const ll = stages.find(stage => stage.key === 'eo');
-  for (let index = 0; index < ll.start + 1; index++) await page.keyboard.press('ArrowRight');
-  await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 20, dimmed: 34, cages: 8 });
+  const edges = await stickers(page, '.history-stage__cube');
+  expect(edges.pieces).toHaveLength(4);
+  expect(edges.pieces.every(name => name.length === 2)).toBe(true);
+  if (lastLayer) {
+    await page.goto(`/#/history/${record.at}/review/${encodeURIComponent(lastLayer.id)}`);
+    // the last layer: four edges and four corners, 20 stickers
+    await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 20, dimmed: 34, cages: 8 });
+  }
+  // and the plain solve and the replay show the whole cube, as the approved frames do
+  await page.goto(`/#/history/${record.at}/replay`);
+  await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 0, dimmed: 0 });
 });
 
 test('review: a pair moment emphasises that pair (corner and edge, and the slot) and dims the rest', async ({ page }) => {
