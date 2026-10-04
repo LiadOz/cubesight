@@ -18,7 +18,7 @@ import { exportAll, serializeExport, parseImport, importAll, historyFromImport, 
 import { algDatabase } from '../algs/runtime.js';
 import { subscribeConnection, clearConnectionLog, getConnectionLog, logConnection } from '../smart-cube-diag.js';
 import { clearSavedCubeData } from '../smart-cube-bluetooth.js';
-import { recordLiveCalls, recordRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
+import { recordLiveCalls, recordRead, recordAsyncRead, replaySpeed, isReplaying, record, now as recorderNow } from '../recorder.js';
 import { attachBrainRecording } from '../brain-recording.js';
 import { MSG } from '../copy/terms.js';
 import { loadSettings, saveSettings, setSetting, parseCommand, withVoiceCalloutStatus } from './settings.js';
@@ -275,7 +275,8 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     if (!settings.toggles.crossSuggest || settings.crossHint === 'off' || !scramble) { optimalCross = null; return; }
     pendingSuggestion = scramble;
     try {
-      const result = await crossSuggestion(scramble, { extended: false, timeLimitMs: 1500, color: settings.crossColor });
+      const color = settings.crossColor;
+      const result = await recordAsyncRead(`brain.crossSuggestion:${scramble}:${color}`, () => crossSuggestion(scramble, { extended: false, timeLimitMs: 1500, color }));
       if (request !== suggestionRequest || pendingSuggestion !== scramble || detached) return;
       optimalCross = result.best ? { ...result.best, best: result.best, bestXcross: result.bestXcross } : null;
       render();

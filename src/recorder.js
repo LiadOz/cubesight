@@ -448,6 +448,14 @@ export function recordRead(kind, compute) {
   return value;
 }
 
+/** Resolve and record an asynchronous nondeterministic input, or replay it. */
+export async function recordAsyncRead(kind, compute) {
+  if (replayHooks?.read) return replayHooks.read(kind, compute);
+  const value = await compute();
+  record('read', { kind, value });
+  return value;
+}
+
 // ---------------------------------------------------------------------------
 // Device-adapter seam.
 
