@@ -1,25 +1,25 @@
 .alg-page { width: 100%; }
 .alg-browser, .alg-detail { width: min(1180px, 100%); margin: 0 auto; color: var(--b-ink); }
 .alg-browser__head, .alg-detail__head { max-width: 760px; margin: 0 auto 24px; }
-.alg-browser__scope { padding: 10px 13px; border-left: 3px solid var(--b-accent); border-radius: 0 var(--b-radius-bar) var(--b-radius-bar) 0; background: var(--b-surface); }
 .alg-eyebrow { color: var(--b-muted); font: 600 11px/1.2 var(--b-font-mono); letter-spacing: .13em; }
 .alg-browser h1, .alg-detail h1 { margin: 4px 0 10px; font-size: clamp(32px, 5vw, 58px); line-height: 1.02; }
 .alg-browser__head > p:last-child, .alg-detail__head > p { color: var(--b-muted); line-height: 1.55; }
 .alg-set-tabs { display: flex; flex-wrap: wrap; gap: 8px; max-width: 1180px; margin: 0 auto 18px; }
-.alg-set-tabs a, .alg-set-tabs span { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 15px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); color: inherit; text-decoration: none; }
-.alg-set-tabs a.is-active { background: var(--b-accent); color: var(--b-on-accent); border-color: transparent; }
+.alg-set-tabs a:not(.chip), .alg-set-tabs span { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 15px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); color: inherit; text-decoration: none; }
+.alg-set-tabs a.is-active:not(.chip) { background: var(--b-accent); color: var(--b-on-accent); border-color: transparent; }
 .alg-set-tabs small { margin-left: 5px; opacity: .7; }
 .alg-set-tabs .is-disabled { opacity: .48; }
-.alg-case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-.alg-case-card { display: grid; gap: 7px; min-height: 110px; padding: 16px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); color: inherit; text-decoration: none; background: var(--b-surface); transition: border-color .15s, transform .15s; }
-.alg-case-card:hover { border-color: var(--b-accent); transform: translateY(-2px); }
+.alg-case-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0 24px; }
+.alg-case-card { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 3px 10px; align-items: center; min-height: 62px; padding: 10px 0; border-bottom: 1px solid var(--b-hairline); color: inherit; text-decoration: none; background: none; transition: color .15s; }
+.alg-case-card__orbit { grid-column: 1; grid-row: 1 / 3; }
+.alg-case-card:hover { color: var(--b-accent-text); }
 @media (prefers-reduced-motion: reduce) {
   .alg-case-card { transition: none; }
   .alg-case-card:hover { transform: none; }
 }
-.alg-case-card__id { color: var(--b-accent); font: 600 12px var(--b-font-mono); }
-.alg-case-card__name { font-weight: 650; }
-.alg-case-card__count { align-self: end; color: var(--b-muted); font-size: 12px; }
+.alg-case-card__id { grid-column: 2; grid-row: 1; color: var(--b-accent); font: 600 12px var(--b-font-mono); }
+.alg-case-card__name { grid-column: 2; grid-row: 2; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alg-case-card__count { grid-column: 3; grid-row: 1 / 3; align-self: center; color: var(--b-muted); font-size: 12px; }
 .alg-detail__head > a { color: var(--b-accent); }
 .alg-setup { display: grid; gap: 6px; margin-top: 18px !important; }
 .alg-setup span { color: var(--b-muted); font-size: 12px; }
@@ -95,7 +95,9 @@
 }
 @media (max-width: 640px) {
   .alg-case-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .alg-case-card { min-height: 100px; padding: 11px; }
+  .alg-case-card { min-height: 62px; padding: 10px 0; grid-template-columns: 26px minmax(0, 1fr); }
+  .alg-case-card__count { grid-column: 2; grid-row: 3; }
+  .alg-case-card__orbit { grid-row: 1 / 4; }
   .alg-case-card__name { font-size: 13px; }
   .alg-cube-card { gap: 10px; }
   .alg-cube { width: min(100%, 420px); }
@@ -112,3 +114,36 @@
 .alg-demo-import label { color: var(--b-muted); font-size: 12px; }
 .alg-demo-import input { flex: 1 1 260px; min-width: 0; }
 .alg-demo-import [data-alg-demo-status] { flex-basis: 100%; color: var(--b-muted); font-size: 12px; }
+
+.alg-browser-tools { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.alg-search { display: flex; align-items: center; gap: 8px; }
+.alg-search label { color: var(--b-muted); font-size: 12px; }
+.alg-search input { min-width: 0; width: 220px; }
+.alg-paste-disclosure { position: relative; color: var(--b-muted); font-size: 13px; }
+.alg-paste-disclosure > summary { cursor: pointer; padding: 10px 0; }
+.alg-paste-disclosure .alg-demo-import { position: absolute; right: 0; top: 100%; width: min(460px, calc(100vw - 32px)); padding: 16px; background: var(--b-surface); z-index: 5; }
+.alg-pagination { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; color: var(--b-muted); font: 12px var(--b-font-mono); }
+.alg-pagination a { padding: 8px 0; color: var(--b-ink); }
+@media (min-width: 900px) {
+  .cs-page.brain.alg-page:has(.alg-browser) { padding-block: 16px; gap: 12px; }
+  .alg-browser__head { max-width: none; margin-bottom: 12px; }
+  .alg-browser h1 { font-size: 34px; margin-block: 4px 8px; }
+  .alg-browser__head > p { font-size: 13px; }
+  .alg-browser__scope { padding: 0; border: 0; background: none; }
+  .alg-set-tabs { margin-bottom: 8px; }
+}
+@media (max-width: 640px) { .alg-search { flex-wrap: wrap; } .alg-search input { width: 190px; } }
+
+.alg-browser__scope { padding: 0; border: 0; background: none; color: var(--b-muted); font-size: 12px; }
+.alg-browser__scope summary { cursor: pointer; }
+.alg-browser__scope[open] > p { padding: 8px 0; }
+
+@media (min-width: 900px) {
+  .alg-browser { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 0 24px; }
+  .alg-browser__head { grid-column: 1 / -1; }
+  .alg-browser-tools { grid-column: 2; grid-row: 2; }
+  .alg-browser > .alg-set-tabs[aria-label="Algorithm sets"] { grid-column: 1; grid-row: 2 / span 4; display: grid; align-content: start; gap: 4px; }
+  .alg-browser > .alg-set-tabs[aria-label="Algorithm sets"] a { justify-content: flex-start; height: 44px; padding-inline: 12px; border-radius: 12px; }
+  .alg-browser > .alg-set-tabs[aria-label="F2L slot"] { grid-column: 2; }
+  .alg-browser > :is(.alg-case-grid, .alg-pagination) { grid-column: 2; }
+}

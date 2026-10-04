@@ -401,7 +401,7 @@ export function createShell(root, { dispatch }) {
     });
     renderKeyed(container, flat, item => item.key,
       item => item.sep ? el('i', 'b-sep', '|') : item.label ? el('span', 'b-cfg-label', item.label)
-        : Object.assign(el('button', 'b-cfg'), { type: 'button' }),
+        : Object.assign(el('button', 'b-cfg chip'), { type: 'button' }),
       (node, item) => {
         if (item.sep) return;
         if (item.label) { setText(node, item.label); return; }
@@ -451,7 +451,7 @@ export function createShell(root, { dispatch }) {
               return;
             }
             renderKeyed(options, row.options, o => o.value,
-              () => Object.assign(el('button', 'b-opt'), { type: 'button' }),
+              () => Object.assign(el('button', 'b-opt chip'), { type: 'button' }),
               (button, o) => {
                 button.dataset.setting = row.id;
                 button.dataset.value = o.value;
@@ -555,7 +555,13 @@ export function createShell(root, { dispatch }) {
     if (keys === prev) return;
     renderKeyed(parts.keys, keys.slice(0, 3), k => `${k.key}:${k.action}`,
       () => { const b = el('button', 'b-key'); b.type = 'button'; b.append(el('kbd'), el('span')); return b; },
-      (node, k) => { node.dataset.action = k.action; setText(node.querySelector('kbd'), k.key); setText(node.querySelector('span'), k.label); });
+      (node, k) => { node.dataset.action = k.action; const cap = node.querySelector('kbd');
+        const pair = k.key === '[ ]' ? ['[', ']'] : k.key.includes('–') ? k.key.split('–').map(key => key.trim()) : null;
+        cap.className = pair ? 'key key--pair' : 'key';
+        if (pair) {
+          const signature = pair.join('–');
+          if (cap.dataset.pair !== signature) { cap.replaceChildren(el('i', '', pair[0]), document.createTextNode('–'), el('i', '', pair[1])); cap.dataset.pair = signature; }
+        } else { delete cap.dataset.pair; setText(cap, k.key); } setText(node.querySelector('span'), k.label); });
   }
 
   function updatePrimary(vm) {
@@ -602,7 +608,7 @@ export function createShell(root, { dispatch }) {
     const showStatus = vm.screen === 'idle' || vm.screen === 'disconnected' || vm.screen === 'desynced' || vm.screen === 'connecting';
     setText(parts.idleStatus, showStatus ? vm.status : '');
     parts.idleStatus.dataset.tone = vm.screen === 'disconnected' && vm.device.failed ? 'error' : 'text';
-    parts.toast.hidden = !vm.toast;
+    parts.toast.hidden = !vm.toast || Boolean(vm.error);
     if (vm.toast) { setText(parts.toast, vm.toast.text); parts.toast.dataset.tone = vm.toast.tone; }
     parts.error.hidden = !vm.error;
     setText(parts.error, vm.error);

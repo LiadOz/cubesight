@@ -56,7 +56,7 @@ const supportsVirtualRepaint = row => ['oll', 'pll', 'oll2'].includes(row?.set);
 
 function caseCard(row) {
   const count = row.algs.length;
-  return `<a class="alg-case-card" href="${canonicalCasePath(row)}"><span class="alg-case-card__id">${esc(row.set.toUpperCase())} ${esc(row.number ?? row.name)}</span><span class="alg-case-card__name">${esc(row.name)}</span><span class="alg-case-card__count">${count} verified algorithms</span></a>`;
+  return `<a class="alg-case-card" href="${canonicalCasePath(row)}"><span class="alg-case-card__orbit" data-case-orbit></span><span class="alg-case-card__id">${esc(row.set.toUpperCase())} ${esc(row.number ?? row.name)}</span><span class="alg-case-card__name" title="${esc(row.name)}">${esc(row.name)}</span><span class="alg-case-card__count">${count} alg${count === 1 ? '' : 's'}</span></a>`;
 }
 
 function caseDetail(row, context = {}) {
@@ -101,16 +101,30 @@ function caseDetail(row, context = {}) {
 
 function browser(set = null) {
   const active = ALG_SETS.find(item => item.id === set) ?? ALG_SETS.find(item => item.status === 'ready');
-  const requestedSlot = new URLSearchParams(location.hash.split('?')[1] ?? '').get('slot') ?? 'FR';
+  const query = new URLSearchParams(location.hash.split('?')[1] ?? '');
+  const requestedSlot = query.get('slot') ?? 'FR';
+  const search = (query.get('q') ?? '').slice(0, 80);
   const slot = ['FR', 'BR', 'BL', 'all'].includes(requestedSlot) ? requestedSlot : 'FR';
   const rows = (active ? CASES.filter(row => row.set === active.id) : CASES).filter(row => active?.id !== 'f2l' || slot === 'all' || row.targetPair === slot);
-  const slotNav = active?.id === 'f2l' ? `<nav class="alg-set-tabs" aria-label="F2L slot">${[['FR', 'front right'], ['BR', 'back right'], ['BL', 'back left'], ['all', 'all slots']].map(([value, label]) => `<a class="${slot === value ? 'is-active' : ''}" href="#/algs/f2l?slot=${value}">${label}</a>`).join('')}</nav>` : '';
+  const filtered = rows.filter(row => `${row.name} ${row.number ?? ''} ${row.id}`.toLowerCase().includes(search.toLowerCase()));
+  const perPage = active?.id === 'pll' ? 24 : 20;
+  const pages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const page = Math.min(pages, Math.max(1, Number.parseInt(query.get('page'), 10) || 1));
+  const pageRows = filtered.slice((page - 1) * perPage, page * perPage);
+  const pageHref = number => {
+    const params = new URLSearchParams({ page: String(number) });
+    if (active?.id === 'f2l') params.set('slot', slot);
+    if (search) params.set('q', search);
+    return `#/algs/${active.id}?${params}`;
+  };
+  const pagination = `<nav class="alg-pagination" aria-label="Case pages">${page > 1 ? `<a href="${esc(pageHref(page - 1))}">‹ previous</a>` : '<span></span>'}<span>${filtered.length} cases · ${page} of ${pages}</span>${page < pages ? `<a href="${esc(pageHref(page + 1))}">next ›</a>` : '<span></span>'}</nav>`;
+  const slotNav = active?.id === 'f2l' ? `<nav class="alg-set-tabs" aria-label="F2L slot">${[['FR', 'front right'], ['BR', 'back right'], ['BL', 'back left'], ['all', 'all slots']].map(([value, label]) => `<a class="chip ${slot === value ? 'is-active' : ''}" aria-pressed="${slot === value}" href="#/algs/f2l?slot=${value}">${label}</a>`).join('')}</nav>` : '';
   // copy-ok: Algorithms is the library's name, separate from the Drills navigation label.
-  const note = set === 'f2l' ? '<p class="alg-browser__scope">All 41 standard F2L cases, plus 41 back-right and 41 back-left variants. Each credited insertion is checked with the cross and other three pairs solved.</p>' : set === 'oll2' ? '<p class="alg-browser__scope">Practice each stage goal separately: edge orientation, corner orientation, corner permutation, then edge permutation.</p>' : '';
-  return /* copy-ok: Drill is a feature label used by the algorithm case actions. */ `<section class="cs-page brain alg-page" data-brain-style="orbit"><section class="alg-browser"><header class="alg-browser__head"><p class="alg-eyebrow">OFFLINE ALGORITHM LIBRARY</p><h1>Algorithm library</h1><p>Browse canonical cases, compare credited variants, and practice your picked algorithm. Community source links need an internet connection.</p>${note}</header>
-    ${demoPasteMarkup()}
-    <nav class="alg-set-tabs" aria-label="Algorithm sets">${ALG_SETS.map(item => item.status === 'ready' ? `<a class="${item.id === active?.id ? 'is-active' : ''}" href="#/algs/${item.id}">${esc(item.name)} <small>${item.count}</small></a>` : `<span class="is-disabled" aria-disabled="true">${esc(item.name)} <small>Coming soon</small></span>`).join('')}</nav>
-    ${slotNav}<div class="alg-case-grid">${rows.map(caseCard).join('')}</div></section></section>`;
+  const note = set === 'f2l' ? '<details class="alg-browser__scope"><summary>about these cases</summary><p>All 41 standard F2L cases, plus 41 back-right and 41 back-left variants. Each credited insertion is checked with the cross and other three pairs solved.</p></details>' : set === 'oll2' ? '<details class="alg-browser__scope"><summary>about these cases</summary><p>Drill each stage goal separately: edge orientation, corner orientation, corner permutation, then edge permutation.</p></details>' : '';
+  return /* copy-ok: Drill is a feature label used by the algorithm case actions. */ `<section class="cs-page brain alg-page" data-brain-style="orbit"><section class="alg-browser"><header class="alg-browser__head"><p class="alg-eyebrow">OFFLINE ALGORITHM LIBRARY</p><h1>Algorithm library</h1><p>Find a case, compare algs, then drill your choice.</p>${note}</header>
+    <div class="alg-browser-tools"><form class="alg-search" data-alg-search><label for="alg-search">find a case</label><input id="alg-search" class="field__input" type="search" name="q" value="${esc(search)}" placeholder="case name or number"><button class="btn btn--secondary btn--s" type="submit">find</button></form><details class="alg-paste-disclosure"><summary>paste a demo link</summary>${demoPasteMarkup()}</details></div>
+    <nav class="alg-set-tabs" aria-label="Algorithm sets">${ALG_SETS.map(item => item.status === 'ready' ? `<a class="chip ${item.id === active?.id ? 'is-active' : ''}" aria-pressed="${item.id === active?.id}" href="#/algs/${item.id}">${esc(item.name)} <small>${item.count}</small></a>` : `<span class="is-disabled" aria-disabled="true">${esc(item.name)} <small>Coming soon</small></span>`).join('')}</nav>
+    ${slotNav}<div class="alg-case-grid">${pageRows.map(caseCard).join('')}</div>${pagination}</section></section>`;
 }
 
 function demoPasteMarkup() {
@@ -140,10 +154,12 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
   let session = null, tick = null, destroyed = false, renderId = 0, active = true, lastRouteKey = null;
   let cubeView = null, sequencePlayer = null, caseOrbit = null, caseGeometryObserver = null, selectedAlgId = null, cubeSnapshot = smartCube.getSnapshot(), cubeUnsubscribe = null, cubeSessionUnsubscribe = null, repaintRound = null, repaintReady = false;
   let displayMode = 'case', displayModeWidget = null, caseColorSetting = readCaseColorSetting(storage);
+  const browserOrbits = [];
   let setupState = null, lastCubeMoveSeq = 0;
   const saveLearning = () => { try { storage?.setItem(LEARNING_KEY, JSON.stringify(learning)); } catch { /* Keep the schedule for this tab. */ } };
 
   function disposeVisuals() {
+    browserOrbits.splice(0).forEach(orbit => orbit.destroy());
     sequencePlayer?.destroy(); sequencePlayer = null;
     caseGeometryObserver?.disconnect(); caseGeometryObserver = null;
     caseOrbit?.destroy(); caseOrbit = null;
@@ -163,6 +179,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     root.innerHTML = caseData ? caseDetail(caseData, context) : browser(set);
     const shell = root.querySelector('.alg-page');
     displayModeWidget = null;
+    root.querySelectorAll('[data-case-orbit]').forEach(host => browserOrbits.push(createOrbit(host, { size: 'mini', glyphSize: 32, label: 'Case orbit', segments: [{ key: 'case', weight: 1, state: 'future' }] })));
     if (shell) { shell.dataset.brainStyle = loadSettings(storage).style; syncPageTokens(shell); }
     const displayModeHost = root.querySelector('[data-display-mode-controls]');
     if (displayModeHost) {
@@ -451,6 +468,16 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     }
   };
   const pasteSubmitHandler = event => {
+    const searchForm = event.target.closest('[data-alg-search]');
+    if (searchForm) {
+      event.preventDefault();
+      const params = new URLSearchParams(location.hash.split('?')[1] ?? '');
+      params.delete('page');
+      const value = searchForm.querySelector('[name="q"]').value.trim();
+      if (value) params.set('q', value); else params.delete('q');
+      location.hash = `#/algs/${routeSelection().set ?? 'pll'}${params.size ? `?${params}` : ''}`;
+      return;
+    }
     const form = event.target.closest('[data-alg-demo-form]');
     if (!form) return;
     event.preventDefault();

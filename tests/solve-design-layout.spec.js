@@ -60,3 +60,20 @@ test('solve keeps its Orbit and dial slot through the real flow', async ({ page 
   expect(await original.evaluate(node => node === document.querySelector('#brain-cube canvas'))).toBe(true);
   await expect(brain.locator('canvas')).toHaveCount(1);
 });
+
+test('a long scramble keeps every move visible, including the return path', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await mountTestBrain(page, 'orbit', { route: true });
+  await expect(page.locator('#brain-view .brain')).toHaveAttribute('data-brain-style', 'orbit');
+  const scramble = "R U F2 L D' B U2 R' F D2 L2 B' U R2 D F' L U' B2 D";
+  await startScramble(page, scramble);
+  const labels = page.locator('#brain-timeline .orbit__label');
+  await expect(labels).toHaveCount(20);
+  await page.evaluate(() => window.testBrain.emitTurns('U'));
+  await expect(page.locator('#brain-timeline .orbit__segment.is-wrong')).not.toHaveCount(0);
+  await expect(labels).toHaveCount(21);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('#brain-moves')).toBeVisible();
+  await expect(page.locator('#brain-moves .mg-strip i')).toHaveCount(20);
+});

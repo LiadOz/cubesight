@@ -9,6 +9,7 @@ import '../pages/page.css';
 import './hub.css';
 import { loadSettings } from '../brain/settings.js';
 import { createSolvedState } from '../cross-cube.js';
+import { Orbit } from '../ui/orbit/index.js';
 import { Cube } from '../ui/cube/index.js';
 import { readCaseColorSetting } from '../ui/cube/case-color.js';
 import { caseDisplayState } from '../ui/cube/orientation.js';
@@ -32,6 +33,8 @@ function cubeMarker(drill) {
 
 export function createDrillsHub(root, storage = globalThis.localStorage) {
   let active = false, detached = false, cube = null;
+  let heroOrbit = null;
+  const rowOrbits = [];
   const page = el('section', 'brain cs-page drills-hub');
   const hero = el('section', 'hub-hero');
   const intro = el('div', 'hub-hero-copy');
@@ -44,7 +47,8 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
   stage.setAttribute('aria-label', '3D cube preview');
   const cubeMount = el('div', 'hub-cube-mount');
   cubeMount.setAttribute('aria-label', '3D cube');
-  stage.append(cubeMount);
+  const orbitMount = el('div', 'hub-orbit-mount');
+  stage.append(orbitMount, cubeMount);
   hero.append(intro, stage);
   const content = el('div', 'hub-content');
   page.append(hero, content);
@@ -53,7 +57,8 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
   function mountCube() {
     if (!active || cube || detached) return Promise.resolve(cube);
     try {
-      cube = new Cube(cubeMount, { state: createSolvedState(), mode: 'case', size: 'M', caseColorSetting: readCaseColorSetting(), caseSeed: 'drills-hub', label: 'Drills cube preview' });
+      cube = new Cube(cubeMount, { state: createSolvedState(), mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(), caseSeed: 'drills-hub', label: 'Drills cube preview' });
+      heroOrbit = new Orbit(orbitMount, { size: 'L', shape: 'open', fitHost: true, label: 'Drills orbit', segments: [] });
       return Promise.resolve(cube);
     } catch {
       cubeMount.textContent = '3D cube preview unavailable.';
@@ -62,12 +67,14 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
   }
 
   function unmountCube() {
+    heroOrbit?.destroy(); heroOrbit = null;
     cube?.destroy(); cube = null;
     cubeMount.replaceChildren();
   }
 
   function render() {
     page.dataset.brainStyle = loadSettings(storage).style;
+    rowOrbits.splice(0).forEach(orbit => orbit.destroy());
     content.replaceChildren();
     const rounds = loadShell(storage);
     const streak = dayStreak(rounds.days);
@@ -105,7 +112,10 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
       const key = el('kbd', 'hub-key', drill.key);
       const name = el('span', 'hub-name');
       name.append(el('strong', null, drill.title), el('span', 'hub-blurb', drill.blurb));
-      link.append(key, name, el('span', 'hub-modes', drill.modes.join(' · ')), cubeMarker(drill), el('span', 'hub-chevron'));
+      const glyph = el('span', 'hub-row-orbit');
+      rowOrbits.push(new Orbit(glyph, { size: 'mini', glyphSize: 32, label: `${drill.title} orbit`, segments: [{ key: drill.id, weight: 1, state: 'future' }] }));
+      name.append(key);
+      link.append(glyph, name, el('span', 'hub-modes', drill.modes.join(' · ')), cubeMarker(drill), el('span', 'hub-chevron'));
       link.lastChild.setAttribute('aria-hidden', 'true');
       row.append(link);
       list.append(row);
@@ -123,7 +133,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
 
     const hints = el('p', 'hub-keys');
     hints.setAttribute('aria-hidden', 'true');
-    hints.innerHTML = `<span><kbd>${DRILLS.map(drill => drill.key).join(' ')}</kbd> open drill</span><span><kbd>enter</kbd> next</span>`;
+    hints.innerHTML = '<span><kbd>enter</kbd> next</span>';
     content.append(hints);
     syncPageTokens(page);
   }

@@ -88,9 +88,9 @@ export function createKeyBar(host, keys = []) {
   const bar = document.createElement('div'); bar.className = 'ui-key-bar'; bar.setAttribute('aria-label', 'keyboard shortcuts');
   keys.slice(0, 3).forEach(({ key, label }) => {
     const item = document.createElement('span');
-    const pair = Array.isArray(key) ? key : (typeof key === 'string' && key.includes('–') ? key.split('–').map(part => part.trim()) : null);
+    const pair = Array.isArray(key) ? key : (typeof key === 'string' && key.includes('–') ? key.split('–').map(part => part.trim()) : key === '[ ]' ? ['[', ']'] : null);
     const kbd = document.createElement('kbd'); kbd.className = `key${pair?.length === 2 ? ' key--pair' : ''}`;
-    if (pair?.length === 2) pair.forEach(part => { const cap = document.createElement('i'); cap.textContent = part; kbd.append(cap); });
+    if (pair?.length === 2) pair.forEach((part, index) => { if (index) kbd.append(document.createTextNode('–')); const cap = document.createElement('i'); cap.textContent = part; kbd.append(cap); });
     else kbd.textContent = String(key);
     const text = document.createElement('span'); text.textContent = label; item.append(kbd, text); bar.append(item);
   });
@@ -160,7 +160,7 @@ export function createButton(host, { label, variant = 'primary', size = '', disa
     else { control.tabIndex = -1; control.addEventListener('click', event => event.preventDefault()); }
   }
   if (loading) { const ring = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); ring.classList.add('btn-ring'); ring.setAttribute('viewBox', '0 0 20 20'); ring.setAttribute('aria-hidden', 'true'); ring.innerHTML = '<circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="22 22" />'; control.prepend(ring); control.setAttribute('aria-busy', 'true'); }
-  if (key) { const cap = document.createElement('kbd'); cap.textContent = key; control.append(cap); }
+  if (key) { const cap = document.createElement('kbd'); cap.className = 'key'; cap.textContent = key; control.append(cap); }
   host.append(control); return control;
 }
 
