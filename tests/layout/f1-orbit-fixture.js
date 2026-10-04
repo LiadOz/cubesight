@@ -96,7 +96,7 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
   }
 
   if (['live-results', 'case-choices', 'staged-detail-comparison', 'marker-detail', 'past-results-review-deeplink'].includes(f1State)) {
-    const vm = ['case-choices', 'staged-detail-comparison', 'marker-detail'].includes(f1State)
+    const vm = ['case-choices', 'staged-detail-comparison', 'marker-detail', 'past-results-review-deeplink'].includes(f1State)
       ? await finishCaseSolve(page)
       : (await finishSolve(page), await requireView(page, 'results'));
     if (f1State === 'live-results') return;
@@ -162,15 +162,23 @@ export async function driveF1OrbitFixture(page, { f1State, clockInstalled = fals
       await page.waitForFunction(() => Boolean(window.__cubesightSnapshot.getViewModel().viewModel.results?.review?.detail));
       return;
     }
-    const review = page.locator('#brain-view .f1-results__actions a[href^="#/review/"]').first();
+    const at = vm.results.record.at;
+    await page.waitForFunction(async solveAt => {
+      const backend = await (await import('/src/store/idb.js')).openIdbBackend();
+      try { return (await backend.getAll()).some(record => record.at === solveAt); }
+      finally { await backend.close(); }
+    }, at);
+    await page.goto(`/#/history/${at}`);
+    await page.locator('#history-view .f1-results').waitFor({ state: 'visible' });
+    const review = page.locator('#history-view .f1-results__actions a[href*="/review/"]').first();
     const href = await review.getAttribute('href');
-    if (!href || !href.startsWith('#/review/')) throw new Error('live results review link is not a local deep link');
+    if (!href?.startsWith(`#/history/${at}/review/`)) throw new Error('past results review link is not a history marker deep link');
     await review.click();
-    await page.waitForFunction(() => location.hash.startsWith('#/review/'));
-    await page.waitForFunction(() => Boolean(document.querySelector('#review-view .solve-review-page .sr-layout')), null, { timeout: 45_000 });
-    if (!page.url().includes('#/review/')) throw new Error('review deep link did not navigate from actual live results');
-    const reviewModel = await page.evaluate(() => ({ mounted: Boolean(document.querySelector('#review-view .solve-review-page .sr-layout')), hasMoves: Boolean(document.querySelector('#review-view .solve-review-page .sr-moves li')), route: location.hash }));
-    if (!reviewModel.mounted || !reviewModel.hasMoves) throw new Error(`deep review route did not render the selected solve: ${JSON.stringify(reviewModel)}`);
+    await page.waitForFunction(hash => location.hash === hash, href);
+    await page.locator('#history-view .b-rev-detail').waitFor({ state: 'visible' });
+    const envelope = await mountedView(page);
+    if (envelope.owner !== 'F2' || envelope.viewModel.results.review.detail.kind !== 'marker') throw new Error('history deep link did not select a real review marker');
+
     return;
   }
 

@@ -5,6 +5,7 @@ import { CROWDED_MARKERS, validateCrowdedMarkerFixture } from './fixtures/crowde
 import { mountFakeCube, startScramble, completeScramble, solveReverse } from './fake-cube.js';
 import { mountTestBrain, playSolve } from '../helpers/fake-brain.js';
 import { GOLD } from '../analysis-golden.mjs';
+import { seedGoalProgressState } from '../helpers/goal-progress-state.js';
 import { selectOrbitMarker } from '../helpers/orbit-markers.js';
 import { registerF1OrbitFixture } from './f1-orbit-fixture.js';
 
@@ -95,6 +96,7 @@ registerLayoutDriver('review-fixture', async page => {
 registerLayoutDriver('recording-fixture', async page => {
   await page.addInitScript(record => localStorage.setItem('cubesight-solves-v1', JSON.stringify(record)), HISTORY_SEED);
   await readyForRoute(page, '/history/1000000/replay');
+  await expect.poll(() => page.evaluate(() => window.__cubesightSnapshot?.getViewModel()?.viewModel?.selected?.at)).toBe(1000000);
   await expect(page.locator('.history-stage__orbit .orbit'), 'the replay Orbit is the visible scrub control').toBeVisible();
   const midpoint = Math.floor(HISTORY_SEED.records[0].solveMoves.length / 2);
   for (let index = 0; index < midpoint; index++) await page.keyboard.press('ArrowRight');
@@ -115,10 +117,10 @@ registerLayoutDriver('alg-fixture', async (page, { fixture }) => {
   await expect.poll(() => sequence.getAttribute('data-case-sequence-index')).toBe('1');
 });
 
-registerLayoutDriver('manual-timer', async (page, { id, fixture }) => {
-  await readyForRoute(page, '/timer');
-  await page.locator('.tm').waitFor();
-  await page.clock.install();
+registerLayoutDriver('manual-timer', async (page, { id, fixture, clockInstalled }) => {
+  await readyForRoute(page, '/timer', { clockInstalled });
+  await expect(page.locator('.tm-scramble')).toHaveAttribute('data-state', 'ready', { timeout: 30000 });
+  if (!clockInstalled) await page.clock.install();
   const startHold = async () => {
     await page.keyboard.down(' ');
     await page.clock.fastForward(350);
@@ -139,6 +141,19 @@ registerLayoutDriver('manual-timer', async (page, { id, fixture }) => {
   await expect(page.locator('.tm')).toHaveAttribute('data-phase', fixture.phase);
 });
 
+registerLayoutDriver('goal-progress-fixture', async (page, { fixture, fixedNow }) => {
+  const values = new Map();
+  const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, String(value)), removeItem: key => values.delete(key) };
+  seedGoalProgressState(storage, { state: fixture.goalState, now: fixedNow ?? Date.now() });
+  await page.addInitScript(entries => { for (const [key, value] of entries) localStorage.setItem(key, value); }, [...values]);
+  await readyForRoute(page, '/progress');
+  await expect(page.locator('.progress-page')).toHaveAttribute('data-ready', 'true');
+  const view = page.getByRole('combobox', { name: 'view', exact: true });
+  if (!(await view.innerText()).includes('ao12 goal')) {
+    await view.click(); await page.getByRole('option', { name: 'ao12 goal', exact: true }).click();
+  }
+});
+
 registerLayoutDriver('case-colour-fixture', async (page, { fixture }) => {
   await readyForRoute(page, fixture.route);
   await page.locator('#algs-view .alg-detail').waitFor({ state: 'visible' });
@@ -147,7 +162,7 @@ registerLayoutDriver('case-colour-fixture', async (page, { fixture }) => {
     await expect(cycle).toBeVisible();
     for (let i = 0; i < 8 && !(await cycle.innerText()).includes(fixture.colour); i++) await cycle.click();
     await expect(cycle).toContainText(fixture.colour);
-    await expect.poll(() => page.evaluate(() => localStorage.getItem('cubesight-case-color-v1'))).toBe(fixture.colour);
+    await expect.poll(() => page.evaluate(async () => (await import('/src/ui/cube/case-color.js')).readCaseColorSetting(localStorage))).toBe(fixture.colour);
     return;
   }
   const select = page.locator('select[aria-label*="case colour" i]:visible, select[aria-label*="case color" i]:visible').first();

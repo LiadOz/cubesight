@@ -74,7 +74,7 @@ const stateView = {
 
 const canvasCountFor = route => route === '/algs' || route === '/help' || route === '/demo/format' ? 0 : 1;
 
-const familyFor = (route, id) => id === 'results' || id === 'review-detail' ? 'results'
+const familyFor = (route, id) => id === 'f1-past-results-review-deeplink' ? 'history' : id === 'results' || id === 'review-detail' ? 'results'
   : route.startsWith('/solve') ? 'solve'
   : route.startsWith('/drills') ? 'drills'
     : route.startsWith('/algs') ? 'algs'
@@ -115,7 +115,7 @@ for (const fixture of STATE_FIXTURES) {
         await page.evaluate(() => { window.__layoutShiftCheckpoint = (window.__layoutShiftSamples || []).length; });
         const report = await checkCell(page, {
           width, height, routeId: `state-${fixture.id}`, routeFamily: familyFor(fixture.route, fixture.id),
-          routePath: fixture.route, expectedView: stateView[fixture.route] ?? (fixture.route.startsWith('/demo?') ? '#demo-view' : undefined), expectedCanvasCount: canvasCountFor(fixture.route), state: fixture.id, theme, driverFailure,
+          routePath: fixture.route, expectedView: fixture.id === 'f1-past-results-review-deeplink' ? '#history-view' : stateView[fixture.route] ?? (fixture.route.startsWith('/demo?') ? '#demo-view' : undefined), expectedCanvasCount: canvasCountFor(fixture.route), state: fixture.id, theme, driverFailure,
           expectDebugDrawer: fixture.id === 'debug-open',
           expectSettingsDrawer: fixture.id === 'settings-open',
           expectConnectionMenu: fixture.id === 'connection-menu-open',
