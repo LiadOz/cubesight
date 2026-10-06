@@ -338,7 +338,7 @@
   .history-page[data-view="past"] .f1-results__actions .ui-actions { display: block; }
   .history-page[data-view="past"] .f1-results__actions [data-action="next"] { display: flex; align-items: center; justify-content: center; width: 100%; height: calc(54 * var(--pu)); border-radius: 27px; background: var(--b-ink); color: var(--b-bg); font: 700 17px/1 var(--b-font-sans); }
   .history-page[data-view="past"] .f1-results__actions [data-action="next"]::after { content: none; }
-  .history-page[data-view="past"] .f1-results__actions a:not([data-action]) { position: absolute; left: calc(96 * var(--pu) - 24px + 12px); top: calc(806 * var(--pu) - 722 * var(--pu) - 8px); width: 48px; color: var(--b-ink); font: 600 15px/1 var(--b-font-sans); text-align: center; }
+  .history-page[data-view="past"] .f1-results__actions a:not([data-action]) { position: absolute; left: calc(96 * var(--pu) - 24px); top: calc(806 * var(--pu) - 722 * var(--pu) - 8px); width: 48px; color: var(--b-ink); font: 600 15px/1 var(--b-font-sans); text-align: center; }
   .history-page[data-view="past"] .history-actions-host { position: absolute; left: calc(270 * var(--pu) - 24px); top: calc(806 * var(--pu) - var(--phdr) - 8px); display: block; width: 48px; }
   .history-page[data-view="past"] .history-more > summary { color: var(--b-muted); }
 
