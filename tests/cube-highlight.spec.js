@@ -69,10 +69,11 @@ test('algs: an OLL case highlights the last layer and dims the first two layers'
   await expect.poll(() => stickers(page, '[data-alg-cube]')).toMatchObject({ highlighted: 20, dimmed: 34 });
 });
 
-test('drills: OLL and PLL (a corner-mode cube) highlight the last layer', async ({ page }) => {
+test('drills: the PLL cube (corner mode) highlights the last layer; the OLL drill shows the whole case plain, as frame A-08 does', async ({ page }) => {
   await page.goto('/#/drills/oll');
   await expect(page.locator('#oll-cube canvas')).toBeVisible();
-  await expect.poll(() => stickers(page, '#oll-cube')).toMatchObject({ highlighted: 20, dimmed: 34 });
+  // A-08 draws every sticker of the case at full colour, so the first two layers are not dimmed there.
+  await expect.poll(() => stickers(page, '#oll-cube')).toMatchObject({ highlighted: 0, dimmed: 0 });
   await page.goto('/#/drills/pll');
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
   // the PLL cube is built in corner mode, which used to ignore every highlight

@@ -10,6 +10,7 @@ import { HISTORY_SEED } from '../../tests/layout/fixtures/state-seeds.js';
 import '../../tests/layout/state-drivers.js';
 import { FRAMES, RICH_AT } from './frames.mjs';
 import { buildRichSeed } from './rich-seed.mjs';
+import { ollRoundStorage } from './drill-seed.mjs';
 
 const readJson = name => JSON.parse(readFileSync(new URL(`../../tests/fixtures/${name}`, import.meta.url), 'utf8'));
 // Recorded cross-suggestion / analysis answers, so the app never waits on the real solver worker.
@@ -55,6 +56,7 @@ for (const frame of FRAMES) {
       const seed = frame.driver.seed === 'rich' ? await buildRichSeed() : HISTORY_SEED;
       const selectedAt = frame.driver.seed === 'rich' ? RICH_AT : HISTORY_SEED.records[0].at;
       await page.addInitScript(records => localStorage.setItem('cubesight-solves-v1', JSON.stringify(records)), seed);
+      if (frame.driver.storage === 'oll-round') await page.addInitScript(entries => { for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, JSON.stringify(value)); }, ollRoundStorage());
       await page.goto(`/#${frame.route}`);
       await page.waitForFunction(hash => location.hash === hash, `#${frame.route}`);
       await expect.poll(() => page.evaluate(() => Boolean(window.__cubesightSnapshot?.getViewModel()?.viewModel)), { timeout: 20_000 }).toBe(true);

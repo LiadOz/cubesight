@@ -12,6 +12,7 @@
 //              { seed: true }       HISTORY_SEED in localStorage, then plain navigation
 //              { seed: 'rich', replayFraction? }  the 23-solve history of rich-seed.mjs (what the history frames show),
 //                                   optionally stepped to that fraction of the replay
+//              { seed: true, storage: 'oll-round' }  HISTORY_SEED plus the localStorage keys of drill-seed.mjs (a mid-round OLL drill)
 //              UNREACHABLE: '<reason>'  the state cannot be produced today; the frame is reported, not faked
 // 17:33 UTC on the harness's fixed day: solve 23, the newest, which the history frames select.
 export const RICH_AT = Date.UTC(2026, 0, 15, 17, 33);
@@ -24,7 +25,7 @@ export const FRAMES = [
   { frame: 'A-05-results', ref: 'A-05-results.png', viewport: [1440, 900], route: '/solve', driver: { fixture: 'results' } },
   { frame: 'A-06-review', ref: 'A-06-review.png', viewport: [1440, 900], route: `/history/${RICH_AT}/review/cross-extra-3`, driver: { seed: 'rich' } },
   { frame: 'A-07-history', ref: 'A-07-history.png', viewport: [1440, 900], route: '/history', driver: { seed: 'rich' } },
-  { frame: 'A-08-drill', ref: 'A-08-drill.png', viewport: [1440, 900], route: '/drills/oll', driver: { seed: true } },
+  { frame: 'A-08-drill', ref: 'A-08-drill.png', viewport: [1440, 900], route: '/drills/oll', driver: { seed: true, storage: 'oll-round' } },
   { frame: 'A-09a-phone-solving', ref: 'A-09-phone.png', crop: [40, 28], viewport: [390, 844], route: '/solve', driver: { fixture: 'solving' } },
   { frame: 'A-09b-phone-results', ref: 'A-09-phone.png', crop: [470, 28], viewport: [390, 844], route: '/solve', driver: { fixture: 'results' } },
   { frame: 'A-10-past-solve', ref: 'A-10-past-solve.png', viewport: [1440, 900], route: `/history/${RICH_AT}`, driver: { seed: 'rich' } },
