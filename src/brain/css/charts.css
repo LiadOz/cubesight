@@ -72,22 +72,6 @@
 .b-ch-spark-legend .is-plus2::before { background: var(--b-plus2); }
 .b-ch-spark-legend .is-dnf::before { content: '✕'; width: auto; height: auto; border-radius: 0; color: var(--b-dnf); background: none; }
 
-/* --- Donut -------------------------------------------------------------- */
-.b-ch-donut { display: grid; justify-items: center; }
-.b-ch-donut svg { display: block; width: 100%; max-width: 300px; height: auto; overflow: visible; }
-.b-ch-donut-track { fill: none; stroke: var(--b-track); stroke-width: 2; }
-.b-ch-donut-arc { fill: none; stroke-width: 18; stroke-linecap: butt; stroke: var(--b-fill); }
-.b-ch-donut-arc.is-faster { stroke: var(--b-accent); }
-.b-ch-donut-arc.is-even, .b-ch-donut-arc.is-none { stroke: var(--b-muted); }
-.b-ch-donut-skip path { fill: var(--b-accent); }
-.b-ch-donut-label { fill: var(--b-muted); font: 12px var(--b-font-mono); }
-.b-ch-donut-value { fill: var(--b-ink); font: 600 30px var(--b-font-num, var(--b-font-sans)); font-variant-numeric: tabular-nums; }
-.b-ch-donut-center-label { fill: var(--b-muted); font: 12px var(--b-font-mono); }
-.b-ch-donut-legend { display: flex; gap: 18px; margin: 4px 0 0; font: 11px var(--b-font-mono); color: var(--b-muted); }
-.b-ch-donut-legend span::before { content: ''; display: inline-block; width: 14px; height: 5px; margin-right: 6px; border-radius: 3px; vertical-align: 2px; }
-.b-ch-donut-legend .is-faster::before { background: var(--b-accent); }
-.b-ch-donut-legend .is-slower::before { background: var(--b-fill); }
-
 @media (prefers-reduced-motion: reduce) {
   .b-ch-line.is-drawing { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
   .b-ch-bar-fill { animation: none; }

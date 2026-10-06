@@ -11,7 +11,6 @@ import { INSPECTION_VARIANTS, fixture, frameFor } from './_dev-fixtures.js';
 import { createTpsLine } from '../../charts/tps-line.js';
 import { createSplitBars } from '../../charts/split-bars.js';
 import { createSparkline } from '../../charts/sparkline.js';
-import { createDonut } from '../../charts/donut.js';
 
 const params = new URLSearchParams(location.search);
 const state = params.get('state') || 'solving';
@@ -222,7 +221,6 @@ function mountMonoCharts() {
   const a = h('div'); root.append(a); createTpsLine(a, { variant: 'mono' }).update(r.tpsSeries, { drawIn: false });
   const b = h('div'); root.append(b); createSplitBars(b, { layout: 'columns' }).update(r.splits);
   const c = h('div'); c.style.maxWidth = '360px'; root.append(c); createSparkline(c).update(r.spark);
-  const d = h('div'); d.style.maxWidth = '300px'; root.append(d); createDonut(d).update(r.donut);
   document.documentElement.dataset.harness = 'ready';
 }
 

@@ -4,6 +4,8 @@
 //   ref      PNG in docs/design/orbit-v3/ and the crop taken from it (phone frames are 900x900 sheets with two
 //            390x844 phones at (40,28) and (470,28); every phone is one entry, suffix a = left, b = right)
 //   viewport live viewport, equal to the crop size
+// A-06 is the history review route (the screen that survived the review-page consolidation), on the move-4 marker of the rich seed's
+//            newest solve (the seed's real solve has no 'detour' marker; 'cross-extra-3' is the same stage and move).
 //   route    hash route the app is opened on
 //   driver   how the state is reached, reusing the Tier 2 snapshot drivers in tests/layout/state-drivers.js:
 //              { fixture: '<id>' }  a registered layout state (fake smart cube replayed through the real session)
@@ -20,7 +22,7 @@ export const FRAMES = [
   { frame: 'A-03-inspection', ref: 'A-03-inspection.png', viewport: [1440, 900], route: '/solve', driver: { fixture: 'inspection' } },
   { frame: 'A-04-solving', ref: 'A-04-solving.png', viewport: [1440, 900], route: '/solve', driver: { fixture: 'solving' } },
   { frame: 'A-05-results', ref: 'A-05-results.png', viewport: [1440, 900], route: '/solve', driver: { fixture: 'results' } },
-  { frame: 'A-06-review', ref: 'A-06-review.png', viewport: [1440, 900], route: '/solve', driver: { fixture: 'review-detail' } },
+  { frame: 'A-06-review', ref: 'A-06-review.png', viewport: [1440, 900], route: `/history/${RICH_AT}/review/cross-extra-3`, driver: { seed: 'rich' } },
   { frame: 'A-07-history', ref: 'A-07-history.png', viewport: [1440, 900], route: '/history', driver: { seed: 'rich' } },
   { frame: 'A-08-drill', ref: 'A-08-drill.png', viewport: [1440, 900], route: '/drills/oll', driver: { seed: true } },
   { frame: 'A-09a-phone-solving', ref: 'A-09-phone.png', crop: [40, 28], viewport: [390, 844], route: '/solve', driver: { fixture: 'solving' } },
