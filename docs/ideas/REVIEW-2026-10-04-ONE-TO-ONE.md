@@ -222,3 +222,23 @@ The last wave fast-forwarded 219 unreviewed commits into the user's trunk and th
 **Acceptance for the whole piece:** `npm run design:diff` under 2 % mean, no frame above 4 %;
 no horizontal scroll on any route; solve, drills and algs fit the viewport at 1280×720 and above;
 the full gate green; one gallery post with the before/after overlays.
+
+## 5. Phone navigation (lead decision, 2026-10-06)
+
+Decided from the frames, which are unambiguous once you look at A-09 and A-12 together.
+
+- **The phone header is ONE row, 72 px**: the `cubesight` wordmark left, the `● GAN 356 i3` cube
+  pill right. There is no nav row in any phone frame, in any state. The current 90 px (solve) /
+  108 px two-row header is wrong everywhere, not just on solve.
+- **Going back is a crumb row** under the header, not a nav bar: A-12 shows `‹ history   23 of 23`
+  and `‹ results   replay · 1×`. This is approved navigation ③ ("arrow links with crumbs") with the
+  desktop side rail simply absent on phone.
+- **Going across** (solve / drills / algs / progress / history) is the **nav drawer**, opened by
+  tapping the wordmark. Navigation ③ already establishes the drawer pattern for the cube chip, so
+  this adds no new widget. The existing test that requires nav to stay reachable is satisfied by
+  the drawer; it must be updated to open the drawer rather than to assert a visible nav row.
+- **Contextual actions do the rest** and are already in the frames: `next scramble` as the primary
+  pill with `review` / `more…` beneath it, and `replay` on a past solve.
+
+Do not hide and re-show the nav per solve phase. That was a workaround for the 72 px target and it
+is not what the frames show.
