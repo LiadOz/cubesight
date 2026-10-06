@@ -119,7 +119,8 @@ export function createOrbitResults(host, ctx = {}) {
     currentRecord = r.record;
     historyNav.replaceChildren();
     if (mode === 'past' && pastNavigation) {
-      const back = el('a', 'f1-results__crumb', `‹ ${pastNavigation.back?.label ?? 'history'}`);
+      const back = el('a', 'f1-results__crumb');
+      back.append(el('span', 'crumb-chevron', '‹'), ` ${pastNavigation.back?.label ?? 'history'}`);   // the chevron is drawn on a phone (A-12), the text stays the accessible name
       back.href = pastNavigation.back?.href ?? '#/history';
       const neighbors = el('span', 'f1-results__neighbors');
       for (const direction of ['previous', 'next']) {
