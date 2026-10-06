@@ -1,5 +1,8 @@
 import { defineConfig } from 'playwright/test';
 
+// PW_PORT lets parallel worktrees run the suite without colliding on one port.
+const port = process.env.PW_PORT || 4174;
+
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.js',
@@ -15,12 +18,12 @@ export default defineConfig({
   // (shared browser, stubbed cube) before raising this.
   workers: 2,
   use: {
-    baseURL: 'http://127.0.0.1:4174',
+    baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1280, height: 900 },
   },
   webServer: {
-    command: 'npm run dev -- --port 4174',
-    url: 'http://127.0.0.1:4174',
+    command: `npm run dev -- --port ${port}`,
+    url: `http://127.0.0.1:${port}`,
     // A gate must validate current modules, never a stale worktree server.
     reuseExistingServer: false,
   },
