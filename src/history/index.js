@@ -122,7 +122,7 @@ export function initHistory(host) {
       const start = Math.max(0, bounds.start || 0), end = Math.max(start, bounds.end || start);
       const span = end - start;
       const fill = span ? clamp((move - start) / span, 0, 1) : (move >= start ? 1 : 0);
-      const state = bounds.skipped || split.skipped ? 'skipped' : move >= end ? 'done' : move > start ? 'current' : 'future';
+      const state = bounds.skipped || split.skipped ? (move >= end ? 'skipped' : 'future') : move >= end ? 'done' : move > start ? 'current' : 'future';   // a skip not yet reached is still ahead of the playhead (A-12b)
       return { key, label: split.label || split.short || split.key || key, value: Number.isFinite(split.ms) ? (split.ms / 1000).toFixed(2) : '', weight: Math.max(1, Number(split.ms) || 1), fill: state === 'done' ? 1 : state === 'current' ? fill : 0, state, selected: state === 'current', importance: state === 'current' ? 10 : 1 };
     });
   }
@@ -554,7 +554,7 @@ export function initHistory(host) {
     root.dataset.view = route.kind;
     root.querySelector('.history-data').open = false;
     importHost.hidden = true; listHost.hidden = true; resultsHost.hidden = false; replayHost.hidden = true;
-    counter.textContent = `solve ${selectedIndex(record)} of ${chronologicalRows().length}`;
+    { const lead = document.createElement('span'); lead.className = 'history-counter__lead'; lead.textContent = 'solve '; counter.replaceChildren(lead, `${selectedIndex(record)} of ${chronologicalRows().length}`); }   // a phone shows "23 of 23" (A-12)
     focusHost.classList.remove('is-replay'); focusHost.classList.add('is-past');
     resultsHost.classList.remove('is-hidden');
     // A reviewed moment shows the cube where the moment happens (before its move), not at the end of the solve.
@@ -569,7 +569,7 @@ export function initHistory(host) {
     root.dataset.view = 'replay'; importHost.hidden = true; listHost.hidden = true; resultsHost.hidden = true; replayHost.hidden = false;
     root.querySelector('.history-data').open = false;
     counter.textContent = `replay · ${replaySpeed}×`;
-    backLink.textContent = '‹ results'; backLink.href = href(historyPath(record.at));
+    { const chevron = document.createElement('span'); chevron.className = 'crumb-chevron'; chevron.textContent = '‹'; backLink.replaceChildren(chevron, ' results'); } backLink.href = href(historyPath(record.at));
     focusHost.classList.remove('is-past'); focusHost.classList.add('is-replay');
     replayMove = vm.selected?.move ?? replayMove;
     updateStage(record, { move: replayMove, animate: false });

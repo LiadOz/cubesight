@@ -81,7 +81,7 @@ createHeader($('.f0-header'), { sections: ['solve','drills','algs','progress','h
 window.__f0Cube = cube;
 window.__f0Orbit = orbit;
 window.addEventListener('resize', () => { void orbit.update({ ...orbit.options, centerClearance: cubeClearance() }, { animate: false }); });
-$('.f0-header #theme-toggle').addEventListener('click', () => {
+document.getElementById('theme-toggle').addEventListener('click', () => {
   theme = theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;

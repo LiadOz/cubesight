@@ -81,6 +81,7 @@ test('break prompt is confined to the cube and does not block switching to F2L',
   expect(box.height).toBeCloseTo(stage.height, 0);
   const resume = await prompt.getByRole('button').boundingBox();
   expect(resume.y + resume.height).toBeLessThanOrEqual(box.y + box.height);
+  await page.locator('.ui-header__brand').click();   // the phone header keeps the theme button in the nav drawer
   await page.locator('#theme-toggle').click();
   await page.goto('/#/drills/f2l');
   await expect(prompt).toBeHidden();

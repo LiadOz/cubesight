@@ -32,3 +32,8 @@
   .f1-results__crumb, .f1-results__neighbors a { display: inline-flex; align-items: center; min-width: 40px; min-height: 40px; }
   .f1-results .b-rev-detail :is(button, a) { min-width: 40px; min-height: 40px; }
 }
+
+/* Phone (A-09 / A-12): "-0.96 vs ao12 · pb 12.41" - the ao5 part and its separator are desktop-only. */
+@media (max-width: 899px) {
+  .f1-results__compare-ao5 { display: none; }
+}

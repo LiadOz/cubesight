@@ -67,19 +67,36 @@ test.describe('phone', () => {
     await expect(page.locator('#drills-view')).toBeVisible();
   });
 
-  test('the whole nav fits on a phone', async ({ page }) => {
+  test('the phone header is one 72 px row and the nav is reached through the drawer on the wordmark', async ({ page }) => {
     await page.goto('/#/drills');
-    const box = await page.locator('.main-nav').boundingBox();
-    const nav = page.locator('.main-nav');
-    await expect(nav).toHaveAttribute('data-scroll-x', 'true');
-    await nav.evaluate(node => { node.scrollLeft = node.scrollWidth; });
-    const navBox = await nav.boundingBox();
-    const last = await nav.getByRole('link', { name: 'history', exact: true }).boundingBox();
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(last.x).toBeGreaterThanOrEqual(navBox.x);
-    expect(last.x + last.width).toBeLessThanOrEqual(navBox.x + navBox.width);
-    const actions = await page.locator('.header-actions').boundingBox();
-    expect(actions.x + actions.width).toBeLessThanOrEqual(390);
+    const header = await page.locator('.site-header').boundingBox();
+    expect(header.height).toBe(72);
+    // One row: the wordmark on the left and the cube pill on the right, nothing else visible in it (A-09 / A-12).
+    await expect(page.locator('.site-header .main-nav')).toBeHidden();
+    await expect(page.locator('.site-header #theme-toggle')).toHaveCount(0);
+    const brand = await page.locator('.ui-header__brand').boundingBox();
+    const chip = await page.locator('.ui-cube-chip').boundingBox();
+    expect(brand.x).toBeCloseTo(24, 0);
+    expect(chip.x + chip.width).toBeCloseTo(366, 0);
+    expect(brand.y + brand.height / 2).toBeCloseTo(44, 0);
+    // Tapping the wordmark opens the nav drawer; every page is reachable in it and nothing leaves the viewport.
+    await page.locator('.ui-header__brand').tap();
+    const drawer = page.locator('.ui-nav-drawer');
+    await expect(drawer).toBeVisible();
+    const nav = drawer.locator('.main-nav');
+    await expect(nav.locator('.nav-link')).toHaveText(['solve', 'drills', 'algs', 'progress', 'history']);
+    for (const name of ['solve', 'drills', 'algs', 'progress', 'history']) {
+      const box = await nav.getByRole('link', { name, exact: true }).boundingBox();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(390);
+      expect(box.height).toBeGreaterThanOrEqual(40);
+    }
+    await expect(nav.getByRole('link', { name: 'drills', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(drawer.locator('#theme-toggle')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+    await nav.getByRole('link', { name: 'history', exact: true }).tap();
+    await expect(page).toHaveURL(/#\/history$/);
+    await expect(drawer).toBeHidden();
+    await expect(page.locator('#history-view')).toBeVisible();
   });
 });

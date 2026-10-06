@@ -38,6 +38,7 @@ test('theme toggle fits and responds to touch on a narrow phone', async ({ brows
   const page = await context.newPage();
   const finishCoverage = await beginCoverage(page, testInfo);
   await page.goto('/#/drills/corners');
+  await page.locator('.ui-header__brand').tap();   // the one-row phone header keeps the theme button in the nav drawer
   await page.getByRole('button', { name: 'Switch to dark mode' }).tap();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
