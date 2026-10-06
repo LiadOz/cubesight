@@ -258,7 +258,8 @@ function ensureHostArtifacts(artifactRoot) {
   const free = Number(stats.bavail) * Number(stats.bsize);
   return run('df', ['-Pk', dir], { cwd: dir }).then(r => {
     const fs = r.stdout.split('\n').at(-1)?.trim().split(/\s+/)[0];
-    if (fs !== 'host' && !(process.env.CI === 'true' && free >= 10 * 1024 ** 3)) {
+    // The sandbox mounts the host as "host"; elsewhere a large free disk is the equivalent (a sandbox overlay is ~20 GB).
+    if (fs !== 'host' && free < 100 * 1024 ** 3) {
       throw new Error(`Queue artifacts must be on the host-backed .agents filesystem, not a sandbox overlay.\n${r.stdout}`);
     }
   });
