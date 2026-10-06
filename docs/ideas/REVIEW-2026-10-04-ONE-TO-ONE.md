@@ -242,3 +242,22 @@ Decided from the frames, which are unambiguous once you look at A-09 and A-12 to
 
 Do not hide and re-show the nav per solve phase. That was a workaround for the 72 px target and it
 is not what the frames show.
+
+## 6. Lead decisions, 2026-10-06 (second wave)
+
+**Demo links stay on desktop.** The A-06 frame shows exactly two actions (`better line`,
+`retry this moment`) and no demo action, so rebuilding the review moment on the frame dropped
+"copy your demo link" / "copy better demo link" from desktop; phone kept them in the legacy detail
+panel. `SPEC-FLEET` asks for demo links, and silently losing a feature to match a mock is the wrong
+trade. Restore them in the **left rail beside `back to results`**, as quiet text actions in the
+same style. The rail is empty below the legend in the frame, so this costs a little diff — accept
+it. The frames are the spec for *layout and style*, not an exhaustive inventory of actions.
+
+**The A-08 frame draws an impossible cube; do not match it.** The frame shows a yellow top with
+green and red on the two visible side faces and no orange. With yellow up, the side faces run
+green → orange → blue → red clockwise, so a (left, right) pair of (green, red) is the mirror image
+of a legal cube; the legal pair is (red, green). The app renders orange on the right and is
+correct. The frame's OLL case is also not among its own answer pills (21, 27, 31, 33).
+**Consequence:** `A-08-drill` has an irreducible diff floor and can never reach ~0 %. Do not
+contort the renderer to match it. Regenerate the frame from `docs/design/orbit-v3/_src/` with a
+legal cube and a case that matches its pills, then re-baseline.
