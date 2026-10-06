@@ -28,19 +28,19 @@
 .moment__side p, .moment__center p, .moment__side ul { margin: 0; padding: 0; }
 .moment__side { left: 0; top: 0; width: 100%; pointer-events: none; }
 .moment__side > * { position: absolute; pointer-events: auto; }
-.moment__badge { left: 64.7px; top: calc(156.7 * var(--u) - var(--hdr)); display: flex; align-items: center; gap: 10.7px; color: #e6a642; font: 500 12px/22.6px var(--b-font-mono); white-space: nowrap; }
+.history-page .moment__badge { left: 64.7px; top: calc(156.7 * var(--u) - var(--hdr)); display: flex; align-items: center; gap: 10.7px; color: #e6a642; font: 500 12px/22.6px var(--b-font-mono); white-space: nowrap; }
 .moment__badge i { display: grid; place-items: center; box-sizing: border-box; width: 22.6px; height: 22.6px; border: 2.6px solid currentColor; border-radius: 50%; background: var(--b-bg); font: 500 14px/1 var(--b-font-sans); font-style: normal; }
-.moment__prose { left: 48px; top: calc(242 * var(--u) - var(--hdr) - 21.3px); width: 262px; color: var(--b-ink); font: 500 19px/28px var(--b-font-sans); }
-.moment__legend { left: 48px; top: calc(358 * var(--u) - var(--hdr)); list-style: none; font: 400 12px/28px var(--b-font-mono); color: var(--b-muted); }
+.history-page .moment__prose { left: 48px; top: calc(242 * var(--u) - var(--hdr) - 21.3px); width: 262px; color: var(--b-ink); font: 500 19px/28px var(--b-font-sans); }
+.history-page .moment__legend { left: 48px; top: calc(358 * var(--u) - var(--hdr)); list-style: none; font: 400 12px/28px var(--b-font-mono); color: var(--b-muted); }
 .moment__legend li { display: flex; align-items: center; gap: 11.5px; height: 28px; }
 .moment__legend li[hidden] { display: none; }
 .moment__legend i { flex: none; width: 35px; height: 5px; margin-left: -2.5px; border-radius: 2.5px; background: var(--b-ink); }
 .moment__legend [data-ring="inner"] i { background: var(--b-accent-text, #3dbfad); }
-.moment__back { left: 48px; top: calc(470 * var(--u) - var(--hdr) - 15px * .86); color: var(--b-muted); font: 600 15px/1 var(--b-font-sans); }
+.history-page .moment__back { left: 48px; top: calc(470 * var(--u) - var(--hdr) - 15px * .86); color: var(--b-muted); font: 600 15px/1 var(--b-font-sans); }
 .moment__center { left: 0; top: 0; width: 100%; pointer-events: none; }
 .moment__center > * { position: absolute; left: 50vw; transform: translateX(-50%); width: max-content; max-width: 90vw; text-align: center; pointer-events: auto; }
-.moment__count { top: calc(760 * var(--u) - var(--hdr) - 56px * .86); color: #e6a642; font: 300 56px/1 var(--b-font-sans); font-variant-numeric: tabular-nums; }
-.moment__why { top: calc(796 * var(--u) - var(--hdr) - 16px * .86); color: var(--b-ink); font: 600 16px/1 var(--b-font-sans); }
+.history-page .moment__count { top: calc(760 * var(--u) - var(--hdr) - 56px * .86); color: #e6a642; font: 300 56px/1 var(--b-font-sans); font-variant-numeric: tabular-nums; }
+.history-page .moment__why { top: calc(796 * var(--u) - var(--hdr) - 16px * .86); color: var(--b-ink); font: 600 16px/1 var(--b-font-sans); }
 .moment__actions { top: calc(820 * var(--u) - var(--hdr)); display: flex; gap: 12px; }
 .moment__better, .moment__retry { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 44px; padding: 0; border: 0; border-radius: 22px; font: 700 15px/44px var(--b-font-sans); cursor: pointer; }
 .moment__better { width: 150px; background: #3dbfad; color: #0b1f1c; }
@@ -58,6 +58,10 @@
 .history-page.has-moment .f1-results__coach-tag { display: none !important; }
 @media (min-width: 900px) {
   .history-page.has-moment .history-keybar-host { top: calc(866 * var(--u) - var(--hdr)); }
+  /* A-06 keycaps: 36.2 / 51 / 36.2 wide, the three groups 39 px apart */
+  .history-page.has-moment .history-keybar-host .ui-key-bar { gap: 0 39px; }
+  .history-page.has-moment .history-keybar-host .key:not(.key--pair) { box-sizing: border-box; width: 36.2px; padding: 0; }
+  .history-page.has-moment .history-keybar-host .ui-key-bar > span:nth-child(2) .key { width: 51px; }
 }
 @media (max-width: 899px) {
   .moment__side, .moment__center { position: static; width: auto; padding: 8px 16px; }

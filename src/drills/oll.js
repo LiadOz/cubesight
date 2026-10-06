@@ -40,13 +40,13 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
       <p id="oll-caption" class="oll-caption"></p>
       <div id="oll-reveal" class="oll-reveal" hidden></div><button id="oll-next" type="button" class="oll-next" hidden>next case <kbd>space</kbd></button>
     </section>
-    <div class="oll-keybar-host"><div class="ui-key-bar" aria-label="keyboard shortcuts"><span><kbd class="key">1-4</kbd><span>answer</span></span><span><kbd class="key">space</kbd><span>skip</span></span><button type="button" class="oll-end" data-end-round><kbd class="key">esc</kbd><span>end round</span></button></div><a class="oll-all" href="#/drills">all drills</a></div>
+    <div class="oll-keybar-host"><div class="ui-key-bar" aria-label="keyboard shortcuts"><span><kbd class="key" style="--kw:36.2px">1-4</kbd><span>answer</span></span><span><kbd class="key" style="--kw:51px">space</kbd><span>skip</span></span><button type="button" class="oll-end" data-end-round><kbd class="key" style="--kw:36.2px">esc</kbd><span>end round</span></button></div></div>
   </section>`;
   const $ = selector => root.querySelector(selector);
   const disposeCaseColorControl = mountCaseColorControl($('.oll-head'), storage);
   const cubeReady = Promise.resolve().then(() => {
     if (disposed) return;
-    cube = new Cube($('#oll-cube'), { mode: 'case', size: 'XL', caseColorSetting: readCaseColorSetting(storage), caseSeed: 'oll:initial', label: 'OLL case' });
+    cube = new Cube($('#oll-cube'), { mode: 'case', size: 'XL', caseColorSetting: readCaseColorSetting(storage), caseSeed: 'oll:initial', hideOffTop: true, label: 'OLL case' });
     if (renderState) cube.setState(renderState);
   }).catch(() => { if (!disposed) $('#oll-cube').textContent = '3D cube needs WebGL. The case choices still work.'; });
   roundPanel = createRoundPanel($('#oll-round-host'), {

@@ -10,6 +10,8 @@ const MS = [2410, 1980, 920, 3850, 2230, 2120, 1990, 2260, 2480, 4210, 1650, 162
 export function ollRoundStorage() {
   const answers = CASES.map((number, index) => ({ correct: true, ms: MS[index], caseId: `oll/${number}`, at: FIXED_NOW - (CASES.length - index) * 4000 }));
   const items = Object.fromEntries(Array.from({ length: 12 }, (_, index) => [itemKey('oll', `oll/${60 + index}`), { attempts: 1, correct: 1, due: 0 }]));
+  // The one due case, so the frame's case 13 is the same case on every run (OLL 25: all four edges and two adjacent corners oriented).
+  items[itemKey('oll', 'oll/25')] = { attempts: 1, correct: 1, due: 0 };
   return {
     'cubesight-shell-v1': { version: 1, lastDrill: 'oll', settings: {}, bestCombos: { oll: 7 }, days: [], round: { drill: 'oll', preset: { kind: 'cases', cases: 20 }, startedAt: FIXED_NOW - 60_000, updatedAt: FIXED_NOW, status: 'active', answers, combo: 7, bestCombo: 7 } },
     'cubesight-oll-learning-v1': { version: 1, trial: 0, recentKeys: [], items, sessions: [] },

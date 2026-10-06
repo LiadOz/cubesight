@@ -1,4 +1,4 @@
-import { applyMoves, createSolvedState, parseScramble, toRenderData } from '../../cross-cube.js';
+import { applyMoves, createSolvedState, parseScramble, toRenderData, COLOR_HEX } from '../../cross-cube.js';
 import { resolveSlotPieces } from './slots.js';
 import { stagePieces } from './pieces.js';
 export { resolveSlotPieces } from './slots.js';
@@ -11,11 +11,18 @@ import './cube.css';
 const SIZES = { XS: 72, S: 128, M: 196, L: 300, XL: 460 };
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const caseStateSeed = state => JSON.stringify(state?.cubies?.map(cubie => [cubie.id, cubie.position, cubie.stickers]) || []);
+/** Recognition view: top-face stickers that are not the top colour carry no colour cue (A-08 sticker-unknown). */
+const UNKNOWN_STICKER = '#2a2d33';
+function neutraliseOffTop(data, topHex) {
+  for (const group of [data.cornerStickers, data.stickerColors]) {
+    for (const key of Object.keys(group)) if (key.startsWith('U:') && String(group[key]).toLowerCase() !== String(topHex).toLowerCase()) group[key] = UNKNOWN_STICKER;
+  }
+}
 const copyModel = value => value == null ? value : JSON.parse(JSON.stringify(value));
 
 /** Stable wrapper over the site's single WebGL cube. Model states use cross-cube.js states. */
 export class Cube {
-  constructor(host, { mode = 'case', state = createSolvedState(), size = 'L', label = '3D cube', caseColorSetting = 'yellow top', caseSeed = '', cubeOptions = {} } = {}) {
+  constructor(host, { mode = 'case', state = createSolvedState(), size = 'L', label = '3D cube', caseColorSetting = 'yellow top', caseSeed = '', hideOffTop = false, cubeOptions = {} } = {}) {
     if (!host) throw new Error('Cube needs a host element.');
     this.host = host;
     this.mode = mode;
@@ -25,6 +32,7 @@ export class Cube {
     this.caseColorSetting = normalizeCaseColorSetting(caseColorSetting);
     this.caseSeed = caseSeed || caseStateSeed(state);
     this.explicitCaseSeed = Boolean(caseSeed);
+    this.hideOffTop = hideOffTop;
     this.destroyed = false;
     this.lastHighlight = null;
     this.lastRenderData = null;
@@ -68,8 +76,9 @@ export class Cube {
 
   renderData(state, highlight = this.lastHighlight) {
     const ids = Array.isArray(highlight?.pieces) ? highlight.pieces : [];
-    const display = this.mode === 'case' ? caseDisplayState(state, this.caseColorSetting, this.caseSeed).state : state;
-    const data = toRenderData(display, ids);
+    const shown = this.mode === 'case' ? caseDisplayState(state, this.caseColorSetting, this.caseSeed) : null;
+    const data = toRenderData(shown ? shown.state : state, ids);
+    if (shown && this.hideOffTop) neutraliseOffTop(data, COLOR_HEX[shown.topColor]);
     data.mode = this.interactionMode;
     if (this.interactionMode === 'corner') data.showAllCorners = true;
     data.dimOthers = Boolean(highlight?.dimOthers);
