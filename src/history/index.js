@@ -10,6 +10,7 @@ import { Cube } from '../ui/cube/index.js';
 import { Orbit, createMiniOrbit } from '../ui/orbit/index.js';
 import { createSolvedState } from '../cross-cube.js';
 import { stateAfter } from '../review/replay.js';
+import { buildMoment, createMomentView } from '../brain/review/moment.js';
 import { parseCsTimer, exportCsTimer, filterHistory } from './cstimer.js';
 import { parseHistoryRoute, historyPath, replayPath, historyReviewPath, historyReviewHref, buildHistoryViewModel } from './view-model.js';
 import { exportAll, serializeExport, parseImport, importAll, historyFromImport, pinsFromImport, algorithmsFromImport } from '../data-port.js';
@@ -41,7 +42,7 @@ export function initHistory(host) {
   let cube = null, orbit = null, resultPresenter = null, resultPresenterPromise = null, presenterKey = '';
   let currentRecord = null, replayMove = 0, cubeMove = 0, cubeTargetMove = 0, cubePlaybackGeneration = 0, cubeAnimationRunning = false;
   let replaySpeed = 1, playing = false, raf = 0, playStarted = 0, playBase = 0, renderedResults = null, reviewPlaybackGeneration = 0;
-  let inlineReviewDetail = null, reviewVariant = 'yours', reviewCursor = null;
+  let inlineReviewDetail = null, reviewVariant = 'yours', reviewCursor = null, moment = null;
   let listScrollTop = 0;
   let suppressOrbitClick = false, deleted = null, miniOrbits = [];
   let settings = normalizeSettings(loadSettings(globalThis.localStorage));
@@ -202,10 +203,12 @@ export function initHistory(host) {
     const wanted = emphasisFor(record, cursor);
     const key = wanted ? JSON.stringify([record.at, wanted]) : '';
     // Re-painting cancels a running turn, so only touch the cube when the emphasis actually changes.
-    if (key === lastEmphasis && cube.lastHighlight?.dimOthers === Boolean(wanted)) return;
+    // A-06 outlines the moment's pieces and leaves the rest of the cube at full colour; only an opened stage dims the others.
+    const dim = route.kind !== 'review';
+    if (key === lastEmphasis && cube.lastHighlight?.dimOthers === Boolean(wanted && dim)) return;
     lastEmphasis = key;
     const found = wanted && cube.state ? stagePieces(cube.state, wanted.stage, wanted.options) : null;
-    if (found) cube.highlight(found); else cube.clearHighlight();
+    if (found) cube.highlight({ ...found, dimOthers: dim && found.dimOthers !== false }); else cube.clearHighlight();
   }
   const clock = at => { const date = new Date(at); return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`; };
   const whenText = at => { const now = new Date(Date.now()), day = new Date(at); const same = day.getFullYear() === now.getFullYear() && day.getMonth() === now.getMonth() && day.getDate() === now.getDate(); return `${same ? 'today' : fmt.date(at)} ${clock(at)}`; };
@@ -314,8 +317,20 @@ export function initHistory(host) {
     const model = resultPresenter.build({ record: presented, records, settings, plan: buildStagePlan(settings), pins: store.pins.list, reviewUi: reviewUiForRoute(), analysisStatus: record.analysis ? 'complete' : 'none' });
     renderedResults = model.vm;
     resultPresenter.update({ screen: 'results', results: model.vm, history: { navigation: navigationFor(record), replayHref: href(replayPath(record.at)) } });
+    syncMoment(record);
     return model;
   }
+  /** The review route draws one moment as frame A-06 does (two move rings, the coach sentence, the two actions); other routes drop it. */
+  function syncMoment(record) {
+    // The frame is a desktop frame (A-06); a phone keeps the review detail panel until a phone review frame exists.
+    const marker = route.kind === 'review' && matchMedia('(min-width: 900px)').matches ? viewModel().selected?.markers?.find(item => item.id === route.marker) : null;
+    const detail = renderedResults?.review?.detail;
+    const model = marker && detail?.key === marker.id ? buildMoment({ marker, detail, record, backHref: href(historyPath(record.at)) }) : null;
+    if (!model) { dropMoment(); return; }
+    moment ??= createMomentView(root, { stage: root.querySelector('.history-stage'), onBetterLine: () => void playReviewVariant('better') });
+    moment.update(model);
+  }
+  function dropMoment() { moment?.destroy(); moment = null; }
   async function playReviewVariant(variant) {
     if (!['yours', 'better'].includes(variant) || !currentRecord || !resultPresenter?.build) return;
     const compare = renderedResults?.review?.detail?.compare;
@@ -542,7 +557,9 @@ export function initHistory(host) {
     counter.textContent = `solve ${selectedIndex(record)} of ${chronologicalRows().length}`;
     focusHost.classList.remove('is-replay'); focusHost.classList.add('is-past');
     resultsHost.classList.remove('is-hidden');
-    updateStage(record, { move: record.solveMoves?.length || 0, animate: false });
+    // A reviewed moment shows the cube where the moment happens (before its move), not at the end of the solve.
+    const reviewed = route.kind === 'review' ? viewModel().selected?.markers?.find(item => item.id === route.marker) : null;
+    updateStage(record, { move: reviewed ? Math.max(0, Math.min(record.solveMoves?.length || 0, reviewed.at ?? reviewed.idx ?? 0)) : record.solveMoves?.length || 0, animate: false });
     await ensureResultsPresenter();
     if (!active || route.kind !== 'past' && route.kind !== 'review' || currentRecord?.at !== record.at) return;
     updatePastPresenter(record);
@@ -594,6 +611,7 @@ export function initHistory(host) {
       const visible = filterHistory(storageRecords(), filters).sort((a, b) => b.at - a.at);
       if (!visible.some(record => record.at === selectedAt)) selectedAt = visible[0]?.at ?? null;
     }
+    if (route.kind !== 'review') dropMoment();
     const vm = viewModel();
     updateSummary(vm);
     currentRecord = selectedRecord();
@@ -842,7 +860,7 @@ export function initHistory(host) {
       await store.reload(); updateSessionFilter(); root.dataset.brainStyle = settings.style; syncPageTokens(root); render();
     },
     detach() {
-      active = false; stopPlayback(); resultPresenter?.destroy?.(); resultPresenter = null;
+      active = false; stopPlayback(); dropMoment(); resultPresenter?.destroy?.(); resultPresenter = null;
       reviewPlaybackGeneration++; cubePlaybackGeneration++; cubeAnimationRunning = false;
       cube?.destroy(); cube = null; orbit?.destroy(); orbit = null; destroyMiniOrbits();
       document.removeEventListener('cubesight-theme', retheme);
