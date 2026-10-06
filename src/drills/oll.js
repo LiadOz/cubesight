@@ -171,7 +171,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
       if (button.dataset.caseId === current.id) button.dataset.correct = 'true';
       if (button.dataset.caseId === row.id && !correct) button.dataset.missed = 'true';
     });
-    $('#oll-feedback').textContent = correct ? 'nice, that’s the case' : `not quite: this is OLL ${current.number}, ${current.name}`;
+    $('#oll-feedback').textContent = correct ? 'Nice. That’s the case.' : `Not quite. This is OLL ${current.number}, ${current.name}.`;
     const alg = current.algs?.[0];
     $('#oll-reveal').hidden = false;
     $('#oll-reveal').innerHTML = `<strong>OLL ${current.number} · ${current.name}</strong>${alg ? `<p>${fmt.moves(alg.moves)}</p><small><a href="${alg.source.url}" target="_blank" rel="noopener noreferrer">${alg.credit} (opens a website)</a></small>` : ''}`;

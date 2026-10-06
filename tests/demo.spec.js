@@ -138,6 +138,8 @@ test('algorithm case and history review copy actions produce pasteable demo link
   expect(caseDemo.parts[0].highlight).toEqual(['pair:FR']);
   expect(caseDemo.parts[0].colorSetting).toBeTruthy();
 
+  // Desktop review draws frame A-06 (the moment screen: better line, retry this moment, no copy actions); a phone keeps the detail panel with them.
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/#/history/${historyRecord.at}/review/${encodeURIComponent(historyMarker.id)}`);
   const reviewButton = page.locator('.b-rev-detail [data-act="copy-demo"][data-variant="yours"]');
   await expect(reviewButton).toBeVisible();
