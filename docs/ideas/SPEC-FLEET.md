@@ -259,6 +259,7 @@ Evidence (2026-10-03): `.github/workflows/check.yml` exists but **has never run*
 4. **Enforce ownership mechanically:** a path → work-package map, and a check that fails when a branch touches another package's files without declaring it. Catch it at commit time, not at merge time.
 5. **Tiers stay as in F11:** affected tests while iterating, the full gate only in the queue. Don't run a 10-minute gate after every edit.
 6. **Keep the GitHub workflow** for when pushing is allowed; until then the queue is the CI and must run the identical commands.
+**Status (implemented):** `npm run queue -- <branch>...` in `scripts/merge-queue.mjs`; operator doc `docs/MERGE-QUEUE.md`; deliberate combination-failure proof via `node scripts/merge-queue-demo.mjs` and `tests/merge-queue-unit.test.mjs`. Items 3-5 are not part of the queue script (ownership check, directory-based registries remain open). Because trunk is checked out in the user's live checkout, the queue validates but hands over the `git merge --ff-only <sha>` instead of moving that ref itself.
 Acceptance: the queue rejects a branch that passes alone but fails when merged (test it deliberately); trunk is green at every commit; no branch is more than a few hours behind; the duplicate-commit pattern is gone; `fleet/combined` is either landed through the queue or deleted.
 
 ## F19: Scale the test suite back (next wave; owns `tests/**` and the test harnesses)

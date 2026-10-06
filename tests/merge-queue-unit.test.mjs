@@ -103,3 +103,99 @@ test('queue rejects a failing merge without touching real refs or identity', asy
     await rm(scratch, { recursive: true, force: true });
   }
 });
+
+// ---- chained queue on a throwaway repository: combination failure, promotion, safety rules
+
+import { runQueue, assertAllowedGit, assertNotLiveCheckout } from '../scripts/merge-queue.mjs';
+
+async function fixtureRepo() {
+  const dir = await mkdtemp(path.join(process.env.TMPDIR || os.tmpdir(), 'cubesight-queue-chain-'));
+  git(dir, ['init', '-b', 'scratch-home']);
+  git(dir, ['config', 'user.name', 'Queue Proof']);
+  git(dir, ['config', 'user.email', 'queue-proof@example.invalid']);
+  await writeFile(path.join(dir, 'ring.txt'), 'size=10\n');
+  await writeFile(path.join(dir, 'cube.txt'), 'camera=10\n');
+  git(dir, ['add', '.']);
+  git(dir, ['commit', '-m', 'base']);
+  git(dir, ['branch', 'trunk']);
+  const edit = async (branch, file, text) => {
+    git(dir, ['switch', '-c', branch, 'trunk']);
+    await writeFile(path.join(dir, file), text);
+    git(dir, ['add', '-A']);
+    git(dir, ['commit', '-m', branch]);
+  };
+  await edit('orbit-sizing', 'ring.txt', 'size=12\n');
+  await edit('cube-camera', 'cube.txt', 'camera=11\n');
+  await edit('unrelated', 'notes.txt', 'hello\n');
+  git(dir, ['switch', 'scratch-home']);
+  return dir;
+}
+
+test('queue lands green branches in order and rejects a combination failure, leaving trunk at the last green tip', async () => {
+  const dir = await fixtureRepo();
+  try {
+    const gate = { name: 'tier1', command: 'x', args: [] };
+    // Gate stand-in for the ring/cube drift: each change passes alone, both together fail.
+    const strict = async (g, ctx) => {
+      const [ring, camera] = await Promise.all(['ring.txt', 'cube.txt'].map(f => readFile(path.join(ctx.cwd, f), 'utf8')));
+      const changed = ring !== 'size=10\n' && camera !== 'camera=10\n';
+      return { name: g.name, exitCode: changed ? 1 : 0, durationMs: 1 };
+    };
+    const summary = await runQueue({
+      repoRoot: dir, branches: ['unrelated', 'orbit-sizing', 'cube-camera'], base: 'trunk', liveCheckout: path.join(dir, 'elsewhere'),
+      gates: [gate], gateRunner: strict, installDependencies: false, explainAlone: false,
+    });
+    assert.deepEqual(summary.results.map(r => r.status), ['landed', 'landed', 'rejected']);
+    assert.match(summary.results[2].failure, /Gate tier1 exited 1/);
+    assert.match(await readFile(summary.results[2].diagnosis, 'utf8'), /Trunk was NOT changed/);
+    // trunk contains the two greens, not the rejected branch
+    assert.equal(git(dir, ['rev-parse', 'trunk']), summary.endTip);
+    assert.equal(git(dir, ['show', 'trunk:ring.txt']), 'size=12');
+    assert.equal(git(dir, ['show', 'trunk:cube.txt']), 'camera=10');
+    assert.equal(git(dir, ['worktree', 'list']).split('\n').length, 1, 'scratch worktrees removed');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('queue does not advance trunk while a worktree has it checked out; it hands over the green tip', async () => {
+  const dir = await fixtureRepo();
+  try {
+    git(dir, ['switch', 'trunk']);
+    const before = git(dir, ['rev-parse', 'trunk']);
+    const summary = await runQueue({
+      repoRoot: dir, branches: ['unrelated'], base: 'trunk', liveCheckout: path.join(dir, 'elsewhere'),
+      gates: [{ name: 'tier1', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
+      installDependencies: false,
+    });
+    assert.equal(summary.results[0].status, 'green');
+    assert.equal(git(dir, ['rev-parse', 'trunk']), before);
+    assert.match(summary.handover, /git merge --ff-only [0-9a-f]{40}/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('a textual conflict with trunk is rejected with the conflicting files named', async () => {
+  const dir = await fixtureRepo();
+  try {
+    git(dir, ['switch', '-c', 'clash', 'trunk']);
+    await writeFile(path.join(dir, 'ring.txt'), 'size=99\n');
+    git(dir, ['commit', '-am', 'clash']);
+    git(dir, ['switch', 'scratch-home']);
+    const summary = await runQueue({
+      repoRoot: dir, branches: ['orbit-sizing', 'clash'], base: 'trunk', liveCheckout: path.join(dir, 'elsewhere'),
+      gates: [{ name: 'tier1', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
+      installDependencies: false, explainAlone: false,
+    });
+    assert.deepEqual(summary.results.map(r => r.status), ['landed', 'rejected']);
+    assert.match(summary.results[1].failure, /conflict.*ring\.txt/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('safety rules are enforced in code', () => {
+  assert.throws(() => assertAllowedGit(['commit', '--no-verify', '-m', 'x']), /no-verify/);
+  assert.throws(() => assertAllowedGit(['stash', 'push']), /stash/);
+  assert.throws(() => assertAllowedGit(['-C', '.', 'stash']), /stash/);
+  assert.doesNotThrow(() => assertAllowedGit(['merge', '--no-ff', 'stash-feature']));
+  assert.throws(() => assertNotLiveCheckout('/live', '/live'), /live checkout/);
+  assert.throws(() => assertNotLiveCheckout('/live/src', '/live'), /live checkout/);
+  assert.doesNotThrow(() => assertNotLiveCheckout('/live/.agents/worktrees/x', '/live'));
+  assert.doesNotThrow(() => assertNotLiveCheckout('/live-other', '/live'));
+});
