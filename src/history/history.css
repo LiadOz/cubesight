@@ -381,3 +381,25 @@
   .history-speeds button::before { content: ''; position: absolute; z-index: -1; inset: 7px 0; border: 1px solid var(--b-hairline); border-radius: 13px; }
   .history-speeds button[aria-pressed="true"]::before { border-color: transparent; background: var(--b-accent-soft, #16403a); }
 }
+
+/* ---- phone, exact (A-12): the crumb row, the counter and the stage labels, from design-spec.js phone coordinates ----
+   Crumb: chevron path M29 84 L23 90 L29 96 (6 x 12, stroke 2), "history" / "results" 14/600 starting at x=40, row centred on y=90 (a 40 px target);
+   meta ("23 of 23", "replay · 1×") 12/500 ending at x=366. */
+@media (max-width: 899px) {
+  .history-back, .history-page[data-view="past"] .f1-results__history-nav { top: calc(70 * var(--pu) - var(--phdr)); left: 22px; right: auto; height: 40px; min-height: 40px; align-items: center; gap: 0; }
+  .history-page[data-view="past"] .f1-results__history-nav { right: 24px; }
+  .history-back, .f1-results__crumb { display: inline-flex; align-items: center; height: 40px; font: 600 14px/1 var(--b-font-sans); color: var(--b-ink); }
+  .crumb-chevron { flex: none; width: 8px; height: 12px; margin-right: 10px; font-size: 0; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M7 1L1 6L7 11' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") center / 100% 100% no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 12'%3E%3Cpath d='M7 1L1 6L7 11' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+  .history-counter__lead { display: none; }
+  .history-page:is([data-view="past"], [data-view="replay"]) .history-counter { color: var(--b-muted); }
+}
+
+/* replay (A-12b): the crumb has no extra gap, the total sits on the digits' baseline, the transport's 40 px targets centre their glyphs on the frame's x */
+@media (max-width: 899px) {
+  .history-page[data-view="replay"] .history-back { gap: 0; }
+  .history-page[data-view="replay"] .history-stage__number small { left: calc(100% + 24px); bottom: auto; top: calc(.83 * 84 * var(--pu) - .84 * 11px); font: 400 11px/1 var(--b-font-mono); white-space: nowrap; }
+  .history-page[data-view="replay"] .history-transport { left: calc(50% - 110 * var(--pu)); width: calc(220 * var(--pu)); }
+  .history-page[data-view="replay"] .history-transport button:not(.history-transport__toggle) svg { width: 36px; height: 36px; }   /* the frame's chevrons: 9 x 18, 2.4 stroke */
+  .history-page[data-view="replay"] .history-transport__toggle svg { width: 37px; height: 37px; }   /* pause bars 5.5 x 20 */
+  .history-page[data-view="past"] .f1-results__coach-tag { display: none; }   /* the frame's "coach" label is the ::before of the coach block */
+}
