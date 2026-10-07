@@ -53,3 +53,20 @@ test('the settings panel starts below the site header', async ({ page }) => {
     await expect(body).toBeHidden();
   }
 });
+
+test('past solve: the replay pill does not sit on the keycap row, and there is one "coach" label', async ({ page }) => {
+  await seeded(page, '/history/1000000');
+  await expect(page.locator('.history-page')).toHaveAttribute('data-view', 'past');
+  await page.locator('.f1-results__actions [data-action="next"]').waitFor();
+  for (const [width, height] of [[900, 700], [1024, 768], [1280, 720], [1440, 900]]) {
+    await page.setViewportSize({ width, height });
+    await expect.poll(() => page.evaluate(() => {
+      const pill = document.querySelector('.f1-results__actions [data-action="next"]').getBoundingClientRect();
+      const keys = [...document.querySelectorAll('.history-keybar-host .ui-key-bar > span, .history-keybar__meta')].map(node => node.getBoundingClientRect()).filter(box => box.width > 0);
+      const hits = keys.filter(box => box.left < pill.right && box.right > pill.left && box.top < pill.bottom && box.bottom > pill.top);
+      return hits.length;
+    }), { message: `${width}x${height}` }).toBe(0);
+  }
+  const visibleCoachWords = await page.evaluate(() => [...document.querySelectorAll('.f1-results__coach-tag')].filter(node => getComputedStyle(node).display !== 'none').length);
+  expect(visibleCoachWords).toBe(0);
+});
