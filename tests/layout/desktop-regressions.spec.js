@@ -114,3 +114,21 @@ test('alg case on a phone: the Orbit part name is visible, on screen, and not on
     }), { message: `${width}x${height}` }).toEqual({ shown: true, onCube: 0, offScreen: 0 });
   }
 });
+
+test('history review at tablet width: the canvas-sized Orbit stays centred on the Cube and no label sits on the Cube', async ({ page }) => {
+  await seeded(page, '/history/1000000/review/1');
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.locator('.history-stage__orbit .orbit__svg').waitFor();
+  await page.locator('.history-stage__cube canvas').waitFor();
+  await expect.poll(() => page.evaluate(async () => {
+    const { polygonIntersectsRect } = await import('/src/ui/cube/bounds.js');
+    const orbit = document.querySelector('.history-stage__orbit > .orbit').getBoundingClientRect();
+    const canvas = document.querySelector('.history-stage__cube canvas');
+    const cube = canvas.getBoundingClientRect();
+    const bounds = canvas.getRenderedCubeBounds?.();
+    const onCube = bounds ? [...document.querySelectorAll('.history-stage__orbit .orbit__label')].filter(label => { const box = label.getBoundingClientRect(); return box.width > 0 && polygonIntersectsRect(bounds.points, box); }).length : -1;
+    return { dx: Math.round(Math.abs(orbit.x + orbit.width / 2 - cube.x - cube.width / 2)), onCube };
+  })).toEqual({ dx: expect.any(Number), onCube: 0 });
+  const dx = await page.evaluate(() => { const o = document.querySelector('.history-stage__orbit > .orbit').getBoundingClientRect(); const c = document.querySelector('.history-stage__cube canvas').getBoundingClientRect(); return Math.abs(o.x + o.width / 2 - c.x - c.width / 2); });
+  expect(dx).toBeLessThan(4);
+});
