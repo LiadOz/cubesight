@@ -211,7 +211,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
       const orbitWidth = orbitHost?.getBoundingClientRect().width || 340;
       const clearanceForGeometry = () => Math.ceil(((cubeMount?.getBoundingClientRect().width || 250) / Math.max(1, orbitHost?.getBoundingClientRect().width || 340)) * 180 + 14);
       const centerClearance = Math.ceil((cubeWidth / orbitWidth) * 180 + 14);
-      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, centerClearance, label: `${caseData.name} algorithm progress`, segments: [] });
+      if (orbitHost) caseOrbit = createOrbit(orbitHost, { size: 'L', shape: 'open', gap: 78, centerClearance, clampLabels: false, label: `${caseData.name} algorithm progress`, segments: [] });
       if (!supportsVirtualRepaint(caseData)) repaintReady = false;
       try { setupState = caseSetupState(caseData); }
       catch { setupState = null; }

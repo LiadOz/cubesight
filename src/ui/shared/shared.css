@@ -84,13 +84,16 @@
    appear when the header is hovered or focused. Phones keep their own header (below 721 px). */
 @media (min-width:721px) {
   .site-header.ui-header { box-sizing:border-box; height:60px; min-height:60px; padding:18px 48px 0; align-items:flex-start; gap:0; background:transparent; }   /* items hang from y=18: baselines land on the frames' y=38 whatever the header height */
-  .site-header.ui-header .ui-header__brand { flex:0 0 150px; min-height:0; height:28px; margin-top:-2px; font:800 20px/28px 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.4px; color:var(--orbit-ink); }
-  .site-header.ui-header nav { flex:0 0 auto; gap:28px; overflow:visible; }
+  .site-header.ui-header .ui-header__brand { flex:0 0 auto; min-width:150px; min-height:0; height:28px; margin-top:-2px; font:800 20px/28px 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.4px; color:var(--orbit-ink); }
+  /* The nav is a declared horizontal scroller (data-scroll-x): at default text it fits exactly as drawn; when text is enlarged it shrinks to
+     the room left and scrolls (the active underline sits in the bottom padding so overflow does not clip it) instead of clipping every link. */
+  .site-header.ui-header nav { flex:0 1 auto; min-width:0; gap:28px; overflow-x:auto; overflow-y:hidden; padding-bottom:6px; margin-bottom:-6px; scrollbar-width:thin; }
+  .site-header.ui-header nav a { flex:none; }
   .site-header.ui-header nav a { position:relative; box-sizing:border-box; min-height:0; height:28px; padding:0; justify-content:flex-start; font:500 15px/28px 'Manrope Variable','Manrope',sans-serif; color:var(--orbit-muted); }
   .site-header.ui-header nav a.active, .site-header.ui-header nav a[aria-current='page'] { color:var(--orbit-ink); font-weight:700; box-shadow:none; border-radius:0; }
   .site-header.ui-header nav a.active::after, .site-header.ui-header nav a[aria-current='page']::after { content:''; position:absolute; left:0; right:0; bottom:-4px; height:2px; border-radius:1px; background:var(--orbit-accent); }
-  .site-header.ui-header nav a[data-nav='solve'] { width:42px; } .site-header.ui-header nav a[data-nav='drills'] { width:50.4px; } .site-header.ui-header nav a[data-nav='algs'] { width:33.6px; }
-  .site-header.ui-header nav a[data-nav='progress'] { width:67.2px; } .site-header.ui-header nav a[data-nav='history'] { width:58.8px; }
+  .site-header.ui-header nav a[data-nav='solve'] { min-width:42px; } .site-header.ui-header nav a[data-nav='drills'] { min-width:50.4px; } .site-header.ui-header nav a[data-nav='algs'] { min-width:33.6px; }
+  .site-header.ui-header nav a[data-nav='progress'] { min-width:67.2px; } .site-header.ui-header nav a[data-nav='history'] { min-width:58.8px; }
   /* Theme and help are not in the frames: they sit as two quiet icons in the 48 px right margin, clear of the status line. */
   .site-header.ui-header .ui-header__actions { position:static; align-items:flex-start; gap:0; }
   .site-header.ui-header .header-button { position:absolute; top:19px; width:22px; min-width:0; height:26px; min-height:0; padding:0; opacity:.55; transition:opacity .2s; }

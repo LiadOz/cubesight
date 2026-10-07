@@ -39,12 +39,15 @@ test('curated OLL case page shows verified sources, setup repaint, picked alg an
 test('case drill deep link is preserved and opens the requested case', async ({ page }) => {
   await page.goto('/#/algs/pll/Jb/drill');
   await expect(page).toHaveURL(/#\/algs\/pll\/Jb\/drill$/);
-  await expect(page.getByRole('heading', { name: 'Jb' })).toBeVisible();
+  // exact: the open drill panel's own heading is "Jb · Algorithm 1"
+  await expect(page.getByRole('heading', { name: 'Jb', exact: true })).toBeVisible();
   await expect(page.locator('[data-drill]')).toBeVisible();
   await expect(page.locator('[data-timer]')).toBeVisible();
 });
 
 test('changing to a different algorithm case resets scroll to the page top', async ({ page }) => {
+  // The case and drill now fit a 1280x900 window without scrolling, so use a window short enough for the page to scroll.
+  await page.setViewportSize({ width: 1280, height: 480 });
   await page.goto('/#/algs/oll/1/drill');
   await expect(page.locator('[data-drill]')).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));

@@ -218,6 +218,9 @@
   padding: 24px 32px 48px; background: var(--b-bg); color: var(--b-ink); box-shadow: -24px 0 60px rgb(0 0 0 / .32); text-align: left;
 }
 .b-debug { z-index: 70; width: min(640px, 100vw); }
+/* The settings panel sits below the site header (which stays above it): from top: 0 its first 60px, the panel's title
+   and first rows, were hidden behind the header and the panel counted as covering it. */
+.b-settings-body { top: var(--site-header-height, 60px); }
 .b-debug[hidden] { display: none; }
 .b-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
 .b-panel-head h2 { font: 500 14px var(--b-font-mono); color: var(--b-muted); }

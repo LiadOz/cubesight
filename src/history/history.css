@@ -96,7 +96,7 @@
 /* ---- the stage: the Orbit, the cube and the time, sized by the viewport ------------------------------ */
 .history-focus { min-width: 0; }
 .history-stage { position: relative; width: var(--stage); height: var(--stage); max-width: 100%; margin: 0 auto; }
-.history-stage__orbit { position: absolute; inset: 0; display: grid; place-items: center; }
+.history-stage__orbit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }   /* flex, not grid: a canvas-sized Orbit wider than the stage stays centred on it instead of widening a grid track and growing to the right */
 .history-stage__orbit > .orbit { width: 100%; height: 100%; }
 .history-stage__orbit > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
 /* The cube is a square canvas; its silhouette is --cube-fill of it, so the canvas side is the frame's cube
@@ -147,7 +147,7 @@
 /* ---- the key row and the bottom-right line (every desktop frame has them) -------------------------- */
 .history-keybar-host { display: flex; align-items: center; height: 20px; justify-content: space-between; padding: 0 48px; }
 .history-keybar-host .ui-key-bar { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 0 26px; font: 500 12.5px var(--b-font-sans); color: var(--b-muted); }
-.history-keybar-host .ui-key-bar > span { display: inline-flex; align-items: center; gap: 8px; min-height: 0; }
+.history-keybar-host .ui-key-bar span { display: inline-flex; align-items: center; gap: 8px; min-height: 0; }
 .history-keybar-host .key:not(.key--pair) { display: inline-grid; place-items: center; min-width: 21.4px; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--b-key-bg, #2b2925); color: var(--b-key-ink, #d9d2c3); font: 500 11px/1 var(--b-font-mono); box-shadow: none; }
 .history-keybar__meta { font: 12px var(--b-font-mono); color: var(--b-muted); }
 .history-keybar__meta:empty { display: none; }
@@ -194,13 +194,16 @@
   .history-page[data-view="past"] .f1-results__coach { position: absolute; z-index: 2; left: 48px; top: calc(560 * var(--u) - var(--hdr) - 12px * .83); width: 262px; min-height: 0; }
   .history-page[data-view="past"] .f1-results__coach::before { content: 'coach'; display: block; margin-bottom: 12px; padding-left: 17px; font: 500 12px/1 var(--b-font-mono); color: var(--b-warn-text, #e6a642); background: radial-gradient(circle at 5px 50%, transparent 2.6px, currentColor 3px, currentColor 4.4px, transparent 4.8px) no-repeat; }
   .history-page[data-view="past"] .ui-coach-line__text { font: 500 19px/28px var(--b-font-sans); color: var(--b-ink); }
-  .history-page[data-view="past"] .f1-results__actions { position: absolute; z-index: 3; left: calc(50vw - 160px); top: calc(836 * var(--u) - var(--hdr)); display: flex; align-items: center; height: 44px; }
+  .history-page[data-view="past"] .f1-results__coach-tag { display: none; }   /* the frame's "coach" label is the ::before of the coach block; the tag was a second, unplaced "coach" at the top-left */
+  /* The pill is centred in the frame (1440), where the keycap row ends at x 443. In narrower windows the row would run under it: the group then starts to its right. */
+  .history-page[data-view="past"] { --past-actions-left: max(calc(50vw - 160px), 460px); }
+  .history-page[data-view="past"] .f1-results__actions { position: absolute; z-index: 3; left: var(--past-actions-left); top: calc(836 * var(--u) - var(--hdr)); display: flex; align-items: center; height: 44px; }
   .history-page[data-view="past"] .f1-results__actions .ui-actions { gap: 0; flex-wrap: nowrap; align-items: center; }
   .history-page[data-view="past"] .f1-results__actions [data-action="next"] { display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; width: 160px; height: 44px; margin-right: 43px; padding: 0 18px; border-radius: 22px; background: var(--b-ink); color: var(--b-bg); font: 700 15px/1 var(--b-font-sans); }
   .history-page[data-view="past"] .f1-results__actions [data-action="next"]::after { content: 'space'; }
   .history-page[data-view="past"] .f1-results__actions a:not([data-action]) { color: var(--b-ink); font: 600 15px/1 var(--b-font-sans); margin-right: 34px; }
   .history-page[data-view="past"] .f1-results__keys, .history-page[data-view="past"] .f1-results__more, .history-page[data-view="past"] .f1-results__actions .ui-actions > :nth-child(3) { display: none; }
-  .history-page[data-view="past"] .history-actions-host { left: calc(50vw + 142px); top: calc(836 * var(--u) - var(--hdr)); height: 44px; width: auto; right: auto; flex-direction: row; }
+  .history-page[data-view="past"] .history-actions-host { left: calc(var(--past-actions-left) + 302px); top: calc(836 * var(--u) - var(--hdr)); height: 44px; width: auto; right: auto; flex-direction: row; }
   .history-page[data-view="past"] .history-more { position: relative; }
 
   /* ---- review (A-06): the stage as in the past solve, the selected moment's detail in the left column ---- */
@@ -219,7 +222,7 @@
   .history-replay-controls > * { pointer-events: auto; }
   .history-page[data-view="replay"] .history-counter { display: none; }
   .history-page[data-view="replay"] .history-stage__subline { left: 48px; transform: none; top: calc(150 * var(--u) - var(--hdr) - 12px * .83); text-align: left; color: var(--faint); }
-  .history-page[data-view="replay"] .history-stage__number small { position: absolute; left: calc(100% + 24px); bottom: .12em; margin: 0; }
+  .history-page[data-view="replay"] .history-stage__number small { position: absolute; left: calc(100% + 24px); bottom: .12em; margin: 0; white-space: nowrap; }   /* the total is one line, "/ 14.07" (A-11) */
   .history-page[data-view="replay"] .history-replay-info { position: absolute; left: 48px; top: calc(176 * var(--u) - var(--hdr) - 28px * .83); width: 260px; }
   .history-page[data-view="replay"] .history-replay-info__help { margin-top: 12px; }
   .history-page[data-view="replay"] .history-transport { position: absolute; left: calc(50vw - 146px); top: calc(836 * var(--u) - var(--hdr) - 24px); gap: 30px; }

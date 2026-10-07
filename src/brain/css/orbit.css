@@ -20,7 +20,7 @@
   color: var(--b-ink);
   font-family: var(--b-font-sans);
 }
-.brain[data-brain-style="orbit"] .b-rev-detail:not([hidden]) { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(460px, 100vw); overflow-y: auto; align-content: start; padding: 24px; border: 0; border-radius: 0; background: var(--b-bg); box-shadow: -12px 0 40px #0004; }
+.brain[data-brain-style="orbit"] .b-rev-detail:not([hidden]) { position: fixed; top: var(--site-header-height, 60px); right: 0; bottom: 0; z-index: 60; width: min(460px, 100vw); overflow-y: auto; align-content: start; padding: 24px; border: 0; border-radius: 0; background: var(--b-bg); box-shadow: -12px 0 40px #0004; }
 @media (max-width: 720px) { .brain[data-brain-style="orbit"] { width: calc(100% - 32px); } }
 
 .brain[data-brain-style="orbit"][data-layout="orbit"] {

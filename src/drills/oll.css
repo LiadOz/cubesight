@@ -32,7 +32,7 @@
 .oll-reveal a { color: var(--b-accent-text); text-underline-offset: 3px; }
 .oll-keybar-host { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 20px; }
 .oll-keybar-host .ui-key-bar { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 0 26px; font: 500 12.5px var(--b-font-sans); color: var(--b-muted); }
-.oll-keybar-host .ui-key-bar > span, .oll-keybar-host .oll-end { display: inline-flex; align-items: center; gap: 8px; min-height: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; }
+.oll-keybar-host .ui-key-bar span, .oll-keybar-host .oll-end { display: inline-flex; align-items: center; gap: 8px; min-height: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; }
 .oll-keybar-host .oll-end { cursor: pointer; }
 .oll-keybar-host .key { display: inline-grid; place-items: center; box-sizing: border-box; width: var(--kw, auto); min-width: 21.4px; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--b-key-bg, #2b2925); color: var(--b-key-ink, #d9d2c3); font: 500 11px/1 var(--b-font-mono); }
 .oll-page .quick-round-metrics { display: flex; flex-wrap: wrap; gap: 8px 28px; font: inherit; }

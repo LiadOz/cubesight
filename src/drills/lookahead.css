@@ -19,8 +19,9 @@
   .lookahead-page { gap: 12px; }
   .lookahead-session { gap: 10px; padding: 14px; }
   .lookahead-layout { gap: 14px; }
-  .lookahead-cube { width: min(100%, 300px); min-height: 250px; }
+  .lookahead-cube, #la-cube { width: min(100%, 300px); min-height: 250px; }
   .lookahead-choices { margin: 10px 0; }
+  .lookahead-choice { min-height: 48px; padding-block: 8px; }
 }
 @media (max-width: 700px) {
   .lookahead-page { gap: 8px; }
