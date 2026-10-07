@@ -32,6 +32,8 @@
     "test:impact-map": "node scripts/test-impact-map.mjs",
     "test:health": "node scripts/test-health.mjs",
     "test:flaky": "node scripts/test-flaky.mjs",
+    "tier1": "node scripts/test-tiers.mjs merge",
+    "tier2": "node scripts/test-tiers.mjs regression",
     "test:merge": "node scripts/test-tiers.mjs merge",
     "test:regression": "node scripts/test-tiers.mjs regression"
   },

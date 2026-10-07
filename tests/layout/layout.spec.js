@@ -154,12 +154,31 @@ for (const route of ROUTES) {
         await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
         await setTheme(page, theme);
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        const report = await checkCell(page, {
+        const defaultCell = {
           width, height, routeId: route.id, routeFamily: route.page,
           state: 'route-default', theme,
           expectedView: viewFor[route.id], expectedCanvasCount: canvasCountFor(route.path), routePath: route.path,
-        }, testInfo);
-        if (report?.totalErrors) failures.push({ route: route.id, counts: report.counts });
+        };
+        // Re-layout caused by the viewport change itself is not lazy movement: let it settle, then watch.
+        await page.waitForTimeout(150);
+        await page.evaluate(() => { window.__layoutShiftCheckpoint = (window.__layoutShiftSamples || []).length; });
+        let resizeOnly = false;
+        let report = await inspectLayout(page, defaultCell);
+        if (report.totalErrors) {
+          // The sweep resizes one live page. If a finding disappears on a fresh
+          // load, the app failed to re-fit after a resize/rotation: still a
+          // failure, but flagged 'resize-only' so the cause is visible.
+          const stale = report;
+          await page.reload();
+          await expect(page.locator(viewFor[route.id])).toBeVisible();
+          await setTheme(page, theme);
+          await page.evaluate(async () => { await document.fonts.ready; await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); });
+          await page.evaluate(() => { window.__layoutShiftCheckpoint = (window.__layoutShiftSamples || []).length; });
+          const fresh = await checkCell(page, defaultCell, testInfo);
+          if (!fresh.totalErrors) { testInfo.annotations.push({ type: 'resize-only', description: `${route.id} ${width}x${height} ${theme}: ${JSON.stringify(stale.counts)}` }); resizeOnly = true; }
+          if (fresh.totalErrors) report = fresh; else report = stale;
+        }
+        if (report?.totalErrors) failures.push({ route: route.id, width, height, theme, counts: report.counts, resizeOnly });
 
         // Shared drawer/menu states get full viewport/theme coverage in their
         // dedicated fixture tests. Sample both ends of the layout range here
@@ -192,7 +211,9 @@ for (const width of [390, 1440]) for (const theme of THEMES) {
     }, { mode: theme });
     await page.goto('/#/solve');
     await page.locator('#brain-view').waitFor({ state: 'visible' });
-    const pageStyle = await page.locator('#brain-view .brain').getAttribute('data-brain-style').catch(() => null);
+    // The skin module loads lazily; measure only once the requested skin is applied.
+    await expect(page.locator('#brain-view .brain')).toHaveAttribute('data-brain-style', 'mono');
+    const pageStyle = await page.locator('.brain').first().getAttribute('data-brain-style').catch(() => null);
     const report = await checkCell(page, { width, height: width === 390 ? 844 : 900, routeId: 'solve-mono', routeFamily: 'solve', state: 'idle', theme: `${theme}-mono`, expectedBrainStyle: 'mono' }, testInfo);
     if (report?.totalErrors || pageStyle !== 'mono') expect({ errors: report?.counts, pageStyle }).toEqual({ errors: {}, pageStyle: 'mono' });
   });

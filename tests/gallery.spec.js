@@ -141,6 +141,7 @@ test('the approved widget gallery keeps select, field and right-drawer states ac
   await expect(drawer).toBeHidden();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  // Layout settles a frame after the resize; poll rather than sample once.
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(errors).toEqual([]);
 });

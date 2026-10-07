@@ -213,6 +213,8 @@ for (const style of ['orbit', 'mono']) {
         await testInfo.attach(`${name}-results`, { path: `${SHOTS}/${name}-results.png`, contentType: 'image/png' });
         await page.keyboard.press('Escape');
         await expect(page).toHaveURL(/#\/history\/\d+$/);
+        // Leaving the moment re-renders the past screen; wait for that before driving it again.
+        await expect(brain.locator('.moment__badge')).toHaveCount(0);
       } else {
         await expect(brain.locator('.b-rev-detail')).toBeVisible();
         await expect(brain.locator('.b-rev-dtitle')).toContainText('detour');
@@ -234,6 +236,7 @@ for (const style of ['orbit', 'mono']) {
         await expect(brain.locator('.b-rev-detail')).toBeHidden();
       }
       if (style === 'orbit') {
+        await expect(brain.locator('.f1-results')).toBeVisible();
         await brain.locator('[data-segment=cross]').press('Enter');
         await expect(brain.locator('.b-rev-detail')).toBeVisible();
         await page.keyboard.press('Escape');
