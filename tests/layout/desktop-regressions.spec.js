@@ -70,3 +70,27 @@ test('past solve: the replay pill does not sit on the keycap row, and there is o
   const visibleCoachWords = await page.evaluate(() => [...document.querySelectorAll('.f1-results__coach-tag')].filter(node => getComputedStyle(node).display !== 'none').length);
   expect(visibleCoachWords).toBe(0);
 });
+
+test('header nav keeps the frame positions, and with doubled text no link is clipped and a too-narrow nav scrolls by keyboard', async ({ page }) => {
+  await seeded(page, '/solve');
+  await page.locator('.site-header nav a').first().waitFor();
+  const nav = () => page.evaluate(() => [...document.querySelectorAll('.site-header nav a')].map(link => [Math.round(link.getBoundingClientRect().left), link.scrollWidth > link.clientWidth + 1]));
+  // A-01..: the nav items start at x 198, 268, 346, 408, 503 at the default text size.
+  expect((await nav()).map(([x]) => x)).toEqual([198, 268, 346, 408, 503]);
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll('body *')) {
+      if (!el.textContent.trim()) continue;
+      el.style.setProperty('font-size', `${parseFloat(getComputedStyle(el).fontSize) * 2}px`, 'important');
+    }
+  });
+  expect((await nav()).filter(([, clipped]) => clipped)).toEqual([]);
+  // Narrower than the doubled nav: it scrolls (End reaches the last link) instead of cutting links off.
+  await page.setViewportSize({ width: 800, height: 720 });
+  const scroller = page.locator('.site-header nav[data-scroll-x="true"]');
+  expect(await scroller.evaluate(node => getComputedStyle(node).overflowX)).toMatch(/auto|scroll/);
+  await scroller.focus();
+  await page.keyboard.press('End');
+  const scrolled = await scroller.evaluate(node => ({ left: node.scrollLeft, room: node.scrollWidth - node.clientWidth }));
+  expect(scrolled.room).toBeGreaterThan(0);
+  expect(scrolled.left).toBeGreaterThan(0);
+});
