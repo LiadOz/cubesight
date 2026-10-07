@@ -122,10 +122,13 @@
   .alg-drill:not([hidden]) .alg-drill__timer { padding: 8px; }
   .alg-drill:not([hidden]) .alg-drill__alg { padding: 10px 14px; }
 }
-/* On a phone the Orbit is as wide as the column (about 310 px): its ring leaves ~30 px beside it, and the Orbit clamps a part's name ("sledgehammer",
-   84 px) back over the Cube. The names are the sequence player's group guide just below, and each arc keeps them as its accessible name. */
+/* On a phone the ring is narrower than the column so a part's name ("sledgehammer", up to 84 px) fits beside it, inside the screen, instead of being
+   clamped back over the Cube (the Cube keeps its width, the ring stays outside it). */
 @media (max-width: 640px) {
-  .alg-case-orbit .orbit__label { display: none; }
+  .alg-case-orbit { width: min(100%, 252px); }
+}
+@media (max-width: 340px) {
+  .alg-case-orbit { width: min(100%, 226px); }
 }
 @media (max-width: 640px) {
   .alg-case-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

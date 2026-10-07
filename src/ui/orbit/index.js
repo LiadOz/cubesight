@@ -249,7 +249,7 @@ export class Orbit {
       const spanAngle = group && group.keys.length > 1 ? group.keys.reduce((sum, member) => sum + angleOf(member), 0) / group.keys.length : angleOf(key);
       return { key, angle: spanAngle, kind: moveRing ? 'move' : 'stage', current: segment.state === 'current', height: stageBlock(segment, group, fontScale, compactLabels).height, width: stageBlock(segment, group, fontScale, compactLabels).width };
     }).filter(Boolean);
-    const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: window.innerWidth <= 640 });
+    const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: options.clampLabels ?? window.innerWidth <= 640 });
     const labelPositions = new Map(placedLabels.labels.map(label => [label.key, label]));
     this.labelModel = placedLabels;
     const parts = [];

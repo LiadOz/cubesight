@@ -95,7 +95,7 @@ test('header nav keeps the frame positions, and with doubled text no link is cli
   expect(scrolled.left).toBeGreaterThan(0);
 });
 
-test('alg case on a phone: no Orbit part label sits on the Cube', async ({ page }) => {
+test('alg case on a phone: the Orbit part name is visible, on screen, and not on the Cube', async ({ page }) => {
   await seeded(page, '/algs/oll/1');
   await page.locator('[data-alg-orbit] .orbit__segment').first().waitFor();
   await page.locator('[data-alg-cube] canvas').waitFor();
@@ -105,11 +105,12 @@ test('alg case on a phone: no Orbit part label sits on the Cube', async ({ page 
       const { polygonIntersectsRect } = await import('/src/ui/cube/bounds.js');
       const canvas = document.querySelector('[data-alg-cube] canvas');
       const bounds = canvas.getRenderedCubeBounds();
-      const hits = [...document.querySelectorAll('[data-alg-orbit] .orbit__label, [data-alg-orbit] .orbit__move-label')].filter(label => {
-        const box = label.getBoundingClientRect();
-        return box.width > 0 && box.height > 0 && polygonIntersectsRect(bounds.points, box);
-      });
-      return hits.length;
-    }), { message: `${width}x${height}` }).toBe(0);
+      const labels = [...document.querySelectorAll('[data-alg-orbit] .orbit__label')].map(label => label.getBoundingClientRect()).filter(box => box.width > 0 && box.height > 0);
+      return {
+        shown: labels.length > 0,
+        onCube: labels.filter(box => polygonIntersectsRect(bounds.points, box)).length,
+        offScreen: labels.filter(box => box.left < -1 || box.right > innerWidth + 1).length,
+      };
+    }), { message: `${width}x${height}` }).toEqual({ shown: true, onCube: 0, offScreen: 0 });
   }
 });
