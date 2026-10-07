@@ -3,7 +3,7 @@ import { buildRoundSegments } from '../drills/round-segments.js';
 import './trainer-orbit.css';
 
 /** Keeps a timer and marker-linked coach sentence on the trainer's one round Orbit. */
-export function createTrainerOrbit(stage) {
+export function createTrainerOrbit(stage, { customSegments = () => null } = {}) {
   if (!stage) return null;
   let orbit = null, getViewModel = () => null;
   stage.classList.add('trainer-orbit-stage');
@@ -24,8 +24,12 @@ export function createTrainerOrbit(stage) {
     const round = getViewModel()?.round;
     const answers = round?.answers ?? [];
     const total = round?.total || 1;
-    const segments = buildRoundSegments(round ?? { status: 'idle', answers: [] }, total);
-    const markers = answers.map((answer, at) => ({ key: `result-${at + 1}`, segment: `case-${at + 1}`, position: .5,
+    // A drill may own the ring for a smaller unit than the round (the corner drill's three guesses of one case).
+    const custom = customSegments();
+    const segments = custom ?? buildRoundSegments(round ?? { status: 'idle', answers: [] }, total);
+    const markers = custom ? custom.flatMap((segment, at) => segment.state === 'good' || segment.state === 'bad'
+      ? [{ key: `result-${at + 1}`, segment: segment.key, position: .5, type: segment.state === 'good' ? 'good' : 'wrong', label: segment.state === 'good' ? 'correct' : 'miss' }] : [])
+      : answers.map((answer, at) => ({ key: `result-${at + 1}`, segment: `case-${at + 1}`, position: .5,
       type: answer.correct ? 'good' : 'wrong', label: answer.correct ? 'correct' : 'miss' }));
     const currentMarker = ['good', 'bad', 'wrong'].includes(state) ? `result-${activeIndex + 1}` : null;
     if (currentMarker) lastCoachMarker = currentMarker;
@@ -34,7 +38,7 @@ export function createTrainerOrbit(stage) {
     coachHost.hidden = !lastCoachText;
     const update = orbit.update({ segments, markers });
     if (value || elapsed != null) slot.textContent = value || `${(elapsed / 1000).toFixed(2)} s`;
-    else slot.textContent = round ? `${round.answered} / ${round.total}` : `${activeIndex + 1}`;
+    else slot.textContent = custom ? '' : round ? `${round.answered} / ${round.total}` : `${activeIndex + 1}`;
     Promise.resolve(update).then(() => {
       if (paintGeneration === generation) coach.update({ text: lastCoachText, marker: lastCoachMarker, orbit });
     });

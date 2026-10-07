@@ -461,7 +461,22 @@ document.querySelector('#app').innerHTML = `
 
 `;
 
-const cornerTrainerOrbit = createTrainerOrbit(document.querySelector('#corner-view .cube-stage'));
+// A three-corner case is three guesses; with no quick round running the Orbit shows them, one arc per guess.
+function cornerGuessSegments() {
+  if (!state.current || !['triple', 'recall'].includes(state.mode)) return null;
+  const round = legacyRounds.corner?.getViewModel?.().round;
+  if (round && (round.status === 'active' || round.status === 'complete')) return null;
+  const guesses = state.current.guesses || [];
+  return state.current.targets.map((_, index) => ({
+    key: `guess-${index + 1}`,
+    weight: 1,
+    fill: guesses[index] === undefined ? 0 : 1,
+    // Recall answers stay unmarked until the reveal, as the mode promises no interim feedback.
+    state: guesses[index] === true ? 'good' : guesses[index] === false ? 'bad'
+      : index < (state.current.recallAnswers?.length ?? 0) ? 'done' : index === state.current.activeIndex ? 'current' : 'future',
+  }));
+}
+const cornerTrainerOrbit = createTrainerOrbit(document.querySelector('#corner-view .cube-stage'), { customSegments: cornerGuessSegments });
 const f2lTrainerOrbit = createTrainerOrbit(document.querySelector('#f2l-view .cube-stage'));
 mountCaseColorControl(document.querySelector('#corner-view .intro-row'));
 mountCaseColorControl(document.querySelector('#f2l-view .intro-row'));
@@ -790,17 +805,17 @@ function renderCurrentCase() {
     : 'Which color completes <br>this corner?';
   renderSequence();
   const activeRoundIndex = legacyRounds.corner?.getViewModel?.().round?.answers?.length ?? 0;
-  cornerTrainerOrbit?.update({ index: state.sprint ? session.attempts : activeRoundIndex, state: 'current', value: `${stats.streak} combo` });
+  cornerTrainerOrbit?.update({ index: cornerGuessSegments() ? state.current.activeIndex : state.sprint ? session.attempts : activeRoundIndex, state: 'current', value: `${stats.streak} combo` });
 }
 
 function renderAnswers() {
+  // The six buttons sit in one fixed order of DISPLAYED colours, so a colour (and its key) never moves between cases.
+  // The cube may be recoloured per case; each press is resolved back to its logical colour through the case's map when it is scored.
   state.answerChoices = Object.keys(COLORS);
-  const displayMap = state.current?.displayColorMap || {};
-  document.querySelector('#answers').innerHTML = state.answerChoices.map((logicalKey, index) => {
-    const key = displayColorKey(logicalKey, displayMap);
+  document.querySelector('#answers').innerHTML = state.answerChoices.map((key) => {
     const color = COLORS[key];
     return `
-      <button class="answer-button color-${key}" data-color="${key}" data-logical-color="${logicalKey}" style="--swatch:${color.hex};--swatch-ink:${color.ink}">
+      <button class="answer-button color-${key}" data-color="${key}" style="--swatch:${color.hex};--swatch-ink:${color.ink}">
       <i aria-hidden="true"></i><span>${color.label}</span><kbd>${color.label[0]}</kbd>
     </button>
   `}).join('');
@@ -878,6 +893,7 @@ function startCase(successNotice = null) {
   previousCornerView = state.current.viewPose.id;
   state.current.exposureMs = state.exposureMs;
   state.current.recallAnswers = [];
+  state.current.guesses = [];
   document.querySelector('[data-action="next-recall"]').hidden = true;
   document.querySelector('[data-action="skip"]').hidden = false;
   if (!state.current.edgeStickers) state.current.edgeStickers = createScrambledEdges(state.current.orientation, state.current.cornerParity);
@@ -1030,6 +1046,7 @@ function recordCornerAnswer(active, color, skipped, elapsed, position, at = Date
     if (pacingResult.changed) syncExposureSelect();
   }
 
+  if (state.current) state.current.guesses[position - 1] = isCorrect;
   stats.attempts++;
   session.attempts++;
   session.outcomes.push({ correct: isCorrect, ms: elapsed, caseId: family });
@@ -1068,7 +1085,7 @@ function recordCornerAnswer(active, color, skipped, elapsed, position, at = Date
   saveStats();
   legacyRounds.corner?.record({correct:isCorrect,ms:elapsed,caseId:family,at});
   const activeRoundAnswers = legacyRounds.corner?.getViewModel?.().round?.answers?.length ?? session.attempts;
-  cornerTrainerOrbit?.update({ index: Math.max(0, activeRoundAnswers - 1), state: isCorrect ? 'good' : 'bad', value: fmt.time(elapsed), text: isCorrect ? 'Color recognized.' : `This corner needs ${COLORS[displayColorKey(correctColor, state.current.displayColorMap)].label.toLowerCase()}.` });
+  cornerTrainerOrbit?.update({ index: cornerGuessSegments() ? position - 1 : Math.max(0, activeRoundAnswers - 1), state: isCorrect ? 'good' : 'bad', value: fmt.time(elapsed), text: isCorrect ? 'Color recognized.' : `This corner needs ${COLORS[displayColorKey(correctColor, state.current.displayColorMap)].label.toLowerCase()}.` });
   return { isCorrect, correctColor };
 }
 
@@ -2369,7 +2386,7 @@ document.addEventListener('keydown', (event) => {
     return;
   }
   if (state.mode === 'recall' && state.locked && !document.querySelector('[data-action="next-recall"]').hidden && [KEYS.global.space, 'enter'].includes(event.key === ' ' ? KEYS.global.space : event.key.toLowerCase())) return startCase();
-  const displayChoices = state.answerChoices.map(color => displayColorKey(color, state.current?.displayColorMap));
+  const displayChoices = state.answerChoices;
   const colorKey = displayChoices.find(color => color[0] === event.key.toLowerCase());
   if (colorKey) return answer(colorKey);
   if (/^[1-6]$/.test(event.key)) answer(displayChoices[Number(event.key) - 1]);
