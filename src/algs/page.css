@@ -98,6 +98,30 @@
   .alg-case-rail .alg-detail__tools button { min-height: 40px; }
   .alg-case-rail .alg-add-own { margin-top: 8px; }
 }
+/* Short desktop windows (1280x720): the case page must still fit one screen. The paste link moves onto the head's
+   free right-hand side and the case name and its note share a line, which returns the rows the playback needs. */
+@media (min-width: 900px) and (max-height: 780px) {
+  .alg-case-shell { position: relative; }
+  .alg-case-head { margin-bottom: 0; }
+  .alg-case-head > div { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 16px; }
+  .alg-case-head .alg-eyebrow { flex: 0 0 100%; }
+  .alg-case-head h1 { margin-bottom: 4px; font-size: clamp(30px, 3vw, 34px); }
+  .alg-case-head > div > p:last-child { margin: 0; }
+  .alg-case-shell > .alg-paste-disclosure { position: absolute; top: 0; right: 0; }
+  .alg-paste-disclosure > summary { padding: 0; }
+}
+/* An open drill takes the rail's place beside the Cube (it used to stack under the whole case page and push the page
+   to twice the window). The rail's choices come back when the drill is closed. */
+@media (min-width: 900px) {
+  .alg-case-shell:has(.alg-drill:not([hidden])) { display: grid; grid-template-columns: minmax(320px, 360px) minmax(0, 1fr); column-gap: clamp(18px, 2.4vw, 32px); align-items: start; }
+  .alg-case-shell:has(.alg-drill:not([hidden])) > :is(.alg-case-head, .alg-paste-disclosure) { grid-column: 1 / -1; }
+  .alg-case-shell:has(.alg-drill:not([hidden])) > .alg-case-layout { display: contents; }
+  .alg-case-shell:has(.alg-drill:not([hidden])) .alg-case-focus { grid-column: 1; grid-row: 3; }
+  .alg-case-shell:has(.alg-drill:not([hidden])) .alg-case-rail { display: none; }
+  .alg-case-shell > .alg-drill:not([hidden]) { grid-column: 2; grid-row: 3; width: 100%; max-width: none; margin: 0; padding: 12px 16px; }
+  .alg-drill:not([hidden]) .alg-drill__timer { padding: 8px; }
+  .alg-drill:not([hidden]) .alg-drill__alg { padding: 10px 14px; }
+}
 @media (max-width: 640px) {
   .alg-case-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .alg-case-card { min-height: 62px; padding: 10px 0; grid-template-columns: 26px minmax(0, 1fr); }

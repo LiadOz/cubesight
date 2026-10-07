@@ -22,6 +22,24 @@ for (const [route, ready] of [['drills', '.hub-list'], ['algs', '.alg-case-grid'
   });
 }
 
+// Each of these once grew past the window at 1280x720 (and Cross Scout grew with the width): the shared Brain
+// min-height of 100dvh-60px swelled the quick-round panel, the case head and drill panel stacked, a key label
+// carried a 44px touch height inside a 20px bar.
+for (const [route, ready] of [['drills/scout', '.cp-session'], ['drills/lookahead', '.lookahead-session'], ['drills/oll', '.oll-stage'],
+  ['algs/pll/T', '.alg-case-layout'], ['algs/oll/1', '.alg-case-layout'], ['algs/oll2/eo-line', '.alg-case-layout'], ['algs/pll/Jb/drill', '.alg-drill:not([hidden])']]) {
+  test(`one-screen page fits at 1280x720 and above: ${route}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+    await page.addInitScript(() => localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style: 'orbit' })));
+    await page.goto(`/#/${route}`);
+    await page.locator(ready).first().waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    for (const [width, height] of viewports) {
+      await page.setViewportSize({ width, height });
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight), { message: `${route} at ${width}x${height}` }).toBeLessThanOrEqual(height + 1);
+    }
+  });
+}
+
 test('library paging and search keep every OLL case reachable', async ({ page }) => {
   await page.goto('/#/algs/oll');
   const seen = new Set();

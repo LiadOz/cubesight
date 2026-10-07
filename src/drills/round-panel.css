@@ -1,4 +1,4 @@
-.brain.quick-round { min-height: 0; width: 100%; margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius, 12px); background: var(--b-surface); color: var(--b-ink); }
+.brain.quick-round, .brain.quick-round[data-brain-style] { min-height: 0; width: 100%; margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius, 12px); background: var(--b-surface); color: var(--b-ink); }
 .quick-round-line, .quick-round-result, .quick-round-result > div { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .quick-round-result { align-items: flex-start; flex-direction: column; }
 .quick-round button, .quick-round a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--b-hairline); border-radius: 8px; background: var(--b-surface); color: var(--b-ink); font: inherit; cursor: pointer; }
