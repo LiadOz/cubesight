@@ -210,6 +210,21 @@ test('coach connector routes around the Cube canvas', async ({ page }) => {
   expect(intersects).toBe(false);
 });
 
+test('coach connector stays inside the viewport when its host has no box of its own (display: contents)', async ({ page }) => {
+  await page.goto('/src/ui/gallery.html?flow=results');
+  await expect(page.locator('.ui-coach-line.is-linked')).toBeVisible();
+  // The Brain results screen hosts the connector in `.b-stage`, which is display: contents there: no rect, so the
+  // connector is sized by a further ancestor. Measuring against the host's 0x0 rect scaled every coordinate by ~1000x.
+  await page.evaluate(() => { document.querySelector('.f0-coach').style.display = 'contents'; window.dispatchEvent(new Event('resize')); });
+  await expect.poll(() => page.evaluate(() => {
+    const path = document.querySelector('.ui-coach-line__connector.is-linked path');
+    if (!path) return 'unlinked';
+    const box = path.getBoundingClientRect();
+    const inside = box.left >= -1 && box.top >= -1 && box.right <= innerWidth + 1 && box.bottom <= innerHeight + 1 && box.width > 0;
+    return inside ? 'inside' : `outside ${JSON.stringify(box.toJSON())}`;
+  })).toBe('inside');
+});
+
 test('case playback keeps a stable color-neutral frame, final state, highlights and a single canvas', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/src/ui/gallery.html?flow=alg');
