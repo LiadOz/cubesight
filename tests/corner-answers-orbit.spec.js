@@ -75,3 +75,53 @@ test('the Orbit shows the three guesses of a case: right, right, wrong', async (
   // The next case starts a fresh set of three.
   await expect.poll(() => segmentStates(page), { timeout: 4_000 }).toEqual(['current', 'future', 'future']);
 });
+
+const tripleMode = page => page.addInitScript(() => localStorage.setItem('cubesight-corner-mode', 'triple'));
+const seed = async page => (await vm(page)).currentCase.seed;
+
+test('a completed three-corner case holds its three-teal Orbit before the next case', async ({ page }) => {
+  await tripleMode(page);
+  await page.goto('/#/drills/corners');
+  await ready(page);
+  const first = await seed(page);
+  await answerWith(page, true); await answerWith(page, true); await answerWith(page, true);
+  // Right after the third right answer the reward is on screen, not already replaced by the next case.
+  expect(await segmentStates(page)).toEqual(['good', 'good', 'good']);
+  expect(await seed(page)).toBe(first);
+  await page.waitForTimeout(700);
+  expect(await segmentStates(page)).toEqual(['good', 'good', 'good']);
+  await expect.poll(() => segmentStates(page), { timeout: 4_000 }).toEqual(['current', 'future', 'future']);
+});
+
+test('the end-of-case dwell is the same for right and wrong, and any answer key or skip ends it early', async ({ page }) => {
+  await tripleMode(page);
+  await page.goto('/#/drills/corners');
+  for (const finalAnswer of [true, false]) {
+    await ready(page);
+    const first = await seed(page);
+    await answerWith(page, true); await answerWith(page, true);
+    await answerWith(page, finalAnswer);
+    expect(await segmentStates(page)).toEqual(['good', 'good', finalAnswer ? 'good' : 'bad']);
+    await page.waitForTimeout(500);
+    expect(await seed(page)).toBe(first); // both endings are still held
+    const before = Date.now();
+    await page.keyboard.press('s'); // skip ends the dwell now
+    await expect.poll(() => seed(page), { timeout: 600 }).not.toBe(first); // the next case, well before the 1.1 s dwell ends
+    expect(Date.now() - before).toBeLessThan(900);
+    await expect.poll(() => segmentStates(page), { timeout: 4_000 }).toEqual(['current', 'future', 'future']);
+  }
+});
+
+for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  test(`the result toast does not cover the cube at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await tripleMode(page);
+    await page.goto('/#/drills/corners');
+    await answerWith(page, false);
+    const toast = page.locator('.corner-result');
+    await expect(toast).toContainText('Not quite, it was');
+    const [box, cube] = await Promise.all([toast.boundingBox(), page.locator('#cube').boundingBox()]);
+    const overlap = !(box.x + box.width <= cube.x || cube.x + cube.width <= box.x || box.y + box.height <= cube.y || cube.y + cube.height <= box.y);
+    expect(overlap, `toast ${JSON.stringify(box)} vs cube ${JSON.stringify(cube)}`).toBe(false);
+  });
+}

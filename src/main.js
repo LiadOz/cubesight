@@ -325,7 +325,6 @@ document.querySelector('#app').innerHTML = `
         </div>
         <div id="cube" class="cube-mount"></div>
         <div id="glance-overlay" class="glance-overlay" hidden aria-live="polite">Look</div>
-        <div id="corner-sequence" class="corner-sequence" hidden></div>
         <div class="cube-caption">
           <span id="orientation-caption">White top · Green front</span>
           <span>Nearby solve angles · hidden stickers stay masked</span>
@@ -629,6 +628,7 @@ function cancelCornerTimers() {
   state.timerFrame = null;
   state.glanceTimer = null;
   state.transitionTimer = null;
+  state.holdSkip = null;
   document.querySelector('#cube')?.classList.remove('glance-mask');
   const overlay = document.querySelector('#glance-overlay');
   if (overlay) overlay.hidden = true;
@@ -767,6 +767,8 @@ function cubeTargetData(item) {
   };
 }
 
+// Names the corner being asked about (the case shows all three); the Orbit alone shows progress.
+const CORNER_POSITIONS = ['Left', 'Top right', 'Bottom right'];
 function renderCurrentCase() {
   cornerSettings.sync();
   const current = state.current;
@@ -801,9 +803,8 @@ function renderCurrentCase() {
   document.querySelector('#case-mode').textContent = multiCorner() ? `${state.mode === 'recall' ? 'one-glance recall' : 'three corners'} · ${current.activeIndex + 1}/3` : 'single corner';
   document.querySelector('#case-mode').dataset.targetCorner = active.target.corner;
   document.querySelector('#prompt-text').innerHTML = multiCorner()
-    ? `Case ${current.activeIndex + 1} of 3. Which color <br>completes it?`
+    ? `${CORNER_POSITIONS[current.activeIndex]} corner. Which color <br>completes it?`
     : 'Which color completes <br>this corner?';
-  renderSequence();
   const activeRoundIndex = legacyRounds.corner?.getViewModel?.().round?.answers?.length ?? 0;
   cornerTrainerOrbit?.update({ index: cornerGuessSegments() ? state.current.activeIndex : state.sprint ? session.attempts : activeRoundIndex, state: 'current', value: `${stats.streak} combo` });
 }
@@ -821,25 +822,18 @@ function renderAnswers() {
   `}).join('');
 }
 
-function renderSequence() {
-  const sequence = document.querySelector('#corner-sequence');
-  sequence.hidden = !multiCorner();
-  if (!multiCorner()) return;
-  const positions = ['Left', 'Top right', 'Bottom right'];
-  sequence.innerHTML = state.current.targets.map((_, index) => `<span class="${index === state.current.activeIndex ? 'active' : index < state.current.activeIndex ? 'done' : ''}"><i>${String(index + 1).padStart(2, '0')}</i>${positions[index]}</span>`).join('');
-}
-
+// Transient result: the approved toast (W-16, bottom-right), never a box over the cube. It auto-dismisses at the dwell
+// length, so even a wrong answer never persists (tone "error" would) in a speed drill.
+const CORNER_DWELL_MS = 1100;
 function showCornerResult(isCorrect, correctColor, skipped) {
-  document.querySelector('.corner-result')?.remove();
-  const result = document.createElement('div');
-  result.className = `corner-result ${isCorrect ? 'is-correct' : 'is-wrong'}`;
-  result.setAttribute('aria-hidden', 'true');
   const shownColor = displayColorKey(correctColor, state.current?.displayColorMap);
-  result.textContent = isCorrect
-    ? `Nice · ${COLORS[shownColor].label.toLowerCase()}`
-    : skipped ? `Skipped, it was ${COLORS[shownColor].label.toLowerCase()}.` : `Not quite, it was ${COLORS[shownColor].label.toLowerCase()}.`;
-  result.addEventListener('animationend', () => result.remove(), { once: true });
-  document.querySelector('#corner-view .cube-stage').append(result);
+  const name = COLORS[shownColor].label.toLowerCase();
+  const toast = appToast.show({
+    text: isCorrect ? `Nice · ${name}` : skipped ? `Skipped, it was ${name}.` : `Not quite, it was ${name}.`,
+    tone: isCorrect ? 'default' : 'warn',
+    duration: CORNER_DWELL_MS,
+  });
+  toast.classList.add('corner-result', isCorrect ? 'is-correct' : 'is-wrong');
 }
 
 function syncExposureSelect() {
@@ -1090,6 +1084,7 @@ function recordCornerAnswer(active, color, skipped, elapsed, position, at = Date
 }
 
 function answer(color, skipped = false) {
+  if (state.locked && state.holdSkip && activeTool === 'corner' && !paused) return state.holdSkip();
   if (state.locked || activeTool !== 'corner' || paused) return;
   const answeredAt = performance.now();
   if (expireTrial(state.startedAt)) return;
@@ -1132,7 +1127,10 @@ function answer(color, skipped = false) {
       state.current.feedback = null;
       return presentCorner(answeredAt, `Nice · ${fmt.time(elapsed, { unit: true })}`);
     }
-    return startCase(`Nice · ${fmt.time(elapsed, { unit: true })}`);
+    if (!cornerGuessSegments()) return startCase(`Nice · ${fmt.time(elapsed, { unit: true })}`);
+    // Three right in a row: hold the completed Orbit so the reward registers, then move on (any key or skip moves on sooner).
+    renderCurrentCase();
+    return holdCornerResult(() => startCase(`Nice · ${fmt.time(elapsed, { unit: true })}`));
   }
   if (moreCorners && !sprintDone) {
     // Later corners remain visible during feedback: that inspection time is
@@ -1143,14 +1141,28 @@ function answer(color, skipped = false) {
     tickTimer(true);
   }
   const generation = state.generation;
-  state.transitionTimer = setTimeout(() => {
+  const advance = () => {
     if (generation !== state.generation || activeTool !== 'corner' || paused) return;
     if (sprintDone) return showSummary();
     if (!moreCorners) return startCase();
     state.current.activeIndex++;
     state.current.feedback = null;
     presentCorner(answeredAt);
-  }, 1100);
+  };
+  if (moreCorners) state.transitionTimer = setTimeout(advance, CORNER_DWELL_MS);
+  else holdCornerResult(advance);
+}
+
+// The end of a case lingers CORNER_DWELL_MS, right or wrong; an answer key or skip ends it early so speed practice is never blocked.
+function holdCornerResult(next) {
+  const generation = state.generation;
+  const go = () => {
+    clearTimeout(state.transitionTimer);
+    state.holdSkip = null;
+    if (generation === state.generation) next();
+  };
+  state.holdSkip = go;
+  state.transitionTimer = setTimeout(go, CORNER_DWELL_MS);
 }
 
 function formatMs(ms) {
@@ -2382,7 +2394,7 @@ document.addEventListener('keydown', (event) => {
   if (scope === 'f2l') {
     if (f2lState.drill === 'scan' && !f2lState.scanRunning && (event.key === ' ' || event.key === 'Enter')) return startF2LScan();
     if ((event.key === ' ' || event.key === 'Enter') && f2lState.correction) newF2LCase();
-    else if (event.key.toLowerCase() === KEYS.case.s) newF2LCase();
+    else if (KEYS.case[event.key.toLowerCase()] === 'skip') newF2LCase();
     return;
   }
   if (state.mode === 'recall' && state.locked && !document.querySelector('[data-action="next-recall"]').hidden && [KEYS.global.space, 'enter'].includes(event.key === ' ' ? KEYS.global.space : event.key.toLowerCase())) return startCase();
@@ -2390,7 +2402,7 @@ document.addEventListener('keydown', (event) => {
   const colorKey = displayChoices.find(color => color[0] === event.key.toLowerCase());
   if (colorKey) return answer(colorKey);
   if (/^[1-6]$/.test(event.key)) answer(displayChoices[Number(event.key) - 1]);
-  if (event.key.toLowerCase() === KEYS.case.s) answer(null, true);
+  if (KEYS.case[event.key.toLowerCase()] === 'skip') answer(null, true);
 });
 
 let legacyCubeLoad = null;

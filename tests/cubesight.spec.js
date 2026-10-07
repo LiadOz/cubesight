@@ -21,7 +21,8 @@ test('accepts color initials and advances all three corners', async ({ page }) =
   await page.locator('#corner-view .training-settings > summary').click();
   await page.getByRole('button', { name: 'three corners' }).click();
   await page.locator('#corner-view .training-settings > summary').click();
-  await expect(page.locator('#corner-sequence span')).toHaveCount(3);
+  await expect(page.locator('#corner-sequence')).toHaveCount(0); // progress is shown by the Orbit only
+  await expect(page.locator('#prompt-text')).toContainText('Left corner');
   await expect(page.locator('#case-mode')).toContainText('1/3');
   await expect(page.locator('#cube canvas')).toHaveAttribute('data-corner-presentation', 'full');
 
@@ -29,7 +30,7 @@ test('accepts color initials and advances all three corners', async ({ page }) =
   await page.keyboard.press(key);
   expect(await page.locator('#cube canvas').getAttribute('aria-label')).toMatch(/Result: (correct|wrong)\. Correct color: (White|Yellow|Green|Blue|Red|Orange)\./);
   await expect(page.locator('#case-mode')).toContainText('2/3', { timeout: 3_000 });
-  await expect(page.locator('#corner-sequence .active')).toHaveText(/02/);
+  await expect(page.locator('#prompt-text')).toContainText('Top right corner');
 });
 
 test('F2L is always color neutral with a limited camera and three drills', async ({ page }) => {

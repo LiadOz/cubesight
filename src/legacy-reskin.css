@@ -115,16 +115,13 @@
   color: var(--b-on-accent);
 }
 
-.legacy-drill-view :is(.corner-sequence, .pll-pause) {
+.legacy-drill-view .pll-pause {
   border-color: var(--b-hairline);
   border-radius: var(--b-radius-bar);
   background: var(--b-surface-2);
   color: var(--b-ink);
 }
 
-.legacy-drill-view .corner-sequence span { color: var(--b-muted); }
-.legacy-drill-view .corner-sequence span.active { background: var(--b-accent-soft); color: var(--b-accent-text); box-shadow: inset 0 2px var(--b-accent); }
-.legacy-drill-view .corner-sequence span.done { color: var(--b-good); }
 .legacy-drill-view :is(.feedback-line p.is-correct, .f2l-instructions p.is-correct, .pll-feedback-row p[data-kind="correct"]) { color: var(--b-good); }
 .legacy-drill-view :is(.feedback-line p.is-wrong, .f2l-instructions p.is-wrong, .pll-feedback-row p[data-kind="wrong"], .pll-feedback-row p[data-kind="error"]) { color: var(--b-warn); }
 .legacy-drill-view :is(.pll-pause span, .pll-pause .pll-text-button) { color: var(--b-muted); }
@@ -172,15 +169,6 @@
   background: var(--b-surface);
   color: var(--b-ink);
 }
-
-.legacy-drill-view .corner-result {
-  border-color: var(--b-good);
-  border-radius: var(--b-radius-bar);
-  background: var(--b-surface);
-  color: var(--b-good);
-  box-shadow: none;
-}
-.legacy-drill-view .corner-result.is-wrong { border-color: var(--b-warn); color: var(--b-warn); }
 
 .legacy-drill-view .recognition-profile {
   color: var(--b-ink);

@@ -19,7 +19,7 @@ test('a correct single-corner answer makes the next case ready without a feedbac
   const firstFlash = await page.evaluate(() => window.cornerFlashes[0]);
   expect(firstFlash.text).toContain('Nice');
   expect({animation: firstFlash.animation, pointerEvents: firstFlash.pointerEvents})
-    .toEqual({animation: 'corner-result-flash', pointerEvents: 'none'});
+    .toEqual({animation: 'none', pointerEvents: 'auto'}); // the approved toast, not a banner over the cube
   const first = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1));
   expect(first.correct).toBe(true);
   await page.clock.runFor(50);
