@@ -87,6 +87,9 @@
   .alg-case-head { display: grid; grid-template-columns: minmax(112px, auto) minmax(0, 1fr); align-items: center; gap: 18px; max-width: none; margin: 0 0 8px; }
   .alg-case-head h1 { font-size: clamp(30px, 3vw, 42px); }
   .alg-case-layout { display: grid; grid-template-columns: minmax(320px, 360px) minmax(0, 1fr); align-items: start; gap: clamp(18px, 2.4vw, 32px); }
+  /* the longest case-colour label ("yellow or white") plus the case / your-cube switch is 357 px of the 360 px column: no room for a wrap */
+  .alg-case-display { gap: 2px; }
+  .alg-case-display button.chip { padding-inline: 8px; }
   .alg-case-rail { min-width: 0; }
   .alg-case-rail .alg-entry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .alg-case-rail .alg-entry { min-width: 0; padding: 12px; }

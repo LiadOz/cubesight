@@ -6,3 +6,5 @@
 .quick-round small { color: var(--b-muted); }
 .quick-round[data-brain-style="mono"], .quick-round[data-brain-style="mono"] :is(button, a) { border-radius: 0; }
 @media (max-width: 520px) { .brain.quick-round { padding: 10px; } .quick-round-line { gap: 8px; } }
+/* A round in progress adds the answers row (42 px) to the panel: the corner trainer's 498 px minimum height would push the page past one screen at 1440x900. */
+@media (min-width: 701px) and (min-height: 781px) { #corner-view:has(.quick-round-answers) .trainer-shell { min-height: 470px; } }

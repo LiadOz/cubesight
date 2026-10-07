@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import { quickRoundSeed } from './fixtures/state-seeds.js';
 
 const viewports = [[1280, 720], [1440, 900], [1920, 1080]];
 for (const [route, ready] of [['drills', '.hub-list'], ['algs', '.alg-case-grid'], ['algs/oll', '.alg-case-grid'], ['algs/f2l?slot=all', '.alg-case-grid']]) {
@@ -39,6 +40,29 @@ for (const [route, ready] of [['drills/scout', '.cp-session'], ['drills/lookahea
     }
   });
 }
+
+test('alg case with the longest case-colour label still fits one screen at 1280x720', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.addInitScript(() => localStorage.setItem('cubesight-case-color-v1', 'yellow or white'));
+  await page.goto('/#/algs/oll/1');
+  await page.locator('.alg-case-layout').waitFor();
+  await expect(page.locator('.alg-case-display .chip')).toContainText('yellow or white');
+  for (const [width, height] of viewports) {
+    await page.setViewportSize({ width, height });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight), { message: `${width}x${height}` }).toBeLessThanOrEqual(height + 1);
+  }
+});
+
+test('corner drill with a round in progress fits one screen', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.addInitScript(seed => localStorage.setItem('cubesight-shell-v1', JSON.stringify(seed)), quickRoundSeed('corners', Date.now()));
+  await page.goto('/#/drills/corners');
+  await expect(page.locator('.quick-round')).toContainText('1 cases left');
+  for (const [width, height] of viewports) {
+    await page.setViewportSize({ width, height });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight), { message: `${width}x${height}` }).toBeLessThanOrEqual(height + 1);
+  }
+});
 
 test('library paging and search keep every OLL case reachable', async ({ page }) => {
   await page.goto('/#/algs/oll');
