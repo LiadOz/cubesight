@@ -113,7 +113,7 @@ export async function inspectLayout(page, cell) {
       }
       if (el.matches('p,span,label,button,a,h1,h2,h3,li,td,th') && el.textContent.trim() && r.width > 2 && r.height > 2 /* a 1px sr-only box is clipped on purpose */ && el.scrollWidth > el.clientWidth + 1) {
         const style = getComputedStyle(el);
-        if (style.display === 'inline' || (style.overflowX !== 'hidden' && style.overflowX !== 'clip' && style.whiteSpace !== 'nowrap' && !style.webkitLineClamp)) continue;
+        if (style.display === 'inline' || (style.overflowX !== 'hidden' && style.overflowX !== 'clip' && style.whiteSpace !== 'nowrap' && (!style.webkitLineClamp || style.webkitLineClamp === 'none'))) continue;   // computed -webkit-line-clamp is the string 'none', which is truthy
         const full = el.getAttribute('title') || el.getAttribute('aria-label');
         if (!(style.textOverflow === 'ellipsis' && full)) add('clipped-text', el, `scrollWidth ${el.scrollWidth} > clientWidth ${el.clientWidth}; no labelled ellipsis`);
       }

@@ -49,3 +49,21 @@ test('touch checks skip closed disclosure contents and check them when opened', 
   report = await inspectLayout(page, phone);
   expect(report.errors.some(error => error.kind === 'small-touch-target' && error.selector === '#small-control')).toBe(true);
 });
+
+test('clipped-text flags text that is actually clipped and not text whose overflow is visible', async ({ page }) => {
+  await openTrainer(page);
+  await page.evaluate(() => {
+    // Overflow stays visible: an absolutely placed child past the box is not clipped text (the replay total, "/ 14.07").
+    const visible = document.createElement('p'); visible.id = 'visible-overflow'; visible.textContent = 'ok';
+    visible.style.cssText = 'position:fixed;left:20px;top:200px;width:60px;margin:0';
+    const small = document.createElement('small'); small.textContent = '/ 14.07'; small.style.cssText = 'position:absolute;left:100%;white-space:nowrap';
+    visible.append(small);
+    // Overflow hidden with no ellipsis label: genuinely clipped.
+    const clipped = document.createElement('p'); clipped.id = 'really-clipped'; clipped.textContent = 'a long run of text that cannot fit';
+    clipped.style.cssText = 'position:fixed;left:20px;top:260px;width:60px;margin:0;overflow:hidden;white-space:nowrap';
+    document.body.append(visible, clipped);
+  });
+  const errors = (await inspectLayout(page, cell)).errors.filter(error => error.kind === 'clipped-text');
+  expect(errors.some(error => error.selector === '#really-clipped')).toBe(true);
+  expect(errors.some(error => error.selector === '#visible-overflow')).toBe(false);
+});
