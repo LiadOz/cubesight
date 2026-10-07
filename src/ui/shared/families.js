@@ -254,7 +254,7 @@ export function createListRow(host, { title, detail = '', value = '', selected =
 }
 
 export function createNavigationRail(host, { items = [], active = '' } = {}) {
-  const rail = document.createElement('nav'); rail.className = 'ui-nav-rail'; rail.setAttribute('aria-label', 'Section navigation');
+  const rail = document.createElement('nav'); rail.className = 'ui-nav-rail'; rail.dataset.scrollX = 'true'; rail.setAttribute('aria-label', 'Section navigation');
   items.forEach(item => { const link = document.createElement('a'); link.href = item.href; link.textContent = item.label; if (item.id === active) link.setAttribute('aria-current', 'page'); rail.append(link); });
   host.append(rail); return rail;
 }

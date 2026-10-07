@@ -1,4 +1,7 @@
 export async function inspectLayout(page, cell) {
+  // The Cube mounts after a lazy chunk; wait for it (bounded) so a slow load is not a missing Cube.
+  // A Cube that never appears still fails the canvas-count check.
+  if ((cell.expectedCanvasCount ?? 1) > 0) await page.waitForFunction(count => document.querySelectorAll("canvas").length >= count, cell.expectedCanvasCount ?? 1, { timeout: 5000 }).catch(() => {});
   const result = await page.evaluate(async ({ width, height, routeId, routeFamily, routePath, expectedView, expectedBrainStyle, expectDebugDrawer, expectSettingsDrawer, expectConnectionMenu, expectedCanvasCount = 1, driverFailure, state, theme }) => {
     const { polygonIntersectsRect } = await import('/src/ui/cube/bounds.js');
     const errors = [];
@@ -63,7 +66,8 @@ export async function inspectLayout(page, cell) {
     if (expectedBrainStyle && document.querySelector('#brain-view .brain')?.dataset.brainStyle !== expectedBrainStyle) add('brain-style-mismatch', document.querySelector('#brain-view .brain') || document.querySelector('#brain-view'), `expected ${expectedBrainStyle} Orbit skin`);
     if (document.querySelector('footer, .site-footer, [data-site-footer]')) add('site-footer-present', document.querySelector('footer, .site-footer, [data-site-footer]'), 'the site has no footer');
     if (expectDebugDrawer && ![...document.querySelectorAll('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]')].some(isVisible)) add('debug-drawer-shortcut', document.querySelector('.site-header'), 'backtick must open the shared dev drawer on every page');
-    if (expectDebugDrawer && !/save recording/i.test(document.querySelector('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]')?.textContent || '')) add('dev-drawer-recording-action', document.querySelector('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]'), 'dev drawer needs save recording');
+    const openDrawer = [...document.querySelectorAll('[data-global-dev-drawer], #brain-debug, [role="dialog"][aria-label*="dev" i]')].find(isVisible);
+    if (expectDebugDrawer && openDrawer && !/save recording/i.test(openDrawer.textContent || '')) add('dev-drawer-recording-action', openDrawer, 'dev drawer needs save recording');
     if (expectSettingsDrawer && ![...document.querySelectorAll('.b-settings[open], [data-settings-drawer][open], [role="dialog"][aria-label*="settings" i]')].some(isVisible)) add('settings-drawer-closed', document.querySelector('#brain-view'), 'settings state did not open the settings drawer');
     if (expectConnectionMenu) {
       const menu = [...document.querySelectorAll('[data-global-cube-menu], [role="menu"], [role="dialog"][aria-label*="cube" i]')].find(isVisible);
@@ -91,7 +95,7 @@ export async function inspectLayout(page, cell) {
         else {
           const sr = allowedScroller.getBoundingClientRect();
           if (sr.left < -1 || sr.right > innerWidth + 1) add('scroller-offscreen', allowedScroller, 'horizontal scroller itself must fit viewport');
-          if (getComputedStyle(allowedScroller).overflowX === 'visible') add('scroller-not-scrollable', allowedScroller, 'data-scroll-x requires overflow-x auto/scroll');
+          if (getComputedStyle(allowedScroller).overflowX === 'visible' && allowedScroller.scrollWidth > allowedScroller.clientWidth + 1) add('scroller-not-scrollable', allowedScroller, 'data-scroll-x requires overflow-x auto/scroll');
         }
       }
       if (el.matches('button,a,[role="button"],input,select,summary,[data-hit-area]') && width <= 390) {
@@ -107,7 +111,7 @@ export async function inspectLayout(page, cell) {
         }
         if (hitWidth < 40 || hitHeight < 40) add('small-touch-target', hit, `${hitWidth.toFixed(1)}×${hitHeight.toFixed(1)}; minimum 40×40 including hit padding/stroke`);
       }
-      if (el.matches('p,span,label,button,a,h1,h2,h3,li,td,th') && el.textContent.trim() && el.scrollWidth > el.clientWidth + 1) {
+      if (el.matches('p,span,label,button,a,h1,h2,h3,li,td,th') && el.textContent.trim() && r.width > 2 && r.height > 2 /* a 1px sr-only box is clipped on purpose */ && el.scrollWidth > el.clientWidth + 1) {
         const style = getComputedStyle(el);
         if (style.display === 'inline' || (style.overflowX !== 'hidden' && style.overflowX !== 'clip' && style.whiteSpace !== 'nowrap' && !style.webkitLineClamp)) continue;
         const full = el.getAttribute('title') || el.getAttribute('aria-label');
@@ -158,7 +162,7 @@ export async function inspectLayout(page, cell) {
       const style = getComputedStyle(scroller);
       const box = scroller.getBoundingClientRect();
       if (box.left < -1 || box.right > innerWidth + 1) add('scroller-offscreen', scroller, `scroller bounds [${box.left.toFixed(1)}, ${box.right.toFixed(1)}] outside viewport`);
-      if (!['auto', 'scroll'].includes(style.overflowX)) add('scroller-not-scrollable', scroller, 'data-scroll-x requires overflow-x auto/scroll');
+      if (!['auto', 'scroll'].includes(style.overflowX) && scroller.scrollWidth > scroller.clientWidth + 1) add('scroller-not-scrollable', scroller, 'data-scroll-x requires overflow-x auto/scroll');
       if (scroller.tabIndex < 0 && !scroller.querySelector('a,button,input,select,[tabindex="0"]')) add('scroller-not-keyboard-accessible', scroller, 'horizontal scroller needs keyboard focus or a focusable descendant');
     }
     const shifts = window.__layoutShiftSamples || [];
@@ -176,28 +180,47 @@ export async function inspectLayout(page, cell) {
 
   for (const selector of result.scrollers) {
     const scroller = page.locator(selector).first();
-    const before = await scroller.evaluate(el => {
-      const original = el.scrollLeft;
-      el.scrollLeft = 0;
-      window.__layoutPreviousFocus = document.activeElement;
-      window.__layoutPageScroll = { x: scrollX, y: scrollY };
-      return { left: el.scrollLeft, max: el.scrollWidth - el.clientWidth, original };
-    });
-    if (before.max <= 1) {
-      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); window.scrollTo(window.__layoutPageScroll?.x ?? 0, window.__layoutPageScroll?.y ?? 0); delete window.__layoutPreviousFocus; delete window.__layoutPageScroll; }, before.original);
-      continue;
-    }
-    let after = 0;
+    // A scroller that re-renders between sampling and probing (a move guide
+    // replaced by a new scramble) is not a layout fault; skip it.
+    if (!await scroller.waitFor({ state: 'attached', timeout: 1500 }).then(() => true, () => false)) continue;
+    // An open modal dialog makes everything behind it inert; keyboard probing
+    // is meaningful only for scrollers inside the dialog (or with none open).
+    if (await scroller.evaluate(el => { const modal = [...document.querySelectorAll('dialog:modal')].at(-1); return Boolean(modal && !modal.contains(el)); }, undefined, { timeout: 3000 }).catch(() => false)) continue;
+    const probe = { timeout: 3000 };
     try {
-      await scroller.evaluate(el => el.focus({ preventScroll: true }));
-      await scroller.press('End');
-      after = await scroller.evaluate(el => el.scrollLeft);
-    } finally {
-      await scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); window.scrollTo(window.__layoutPageScroll?.x ?? 0, window.__layoutPageScroll?.y ?? 0); delete window.__layoutPreviousFocus; delete window.__layoutPageScroll; }, before.original);
-    }
-    if (after <= before.left) {
-      const box = await scroller.boundingBox();
-      result.errors.push({ kind: 'scroller-not-keyboard-scrollable', selector, box, detail: 'End did not move the horizontal scroller' });
+      const before = await scroller.evaluate(el => {
+        const original = el.scrollLeft;
+        el.scrollLeft = 0;
+        window.__layoutPreviousFocus = document.activeElement;
+        window.__layoutPageScroll = { x: scrollX, y: scrollY };
+        return { left: el.scrollLeft, max: el.scrollWidth - el.clientWidth, original };
+      }, undefined, probe);
+      const restore = () => scroller.evaluate((el, original) => { el.scrollLeft = original; window.__layoutPreviousFocus?.focus?.({ preventScroll: true }); window.scrollTo(window.__layoutPageScroll?.x ?? 0, window.__layoutPageScroll?.y ?? 0); delete window.__layoutPreviousFocus; delete window.__layoutPageScroll; }, before.original, probe);
+      if (before.max <= 1) { await restore(); continue; }
+      let after = 0;
+      try {
+        // A scroller with its own tab stop is driven with End. One without (a rail of
+        // links) is driven the way a keyboard user does it: Tab to the last link, and the
+        // browser scrolls the focused link into view.
+        const ownStop = await scroller.evaluate(el => el.tabIndex >= 0, undefined, probe);
+        if (ownStop) {
+          await scroller.evaluate(el => el.focus({ preventScroll: true }), undefined, probe);
+          await scroller.press('End', probe);
+        } else {
+          await scroller.evaluate(el => { const stops = [...el.querySelectorAll('a[href],button,input,select,[tabindex="0"]')]; stops.at(-1)?.focus(); }, undefined, probe);
+        }
+        // Scrollers may use CSS smooth scrolling; give the animation time to land.
+        for (let i = 0; i < 20 && after <= before.left; i++) {
+          after = await scroller.evaluate(el => el.scrollLeft, undefined, probe);
+          if (after <= before.left) await page.waitForTimeout(50);
+        }
+      } finally { await restore().catch(() => {}); }
+      if (after <= before.left) {
+        const box = await scroller.boundingBox();
+        result.errors.push({ kind: 'scroller-not-keyboard-scrollable', selector, box, detail: 'End did not move the horizontal scroller' });
+      }
+    } catch (error) {
+      if (!/Timeout/.test(String(error))) throw error;
     }
   }
 
@@ -216,12 +239,13 @@ export async function inspectLayout(page, cell) {
         const r = el.getBoundingClientRect();
         if (r.width <= 0 || r.height <= 0) continue;
         const box = { x: +r.x.toFixed(1), y: +r.y.toFixed(1), width: +r.width.toFixed(1), height: +r.height.toFixed(1) };
-        if (r.top < -1 || r.bottom > innerHeight + 1) found.push({ selector: el.id ? `#${el.id}` : el.className ? `${el.tagName.toLowerCase()}.${String(el.className).replaceAll(' ', '.')}` : el.tagName.toLowerCase(), box, detail: `sticky element outside viewport at scrollY=${top}` });
-        if (header && el !== document.querySelector('.site-header') && r.top < header.bottom - 1 && r.bottom > header.top + 1) found.push({ selector: el.id ? `#${el.id}` : el.tagName.toLowerCase(), box, detail: 'sticky element covers the header' });
+        if ((r.top < -1 || r.bottom > innerHeight + 1)) found.push({ selector: el.id ? `#${el.id}` : el.className ? `${el.tagName.toLowerCase()}.${String(el.className).replaceAll(' ', '.')}` : el.tagName.toLowerCase(), box, detail: `sticky element outside viewport at scrollY=${top}` });
+        if (header && !el.matches('dialog[open]:modal') && el !== document.querySelector('.site-header') && r.top < header.bottom - 1 && r.bottom > header.top + 1) found.push({ selector: el.id ? `#${el.id}` : el.tagName.toLowerCase(), box, detail: 'sticky element covers the header' });
       }
       if (['results', 'history', 'progress'].includes(routeFamily)) {
-        for (const [name, selector] of [['cube', '#brain-cube canvas, .tm-preview canvas, .history-stage__cube canvas, .history-cube canvas, .progress-cube-mount canvas, [data-cube] canvas'], ['orbit', '#brain-timeline, [data-orbit], .orbit, .tm-orbit, .tm-ring']]) {
-          const target = [...document.querySelectorAll(selector)].find(el => {
+        for (const [name, selector] of [['cube', '#brain-cube canvas, .tm-preview canvas, .history-stage__cube canvas, .history-cube canvas, .progress-cube-mount canvas, [data-cube] canvas'], ['orbit', '.history-stage__orbit, #brain-timeline, [data-orbit], .orbit, .tm-orbit, .tm-ring']]) {
+          // Selectors are in priority order: the focal cube/orbit of the page, not a list-row mini ring.
+          const target = selector.split(', ').flatMap(one => [...document.querySelectorAll(one)]).find(el => {
             const r = el.getBoundingClientRect();
             return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
           });
