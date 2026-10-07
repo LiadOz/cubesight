@@ -21,7 +21,7 @@ const ROUTES = [
   '/history', `/history/${record.at}`, `/history/${record.at}/replay`, `/history/${record.at}/review/pause-0`, '/history/import', '/review/import', `/review/${record.at}`,
 ];
 
-for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 390, height: 844 }, { width: 360, height: 740 }, { width: 320, height: 568 }]) {
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 360, height: 740 }, { width: 320, height: 568 }]) {
   test(`no route scrolls sideways at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize(viewport);
@@ -41,12 +41,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
 // A route's resting state hides most of what overflows on a phone: the start pill needs a connected cube, the results need a finished
 // solve, the review orbit needs a moment, the goal states need a goal. Reach each of them with the layout suite's own drivers and
 // measure the document AND every visible element on the three phones (an element past the edge is a sideways scroll waiting to happen).
-const PHONES = [[320, 568], [360, 740], [390, 844]];
+const PHONES = [[320, 568], [360, 740], [390, 844], [768, 1024]];   // 768: the progress goal states' drill rows pushed the page 5 px sideways there
 const SIDEWAYS = new Set(['horizontal-scroll', 'horizontal-scroll-position', 'offscreen-x', 'scroller-offscreen']);
 // Known, separate defect (a coach-line connector drawn with coordinates in the tens of thousands inside a display:contents box): invisible, never scrolls.
 const KNOWN = [/ui-coach-line__connector/];
 for (const id of ['idle', 'guided-scramble', 'results', 'f1-live-results', 'review-detail', 'replay-midway', 'goal-unset', 'goal-reached']) {
-  test(`state ${id} does not run past the screen edge on a phone`, async ({ page }) => {
+  test(`state ${id} does not run past the screen edge on a phone or tablet`, async ({ page }) => {
     test.setTimeout(150_000);
     page.setDefaultTimeout(10_000);
     const fixture = STATE_FIXTURES.find(item => item.id === id);
