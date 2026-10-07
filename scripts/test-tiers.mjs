@@ -3,6 +3,24 @@ import { spawn, execFileSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createServer } from 'node:net';
+
+/**
+ * Claim a free port for this run's dev server.
+ *
+ * The Playwright configs default to a fixed port with `reuseExistingServer:
+ * false`, so the gate failed outright whenever any other test run held it --
+ * exactly the concurrent-agent case the merge queue exists to serve. Binding to
+ * port 0 lets the OS pick one that is actually free.
+ */
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.unref();
+    probe.on('error', reject);
+    probe.listen(0, '127.0.0.1', () => { const { port } = probe.address(); probe.close(() => resolve(port)); });
+  });
+}
 
 export const TIER_BUDGETS = Object.freeze({ merge: 60_000, regression: 600_000 });
 export const REGRESSION_STAGES = Object.freeze([
@@ -93,7 +111,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   ];
   const runtimeTmp = path.resolve('test-results/runtime-tmp');
   await mkdir(runtimeTmp, { recursive: true });
-  const result = await runTier({ tier, stages, parallel: tier === 'merge', env: { ...process.env, TMPDIR: runtimeTmp } });
+  const env = { ...process.env, TMPDIR: runtimeTmp };
+  if (!env.PW_PORT) env.PW_PORT = String(await freePort());
+  const result = await runTier({ tier, stages, parallel: tier === 'merge', env });
   result.commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim());
   result.generatedAt = new Date().toISOString();
