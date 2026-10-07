@@ -175,10 +175,15 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null, 
     const target = orbit.getMarkerElement?.(marker);
     if (!target) return;
     ensureConnector();
-    // Measure against the connector's own box, not the host's: a host can have no box of its own (display: contents)
-    // while the absolutely positioned connector is sized by some further ancestor, so the host's rect would give a
-    // wrong origin and a viewBox that scales every coordinate.
-    const targetBox = target.getBoundingClientRect(), box = connector.getBoundingClientRect(), start = textEnd(sentence);
+    // Measure the connector's OWN box, never the host's. A host can be `display: contents`
+    // (the solve screen's results stage), which has no box at all, while the absolutely
+    // positioned connector is still sized by a further ancestor. Measuring the host there
+    // gave a 1x1 viewBox against a viewport-sized SVG, scaling every coordinate by ~1000 --
+    // the path reached x=83072. Retrying until the host has a box is not an option either:
+    // a `display: contents` host never gets one, so the connector would simply never draw.
+    const box = connector.getBoundingClientRect();
+    if (!box.width || !box.height) { timer = setTimeout(repaint, 30); return; }
+    const targetBox = target.getBoundingClientRect(), start = textEnd(sentence);
     const x1 = Math.max(0, start.x - box.left), y1 = start.y - box.top;
     const x2 = targetBox.left + targetBox.width / 2 - box.left, y2 = targetBox.top + targetBox.height / 2 - box.top;
     connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`); connector.removeAttribute('width'); connector.removeAttribute('height');

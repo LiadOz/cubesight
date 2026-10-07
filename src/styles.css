@@ -266,3 +266,15 @@ dialog.smart-mac-dialog .smart-mac-error { color: #c0392b; font-size: .85rem; ma
 [data-theme="dark"] dialog.smart-mac-dialog .smart-mac-error { color: #ffa395; }
 dialog.smart-mac-dialog .smart-mac-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
 dialog.smart-mac-dialog .smart-mac-cancel { font: inherit; cursor: pointer; padding: .5rem .9rem; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); }
+
+/* Phone touch targets: every control is at least 40 x 40 where the screen is a phone (the invariant suite measures it at <= 390 px).
+   Text links and small buttons keep their look; only the box they can be hit in grows. */
+@media (max-width: 640px) {
+  .quick-round :is(button, a) { min-width: 44px; }
+  .skip-button, .pll-skip, .pll-text-button { min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+  .hub-page-links a, .help-dev-links a, .history-import__actions a, .alg-pagination a, .alg-browser__scope > summary, .alg-paste-disclosure > summary {
+    display: inline-flex; align-items: center; min-height: 40px;
+  }
+  .alg-search .btn, .alg-drill__top button { min-height: 40px; min-width: 40px; }
+  .tm-controls button, .recording-page__actions button, .tm-scramble-row button, .sequence-controls button, #timer-view button[data-action="stats-source"] { min-height: 40px; min-width: 40px; }
+}

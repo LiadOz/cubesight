@@ -133,7 +133,8 @@
   #pll-view .pll-feedback-row { margin-top: 8px; padding-top: 6px; }
   #pll-view .brain.quick-round { border: 0; background: transparent; padding: 0; margin-bottom: 8px; }
   #pll-view .quick-round-line { gap: 6px; font-size: 11px; }
-  #pll-view .pll-intro { margin: 8px 0; }
+  #pll-view .pll-intro { margin: 8px 0; flex-wrap: wrap; gap: 4px 20px; }   /* title + 150 px control are wider than a 320 px phone: the control wraps under the title instead of scrolling the page */
+  #pll-view .pll-intro > div { min-width: 0; }
   #pll-view .pll-intro h1 { white-space: nowrap; font-size: 22px; }
   #pll-view .pll-intro .eyebrow { white-space: nowrap; font-size: 9px; }
   #pll-view .trainer-case-color-control .ui-field__label { display: none; }

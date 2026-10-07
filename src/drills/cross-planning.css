@@ -5,7 +5,7 @@
 .cp-work { min-width: 0; padding: clamp(16px, 3vw, 28px); display: flex; flex-direction: column; justify-content: center; gap: 14px; }
 .cp-question { margin: 0; color: var(--b-ink); font: var(--b-fs-title) var(--b-font-sans); }
 .cp-hint, .cp-source { margin: 0; color: var(--b-muted); line-height: 1.55; }
-.cp-faces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.cp-faces { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 8px; }   /* a face button needs ~110 px for swatch, colour name and key: fewer columns in a narrow panel, never clipped text */
 .cp-face, .cp-playback button, #cp-next { min-height: 44px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-control); background: var(--b-bg); color: var(--b-ink); font: inherit; cursor: pointer; }
 .cp-face { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px; padding: 8px; text-align: left; }
 .cp-face i { width: 16px; height: 16px; border: 1px solid var(--b-hairline); border-radius: 4px; background: var(--face-color); }
@@ -38,8 +38,8 @@
   .cp-work { gap: 6px; padding: 8px; }
   .cp-hint, .cp-source { display: none; }
   .cp-question { font-size: 14px; }
-  .cp-faces { gap: 6px; }
-  .cp-face { min-width: 0; min-height: 44px; grid-template-columns: 12px 1fr; gap: 4px; padding: 4px; font-size: 9px; }
+  .cp-faces { gap: 6px; grid-template-columns: repeat(auto-fit, minmax(min(92px, 100%), 1fr)); }   /* the work column is ~130 px on a phone: one column of full-width buttons */
+  .cp-face { min-width: 0; min-height: 44px; grid-template-columns: 12px 1fr; gap: 6px; padding: 4px 8px; font-size: 12px; }
   .cp-face i { width: 11px; height: 11px; }
   .cp-face kbd { display: none; }
   .cp-reveal { max-height: 140px; overflow: auto; padding: 8px; }

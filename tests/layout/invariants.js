@@ -2,6 +2,8 @@ export async function inspectLayout(page, cell) {
   // The Cube mounts after a lazy chunk; wait for it (bounded) so a slow load is not a missing Cube.
   // A Cube that never appears still fails the canvas-count check.
   if ((cell.expectedCanvasCount ?? 1) > 0) await page.waitForFunction(count => document.querySelectorAll("canvas").length >= count, cell.expectedCanvasCount ?? 1, { timeout: 5000 }).catch(() => {});
+  // The solve screen's skin (Orbit or Mono) loads lazily: until it lands the shell shows its unstyled column. Measure the skin, not that moment.
+  if (cell.routePath?.startsWith('/solve')) await page.waitForSelector('#brain-view .brain[data-brain-style]', { timeout: 5000 }).catch(() => {});
   const result = await page.evaluate(async ({ width, height, routeId, routeFamily, routePath, expectedView, expectedBrainStyle, expectDebugDrawer, expectSettingsDrawer, expectConnectionMenu, expectedCanvasCount = 1, driverFailure, state, theme }) => {
     const { polygonIntersectsRect } = await import('/src/ui/cube/bounds.js');
     const errors = [];

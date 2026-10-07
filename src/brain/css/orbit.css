@@ -334,7 +334,8 @@
 /* --- Phone (A-09 / A-12): the 390 x 844 device, 1:1 -- the canvas is the viewport, the Orbit renders at half size (r=150) ---------- */
 @media (max-width: 720px) {
   .brain[data-brain-style="orbit"][data-layout="orbit"] {
-    --u: 1px; --oy: 0px; --corner: 24px;
+    /* The approved phone is a 390 x 844 device, 1:1. A narrower or shorter window scales the whole composition (as the desktop does with the 1440 x 900 canvas) instead of letting it run off the edge. */
+    --u: min(1px, calc(100vw / 390), calc(100dvh / 844)); --oy: 0px; --corner: calc(24 * var(--u));
     --c-x: var(--ds-phone-cx); --c-y: var(--ds-phone-cy); --c-cube: var(--ds-phone-cube-box); --c-orbit: calc(var(--ds-orbit-view) * var(--ds-phone-scale));
     --t-x: var(--ds-phone-timer-live-x); --t-y: var(--ds-phone-timer-live-y); --t-size: var(--ds-phone-timer-live-size); --t-weight: var(--ds-phone-timer-live-weight); --t-ls: var(--ds-phone-timer-live-ls);
   }
@@ -343,7 +344,7 @@
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="results"] { --t-x: var(--ds-phone-timer-done-x); --t-y: var(--ds-phone-timer-done-y); --t-size: var(--ds-phone-timer-done-size); --t-weight: var(--ds-phone-timer-done-weight); --t-ls: var(--ds-phone-timer-done-ls); }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .b-art--desktop { display: none; }
-  .brain[data-brain-style="orbit"][data-layout="orbit"] .b-art--phone { display: block; width: var(--ds-phone-w); height: var(--ds-phone-h); }
+  .brain[data-brain-style="orbit"][data-layout="orbit"] .b-art--phone { display: block; width: calc(var(--ds-phone-w) * var(--u)); height: calc(var(--ds-phone-h) * var(--u)); }
   .brain[data-brain-style="orbit"][data-layout="orbit"] :is(.b-keys, .b-config-line, .b-stats-line, .b-note, .b-cube-reset, .b-plan) { display: none; }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .b-tabs { top: 120px; }
 
@@ -359,6 +360,8 @@
   .brain[data-brain-style="orbit"][data-layout="orbit"] #brain-stop {
     position: absolute; inset: auto; opacity: 1; width: auto; height: auto; padding: 0; translate: -50% 0; z-index: 3; white-space: nowrap; color: var(--b-muted);
     left: calc(var(--ox) + var(--ds-phone-stop-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-stop-y) - var(--base-sans) * var(--ds-phone-stop-size)) * var(--u));
+    /* The word keeps the frame's size and place; the touch target around it is 40 px (centred on the line). */
+    display: flex; align-items: center; justify-content: center; min-width: 64px; min-height: 40px; margin-top: calc((var(--ds-phone-stop-size) * var(--u) - 40px) / 2);
     font: var(--ds-phone-stop-weight) calc(var(--ds-phone-stop-size) * var(--u)) / 1 var(--b-font-sans);
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .b-primary { position: static; display: contents; }
@@ -366,7 +369,7 @@
   .brain[data-brain-style="orbit"][data-layout="orbit"] .b-start {
     position: absolute; z-index: 3; justify-content: center; padding: 0;
     left: calc(var(--ox) + var(--ds-phone-next-x) * var(--u)); top: calc(var(--oy) + var(--ds-phone-next-y) * var(--u));
-    width: calc(var(--ds-phone-next-w) * var(--u)); height: calc(var(--ds-phone-next-h) * var(--u));
+    width: calc(var(--ds-phone-next-w) * var(--u)); height: max(40px, calc(var(--ds-phone-next-h) * var(--u)));
     font: var(--ds-phone-next-label-weight) calc(var(--ds-phone-next-label-size) * var(--u)) / 1 var(--b-font-sans);
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .b-start kbd { display: none; }
@@ -430,7 +433,7 @@
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__coach .ui-coach-line__text { font: var(--ds-phone-coach-body-weight) calc(var(--ds-phone-coach-body-size) * var(--u)) / calc(24 * var(--u)) var(--b-font-sans); }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__actions {
     left: calc(var(--ox) + var(--ds-phone-next-x) * var(--u)); top: calc(var(--oy) + var(--ds-phone-next-y) * var(--u));
-    width: calc(var(--ds-phone-next-w) * var(--u)); height: calc(var(--ds-phone-next-h) * var(--u));
+    width: calc(var(--ds-phone-next-w) * var(--u)); height: max(40px, calc(var(--ds-phone-next-h) * var(--u)));
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__actions .btn--primary {
     justify-content: center; padding: 0; font: var(--ds-phone-next-label-weight) calc(var(--ds-phone-next-label-size) * var(--u)) / 1 var(--b-font-sans);
@@ -443,4 +446,5 @@
     left: calc((var(--ds-phone-more-x) - var(--ds-phone-next-x)) * var(--u)); top: calc((var(--ds-phone-more-y) - var(--base-sans) * var(--ds-next-more-size) - var(--ds-phone-next-y)) * var(--u) - (40px - var(--ds-next-more-size) * 1px) / 2);
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__history-nav { top: 100px; }
+  .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__case-prompt { min-height: 40px; }   /* a 40 px target, same look */
 }

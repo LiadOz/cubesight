@@ -35,10 +35,13 @@ export const ROUTES = [
   { id: 'unknown', path: '/__layout-unknown__', page: 'scroll' },
 ];
 
-export const VIEWPORTS = [
+const ALL_VIEWPORTS = [
   [320, 568], [360, 740], [390, 844], [768, 1024],
   [1024, 768], [1280, 720], [1440, 900], [1920, 1080],
 ];
+// LAYOUT_WIDTHS=320,360,390 narrows a focused run (the full matrix is the gate; this is for iterating).
+const ONLY_WIDTHS = (process.env.LAYOUT_WIDTHS || '').split(',').filter(Boolean).map(Number);
+export const VIEWPORTS = ONLY_WIDTHS.length ? ALL_VIEWPORTS.filter(([w]) => ONLY_WIDTHS.includes(w)) : ALL_VIEWPORTS;
 
 export const THEMES = ['dark', 'light'];
 
