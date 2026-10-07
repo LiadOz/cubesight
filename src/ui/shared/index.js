@@ -174,8 +174,12 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null, 
     unlink();
     const target = orbit.getMarkerElement?.(marker);
     if (!target) return;
+    // A host that is display: contents (the solve screen's results stage) has no box to draw in: its connector got a 1 x 1 viewBox and a path
+    // with coordinates in the tens of thousands. The line still reads as linked; nothing is drawn into a box that does not exist.
+    const hostBox = connectorHost.getBoundingClientRect();
+    if (!hostBox.width || !hostBox.height) { timer = setTimeout(() => wrap.classList.add('is-linked'), 30); return; }
     ensureConnector();
-    const targetBox = target.getBoundingClientRect(), box = connectorHost.getBoundingClientRect(), start = textEnd(sentence);
+    const targetBox = target.getBoundingClientRect(), box = hostBox, start = textEnd(sentence);
     const x1 = Math.max(0, start.x - box.left), y1 = start.y - box.top;
     const x2 = targetBox.left + targetBox.width / 2 - box.left, y2 = targetBox.top + targetBox.height / 2 - box.top;
     connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`); connector.setAttribute('width', String(Math.max(1, box.width))); connector.setAttribute('height', String(Math.max(1, box.height)));

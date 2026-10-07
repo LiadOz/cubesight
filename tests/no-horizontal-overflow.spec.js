@@ -43,8 +43,6 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
 // measure the document AND every visible element on the three phones (an element past the edge is a sideways scroll waiting to happen).
 const PHONES = [[320, 568], [360, 740], [390, 844], [768, 1024]];   // 768: the progress goal states' drill rows pushed the page 5 px sideways there
 const SIDEWAYS = new Set(['horizontal-scroll', 'horizontal-scroll-position', 'offscreen-x', 'scroller-offscreen']);
-// Known, separate defect (a coach-line connector drawn with coordinates in the tens of thousands inside a display:contents box): invisible, never scrolls.
-const KNOWN = [/ui-coach-line__connector/];
 for (const id of ['idle', 'guided-scramble', 'results', 'f1-live-results', 'review-detail', 'replay-midway', 'goal-unset', 'goal-reached']) {
   test(`state ${id} does not run past the screen edge on a phone or tablet`, async ({ page }) => {
     test.setTimeout(150_000);
@@ -59,7 +57,7 @@ for (const id of ['idle', 'guided-scramble', 'results', 'f1-live-results', 'revi
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       await page.waitForTimeout(150);
       const report = await inspectLayout(page, { width, height, routeId: `state-${id}`, routeFamily: 'solve', routePath: fixture.route, state: id, theme: 'dark', expectedCanvasCount: 1 });
-      for (const error of report.errors) if (SIDEWAYS.has(error.kind) && !KNOWN.some(pattern => pattern.test(error.selector))) offenders.push(`${width}x${height} ${error.kind}: ${error.selector} ${JSON.stringify(error.box)} ${error.detail}`);
+      for (const error of report.errors) if (SIDEWAYS.has(error.kind)) offenders.push(`${width}x${height} ${error.kind}: ${error.selector} ${JSON.stringify(error.box)} ${error.detail}`);
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
   });

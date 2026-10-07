@@ -11,9 +11,6 @@ import './state-drivers.js';
 
 const PHONES = [[320, 568], [360, 740], [390, 844]];
 const FIT_KINDS = new Set(['horizontal-scroll', 'horizontal-scroll-position', 'offscreen-x', 'scroller-offscreen', 'small-touch-target', 'clipped-text', 'sticky-scroll']);
-// KNOWN, separate defect (not a phone-fit one): the linked coach line's connector is drawn in a display:contents box, so its path
-// has coordinates in the tens of thousands. It is invisible and does not scroll the page; it is reported by the full layout matrix.
-const KNOWN = [/ui-coach-line__connector/];
 
 const ROUTE_IDS = ['solve', 'drills', 'corners', 'pll-drill', 'f2l', 'cross-planning', 'oll-drill', 'lookahead', 'algs', 'alg-case-pll', 'alg-case-f2l', 'alg-drill',
   'help', 'recording', 'progress', 'history', 'past-solve', 'replay', 'review-detail', 'review-import', 'timer'];
@@ -21,7 +18,7 @@ const STATE_IDS = ['idle', 'guided-scramble', 'wrong-turn', 'inspection', 'solvi
   'f1-marker-detail', 'goal-reached', 'replay-midway'];
 const NO_CANVAS = new Set(['algs', 'help', 'review-import', 'recording']);
 
-const describe = report => report.errors.filter(error => FIT_KINDS.has(error.kind) && !KNOWN.some(pattern => pattern.test(error.selector)))
+const describe = report => report.errors.filter(error => FIT_KINDS.has(error.kind))
   .map(error => `${error.kind}: ${error.selector} ${JSON.stringify(error.box)} ${error.detail}`);
 
 // Lazy chunks (the solve skin, the Orbit's first draw before its host has a size) land within a few hundred ms: measure the settled page.
