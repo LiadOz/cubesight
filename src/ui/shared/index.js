@@ -40,7 +40,13 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const menuItems = document.createElement('div'); menuItems.className = 'ui-cube-menu__items'; menuItems.setAttribute('role', 'menu');
   menu.addEventListener('click', event => { if (event.target === menu) menu.close(); });
   const actionsForMenu = [['connect', 'connect'], ['sync', 'sync solved cube'], ['recenter', 'recenter'], ['disconnect', 'disconnect'], ['forget', 'forget saved cube'], ['save-recording', 'save recording'], ['report-problem', 'report a problem']];
-  actionsForMenu.forEach(([id, label]) => { const button = document.createElement('button'); button.type = 'button'; button.dataset.cubeAction = id; button.textContent = label; button.setAttribute('role', 'menuitem'); button.addEventListener('click', () => { menu.close(); actions[id]?.(); }); menuItems.append(button); });
+  // Run the action BEFORE closing the drawer. `connect` reaches
+  // navigator.bluetooth.requestDevice(), which needs the click's transient user
+  // activation; closing a modal <dialog> first spends it, and mobile browsers
+  // enforce that far more strictly than desktop, so connecting from a phone
+  // failed silently. The session and adapter both go out of their way to stay
+  // synchronous for this reason (smart-cube-session.js, smart-cube-bluetooth.js).
+  actionsForMenu.forEach(([id, label]) => { const button = document.createElement('button'); button.type = 'button'; button.dataset.cubeAction = id; button.textContent = label; button.setAttribute('role', 'menuitem'); button.addEventListener('click', () => { try { actions[id]?.(); } finally { menu.close(); } }); menuItems.append(button); });
   menu.append(menuHead, menuItems);
   summary.addEventListener('click', () => { if (!menu.open) menu.showModal(); });
   cubeMenu.append(summary); controls.append(cubeMenu); document.body.append(menu);

@@ -508,6 +508,15 @@ window.addEventListener(CASE_COLOR_CHANGE_EVENT, () => {
 const globalHeaderStatus = document.createElement('span');
 globalHeaderStatus.className = 'ui-header-status';
 globalHeaderStatus.setAttribute('role', 'status');
+
+// The header status line is hidden below 700px (shared.css), so a cube that
+// refuses to connect used to fail with no visible reason at all on a phone.
+// Report through the approved toast as well, which is where an error belongs
+// and which stays on screen until it is dismissed.
+function reportCubeProblem(message) {
+  globalHeaderStatus.textContent = message;
+  appToast?.show({ text: message, tone: 'error' });
+}
 const globalHeader = createHeader(document.querySelector('#site-header'), {
   title: APP_NAME,
   sections: [
@@ -519,8 +528,8 @@ const globalHeader = createHeader(document.querySelector('#site-header'), {
   ],
   session: smartCube,
   actions: {
-    connect: () => { const state = smartCube.getSnapshot(); const attempt = state.link?.status === 'lost' ? smartCube.reconnect({ gesture: true }) : smartCube.connect(); void attempt.catch(error => { globalHeaderStatus.textContent = error?.message || 'Could not connect to the cube.'; }); },
-    sync: () => { void smartCube.syncSolved().catch(error => { globalHeaderStatus.textContent = error?.message || 'Could not sync the cube.'; }); },
+    connect: () => { const state = smartCube.getSnapshot(); const attempt = state.link?.status === 'lost' ? smartCube.reconnect({ gesture: true }) : smartCube.connect(); void attempt.catch(error => reportCubeProblem(error?.message || 'Could not connect to the cube.')); },
+    sync: () => { void smartCube.syncSolved().catch(error => reportCubeProblem(error?.message || 'Could not sync the cube.')); },
     recenter: () => document.dispatchEvent(new Event('cubesight-recenter')),
     disconnect: () => { void smartCube.disconnect(); },
     forget: () => clearSavedCubeData(),

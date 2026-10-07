@@ -398,3 +398,36 @@ test('header themes stay readable and recorder survives a fast full-page reload 
   const afterClear = await page.evaluate(async () => (await import('/src/recorder.js')).getRecording().events.map(event => event.kind));
   expect(afterClear).not.toContain('f0-fast-reload');
 });
+
+// Connecting a cube reaches navigator.bluetooth.requestDevice(), which only works
+// while the click still carries transient user activation. Closing the modal cube
+// drawer before running the action spends that activation, and mobile browsers
+// enforce it strictly, so connecting from a phone failed with no visible error.
+test('the cube drawer runs its action before closing, so connect keeps the click activation', async ({ page }) => {
+  await page.goto('/src/ui/gallery.html');
+  const observed = await page.evaluate(async () => {
+    const { createHeader } = await import('/src/ui/shared/index.js');
+    const host = document.createElement('div'); document.body.append(host);
+    const snapshot = { phase: 'idle', canSync: true, canDisconnect: false };
+    const session = { getSnapshot: () => snapshot, subscribe(callback) { callback(snapshot); return () => {}; } };
+    const seen = [];
+    createHeader(host, {
+      title: 'cubesight', sections: [], session,
+      // The gallery page mounts its own header, so always take the last drawer:
+      // createHeader appends its dialog to document.body.
+      actions: { connect: () => seen.push({ action: 'connect', drawerOpenDuringAction: [...document.querySelectorAll('.ui-cube-menu__drawer')].pop().open }) },
+    });
+    host.querySelector('.ui-cube-chip').click();
+    const drawer = [...document.querySelectorAll('.ui-cube-menu__drawer')].pop();
+    const openedBefore = drawer.open;
+    // The enable rules are covered by the recovery-phases test above; this one is
+    // only about the order of close() versus the action, so force it clickable.
+    const connect = drawer.querySelector('[data-cube-action="connect"]');
+    connect.disabled = false;
+    connect.click();
+    return { openedBefore, seen, closedAfter: !drawer.open };
+  });
+  expect(observed.openedBefore).toBe(true);
+  expect(observed.seen).toEqual([{ action: 'connect', drawerOpenDuringAction: true }]);
+  expect(observed.closedAfter).toBe(true);
+});
