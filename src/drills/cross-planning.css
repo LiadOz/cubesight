@@ -33,12 +33,12 @@
   .cross-planning-page > .cs-head .cs-sub { display: none; }
   .cross-planning-page > .cs-head { margin-bottom: 0; }
   .cp-session { border-radius: var(--b-radius-bar); }
-  .cp-layout { grid-template-columns: minmax(0, 1fr); }   /* stacked: the cube above, the question and its six face buttons below at full width */
+  .cp-layout { grid-template-columns: minmax(132px, .8fr) minmax(0, 1.2fr); }
   .cp-cube { height: 190px; min-height: 0; max-height: 190px; }
   .cp-work { gap: 6px; padding: 8px; }
   .cp-hint, .cp-source { display: none; }
   .cp-question { font-size: 14px; }
-  .cp-faces { gap: 6px; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); }
+  .cp-faces { gap: 6px; grid-template-columns: repeat(auto-fit, minmax(min(92px, 100%), 1fr)); }   /* the work column is ~130 px on a phone: one column of full-width buttons */
   .cp-face { min-width: 0; min-height: 44px; grid-template-columns: 12px 1fr; gap: 6px; padding: 4px 8px; font-size: 12px; }
   .cp-face i { width: 11px; height: 11px; }
   .cp-face kbd { display: none; }
