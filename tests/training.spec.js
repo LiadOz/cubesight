@@ -259,7 +259,7 @@ test.describe('phone touch layout', () => {
     await expect.poll(() => page.evaluate(() => window.__cubesightLegacyTrainerHandles.corner.getViewModel().currentCase.seed)).not.toBe(current.currentCase.seed);
     await page.locator('#corner-view .training-settings > summary').tap();
     await page.locator('[data-mode="triple"]').tap();
-    await expect(page.locator('#corner-sequence')).toBeVisible();
+    await expect(page.locator('#prompt-text')).toContainText('Left corner');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   });
 
