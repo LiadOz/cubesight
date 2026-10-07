@@ -56,9 +56,10 @@ test('alg case with the longest case-colour label still fits one screen at 1280x
 test('corner drill with a round in progress fits one screen', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   await page.addInitScript(seed => localStorage.setItem('cubesight-shell-v1', JSON.stringify(seed)), quickRoundSeed('corners', Date.now()));
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/#/drills/corners');
   await expect(page.locator('.quick-round')).toContainText('1 cases left');
-  for (const [width, height] of viewports) {
+  for (const [width, height] of [[1440, 900], [1280, 720], [1920, 1080]]) {
     await page.setViewportSize({ width, height });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight), { message: `${width}x${height}` }).toBeLessThanOrEqual(height + 1);
   }
