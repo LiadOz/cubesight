@@ -130,7 +130,9 @@ test('the solve screen debug drawer links to the studio', async ({ page }) => {
 test('direct Scout navigation does not arm the corner inactivity prompt', async ({ page }) => {
   await page.clock.install();
   await page.goto('/#/cross-scout?mode=explore');
-  await expect(page.locator('#scout-highlight')).toBeVisible();
+  // Readiness is the Cube, not the highlight button: that button stays disabled and
+  // hidden until a plan is chosen, which is not what this test is about.
+  await expect(page.locator('#scout-cube canvas')).toBeVisible();
   await page.clock.fastForward(11_000);
   await expect(page.locator('#pause-overlay')).toBeHidden();
   await expect(page.locator('#scout-view')).toBeVisible();

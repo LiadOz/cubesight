@@ -65,7 +65,9 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await expect(page.locator('#pll-view')).toBeVisible();
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
   await expect(page.locator('[data-pll-answer]')).toHaveCount(2);
-  await expect(page.locator('.pll-trainer-shell')).toHaveCSS('display', 'grid');
+  // Orbit phone layout stacks the cube above the answers (trainer-orbit.css, max-width 700px).
+  await expect(page.locator('.pll-trainer-shell')).toHaveCSS('display', 'flex');
+  await expect(page.locator('.pll-trainer-shell')).toHaveCSS('flex-direction', 'column');
   const pllCase = await page.locator('#pll-view').getAttribute('data-pll-case');
   await page.locator(`[data-pll-answer="${pllCase}"]`).tap();
   await expect(page.locator('#pll-feedback')).toContainText('Nice');
@@ -78,7 +80,8 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   await crossChoice.tap();
   await expect(page.locator('#cp-playback')).toBeVisible();
   await page.goto('/#/drills/scout?mode=explore');
-  await expect(page.locator('#scout-highlight')).toBeVisible();
+  // Readiness is the Cube: the highlight button stays disabled and hidden until a plan is chosen.
+  await expect(page.locator('#scout-cube canvas')).toBeVisible();
   await page.goto('/#/dev/studio');
   await expect(page.locator('#studio-cube canvas')).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Inspect tracking' })).toHaveAttribute('aria-selected', 'true');
