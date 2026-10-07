@@ -26,22 +26,22 @@ test('review: a cross moment emphasises the four cross edges and a last-layer mo
   const cross = markers.find(item => item.stage === 'cross'), lastLayer = markers.find(item => ['eo', 'co', 'cp', 'ep', 'oll', 'pll'].includes(item.stage));
   expect(cross, 'a cross moment').toBeTruthy();
   await page.goto(`/#/history/${record.at}/review/${encodeURIComponent(cross.id)}`);
-  // the cross: four edges, 8 stickers; the other 46 dim
-  await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 8, dimmed: 46, cages: 4 });
+  // the cross: four edges, 8 stickers outlined; A-06 draws the rest of the cube at full colour
+  await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 8, dimmed: 0, cages: 4 });
   const edges = await stickers(page, '.history-stage__cube');
   expect(edges.pieces).toHaveLength(4);
   expect(edges.pieces.every(name => name.length === 2)).toBe(true);
   if (lastLayer) {
     await page.goto(`/#/history/${record.at}/review/${encodeURIComponent(lastLayer.id)}`);
     // the last layer: four edges and four corners, 20 stickers
-    await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 20, dimmed: 34, cages: 8 });
+    await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 20, dimmed: 0, cages: 8 });
   }
   // and the plain solve and the replay show the whole cube, as the approved frames do
   await page.goto(`/#/history/${record.at}/replay`);
   await expect.poll(() => stickers(page, '.history-stage__cube')).toMatchObject({ highlighted: 0, dimmed: 0 });
 });
 
-test('review: a pair moment emphasises that pair (corner and edge, and the slot) and dims the rest', async ({ page }) => {
+test('review: a pair moment outlines that pair (corner and edge, and the slot) and leaves the rest at full colour', async ({ page }) => {
   await seedSolve(page, { record });
   await page.goto(`/#/history/${record.at}`);
   await expect(page.locator('.history-stage__cube canvas')).toBeVisible();
@@ -50,7 +50,7 @@ test('review: a pair moment emphasises that pair (corner and edge, and the slot)
   test.skip(!marker, 'the analysed record has no pair moment');
   await page.goto(`/#/history/${record.at}/review/${encodeURIComponent(marker.id)}`);
   // the pair is a corner (3 stickers) and an edge (2); when it is not yet in its slot the slot's own cubicles are caged too
-  await expect.poll(async () => { const { highlighted, dimmed } = await stickers(page, '.history-stage__cube'); return highlighted >= 5 && highlighted <= 10 && highlighted + dimmed === 54; }).toBe(true);
+  await expect.poll(async () => { const { highlighted, dimmed } = await stickers(page, '.history-stage__cube'); return highlighted >= 5 && highlighted <= 10 && dimmed === 0; }).toBe(true);
 });
 
 test('algs: an F2L case highlights its corner and edge plus the slot they belong in', async ({ page }) => {
@@ -69,10 +69,11 @@ test('algs: an OLL case highlights the last layer and dims the first two layers'
   await expect.poll(() => stickers(page, '[data-alg-cube]')).toMatchObject({ highlighted: 20, dimmed: 34 });
 });
 
-test('drills: OLL and PLL (a corner-mode cube) highlight the last layer', async ({ page }) => {
+test('drills: the PLL cube (corner mode) highlights the last layer; the OLL drill shows the whole case plain, as frame A-08 does', async ({ page }) => {
   await page.goto('/#/drills/oll');
   await expect(page.locator('#oll-cube canvas')).toBeVisible();
-  await expect.poll(() => stickers(page, '#oll-cube')).toMatchObject({ highlighted: 20, dimmed: 34 });
+  // A-08 draws every sticker of the case at full colour, so the first two layers are not dimmed there.
+  await expect.poll(() => stickers(page, '#oll-cube')).toMatchObject({ highlighted: 0, dimmed: 0 });
   await page.goto('/#/drills/pll');
   await expect(page.locator('#pll-cube canvas')).toBeVisible();
   // the PLL cube is built in corner mode, which used to ignore every highlight

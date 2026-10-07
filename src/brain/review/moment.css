@@ -1,0 +1,72 @@
+/* A reviewed moment (A-06). Positions are frame coordinates, like the rest of the history page: an element at frame (x, y) sits at
+   left: x px / top: calc(y * var(--u) - var(--hdr)); text is placed by its baseline (a one-line box of size F at line-height 1 has it
+   ~0.83 F below its top). --u and --hdr come from .history-page. */
+.moment__rings { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none; }
+.moment__outer, .moment__inner { position: absolute; inset: 0; display: grid; place-items: center; }
+.moment__inner { inset: 50% auto auto 50%; transform: translate(-50%, -50%); }   /* its size is set from the outer ring (moment.js) */
+.moment__inner[hidden] { display: none; }
+.moment__outer > .orbit, .moment__inner > .orbit { width: 100%; height: 100%; pointer-events: auto; }
+.moment__outer > .orbit > .orbit__svg, .moment__inner > .orbit > .orbit__svg { width: 100% !important; height: 100% !important; }
+/* the outer ring: moves before the moment white (done 6), the moment amber (9), the rest text-dim (6) */
+.moment__outer .orbit__segment.is-quiet .orbit__segment-track { stroke: var(--orbit-ink, #ece6d8); stroke-width: var(--orbit-w-done, 6); }
+.moment__outer .orbit__segment.is-wrong .orbit__segment-track { stroke: #e6a642; stroke-width: calc(var(--orbit-w-lit, 8) * 9 / 8); }
+.moment__outer .orbit__segment.is-future .orbit__segment-track { stroke: #9a9486; stroke-width: var(--orbit-w-done, 6); }
+.moment__outer .orbit__move-label { font-size: calc(16px * var(--orbit-label-scale, 1)); font-weight: 400; opacity: 1; }
+.moment__outer .orbit__move-label.is-quiet { fill: var(--orbit-ink, #ece6d8); }
+.moment__outer .orbit__move-label.is-future { fill: #9a9486; }
+.moment__outer .orbit__move-label.is-wrong { display: none; }
+.moment__pill { fill: #4d3715; stroke: #e6a642; }
+.moment__pill-text { fill: #e6a642; font-family: 'DM Mono', monospace; font-weight: 500; }
+/* the inner ring: the moves you share with the better line text-faint (5), the better line teal (5) */
+.moment__inner .orbit__segment.is-quiet .orbit__segment-track { stroke: #6d675c; stroke-width: var(--orbit-w-quiet, 5); }
+.moment__inner .orbit__segment.is-good .orbit__segment-track { stroke: #3dbfad; stroke-width: var(--orbit-w-quiet, 5); }
+.moment__inner-label { font-family: 'DM Mono', monospace; font-weight: 500; }
+.moment__inner-label.is-before { fill: #6d675c; }
+.moment__inner-label.is-better { fill: #3dbfad; }
+
+.moment__side, .moment__center { position: absolute; z-index: 3; margin: 0; }
+.moment__side p, .moment__center p, .moment__side ul { margin: 0; padding: 0; }
+.moment__side { left: 0; top: 0; width: 100%; pointer-events: none; }
+.moment__side > * { position: absolute; pointer-events: auto; }
+.history-page .moment__badge { left: 64.7px; top: calc(156.7 * var(--u) - var(--hdr)); display: flex; align-items: center; gap: 10.7px; color: #e6a642; font: 500 12px/22.6px var(--b-font-mono); white-space: nowrap; }
+.moment__badge i { display: grid; place-items: center; box-sizing: border-box; width: 22.6px; height: 22.6px; border: 2.6px solid currentColor; border-radius: 50%; background: var(--b-bg); font: 500 14px/1 var(--b-font-sans); font-style: normal; }
+.history-page .moment__prose { left: 48px; top: calc(242 * var(--u) - var(--hdr) - 21.3px); width: 262px; color: var(--b-ink); font: 500 19px/28px var(--b-font-sans); }
+.history-page .moment__legend { left: 48px; top: calc(358 * var(--u) - var(--hdr)); list-style: none; font: 400 12px/28px var(--b-font-mono); color: var(--b-muted); }
+.moment__legend li { display: flex; align-items: center; gap: 11.5px; height: 28px; }
+.moment__legend li[hidden] { display: none; }
+.moment__legend i { flex: none; width: 35px; height: 5px; margin-left: -2.5px; border-radius: 2.5px; background: var(--b-ink); }
+.moment__legend [data-ring="inner"] i { background: var(--b-accent-text, #3dbfad); }
+.history-page .moment__back { left: 48px; top: calc(470 * var(--u) - var(--hdr) - 15px * .86); color: var(--b-muted); font: 600 15px/1 var(--b-font-sans); }
+.moment__center { left: 0; top: 0; width: 100%; pointer-events: none; }
+.moment__center > * { position: absolute; left: 50vw; transform: translateX(-50%); width: max-content; max-width: 90vw; text-align: center; pointer-events: auto; }
+.history-page .moment__count { top: calc(760 * var(--u) - var(--hdr) - 56px * .86); color: #e6a642; font: 300 56px/1 var(--b-font-sans); font-variant-numeric: tabular-nums; }
+.history-page .moment__why { top: calc(796 * var(--u) - var(--hdr) - 16px * .86); color: var(--b-ink); font: 600 16px/1 var(--b-font-sans); }
+.moment__actions { top: calc(820 * var(--u) - var(--hdr)); display: flex; gap: 12px; }
+.moment__better, .moment__retry { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 44px; padding: 0; border: 0; border-radius: 22px; font: 700 15px/44px var(--b-font-sans); cursor: pointer; }
+.moment__better { width: 150px; background: #3dbfad; color: #0b1f1c; }
+.moment__retry { width: 198px; background: var(--b-key-bg, #2b2925); color: var(--b-ink); }
+.moment__better[hidden], .moment__retry[hidden] { display: none; }
+.history-page[data-moment="good"] .moment__badge { color: var(--b-accent-text, #3dbfad); }
+.history-page[data-moment="good"] .moment__count { color: var(--b-accent-text, #3dbfad); }
+
+/* the review route draws only the moment: no stage ring of its own, no crumb, counter or solve meta (A-06 has none of them) */
+.history-page.has-moment .history-stage__orbit,
+.history-page.has-moment .f1-results__detail-host,
+.history-page.has-moment .f1-results__history-nav,
+.history-page.has-moment .history-counter,
+.history-page.has-moment .history-keybar__meta,
+.history-page.has-moment .f1-results__coach-tag { display: none !important; }
+@media (min-width: 900px) {
+  .history-page.has-moment .history-keybar-host { top: calc(866 * var(--u) - var(--hdr)); }
+  /* A-06 keycaps: 36.2 / 51 / 36.2 wide, the three groups 39 px apart */
+  .history-page.has-moment .history-keybar-host .ui-key-bar { gap: 0 39px; }
+  .history-page.has-moment .history-keybar-host .key:not(.key--pair) { box-sizing: border-box; width: 36.2px; padding: 0; }
+  .history-page.has-moment .history-keybar-host .ui-key-bar > span:nth-child(2) .key { width: 51px; }
+}
+@media (max-width: 899px) {
+  .moment__side, .moment__center { position: static; width: auto; padding: 8px 16px; }
+  .moment__side > *, .moment__center > * { position: static; transform: none; max-width: none; }
+  .moment__prose { width: auto; }
+  .moment__count { font-size: 36px; }
+  .moment__actions { justify-content: center; }
+}

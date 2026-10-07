@@ -60,5 +60,9 @@
 }
 
 @media (max-width: 640px) {
+  /* Phone stage labels (A-09 / A-12): the Orbit builds one value row (compactLabels); 11 px, teal when the split beat the average, amber when it did not. */
+  .orbit__label-value[class*='tone-'] { font-size: calc(11px * var(--orbit-label-scale, 1)); font-weight: 400; }
+  .orbit__label-value.tone-good { fill: var(--orbit-accent, #3dbfad); }
+  .orbit__label-value.tone-bad { fill: #e6a642; }
   .orbit__hit { vector-effect: non-scaling-stroke; stroke-width: 40px; }
 }

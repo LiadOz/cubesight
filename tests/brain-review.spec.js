@@ -203,24 +203,36 @@ for (const style of ['orbit', 'mono']) {
       expect(detour).toBeTruthy();
       if (style === 'orbit') await selectOrbitMarker(brain, detour.id);
       else await brain.locator('.b-rev-chip', { hasText: 'detour' }).click();
-      await expect(brain.locator('.b-rev-detail')).toBeVisible();
-      await expect(brain.locator('.b-rev-dtitle')).toContainText('detour');
-      const statOverlap = await brain.locator('.b-rev-dstats > div').evaluateAll(nodes => nodes.some(node => {
-        const label = node.querySelector('dt').getBoundingClientRect();
-        const value = node.querySelector('dd').getBoundingClientRect();
-        return label.left < value.right && value.left < label.right && label.top < value.bottom && value.top < label.bottom;
-      }));
-      expect(statOverlap, 'detail labels and values stay separate').toBe(false);
-      await page.screenshot({ path: `${SHOTS}/${name}-detail.png`, fullPage: true });
-      await testInfo.attach(`${name}-results`, { path: `${SHOTS}/${name}-results.png`, contentType: 'image/png' });
-      if (style === 'orbit') {
-        await page.evaluate(() => window.scrollTo(0, document.scrollingElement.scrollHeight));
-        const cube = await brain.locator('.history-stage__cube').boundingBox();
-        expect(cube.y).toBeGreaterThanOrEqual(-1);
-        expect(cube.y + cube.height).toBeLessThanOrEqual(size.height + 1);
+      // A desktop shows the moment screen of frame A-06; a phone keeps the detail panel
+      const moment = style === 'orbit' && size.width >= 900;
+      if (moment) {
+        await expect(brain.locator('.moment__badge')).toContainText('detour');
+        await expect(brain.locator('.moment__count')).toContainText(/^move \d+ of \d+$/);
+        await expect(brain.locator('.b-rev-detail')).toBeHidden();
+        await page.screenshot({ path: `${SHOTS}/${name}-detail.png`, fullPage: true });
+        await testInfo.attach(`${name}-results`, { path: `${SHOTS}/${name}-results.png`, contentType: 'image/png' });
+        await page.keyboard.press('Escape');
+        await expect(page).toHaveURL(/#\/history\/\d+$/);
+      } else {
+        await expect(brain.locator('.b-rev-detail')).toBeVisible();
+        await expect(brain.locator('.b-rev-dtitle')).toContainText('detour');
+        const statOverlap = await brain.locator('.b-rev-dstats > div').evaluateAll(nodes => nodes.some(node => {
+          const label = node.querySelector('dt').getBoundingClientRect();
+          const value = node.querySelector('dd').getBoundingClientRect();
+          return label.left < value.right && value.left < label.right && label.top < value.bottom && value.top < label.bottom;
+        }));
+        expect(statOverlap, 'detail labels and values stay separate').toBe(false);
+        await page.screenshot({ path: `${SHOTS}/${name}-detail.png`, fullPage: true });
+        await testInfo.attach(`${name}-results`, { path: `${SHOTS}/${name}-results.png`, contentType: 'image/png' });
+        if (style === 'orbit') {
+          await page.evaluate(() => window.scrollTo(0, document.scrollingElement.scrollHeight));
+          const cube = await brain.locator('.history-stage__cube').boundingBox();
+          expect(cube.y).toBeGreaterThanOrEqual(-1);
+          expect(cube.y + cube.height).toBeLessThanOrEqual(size.height + 1);
+        }
+        await page.keyboard.press('Escape');
+        await expect(brain.locator('.b-rev-detail')).toBeHidden();
       }
-      await page.keyboard.press('Escape');
-      await expect(brain.locator('.b-rev-detail')).toBeHidden();
       if (style === 'orbit') {
         await brain.locator('[data-segment=cross]').press('Enter');
         await expect(brain.locator('.b-rev-detail')).toBeVisible();

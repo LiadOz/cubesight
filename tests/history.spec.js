@@ -29,7 +29,9 @@ test('history filters, opens past solves, replays and edits stored records', asy
   await expect(page.locator('.f1-results__actions a', { hasText: 'review' })).toHaveAttribute('href', '#/history/1100000/review/pause-0');
   await page.locator('.f1-results__actions a', { hasText: 'review' }).click();
   await expect(page).toHaveURL(/#\/history\/1100000\/review\/pause-0$/);
-  await expect(page.locator('.b-rev-detail')).toBeVisible();
+  // A-06: on a desktop the review is the moment screen (badge, coach sentence, move rings), not the legacy detail panel
+  await expect(page.locator('.moment__badge')).toContainText('pause');
+  await expect(page.locator('.moment__count')).toBeVisible();
   // the review is its own screen (A-06): back out to the solve, whose primary action is the replay
   await page.keyboard.press('Escape');
   await expect(page).toHaveURL(/#\/history\/1100000$/);
@@ -205,26 +207,22 @@ test('history review playback ignores an older variant after rapid switching and
   };
   await page.addInitScript(value => localStorage.setItem('cubesight-solves-v1', JSON.stringify({ version: 1, records: [value] })), record);
   await page.goto('/#/history/1000000/review/better-pair-1');
-  await expect(page.locator('.b-rev-detail')).toBeVisible();
-  const yours = page.locator('.b-rev-variant[data-variant="yours"]');
-  const better = page.locator('.b-rev-variant[data-variant="better"]');
-  await expect(better).toBeVisible();
-  await yours.click();
-  await better.click();
-  await expect(better).toHaveAttribute('aria-pressed', 'true');
+  // A-06 has one control for a variant: "better line" (the legacy yours / better toggle is gone with the legacy panel on a desktop)
+  const betterLine = page.locator('.moment__better');
+  await expect(betterLine).toBeVisible();
+  await betterLine.click();
+  await betterLine.click();
   await page.waitForTimeout(500);
-  await expect(better).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.moment__count')).toBeVisible();
   await page.goto('/#/history');
   await expect(page.locator('.history-page')).toHaveAttribute('data-view', 'list');
   await expect(page.locator('.history-results-host')).toBeHidden();
   await page.waitForTimeout(500);
   await expect(page.locator('.history-page')).toHaveAttribute('data-view', 'list');
   await page.goto('/#/history/1000000/review/better-pair-1');
-  await expect(page.locator('.b-rev-detail')).toBeVisible();
-  await page.locator('.b-rev-variant[data-variant="yours"]').click();
-  await expect(page.locator('.b-rev-variant[data-variant="yours"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.moment__better')).toBeVisible();
+  await page.locator('.moment__better').click();
   await page.waitForTimeout(500);
-  await expect(page.locator('.b-rev-variant[data-variant="yours"]')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('canvas')).toHaveCount(1);
 });
 

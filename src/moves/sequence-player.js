@@ -1,7 +1,7 @@
 import { applyMoves, createSolvedState, toRenderData } from '../cross-cube.js';
 import { physicalModelTokens, tokenizeReconstruction } from '../review/import-parser.js';
 import { createMoveGuide } from './move-guide.js';
-import { createRingTimeline } from '../brain/styles/orbit/timeline-ring.js';
+import { Orbit } from '../ui/orbit/index.js';
 import { createLinearTimeline } from '../brain/styles/mono/timeline-linear.js';
 import '../brain/css/orbit.css';
 import '../brain/css/mono.css';
@@ -9,6 +9,12 @@ import './sequence-player.css';
 
 let activePlayer = null;
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** The shared Orbit (open ring, no labels) as the progress ring around the page's cube. */
+function createSequenceOrbit(host) {
+  const orbit = new Orbit(host, { size: 'L', shape: 'open', gap: 70, label: 'Playback progress', segments: [], animate: false });
+  return { isOrbit: true, orbit, destroy() { orbit.destroy?.(); host.replaceChildren(); } };
+}
 
 /** Indexed playback on a page's single existing cube; the page owns the cube. */
 export function createSequencePlayer(host, options = {}) {
@@ -40,7 +46,7 @@ export function createSequencePlayer(host, options = {}) {
       cube3d?.host?.classList.toggle('has-sequence-ring', style === 'orbit');
       if (style === 'orbit' && cube3d?.host) cube3d.host.append(progressHost);
       else host.prepend(progressHost);
-      timeline = style === 'mono' ? createLinearTimeline(progressHost, { mode: 'sequence' }) : createRingTimeline(progressHost, { mode: 'sequence' });
+      timeline = style === 'mono' ? createLinearTimeline(progressHost, { mode: 'sequence' }) : createSequenceOrbit(progressHost);
     }
     const chunks = Math.min(4, moves.length);
     const segments = Array.from({ length: chunks }, (_, i) => {
@@ -49,7 +55,8 @@ export function createSequencePlayer(host, options = {}) {
         state: index >= to ? 'done' : index >= from ? 'current' : 'future', fill: Math.max(0, Math.min(1, (index - from) / (to - from))),
         tags: [], splitText: '', splitMs: null, avgMs: 0, delta: null };
     });
-    if (timeline) timeline.update({ screen: 'solving', timeline: { planKey: moves.join(' '), visible: active && Boolean(moves.length), ghost: false, segments, groups: [], currentIndex: segments.findIndex(s => s.state === 'current') } }, null);
+    if (timeline?.isOrbit) timeline.orbit.update({ segments: active && moves.length ? segments.map(({ key, state, fill, label }) => ({ key, state, fill, ariaLabel: label })) : [], animate: false }, { animate: false });
+    else if (timeline) timeline.update({ screen: 'solving', timeline: { planKey: moves.join(' '), visible: active && Boolean(moves.length), ghost: false, segments, groups: [], currentIndex: segments.findIndex(s => s.state === 'current') } }, null);
     guide?.update({ moves, index, cube3d: active && !playing ? cube3d : null });
     host.dataset.sequenceIndex = String(index);
     host.dataset.sequencePlaying = String(playing);

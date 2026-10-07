@@ -8,14 +8,13 @@ import { getCase, getCases } from '../algs/seed/cases.js';
 import { identifyOllCase } from './oll-model.js';
 import { resolveDrillPosition } from './position.js';
 import { syncPageTokens } from '../pages/tokens.js';
-import { loadLearning, saveLearning, review, itemKey, chooseDue } from '../learning.js';
+import { loadLearning, saveLearning, review, itemKey, chooseDue, dueItems } from '../learning.js';
 import { QUICK_ROUNDS, createRoundStore } from './rounds.js';
 import { parseDrillStart } from './start-position.js';
 import { fmt } from '../copy/terms.js';
 import { relabelMoves } from '../analysis/normalize.js';
 import { loadSettings } from '../brain/settings.js';
 import { createRoundPanel } from './round-panel.js';
-import { createTrainerOrbit } from '../trainers/orbit-round.js';
 import { mountCaseColorControl } from '../trainers/case-color-control.js';
 
 const LEARNING_KEY = 'cubesight-oll-learning-v1';
@@ -30,44 +29,40 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   let round = rounds.current?.drill === 'oll' ? rounds.current : null;
   let forced = null, cube = null, timerId = null, activePin = null, activeCaseSeed = '';
   let roundPanel = null, renderState = null;
+  const dueCount = () => dueItems(learning).filter(item => String(item.key ?? '').startsWith('oll')).length;
   root.innerHTML = `<section class="cs-page brain oll-page" data-brain-style="${loadSettings(storage).style}">
-    <header class="cs-head"><p class="cs-eyebrow">drills / OLL</p><h1>OLL recognition</h1><p class="cs-sub">Name the last-layer pattern before you think about the turns.</p></header>
+    <header class="cs-head oll-head"><h1>OLL recognition</h1><p class="cs-sub" id="oll-due">spaced · ${dueCount()} due</p></header>
     <div class="trainer-round-host" id="oll-round-host"></div>
     <section class="oll-session" aria-label="OLL recognition round">
-      <div class="oll-layout"><div id="oll-cube" class="oll-cube" aria-label="OLL case"></div>
-        <div class="oll-answer-side"><p class="oll-prompt">Which OLL case is this?</p><p class="oll-hint">Match the top-layer pattern to its standard case number.</p>
-          <div id="oll-answers" class="oll-answers" role="group" aria-label="Choose the OLL case"></div>
-          <p id="oll-feedback" role="status" aria-live="polite">Start a round when you’re ready.</p>
-          <div id="oll-reveal" class="oll-reveal" hidden></div><button id="oll-next" type="button" hidden>next case</button>
-        </div>
-      </div>
-      <div class="oll-actions"><a href="#/drills">all drills</a></div>
+      <div class="oll-stage"><div class="oll-stage__orbit" id="oll-orbit"></div><div id="oll-cube" class="oll-cube oll-stage__cube" aria-label="OLL case"></div></div>
+      <p id="oll-feedback" class="oll-prompt" role="status" aria-live="polite">start a round when you’re ready</p>
+      <div id="oll-answers" class="oll-answers" role="group" aria-label="Choose the OLL case"></div>
+      <p id="oll-caption" class="oll-caption"></p>
+      <div id="oll-reveal" class="oll-reveal" hidden></div><button id="oll-next" type="button" class="oll-next" hidden>next case <kbd>space</kbd></button>
     </section>
+    <div class="oll-keybar-host"><div class="ui-key-bar" aria-label="keyboard shortcuts"><span><kbd class="key" style="--kw:36.2px">1-4</kbd><span>answer</span></span><span><kbd class="key" style="--kw:51px">space</kbd><span>skip</span></span><button type="button" class="oll-end" data-end-round><kbd class="key" style="--kw:36.2px">esc</kbd><span>end round</span></button></div></div>
   </section>`;
   const $ = selector => root.querySelector(selector);
-  const disposeCaseColorControl = mountCaseColorControl($('.cs-head'), storage);
-  const trainerOrbit = createTrainerOrbit($('#oll-cube'));
+  const disposeCaseColorControl = mountCaseColorControl($('.oll-head'), storage);
   const cubeReady = Promise.resolve().then(() => {
     if (disposed) return;
-    cube = new Cube($('#oll-cube'), { mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(storage), caseSeed: 'oll:initial', label: 'OLL case' });
+    cube = new Cube($('#oll-cube'), { mode: 'case', size: 'XL', caseColorSetting: readCaseColorSetting(storage), caseSeed: 'oll:initial', hideOffTop: true, label: 'OLL case' });
     if (renderState) cube.setState(renderState);
-    // The case lives in the last layer: its eight pieces stay vivid, the first two layers dim.
-    cube.highlightStage('oll');
   }).catch(() => { if (!disposed) $('#oll-cube').textContent = '3D cube needs WebGL. The case choices still work.'; });
   roundPanel = createRoundPanel($('#oll-round-host'), {
-    drill: 'oll', storage, store: rounds, orbitHost: $('#oll-cube'),
+    drill: 'oll', storage, store: rounds, orbitHost: $('#oll-orbit'), variant: 'stage',
     onRestart() {
       round = rounds.current; current = null;
       void nextCase();
     },
     onComplete() {
       clearInterval(timerId);
-      $('#oll-next').hidden = true;
+      $('#oll-next').hidden = true; $('#oll-caption').textContent = '';
+      $('#oll-feedback').textContent = 'round complete';
       [...$('#oll-answers').children].forEach(button => { button.disabled = true; });
       round = rounds.current;
     },
   });
-  trainerOrbit.connect(roundPanel.orbit, () => roundPanel.getViewModel());
 
   function buildChoices(target) {
     const pool = start.cases.length ? start.cases.map(id => getCase(id.startsWith('oll/') ? id : `oll/${id}`)).filter(Boolean) : allCases;
@@ -81,7 +76,7 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
   }
   async function nextCase(seedCase = null, customPosition = '') {
     const token = ++generation;
-    $('#oll-feedback').textContent = 'Choosing a due case…';
+    $('#oll-feedback').textContent = 'choosing a due case…';
     const eligible = start.cases.length
       ? start.cases.map(id => getCase(id.startsWith('oll/') ? id : `oll/${id}`)).filter(Boolean)
       : allCases;
@@ -119,22 +114,43 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     choices.forEach(row => {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'oll-answer'; button.dataset.caseId = row.id;
-      button.textContent = `${row.number} · ${row.name}`;
+      button.setAttribute('aria-label', `${row.number} · ${row.name}`);
+      const keyCap = document.createElement('span'); keyCap.className = 'oll-answer__key'; keyCap.textContent = String(answerRoot.children.length + 1); keyCap.setAttribute('aria-hidden', 'true');
+      const text = document.createElement('span'); text.textContent = `OLL ${row.number}`;
+      button.append(keyCap, text);
       button.addEventListener('click', () => answer(row));
       answerRoot.append(button);
     });
     $('#oll-reveal').hidden = true;
     $('#oll-next').hidden = true;
-    $('#oll-feedback').textContent = 'Choose the case you see.';
-    trainerOrbit?.update({ index: round?.answers?.length || 0, state: 'current', value: `${round?.combo || 0} combo` });
+    $('#oll-feedback').textContent = 'which OLL is this?';
+    roundPanel.resetElapsed();
     startedAt = performance.now();
+    paintCaption(0);
     clearInterval(timerId);
     timerId = setInterval(() => {
       if (!active || answered || !round || round.status !== 'active') return;
-      trainerOrbit.tick(`${((performance.now() - startedAt) / 1000).toFixed(2)} s`);
+      const elapsed = performance.now() - startedAt;
+      paintCaption(elapsed); roundPanel.setElapsed(elapsed);
     }, 80);
     if (token !== generation || disposed) clearInterval(timerId);
   }
+  /** "case 13 of 20 · 1.84 s": the case in play and the time on it. */
+  function paintCaption(elapsed) {
+    const live = rounds.current?.drill === 'oll' && rounds.current.status === 'active' ? rounds.current : null;
+    if (!live || !current || answered) { $('#oll-caption').textContent = ''; return; }
+    const position = live.preset.kind === 'cases' ? `case ${live.answers.length + 1} of ${live.preset.cases}` : `case ${live.answers.length + 1}`;
+    $('#oll-caption').textContent = `${position} · ${(elapsed / 1000).toFixed(2)} s`;
+  }
+  function onKey(event) {
+    if (!active || disposed || event.metaKey || event.ctrlKey || event.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName ?? '') || event.target?.isContentEditable) return;
+    if (roundPanel.handleKey(event)) return;
+    if (/^[1-4]$/.test(event.key)) { const button = $('#oll-answers').children[Number(event.key) - 1]; if (button && !button.disabled) { event.preventDefault(); button.click(); } }
+    else if (event.key === ' ' && round?.status === 'active' && !roundPanel.complete && !event.target?.closest?.('button, a')) { event.preventDefault(); if (answered) $('#oll-next').click(); else void nextCase(); }
+    else if (event.key === 'Escape' && round?.status === 'active') { event.preventDefault(); roundPanel.stop(); }
+  }
+  document.addEventListener('keydown', onKey);
+  $('[data-end-round]').addEventListener('click', () => roundPanel.stop());
   const onCaseColorChange = event => { if (cube && renderState) cube.setCaseOrientation(event.detail?.setting || readCaseColorSetting(storage), { seed: activeCaseSeed }); };
   window.addEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange);
   function answer(row) {
@@ -149,14 +165,13 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
     saveLearning(storage, learning, LEARNING_KEY);
     const result = roundPanel.record({ correct, ms, caseId: current.id });
     round = rounds.current;
-    trainerOrbit.tick(`${(ms / 1000).toFixed(2)} s`);
+    $('#oll-caption').textContent = '';
     [...$('#oll-answers').children].forEach(button => {
       button.disabled = true;
       if (button.dataset.caseId === current.id) button.dataset.correct = 'true';
       if (button.dataset.caseId === row.id && !correct) button.dataset.missed = 'true';
     });
     $('#oll-feedback').textContent = correct ? 'Nice. That’s the case.' : `Not quite. This is OLL ${current.number}, ${current.name}.`;
-    trainerOrbit?.update({ index: Math.max(0, (round?.answers?.length || 1) - 1), state: correct ? 'good' : 'bad', value: `${(ms / 1000).toFixed(2)} s`, text: correct ? `OLL ${current.number} · ${current.name}.` : `This is OLL ${current.number} · ${current.name}.` });
     const alg = current.algs?.[0];
     $('#oll-reveal').hidden = false;
     $('#oll-reveal').innerHTML = `<strong>OLL ${current.number} · ${current.name}</strong>${alg ? `<p>${fmt.moves(alg.moves)}</p><small><a href="${alg.source.url}" target="_blank" rel="noopener noreferrer">${alg.credit} (opens a website)</a></small>` : ''}`;
@@ -210,6 +225,6 @@ export function createDrillPage(root, storage = globalThis.localStorage) {
         round: roundPanel.getViewModel(), cube: snapshot, feedback: $('#oll-feedback')?.textContent || '', settings: { caseColor: readCaseColorSetting(storage) } };
     },
     setActive(value) { active = value; roundPanel.setActive(value); if (!value) { clearInterval(timerId); generation++; current = null; } else if (round?.status === 'active' && !current) void nextCase(); },
-    detach() { disposed = true; active = false; clearInterval(timerId); generation++; window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange); disposeCaseColorControl(); roundPanel.destroy(); trainerOrbit?.destroy(); cube?.destroy(); root.replaceChildren(); },
+    detach() { disposed = true; active = false; clearInterval(timerId); generation++; window.removeEventListener(CASE_COLOR_CHANGE_EVENT, onCaseColorChange); disposeCaseColorControl(); document.removeEventListener('keydown', onKey); roundPanel.destroy(); cube?.destroy(); root.replaceChildren(); },
   };
 }

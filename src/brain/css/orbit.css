@@ -63,8 +63,11 @@
 :root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"][data-layout="orbit"]) main { width: 100%; max-width: none; margin: 0; }
 /* The header is drawn over the top of the canvas (the frames' wordmark sits at y=38); it dims to .3 while a solve is under way. */
 :root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"][data-layout="orbit"]) .site-header { position: relative; z-index: 5; transition: opacity .3s; }
-:root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"][data-layout="orbit"].is-chrome-dimmed) .site-header { opacity: .3; }
-:root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"][data-layout="orbit"].is-chrome-dimmed) .site-header:is(:hover, :focus-within) { opacity: 1; }
+/* Not on a phone: A-09's solving frame keeps the wordmark and the cube pill at full strength. */
+@media (min-width: 721px) {
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"][data-layout="orbit"].is-chrome-dimmed) .site-header { opacity: .3; }
+  :root:has(#brain-view:not([hidden]) .brain[data-brain-style="orbit"][data-layout="orbit"].is-chrome-dimmed) .site-header:is(:hover, :focus-within) { opacity: 1; }
+}
 
 /* The wrappers are not boxes: everything below is positioned against .brain itself. */
 .brain[data-brain-style="orbit"][data-layout="orbit"] :is(.b-stage, .brain-body, .brain-stage, .brain-hero, .brain-review, .b-results-host, .b-slot-inspection) { display: contents; }
@@ -404,9 +407,7 @@
   /* Phone stage labels are one 11 px value, coloured by how it went (A-09: 2.08 teal, 1.96 cream, 2.31 amber); names and plan estimates stay off the small ring. */
   .brain[data-brain-style="orbit"][data-layout="orbit"] .orbit__label :is(.orbit__label-name, .orbit__label-delta, .orbit__label-tag) { display: none; }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .orbit__label:is(.is-future, .is-current) { display: none; }
-  .brain[data-brain-style="orbit"][data-layout="orbit"] .orbit__label .orbit__label-value { font-size: calc(11px * var(--orbit-label-scale, 1)); font-weight: 400; transform: translateY(-21px); }
-  .brain[data-brain-style="orbit"][data-layout="orbit"] .orbit__label.delta-good .orbit__label-value { fill: var(--b-accent); }
-  .brain[data-brain-style="orbit"][data-layout="orbit"] .orbit__label.delta-bad .orbit__label-value { fill: var(--b-warn); }
+  .brain[data-brain-style="orbit"][data-layout="orbit"] .orbit__label .orbit__label-value { font-size: calc(11px * var(--orbit-label-scale, 1)); font-weight: 400; }
 
   /* Inspection hint under the digit */
   .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="inspection"] .b-sub:not(:empty) {
@@ -423,7 +424,7 @@
     font: var(--ds-phone-coach-tag-weight) calc(var(--ds-phone-coach-tag-size) * var(--u)) / 1 var(--b-font-mono);
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__coach {
-    left: calc(var(--ox) + var(--ds-phone-coach-body-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-coach-body-y) - var(--base-sans) * var(--ds-phone-coach-body-size)) * var(--u));
+    left: calc(var(--ox) + var(--ds-phone-coach-body-x) * var(--u)); top: calc(var(--oy) + (var(--ds-phone-coach-body-y) - var(--ds-phone-coach-pitch) / 2 - .383 * var(--ds-phone-coach-body-size)) * var(--u));   /* baseline of the first line: half the 24 px line box plus .383 em (Manrope) */
     width: calc(var(--ds-phone-w) * var(--u) - 2 * var(--ds-phone-coach-body-x) * var(--u));
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__coach .ui-coach-line__text { font: var(--ds-phone-coach-body-weight) calc(var(--ds-phone-coach-body-size) * var(--u)) / calc(24 * var(--u)) var(--b-font-sans); }
@@ -436,10 +437,10 @@
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results[data-mode="live"] .f1-results__actions .btn--primary::after { content: none; }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__actions .btn--text:nth-child(2) {
-    left: calc((var(--ds-phone-review-x) - var(--ds-phone-next-x)) * var(--u)); top: calc((var(--ds-phone-review-y) - var(--base-sans) * var(--ds-next-review-size) - var(--ds-phone-next-y)) * var(--u));
+    left: calc((var(--ds-phone-review-x) - var(--ds-phone-next-x)) * var(--u)); top: calc((var(--ds-phone-review-y) - var(--base-sans) * var(--ds-next-review-size) - var(--ds-phone-next-y)) * var(--u) - (40px - var(--ds-next-review-size) * 1px) / 2);   /* the link is a 40 px target, its line centred in it */
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__actions .btn--text:nth-child(3), .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__more {
-    left: calc((var(--ds-phone-more-x) - var(--ds-phone-next-x)) * var(--u)); top: calc((var(--ds-phone-more-y) - var(--base-sans) * var(--ds-next-more-size) - var(--ds-phone-next-y)) * var(--u));
+    left: calc((var(--ds-phone-more-x) - var(--ds-phone-next-x)) * var(--u)); top: calc((var(--ds-phone-more-y) - var(--base-sans) * var(--ds-next-more-size) - var(--ds-phone-next-y)) * var(--u) - (40px - var(--ds-next-more-size) * 1px) / 2);
   }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .f1-results__history-nav { top: 100px; }
 }

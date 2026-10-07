@@ -8,7 +8,7 @@ test('the OLL drill opens the selected canonical case, scores it, and reveals a 
   await page.getByRole('button', { name: /1 · Runway, Blank/ }).click();
   await expect(page.locator('#oll-reveal')).toContainText('OLL 1 · Runway, Blank');
   await expect(page.locator('#oll-reveal a')).toHaveAttribute('href', /speedsolving\.com/);
-  await expect(page.locator('#oll-view .quick-round-metrics')).toContainText('combo 1');
+  await expect(page.locator('#oll-view .quick-round-metrics')).toContainText(/combo\s*×1/);
   const round = await page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-shell-v1')).round);
   expect(round.combo).toBe(1);
   expect(round.answers).toHaveLength(1);

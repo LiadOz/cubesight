@@ -55,14 +55,14 @@
 .recording-page__events { display:grid; gap:4px; max-height:310px; overflow:auto; margin:24px 0 0; padding:0; list-style:none; }
 .recording-page__events li { display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px dotted color-mix(in srgb,currentColor 20%,transparent); color:var(--orbit-muted,#aaa99f); font:400 .74rem/1.4 'DM Mono',monospace; }
 .recording-page__events strong { color:var(--orbit-ink,#eeeae1); font-weight:500; }
-.ui-cube-menu__drawer { position:fixed; inset:0 0 0 auto; width:min(420px,92vw); max-width:none; height:100dvh; max-height:none; margin:0; padding:28px; border:0; border-left:1px solid var(--orbit-track,#494b47); background:var(--orbit-bg,#141512); color:var(--orbit-ink,#eeeae1); }
-.ui-cube-menu__drawer::backdrop { background:#0008; }
-.ui-cube-menu__head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:26px 0 20px; }
-.ui-cube-menu__head h2 { margin:0; font:700 21px 'Manrope Variable','Manrope',sans-serif; }
-.ui-cube-menu__close { min-height:40px; padding:0 14px; border:1px solid var(--orbit-track,#494b47); border-radius:999px; background:transparent; color:inherit; cursor:pointer; }
-.ui-cube-menu__items { display:grid; gap:4px; }
-.ui-cube-menu__items button { min-height:44px; padding:8px 10px; border:0; border-radius:8px; background:transparent; color:var(--orbit-ink,#eeeae1); text-align:left; font:14px 'Manrope Variable','Manrope',sans-serif; cursor:pointer; }
-.ui-cube-menu__items button:hover:not(:disabled) { background:var(--orbit-key,#252722); }
+.ui-cube-menu__drawer, .ui-nav-drawer { position:fixed; inset:0 0 0 auto; width:min(420px,92vw); max-width:none; height:100dvh; max-height:none; margin:0; padding:28px; border:0; border-left:1px solid var(--orbit-track,#494b47); background:var(--orbit-bg,#141512); color:var(--orbit-ink,#eeeae1); }
+.ui-cube-menu__drawer::backdrop, .ui-nav-drawer::backdrop { background:#0008; }
+.ui-cube-menu__head, .ui-nav-drawer__head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:26px 0 20px; }
+.ui-cube-menu__head h2, .ui-nav-drawer__head h2 { margin:0; font:700 21px 'Manrope Variable','Manrope',sans-serif; }
+.ui-cube-menu__close, .ui-nav-drawer__close { min-height:40px; padding:0 14px; border:1px solid var(--orbit-track,#494b47); border-radius:999px; background:transparent; color:inherit; cursor:pointer; }
+.ui-cube-menu__items, .ui-nav-drawer__items { display:grid; gap:4px; }
+.ui-cube-menu__items button, .ui-nav-drawer__items button { min-height:44px; padding:8px 10px; border:0; border-radius:8px; background:transparent; color:var(--orbit-ink,#eeeae1); text-align:left; font:14px 'Manrope Variable','Manrope',sans-serif; cursor:pointer; }
+.ui-cube-menu__items button:hover:not(:disabled), .ui-nav-drawer__items button:hover:not(:disabled) { background:var(--orbit-key,#252722); }
 .ui-cube-menu__items button:disabled { opacity:.45; cursor:default; }
 .ui-dev-drawer { position:fixed; inset:0 0 0 auto; width:min(380px,92vw); max-width:none; height:100dvh; max-height:none; margin:0; padding:28px; border:0; border-left:1px solid var(--orbit-track,#494b47); background:var(--orbit-bg,#141512); color:var(--orbit-ink,#eeeae1); }
 .ui-dev-drawer::backdrop { background:#0008; }
@@ -75,7 +75,7 @@
 .orbit-mini-row__value { display:block; margin-top:2px; color:var(--orbit-muted,#aaa99f); font:12px 'DM Mono',monospace; }
 .ui-action:focus-visible,.ui-chip:focus-visible,.ui-header a:focus-visible { outline:2px solid var(--orbit-accent,#52e0ca); outline-offset:3px; }
 @media (prefers-reduced-motion:reduce) { .ui-coach-line__connector { transition:none; } }
-@media(max-width:520px) { .ui-cube-menu__drawer { width:100vw; padding:20px; border-left:0; } }
+@media(max-width:520px) { .ui-cube-menu__drawer, .ui-nav-drawer { width:100vw; padding:20px; border-left:0; } }
 @media(max-width:700px) { .site-header.ui-header { min-width:0; min-height:50px; padding:8px 12px; gap:8px 10px; flex-wrap:wrap; } .site-header.ui-header .header-button, .site-header.ui-header .ui-cube-chip { min-width:44px; min-height:44px; } .site-header.ui-header nav[data-scroll-x='true'] { order:3; flex:0 0 100%; width:100%; gap:9px; overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x; } .site-header.ui-header nav a { min-width:40px; min-height:40px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; white-space:nowrap; } .site-header.ui-header .theme-label { display:none; } .ui-header__brand { flex:1 1 auto; } .ui-header__actions { flex:none; gap:6px; } .ui-cube-chip { gap:5px; font-size:10px; } .ui-cube-chip__name { max-width:90px; overflow:hidden; text-overflow:ellipsis; } .ui-header-status { display:none; } .recording-page { min-height:calc(100dvh - 110px); margin:28px auto; } }
 
 /* The page header as the approved frames draw it (A-01..A-12, desktop): wordmark at x=48, nav from x=198 with 28 px between items, the active item
@@ -105,18 +105,26 @@
   .site-header.ui-header .ui-cube-chip__battery { margin-left:20px; font:400 12px/28px 'DM Mono',monospace; color:var(--orbit-muted); }
 }
 
-/* Phone header on the solve screen (A-09): wordmark at x=24, status dot and cube name ending at x=366, the whole 390 px device row 90 px tall.
-   There is no nav in the frames; it appears (as its own row) only while no solve is under way, so every page stays reachable. */
+/* Phone header (A-09 / A-12), the same on every page: ONE row, 72 px. The wordmark at x=24 and the cube pill ending at x=366, both centred on y=44.
+   No nav row in any state: going across is the nav drawer (tap the wordmark; ui/shared/index.js moves the nav, theme and help into it). */
 @media (max-width:720px) {
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header { box-sizing:border-box; min-height:90px; padding:0 24px; gap:0 10px; align-content:flex-start; background:transparent; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-header__brand { height:90px; min-height:0; font:800 17px/1 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.3px; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-header__actions { height:90px; position:static; gap:0; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .header-button { position:absolute; top:58px; width:28px; min-width:0; height:28px; min-height:0; padding:0; opacity:.55; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .theme-button { right:56px; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .site-header.ui-header .help-button { right:24px; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip { min-width:0; min-height:0; height:28px; gap:8px; margin-right:-8px; font-size:0; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__dot { width:7px; height:7px; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__name { max-width:none; font:400 11px/1 'DM Mono',monospace; color:var(--orbit-muted); overflow:visible; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']) .ui-cube-chip__battery { display:none; }
-  :root:has(#brain-view:not([hidden]) .brain[data-brain-style='orbit']:is([data-screen='scramble'], [data-screen='inspection'], [data-screen='ready'], [data-screen='solving'], [data-screen='results'])) .site-header.ui-header nav { display:none; }
+  .site-header.ui-header { box-sizing:border-box; height:72px; min-height:72px; padding:24px 24px 0; gap:0; flex-wrap:nowrap; align-items:flex-start; background:transparent; }
+  .site-header.ui-header .ui-header__brand { flex:0 0 auto; height:40px; min-height:0; font:800 17px/40px 'Manrope Variable','Manrope',sans-serif; letter-spacing:-.3px; color:var(--orbit-ink,#eeeae1); }
+  .site-header.ui-header .ui-header__actions { flex:none; height:40px; margin-left:auto; position:static; gap:0; }
+  .site-header.ui-header .ui-cube-chip { height:40px; min-width:0; min-height:0; margin:0; gap:10px; font-size:0; }
+  .site-header.ui-header .ui-cube-chip__dot { width:7px; height:7px; }
+  .site-header.ui-header .ui-cube-chip__name { max-width:none; overflow:visible; font:400 11px/40px 'DM Mono',monospace; color:var(--orbit-muted,#aaa99f); }
+  .site-header.ui-header .ui-cube-chip__battery { display:none; }
+  .site-header.ui-header .ui-header-status { display:none; }
 }
+/* The nav drawer: the cube menu's drawer, listing the pages and the two settings the one-row header has no room for. */
+.ui-nav-drawer .main-nav { display:grid; gap:4px; margin:0; overflow:visible; }
+.ui-nav-drawer .main-nav .nav-link { display:flex; align-items:center; min-height:48px; padding:0 10px; border-radius:8px; font:600 17px 'Manrope Variable','Manrope',sans-serif; text-align:left; color:var(--orbit-muted,#aaa99f); box-shadow:none; }
+.ui-nav-drawer .main-nav .nav-link:is(.active, [aria-current='page']) { color:var(--orbit-ink,#eeeae1); border-radius:8px; box-shadow:inset 3px 0 0 var(--orbit-accent,#52e0ca); background:var(--orbit-key,#252722); }
+.ui-nav-drawer .header-button { display:flex; align-items:center; justify-content:flex-start; gap:10px; width:100%; min-height:48px; padding:0 10px; border:0; border-radius:8px; background:transparent; color:var(--orbit-muted,#aaa99f); font:600 15px 'Manrope Variable','Manrope',sans-serif; }
+.ui-nav-drawer .header-button svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.ui-nav-drawer .theme-moon, :root[data-theme='dark'] .ui-nav-drawer .theme-sun { display:none; }
+:root[data-theme='dark'] .ui-nav-drawer .theme-moon { display:block; }
+.ui-nav-drawer .theme-label { display:inline; }
+.ui-nav-drawer .help-button { font-size:0; gap:0; }
+.ui-nav-drawer .help-button::after { content:'help'; font:600 15px 'Manrope Variable','Manrope',sans-serif; }

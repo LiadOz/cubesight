@@ -119,7 +119,8 @@ export function createOrbitResults(host, ctx = {}) {
     currentRecord = r.record;
     historyNav.replaceChildren();
     if (mode === 'past' && pastNavigation) {
-      const back = el('a', 'f1-results__crumb', `‹ ${pastNavigation.back?.label ?? 'history'}`);
+      const back = el('a', 'f1-results__crumb');
+      back.append(el('span', 'crumb-chevron', '‹'), ` ${pastNavigation.back?.label ?? 'history'}`);   // the chevron is drawn on a phone (A-12), the text stays the accessible name
       back.href = pastNavigation.back?.href ?? '#/history';
       const neighbors = el('span', 'f1-results__neighbors');
       for (const direction of ['previous', 'next']) {
@@ -130,8 +131,18 @@ export function createOrbitResults(host, ctx = {}) {
       historyNav.append(back, neighbors);
     }
     setText(root.querySelector('.f1-results__number'), r.time.resultText ?? r.time.text);
-    const compare = [r.vsAo12?.text && `${r.vsAo12.text} vs ao12`, r.session?.ao5 && `ao5 ${r.session.ao5}`, r.session?.pb && `PB ${r.session.pb}`].filter(Boolean).join(' · ');
-    setText(root.querySelector('.f1-results__compare'), compare);
+    // "-0.96 vs ao12 · ao5 14.62 · pb 12.41"; the phone frames (A-09/A-12) drop the ao5 part
+    const compareEl = root.querySelector('.f1-results__compare');
+    const parts = [
+      r.vsAo12?.text && { text: `${r.vsAo12.text} vs ao12` },
+      r.session?.ao5 && { text: `ao5 ${r.session.ao5}`, cls: 'f1-results__compare-ao5' },
+      r.session?.pb && { text: `pb ${r.session.pb}` },
+    ].filter(Boolean);
+    const compareKey = JSON.stringify(parts);
+    if (compareEl.dataset.key !== compareKey) {
+      compareEl.dataset.key = compareKey;
+      compareEl.replaceChildren(...parts.map((part, i) => el('span', part.cls ?? '', i ? ` · ${part.text}` : part.text)));
+    }
     root.querySelector('.f1-results__time').dataset.tone = r.time.tone;
     coach.update({ text: r.review.coach.text, marker: r.review.selectedId, orbit: ctx.resultsOrbit });
     review.update(r.review);

@@ -21,7 +21,7 @@ const deltaText = value => {
 };
 const round2 = value => Math.round(value * 100) / 100;
 /** The stage label block (A-05): name 12 / value 16 / delta 12 / tag 12 (inset 16), baselines 0, 21, 38, 55 apart, scaled with the Orbit. */
-function stageBlock(segment, group, scale = 1) {
+function stageBlock(segment, group, scale = 1, compact = false) {
   const merged = group && group.keys.length > 1;
   const name = merged ? group.name : segment.short ?? segment.label;
   const value = merged ? group.value : segment.value;
@@ -29,6 +29,11 @@ function stageBlock(segment, group, scale = 1) {
   const tone = segment.deltaTone || (String(delta).startsWith('\u2212') || String(delta).startsWith('-') ? 'good' : 'neutral');
   const rows = []; let y = 10 * scale;
   const push = (cls, text, step, inset = 0) => { if (text == null || text === '') return; if (rows.length) y += step * scale; rows.push({ cls, text: String(text), y, inset }); };
+  if (compact) {
+    // Phone (A-09 / A-12): a stage label is one 11 px value, coloured by how the split went. Name, delta and tag stay off the small ring.
+    push(`orbit__label-value tone-${tone}${merged && group.kind === 'skip' ? ' is-skip' : ''}`, value, 0);
+    return { rows, height: y + 8 * scale, width: Math.max(0, ...rows.map(row => row.text.length * 11 * 0.7 * scale)) };
+  }
   push('orbit__label-name', name, 0);
   push(`orbit__label-value${merged && group.kind === 'skip' ? ' is-skip' : ''}`, value, 21);
   push(`orbit__label-delta is-${tone}`, delta, value == null || value === '' ? 21 : 17);
@@ -213,6 +218,7 @@ export class Orbit {
     const k = view / renderWidth;                       // viewBox units per rendered px
     const fontScale = Math.max(1, Math.min(2.2, k));
     const markerR = 11 * fontScale;
+    const compactLabels = !mini && options.labelStyle === 'around' && window.innerWidth <= 640;   // the phone frames' one-value labels
     const fanned = options.markerFan !== false && !mini;
     // Every marker is its own hit target: 40 px on a phone, 22 px (the badge itself) elsewhere. The fan spaces markers by that diameter.
     const hitPx = window.innerWidth <= 640 ? 40 : 22;
@@ -233,12 +239,14 @@ export class Orbit {
     const groups = !mini && !sideLabels && !moveRing ? groupEndLabels(segments.map((segment, index) => ({ key: String(segment.key ?? index), state: segment.state, merged: segment.merged })), segment => { const original = segments.find((candidate, at) => String(candidate.key ?? at) === segment.key); return original?.short ?? original?.label ?? segment.key; }) : [];
     const groupOf = new Map(); groups.forEach(group => group.keys.forEach(key => groupOf.set(key, group)));
     const angleOf = key => layoutByKey.get(key)?.mid ?? 0;
+    const hiddenLabel = segment => compactLabels && (segment.state === 'future' || segment.state === 'current');   // a phone labels only what is behind you (A-09 / A-12b)
     const labelItems = mini || sideLabels ? [] : segments.map((segment, index) => {
+      if (hiddenLabel(segment)) return null;
       const key = String(segment.key ?? index);
       const group = groupOf.get(key);
       const spanAngle = group && group.keys.length > 1 ? group.keys.reduce((sum, member) => sum + angleOf(member), 0) / group.keys.length : angleOf(key);
-      return { key, angle: spanAngle, kind: moveRing ? 'move' : 'stage', current: segment.state === 'current', height: stageBlock(segment, group, fontScale).height, width: stageBlock(segment, group, fontScale).width };
-    });
+      return { key, angle: spanAngle, kind: moveRing ? 'move' : 'stage', current: segment.state === 'current', height: stageBlock(segment, group, fontScale, compactLabels).height, width: stageBlock(segment, group, fontScale, compactLabels).width };
+    }).filter(Boolean);
     const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: window.innerWidth <= 640 });
     const labelPositions = new Map(placedLabels.labels.map(label => [label.key, label]));
     this.labelModel = placedLabels;
@@ -266,7 +274,7 @@ export class Orbit {
       root.append(group); parts.push({ segment, arc });
       if (!mini && (segment.label || segment.value != null || segment.delta != null)) {
         const placement = labelPositions.get(key);
-        if (!sideLabels && placement?.hidden) return;
+        if (!sideLabels && (placement?.hidden || hiddenLabel(segment))) return;
         // Merged groups draw one label, on their first member.
         const merge = groupOf.get(key);
         if (!sideLabels && merge && merge.keys.length > 1 && merge.keys[0] !== key) return;
@@ -275,7 +283,7 @@ export class Orbit {
           label.textContent = segment.label; root.append(label);
           return;
         }
-        const block = stageBlock(segment, merge, fontScale);
+        const block = stageBlock(segment, merge, fontScale, compactLabels);
         const label = svg('g', { class: `orbit__label${sideLabels ? ' is-side' : ''}`, 'data-label-for': key,
           transform: sideLabels ? `translate(${cx + radius + 30} ${38 + index * 25})` : `translate(${placement?.x ?? cx} ${(placement?.y ?? cy) - block.height / 2})`,
           'text-anchor': sideLabels ? 'start' : placement?.anchor || 'middle' });

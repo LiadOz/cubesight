@@ -40,7 +40,13 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const menuItems = document.createElement('div'); menuItems.className = 'ui-cube-menu__items'; menuItems.setAttribute('role', 'menu');
   menu.addEventListener('click', event => { if (event.target === menu) menu.close(); });
   const actionsForMenu = [['connect', 'connect'], ['sync', 'sync solved cube'], ['recenter', 'recenter'], ['disconnect', 'disconnect'], ['forget', 'forget saved cube'], ['save-recording', 'save recording'], ['report-problem', 'report a problem']];
-  actionsForMenu.forEach(([id, label]) => { const button = document.createElement('button'); button.type = 'button'; button.dataset.cubeAction = id; button.textContent = label; button.setAttribute('role', 'menuitem'); button.addEventListener('click', () => { menu.close(); actions[id]?.(); }); menuItems.append(button); });
+  // Run the action BEFORE closing the drawer. `connect` reaches
+  // navigator.bluetooth.requestDevice(), which needs the click's transient user
+  // activation; closing a modal <dialog> first spends it, and mobile browsers
+  // enforce that far more strictly than desktop, so connecting from a phone
+  // failed silently. The session and adapter both go out of their way to stay
+  // synchronous for this reason (smart-cube-session.js, smart-cube-bluetooth.js).
+  actionsForMenu.forEach(([id, label]) => { const button = document.createElement('button'); button.type = 'button'; button.dataset.cubeAction = id; button.textContent = label; button.setAttribute('role', 'menuitem'); button.addEventListener('click', () => { try { actions[id]?.(); } finally { menu.close(); } }); menuItems.append(button); });
   menu.append(menuHead, menuItems);
   summary.addEventListener('click', () => { if (!menu.open) menu.showModal(); });
   cubeMenu.append(summary); controls.append(cubeMenu); document.body.append(menu);
@@ -59,6 +65,27 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
     header.addEventListener('cube-header-destroy', () => document.removeEventListener('keydown', onDevKey), { once: true });
   }
   header.append(brand, nav, controls); if (compass) header.querySelector('.ui-header__brand').after(compass);
+  // Phone (A-09 / A-12): the header is ONE row, the wordmark and the cube pill. Going across is the nav drawer, opened by the
+  // wordmark; it reuses the cube menu's drawer. The real nav (and the theme / help buttons) move into it, so there is one of each.
+  const navDrawer = document.createElement('dialog'); navDrawer.className = 'ui-nav-drawer'; navDrawer.setAttribute('aria-label', 'Navigation');
+  const navHead = document.createElement('div'); navHead.className = 'ui-nav-drawer__head';
+  const navTitle = document.createElement('h2'); navTitle.textContent = title.toLowerCase();
+  const navClose = document.createElement('button'); navClose.type = 'button'; navClose.className = 'ui-nav-drawer__close'; navClose.textContent = 'close'; navClose.addEventListener('click', () => navDrawer.close());
+  navHead.append(navTitle, navClose);
+  const navItems = document.createElement('div'); navItems.className = 'ui-nav-drawer__items';
+  navDrawer.append(navHead, navItems);
+  navDrawer.addEventListener('click', event => { if (event.target === navDrawer || event.target.closest('a, button:not(.ui-nav-drawer__close)')) navDrawer.close(); });
+  document.body.append(navDrawer);
+  const phoneQuery = window.matchMedia('(max-width: 720px)');
+  const placeNavigation = () => {
+    if (phoneQuery.matches) navItems.append(nav, ...(themeToggle ? [themeButton] : []), helpButton);
+    else { controls.before(nav); if (themeToggle) controls.prepend(themeButton); controls.append(helpButton); if (navDrawer.open) navDrawer.close(); }
+    brand.setAttribute('aria-label', phoneQuery.matches ? `${title} menu` : `${title} home`);
+    if (phoneQuery.matches) brand.setAttribute('aria-haspopup', 'dialog'); else brand.removeAttribute('aria-haspopup');
+  };
+  placeNavigation(); phoneQuery.addEventListener('change', placeNavigation);
+  brand.addEventListener('click', event => { if (!phoneQuery.matches) return; event.preventDefault(); if (!navDrawer.open) navDrawer.showModal(); });
+  header.addEventListener('cube-header-destroy', () => phoneQuery.removeEventListener('change', placeNavigation), { once: true });
   host.append(header);
   if (host.id === 'site-header' || host.matches('[data-site-header]')) {
     const syncHeaderHeight = () => document.documentElement.style.setProperty('--site-header-height', `${Math.ceil(header.getBoundingClientRect().height)}px`);
@@ -81,7 +108,7 @@ export function createHeader(host, { title = APP_NAME, sections = ['solve', 'dri
   const unsubscribe = session?.subscribe?.(applySnapshot);
   const themeObserver = new MutationObserver(() => applySnapshot(session?.getSnapshot?.() || {}));
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  header.destroy = () => { header.dispatchEvent(new Event('cube-header-destroy')); unsubscribe?.(); themeObserver.disconnect(); drawer?.remove(); menu.remove(); header.remove(); };
+  header.destroy = () => { header.dispatchEvent(new Event('cube-header-destroy')); unsubscribe?.(); themeObserver.disconnect(); drawer?.remove(); menu.remove(); navDrawer.remove(); header.remove(); };
   header.openDeveloperDrawer = openDrawer;
   header.getViewModel = ({ route = '/', recording = null } = {}) => buildSharedViewModel({
     route, title, activeRoute: nav.querySelector('[aria-current="page"]')?.dataset.nav,
