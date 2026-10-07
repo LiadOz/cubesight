@@ -187,7 +187,9 @@ export class Orbit {
     // ring at r=300 on a 1440x900 canvas (r=150 on the 390 px phone), so the SVG is VIEW wide at canvas scale 1.
     const canvasSized = !mini && (options.canvasScale ?? (options.fitHost === true && options.labelStyle === 'around')) === true;
     const canvasUnit = window.innerWidth <= 640 ? 0.5 : Math.min(1.25, window.innerWidth / CANVAS.desktop.width, window.innerHeight / CANVAS.desktop.height);
-    const fittedWidth = canvasSized ? Math.round(VIEW * canvasUnit) : Math.min(options.fitHost && !mini ? Infinity : width, hostBox.width || width, hostBox.height || width);
+    // options.ringRadius: the ring radius (px at canvas scale 1) when a frame's ring is not the solve screen's r=300 (the history list, A-07: r=190).
+    const ringScale = canvasSized && Number(options.ringRadius) > 0 ? Number(options.ringRadius) / RING_RADIUS : 1;
+    const fittedWidth = canvasSized ? Math.round(VIEW * canvasUnit * ringScale) : Math.min(options.fitHost && !mini ? Infinity : width, hostBox.width || width, hostBox.height || width);
     const renderWidth = fittedWidth;
     // Important, so a screen stylesheet that stretches the element to its slot cannot undo the canvas size.
     // min(.., 100vw): a viewport that shrinks before the next redraw (rotation, resize) cannot produce a horizontal scroll.

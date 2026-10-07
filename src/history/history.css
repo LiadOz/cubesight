@@ -147,7 +147,7 @@
 /* ---- the key row and the bottom-right line (every desktop frame has them) -------------------------- */
 .history-keybar-host { display: flex; align-items: center; height: 20px; justify-content: space-between; padding: 0 48px; }
 .history-keybar-host .ui-key-bar { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 0 26px; font: 500 12.5px var(--b-font-sans); color: var(--b-muted); }
-.history-keybar-host .ui-key-bar > span { display: inline-flex; align-items: center; gap: 8px; min-height: 0; }
+.history-keybar-host .ui-key-bar span { display: inline-flex; align-items: center; gap: 8px; min-height: 0; }
 .history-keybar-host .key:not(.key--pair) { display: inline-grid; place-items: center; min-width: 21.4px; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--b-key-bg, #2b2925); color: var(--b-key-ink, #d9d2c3); font: 500 11px/1 var(--b-font-mono); box-shadow: none; }
 .history-keybar__meta { font: 12px var(--b-font-mono); color: var(--b-muted); }
 .history-keybar__meta:empty { display: none; }
@@ -219,7 +219,7 @@
   .history-replay-controls > * { pointer-events: auto; }
   .history-page[data-view="replay"] .history-counter { display: none; }
   .history-page[data-view="replay"] .history-stage__subline { left: 48px; transform: none; top: calc(150 * var(--u) - var(--hdr) - 12px * .83); text-align: left; color: var(--faint); }
-  .history-page[data-view="replay"] .history-stage__number small { position: absolute; left: calc(100% + 24px); bottom: .12em; margin: 0; }
+  .history-page[data-view="replay"] .history-stage__number small { position: absolute; left: calc(100% + 24px); bottom: .12em; margin: 0; white-space: nowrap; }   /* the total is one line, "/ 14.07" (A-11) */
   .history-page[data-view="replay"] .history-replay-info { position: absolute; left: 48px; top: calc(176 * var(--u) - var(--hdr) - 28px * .83); width: 260px; }
   .history-page[data-view="replay"] .history-replay-info__help { margin-top: 12px; }
   .history-page[data-view="replay"] .history-transport { position: absolute; left: calc(50vw - 146px); top: calc(836 * var(--u) - var(--hdr) - 24px); gap: 30px; }

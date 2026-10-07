@@ -141,6 +141,8 @@ export function initHistory(host) {
     const visible = filterHistory(storageRecords(), filters).sort((a, b) => b.at - a.at);
     return visible.find(record => record.at === selectedAt) || visible[0] || null;
   }
+  /** The history list's ring is the A-07 frame's r=190, not the solve screens' r=300 (0 keeps the Orbit's own radius). */
+  const listRingRadius = () => route.kind === 'list' ? 190 : 0;
   function updateStage(record, { move = null, animate = false, cubePaint = true } = {}) {
     if (!record || !orbit || !cube) return;
     const cursor = move == null ? (record.solveMoves?.length || 0) : move;
@@ -148,7 +150,7 @@ export function initHistory(host) {
     const segments = stageData(record, cursor);
     const markers = markerData(record);
     orbit.update({
-      segments, markers, size: 'XL', fitHost: true, shape: 'open', gap: 70, direction: 'clockwise', labelStyle: 'around',
+      segments, markers, size: 'XL', fitHost: true, shape: 'open', gap: 70, direction: 'clockwise', labelStyle: 'around', ringRadius: listRingRadius(),
       centerClearance: 150, label: 'solve orbit', duration: 360,
       onSegment: segment => {
         if (suppressOrbitClick) { suppressOrbitClick = false; return; }
@@ -497,7 +499,7 @@ export function initHistory(host) {
     else {
       root.querySelector('.history-stage__number').textContent = '—';
       root.querySelector('.history-stage__subline').textContent = 'select a solve';
-      orbit?.update({ segments: [], markers: [], size: 'XL', fitHost: true, shape: 'open', gap: 70, centerClearance: 150, label: 'solve orbit' }, { animate: false });
+      orbit?.update({ segments: [], markers: [], size: 'XL', fitHost: true, shape: 'open', gap: 70, labelStyle: 'around', ringRadius: listRingRadius(), centerClearance: 150, label: 'solve orbit' }, { animate: false });
       cube?.setState(createSolvedState());
       cube?.clearHighlight();
     }
@@ -763,6 +765,8 @@ export function initHistory(host) {
   }
   function onKeyDown(event) {
     if (!active || event.metaKey || event.ctrlKey || event.altKey) return;
+    // A modal drawer (developer drawer, cube menu) owns the keyboard: its Escape closes it and must not also leave the page.
+    if (document.querySelector('dialog[open]:modal')) return;
     const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
     if (event.key === 'Escape' && (route.kind === 'review' || inlineReviewDetail)) {
       event.preventDefault(); closeReviewDetail(); return;
