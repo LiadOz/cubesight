@@ -94,3 +94,22 @@ test('header nav keeps the frame positions, and with doubled text no link is cli
   expect(scrolled.room).toBeGreaterThan(0);
   expect(scrolled.left).toBeGreaterThan(0);
 });
+
+test('alg case on a phone: no Orbit part label sits on the Cube', async ({ page }) => {
+  await seeded(page, '/algs/oll/1');
+  await page.locator('[data-alg-orbit] .orbit__segment').first().waitFor();
+  await page.locator('[data-alg-cube] canvas').waitFor();
+  for (const [width, height] of [[320, 568], [360, 740], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await expect.poll(() => page.evaluate(async () => {
+      const { polygonIntersectsRect } = await import('/src/ui/cube/bounds.js');
+      const canvas = document.querySelector('[data-alg-cube] canvas');
+      const bounds = canvas.getRenderedCubeBounds();
+      const hits = [...document.querySelectorAll('[data-alg-orbit] .orbit__label, [data-alg-orbit] .orbit__move-label')].filter(label => {
+        const box = label.getBoundingClientRect();
+        return box.width > 0 && box.height > 0 && polygonIntersectsRect(bounds.points, box);
+      });
+      return hits.length;
+    }), { message: `${width}x${height}` }).toBe(0);
+  }
+});
