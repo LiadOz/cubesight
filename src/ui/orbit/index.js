@@ -186,8 +186,11 @@ export class Orbit {
     // fitHost Orbits are sized from the canvas, not squeezed into whatever box the layout left: the frames put the
     // ring at r=300 on a 1440x900 canvas (r=150 on the 390 px phone), so the SVG is VIEW wide at canvas scale 1.
     const canvasSized = !mini && (options.canvasScale ?? (options.fitHost === true && options.labelStyle === 'around')) === true;
-    const canvasUnit = window.innerWidth <= 640 ? 0.5 : Math.min(1.25, window.innerWidth / CANVAS.desktop.width, window.innerHeight / CANVAS.desktop.height);
-    const fittedWidth = canvasSized ? Math.round(VIEW * canvasUnit) : Math.min(options.fitHost && !mini ? Infinity : width, hostBox.width || width, hostBox.height || width);
+    const canvasUnit = window.innerWidth <= 640 ? 0.5 * Math.min(1, window.innerWidth / CANVAS.phoneSheet.device.width, window.innerHeight / CANVAS.phoneSheet.device.height) :   // the phone frame is 390 x 844; a smaller window scales it (css/orbit.css --u)
+      Math.min(1.25, window.innerWidth / CANVAS.desktop.width, window.innerHeight / CANVAS.desktop.height);
+    // On a phone the stage (a smaller host on the review and history lists) is the limit: an Orbit wider than its host pokes out past the screen edge.
+    const phoneHostCap = window.innerWidth <= 640 ? Math.min(hostBox.width || Infinity, hostBox.height || Infinity) : Infinity;
+    const fittedWidth = canvasSized ? Math.round(Math.min(VIEW * canvasUnit, phoneHostCap)) : Math.min(options.fitHost && !mini ? Infinity : width, hostBox.width || width, hostBox.height || width);
     const renderWidth = fittedWidth;
     // Important, so a screen stylesheet that stretches the element to its slot cannot undo the canvas size.
     // min(.., 100vw): a viewport that shrinks before the next redraw (rotation, resize) cannot produce a horizontal scroll.
@@ -220,8 +223,8 @@ export class Orbit {
     const markerR = 11 * fontScale;
     const compactLabels = !mini && options.labelStyle === 'around' && window.innerWidth <= 640;   // the phone frames' one-value labels
     const fanned = options.markerFan !== false && !mini;
-    // Every marker is its own hit target: 40 px on a phone, 22 px (the badge itself) elsewhere. The fan spaces markers by that diameter.
-    const hitPx = window.innerWidth <= 640 ? 40 : 22;
+    // Every marker is its own hit target: 40+ px on a phone, 22 px (the badge itself) elsewhere. The fan spaces markers by that diameter.
+    const hitPx = window.innerWidth <= 640 ? 41 : 22;   // 41, not 40: a sub-pixel round-off must never leave the target a hair under 40 px
     const hitRadius = fanned ? hitPx / 2 * k : Math.max(20.2, 20.2 * k);
     const root = svg('svg', { class: `orbit__svg${mini ? ' orbit__svg--mini' : ''}`, viewBox: `0 0 ${view} ${view}`, role: 'list', 'aria-label': options.label || 'orbit segments', preserveAspectRatio: 'xMidYMid meet', focusable: 'false' });
     // Fit the SVG and Orbit frame to constrained hosts so preserveAspectRatio
@@ -247,7 +250,9 @@ export class Orbit {
       const spanAngle = group && group.keys.length > 1 ? group.keys.reduce((sum, member) => sum + angleOf(member), 0) / group.keys.length : angleOf(key);
       return { key, angle: spanAngle, kind: moveRing ? 'move' : 'stage', current: segment.state === 'current', height: stageBlock(segment, group, fontScale, compactLabels).height, width: stageBlock(segment, group, fontScale, compactLabels).width };
     }).filter(Boolean);
-    const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: window.innerWidth <= 640 });
+    // Room beside the drawing on a phone (the page margin), in view units, less a 4 px safety gap.
+    const overhang = hostBox.width > 0 ? Math.max(0, Math.min(hostBox.left, window.innerWidth - hostBox.right) - 4) * k : 0;
+    const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: window.innerWidth <= 640, overhang });
     const labelPositions = new Map(placedLabels.labels.map(label => [label.key, label]));
     this.labelModel = placedLabels;
     const parts = [];

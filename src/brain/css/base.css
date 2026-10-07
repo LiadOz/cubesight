@@ -308,17 +308,27 @@
   .brain[data-layout="column"][data-screen="results"] .b-cube-wrap { position: relative; top: auto; justify-self: center; }
   .brain[data-layout="column"][data-screen="results"] .b-slot-results { grid-column: 1; grid-row: 2; }
   .b-top { gap: 12px; flex-wrap: wrap; }
-  .b-tabs { gap: 16px; }
+  .b-tabs { gap: 4px 12px; flex-wrap: wrap; }
+  .b-cube-reset { right: 0; }   /* it sat 72 px outside the cube: past the screen edge */
   .b-device { max-width: 100%; }
   .b-foot { grid-template-columns: 1fr; }
   .b-foot-tools { grid-column: 1; grid-row: 2; justify-self: center; }
   .b-settings-body, .b-debug { width: 100vw; padding: 18px 16px 40px; }
-  .b-configbar { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; max-width: 100%; font-size: 13px; }
-  .b-cfg, .b-cfg-label, .b-sep { flex: none; white-space: nowrap; }   /* scroll the bar sideways instead of wrapping words */
+  /* The bar wraps onto more lines (a phone never scrolls sideways); a choice is never split across two lines. */
+  .b-configbar { flex-wrap: wrap; justify-content: center; max-width: 100%; font-size: 13px; gap: 2px 10px; }
+  .b-cfg, .b-cfg-label, .b-sep { flex: none; white-space: nowrap; }
+  .b-cfg { min-height: 40px; min-width: 40px; }
+  .b-sep { display: none; }
+  .b-tab { flex: none; white-space: nowrap; }
+  .b-tab, .b-device-toggle, .b-connect { min-height: 40px; min-width: 40px; display: inline-flex; align-items: center; justify-content: center; }
   .b-clock { letter-spacing: -2px; }
   .b-row { grid-template-columns: 1fr; gap: 10px; }
   .b-stats { gap: 8px 20px; }
   .b-keys { display: none; grid-column: 1; }
+  /* The dev drawer's controls are 40 px touch targets too (a toggle's whole label is the target). */
+  .b-debug :is(button, a, select, .b-textbtn), .b-debug .brain-toggle { min-height: 40px; min-width: 40px; }
+  .b-debug .brain-toggle { display: inline-flex; align-items: center; }
+  .b-debug a { display: inline-flex; align-items: center; }
 }
 
 /* Parts only the Orbit layout draws (the frames' corner texts, the guidance glyph, the cube's glow and shadow): Mono never shows them. */

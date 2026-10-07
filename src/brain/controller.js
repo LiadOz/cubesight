@@ -157,7 +157,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       ollStage: 'OLL stages', rotationFlag: 'rotation flag', efficiencyScore: 'efficiency', autoCross: 'auto cross',
     };
     if (box.querySelectorAll('[data-brain-toggle]').length !== entries.length) {
-      box.innerHTML = entries.map(([key]) => `<label class="brain-toggle"><input type="checkbox" data-brain-toggle="${key}"><span>${labels[key] ?? key}</span></label>`).join('');
+      box.innerHTML = entries.map(([key]) => `<label class="brain-toggle" data-hit-area><input type="checkbox" data-brain-toggle="${key}"><span>${labels[key] ?? key}</span></label>`).join('');
     }
     for (const [key, value] of entries) { const input = box.querySelector(`[data-brain-toggle="${key}"]`); if (input && input.checked !== value) input.checked = value; }
   }

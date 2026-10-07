@@ -161,7 +161,7 @@ export function labelWindow(count, currentIndex = 0, size = 22) {
  * Only a scramble too long for one radius (`maxSingle`) is windowed to `windowSize` around the current move.
  * items: {key, angle, kind:'move'|'stage', width?, height?, current?}
  */
-export function ringLabels(items, { cx, cy, stageRadius, moveRadius, pitch = 22, lanes = 3, windowSize = 22, ringStart = 215, ringSweep = 290, view = 760, clampToView = false } = {}) {
+export function ringLabels(items, { cx, cy, stageRadius, moveRadius, pitch = 22, lanes = 3, windowSize = 22, ringStart = 215, ringSweep = 290, view = 760, clampToView = false, overhang = 0 } = {}) {
   const moves = items.filter(item => item.kind === 'move');
   const arc = moveRadius * ringSweep * Math.PI / 180;
   const maxSingle = Math.floor(arc / pitch);
@@ -191,7 +191,9 @@ export function ringLabels(items, { cx, cy, stageRadius, moveRadius, pitch = 22,
     const anchor = pole ? 'middle' : angle < 180 ? 'start' : 'end';
     // On a narrow screen (clampToView) the block is pulled inside the drawing rather than dropped or slid along the ring.
     const width = item.width ?? 0;
-    const x = !clampToView ? point.x : anchor === 'start' ? Math.min(point.x, view - width) : anchor === 'end' ? Math.max(point.x, width) : Math.max(width / 2, Math.min(view - width / 2, point.x));
+    // `overhang` is the room (in view units) the page leaves beside the drawing: a label may extend into it, so a long name is not
+    // dragged back over the ring and the Cube just to stay inside the square.
+    const x = !clampToView ? point.x : anchor === 'start' ? Math.min(point.x, view + overhang - width) : anchor === 'end' ? Math.max(point.x, width - overhang) : Math.max(width / 2 - overhang, Math.min(view + overhang - width / 2, point.x));
     return { key: item.key, kind: 'stage', angle, radius: stageRadius, lane: 0, x: round(x), y: round(y), anchor, side: pole ? `center-${pole}` : angle < 180 ? 'right' : 'left', hidden: false };
   });
   return { labels: placed, window: win, fanned: fan };
