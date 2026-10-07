@@ -36,11 +36,17 @@
 @media (width <= 700px) {
   .cs-page.progress-page { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
   .progress-visual { z-index: 2; }
+  /* The Cube and the Orbit are the page: on a phone they come right after the heading, so they are on screen at rest and the filters scroll under them. */
+  .progress-heading { order: 0; } .progress-visual { order: 1; } .progress-filters { order: 2; } .progress-content { order: 3; }
   .progress-orbit-wrap { width: min(100%, 220px, 28dvh, var(--progress-orbit-fit, 220px)); }
   .progress-content :where(a, input, button) { scroll-margin-top: calc(var(--site-header-height, 104px) + 300px); }
   .progress-chart-grid { grid-template-columns: minmax(0, 1fr); }
   .progress-filters .ui-field { flex: 1 1 130px; }
   .progress-session-filter, .progress-period-filter { flex: 1 1 100%; }
+  .progress-link, .progress-drill-name { display: inline-flex; align-items: center; min-height: 40px; }   /* text links are 40 px touch targets on a phone */
+}
+/* The drill rows need ~330 px; the content column at tablet widths is narrower than that, so they stack (name, then its figures) up to 1000 px. */
+@media (width <= 1000px) {
   .progress-drill-row { grid-template-columns: 28px minmax(0, 1fr); }
   .progress-drill-meta { grid-column: 2; }
 }

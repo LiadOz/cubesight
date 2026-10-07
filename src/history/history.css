@@ -248,11 +248,12 @@
 
 /* ---- the list on a narrow screen (and on a phone): the stage first, small, then the rows --------------- */
 @media (max-width: 1099px) {
-  .cs-page.brain.history-page[data-view="list"] { height: auto; --stage: min(calc(100vw - 24px), 300px); }
+  .cs-page.brain.history-page[data-view="list"] { height: auto; --stage: min(calc(100vw - 24px), 300px, 42svh); }   /* 42svh: on a 568 px phone the glyph still ends above the fold */
   .history-page[data-view="list"] .history-top { position: static; padding: 0 12px; }
   .history-page[data-view="list"] .history-heading h1 { font-size: 34px; margin-top: 8px; }
-  .history-page[data-view="list"] .history-summary { margin: 14px 0; }
-  .history-page[data-view="list"] .history-summary__stats { grid-template-columns: repeat(3, auto); justify-content: start; gap: 8px 18px; font-size: 17px; }
+  .history-page[data-view="list"] .history-summary { margin: 14px 0; grid-template-columns: 76px minmax(0, 1fr); }   /* minmax(0, ..): the text column may be narrower than its content, and wraps */
+  .history-page[data-view="list"] .history-summary__today { white-space: normal; }
+  .history-page[data-view="list"] .history-summary__stats { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px 18px; font-size: 17px; }
   .history-page[data-view="list"] .history-filters { flex-wrap: wrap; row-gap: 8px; margin-bottom: 12px; position: static; }
   .history-page[data-view="list"] .history-search { margin-left: auto; }
   .history-page[data-view="list"] .history-data { margin-left: 12px; }
@@ -264,7 +265,7 @@
   .history-page[data-view="list"] .history-stage { position: relative; left: auto; top: auto; width: var(--stage); height: var(--stage); margin: 0 auto; }
   .history-page[data-view="list"] .history-stage__cube { --cube-sil: calc(var(--stage) * .42); --cube-box: calc(var(--cube-sil) / var(--cube-fill)); }
   .history-page[data-view="list"] .history-stage__number { position: static; display: block; transform: none; margin: 4px auto 0; text-align: center; font-size: 44px; }
-  .history-page[data-view="list"] .history-stage__subline { position: static; display: block; transform: none; margin: 6px auto 10px; }
+  .history-page[data-view="list"] .history-stage__subline { position: static; display: block; transform: none; margin: 6px auto 10px; width: auto; max-width: 100%; white-space: normal; }
   .history-page[data-view="list"] .history-actions-host { position: static; margin-bottom: 18px; }
   .history-page[data-view="list"] .history-keybar-host { display: none; }
   .history-page[data-view="list"] .history-solve a { grid-template-columns: 34px 38px 8px 70px 62px minmax(0, 1fr) auto; padding: 0 6px; }
@@ -273,11 +274,12 @@
 
 /* ---- phone (A-12): one column, laid out at the frame's own coordinates in units of the screen width ---- */
 @media (max-width: 899px) {
-  .cs-page.brain.history-page { --pu: calc(min(100vw, 430px) / 390); --phdr: var(--site-header-height, 72px); --stage: min(calc(442 * var(--pu)), 100vw); }
+  /* --pu: one px of the 390 x 844 phone frame. Width alone would let a short phone (320 x 568) scroll the stage out of view, so the frame also scales to the height. */
+  .cs-page.brain.history-page { --pu: min(calc(min(100vw, 430px) / 390), calc(100svh / 844)); --phdr: var(--site-header-height, 72px); --stage: min(calc(442 * var(--pu)), 100vw); }
   .history-keybar-host { display: none; }
 
   /* past solve, review and replay: the frame, positioned in phone units */
-  .history-page:is([data-view="past"], [data-view="replay"]) { height: calc(844 * var(--pu) - var(--phdr)); min-height: 560px; }
+  .history-page:is([data-view="past"], [data-view="replay"]) { height: calc(844 * var(--pu) - var(--phdr)); min-height: 0; }
   .history-page:is([data-view="past"], [data-view="review"], [data-view="replay"]) :is(.history-top, .history-list-panel) { display: none; }
   .history-page:is([data-view="past"], [data-view="replay"]) .history-layout { position: absolute; inset: 0; padding: 0; }
   .history-page:is([data-view="past"], [data-view="replay"]) .history-focus { position: absolute; inset: 0; }
@@ -336,7 +338,7 @@
   .history-page[data-view="past"] .ui-coach-line__text { padding-left: 8px; font: 500 16px/24px var(--b-font-sans); color: var(--b-ink); }
   .history-page[data-view="past"] .f1-results__actions { position: absolute; left: 24px; right: 24px; top: calc(722 * var(--pu) - var(--phdr)); display: block; }
   .history-page[data-view="past"] .f1-results__actions .ui-actions { display: block; }
-  .history-page[data-view="past"] .f1-results__actions [data-action="next"] { display: flex; align-items: center; justify-content: center; width: 100%; height: calc(54 * var(--pu)); border-radius: 27px; background: var(--b-ink); color: var(--b-bg); font: 700 17px/1 var(--b-font-sans); }
+  .history-page[data-view="past"] .f1-results__actions [data-action="next"] { display: flex; align-items: center; justify-content: center; width: 100%; height: max(40px, calc(54 * var(--pu))); border-radius: 27px; background: var(--b-ink); color: var(--b-bg); font: 700 17px/1 var(--b-font-sans); }
   .history-page[data-view="past"] .f1-results__actions [data-action="next"]::after { content: none; }
   .history-page[data-view="past"] .f1-results__actions a:not([data-action]) { position: absolute; left: calc(96 * var(--pu) - 24px); top: calc(806 * var(--pu) - 722 * var(--pu) - 8px); width: 48px; color: var(--b-ink); font: 600 15px/1 var(--b-font-sans); text-align: center; }
   .history-page[data-view="past"] .history-actions-host { position: absolute; left: calc(270 * var(--pu) - 24px); top: calc(806 * var(--pu) - var(--phdr) - 8px); display: block; width: 48px; }
@@ -397,7 +399,9 @@
 /* replay (A-12b): the crumb has no extra gap, the total sits on the digits' baseline, the transport's 40 px targets centre their glyphs on the frame's x */
 @media (max-width: 899px) {
   .history-page[data-view="replay"] .history-back { gap: 0; }
-  .history-page[data-view="replay"] .history-stage__number small { left: calc(100% + 24px); bottom: auto; top: calc(.83 * 84 * var(--pu) - .84 * 11px); font: 400 11px/1 var(--b-font-mono); white-space: nowrap; }
+  /* The total ("/ 12.34") sits beside the digits, outside them. The digits' box reserves that room on both sides (so they stay centred and the box really contains the total, instead of the total spilling out of it). */
+  .history-page[data-view="replay"] .history-stage__number { padding-inline: 88px; }
+  .history-page[data-view="replay"] .history-stage__number small { left: calc(100% - 88px + 24px); bottom: auto; top: calc(.83 * 84 * var(--pu) - .84 * 11px); font: 400 11px/1 var(--b-font-mono); white-space: nowrap; }
   .history-page[data-view="replay"] .history-transport { left: calc(50% - 110 * var(--pu)); width: calc(220 * var(--pu)); }
   .history-page[data-view="replay"] .history-transport button:not(.history-transport__toggle) svg { width: 36px; height: 36px; }   /* the frame's chevrons: 9 x 18, 2.4 stroke */
   .history-page[data-view="replay"] .history-transport__toggle svg { width: 37px; height: 37px; }   /* pause bars 5.5 x 20 */
