@@ -18,7 +18,7 @@ test('three-corner clock includes feedback between answers in displayed and logg
   await page.clock.runFor(1200);
   await expect(page.locator('#case-mode')).toContainText('2/3');
   expect(parseFloat(await page.locator('#timer').textContent())).toBeGreaterThanOrEqual(1.48);
-  const selected = await page.locator('[data-color=white]').getAttribute('data-logical-color');
+  const selected = await page.evaluate(() => window.__cubesightLegacyTrainerHandles.corner.getViewModel().answers.find(answer => answer.displayKey === 'white').logicalKey);
   await page.keyboard.press('w');
   const second=await page.evaluate(()=>JSON.parse(localStorage.getItem('cubesight-progress-v2')).history.at(-1));
   expect(second.ms).toBe(1500);
