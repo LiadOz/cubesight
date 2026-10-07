@@ -34,7 +34,7 @@ test('progress charts the selected solve cohort, shares the Orbit, and preserves
   await expect(page.getByRole('combobox', { name: 'solve source' }).locator('.sel__value')).toHaveText('cube');
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('cubesight-progress-v2')).attempts)).toBe(20);
   await page.setViewportSize({width:390,height:844});
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390);
+  await expect.poll(() => page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390); // settles a frame after the resize
 });
 
 
