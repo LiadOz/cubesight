@@ -44,12 +44,16 @@ function ensureDialog() {
       </div>
     </form>`;
   document.body.append(dialogEl);
-  // chrome://bluetooth-internals does not exist in Chrome on a phone; point at a scanner app instead.
+  // chrome://bluetooth-internals DOES work in Chrome on Android, and the user relies on it
+  // there. An earlier change replaced these steps on phones with "install a scanner app" and
+  // hid the copy button, which removed a route that works. Keep the same steps everywhere and
+  // offer a scanner app only as a fallback for browsers without that page.
   if (inspectBluetoothSupport().platform !== 'desktop') {
-    dialogEl.querySelector('.smart-mac-steps').innerHTML = `
-        <li>Chrome on a phone has no page that shows this. Install a free Bluetooth scanner app, for example <strong>nRF Connect</strong>.<button type="button" class="smart-mac-copy" hidden></button><span class="smart-mac-copy-status" role="status"></span></li>
-        <li>Turn the cube on, scan, and find your cube in the list.</li>
-        <li>Copy its <strong>address</strong> (six pairs of hex digits, e.g. <code>AA:BB:CC:DD:EE:FF</code>) and paste it below.</li>`;
+    const steps = dialogEl.querySelector('.smart-mac-steps');
+    const fallback = document.createElement('li');
+    fallback.className = 'smart-mac-fallback';
+    fallback.innerHTML = 'No <code>chrome://bluetooth-internals</code> in your browser? A free Bluetooth scanner app such as <strong>nRF Connect</strong> shows the same address.';
+    steps.append(fallback);
   }
   const $ = sel => dialogEl.querySelector(sel);
   $('.smart-mac-copy').addEventListener('click', async () => {

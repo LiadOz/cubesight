@@ -79,3 +79,32 @@ test('Android: a cube that never answers does not leave the app stuck in connect
   await expect(page.locator('html')).toHaveAttribute('data-cube-phase', 'disconnected');
   await context.close();
 });
+
+// chrome://bluetooth-internals works in Chrome on Android and the user relies on it there.
+// An earlier change replaced these steps on phones with "install a scanner app" and hid the
+// copy button, removing a route that works. The platform comes from the USER AGENT, not the
+// viewport, so this test must run under an Android UA or it asserts nothing.
+test('Android: the cube-address dialog keeps the bluetooth-internals route and its copy button', async ({ browser }) => {
+  const context = await browser.newContext({ userAgent: ANDROID, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  await page.goto('/#/solve');
+  const shown = await page.evaluate(async () => {
+    const mod = await import('/src/smart-cube-mac-dialog.js');
+    const ask = Object.values(mod).find(value => typeof value === 'function');
+    try { void ask?.({ reason: 'test' }); } catch { /* the dialog only needs to be built */ }
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const steps = document.querySelector('.smart-mac-steps');
+    const copy = document.querySelector('.smart-mac-copy');
+    return {
+      platform: (await import('/src/smart-cube-diag.js')).inspectBluetoothSupport().platform,
+      html: steps?.innerHTML || '',
+      text: steps?.textContent || '',
+      copyHidden: copy ? copy.hidden : null,
+    };
+  });
+  expect(shown.platform).toBe('android');                       // guards the test itself
+  expect(shown.html).toContain('chrome://bluetooth-internals');
+  expect(shown.copyHidden).toBe(false);
+  expect(shown.text).not.toContain('has no page that shows this');
+  await context.close();
+});
