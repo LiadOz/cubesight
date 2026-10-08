@@ -17,7 +17,8 @@ import { saveRecording } from './brain-recording.js';
 import { APP_NAME, NAV_FOR_TOOL, PAGE_TITLES } from './copy/nav.js';
 import { T, MSG, fmt, KEYS } from './copy/terms.js';
 import { isKnownTool, resolveRoute, keyScope, parseHash, registerDevRoute } from './routes.js';
-import { rememberDrill } from './drills/catalog.js';
+import { rememberDrill, drillByTool } from './drills/catalog.js';
+import { createWakeLock } from './wake-lock.js';
 import { createRoundPanel } from './drills/round-panel.js';
 import { syncPageTokens } from './pages/tokens.js';
 import { parseDrillStart } from './drills/start-position.js';
@@ -232,6 +233,9 @@ let historyPage = null;
 let historyPageLoad = null;
 let timerPage = null;
 let timerPageLoad = null;
+// One screen wake lock for every drill route (corners, F2L, PLL, scout, OLL, look-ahead). The hub
+// is a menu, so it is not in the catalog and does not hold it.
+const drillWake = createWakeLock();
 const drillPages = Object.create(null);
 const drillPageHashes = Object.create(null);
 const drillPageLoads = Object.create(null);
@@ -1953,6 +1957,7 @@ function setTool(tool, initial = false) {
   timerPage?.setActive(false);
   Object.values(drillPages).forEach(page => page?.setActive(false));
   Object.values(legacyRounds).forEach(panel => panel.setActive(false));
+  if (drillByTool(tool)) drillWake.hold(); else drillWake.release();
   const previousTool = activeTool;
   if (previousTool !== tool || initial) {
     if (previousTool && previousTool !== tool) recordView('unmount', { tool: previousTool });

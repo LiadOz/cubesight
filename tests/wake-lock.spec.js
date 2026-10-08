@@ -61,3 +61,37 @@ test('a refused wake lock request neither breaks the solve page nor shows an err
   await expect.poll(() => snap(page).then(s => s.active)).toBe(1);
   expect(errors).toEqual([]);
 });
+
+// Drills: the screen stays on for the whole time a drill route is open (corners, F2L, PLL,
+// scout, OLL, look-ahead), and not on the drills hub, which is only a menu.
+const DRILL_ROUTES = ['corners', 'pll', 'f2l', 'scout', 'oll', 'lookahead'];
+for (const drill of DRILL_ROUTES) {
+  test(`the ${drill} drill holds a wake lock, re-acquires it after the page was hidden, and releases on leaving`, async ({ page }) => {
+    await stubWakeLock(page);
+    await page.goto(`/#/drills/${drill}`);
+    await expect.poll(() => snap(page).then(s => s.active)).toBe(1);
+
+    await page.evaluate(() => window.__setVisibility('hidden'));
+    expect((await snap(page)).active).toBe(0);
+    await page.evaluate(() => window.__setVisibility('visible'));
+    await expect.poll(() => snap(page).then(s => s.active)).toBe(1);
+    expect((await snap(page)).requests).toBe(2);
+
+    await page.evaluate(() => { location.hash = '#/history'; });
+    await expect.poll(() => snap(page).then(s => s.active)).toBe(0);
+    await page.evaluate(() => { window.__setVisibility('hidden'); window.__setVisibility('visible'); });
+    expect((await snap(page)).active).toBe(0);
+  });
+}
+
+test('the drills hub holds no wake lock, and moving hub to drill to hub takes and drops it', async ({ page }) => {
+  await stubWakeLock(page);
+  await page.goto('/#/drills');
+  await expect(page.locator('#drills-view')).toBeVisible();
+  await page.evaluate(() => { window.__setVisibility('hidden'); window.__setVisibility('visible'); });
+  expect((await snap(page)).requests).toBe(0);
+  await page.evaluate(() => { location.hash = '#/drills/pll'; });
+  await expect.poll(() => snap(page).then(s => s.active)).toBe(1);
+  await page.evaluate(() => { location.hash = '#/drills'; });
+  await expect.poll(() => snap(page).then(s => s.active)).toBe(0);
+});
