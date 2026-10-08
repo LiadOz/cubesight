@@ -142,7 +142,7 @@
   #corner-view .cube-stage > .pause-overlay { padding: 8px; }
   #corner-view .pause-overlay > div { padding: 12px; }
   #corner-view .pause-overlay h2 { font-size: 18px; }
-  #corner-view .pause-overlay p:not(.eyebrow) { margin: 6px 0 10px; font-size: 11px; }
+  #corner-view .pause-overlay .pause-note { margin: 0 0 4px; font-size: 13px; }
 }
 /* Keep legacy case geometry centred when the shared solve stylesheet arrives. */
 @media (min-width: 701px) {

@@ -448,7 +448,7 @@ document.querySelector('#app').innerHTML = `
   </main>
 
 
-  <div id="pause-overlay" class="pause-overlay" hidden role="region" aria-label="paused" aria-live="polite"><div><p class="eyebrow">Taking a break?</p><h2>paused</h2><p>This case won't count.</p><button class="primary-button" data-action="resume">resume</button></div></div>
+  <div id="pause-overlay" class="pause-overlay" hidden role="region" aria-label="paused" aria-live="polite"><div><p class="pause-label">paused</p><h2>Taking a break?</h2><p class="pause-note">This one won't count.</p><button class="btn btn--primary" type="button" data-action="resume">resume</button></div></div>
   <dialog id="summary-dialog" class="summary-dialog">
     <button class="dialog-close" data-action="close-summary" aria-label="Close">×</button>
     <p class="eyebrow">round done</p>
@@ -470,9 +470,10 @@ function cornerGuessSegments() {
     key: `guess-${index + 1}`,
     weight: 1,
     fill: guesses[index] === undefined ? 0 : 1,
-    // Recall answers stay unmarked until the reveal, as the mode promises no interim feedback.
+    // Every arc starts empty (future, no fill), the one being answered included; an answer fills it, teal when right and amber when wrong.
+    // Recall keeps answers unmarked until the reveal, as the mode promises no interim feedback: a neutral fill, no tone.
     state: guesses[index] === true ? 'good' : guesses[index] === false ? 'bad'
-      : index < (state.current.recallAnswers?.length ?? 0) ? 'done' : index === state.current.activeIndex ? 'current' : 'future',
+      : index < (state.current.recallAnswers?.length ?? 0) ? 'done' : 'future',
   }));
 }
 const cornerTrainerOrbit = createTrainerOrbit(document.querySelector('#corner-view .cube-stage'), { customSegments: cornerGuessSegments });
@@ -2271,10 +2272,9 @@ function pausePractice(reason = 'interrupted') {
   stopF2LScan();
   f2lState.plannerGeneration += 1;
   f2lState.locked = true;
-  document.querySelector('#pause-overlay h2').textContent = 'Taking a break?';
-  document.querySelector('#pause-overlay p:not(.eyebrow)').textContent = reason === 'timeout'
-    ? '10 s elapsed. This one won’t count. Resume for a fresh case.'
-    : MSG.unscored;
+  document.querySelector('#pause-overlay .pause-note').textContent = reason === 'timeout'
+    ? 'No answer in 10 s. This one won\'t count.'
+    : MSG.unscored.replace('Taking a break? ', '');
   placePausePrompt();
   document.querySelector('#pause-overlay').hidden = false;
 }

@@ -27,13 +27,13 @@ export function createTrainerOrbit(stage, { customSegments = () => null } = {}) 
     // A drill may own the ring for a smaller unit than the round (the corner drill's three guesses of one case).
     const custom = customSegments();
     const segments = custom ?? buildRoundSegments(round ?? { status: 'idle', answers: [] }, total);
-    const markers = custom ? custom.flatMap((segment, at) => segment.state === 'good' || segment.state === 'bad'
-      ? [{ key: `result-${at + 1}`, segment: segment.key, position: .5, type: segment.state === 'good' ? 'good' : 'wrong', label: segment.state === 'good' ? 'correct' : 'miss' }] : [])
-      : answers.map((answer, at) => ({ key: `result-${at + 1}`, segment: `case-${at + 1}`, position: .5,
+    // Custom (corner guess) arcs carry the outcome in their colour alone: no marker dots, and the result toast speaks for the coach.
+    const markers = custom ? [] : answers.map((answer, at) => ({ key: `result-${at + 1}`, segment: `case-${at + 1}`, position: .5,
       type: answer.correct ? 'good' : 'wrong', label: answer.correct ? 'correct' : 'miss' }));
     const currentMarker = ['good', 'bad', 'wrong'].includes(state) ? `result-${activeIndex + 1}` : null;
     if (currentMarker) lastCoachMarker = currentMarker;
-    if (text) lastCoachText = text;
+    if (custom) { lastCoachText = ''; lastCoachMarker = null; }
+    else if (text) lastCoachText = text;
     else if (state === 'current') { lastCoachMarker = null; lastCoachText = ''; }
     coachHost.hidden = !lastCoachText;
     const update = orbit.update({ segments, markers });

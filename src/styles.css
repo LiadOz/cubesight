@@ -175,12 +175,12 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
 .summary-metrics > div + div { border-left: 1px solid var(--line); }
 .summary-metrics span { display: block; font-size: 9px; color: var(--muted); }
 .summary-metrics strong { display: block; margin-top: 10px; font: 20px var(--mono); }
-.pause-overlay { position: absolute; z-index: 3; inset: 0; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: #102333dd; backdrop-filter: blur(8px); }
-.pause-overlay > div { width: 100%; max-width: 380px; padding: 22px; border-radius: 14px; background: white; color: var(--ink); }
-.pause-overlay h2 { font-size: 22px; }
-.pause-overlay .eyebrow { margin-bottom: 8px; }
-.pause-overlay p:not(.eyebrow) { margin: 12px 0 18px; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.pause-overlay .primary-button { font-size: 12px; }
+/* The pause / no-answer prompt: Orbit tokens only (--b-*), DM Mono label, Manrope prose and button. */
+.pause-overlay { position: absolute; z-index: 3; inset: 0; display: grid; place-items: center; padding: 16px; overflow-y: auto; background: color-mix(in srgb, var(--b-bg) 82%, transparent); backdrop-filter: blur(8px); }
+.pause-overlay > div { display: grid; justify-items: center; gap: 8px; width: 100%; max-width: 380px; padding: 24px; border: 1px solid var(--b-hairline); border-radius: var(--b-radius-bar); background: var(--b-surface); color: var(--b-ink); text-align: center; font-family: var(--b-font-sans); }
+.pause-overlay .pause-label { margin: 0; color: var(--b-muted); font: 500 var(--b-fs-label) var(--b-font-mono); letter-spacing: .08em; }
+.pause-overlay h2 { margin: 0; font: 600 22px/1.2 var(--b-font-sans); }
+.pause-overlay .pause-note { margin: 0 0 8px; color: var(--b-muted); font: 400 var(--b-fs-body)/1.5 var(--b-font-sans); }
 @media (hover:hover) { .answer-button:hover:not(.muted) { border-color: #8ca5b6; background: #f5f8fa; } .nav-link:hover:not(.active), .header-button:hover { color: var(--ink); } .cross-option:hover { border-color: #90c9be; } }
 @media (max-width:1100px) { .trainer-shell { grid-template-columns: minmax(0,1.15fr) minmax(330px,1fr); } .answer-stage { padding: 24px; } .learning-controls { margin-left: 0; } .stats-grid { grid-template-columns: repeat(3,1fr); } .trend-card { grid-column: 1 / -1; } .retention-panel small { max-width: 210px; } }
 @media (max-width:700px) {
@@ -227,7 +227,7 @@ dialog h2 { margin-bottom: 24px; font-size: 28px; }
 
 /* Theme surfaces are independent of sticker colors and cube lighting. */
 :root[data-theme="dark"] { color-scheme: dark; --ink: #e3ebf3; --paper: #101820; --panel: #19242f; --line: #30404e; --muted: #a6b6c6; --accent: #66dfc5; color: var(--ink); background: var(--paper); }
-[data-theme="dark"] :is(.training-settings, .trainer-shell, .metric-card, .trend-card, .case-table-card, dialog, .pause-overlay > div) { background: var(--panel); }
+[data-theme="dark"] :is(.training-settings, .trainer-shell, .metric-card, .trend-card, .case-table-card, dialog) { background: var(--panel); }
 [data-theme="dark"] :is(.segmented, .cross-option, .dialog-close, .selected-piece-card) { background: #22313e; }
 [data-theme="dark"] .planner-choice { background: #22313e; }
 [data-theme="dark"] .planner-choice.best { background: #17483b; }
