@@ -10,6 +10,7 @@
 // and a style, with no cube or controller, for building and screenshotting
 // the styles.
 
+import { createWakeLock } from '../wake-lock.js';
 import { smartCube } from '../smart-cube-bluetooth.js';
 import { mountBrainController } from './controller.js';
 import { BRAIN_STYLES, DEFAULT_BRAIN_STYLE } from './types.js';
@@ -36,6 +37,7 @@ export function createBrain(root, cubeSession = smartCube) {
   let view = null;
   let detached = false;
   let createShell = null;
+  const wake = createWakeLock();   // the screen stays on while the solve page is the one in view
   const mount = () => {
     view?.detach();
     root.replaceChildren();   // drop main.js's "Loading Brain…" placeholder
@@ -48,8 +50,8 @@ export function createBrain(root, cubeSession = smartCube) {
   });
   return {
     ready,
-    setActive(value) { active = value; view?.setActive(value); },
-    detach() { detached = true; view?.detach(); },
+    setActive(value) { active = value; view?.setActive(value); if (value) wake.hold(); else wake.release(); },
+    detach() { detached = true; wake.release(); view?.detach(); },
     reset() { if (createShell) mount(); return this; },
     /** The current view-model (tests and the dev console). */
     getViewModel: () => view?.getViewModel() ?? null,
