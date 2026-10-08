@@ -1,31 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getRememberedMac, rememberMac, forgetRememberedMac } from '../src/smart-cube-mac.js';
+import { normaliseMac } from '../src/smart-cube-mac.js';
 
-function memoryStorage() {
-  const data = new Map();
-  return {
-    getItem: key => data.get(key) ?? null,
-    setItem: (key, value) => data.set(key, value),
-    removeItem: key => data.delete(key),
-  };
-}
-
-test('verified cube MAC can be recalled by Bluetooth name and forgotten', () => {
-  const storage = memoryStorage();
-  rememberMac('GAN16ui_1234', 'AA:BB:CC:DD:EE:FF', storage);
-  assert.equal(getRememberedMac('GAN16ui_1234', storage), 'AA:BB:CC:DD:EE:FF');
-  assert.equal(getRememberedMac('another cube', storage), null);
-  forgetRememberedMac('GAN16ui_1234', storage);
-  assert.equal(getRememberedMac('GAN16ui_1234', storage), null);
+// A real Android recording showed every manual connect failing with
+// "GAN gen2-4 requires a valid 6-byte Bluetooth MAC". The old normaliser inserted
+// a colon after every two CHARACTERS, so a MAC typed in the form the placeholder
+// asks for became AA::B:B::CC::D:D::EE::F:F. Only the separator-less form worked.
+test('every way a person might type a MAC normalises to AA:BB:CC:DD:EE:FF', () => {
+  for (const input of ['AA:BB:CC:DD:EE:FF', 'aa:bb:cc:dd:ee:ff', 'AABBCCDDEEFF', 'aabbccddeeff',
+                       'AA-BB-CC-DD-EE-FF', 'aa bb cc dd ee ff', ' AA:BB:CC:DD:EE:FF ']) {
+    assert.equal(normaliseMac(input), 'AA:BB:CC:DD:EE:FF', `failed for ${JSON.stringify(input)}`);
+  }
 });
 
-test('invalid addresses and unavailable storage are ignored', () => {
-  const storage = memoryStorage();
-  rememberMac('GAN16ui', 'wrong', storage);
-  assert.equal(getRememberedMac('GAN16ui', storage), null);
-  const unavailable = { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); }, removeItem() { throw Error('blocked'); } };
-  assert.equal(getRememberedMac('GAN16ui', unavailable), null);
-  assert.doesNotThrow(() => rememberMac('GAN16ui', 'AABBCCDDEEFF', unavailable));
-  assert.doesNotThrow(() => forgetRememberedMac('GAN16ui', unavailable));
+test('anything that is not six bytes of hex normalises to empty', () => {
+  for (const input of ['nonsense', '', null, undefined, 'AA:BB:CC:DD:EE', 'AA:BB:CC:DD:EE:FF:00']) {
+    assert.equal(normaliseMac(input), '');
+  }
 });

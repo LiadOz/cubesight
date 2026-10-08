@@ -13,6 +13,7 @@
 // view has to send the user to another view.
 
 import { inspectBluetoothSupport } from './smart-cube-diag.js';
+import { normaliseMac as normalise } from './smart-cube-mac.js';
 
 const VALID_MAC = /^(?:[\da-f]{2}[:-]?){5}[\da-f]{2}$/i;
 
@@ -98,7 +99,3 @@ export function promptMacAddress(device) {
   return dialogPromise;
 }
 
-function normalise(mac) {
-  // Keep the colon-separated upper-case form the library expects.
-  return mac.replace(/[-\s]/g, ':').replace(/(..)(?!$)/g, '$1:').toUpperCase();
-}

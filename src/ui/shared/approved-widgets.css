@@ -314,13 +314,16 @@
 /* ---------- the toast: transient, one at a time ---------- */
 .toast {
   --t-bg: var(--b-surface-2); --t-fg: var(--b-ink); --t-edge: var(--b-hairline);
-  display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px 0 14px; max-width: 460px;
+  display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 9px 16px 9px 14px; max-width: min(460px, calc(100vw - 32px));
   border-radius: var(--b-radius-control); background: var(--t-bg); color: var(--t-fg); box-shadow: inset 0 0 0 1px var(--t-edge);
-  font: 500 13.5px/1 var(--b-font-sans); white-space: nowrap;
+  font: 500 13.5px/1.35 var(--b-font-sans); white-space: normal; overflow-wrap: anywhere;
   transition: opacity 200ms var(--b-ease), transform 200ms var(--b-ease);
 }
+/* A fixed 40px height clipped any message longer than one line, so a connection
+   error arrived unreadable -- cut off mid-sentence with no way to see the rest.
+   Short toasts still render as the approved single 40px line; only a long one grows. */
 .toast.has-act { padding-right: 8px; }
-.touch .toast { height: 48px; }
+.touch .toast { min-height: 48px; }
 .toast.is-enter { opacity: .35; transform: translateY(8px); }
 .toast.is-exit { opacity: .3; transform: translateY(4px); transition-duration: 160ms; }
 .toast .act { color: var(--t-act, var(--b-ink)); }
