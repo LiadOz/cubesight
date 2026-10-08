@@ -142,7 +142,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
     if (vm.screen === 'scramble') {
       const undo = vm.scramble?.recovery?.[0];
       // The wrong move stays visible as an amber "!" token where the way back starts.
-      const markers = undo ? [{ key: 'wrong-turn', segment: `undo-${undo.key}`, position: 0, label: `you turned ${(vm.scramble.detour ?? []).map(displayMove).join(' ')}`, tone: 'bad', type: 'warning' }] : [];
+      const markers = undo ? [{ key: 'wrong-turn', segment: `undo-${undo.key}`, position: 0, label: `turn ${vm.scramble.recovery.map(move => displayMove(move.text)).join(' ')} to fix it`, tone: 'bad', type: 'warning' }] : [];
       return { shape: 'open', gap: 70, direction: 'clockwise', segments: moveSegments(vm.scramble), markers, caret: null, labelKind: 'move' };
     }
     if (vm.screen === 'inspection') {

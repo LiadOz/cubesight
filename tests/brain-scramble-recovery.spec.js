@@ -74,3 +74,19 @@ for (const style of ['orbit', 'mono']) {
     else await expect(brain.locator('#brain-recovery')).toBeHidden();
   });
 }
+
+test('the amber guidance says what to turn to fix a wrong turn, not what was turned (orbit)', async ({ page }) => {
+  test.setTimeout(60_000);
+  await mountTestBrain(page, 'orbit', { route: true });
+  const brain = page.locator('#brain-view');
+  await startGuidedScramble(page, SCRAMBLE, '#brain-view');
+  await page.evaluate(() => window.testBrain.emitTurns("R2 D' L"));
+  await expect(brain.locator('[data-segment^="undo-"]')).toHaveCount(1);
+  const lines = brain.locator('.b-guide-line');
+  await expect(lines.nth(0)).toHaveText("turn L′ to fix it");
+  await expect(lines.nth(1)).toHaveText('then carry on with F2');
+  // The "!" marker is the same instruction, and nothing reports the error as a diagnosis.
+  await expect(brain.locator('[aria-label*="to fix it"]').first()).toBeAttached();
+  const text = await brain.evaluate(node => node.textContent + [...node.querySelectorAll('[aria-label]')].map(n => n.getAttribute('aria-label')).join(' '));
+  expect(text).not.toMatch(/you turned/);
+});

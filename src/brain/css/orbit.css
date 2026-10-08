@@ -131,7 +131,7 @@
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-clock[data-tone="error"] { color: var(--b-dnf); }
 .brain[data-brain-style="orbit"][data-layout="orbit"].is-timer-hidden .b-clock { visibility: visible; }
 .brain[data-brain-style="orbit"][data-layout="orbit"]:is([data-screen="idle"], [data-screen="disconnected"], [data-screen="desynced"], [data-screen="connecting"]) .b-clock { color: var(--b-faint); }
-.brain[data-brain-style="orbit"][data-layout="orbit"]:is([data-screen="scramble"], [data-screen="results"]) .b-clock { display: none; }
+.brain[data-brain-style="orbit"][data-layout="orbit"]:is([data-screen="connecting"], [data-screen="scramble"], [data-screen="results"]) .b-clock { display: none; }
 
 /* --- Scramble guidance: glyph, phrase, counter (A-02) and the wrong-turn variant (A-02b) --------------------------------- */
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-guide > * { position: absolute; z-index: 3; margin: 0; white-space: nowrap; pointer-events: none; translate: -50% 0; line-height: 1; }

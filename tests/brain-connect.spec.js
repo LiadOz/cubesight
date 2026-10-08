@@ -78,6 +78,8 @@ for (const style of STYLES) {
     await expect(button).toBeDisabled();
     await expect(page.getByRole('button', { name: /open cube and recording actions/ })).toHaveAttribute('aria-label', /connecting/);
     await expect(indicator).toBeVisible();
+    // The ring sweeps alone while connecting: a static 0.00 behind it means nothing (orbit layout).
+    if (style === 'orbit') await expect(brain.locator('.b-clock')).toBeHidden();
     // Exactly one animation runs: the ring sweep (Orbit) or the lane (Mono). The chip and button are static.
     await page.getByRole('dialog', { name: 'Cube and recording actions' }).getByRole('button', { name: 'close', exact: true }).click();
     const animated = await page.evaluate(() => {

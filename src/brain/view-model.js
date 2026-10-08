@@ -372,10 +372,9 @@ export function glossMove(description) {
 function guideVM(scramble, move, description, count) {
   if (scramble.recovery?.length) {
     const way = scramble.recovery.map(item => item.text);
-    const turned = (scramble.detour?.length ? scramble.detour : [scramble.wrongTurn]).filter(Boolean).map(displayMove).join(' ');
     return {
       wrong: true, glyph: displayMove(way[0]),
-      lines: [{ text: `you turned ${turned}, the scramble wants ${displayMove(move.text)}`, tone: 'warn' }, { text: `turn ${way.map(displayMove).join(' ')} to fix it, then carry on`, tone: 'dim' }],
+      lines: [{ text: `turn ${way.map(displayMove).join(' ')} to fix it`, tone: 'warn' }, { text: `then carry on with ${displayMove(move.text)}`, tone: 'dim' }],
       count,
     };
   }
