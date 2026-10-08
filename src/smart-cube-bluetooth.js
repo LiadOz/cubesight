@@ -2,7 +2,7 @@ import { connectSmartCube, getRegisteredProtocols, getCachedMacForDevice } from 
 import { createSmartCubeSession, APP_SESSION_OPTIONS } from './smart-cube-session.js';
 import { getRememberedMac, rememberMac, forgetRememberedMac } from './smart-cube-mac.js';
 import { promptMacAddress } from './smart-cube-mac-dialog.js';
-import { logConnection } from './smart-cube-diag.js';
+import { logConnection, inspectBluetoothSupport, unsupportedReason } from './smart-cube-diag.js';
 import { recordingConnectDevice, recordSessionCalls, setCheckpointProvider, now as recorderNow } from './recorder.js';
 
 // A replay (src/recording-replay.js) can take the place of the Bluetooth
@@ -39,8 +39,13 @@ function logConnectionEnvironment() {
       if (k?.startsWith('cubesight-smartcube-mac-name:') || k?.startsWith('smartcube-ble-mac:')) cached.push(k);
     }
   } catch { /* storage unavailable */ }
-  const watch = typeof globalThis.BluetoothDevice !== 'undefined' && 'watchAdvertisements' in BluetoothDevice.prototype;
-  logConnection({ kind: 'env', label: `Origin ${location.origin} · secure=${window.isSecureContext} · watchAdvertisements=${watch ? 'yes' : 'NO (enable chrome://flags/#enable-experimental-web-platform-features)'} · cached addresses: ${cached.length ? cached.join(', ') : 'none for this origin'}` });
+  const support = inspectBluetoothSupport();
+  const watch = support.watchAdvertisements;
+  logConnection({ kind: 'env', label: `Support ${JSON.stringify(support)}` });
+  if (navigator.bluetooth?.getAvailability) {
+    navigator.bluetooth.getAvailability().then(available => logConnection({ kind: 'env', label: `Bluetooth adapter available: ${available}` }), error => logConnection({ kind: 'env', label: `getAvailability failed: ${error?.name}: ${error?.message}` }));
+  }
+  logConnection({ kind: 'env', label: `Origin ${globalThis.location?.origin} · secure=${globalThis.isSecureContext} · watchAdvertisements=${watch ? 'yes' : 'NO (enable chrome://flags/#enable-experimental-web-platform-features)'} · cached addresses: ${cached.length ? cached.join(', ') : 'none for this origin'}` });
   if (navigator.bluetooth?.getDevices) {
     navigator.bluetooth.getDevices()
       .then(devices => logConnection({ kind: 'env', label: `Devices already permitted for this origin: ${devices.length ? devices.map(d => `"${d.name ?? '?'}" (id ${d.id})`).join(', ') : 'none'}` }))
@@ -97,16 +102,38 @@ function reconnectBluetooth(options) {
 
 // Web Bluetooth adapter. Protocol details stay behind it; consumers only see
 // canonical cube moves.
+// How long one step may go without any progress before the attempt is given up.
+// The cube chooser and the address dialog wait for the person, so they do not count.
+const STALL_MS = 45000;
+const stallMs = () => Number(globalThis.__cubesightStallMs) || STALL_MS; // tests shorten it
+const stageFor = detail => /select/i.test(detail) ? 'picker' : /advertisement/i.test(detail) ? 'advertisements'
+  : /verif/i.test(detail) ? 'verify' : /connect/i.test(detail) ? 'gatt' : null;
+
 async function connectBluetooth(options) {
-  if (!window.isSecureContext || !navigator.bluetooth?.requestDevice) {
-    throw new Error('Web Bluetooth needs HTTPS and a supported browser (Chrome or Edge on Android/desktop).');
+  logConnection({ label: 'Starting connection…', kind: 'start' });
+  const support = inspectBluetoothSupport();
+  const unsupported = unsupportedReason(support);
+  if (unsupported) {
+    logConnection({ kind: 'env', label: `Support ${JSON.stringify(support)}` });
+    logConnection({ label: `Connection failed: ${unsupported.code}`, kind: 'error' });
+    throw Object.assign(unsupported, { stage: 'support', support });
   }
   let selectedDevice = null;
   let usedRememberedMac = false;
-  logConnection({ label: 'Starting connection…', kind: 'start' });
+  let stage = 'picker';
+  let waitingForPerson = false;
+  let stallTimer = null;
+  let rejectStall = null;
+  const stalled = new Promise((_, reject) => { rejectStall = reject; });
+  stalled.catch(() => {});
+  const armStall = () => {
+    clearTimeout(stallTimer);
+    if (stage === 'picker' || waitingForPerson) return;
+    stallTimer = setTimeout(() => rejectStall(Object.assign(new Error(`The cube did not answer (stopped at ${stage}). Wake it by turning it, bring it close, then connect again.`), { name: 'BluetoothTimeout' })), stallMs());
+  };
   logConnectionEnvironment();
   try {
-    const connection = await connectSmartCube({
+    const connection = await Promise.race([stalled, connectSmartCube({
       ...options,
       // GAN model names and advertisements vary; let the user choose the BLE
       // device, then identify its protocol from the services it exposes.
@@ -116,9 +143,16 @@ async function connectBluetooth(options) {
       // the same source native apps use. This makes the manual prompt a rare
       // last resort rather than the normal path.
       enableAddressSearch: true,
-      onStatus: detail => { logConnection({ label: String(detail), kind: 'status' }); options.onDeviceStatus?.(detail); },
+      onStatus: detail => {
+        stage = stageFor(String(detail)) || stage;
+        armStall();
+        logConnection({ label: String(detail), kind: 'status', stage });
+        options.onDeviceStatus?.(detail);
+        options.onStatus?.(detail);
+      },
       macAddressProvider: async (device, finalAttempt) => {
         selectedDevice = device;
+        stage = 'address'; armStall();
         let libraryCached = false;
         try { libraryCached = Boolean(globalThis.localStorage?.getItem(`smartcube-ble-mac:${device?.id}`)); } catch { /* storage unavailable */ }
         logConnection({ kind: 'env', label: `Library address cache for device id ${device?.id ?? '?'}: ${libraryCached ? 'present' : 'missing'} · remembered by name: ${getRememberedMac(device?.name) ? 'present' : 'missing'}` });
@@ -136,11 +170,13 @@ async function connectBluetooth(options) {
         // Advertising did not expose the address (Web Bluetooth hides it). Show a
         // self-contained one-time entry dialog — never send the user to another view.
         logConnection({ label: 'The cube did not share its address. Asking for one-time entry.', kind: 'fallback' });
-        const entered = await promptMacAddress(device);
+        waitingForPerson = true; armStall();
+        const entered = await promptMacAddress(device).finally(() => { waitingForPerson = false; armStall(); });
         logConnection({ label: entered ? `Manual address entered: ${entered}` : 'Manual entry cancelled.', kind: entered ? 'manual' : 'cancel' });
         return entered;
       },
-    });
+    })]);
+    clearTimeout(stallTimer);
     // connectSmartCube returns only after it validates decrypted cube data.
     logConnection({ label: `Connected: ${connection.deviceName} · ${connection.protocol?.name ?? ''} · MAC ${connection.deviceMAC || '(none)'}`, kind: 'ok' });
     // Save that proven address as a fallback if the browser's device ID changes.
@@ -148,9 +184,12 @@ async function connectBluetooth(options) {
     lastCubeName = connection.deviceName || null;
     return connection;
   } catch (error) {
-    logConnection({ label: `Connection failed: ${error?.message || error}`, kind: 'error' });
+    clearTimeout(stallTimer);
+    // The reason, the step it stopped at and the browser facts go to the log and the recording.
+    logConnection({ label: `Connection failed at ${stage}: ${error?.name || 'Error'}: ${error?.message || error}${usedRememberedMac ? ' (used the saved address)' : ''}`, kind: 'error', stage });
     // Do not silently retry a stale address on the next connection attempt.
     if (usedRememberedMac) forgetRememberedMac(selectedDevice?.name);
+    try { Object.assign(error, { stage, support }); } catch { /* frozen or primitive error */ }
     throw error;
   }
 }

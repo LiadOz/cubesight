@@ -12,6 +12,8 @@
 // the browser remembers it. It is intentionally self-contained so no trainer
 // view has to send the user to another view.
 
+import { inspectBluetoothSupport } from './smart-cube-diag.js';
+
 const VALID_MAC = /^(?:[\da-f]{2}[:-]?){5}[\da-f]{2}$/i;
 
 let dialogPromise = null;
@@ -42,6 +44,13 @@ function ensureDialog() {
       </div>
     </form>`;
   document.body.append(dialogEl);
+  // chrome://bluetooth-internals does not exist in Chrome on a phone; point at a scanner app instead.
+  if (inspectBluetoothSupport().platform !== 'desktop') {
+    dialogEl.querySelector('.smart-mac-steps').innerHTML = `
+        <li>Chrome on a phone has no page that shows this. Install a free Bluetooth scanner app, for example <strong>nRF Connect</strong>.<button type="button" class="smart-mac-copy" hidden></button><span class="smart-mac-copy-status" role="status"></span></li>
+        <li>Turn the cube on, scan, and find your cube in the list.</li>
+        <li>Copy its <strong>address</strong> (six pairs of hex digits, e.g. <code>AA:BB:CC:DD:EE:FF</code>) and paste it below.</li>`;
+  }
   const $ = sel => dialogEl.querySelector(sel);
   $('.smart-mac-copy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText('chrome://bluetooth-internals/#devices'); $('.smart-mac-copy-status').textContent = 'Copied. Paste into Chrome’s address bar.'; }

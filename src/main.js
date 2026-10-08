@@ -531,6 +531,16 @@ function reportCubeProblem(message) {
   globalHeaderStatus.textContent = message;
   appToast?.show({ text: message, tone: 'error' });
 }
+// The session catches its own connection errors (connect() never rejects), so the
+// failure arrives on the snapshot. Show each new one once, where a phone can see it.
+let lastShownFailure = smartCube.getSnapshot().failure?.seq ?? 0;
+smartCube.subscribe(snapshot => {
+  const failure = snapshot.failure;
+  if (!failure || failure.seq <= lastShownFailure) return;
+  lastShownFailure = failure.seq;
+  globalHeaderStatus.textContent = failure.message;
+  appToast?.show({ text: failure.message, tone: failure.tone === 'neutral' ? undefined : 'error' });
+});
 const globalHeader = createHeader(document.querySelector('#site-header'), {
   title: APP_NAME,
   sections: [
