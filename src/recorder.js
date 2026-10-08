@@ -18,6 +18,8 @@
 // traffic); the header of the active connection is pinned so a trimmed
 // recording can still be replayed.
 
+import { setConnectionSink, inspectBluetoothSupport } from './smart-cube-diag.js';
+
 export const RECORDING_FORMAT = 'cubesight-recording';
 // v2: recordings may contain link-loss / reconnect / desync-check behaviour, so a
 // replay runs the session with the app's robustness options (APP_SESSION_OPTIONS).
@@ -40,6 +42,7 @@ let replayHooks = null;     // { now(), read(kind, fallback) } while a replay dr
 let connectionCounter = 0;
 let commandCounter = 0;
 let header = [];            // pinned events of the active connection
+let diagTrail = [];         // the latest connection diagnostics, kept even when the ring trims them
 let checkpointProvider = null;
 let persistence = null;
 let persistTimer = 0;
@@ -294,6 +297,7 @@ export function record(kind, payload = {}, { pin = false } = {}) {
   const entry = { seq: ++seq, t, kind, data: toJSONSafe(payload) };
   events.push(entry);
   if (pin) header.push(entry);
+  if (kind === 'diag') { diagTrail.push(entry); if (diagTrail.length > 300) diagTrail.shift(); }
   if (events.length > cap) trim();
   schedulePersist();
   return t;
@@ -360,7 +364,14 @@ export function clearRecording() {
 }
 
 /** Drop everything, including the pinned connection header (tests). */
-export function resetRecording() { header = []; clearRecording(); }
+export function resetRecording() { header = []; diagTrail = []; clearRecording(); }
+
+function withDiagTrail(list) {
+  if (!diagTrail.length) return list;
+  const present = new Set(list.map(event => event.seq));
+  const missing = diagTrail.filter(event => !present.has(event.seq));
+  return missing.length ? [...missing, ...list].sort((a, b) => a.seq - b.seq) : list;
+}
 
 /** A JSON-serializable copy of the recording (plus a final snapshot for divergence checks). */
 export function getRecording(extra = {}) {
@@ -371,10 +382,10 @@ export function getRecording(extra = {}) {
     startedAt,               // wall clock at t=0
     durationMs: perf() - origin - (events[0]?.t ?? 0),
     dropped,
-    env: typeof navigator !== 'undefined' ? { userAgent: navigator.userAgent, href: typeof location !== 'undefined' ? location.href : '' } : { node: typeof process !== 'undefined' ? process.version : '' },
+    env: typeof navigator !== 'undefined' ? { userAgent: navigator.userAgent, href: typeof location !== 'undefined' ? location.href : '', bluetooth: inspectBluetoothSupport() } : { node: typeof process !== 'undefined' ? process.version : '' },
     final: checkpoint(),
     ...extra,
-    events: events.map(e => ({ ...e })),
+    events: withDiagTrail(events).map(e => ({ ...e })),
   });
 }
 
@@ -615,3 +626,6 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
   window.addEventListener('error', e => record('runtime-error', { message: e.message, error: e.error }));
   window.addEventListener('unhandledrejection', e => record('runtime-error', { message: 'unhandledrejection', error: e.reason }));
 }
+
+// Every connection diagnostic line (browser support, steps, the failing error) rides along in the recording.
+setConnectionSink(entry => record('diag', entry));

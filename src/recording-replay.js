@@ -244,7 +244,7 @@ export function createReplayDriver(input, { speed = 0, maxGapMs = 5000, onAction
       case 'trimmed':
         diverge(`recording was trimmed (${d.dropped} older events dropped); state before the trim is unknown`);
         return false;
-      case 'read': case 'command': case 'command-result': case 'observe.session': case 'observe.live':
+      case 'read': case 'command': case 'command-result': case 'observe.session': case 'observe.live': case 'diag':
         return false;
       default:
         trace(e.kind, { data: d });

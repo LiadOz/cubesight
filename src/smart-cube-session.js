@@ -1,5 +1,5 @@
 import { applyMoves, createSolvedState, FACE_COLORS, parseScramble } from './cross-cube.js';
-import { logConnection } from './smart-cube-diag.js';
+import { logConnection, explainConnectionError } from './smart-cube-diag.js';
 import { sameCornersAndEdges, stateFromFacelets } from './facelets-state.js';
 import { MSG } from './copy/terms.js';
 
@@ -73,6 +73,10 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
     // Connection health: { status: 'none'|'up'|'lost'|'reconnecting', attempt,
     // maxAttempts, retryAt, needsGesture, reason }.
     link: LINK_NONE,
+    // The last connection attempt that failed: { seq, name, message, tone, stage, raw }.
+    // `message` is a sentence for the person; the UI shows it where it can be seen
+    // (the header status line is hidden on a phone). Never cleared, only replaced.
+    failure: null,
     // Bumped when the tracked state was replaced by the cube's own report
     // (missed packets), and when a reconnect finished verifying: { seq, match, at }.
     resync: null, reconnectEvent: null,
@@ -80,6 +84,13 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
     sync: { status: 'unchecked', gaps: 0, checkedAt: null },
   };
   let moveSeq = 0;
+  let failureSeq = 0;
+
+  function failureFrom(error) {
+    const explained = explainConnectionError(error, { stage: error?.stage, support: error?.support });
+    logConnection({ kind: 'error', label: `[session] connect failed at ${error?.stage || '?'}: ${error?.name || 'Error'}: ${error?.message || error}` });
+    return { seq: ++failureSeq, name: error?.name || 'Error', message: explained.text, tone: explained.tone, stage: error?.stage || '', raw: String(error?.message || error) };
+  }
 
   function publish(changes) {
     snapshot = { ...snapshot, ...changes,
@@ -340,7 +351,10 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
         });
       } else publish({ detail: 'This cube cannot report its state. Start only when it is physically solved.' });
     } catch (error) {
-      if (token === generation) publish({ phase: 'disconnected', detail: error?.name === 'NotFoundError' ? 'No cube selected.' : `Connection failed: ${error.message}` });
+      if (token === generation) {
+        const failure = failureFrom(error);
+        publish({ phase: 'disconnected', detail: failure.message, failure });
+      }
     }
   }
 
@@ -376,7 +390,8 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
       if (token !== generation) return false;
       const needsGesture = Boolean(error?.needsGesture) || (gesture && error?.name === 'NotFoundError');
       logConnection({ kind: 'warn', label: `[session] reconnect try ${retryAttempt} failed: ${error?.message || error}` });
-      publish({ phase: 'disconnected', detail: 'Couldn’t reconnect. Connect to try again.', link: { status: 'lost', attempt: retryAttempt, maxAttempts: autoReconnect?.delaysMs?.length ?? 0, needsGesture, reason: 'failed' } });
+      const failure = failureFrom(error);
+      publish({ phase: 'disconnected', detail: 'Couldn’t reconnect. Connect to try again.', failure: gesture ? failure : snapshot.failure, link: { status: 'lost', attempt: retryAttempt, maxAttempts: autoReconnect?.delaysMs?.length ?? 0, needsGesture, reason: 'failed' } });
       if (!needsGesture && !gesture) scheduleRetry();
       return false;
     }
