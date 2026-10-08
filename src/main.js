@@ -477,7 +477,19 @@ function cornerGuessSegments() {
   }));
 }
 const cornerTrainerOrbit = createTrainerOrbit(document.querySelector('#corner-view .cube-stage'), { customSegments: cornerGuessSegments });
-const f2lTrainerOrbit = createTrainerOrbit(document.querySelector('#f2l-view .cube-stage'));
+// Pair deduction: one arc per pair to be found in this case (3 or 4 depending on how many the cube lets you deduce),
+// all empty, each filling as its pair is found. Rounds and the other F2L drills keep the round Orbit.
+function f2lSlotSegments() {
+  const current = f2lState.current;
+  if (f2lState.drill !== 'deduction' || !current?.targetPairIds?.length) return null;
+  const round = legacyRounds.f2l?.getViewModel?.().round;
+  if (round && (round.status === 'active' || round.status === 'complete')) return null;
+  return current.targetPairIds.map((pairId, index) => {
+    const found = f2lState.matchedPairIds.includes(pairId);
+    return { key: `slot-${index + 1}`, weight: 1, fill: found ? 1 : 0, state: found ? 'good' : 'future' };
+  });
+}
+const f2lTrainerOrbit = createTrainerOrbit(document.querySelector('#f2l-view .cube-stage'), { customSegments: f2lSlotSegments });
 mountCaseColorControl(document.querySelector('#corner-view .intro-row'));
 mountCaseColorControl(document.querySelector('#f2l-view .intro-row'));
 const cornerSettings = mountTrainerSettings(document.querySelector('#corner-view .training-settings'));
@@ -509,6 +521,10 @@ function legacyTrainerViewModel(tool) {
     answers: planner ? buttons.map(button => { const choice = planner.choices[Number(button.dataset.plannerChoice)]; return { logicalKey: choice?.slot, displayKey: choice ? plannerPairLabel(choice, planner.orientation) : '', label: button.querySelector('strong')?.textContent || '', selected: Number(button.dataset.plannerChoice) === planner.answer, correct: choice?.weight === planner.choices[0]?.weight }; }) : selectable.map(id => ({ logicalKey: id, displayKey: id, label: id, selected: f2lState.selected === id, correct: f2lState.matchedPieces?.includes?.(id) || matchedPieces().includes(id) })),
     round: roundPanelModel, cube: f2lCube3D?.getSnapshot?.() || null, feedback: document.querySelector('#f2l-status')?.textContent || '', settings: { mode: f2lState.drill, scanDuration: f2lState.scanDuration, pseudo: f2lState.scanPseudo, plannerShiftD: f2lState.plannerShiftD, caseColor: readCaseColorSetting() } };
 }
+// Test-only: the pairs of the current F2L case, and the cube's own click handler, so a spec can pick a true pair
+// without rotating the cube to reach the back pieces.
+if (import.meta.env.DEV) window.__cubesightF2LCase = () => ({ targets: f2lState.current?.targetPairIds ?? [], pieces: f2lState.current?.pieceByPiece ?? {}, matched: f2lState.matchedPairIds });
+if (import.meta.env.DEV) window.__cubesightF2LCase.pick = piece => handleF2LPiece({ piece });
 window.__cubesightLegacyTrainerHandles = { corner: { getViewModel: () => legacyTrainerViewModel('corner') }, f2l: { getViewModel: () => legacyTrainerViewModel('f2l') } };
 
 window.addEventListener(CASE_COLOR_CHANGE_EVENT, () => {
@@ -1523,6 +1539,7 @@ function renderF2L() {
   const current = f2lState.current;
   document.querySelector('#f2l-cube').hidden = !current;
   if (!current) { document.querySelector('#f2l-status').textContent = f2lState.message || 'preparing a case…'; return; }
+  // A found pair stays exactly as it looks: a real cube does not re-tint what you have already spotted.
   const matched = matchedPieces();
   const selectable = current.selectablePieces.filter((piece) => !matched.includes(piece));
   const displayMap = current.displayColorMap = createCaseDisplayMap(current.orientation, readCaseColorSetting(), `f2l:${current.id || f2lState.caseNumber}`);
@@ -1541,7 +1558,6 @@ function renderF2L() {
     selectablePieces: selectable,
     f2lSelection: f2lState.selected ? [f2lState.selected] : [],
     f2lFeedback: f2lState.feedback,
-    matchedPieces: matched,
     onPieceClick: handleF2LPiece,
   });
   const view = document.querySelector('#f2l-view');

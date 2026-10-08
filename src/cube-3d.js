@@ -594,7 +594,6 @@ export function createCube3D(container, options = {}) {
     const activeCorner = targets[activeIndex]?.targetCorner;
     const feedback = data.feedback || null;
     const f2lFeedback = data.f2lFeedback || null;
-    const matchedPieces = new Set(data.matchedPieces || []);
     const showAllCorners = Boolean(data.showAllCorners);
     const highlightedPieces = new Set(data.highlightedPieces || []);
     const dimOthers = Boolean(data.dimOthers);
@@ -658,7 +657,6 @@ export function createCube3D(container, options = {}) {
       }
       sticker.userData.baseColor.set(revealAnswer ? feedback.correctColor : (isHiddenTarget && active ? '#ffffff' : color));
       const dimmedTarget = Boolean(target && !active && !showAllCorners);
-      const matched = interactionMode === 'f2l' && matchedPieces.has(piece);
       // Emphasis belongs to the cube, not to one interaction mode: corner and f2l cubes honour it too.
       const scoutHighlight = [...highlightedPieces].some((candidate) => samePiece(candidate, piece));
       const dimmed = dimOthers && !scoutHighlight;
@@ -666,10 +664,10 @@ export function createCube3D(container, options = {}) {
       if (scoutHighlight) highlightedStickerCount++;
       // three.js only honours a flipped `transparent` flag after the material is flagged for an update; without it
       // the dim (and every highlight's "everything else steps back") was counted but never drawn.
-      const translucent = dimmedTarget || matched || dimmed;
+      const translucent = dimmedTarget || dimmed;
       if (sticker.material.transparent !== translucent) { sticker.material.transparent = translucent; sticker.material.needsUpdate = true; }
-      sticker.material.opacity = dimmedTarget ? .2 : matched ? .38 : dimmed ? .16 : 1;
-      sticker.material.depthWrite = !(dimmedTarget || matched || dimmed);
+      sticker.material.opacity = dimmedTarget ? .2 : dimmed ? .16 : 1;
+      sticker.material.depthWrite = !(dimmedTarget || dimmed);
       const f2lEmphasis = interactionMode === 'f2l' && (piece === f2lSelected || piece === f2lFeedback?.piece);
       const correction = interactionMode === 'f2l' && f2lFeedback?.correctPieces?.includes(piece);
       sticker.userData.border.visible = scoutHighlight || (interactionMode === 'f2l' ? Boolean(f2lEmphasis || correction) : interactionMode === 'scout' ? false : Boolean(active && (isKnown || isHiddenTarget)));
@@ -679,6 +677,9 @@ export function createCube3D(container, options = {}) {
       sticker.scale.setScalar(scoutHighlight ? 1.045 : active && (isKnown || isHiddenTarget) ? 1.045 : f2lEmphasis ? 1.055 : 1);
       sticker.renderOrder = active ? 2 : 0;
     });
+    // What each sticker is actually drawn as (colour@opacity), so a test can prove a choice never re-tints the cube.
+    renderer.domElement.dataset.stickerLooks = JSON.stringify(Object.fromEntries(stickerMeshes.map(sticker =>
+      [`${sticker.userData.face}:${sticker.userData.piece}`, `#${sticker.userData.baseColor.getHexString()}@${sticker.material.opacity}`])));
     renderer.domElement.dataset.highlightedPieces = [...highlightedPieces].sort().join(',');
     renderer.domElement.dataset.dimmedStickers = String(dimmedStickerCount);
     renderer.domElement.dataset.highlightedStickers = String(highlightedStickerCount);
