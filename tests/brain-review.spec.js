@@ -25,12 +25,15 @@ test('finish a solve: markers appear, a marker opens the detail with the cube th
   test.setTimeout(120_000);
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
+  await page.clock.install();
   await page.setViewportSize({ width: 1440, height: 900 });
-  await mountTestBrain(page, 'orbit', { route: true });
+  await mountTestBrain(page, 'orbit', { route: true, virtualTime: true });
   await playSolve(page, g.scramble, g.moves, { brain: BRAIN, base: 100, gaps: { 14: 1800 } });
   const brain = page.locator(BRAIN);
 
-  // The analysis runs in a worker; the markers arrive a moment after the results.
+  // Compare final markers: the worker publishes a partial set before refinement.
+  await expect.poll(async () => (await review(page))?.status, { timeout: 30_000 }).toBe('done');
+  expect((await review(page)).markers.some(marker => marker.id === 'pause-14')).toBe(true);
   await expect(brain.locator('.b-rev-chip')).not.toHaveCount(0, { timeout: 30_000 });
   await expect.poll(() => ringMarkerKeys(brain)).toEqual((await review(page)).markers.map(marker => marker.id).sort());
   // F1 removes the duplicate TPS chart; all its moments remain on the Orbit.
@@ -83,11 +86,12 @@ test('finish a solve: markers appear, a marker opens the detail with the cube th
   await expect(detail).toBeHidden();
   expect(errors).toEqual([]);
 
-  // Reload: the pin is still there and the next results screen counts it.
+  // Reload: the pin is still there and a new results screen counts it. A short
+  // solve exercises that wiring without repeating the whole review analysis.
   await page.reload();
   expect((await pinsInDb(page)).length).toBe(1);
-  await mountTestBrain(page, 'orbit', { route: true, keepStorage: true });
-  await playSolve(page, g.scramble, g.moves, { brain: BRAIN, base: 60 });
+  await mountTestBrain(page, 'orbit', { route: true, keepStorage: true, virtualTime: true });
+  await playSolve(page, 'R U', "U' R'", { brain: BRAIN, base: 60 });
   await expect(brain.locator('.b-rev-pin-count')).toHaveText('1');
   expect(errors).toEqual([]);
 });

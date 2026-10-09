@@ -184,6 +184,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // The production worker is still built and checked by npm test. The
+        // cube-stub build exercises the same precache without minifying Workbox twice.
+        mode: process.env.VITE_CUBESIGHT_TEST_STUB === '1' ? 'development' : 'production',
         globPatterns: ['**/*.{js,css,html,webmanifest,ico,png,svg,wasm,woff,woff2,txt}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
