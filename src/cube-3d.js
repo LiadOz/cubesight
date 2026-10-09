@@ -118,6 +118,30 @@ function stickerTransform(mesh, face, x, y, z) {
   if (face === 'L') { mesh.position.x -= offset; mesh.rotation.y = -Math.PI / 2; }
 }
 
+/**
+ * TEST-ONLY: a renderer that keeps every scene, animation and data-attribute path but never touches WebGL, so browser
+ * tests that do not assert cube pixels can run in parallel (headless WebGL is software-rendered on the CPU).
+ * Guard: `import.meta.env.DEV` is statically false in a production build, so the stub branch is removed from shipped
+ * code; in dev it needs the dev server to have been started with VITE_CUBESIGHT_TEST_STUB=1 (set only by
+ * playwright.config.js's webServer). A page can opt back into real WebGL with an init script that sets
+ * window.__CUBESIGHT_REAL_GL__ = true. Without the env var (the default for every other dev server, preview
+ * and build) the real WebGLRenderer is always used.
+ */
+function useStubRenderer() {
+  return Boolean(import.meta.env?.DEV && import.meta.env?.VITE_CUBESIGHT_TEST_STUB === '1' && !globalThis.__CUBESIGHT_REAL_GL__);
+}
+function createRenderer() {
+  if (!useStubRenderer()) return new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  const domElement = document.createElement('canvas');
+  domElement.dataset.rendererStub = '1';
+  domElement.style.display = 'block'; // what three's own canvas does
+  return {
+    domElement, outputColorSpace: null, toneMapping: null, toneMappingExposure: 1,
+    setPixelRatio() {}, setClearColor() {}, render() {}, dispose() {},
+    setSize(width, height) { domElement.width = Math.max(1, width); domElement.height = Math.max(1, height); },
+  };
+}
+
 export function createCube3D(container, options = {}) {
   const scene = new THREE.Scene();
   // The approved frames (docs/design/orbit-v3, SPEC-A-EXACT section 5) draw the cube as a symmetric isometric: a hexagon
@@ -130,7 +154,7 @@ export function createCube3D(container, options = {}) {
   camera.position.copy(cornerCameraPosition);
   camera.lookAt(0, 0, 0);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  const renderer = createRenderer();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
