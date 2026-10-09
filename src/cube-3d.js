@@ -123,14 +123,13 @@ function stickerTransform(mesh, face, x, y, z) {
 /**
  * TEST-ONLY: a renderer that keeps every scene, animation and data-attribute path but never touches WebGL, so browser
  * tests that do not assert cube pixels can run in parallel (headless WebGL is software-rendered on the CPU).
- * Guard: `import.meta.env.DEV` is statically false in a production build, so the stub branch is removed from shipped
- * code; in dev it needs the dev server to have been started with VITE_CUBESIGHT_TEST_STUB=1 (set only by
- * playwright.config.js's webServer). A page can opt back into real WebGL with an init script that sets
- * window.__CUBESIGHT_REAL_GL__ = true. Without the env var (the default for every other dev server, preview
- * and build) the real WebGLRenderer is always used.
+ * Guard: VITE_CUBESIGHT_TEST_STUB is replaced at build time, so without it (every shipped build and every other
+ * dev server) the branch is statically false and removed. Only the tests set it: the browser tests' dev server
+ * (playwright.config.js) and the offline tests' own build (scripts/test-suite.mjs, test-results/dist-test).
+ * A page can opt back into real WebGL with an init script that sets window.__CUBESIGHT_REAL_GL__ = true.
  */
 function useStubRenderer() {
-  return Boolean(import.meta.env?.DEV && import.meta.env?.VITE_CUBESIGHT_TEST_STUB === '1' && !globalThis.__CUBESIGHT_REAL_GL__);
+  return Boolean(import.meta.env.VITE_CUBESIGHT_TEST_STUB === '1' && !globalThis.__CUBESIGHT_REAL_GL__);
 }
 function createRenderer() {
   if (!useStubRenderer()) return new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });

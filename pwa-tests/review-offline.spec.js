@@ -27,6 +27,7 @@ test('review import and solve replay routes work offline after install', async (
   await expect(page.locator('.history-stage__cube canvas')).toBeVisible();
   await page.keyboard.press('Space');
   await expect(page).toHaveURL(/#\/history\/\d+\/replay$/);
+  await expect(page.locator('.history-stage__subline')).toContainText('move 0 of 2');
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.history-stage__subline')).toContainText('move 1 of 2');
   expect(errors).toEqual([]);
