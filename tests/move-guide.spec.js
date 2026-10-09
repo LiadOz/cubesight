@@ -1,9 +1,7 @@
 import { test, expect } from './helpers/coverage-test.js';
-import fs from 'node:fs';
 
 // The move guide (plain notation chips) and the 3D cue, through the dev gallery page
-// (src/moves/_gallery.html). Screenshots go to test-results/move-guide/.
-const SHOTS = 'test-results/move-guide';
+// (src/moves/_gallery.html). The cue's motion over time is unit-tested (move-cue-unit.test.mjs).
 const LOOKS = [['orbit', 'dark'], ['mono', 'light']];
 const gallery = (page, style = 'orbit', theme = 'dark', extra = '') => page.goto(`/src/moves/_gallery.html?style=${style}&theme=${theme}${extra}`)
   .then(() => page.waitForSelector('html[data-gallery-ready]'));
@@ -29,7 +27,6 @@ test('overflowing move strips scroll with Home, End, and arrow keys', async ({ p
 
 for (const [style, theme] of LOOKS) {
   test(`chips are plain notation: done dimmed, current highlighted (${style}-${theme})`, async ({ page }) => {
-    fs.mkdirSync(SHOTS, { recursive: true });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width: 1200, height: 900 });
@@ -71,7 +68,6 @@ for (const [style, theme] of LOOKS) {
     expect(style1.curSize).toBeGreaterThan(style1.plainSize);
     expect(style1.curBorder).not.toBe(style1.plainBorder);
     expect(style1.doneOpacity).toBeLessThan(.6);
-    await page.screenshot({ path: `${SHOTS}/${style}-${theme}-chips.png`, fullPage: true });
     expect(errors).toEqual([]);
   });
 }
@@ -101,29 +97,6 @@ test('the cue targets the current move: layer, axis, direction and angle', async
   expect(await layers('r')).toEqual([0, 1]);
   expect(await layers("M'")).toEqual([0]);
   expect(await layers('R')).toEqual([1]);
-});
-
-test('the looping cue eases out, holds, returns to rest and repeats; doubles go twice', async ({ page }) => {
-  await gallery(page, 'orbit', 'dark', '&cue=1');
-  const sample = async (move, ms) => page.evaluate(async ([m, total]) => {
-    const c = window.gallery.cube; c.setCue(m);
-    const out = []; const t0 = performance.now();
-    while (performance.now() - t0 < total) { out.push(Math.round(c.getCueState().angle)); await new Promise(resolve => setTimeout(resolve, 25)); }
-    return out;
-  }, [move, ms]);
-  const quarter = await sample("U'", 3600);   // U' is a positive angle
-  expect(quarter[0]).toBe(0);
-  expect(Math.max(...quarter)).toBeGreaterThanOrEqual(30);
-  expect(Math.min(...quarter)).toBe(0);
-  expect(quarter.every(angle => angle >= 0 && angle <= 36)).toBe(true);
-  const double = await sample('F2', 4200);
-  expect(Math.min(...double)).toBeGreaterThanOrEqual(-60);
-  expect(Math.max(...double.map(Math.abs))).toBeGreaterThanOrEqual(55);
-  // two separate excursions to the peak within one cycle
-  const absd = double.map(Math.abs);
-  let excursions = 0; let above = false;
-  for (const v of absd) { if (v >= 50 && !above) { excursions++; above = true; } else if (v < 20) above = false; }
-  expect(excursions).toBeGreaterThanOrEqual(2);
 });
 
 test('a physical turn cancels the cue at once, the real turn animates, then the cue restarts on the next move', async ({ page }) => {
@@ -217,20 +190,6 @@ test('held orientation: an explicit hold fixes the colour layer, the gyro re-ori
   expect(Math.sign(follow.angle)).toBe(-1);
 });
 
-test('reduced motion: a static tinted layer with a small still offset, no loop', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await gallery(page, 'orbit', 'dark', '&cue=1');
-  const canvas = page.locator('canvas');
-  await expect(canvas).toHaveAttribute('data-cue', "R'");
-  await expect(canvas).toHaveAttribute('data-cue-loop', 'false');
-  const a = await cueAngle(page);
-  await page.waitForTimeout(600);
-  const b = await cueAngle(page);
-  expect(a).toBe(b);
-  expect(Math.abs(a)).toBeGreaterThan(5);
-  expect(Math.abs(a)).toBeLessThan(25);
-});
-
 test('the cue pref turns the cue off and animateMove still works on all kinds', async ({ page }) => {
   await gallery(page, 'orbit', 'dark', '&cue=1');
   await page.evaluate(async () => {
@@ -268,28 +227,3 @@ test('move animation cancellation, reduced motion, and destroy settle their prom
   });
   expect(destroyed).toBe(true);
 });
-
-// Screenshots of the cue at rest, mid-turn and at its peak for the moves the brief asks
-// about, in both priority looks. Read them to check the directions against notation.
-for (const [style, theme] of LOOKS) {
-  test(`cue screenshots (${style}-${theme})`, async ({ page }) => {
-    test.setTimeout(120_000);
-    fs.mkdirSync(`${SHOTS}/cue`, { recursive: true });
-    await page.setViewportSize({ width: 900, height: 700 });
-    await gallery(page, style, theme, '&cue=1');
-    await page.evaluate(() => {
-      const mount = document.querySelector('canvas').parentElement;
-      mount.style.cssText = 'position:fixed;left:50%;top:50%;width:560px;height:560px;transform:translate(-50%,-50%)';
-      window.dispatchEvent(new Event('resize'));
-    });
-    await page.waitForTimeout(300);
-    for (const move of ['R', "U'", 'F2', "M'", 'y', 'r']) {
-      for (const [name, pose] of [['0', 0], ['mid', .5], ['peak', 1]]) {
-        await page.evaluate(([m, p]) => window.gallery.cube.setCue(m, { pose: p, held: { bottom: 'D', front: 'F' } }), [move, pose]);
-        await page.waitForTimeout(250);
-        const box = await page.locator('canvas').boundingBox();
-        await page.screenshot({ clip: box, path: `${SHOTS}/cue/${style}-${theme}-${move.replace("'", 'p').replace(/^r$/, 'rw')}-${name}.png` });
-      }
-    }
-  });
-}
