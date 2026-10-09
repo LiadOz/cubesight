@@ -185,7 +185,7 @@ export function gateStages(plan, { browser = true, checks = true, stopAfterMs = 
   const pwa = plan.rotation?.run.filter((item) => item.key.startsWith(PWA_PREFIX)) ?? [];
   const build = 'npm run build && node scripts/check-no-dev-gallery.mjs && npm run gallery:coverage';
   // The PWA specs run against the gate's own build (the preview server serves dist/), so they wait for it in the same stage.
-  const pwaRun = `[ $(( CUBESIGHT_DEADLINE_MS - $(date +%s%3N) )) -gt ${PWA_MIN_START_MS} ] || { echo 'PWA specs skipped: no time left after the build'; exit 0; }; PLAYWRIGHT_JSON_OUTPUT_NAME=${path.join(GATE_DIR, 'report-pwa.json')} npx playwright test --config=${PWA_CONFIG} --update-snapshots=none --reporter=line,json ${pwa.map((item) => `'${item.spec}'`).join(' ')}`;
+  const pwaRun = `[ $(( CUBESIGHT_DEADLINE_MS - $(date +%s%3N) )) -gt ${PWA_MIN_START_MS} ] || { echo 'PWA specs skipped: no time left after the build'; exit 0; }; PLAYWRIGHT_JSON_OUTPUT_NAME=${path.resolve(GATE_DIR, 'report-pwa.json')} npx playwright test --config=${PWA_CONFIG} --update-snapshots=none --reporter=line,json ${pwa.map((item) => `'${item.spec}'`).join(' ')}`;
   if (checks) {
     // Same checks as `npm run lint`, but cached (only changed files are re-linted) and split so they overlap.
     stages.push(['lint-js', 'npx', ['eslint', '--cache', '--cache-location', `${LINT_CACHE_DIR}/eslintcache`, '.']]);
