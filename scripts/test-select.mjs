@@ -741,7 +741,23 @@ export async function selectTests({ root, changes, model, head = null, specHashe
   const stale = specs.filter((spec) => specHashes[spec] !== undefined && model.specHashes[spec] !== specHashes[spec] && !specChangeSelected.has(spec));
   result.staleSpecs = stale;
   const relevant = [...result.items.values()].filter((item) => !item.floor);
-  for (const spec of stale) await addSpec(spec, 4, 'spec is new or changed since the impact map was captured');
+  // Trunk moved since the map was captured: a pulled spec keeps its old coverage entries (still a good guide),
+  // but tests it ADDED have no history, so those run once (they then join the map).
+  let newlyAdded = 0;
+  for (const spec of stale) {
+    const text = await readSpec(spec);
+    if (!text) continue;
+    let tests;
+    try { tests = parseSpecTests(text).tests; } catch { await addSpec(spec, 4, 'spec changed since the impact map was captured'); continue; }
+    const known = new Set([...model.tests.values()].filter((info) => info.spec === spec).map((info) => info.titlePath?.at(-1)));
+    if (!known.size) { await addSpec(spec, 4, 'spec is new to the impact map'); continue; }
+    for (const test of tests.values()) {
+      if (test.dynamic || known.has(test.title)) continue;
+      await addTitle(spec, test.title, 1, 'test added since the impact map was captured');
+      newlyAdded += 1;
+    }
+  }
+  if (stale.length) note(`${stale.length} spec(s) changed since the impact map was captured (trunk moved): old coverage is still used, ${newlyAdded} added test(s) run once. npm run test:impact-map refreshes the seed.`);
   result.relevantCount = relevant.length;
   if (sourceTouched && !relevant.length) {
     result.smokeOnly = true;
