@@ -275,24 +275,40 @@ const globalHeaderStatus = document.createElement('span');
 globalHeaderStatus.className = 'ui-header-status';
 globalHeaderStatus.setAttribute('role', 'status');
 
-// The header status line is hidden below 700px (shared.css), so a cube that
-// refuses to connect used to fail with no visible reason at all on a phone.
-// Report through the approved toast as well, which is where an error belongs
-// and which stays on screen until it is dismissed.
-function reportCubeProblem(message) {
-  globalHeaderStatus.textContent = message;
-  appToast?.show({ text: message, tone: 'error' });
+// Connection feedback has ONE home: the approved bottom toast (status/toast 1 in
+// docs/design/WIDGETS.md). It is visible on a phone, where the header status
+// line is hidden, and it has a dismiss button. The header status line is for
+// short, non-connection notes only (saving a recording), clears itself, and is
+// cleared on every route change. It used to be written with each connection
+// failure and never reset, so the same sentence sat there for good.
+let headerStatusTimer = 0;
+function setHeaderStatus(message, ms = 6000) {
+  clearTimeout(headerStatusTimer);
+  globalHeaderStatus.textContent = message || '';
+  if (message && ms) headerStatusTimer = setTimeout(() => { globalHeaderStatus.textContent = ''; }, ms);
+}
+let connectionToastUp = false;
+function dismissConnectionToast() {
+  if (!connectionToastUp) return;
+  connectionToastUp = false;
+  appToast?.dismiss();
+}
+function reportCubeProblem(message, tone = 'error') {
+  appToast?.show({ text: message, tone: tone === 'neutral' ? undefined : tone });
+  connectionToastUp = true;
 }
 // The session catches its own connection errors (connect() never rejects), so the
-// failure arrives on the snapshot. Show each new one once, where a phone can see it.
+// failure arrives on the snapshot. Show each new one once. A new attempt or a
+// success clears the old message; leaving the page does too.
 let lastShownFailure = smartCube.getSnapshot().failure?.seq ?? 0;
 smartCube.subscribe(snapshot => {
+  if (snapshot.phase === 'connecting' || snapshot.link?.status === 'up') { setHeaderStatus(''); dismissConnectionToast(); }
   const failure = snapshot.failure;
   if (!failure || failure.seq <= lastShownFailure) return;
   lastShownFailure = failure.seq;
-  globalHeaderStatus.textContent = failure.message;
-  appToast?.show({ text: failure.message, tone: failure.tone === 'neutral' ? undefined : 'error' });
+  reportCubeProblem(failure.message, failure.tone);
 });
+window.addEventListener('hashchange', () => { setHeaderStatus(''); dismissConnectionToast(); });
 const globalHeader = createHeader(document.querySelector('#site-header'), {
   title: APP_NAME,
   sections: [
@@ -309,7 +325,7 @@ const globalHeader = createHeader(document.querySelector('#site-header'), {
     recenter: () => document.dispatchEvent(new Event('cubesight-recenter')),
     disconnect: () => { void smartCube.disconnect(); },
     forget: () => clearSavedCubeData(),
-    'save-recording': () => { void saveRecording({ context: { route: location.hash }, status: message => { globalHeaderStatus.textContent = message; } }); },
+    'save-recording': () => { void saveRecording({ context: { route: location.hash }, status: message => setHeaderStatus(message) }); },
     'report-problem': () => { location.hash = '#/recording'; },
     forgetAvailable: () => { try { return Object.keys(localStorage).some(key => key.startsWith('cubesight-smartcube-mac-name:') || key.startsWith('smartcube-ble-mac:')); } catch { return false; } },
   },
@@ -910,7 +926,7 @@ document.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!action) return;
   if (action === 'save-recording') {
-    void saveRecording({ context: { route: location.hash }, status: message => { globalHeaderStatus.textContent = message; } });
+    void saveRecording({ context: { route: location.hash }, status: message => setHeaderStatus(message) });
     return;
   }
   if (action === 'clear-recording') { clearRecording(); renderRecordingView(); return; }

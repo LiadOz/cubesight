@@ -57,7 +57,18 @@ export function clearConnectionLog() {
 
 // --- What this browser can do, and what went wrong, in words a person can act on ---
 
-const text = (...parts) => parts.join(' ');
+const text = (...parts) => parts.join(' ').trim();
+
+/**
+ * True when the person closed the device chooser. Chrome raises NotFoundError for
+ * that with "User cancelled the requestDevice() chooser." A chooser that found
+ * nothing stays open until the person closes it, so it ends the same way; the
+ * only difference the platform offers is that message, and a missing adapter or
+ * a failed scan carries a different one. That is a choice, not a failure.
+ */
+export function isChooserDismissal(error) {
+  return error?.name === 'NotFoundError' && /cancel|dismiss/i.test(String(error?.message || ''));
+}
 
 /** Facts about the browser that decide whether a cube can connect at all. */
 export function inspectBluetoothSupport(env = globalThis) {
