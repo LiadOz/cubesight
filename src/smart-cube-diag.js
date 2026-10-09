@@ -108,7 +108,7 @@ export function explainConnectionError(error, { stage = '', support = null } = {
       : text('The browser would not open Bluetooth.', 'Allow Bluetooth for this site, then tap connect again.'), tone: 'error' };
   }
   if (name === 'NetworkError' || /GATT|disconnected|connection attempt failed/i.test(message)) {
-    return { text: text('Found the cube but could not connect.', 'Bring it close, close other apps connected to it, turn it a few times, then connect again.'), tone: 'error' };
+    return { text: text(`Found the cube but could not connect${message ? ` (${message.replace(/[.\s]+$/, '')})` : ''}.`, 'Bring it close, close other apps connected to it, turn it a few times, then connect again.'), tone: 'error' };
   }
   if (/Unable to determine cube MAC|MAC address/i.test(message) && !/Timed out/i.test(message)) {
     return { text: text('Your cube did not share its address, so it could not be read.', 'Connect again and enter the address when asked.'), tone: 'error' };
