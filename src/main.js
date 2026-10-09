@@ -18,8 +18,11 @@ import { T, MSG } from './copy/terms.js';
 import { isKnownTool, resolveRoute, keyScope, parseHash, registerDevRoute } from './routes.js';
 import { rememberDrill, drillByTool } from './drills/catalog.js';
 import { createWakeLock } from './wake-lock.js';
+import './drills/round-panel.css';
 import { syncPageTokens } from './pages/tokens.js';
 import { loadSettings } from './brain/settings.js';
+import './trainers/trainer-orbit.css';
+import './recognition-profile.css';
 import { host, legacyRounds } from './drills/trainer-host.js';
 const BUILD_REVISION = __CUBESIGHT_REVISION__;
 const BUILD_LABEL = BUILD_REVISION === 'development' ? BUILD_REVISION : BUILD_REVISION.slice(0, 7);
@@ -386,9 +389,29 @@ function openTrainer(tool) {
     if (token !== trainerOpenToken || host.activeTool !== tool) return;
     trainer.enter(location.hash);
     mountSnapshotPage(tool);
+    replayEarlyInput(tool);
   };
   if (trainers[tool]) open(trainers[tool]);
   else loadTrainer(tool).then(open).catch(() => { if (token === trainerOpenToken) host.toast.show({ text: MSG.loadFailed(tool === 'corner' ? 'corner drill' : 'F2L drill'), tone: 'error' }); });
+}
+// The drill's controls are on the page before its code is, so a tap can land first. Keep those taps and
+// changes, and replay them once the drill is up, so none is lost.
+const EARLY_CONTROLS = '[data-color], [data-mode], [data-session], [data-action], [data-f2l-drill], [data-planner-choice]';
+const earlyInput = [];
+function queueEarlyInput(event) {
+  const tool = host.activeTool;
+  if (!(tool in trainers) || trainers[tool] || !document.querySelector(`#${TOOL_VIEWS[tool]}`)?.contains(event.target)) return;
+  const target = event.type === 'click' ? event.target.closest(EARLY_CONTROLS) : event.target;
+  if (target) earlyInput.push({ tool, type: event.type, target });
+}
+document.addEventListener('click', queueEarlyInput);
+document.addEventListener('change', queueEarlyInput);
+function replayEarlyInput(tool) {
+  for (const item of earlyInput.splice(0)) {
+    if (item.tool !== tool || !item.target.isConnected) continue;
+    if (item.type === 'click') item.target.click();
+    else item.target.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 }
 // Tests and the snapshot bridge read these before the drill has loaded: an idle drill answers until it does.
 const idleTrainerModel = drill => ({ screen: 'trainer', drill, phase: 'idle', currentCase: null, answers: [], round: null, cube: null, feedback: '', settings: {} });
