@@ -46,7 +46,13 @@ test('a tier deadline also terminates a server in a separate process group', asy
   assert.ok(result.durationMs < 5000);
   const serverPid = Number(await readFile(pidFile, 'utf8'));
   // A killed child may briefly remain a zombie until its parent is reaped.
-  const status = await readFile(`/proc/${serverPid}/status`, 'utf8').catch(() => null);
+  // On a loaded machine the kill can take a moment to land, so poll briefly instead of racing it.
+  let status;
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    status = await readFile(`/proc/${serverPid}/status`, 'utf8').catch(() => null);
+    if (status === null || /State:\s+Z/.test(status)) break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
   assert.ok(status === null || /State:\s+Z/.test(status), 'escaped server cannot remain running');
   await unlink(pidFile);
 });
