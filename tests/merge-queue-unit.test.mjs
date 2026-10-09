@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runQueueAttempt } from '../scripts/merge-queue.mjs';
+import { runQueueAttempt, worktreesHoldingBranch, assertNotFalselyBare } from '../scripts/merge-queue.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const gitEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -198,4 +198,33 @@ test('safety rules are enforced in code', () => {
   assert.throws(() => assertNotLiveCheckout('/live/src', '/live'), /live checkout/);
   assert.doesNotThrow(() => assertNotLiveCheckout('/live/.agents/worktrees/x', '/live'));
   assert.doesNotThrow(() => assertNotLiveCheckout('/live-other', '/live'));
+});
+
+// Incident 2026-10-09: a unit test's `git init`, run with a pre-commit hook's
+// inherited GIT_DIR, set core.bare=true on the shared config. `git worktree list`
+// then reported the live checkout as bare with no branch, so the queue believed
+// trunk was free and advanced main under the user's files.
+async function repoWithMainCheckedOut() {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'mq-bare-'));
+  git(root, ['init', '-q', '-b', 'main']);
+  git(root, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'base']);
+  return root;
+}
+
+test('a checkout of trunk is still seen when core.bare has been flipped on it', async () => {
+  const root = await repoWithMainCheckedOut();
+  try {
+    git(root, ['config', 'core.bare', 'true']);
+    const holders = await worktreesHoldingBranch(root, 'main', path.join(root, 'not-the-live-checkout'));
+    assert.ok(holders.map(p => path.resolve(p)).includes(path.resolve(root)), `expected ${root} among ${JSON.stringify(holders)}`);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('the queue refuses to act on a repository falsely marked bare, and names the fix', async () => {
+  const root = await repoWithMainCheckedOut();
+  try {
+    await assert.doesNotReject(assertNotFalselyBare(root, path.join(root, 'not-the-live-checkout')));
+    git(root, ['config', 'core.bare', 'true']);
+    await assert.rejects(assertNotFalselyBare(root, path.join(root, 'not-the-live-checkout')), /core\.bare = true[\s\S]*config core\.bare false/);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
