@@ -34,9 +34,9 @@ await writeFile(path.join(dir, 'layout/orbit.json'), '{"ringHeight":340}\n');
 await writeFile(path.join(dir, 'layout/camera.json'), '{"shiftY":0}\n');
 await writeFile(path.join(dir, 'NOTES.md'), 'notes\n');
 git('add', '-A'); git('commit', '-qm', 'base');
-git('branch', 'feature/smart-cube-guidance');
+git('branch', 'main');
 const branch = async (name, file, text) => {
-  git('switch', '-qc', name, 'feature/smart-cube-guidance');
+  git('switch', '-qc', name, 'main');
   await writeFile(path.join(dir, file), text);
   git('commit', '-qam', name);
 };
@@ -54,11 +54,11 @@ const gateAlone = branch => {
 console.log('Each branch on its own:');
 for (const b of ['docs-only', 'orbit-sizing', 'cube-camera']) console.log(`  ${b.padEnd(13)} ${gateAlone(b)}`);
 
-const before = git('rev-parse', 'feature/smart-cube-guidance');
+const before = git('rev-parse', 'main');
 console.log(`\nTrunk before: ${before.slice(0, 9)}\nQueueing: docs-only, orbit-sizing, cube-camera\n`);
 const summary = await runQueue({ repoRoot: dir, branches: ['docs-only', 'orbit-sizing', 'cube-camera'], liveCheckout: '/nonexistent', installDependencies: false, explainAlone: true });
 for (const r of summary.results) console.log(`  ${r.status.toUpperCase().padEnd(9)} ${r.branch}${r.failure ? `\n            ${r.failure}` : ''}`);
-console.log(`\nTrunk after:  ${git('rev-parse', 'feature/smart-cube-guidance').slice(0, 9)} (landed: docs-only, orbit-sizing; cube-camera NOT landed)`);
-console.log(`trunk:layout/camera.json = ${git('show', 'feature/smart-cube-guidance:layout/camera.json')}\n`);
+console.log(`\nTrunk after:  ${git('rev-parse', 'main').slice(0, 9)} (landed: docs-only, orbit-sizing; cube-camera NOT landed)`);
+console.log(`trunk:layout/camera.json = ${git('show', 'main:layout/camera.json')}\n`);
 console.log('--- diagnosis.md for the rejected branch ---');
 console.log(execFileSync('cat', [summary.results.find(r => r.diagnosis).diagnosis], { encoding: 'utf8' }));
