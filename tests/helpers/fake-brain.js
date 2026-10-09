@@ -8,8 +8,12 @@ function installTestCubeFactory(config = null) {
     } catch { /* A normal application page has no test fixture configuration. */ }
   }
   if (!config) return;
-  const { style, settings, keepStorage, connectDelayMs, deferConnect } = config;
-  if (!keepStorage) localStorage.clear();
+  const { style, settings, keepStorage, connectDelayMs, deferConnect, virtualTime } = config;
+  if (!keepStorage) {
+    const motion = localStorage.getItem('cubesight-motion');
+    localStorage.clear();
+    if (motion != null) localStorage.setItem('cubesight-motion', motion);
+  }
   localStorage.setItem('cubesight-brain-settings-v2', JSON.stringify({ style, ...settings }));
   window.__CUBESIGHT_TEST_CUBE_FACTORY__ = async () => {
     // Snapshot replay uses the production recorder's injectable replay clock.
@@ -53,14 +57,15 @@ function installTestCubeFactory(config = null) {
         tick += 1000; observer?.next({ type: 'MOVE', move: raw, cubeTimestamp: tick });
       }
     };
-    // Timed turns: real waits between moves (the host clock drives the move times) and matching
-    // cube timestamps. gapFor(i, move) returns the wait before move i in ms.
+    // Timed turns use real waits by default. With virtualTime, playSolve advances
+    // the installed Playwright clock before each event instead. Cube timestamps
+    // keep the same gaps. gapFor(i, move) returns the gap before move i in ms.
     const emitTimed = async (moves, gapFor = () => 60) => {
       const list = moves.split(/\s+/).filter(Boolean);
       for (let i = 0; i < list.length; i++) {
         const gap = Math.max(1, gapFor(i, list[i]));
         if (replayClock) replayClock.ms += gap;
-        else await new Promise(resolve => setTimeout(resolve, gap));
+        else if (!virtualTime) await new Promise(resolve => setTimeout(resolve, gap));
         const raw = list[i];
         if (raw.endsWith('2')) {
           tick += gap; observer?.next({ type: 'MOVE', move: raw[0], cubeTimestamp: tick });
@@ -98,6 +103,7 @@ function installTestCubeFactory(config = null) {
     };
     return {
       fixtureId: config.fixtureId,
+      virtualTime,
       connectDevice,
       resolveConnection: () => resolveConnection?.(connection),
       emitTurns: moves => moves.split(/\s+/).filter(Boolean).forEach(emitTurn),
@@ -108,8 +114,8 @@ function installTestCubeFactory(config = null) {
   };
 }
 
-export async function mountTestBrain(page, style = 'orbit', { route = false, fixture = false, settings = {}, keepStorage = false, connectDelayMs = 0, deferConnect = false, awaitConnect = true } = {}) {
-  const config = { style, settings, keepStorage, connectDelayMs, deferConnect };
+export async function mountTestBrain(page, style = 'orbit', { route = false, fixture = false, settings = {}, keepStorage = false, connectDelayMs = 0, deferConnect = false, awaitConnect = true, virtualTime = false } = {}) {
+  const config = { style, settings, keepStorage, connectDelayMs, deferConnect, virtualTime };
   // Route tests install a scripted adapter before the app starts, then drive
   // the single Brain controller that main.js owns on the shared smartCube.
   if (route && !fixture) {
@@ -165,8 +171,9 @@ export async function startGuidedScramble(page, scramble, selector = '#brain-tes
 }
 
 /**
- * Scramble, inspect and solve `solution` with real pauses: `gaps` maps a move index to the wait (ms)
- * before it (default 60). Returns when the results screen is showing.
+ * Scramble, inspect and solve `solution`: `gaps` maps a move index to its pause
+ * (ms, default 60). A virtualTime fixture requires page.clock.install() before
+ * mounting and advances that clock instead of sleeping. Returns at results.
  */
 export async function playSolve(page, scramble, solution, { gaps = {}, base = 60, brain = '#brain-test' } = {}) {
   const root = page.locator(brain);
@@ -179,6 +186,17 @@ export async function playSolve(page, scramble, solution, { gaps = {}, base = 60
   if (await page.evaluate(() => Boolean(window.__cubesightSnapshotReplayClock))) {
     await page.waitForFunction(() => Boolean(window.__cubesightSnapshot.getViewModel().viewModel.inspection?.bestStart));
   }
-  await page.evaluate(([s, gaps, base]) => window.testBrain.emitTimed(s, i => gaps[i] ?? base), [solution, gaps, base]);
+  if (await page.evaluate(() => window.testBrain.virtualTime)) {
+    // Advance the installed Playwright clock, preserving live-history writes
+    // and the real analysis worker (recorder replay mode would disable writes).
+    const moves = solution.split(/\s+/).filter(Boolean);
+    for (let i = 0; i < moves.length; i++) {
+      const gap = gaps[i] ?? base;
+      await page.clock.fastForward(gap);
+      await page.evaluate(([move, gap]) => window.testBrain.emitTimed(move, () => gap), [moves[i], gap]);
+    }
+  } else {
+    await page.evaluate(([s, gaps, base]) => window.testBrain.emitTimed(s, i => gaps[i] ?? base), [solution, gaps, base]);
+  }
   await root.locator('#brain-phase-label').filter({ hasText: 'solved' }).waitFor();
 }

@@ -15,6 +15,10 @@ export default defineConfig({
   testDir: path.join(root, 'pwa-tests'),
   outputDir: path.join(root, 'test-results/pwa-gate'),
   globalTimeout: process.env.CUBESIGHT_DEADLINE_MS ? Math.max(1000, Number(process.env.CUBESIGHT_DEADLINE_MS) - Date.now()) : 0,
-  use: { ...base.use, baseURL: `http://127.0.0.1:${port}` },
+  use: {
+    ...base.use,
+    baseURL: `http://127.0.0.1:${port}`,
+    storageState: { cookies: [], origins: [{ origin: `http://127.0.0.1:${port}`, localStorage: [{ name: 'cubesight-motion', value: 'off' }] }] },
+  },
   webServer: { command: `npx vite preview --outDir test-results/dist-test --host 127.0.0.1 --strictPort --port ${port}`, url: `http://127.0.0.1:${port}`, cwd: root, reuseExistingServer: false },
 });
