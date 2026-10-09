@@ -133,6 +133,7 @@ test('phone flow scroller is keyboard focusable and keeps the selected scenario 
 });
 
 test('Orbit morph interpolates segment and marker geometry and lays out dense marker facts without overlap', async ({ page }) => {
+  await page.addInitScript(() => localStorage.removeItem('cubesight-motion'));
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/src/ui/gallery.html?flow=results');
   const mid = await page.evaluate(async () => {
