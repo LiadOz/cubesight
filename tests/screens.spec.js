@@ -27,7 +27,7 @@ for (const [id, route, seeded] of SCREENS) {
       await page.goto(`/#${route}`);
       for (const [width, height] of SIZES) {
         await page.setViewportSize({ width, height });
-        const maxScrollWidth = await settleAndMeasureOverflow(page);
+        const maxScrollWidth = await settleAndMeasureOverflow(page, { maxMs: 300 });
         expect(maxScrollWidth, `${id} scrolls sideways at ${width}px`).toBeLessThanOrEqual(width);
         await expect(page).toHaveScreenshot(`${id}-${theme}-${width}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.002 });
       }
