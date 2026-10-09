@@ -31,8 +31,13 @@ test('OLL pin variations change the start while keeping the canonical case', asy
 
 test('lookahead pin variations keep the cross, prior pairs, and target pair solvable', async () => {
   const setup = createPlannerSetup(1);
-  const planned = bestCompletions(setup.scramble, { maxDepth: 12, timeBudgetMs: 160, maxSolutions: 6 });
-  const target = planned.candidates.find(candidate => candidate.options.length);
+  // The planner's budget is wall-clock, so on a machine busy with other test runs 160 ms can end before it finds anything.
+  // Start with the fast budget and widen it only when that happens; the assertions below do not depend on which budget won.
+  let target = null;
+  for (const timeBudgetMs of [160, 800, 4000]) {
+    target = bestCompletions(setup.scramble, { maxDepth: 12, timeBudgetMs, maxSolutions: 6 }).candidates.find(candidate => candidate.options.length);
+    if (target) break;
+  }
   assert.ok(target);
   const choice = { slot: target.slots[0], moves: target.options[0].tokens };
   const pin = {

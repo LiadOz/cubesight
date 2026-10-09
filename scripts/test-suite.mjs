@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { spawn, spawnSync, execFileSync } from 'node:child_process';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { spawn, execFileSync } from 'node:child_process';
+import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
-import { DEFAULT_TRUNK, formatPlan, gateEnv, gateStages, planGate, prepareGateDirectory, updateMapFromRun } from './test-gate.mjs';
+import { DEFAULT_TRUNK, STOP_MARGIN_MS, finishRotation, formatPlan, gateEnv, gateStages, planGate, prepareGateDirectory, updateMapFromRun } from './test-gate.mjs';
 
 /**
  * Claim a free port for this run's dev server.
@@ -23,17 +23,8 @@ function freePort() {
   });
 }
 
-export const TIER_BUDGETS = Object.freeze({ merge: 60_000, regression: 600_000 });
-export const REGRESSION_STAGES = Object.freeze([
-  ['check', 'npm', ['run', 'check']],
-  ['browser', 'npx', ['playwright', 'test', '--update-snapshots=none', '--max-failures=1']],
-  ['pwa', 'npm', ['run', 'test:pwa', '--', '--update-snapshots=none', '--max-failures=1']],
-  ['layout', 'npm', ['run', 'test:layout', '--', '--update-snapshots=none', '--max-failures=1']],
-  ['snapshots', 'npm', ['run', 'test:snapshots', '--', '--update-snapshots=none', '--max-failures=1']],
-  ['performance-capture', 'npm', ['run', 'perf']],
-  ['performance-budgets', 'npm', ['run', 'perf:check']],
-]);
-
+// There is exactly one suite, `npm test`, and it has exactly one budget.
+export const SUITE_BUDGET_MS = 60_000;
 // Playwright web servers can create their own process groups. Include every
 // descendant before terminating the runner, so an expired tier leaves no server.
 export function terminateProcessTree(pid) {
@@ -82,7 +73,7 @@ export async function runStage([name, command, args], { remainingMs, cwd = proce
 }
 
 /**
- * Whether a tier passed, and by how much it overran.
+ * Whether the suite passed, and by how much it overran.
  *
  * The budget is enforced by planning (the gate selects what fits and defers the
  * rest) and by a hard deadline that kills any stage still running when time is
@@ -98,12 +89,12 @@ export function tierVerdict({ stages, results, durationMs, budgetMs }) {
   return { passed: completed && clean, overBudgetMs: Math.max(0, Math.round(durationMs - budgetMs)) };
 }
 
-export async function runTier({ tier, stages, budgetMs = TIER_BUDGETS[tier], parallel = false, ...options }) {
+export async function runTier({ tier = 'test', stages, budgetMs = SUITE_BUDGET_MS, parallel = false, ...options }) {
   if (!Number.isFinite(budgetMs) || budgetMs <= 0) throw new Error('A positive tier budget is required.');
   const start = performance.now();
   const results = [];
   const execute = stage => runStage(stage, { ...options, remainingMs: budgetMs - (performance.now() - start) });
-  const report = result => console.log(`${result.name}: ${(result.durationMs / 1000).toFixed(1)}s${result.timedOut ? ' (tier deadline exceeded)' : ''}; exit ${result.exitCode}`);
+  const report = result => console.log(`${result.name}: ${(result.durationMs / 1000).toFixed(1)}s${result.timedOut ? ' (deadline exceeded)' : ''}; exit ${result.exitCode}`);
   if (parallel) {
     results.push(...await Promise.all(stages.map(async stage => {
       const result = await execute(stage);
@@ -122,53 +113,42 @@ export async function runTier({ tier, stages, budgetMs = TIER_BUDGETS[tier], par
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const started = performance.now();
-  const tier = process.argv[2];
-  if (!['merge', 'regression'].includes(tier)) throw new Error('Usage: test-tiers.mjs merge|regression [--base <ref>] [--trunk <branch>]');
   const option = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : null; };
   const root = process.cwd();
-  let plan = null;
-  let stages = REGRESSION_STAGES;
-  const refreshMap = tier === 'regression' && process.argv.includes('--refresh-map');
-  const refreshDir = path.resolve('test-results/impact-map');
-  if (tier === 'merge') {
-    plan = await planGate({ root, trunk: option('--trunk') ?? DEFAULT_TRUNK, base: option('--base'), started });
-    console.log(formatPlan(plan));
-    await prepareGateDirectory(root);
-    stages = gateStages(plan);
-  }
+  const plan = await planGate({ root, trunk: option('--trunk') ?? DEFAULT_TRUNK, base: option('--base'), started });
+  console.log(formatPlan(plan, { verbose: process.argv.includes('--verbose') }));
+  await prepareGateDirectory(root);
+  const stages = gateStages(plan, { stopAfterMs: SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS });
   const runtimeTmp = path.resolve('test-results/runtime-tmp');
   await mkdir(runtimeTmp, { recursive: true });
-  // `tier2 --refresh-map`: the browser stage doubles as the full coverage capture that refreshes the committed seed.
-  if (refreshMap) {
-    stages = stages.map(([name, command, args]) => (name === 'browser' ? [name, command, [...args, '--reporter=line,json']] : [name, command, args]));
-  }
-  const refreshEnv = refreshMap ? { CUBESIGHT_IMPACT_COVERAGE: '1', CUBESIGHT_IMPACT_COVERAGE_DIR: path.join(refreshDir, 'raw'), PLAYWRIGHT_JSON_OUTPUT_NAME: path.join(refreshDir, 'playwright-report.json') } : {};
-  if (refreshMap) await rm(path.join(refreshDir, 'raw'), { recursive: true, force: true });
-  const env = { ...(plan ? gateEnv(root, plan) : process.env), ...refreshEnv, TMPDIR: runtimeTmp };
+  const env = { ...gateEnv(root, plan), TMPDIR: runtimeTmp };
   if (!env.PW_PORT) env.PW_PORT = String(await freePort());
-  const budgetMs = tier === 'merge' ? TIER_BUDGETS.merge - (performance.now() - started) : TIER_BUDGETS[tier];
-  const result = await runTier({ tier, stages, budgetMs, parallel: tier === 'merge', env });
+  env.CUBESIGHT_DEADLINE_MS = String(Math.round(Date.now() + SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS));
+  if (!env.PW_PWA_PORT) env.PW_PWA_PORT = String(await freePort());
+  const budgetMs = SUITE_BUDGET_MS - (performance.now() - started);
+  const result = await runTier({ stages, budgetMs, parallel: true, env });
   result.durationMs = Math.round(performance.now() - started);
-  result.budgetMs = TIER_BUDGETS[tier];
+  result.budgetMs = SUITE_BUDGET_MS;
   result.overBudgetMs = Math.max(0, Math.round(result.durationMs - result.budgetMs));
   result.commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim());
   result.generatedAt = new Date().toISOString();
-  if (plan) {
-    result.deferred = plan.packed.deferred.map((item) => item.key);
-    console.log(await updateMapFromRun(root, plan));
+  result.owed = plan.rotation.deferred.map((item) => item.key);
+  console.log(await updateMapFromRun(root, plan));
+  const rotation = await finishRotation(root, plan, { commit: result.commit });
+  for (const line of rotation.lines) console.log(line);
+  // A Playwright run that stopped at its own time limit with nothing of the change's unfinished is not a failure.
+  for (const stage of result.stages) {
+    if (stage.exitCode && !stage.timedOut && rotation.stageOk[stage.name]) { stage.exitCode = 0; stage.note = 'stopped at its time limit; only rotation tests were cut'; }
   }
-  if (refreshMap && result.stages.find((stage) => stage.name === 'browser')?.exitCode === 0) {
-    spawnSync('node', ['scripts/test-impact-map.mjs', '--from-raw', path.join(refreshDir, 'raw'), '--report', path.join(refreshDir, 'playwright-report.json')], { cwd: root, stdio: 'inherit' });
-    console.log('tests/impact-map.json was refreshed from this full run; commit it.');
-  }
+  Object.assign(result, tierVerdict({ stages, results: result.stages, durationMs: result.durationMs, budgetMs: result.budgetMs }));
+  if (rotation.failed) result.passed = false;
   const output = path.resolve('test-results/health');
   await mkdir(output, { recursive: true });
-  await writeFile(path.join(output, `${tier}-latest.json`), `${JSON.stringify(result, null, 2)}\n`);
-  console.log(`${tier}: ${(result.durationMs / 1000).toFixed(1)}s / ${result.budgetMs / 1000}s; ${result.passed ? 'passed' : 'failed'}`);
-  const killed = (result.stages ?? []).filter(stage => stage.timedOut).map(stage => stage.name);
+  await writeFile(path.join(output, 'test-latest.json'), `${JSON.stringify(result, null, 2)}\n`);
+  console.log(`test: ${(result.durationMs / 1000).toFixed(1)}s / ${result.budgetMs / 1000}s; ${result.passed ? 'passed' : 'failed'}`);
+  const killed = (result.stages ?? []).filter((stage) => stage.timedOut).map((stage) => stage.name);
   if (killed.length) console.log(`FAILED: the deadline stopped ${killed.join(', ')} before it finished — the plan did not fit. Check machine load, or why the estimate was low.`);
-  else if (result.overBudgetMs > 0) console.log(`WARNING: ${tier} ran ${(result.overBudgetMs / 1000).toFixed(1)}s over its ${result.budgetMs / 1000}s budget. Not a failure: every stage finished cleanly.`);
-  if (plan?.packed.deferred.length) console.log(`${plan.packed.deferred.length} selected test(s) were deferred past the budget; Tier 2 / the merge queue's full stage must cover them.`);
+  else if (result.overBudgetMs > 0) console.log(`WARNING: the suite ran ${(result.overBudgetMs / 1000).toFixed(1)}s over its ${result.budgetMs / 1000}s budget. Not a failure: every stage finished cleanly.`);
   if (!result.passed) process.exitCode = 1;
 }

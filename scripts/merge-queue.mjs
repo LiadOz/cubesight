@@ -4,7 +4,7 @@
 //   npm run queue -- <branch> [<branch> ...]      land branches, in order
 //
 // For each candidate: merge it into the CURRENT trunk tip in a scratch worktree
-// under .agents/, run the Tier 1 gate on that MERGED RESULT, and only then
+// under .agents/, run `npm test` (the one suite) on that MERGED RESULT, and only then
 // advance trunk. A rejection leaves trunk untouched and writes a diagnosis.
 // Plain Node and git; no dependencies.
 import { spawn } from 'node:child_process';
@@ -17,16 +17,16 @@ export const DEFAULT_TRUNK = 'main';
 const GATE_TIMEOUT_MS = Number(process.env.CUBESIGHT_QUEUE_GATE_TIMEOUT_MS) || 300_000;
 
 /**
- * THE ONE PLACE that names the gate: `tier1`, the change-aware gate (scripts/test-gate.mjs).
- * It runs lint, every unit test, the build and the browser tests the merged diff
- * reaches (smoke set as the floor) inside 60 s. `baseCommit` is the trunk tip the
- * candidate was merged onto, so the gate selects against exactly what this merge
- * changes. Falls back to `test:merge` for trees that predate `tier1`.
+ * THE ONE PLACE that names the gate: `npm test`, the one suite (scripts/test-gate.mjs).
+ * It runs lint, every unit test, the build, the browser tests the merged diff reaches
+ * (smoke set as the floor) and a rotation of the stalest tests, inside 60 s. There is no
+ * longer suite behind it. `baseCommit` is the trunk tip the candidate was merged onto, so
+ * the gate selects against exactly what this merge changes.
  */
 export async function chooseGate(worktree, { baseCommit = null } = {}) {
   const scripts = JSON.parse(await readFile(path.join(worktree, 'package.json'), 'utf8')).scripts ?? {};
-  const script = scripts.tier1 ? 'tier1' : 'test:merge';
-  return { name: 'tier1', command: 'npm', args: ['run', script, ...(baseCommit ? ['--', '--base', baseCommit] : [])] };
+  if (!scripts.test) throw new Error(`${worktree}/package.json has no "test" script; the queue gates on \`npm test\`.`);
+  return { name: 'test', command: 'npm', args: ['test', ...(baseCommit ? ['--', '--base', baseCommit] : [])] };
 }
 
 // ---------------------------------------------------------------- safety rules
@@ -268,7 +268,17 @@ function ensureHostArtifacts(artifactRoot) {
 
 // ---------------------------------------------------------------- the queue
 
-async function worktreesHoldingBranch(repoRoot, branch, liveCheckout) {
+/**
+ * Which working trees have `branch` checked out.
+ *
+ * `git worktree list` cannot be trusted alone: if `core.bare` has been flipped on
+ * a repository that has a working tree (a test once did this by running
+ * `git init` with a pre-commit hook's GIT_DIR), the listing marks the main
+ * checkout as bare and omits its branch, so the queue believed trunk was free and
+ * advanced it underneath the user's files. The main checkout's HEAD file is read
+ * directly as well, which works whatever core.bare says.
+ */
+export async function worktreesHoldingBranch(repoRoot, branch, liveCheckout) {
   const out = (await run('git', ['worktree', 'list', '--porcelain'], { cwd: repoRoot, liveCheckout })).stdout;
   const holders = [];
   let current = null;
@@ -276,7 +286,27 @@ async function worktreesHoldingBranch(repoRoot, branch, liveCheckout) {
     if (line.startsWith('worktree ')) current = line.slice(9);
     if (line === `branch refs/heads/${branch}`) holders.push(current);
   }
+  const commonDir = (await run('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: repoRoot, liveCheckout })).stdout;
+  if (path.basename(commonDir) === '.git') {
+    const mainCheckout = path.dirname(commonDir);
+    const head = await readFile(path.join(commonDir, 'HEAD'), 'utf8').catch(() => '');
+    if (head.trim() === `ref: refs/heads/${branch}` && !holders.includes(mainCheckout)) holders.push(mainCheckout);
+  }
   return holders;
+}
+
+/**
+ * A repository whose git directory is `<project>/.git` has a working tree, so it
+ * must never say `core.bare = true`. When it does, git refuses every
+ * working-tree command in the user's checkout and the worktree listing lies, so
+ * the queue stops rather than act on it.
+ */
+export async function assertNotFalselyBare(repoRoot, liveCheckout) {
+  const commonDir = (await run('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: repoRoot, liveCheckout })).stdout;
+  const bare = (await run('git', ['config', '--file', path.join(commonDir, 'config'), '--get', 'core.bare'], { cwd: repoRoot, liveCheckout })).stdout;
+  if (path.basename(commonDir) === '.git' && bare === 'true') {
+    throw new Error(`${commonDir}/config says core.bare = true, but this repository has a working tree at ${path.dirname(commonDir)}. Something (often a test running \`git init\` with an inherited GIT_DIR) corrupted it. Refusing to move any branch. Fix: git -C ${path.dirname(commonDir)} config core.bare false — then check that checkout's files match its branch.`);
+  }
 }
 
 /**
@@ -297,6 +327,7 @@ export async function runQueue({ repoRoot, branches, base = DEFAULT_TRUNK, liveC
   const results = [];
   const resolve = async ref => (await run('git', ['rev-parse', '--verify', `${ref}^{commit}`], { cwd: repoRoot, liveCheckout })).stdout;
   try {
+    await assertNotFalselyBare(repoRoot, liveCheckout);
     const holders = await worktreesHoldingBranch(repoRoot, base, liveCheckout);
     const held = holders.length > 0;
     let tip = await resolve(`refs/heads/${base}`);

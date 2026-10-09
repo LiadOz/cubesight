@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runQueueAttempt } from '../scripts/merge-queue.mjs';
+import { runQueueAttempt, worktreesHoldingBranch, assertNotFalselyBare } from '../scripts/merge-queue.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const gitEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
@@ -134,7 +134,7 @@ async function fixtureRepo() {
 test('queue lands green branches in order and rejects a combination failure, leaving trunk at the last green tip', async () => {
   const dir = await fixtureRepo();
   try {
-    const gate = { name: 'tier1', command: 'x', args: [] };
+    const gate = { name: 'test', command: 'x', args: [] };
     // Gate stand-in for the ring/cube drift: each change passes alone, both together fail.
     const strict = async (g, ctx) => {
       const [ring, camera] = await Promise.all(['ring.txt', 'cube.txt'].map(f => readFile(path.join(ctx.cwd, f), 'utf8')));
@@ -146,7 +146,7 @@ test('queue lands green branches in order and rejects a combination failure, lea
       gates: [gate], gateRunner: strict, installDependencies: false, explainAlone: false,
     });
     assert.deepEqual(summary.results.map(r => r.status), ['landed', 'landed', 'rejected']);
-    assert.match(summary.results[2].failure, /Gate tier1 exited 1/);
+    assert.match(summary.results[2].failure, /Gate test exited 1/);
     assert.match(await readFile(summary.results[2].diagnosis, 'utf8'), /Trunk was NOT changed/);
     // trunk contains the two greens, not the rejected branch
     assert.equal(git(dir, ['rev-parse', 'trunk']), summary.endTip);
@@ -163,7 +163,7 @@ test('queue does not advance trunk while a worktree has it checked out; it hands
     const before = git(dir, ['rev-parse', 'trunk']);
     const summary = await runQueue({
       repoRoot: dir, branches: ['unrelated'], base: 'trunk', liveCheckout: path.join(dir, 'elsewhere'),
-      gates: [{ name: 'tier1', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
+      gates: [{ name: 'test', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
       installDependencies: false,
     });
     assert.equal(summary.results[0].status, 'green');
@@ -181,7 +181,7 @@ test('a textual conflict with trunk is rejected with the conflicting files named
     git(dir, ['switch', 'scratch-home']);
     const summary = await runQueue({
       repoRoot: dir, branches: ['orbit-sizing', 'clash'], base: 'trunk', liveCheckout: path.join(dir, 'elsewhere'),
-      gates: [{ name: 'tier1', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
+      gates: [{ name: 'test', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
       installDependencies: false, explainAlone: false,
     });
     assert.deepEqual(summary.results.map(r => r.status), ['landed', 'rejected']);
@@ -198,4 +198,33 @@ test('safety rules are enforced in code', () => {
   assert.throws(() => assertNotLiveCheckout('/live/src', '/live'), /live checkout/);
   assert.doesNotThrow(() => assertNotLiveCheckout('/live/.agents/worktrees/x', '/live'));
   assert.doesNotThrow(() => assertNotLiveCheckout('/live-other', '/live'));
+});
+
+// Incident 2026-10-09: a unit test's `git init`, run with a pre-commit hook's
+// inherited GIT_DIR, set core.bare=true on the shared config. `git worktree list`
+// then reported the live checkout as bare with no branch, so the queue believed
+// trunk was free and advanced main under the user's files.
+async function repoWithMainCheckedOut() {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'mq-bare-'));
+  git(root, ['init', '-q', '-b', 'main']);
+  git(root, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '--allow-empty', '-m', 'base']);
+  return root;
+}
+
+test('a checkout of trunk is still seen when core.bare has been flipped on it', async () => {
+  const root = await repoWithMainCheckedOut();
+  try {
+    git(root, ['config', 'core.bare', 'true']);
+    const holders = await worktreesHoldingBranch(root, 'main', path.join(root, 'not-the-live-checkout'));
+    assert.ok(holders.map(p => path.resolve(p)).includes(path.resolve(root)), `expected ${root} among ${JSON.stringify(holders)}`);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('the queue refuses to act on a repository falsely marked bare, and names the fix', async () => {
+  const root = await repoWithMainCheckedOut();
+  try {
+    await assert.doesNotReject(assertNotFalselyBare(root, path.join(root, 'not-the-live-checkout')));
+    git(root, ['config', 'core.bare', 'true']);
+    await assert.rejects(assertNotFalselyBare(root, path.join(root, 'not-the-live-checkout')), /core\.bare = true[\s\S]*config core\.bare false/);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });

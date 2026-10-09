@@ -17,10 +17,11 @@ export default defineConfig({
   retries: 0,
   outputDir: 'test-results/playwright',
   fullyParallel: true,
-  workers: Number(process.env.PW_WORKERS || 8),
+  workers: Number(process.env.PW_WORKERS || 4),
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1280, height: 900 },
+    reducedMotion: process.env.PW_MOTION === 'reduce' ? 'reduce' : 'no-preference',
   },
   webServer: {
     command: `npm run dev -- --port ${port}`,
