@@ -188,3 +188,23 @@ test('the impact map round-trips, including complement encoding of hot functions
   assert.deepEqual([...back.functions.get('src/m.js').get('cold')], ['b']);
   assert.equal(back.tests.size, 3);
 });
+
+test('source only a unit test reaches is noted, not alarmed about; unreached source with no unit test is', async () => {
+  const lib = 'export function pure(x) { return x; }\n';
+  const covered = await project({ ...files, 'src/pure.js': lib, 'tests/pure-unit.test.mjs': "import { pure } from '../src/pure.js'; pure(1);" });
+  try {
+    const edited = lib.replace('return x', 'return x + 0');
+    await writeFile(path.join(covered, 'src/pure.js'), edited);
+    const selection = await selectTests({ root: covered, model: impact(), changes: [change('src/pure.js', lib, edited)] });
+    assert.deepEqual(ids(selection), []);
+    assert.equal(selection.warnings.length, 0, selection.warnings.join('\n'));
+    assert.ok(selection.unit.has('tests/pure-unit.test.mjs'));
+  } finally { await rm(covered, { recursive: true, force: true }); }
+  const bare = await project({ ...files, 'src/pure.js': lib });
+  try {
+    const edited = lib.replace('return x', 'return x + 0');
+    await writeFile(path.join(bare, 'src/pure.js'), edited);
+    const selection = await selectTests({ root: bare, model: impact(), changes: [change('src/pure.js', lib, edited)] });
+    assert.ok(selection.warnings.some((text) => /NO RELEVANT BROWSER TESTS/u.test(text)));
+  } finally { await rm(bare, { recursive: true, force: true }); }
+});

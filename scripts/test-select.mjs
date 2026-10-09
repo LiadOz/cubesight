@@ -419,13 +419,18 @@ export async function selectTests({ root, changes, model, head = null, specHashe
       const text = await readSpec(spec);
       if (text && importsOf(text, spec, fileSet).some((edge) => edge.target === file)) count += await addSpec(spec, 1, `imports ${file}`);
     }
-    if (!count) warn(`${file}: ${why}; no spec is named after it or imports it.`);
+    if (!count) lacking(file, `${file}: ${why}; no browser spec is named after it or imports it.`);
     return count;
   };
 
   // ---- per-file selection
   const mentions = new Set();
   let functionsByName = null;
+  const unitFor = new Map(); // changed source file -> unit tests that import it
+  const unitOnly = new Set(); // changed source files only unit tests exercise
+  const touchedSrc = new Set();
+  let otherSourceTouched = false;
+  const lacking = (file, text) => { if (unitFor.get(file)?.length) { unitOnly.add(file); note(`${text} Unit test(s) cover it: ${unitFor.get(file).join(', ')}.`); } else warn(text); };
   const specChangeSelected = new Set();
   let sourceTouched = false;
   for (const change of changes) {
@@ -478,20 +483,22 @@ export async function selectTests({ root, changes, model, head = null, specHashe
     if (/^scripts\//u.test(file)) { entry.kind = 'script'; entry.summary = 'tooling; lint and unit tests cover it'; continue; }
     if (/^src\/.*\.m?js$/u.test(file)) {
       sourceTouched = true;
+      touchedSrc.add(file);
+      unitFor.set(file, []);
       for (const unit of files.filter((f) => /-unit\.test\.mjs$/u.test(f))) {
         const text = await reader.read(unit);
-        if (text && importsOf(text, unit, fileSet).some((edge) => edge.target === file)) result.unit.add(unit);
+        if (text && importsOf(text, unit, fileSet).some((edge) => edge.target === file)) { result.unit.add(unit); unitFor.get(file).push(unit); }
       }
       await selectSource(change, entry);
       tally(); continue;
     }
     if (/^src\/.*\.css$/u.test(file)) {
-      sourceTouched = true;
+      sourceTouched = true; otherSourceTouched = true;
       await selectCss(change, entry);
       tally(); continue;
     }
     if (file === 'index.html' || /^src\/.*\.html$/u.test(file)) {
-      sourceTouched = true;
+      sourceTouched = true; otherSourceTouched = true;
       await selectHtml(change, entry);
       tally(); continue;
     }
@@ -506,7 +513,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
     }
     if (/^(?:vite\.config|playwright(?:\.[^/]+)?\.config|pwa-assets\.config)\.[cm]?js$|^public\/|^src\/.*\.(?:json|svg|png|wasm)$|^wasm-core\//u.test(file)) {
       entry.kind = 'config';
-      sourceTouched = true;
+      sourceTouched = true; otherSourceTouched = true;
       entry.summary = 'build/runtime configuration or static asset';
       result.smokeOnly = true;
       // Assets imported by modules reach the functions that use them.
@@ -635,8 +642,8 @@ export async function selectTests({ root, changes, model, head = null, specHashe
       if (!count && touchedScope.some((key) => (newTable.scope.get(key) ?? oldTable?.scope.get(key))?.kind === 'effect')) {
         const widened = addIds(modules, 2, `module-scope code in ${file}`);
         warn(`${file}: module-scope code changed and cannot be narrowed to a function; using every test that loaded the module (${widened}).`);
-      } else if (!count && !direct) warn(`${file}: no test was seen to run the changed code. Only the smoke floor covers it; consider a test for it.`);
-    } else if (!direct && !touchedScope.length) warn(`${file}: the changed functions were never executed by any measured test.`);
+      } else if (!count && !direct) lacking(file, `${file}: no browser test was seen to run the changed code.`);
+    } else if (!direct && !touchedScope.length) lacking(file, `${file}: no browser test executes the changed functions.`);
   }
 
   async function wordSearch(tokens, tier, label) {
@@ -763,7 +770,8 @@ export async function selectTests({ root, changes, model, head = null, specHashe
   result.relevantCount = relevant.length;
   if (sourceTouched && !relevant.length) {
     result.smokeOnly = true;
-    warn('NO RELEVANT BROWSER TESTS were found for the changed source. Only the smoke floor will run. Treat this as unverified.');
+    if (!otherSourceTouched && [...touchedSrc].every((file) => unitOnly.has(file))) note('No browser test reaches the changed source; unit tests do. The browser gate runs the smoke floor.');
+    else warn('NO RELEVANT BROWSER TESTS were found for the changed source. Only the smoke floor will run. Treat this as unverified.');
   }
   return result;
 }
