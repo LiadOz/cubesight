@@ -1,4 +1,5 @@
 import { test, expect } from './helpers/coverage-test.js';
+import { settleAndMeasureOverflow } from './helpers/settle.js';
 import { seedSolve } from './helpers/seed-solve.js';
 import { GOLD } from './analysis-golden.mjs';
 import { STATE_FIXTURES, getLayoutDriver } from './layout/matrix.js';
@@ -30,8 +31,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1280, height: 720
     const offenders = [];
     for (const route of ROUTES) {
       await page.evaluate(hash => { location.hash = hash; }, `#${route}`);
-      await page.waitForTimeout(450);
-      const width = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth);
+      const width = await settleAndMeasureOverflow(page);
       if (width > 0) offenders.push(`${route} overflows by ${width}px`);
     }
     expect(offenders, offenders.join('\n')).toEqual([]);

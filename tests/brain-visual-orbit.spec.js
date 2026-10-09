@@ -9,6 +9,16 @@ const HARNESS = '/src/brain/styles/orbit/_dev.html';
 const GALLERY = '/src/brain/_gallery.html';
 const SIZES = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } };
 
+/** Bounding boxes of several selectors once every one is laid out (the page re-renders pieces as the cube settles). */
+async function boxes(page, ...selectors) {
+  let found = [];
+  await expect.poll(async () => {
+    found = await Promise.all(selectors.map(selector => page.locator(selector).boundingBox()));
+    return found.every(Boolean);
+  }, { message: `${selectors.join(', ')} are laid out` }).toBe(true);
+  return found;
+}
+
 async function open(page, state, theme, size = 'desktop') {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -135,7 +145,7 @@ for (const theme of ['dark', 'light']) {
       await expect(page.locator('.orbit__segment:is(.is-done, .is-good, .is-bad)')).toHaveCount(8);   // coloured by the plan delta on the results
       await expect(page.locator('.orbit__segment.is-skipped')).toHaveCount(1);
       await expect(page.locator('canvas')).toHaveCount(1);
-      const [cube, ring] = await Promise.all([page.locator('#brain-cube').boundingBox(), page.locator('.orbit__svg').boundingBox()]);
+      const [cube, ring] = await boxes(page, '#brain-cube', '.orbit__svg');
       expect(cube.width, 'the cube keeps a real size').toBeGreaterThan(200);
       expect(cube.x + cube.width / 2).toBeCloseTo(ring.x + ring.width / 2, 0);
       await expect(page.locator('.f1-results__coach .ui-coach-line__text')).toHaveCount(1);
@@ -188,13 +198,13 @@ test('the shared charts render in their Mono variants, with a small cube beside 
   expect(errors).toEqual([]);
 });
 
-test('results layout matrix: cube stays below the header on desktop and stacks on phones', async ({ page }, testInfo) => {
-  test.setTimeout(90_000);
-  const fs = await import('node:fs');
-  const path = await import('node:path');
-  const out = 'test-results/r4-results-layout';
-  fs.mkdirSync(out, { recursive: true });
-  for (const style of ['orbit', 'mono']) for (const theme of ['dark', 'light']) for (const size of ['desktop', 'phone']) {
+// One test per style x theme x size cell (they were one 8-cell loop): the cells are independent, so they run in parallel.
+for (const style of ['orbit', 'mono']) for (const theme of ['dark', 'light']) for (const size of ['desktop', 'phone']) {
+  test(`results layout matrix: cube stays below the header on desktop and stacks on phones: ${style} / ${theme} / ${size}`, async ({ page }, testInfo) => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const out = 'test-results/r4-results-layout';
+    fs.mkdirSync(out, { recursive: true });
     const errors = await open(page, `${style}:results`, theme, size);
     const suffix = size === 'phone' ? '390' : '1280';
     const name = `${style}-${theme}-${suffix}`;
@@ -203,12 +213,12 @@ test('results layout matrix: cube stays below the header on desktop and stacks o
     expect(overflow, `${name} has no horizontal overflow`).toBeLessThanOrEqual(1);
     // The Orbit style's wrappers are display: contents (everything is placed on the frames' canvas), so the cube wrap is the box.
     const stage = page.locator('.b-cube-wrap');
-    const initial = await stage.boundingBox();
+    const [initial] = await boxes(page, '.b-cube-wrap');
     expect(initial.y, `${name} starts below the top of the page`).toBeGreaterThanOrEqual(0);
     if (style === 'orbit') {
       await expect(page.locator('.orbit__segment')).toHaveCount(9);
       // The cube is centred on the Orbit, and the stage ends inside the screen.
-      const [cube, ring] = await Promise.all([page.locator('#brain-cube').boundingBox(), page.locator('.orbit__svg').boundingBox()]);
+      const [cube, ring] = await boxes(page, '#brain-cube', '.orbit__svg');
       expect(cube.x + cube.width / 2).toBeCloseTo(ring.x + ring.width / 2, 0);
       expect(cube.y + cube.height / 2).toBeCloseTo(ring.y + ring.height / 2, 0);
       expect(initial.y + initial.height).toBeLessThanOrEqual(SIZES[size].height + 1);
@@ -225,8 +235,8 @@ test('results layout matrix: cube stays below the header on desktop and stacks o
     await page.screenshot({ path: screenshot, fullPage: true });
     await testInfo.attach(name, { path: screenshot, contentType: 'image/png' });
     expect(errors, `${name} browser errors`).toEqual([]);
-  }
-});
+  });
+}
 
 // F1 removes the duplicate split list; the Orbit must keep every stage reachable.
 test('Orbit results retain all stage summaries at both desktop heights', async ({ page }) => {

@@ -3,6 +3,11 @@ import { defineConfig } from 'playwright/test';
 // PW_PORT lets parallel worktrees run the suite without colliding on one port.
 const port = process.env.PW_PORT || 4174;
 
+// The tests do not test the cube's pixels, and headless Chromium draws WebGL in software
+// (SwiftShader, on the CPU): four concurrent real-GL pages took a 20-core machine to load 38.
+// So the dev server runs with VITE_CUBESIGHT_TEST_STUB=1, where the cube keeps all its logic,
+// animation and data attributes but never touches WebGL (src/cube-3d.js; dev server only, never
+// in a production build). That is what lets the suite run wide.
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.js',
@@ -11,12 +16,8 @@ export default defineConfig({
   timeout: 20_000,
   retries: 0,
   outputDir: 'test-results/playwright',
-  // These tests share software-rendered WebGL; excessive concurrency can
-  // starve short visual feedback assertions and browser animation frames.
-  // Raising workers/fullyParallel was measured (72s -> 49s on a subset) but broke 26
-  // tests in the full suite: software WebGL contends. F11 must fix the contention
-  // (shared browser, stubbed cube) before raising this.
-  workers: 2,
+  fullyParallel: true,
+  workers: Number(process.env.PW_WORKERS || 8),
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1280, height: 900 },
@@ -24,6 +25,8 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- --port ${port}`,
     url: `http://127.0.0.1:${port}`,
+    // PW_REAL_GL=1 turns the no-render mode off for the whole run (real WebGL, slow, serial-only).
+    env: process.env.PW_REAL_GL ? {} : { VITE_CUBESIGHT_TEST_STUB: '1' },
     // A gate must validate current modules, never a stale worktree server.
     reuseExistingServer: false,
   },
