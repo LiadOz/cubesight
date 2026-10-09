@@ -1,7 +1,7 @@
 // The PWA offline specs as `npm test` runs them: against the build the gate has just made.
 // playwright.pwa.config.js builds again before it serves; inside the gate that would race the
 // gate's own build over dist/, so this wraps it and serves the existing dist/ instead.
-// (Specs: pwa-tests/. Scheduled by scripts/test-rotation.mjs.)
+// (Specs: pwa-tests/. Run by npm test against the built app.)
 import path from 'node:path';
 import { defineConfig } from 'playwright/test';
 import base from '../playwright.pwa.config.js';

@@ -13,13 +13,13 @@ cd "$(git rev-parse --show-toplevel)"
 for name in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$name"; done
 echo "pre-commit: npm run lint"
 npm run --silent lint
-echo "pre-commit: affected unit tests"
+echo "pre-commit: unit tests"
 hook_log_root="${CUBESIGHT_ARTIFACTS_ROOT:-${TMPDIR:-/tmp}}/pre-commit"
 mkdir -p "$hook_log_root"
 unit_log=$(mktemp "$hook_log_root/affected-units.XXXXXX")
-if ! npm run --silent test:affected -- --unit-only > "$unit_log" 2>&1; then
+if ! npm run --silent test:unit > "$unit_log" 2>&1; then
   tail -n 60 "$unit_log"
-  echo "pre-commit: affected unit tests failed (full log: $unit_log)"
+  echo "pre-commit: unit tests failed (full log: $unit_log)"
   exit 1
 fi
 rm -f "$unit_log"

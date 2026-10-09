@@ -17,7 +17,7 @@ export const DEFAULT_TRUNK = 'main';
 const GATE_TIMEOUT_MS = Number(process.env.CUBESIGHT_QUEUE_GATE_TIMEOUT_MS) || 300_000;
 
 /**
- * THE ONE PLACE that names the gate: `npm test`, the one suite (scripts/test-gate.mjs).
+ * THE ONE PLACE that names the gate: `npm test`, the one suite (scripts/test-suite.mjs).
  * It runs lint, every unit test, the build, the browser tests the merged diff reaches
  * (smoke set as the floor) and a rotation of the stalest tests, inside 60 s. There is no
  * longer suite behind it. `baseCommit` is the trunk tip the candidate was merged onto, so

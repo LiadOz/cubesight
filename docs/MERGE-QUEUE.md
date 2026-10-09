@@ -3,7 +3,7 @@
 The queue is the methodology for when a merge to trunk (`main`) happens. It is not a CI service; it is a script run locally. **Nothing lands on trunk unless `npm test` passes on the MERGED RESULT of the change and the current trunk.** A branch that is green alone but breaks in combination is rejected, and trunk stays untouched.
 
 ## For an agent: queue your work
-1. Commit everything (uncommitted work is not queued). Update from trunk: `git merge main`, resolve, run `npm run test:affected`.
+1. Commit everything (uncommitted work is not queued). Update from trunk: `git merge main`, resolve, run `npm test`.
 2. From **your own worktree**: `npm run queue -- <your-branch>` (no argument queues the branch you are on).
 3. Read the result. `LANDED` means trunk advanced. `GREEN` means the gate passed but the queue deliberately did not move trunk (see below); tell the lead the printed tip. `REJECTED` means trunk is unchanged and a diagnosis file path is printed.
 
