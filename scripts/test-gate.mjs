@@ -13,6 +13,13 @@ export const DEFAULT_TRUNK = 'main';
 export const GATE_BUDGET_MS = 60_000;
 // Dev-server start + Playwright start + result ingestion, none of which is test time.
 export const BROWSER_OVERHEAD_MS = 9_000;
+// Pack the browser stage to this share of its budget. Estimates come from recorded
+// durations and the load average sampled *before* the gate's own lint, unit and
+// build stages start competing for the CPU alongside it, so a plan that fills the
+// budget exactly runs into the hard deadline whenever anything is slower than
+// recorded -- the deadline then kills the stage and fails a change whose tests
+// were passing. Headroom keeps the deadline a safety net, not the stopping point.
+export const PACK_FILL = 0.75;
 export const GATE_DIR = 'test-results/gate';
 const LINT_CACHE_DIR = 'test-results/lint-cache'; // survives between runs, unlike GATE_DIR
 
@@ -41,7 +48,7 @@ export async function planGate({ root = process.cwd(), trunk = DEFAULT_TRUNK, ba
   const selection = await selectTests({ root, changes, model, head, specHashes });
   const browserBudget = Math.max(0, budgetMs - (performance.now() - started) - BROWSER_OVERHEAD_MS);
   const slowdown = loadSlowdown();
-  const packed = packBrowser([...selection.items.values()], { budgetMs: browserBudget, workers, slowdown });
+  const packed = packBrowser([...selection.items.values()], { budgetMs: browserBudget * PACK_FILL, workers, slowdown });
   const args = playwrightArgs(packed.run);
   return { root, baseRef, head, changes, model, mapSource: source, selection, packed, browserBudget, workers, ...args, wholeSpecs: wholeSpecHashes(packed.run, specHashes) };
 }

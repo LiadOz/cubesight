@@ -102,7 +102,10 @@ export function deviceFor(session, supported = true, connectStep = '', live = nu
   // replayed recording connects through the adapter seam regardless).
   // While connecting, the status line is the latest step of the attach (the picker, the advertisement
   // watch, the address lookup, the manual-address prompt, …), newest of the session detail and the log.
-  const failed = s.phase === 'disconnected' && /^(Connection failed|No cube selected)/.test(s.detail ?? '');
+  // The session publishes the explanation as the detail and the same failure on `failure`; the failure is current only while
+  // the detail is still its message (a later publish, such as a retry or a reconnect notice, replaces the detail).
+  const failed = s.phase === 'disconnected' && (Boolean(session?.failure?.message) && session.detail === session.failure.message
+    || /^(Connection failed|No cube selected)/.test(s.detail ?? ''));
   const detail = connecting ? (connectStep || s.detail || 'Select your cube…')
     : failed ? s.detail
       : supported || connected ? `${s.detail ?? ''}${gyro ? ' Hold the cube as shown and tap recenter to align.' : ''}`

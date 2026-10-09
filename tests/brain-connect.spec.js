@@ -116,7 +116,7 @@ for (const style of STYLES) {
     await expect(brain).toHaveAttribute('data-screen', 'connecting');
     await releaseSteps(page);
     await expect(brain).toHaveAttribute('data-screen', 'disconnected');
-    await expect(brain.locator('.b-idle-status')).toHaveText('Connection failed: GATT server busy');
+    await expect(brain.locator('.b-idle-status')).toHaveText('Found the cube but could not connect (GATT server busy). Bring it close, close other apps connected to it, turn it a few times, then connect again.');
     await expect(brain.locator('.b-idle-status')).toHaveAttribute('data-tone', 'error');
     await page.getByRole('button', { name: /open cube and recording actions/ }).click();
     await expect(button).toBeEnabled();

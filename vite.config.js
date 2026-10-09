@@ -188,6 +188,9 @@ export default defineConfig({
           // scrambler. Keep package modules in a browser-safe chunk so the
           // worker entry does not import the app entry.
           if (id.includes('/node_modules/cubing/dist/lib/cubing/')) return 'cubing-core';
+          // Vite's dynamic-import helper must not land in cubing-core: whatever chunk holds it is fetched by
+          // every page, so it dragged all of cubing.js (1.2 MB) into the first load of every route.
+          if (id.includes('vite/preload-helper')) return 'vite-preload';
         },
       },
     },
