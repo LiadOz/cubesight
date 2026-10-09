@@ -166,7 +166,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   await mkdir(output, { recursive: true });
   await writeFile(path.join(output, `${tier}-latest.json`), `${JSON.stringify(result, null, 2)}\n`);
   console.log(`${tier}: ${(result.durationMs / 1000).toFixed(1)}s / ${result.budgetMs / 1000}s; ${result.passed ? 'passed' : 'failed'}`);
-  if (result.overBudgetMs > 0) console.log(`WARNING: ${tier} ran ${(result.overBudgetMs / 1000).toFixed(1)}s over its ${result.budgetMs / 1000}s budget. Not a failure (every stage finished cleanly), but the plan should fit: check machine load, or why the estimate was low.`);
+  const killed = (result.stages ?? []).filter(stage => stage.timedOut).map(stage => stage.name);
+  if (killed.length) console.log(`FAILED: the deadline stopped ${killed.join(', ')} before it finished — the plan did not fit. Check machine load, or why the estimate was low.`);
+  else if (result.overBudgetMs > 0) console.log(`WARNING: ${tier} ran ${(result.overBudgetMs / 1000).toFixed(1)}s over its ${result.budgetMs / 1000}s budget. Not a failure: every stage finished cleanly.`);
   if (plan?.packed.deferred.length) console.log(`${plan.packed.deferred.length} selected test(s) were deferred past the budget; Tier 2 / the merge queue's full stage must cover them.`);
   if (!result.passed) process.exitCode = 1;
 }
