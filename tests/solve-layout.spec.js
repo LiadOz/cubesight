@@ -45,6 +45,8 @@ function specStickerBox() {
 for (const viewport of VIEWPORTS) {
   test(`solve screen lands on the frames' anchors at ${viewport.name}`, async ({ page }) => {
     test.setTimeout(60_000);
+    // This one measures the drawn cube's sticker pixels against the frame, so it is the one place that needs real WebGL.
+    await page.addInitScript(() => { window.__CUBESIGHT_REAL_GL__ = true; });
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await mountTestBrain(page, 'orbit', { route: true });

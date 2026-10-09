@@ -27,6 +27,8 @@ test('a pasted reconstruction is checked, stored, and opens in the history revie
   // the imported solve is in history, and it replays
   await page.keyboard.press('Space');
   await expect(page).toHaveURL(/#\/history\/\d+\/replay$/);
+  // The URL changes before the page's own route state does; arrow keys mean "next solve" until the replay view is up.
+  await expect(page.locator('.history-page')).toHaveAttribute('data-view', 'replay');
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.history-stage__subline')).toContainText('move 1 of 2');
 });
@@ -50,7 +52,7 @@ test('every old review address lands on its solve in the history', async ({ page
   const at = Number(page.url().match(/history\/(\d+)/)[1]);
   for (const old of [`#/review/${at}`, `#/review/${at}/retry?move=0`]) {
     await page.goto(`/${old}`);
-    await expect(page).toHaveURL(new RegExp(`#/history/${at}(\\?move=0)?$`));
+    await expect(page).toHaveURL(new RegExp(`#/history/${at}(\\?move=0|/review/[\\w-]+)?$`));  // ?move=0 may resolve to its moment once the analysis lands
     await expect(page.locator('.history-page')).toHaveAttribute('data-view', /past|review/);
   }
 });
