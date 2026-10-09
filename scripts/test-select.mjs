@@ -587,6 +587,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
     for (const key of touchedScope) for (const name of (newTable.scope.get(key) ?? oldTable?.scope.get(key))?.declares ?? []) mentions.add(name);
     if (stem(file).length >= 5) mentions.add(stem(file));
     const functionHistory = model.functions.get(file);
+    const noHistory = [];
     let direct = 0;
     const unmeasured = [];
     for (const key of [...diff.changed, ...diff.removed]) {
@@ -612,8 +613,9 @@ export async function selectTests({ root, changes, model, head = null, specHashe
         }
       }
       direct += found;
-      if (!found) note(`${file}:${key} has no coverage history (new, or never executed by any test).`);
+      if (!found) noHistory.push(key);
     }
+    if (noHistory.length) note(`${file}: ${noHistory.length} changed function(s) have no coverage history (new, or never executed by any test): ${noHistory.slice(0, 4).join(', ')}${noHistory.length > 4 ? ', ...' : ''}.`);
     // Module scope: follow the names the statement declares or calls.
     let scopeHits = 0;
     for (const key of touchedScope) {
