@@ -21,6 +21,7 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1280, height: 900 },
+    reducedMotion: process.env.PW_MOTION === 'reduce' ? 'reduce' : 'no-preference',
   },
   webServer: {
     command: `npm run dev -- --port ${port}`,

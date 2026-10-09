@@ -37,6 +37,8 @@ test('history filters, opens past solves, replays and edits stored records', asy
   await expect(page).toHaveURL(/#\/history\/1100000$/);
   await page.locator('.f1-results__actions [data-action="next"]').click();
   await expect(page).toHaveURL(/#\/history\/1100000\/replay$/);
+  // The URL changes before the page's route state does; arrow keys mean "next solve" until the replay view is up.
+  await expect(page.locator('.history-page')).toHaveAttribute('data-view', 'replay');
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.history-stage__subline')).toContainText('move 1 of 1');
   await page.keyboard.press('Escape');
