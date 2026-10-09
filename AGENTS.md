@@ -9,9 +9,7 @@ Read this before doing anything in this repository. It applies to every agent (C
 - **Put worktrees and test artifacts in `/home/loz/projects/cubesight/.agents/`** (`worktrees/`, `artifacts/`). This is the ONE exception to the rule above: it is gitignored, it is host-backed (about 511 GB free) and it is already visible inside the sandboxes, whereas a sandbox's own filesystem is a 20 GB overlay that has repeatedly filled to 99% and caused browser crashes, lost test output and stalled runs. Never put them on `/tmp` or in sandbox-local paths such as `/home/loz/projects/cubesight-<something>`. Check with `df -h <your actual output path>` before a long run: it must show the 924 GB host filesystem, not a 20 GB overlay.
 - Scratch files (local configs, logs, temporary specs) live in your worktree (untracked) or under `.agents/artifacts/`, never loose in the main checkout.
 - **Port 5173 belongs to the user.** Use another free port for dev servers and tests.
-- **Temporary, until test runs are cheap: one browser suite at a time, machine-wide.** The goal is the opposite — test runs cheap enough (no cube rendering, lazy-loaded routes) that many agents test in parallel at low CPU; this lock comes out when one agent's full suite averages ≤ ~2 cores. Several agents share this machine and the user runs speech-to-text on it; concurrent browser runs have driven it to load 85–133 and broken that twice. Wrap every command that launches a browser (`playwright test`, `npm run review`, `design:diff`, layout/PWA/tier runs) in the shared lock, at low priority, on your own port:
-  `flock /home/loz/projects/cubesight/.agents/browser.lock nice -n 19 <command>`
-  Unit tests, lint and builds do not need it. Keep locked runs short — targeted specs while iterating, full suites only when you need the number.
+- **Keep test runs cheap so agents can test in parallel.** Browser tests do not render the cube (the test dev server sets `VITE_CUBESIGHT_TEST_STUB=1`; `PW_REAL_GL=1` opts back in). Run browser suites at low priority on your own port — `nice -n 19`, `PW_PORT=<free port>` — and never serialize agents behind a lock: if a run is expensive, make the run cheaper.
 
 ## 2. Commits and merges
 - Small, descriptive commits. **Never bypass the pre-commit hook** (`--no-verify` is forbidden). No auto "WIP" commits.
@@ -36,3 +34,10 @@ Publish screenshots as a post in the in-app gallery (`gallery/README.md`): `gall
 
 ## 6. Report
 Commits, files, test results, the gallery link, deviations from the spec, open questions.
+
+## 7. Time accounting
+The user wants to see where time goes, so every task keeps a clock.
+- **When you start:** run `date -u +%H:%MZ`, state the time in your first message, and create `.agents/artifacts/<task>/timelog.md` with that line.
+- **As you work:** append one line when each phase starts — `HH:MMZ <what> (expect ~N min)`. Always add one **before any command you expect to take over a minute**, saying why you need it *now*. If you are about to wait more than ~5 minutes on a test run, first ask whether a targeted run answers the same question.
+- **When you finish:** your report opens with a **Time** block — start, end, elapsed — then the three things that took longest and *why*, e.g. `38 min waiting for the full Playwright suite: needed a baseline before changing the config`.
+- **The lead checks it.** `node scripts/agent-time.mjs <your transcript>` measures every tool call from the transcript's own timestamps, groups it (waiting on tests, builds, editing, the model's own time) and separates out periods when the whole session was paused. Where your account and the measurement disagree, the measurement wins.
