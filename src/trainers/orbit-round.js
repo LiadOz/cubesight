@@ -36,7 +36,7 @@ export function createTrainerOrbit(stage, { customSegments = () => null } = {}) 
     else if (text) lastCoachText = text;
     else if (state === 'current') { lastCoachMarker = null; lastCoachText = ''; }
     coachHost.hidden = !lastCoachText;
-    const update = orbit.update({ segments, markers });
+    const update = orbit.update({ segments, markers, showCurrentDot: !custom });
     if (value || elapsed != null) slot.textContent = value || `${(elapsed / 1000).toFixed(2)} s`;
     else slot.textContent = custom ? '' : round ? `${round.answered} / ${round.total}` : `${activeIndex + 1}`;
     Promise.resolve(update).then(() => {
