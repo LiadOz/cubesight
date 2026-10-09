@@ -78,7 +78,12 @@ async function expectCleanDisconnected(page) {
     return smartCube.getSnapshot();
   });
   expect(detail.phase).toBe('disconnected');
-  expect(detail.detail).toMatch(/^Connection failed: /);
+  // Assert the intent, not the wording: the failure came from the real Web Bluetooth
+  // adapter's own support check (headless Chrome has no Bluetooth), not from the replay,
+  // and the screen shows that failure's explanation. The old /^Connection failed: /
+  // check was a proxy for this and broke when 294db90 made the messages human-readable.
+  expect(detail.failure?.stage).toBe('support');
+  expect(detail.detail).toBe(detail.failure.message);
 }
 
 test('an instant replay of a few thousand events finishes fast and leaves a clean, disconnected Brain', async ({ page }) => {

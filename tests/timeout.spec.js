@@ -13,7 +13,7 @@ test('ten-second corner trials pause without logging or changing adaptive pace',
   const before = await savedProgress(page);
   await page.clock.fastForward(10_001);
   await expect(page.locator('#pause-overlay')).toBeVisible();
-  await expect(page.locator('#pause-overlay')).toContainText('This one won’t count');
+  await expect(page.locator('#pause-overlay')).toContainText("This one won't count");
   await page.keyboard.press('w');
   expect(await savedProgress(page)).toEqual(before);
   await expect(page.locator('#exposure-select')).toHaveValue('600');
