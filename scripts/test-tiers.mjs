@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-import { spawn, execFileSync } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { spawn, spawnSync, execFileSync } from 'node:child_process';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
+import { DEFAULT_TRUNK, formatPlan, gateEnv, gateStages, planGate, prepareGateDirectory, updateMapFromRun } from './test-gate.mjs';
 
 /**
  * Claim a free port for this run's dev server.
@@ -103,23 +104,51 @@ export async function runTier({ tier, stages, budgetMs = TIER_BUDGETS[tier], par
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const started = performance.now();
   const tier = process.argv[2];
-  if (!['merge', 'regression'].includes(tier)) throw new Error('Usage: test-tiers.mjs merge|regression');
-  const stages = tier === 'regression' ? REGRESSION_STAGES : [
-    ['check', 'npm', ['run', 'check']],
-    ['smoke-and-affected', 'npx', ['playwright', 'test', '--config=playwright.merge.config.js', '--update-snapshots=none', '--max-failures=1', 'tests/merge-smoke.spec.js', ...process.argv.slice(3)]],
-  ];
+  if (!['merge', 'regression'].includes(tier)) throw new Error('Usage: test-tiers.mjs merge|regression [--base <ref>] [--trunk <branch>]');
+  const option = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : null; };
+  const root = process.cwd();
+  let plan = null;
+  let stages = REGRESSION_STAGES;
+  const refreshMap = tier === 'regression' && process.argv.includes('--refresh-map');
+  const refreshDir = path.resolve('test-results/impact-map');
+  if (tier === 'merge') {
+    plan = await planGate({ root, trunk: option('--trunk') ?? DEFAULT_TRUNK, base: option('--base'), started });
+    console.log(formatPlan(plan));
+    await prepareGateDirectory(root);
+    stages = gateStages(plan);
+  }
   const runtimeTmp = path.resolve('test-results/runtime-tmp');
   await mkdir(runtimeTmp, { recursive: true });
-  const env = { ...process.env, TMPDIR: runtimeTmp };
+  // `tier2 --refresh-map`: the browser stage doubles as the full coverage capture that refreshes the committed seed.
+  if (refreshMap) {
+    stages = stages.map(([name, command, args]) => (name === 'browser' ? [name, command, [...args, '--reporter=line,json']] : [name, command, args]));
+  }
+  const refreshEnv = refreshMap ? { CUBESIGHT_IMPACT_COVERAGE: '1', CUBESIGHT_IMPACT_COVERAGE_DIR: path.join(refreshDir, 'raw'), PLAYWRIGHT_JSON_OUTPUT_NAME: path.join(refreshDir, 'playwright-report.json') } : {};
+  if (refreshMap) await rm(path.join(refreshDir, 'raw'), { recursive: true, force: true });
+  const env = { ...(plan ? gateEnv(root, plan) : process.env), ...refreshEnv, TMPDIR: runtimeTmp };
   if (!env.PW_PORT) env.PW_PORT = String(await freePort());
-  const result = await runTier({ tier, stages, parallel: tier === 'merge', env });
+  const budgetMs = tier === 'merge' ? TIER_BUDGETS.merge - (performance.now() - started) : TIER_BUDGETS[tier];
+  const result = await runTier({ tier, stages, budgetMs, parallel: tier === 'merge', env });
+  result.durationMs = Math.round(performance.now() - started);
+  result.budgetMs = TIER_BUDGETS[tier];
+  result.passed = result.passed && result.durationMs <= result.budgetMs;
   result.commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim());
   result.generatedAt = new Date().toISOString();
+  if (plan) {
+    result.deferred = plan.packed.deferred.map((item) => item.key);
+    console.log(await updateMapFromRun(root, plan));
+  }
+  if (refreshMap && result.stages.find((stage) => stage.name === 'browser')?.exitCode === 0) {
+    spawnSync('node', ['scripts/test-impact-map.mjs', '--from-raw', path.join(refreshDir, 'raw'), '--report', path.join(refreshDir, 'playwright-report.json')], { cwd: root, stdio: 'inherit' });
+    console.log('tests/impact-map.json was refreshed from this full run; commit it.');
+  }
   const output = path.resolve('test-results/health');
   await mkdir(output, { recursive: true });
   await writeFile(path.join(output, `${tier}-latest.json`), `${JSON.stringify(result, null, 2)}\n`);
   console.log(`${tier}: ${(result.durationMs / 1000).toFixed(1)}s / ${result.budgetMs / 1000}s; ${result.passed ? 'passed' : 'failed'}`);
+  if (plan?.packed.deferred.length) console.log(`${plan.packed.deferred.length} selected test(s) were deferred past the budget; Tier 2 / the merge queue's full stage must cover them.`);
   if (!result.passed) process.exitCode = 1;
 }
