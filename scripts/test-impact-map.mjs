@@ -5,11 +5,11 @@
 // test with coverage on. The gate keeps its own overlay fresh from each run.
 //
 //   node scripts/test-impact-map.mjs                 full capture, then write the seed
-//   node scripts/test-impact-map.mjs --from-raw DIR [--report FILE]   rebuild from a capture already on disk
+//   node scripts/test-impact-map.mjs --from-raw DIR [--report FILE] [--merge]   rebuild from a capture already on disk (--merge adds to the seed)
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { hashSpecs, emptyModel, ingestRun, reportResults, reportSpecs, saveModel, SEED_PATH, LIVE_PATH } from './test-impact-store.mjs';
+import { hashSpecs, emptyModel, ingestRun, loadModel, reportResults, reportSpecs, saveModel, SEED_PATH, LIVE_PATH } from './test-impact-store.mjs';
 
 const root = process.cwd();
 const argument = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : null; };
@@ -27,7 +27,8 @@ if (!argument('--from-raw')) {
 }
 const report = await readFile(reportFile, 'utf8').then(JSON.parse, () => null);
 if (!report) console.warn(`No Playwright report at ${reportFile}: every raw record is accepted and durations stay unknown.`);
-const model = emptyModel();
+const merge = process.argv.includes('--merge'); // add this capture to the existing seed instead of rebuilding it
+const model = merge ? (await loadModel(root, { live: false })).model : emptyModel();
 const outcome = await ingestRun(model, { rawDir, report, commit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() });
 model.specHashes = await hashSpecs(root, [...new Set([...reportSpecs(report, root), ...[...model.tests.values()].map((info) => info.spec)])]);
 // Extra Playwright reports (e.g. a quiet-machine run) contribute their timings; the fastest wins.
@@ -38,7 +39,7 @@ for (const file of process.argv.flatMap((value, i, all) => (all[i - 1] === '--du
     if (info && result.status === 'passed' && result.durationMs && result.durationMs < info.durationMs) info.durationMs = result.durationMs;
   }
 }
-model.generatedAt = new Date().toISOString();
+model.generatedAt = merge ? model.generatedAt : new Date().toISOString();
 await saveModel(root, model, SEED_PATH);
 await rm(path.join(root, LIVE_PATH), { force: true });
 console.log(`Wrote ${SEED_PATH}: ${model.tests.size} tests, ${model.modules.size} modules, ${model.functions.size} modules with function history (${outcome.updated} refreshed, ${outcome.skippedFailing} failing skipped).`);
