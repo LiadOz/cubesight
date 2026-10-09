@@ -638,35 +638,42 @@ export async function selectTests({ root, changes, model, head = null, specHashe
   }
 
   async function wordSearch(tokens, tier, label) {
-    // Tests that execute functions mentioning a token, and specs that mention it.
+    // Per token: the tests that execute a function mentioning it, plus the specs that mention it.
+    // A token that reaches a large share of the suite (a generic class) is weak evidence: addIds marks it broad.
     let hits = 0;
-    const wanted = [...tokens];
-    if (!wanted.length) return 0;
-    const pattern = new RegExp(`(?<![\\w-])(?:${wanted.map(escapeRegex).join('|')})(?![\\w-])`, 'u');
-    for (const file of files.filter((f) => /^src\/.*\.m?js$/u.test(f))) {
-      const text = await reader.read(file);
-      if (!text || !pattern.test(text)) continue;
-      const table = await tableOf(file);
-      if (!table) continue;
-      const g = new RegExp(pattern.source, 'gu');
-      const owners = new Set();
-      for (const match of text.matchAll(g)) {
-        let best = null;
-        for (const fn of table.functions.values()) if (fn.start <= match.index && fn.end > match.index && (!best || fn.end - fn.start < best.end - best.start)) best = fn;
-        if (best) owners.add(best.key);
-        else {
-          const item = [...table.scope.values()].find((candidate) => candidate.start <= match.index && candidate.end > match.index);
-          if (item) for (const hit of await dependents(file, [...item.declares], {})) owners.add(`${hit.file}::${hit.key}`);
+    const srcFiles = files.filter((f) => /^src\/.*\.m?js$/u.test(f));
+    const texts = new Map();
+    for (const file of srcFiles) texts.set(file, await reader.read(file));
+    for (const token of tokens) {
+      const pattern = new RegExp(`(?<![\\w-])${escapeRegex(token)}(?![\\w-])`, 'u');
+      const ids = new Set();
+      for (const file of srcFiles) {
+        const text = texts.get(file);
+        if (!text || !pattern.test(text)) continue;
+        const table = await tableOf(file);
+        if (!table) continue;
+        const owners = new Set();
+        for (const match of text.matchAll(new RegExp(pattern.source, 'gu'))) {
+          let best = null;
+          for (const fn of table.functions.values()) if (fn.start <= match.index && fn.end > match.index && (!best || fn.end - fn.start < best.end - best.start)) best = fn;
+          if (best) owners.add(`${file}::${best.key}`);
+          else {
+            const item = [...table.scope.values()].find((candidate) => candidate.start <= match.index && candidate.end > match.index);
+            if (item) for (const hit of await dependents(file, [...item.declares], {})) owners.add(`${hit.file}::${hit.key}`);
+          }
+        }
+        for (const owner of owners) {
+          const [ownerFile, key] = owner.split('::');
+          for (const id of model.functions.get(ownerFile)?.get(key) ?? []) ids.add(id);
         }
       }
-      for (const owner of owners) {
-        const [ownerFile, key] = owner.includes('::') ? owner.split('::') : [file, owner];
-        hits += addIds(model.functions.get(ownerFile)?.get(key), tier, `${label} in ${path.posix.basename(ownerFile)}:${key}`);
+      for (const spec of specs) {
+        const text = await readSpec(spec);
+        if (!text || !pattern.test(text)) continue;
+        const known = [...model.tests].filter(([, info]) => info.spec === spec).map(([id]) => id);
+        if (known.length) for (const id of known) ids.add(id); else hits += await addSpec(spec, tier, `${label} "${token}" mentioned in ${path.posix.basename(spec)}`);
       }
-    }
-    for (const spec of specs) {
-      const text = await readSpec(spec);
-      if (text && pattern.test(text)) hits += await addSpec(spec, tier + 1, `${label} mentioned in ${path.posix.basename(spec)}`);
+      if (ids.size) hits += addIds(ids, tier, `${label} "${token}"`);
     }
     return hits;
   }
@@ -679,7 +686,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
     if (!impact.touched && !impact.global) { entry.summary = 'comments/formatting only'; return; }
     entry.summary = `${impact.touched} rule(s); classes/ids: ${[...impact.tokens].slice(0, 6).join(', ') || 'none'}${impact.tokens.size > 6 ? ', ...' : ''}`;
     for (const token of impact.tokens) mentions.add(token);
-    const hits = await wordSearch(impact.tokens, 0, 'class/id');
+    const hits = await wordSearch(impact.tokens, 1, 'class/id');
     note(`${change.file}: CSS has no JS coverage. Rule: the classes and ids it styles are searched for in the code, so tests that execute the functions mentioning them run; layout and visual coverage is Tier 2 (npm run test:layout, test:snapshots).`);
     if (impact.global || impact.hadGlobalRules) {
       result.smokeOnly = !hits;
@@ -697,7 +704,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
       for (const match of line.matchAll(/\b(?:id|class)\s*=\s*["']([^"']+)["']/gu)) for (const token of match[1].split(/\s+/u)) tokens.add(token);
     }
     entry.summary = `${changedLines.length} changed line(s)`;
-    const hits = await wordSearch(tokens, 0, 'id/class');
+    const hits = await wordSearch(tokens, 1, 'id/class');
     if (changedLines.some((line) => /<(?:script|link|meta|title|head|html)\b/u.test(line)) || !tokens.size) {
       warn(`${change.file}: document-level markup changed; the smoke floor${hits ? ' plus id/class hits' : ''} runs, and Tier 2 covers the rest.`);
       result.smokeOnly = result.smokeOnly || !hits;
