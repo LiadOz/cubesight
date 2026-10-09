@@ -1,8 +1,8 @@
 import { expect } from 'playwright/test';
 import { registerLayoutDriver } from './matrix.js';
-import { HISTORY_SEED, quickRoundSeed } from './fixtures/state-seeds.js';
+import { HISTORY_SEED, quickRoundSeed } from '../helpers/history-seed.js';
 import { CROWDED_MARKERS, validateCrowdedMarkerFixture } from './fixtures/crowded-markers.js';
-import { mountFakeCube, startScramble, completeScramble, solveReverse } from './fake-cube.js';
+import { mountFakeCube, startScramble, completeScramble, solveReverse } from '../helpers/fake-cube.js';
 import { mountTestBrain, playSolve } from '../helpers/fake-brain.js';
 import { GOLD } from '../analysis-golden.mjs';
 import { seedGoalProgressState } from '../helpers/goal-progress-state.js';

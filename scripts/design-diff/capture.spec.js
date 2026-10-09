@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, expect } from 'playwright/test';
 import { getLayoutDriver, getLayoutMatrix } from '../../tests/layout/matrix.js';
-import { HISTORY_SEED } from '../../tests/layout/fixtures/state-seeds.js';
+import { HISTORY_SEED } from '../../tests/helpers/history-seed.js';
 import '../../tests/layout/state-drivers.js';
 import { FRAMES, RICH_AT } from './frames.mjs';
 import { buildRichSeed } from './rich-seed.mjs';

@@ -3,7 +3,7 @@
 // connection behind that shared session.
 import { expect } from 'playwright/test';
 import { selectOrbitMarker } from '../helpers/orbit-markers.js';
-import { mountFakeCube, completeScramble, solveReverse } from './fake-cube.js';
+import { mountFakeCube, completeScramble, solveReverse } from '../helpers/fake-cube.js';
 import { getCase } from '../../src/algs/seed/cases.js';
 import { invertAlg } from '../../src/algs/notation.js';
 import { applyMoves, stateFromScramble } from '../../src/cross-cube.js';
