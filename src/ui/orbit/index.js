@@ -2,6 +2,7 @@ import { arcPath, clusterMarkers, fanMarkers, looksLikeMoves, miniGlyphSize, ORB
 import { groupEndLabels } from './end-labels.js';
 import { CANVAS, ORBIT } from '../design-spec.js';
 import './orbit.css';
+import { COMPLETION_DURATION, completionPlan, completionSegments, isCompleted, segmentKey } from './completion.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const SIZES = { XL: 520, L: 420, M: 300, S: 210, mini: 44 };
@@ -83,16 +84,67 @@ export class Orbit {
 
   update(options = {}, { animate = true } = {}) {
     const previous = this.displayed || this.current;
+    const previousTarget = this.current;
     this.options = { ...this.options, ...options, segments: options.segments ?? options.segs ?? this.options.segments };
     this.current = this.normalize(this.options);
     this.element.dataset.shape = this.options.shape;
     this.element.dataset.size = this.options.size;
-    if (!previous || !animate || this.reducedMotion.matches || this.options.animate === false) {
+    const geometryChanged = previousTarget && (
+      ['size', 'shape', 'gap', 'start', 'direction'].some(key => previousTarget.options[key] !== this.current.options[key])
+      || previousTarget.segments.map(segmentKey).join('|') !== this.current.segments.map(segmentKey).join('|')
+      || previousTarget.layout.some((part, index) => part.from !== this.current.layout[index]?.from || part.to !== this.current.layout[index]?.to)
+    );
+    const motion = previous && !this.reducedMotion.matches && this.options.animate !== false;
+    if (motion && !geometryChanged) {
+      const pending = completionPlan(previousTarget?.segments || [], previous.segments, this.current.segments, this.completion?.plan);
+      const newlyCompleted = pending.some(item => !this.completion?.plan.some(old => old.key === item.key));
+      const resetPending = this.completion?.plan.some(item => !isCompleted(this.current.segments.find((segment, index) => segmentKey(segment, index) === item.key)));
+      if (pending.length && (animate || this.completion)) {
+        if (!this.completion || newlyCompleted || resetPending) {
+          const waiters = this.completion?.waiters || [];
+          this.completion = { plan: pending, started: performance.now(), progress: 0, waiters };
+        }
+        this.sequence++;
+        this.element.classList.remove('is-morphing');
+        this.draw(this.current);
+        return this.runCompletion();
+      }
+    }
+    this.stopCompletion();
+    if (!motion || !animate) {
       this.sequence++;
+      this.element.classList.remove('is-morphing');
       this.draw(this.current);
       return Promise.resolve();
     }
     return this.animateFrom(previous, this.current, this.duration());
+  }
+
+  runCompletion() {
+    const promise = new Promise(resolve => this.completion.waiters.push(resolve));
+    if (this.completionFrame) return promise;
+    const tick = now => {
+      this.completionFrame = null;
+      if (!this.completion) return;
+      if (this.reducedMotion.matches || this.options.animate === false) {
+        this.stopCompletion(); this.draw(this.current); return;
+      }
+      const raw = Math.min(1, (now - this.completion.started) / COMPLETION_DURATION);
+      this.completion.progress = 1 - Math.pow(1 - raw, 3);
+      if (raw >= 1) this.stopCompletion();
+      this.draw(this.current);
+      if (this.completion) this.completionFrame = requestAnimationFrame(tick);
+    };
+    this.completionFrame = requestAnimationFrame(tick);
+    return promise;
+  }
+
+  stopCompletion() {
+    cancelAnimationFrame(this.completionFrame);
+    this.completionFrame = null;
+    const waiters = this.completion?.waiters || [];
+    this.completion = null;
+    waiters.forEach(resolve => resolve());
   }
 
   normalize(options) {
@@ -177,6 +229,7 @@ export class Orbit {
   }
 
   draw(model) {
+    if (model === this.current && this.completion) model = { ...model, segments: completionSegments(model.segments, this.completion.plan, this.completion.progress) };
     const { cx, cy, radius, segments, options } = model;
     const markers = model.markers || [];
     const width = model.interpolatedWidth ?? (options.size === 'mini' ? miniGlyphSize(options.glyphSize) : SIZES[options.size] || SIZES.L);
@@ -266,7 +319,7 @@ export class Orbit {
       const key = String(segment.key ?? index), arc = layoutByKey.get(key);
       if (!arc) return;
       const state = segment.state === 'done' && moveRing ? 'quiet' : segment.state || 'future', color = segment.fillColor || segment.color || COLORS[state] || COLORS.done;
-      const group = svg('g', { class: `orbit__segment is-${state}`, 'data-key': key, role: 'listitem', 'aria-label': [segment.label, segment.value, deltaText(segment.delta)].filter(Boolean).join(', ') || key });
+      const group = svg('g', { class: `orbit__segment is-${state}${segment.completing ? ' is-completing' : ''}`, 'data-key': key, role: 'listitem', 'aria-label': [segment.label, segment.value, deltaText(segment.delta)].filter(Boolean).join(', ') || key });
       const trackPath = svg('path', { class: 'orbit__segment-track', d: arcPath(cx, cy, radius, arc.from, arc.to, model.direction) });
       const ratio = clamp(Number(segment.fill) || 0, 0, 1);
       const offset = clamp(Number(segment.fillOffset) || 0, 0, 1);
@@ -278,7 +331,7 @@ export class Orbit {
       hit.addEventListener('pointerleave', event => options.onSegmentLeave?.(segment, event));
       hit.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.onSegment?.(segment, event); } });
       group.append(hit);
-      if (state === 'current' && !moveRing) {
+      if ((state === 'current' || segment.completionLeading) && !moveRing) {
         const end = arc.from + (arc.to - arc.from) * (segment.caretPosition ?? Math.min(1, offset + ratio)), point = polar(cx, cy, radius, end);
         group.append(svg('circle', { class: 'orbit__current-dot', cx: point.x, cy: point.y, r: 5.5 * fontScale, fill: color }));
       }
@@ -416,7 +469,7 @@ export class Orbit {
     this.element.dispatchEvent(new CustomEvent('orbitchange', { detail: { orbit: this } }));
   }
 
-  destroy() { this.resizeObserver?.disconnect(); this.sequence++; this.element.removeEventListener('focusin', this.onFocusIn); this.element.removeEventListener('keydown', this.onEscape); this.element.remove(); }
+  destroy() { this.stopCompletion(); this.resizeObserver?.disconnect(); this.sequence++; this.element.removeEventListener('focusin', this.onFocusIn); this.element.removeEventListener('keydown', this.onEscape); this.element.remove(); }
 }
 
 export const createOrbit = (host, options) => new Orbit(host, options);

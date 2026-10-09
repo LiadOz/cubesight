@@ -66,3 +66,5 @@
   .orbit__label-value.tone-bad { fill: #e6a642; }
   .orbit__hit { vector-effect: non-scaling-stroke; stroke-width: 40px; }
 }
+/* Keep completed-state colour on the advancing fill, with an unfilled track behind it. */
+.orbit__segment.is-completing .orbit__segment-track { stroke: var(--orbit-track, #34312b); stroke-width: var(--orbit-w-track, 3); }
