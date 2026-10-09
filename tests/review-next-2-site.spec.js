@@ -4,12 +4,13 @@ import path from 'node:path';
 
 const output = path.resolve('test-results/review-next-2-site');
 
-test.setTimeout(120_000);
-test('solve settings stay on one desktop line and unknown routes have a styled recovery page', async ({ page }) => {
-  await mkdir(output, { recursive: true });
-  for (const style of ['orbit', 'mono']) {
-    for (const theme of ['light', 'dark']) {
-      for (const viewport of [{ name: 'desktop', width: 1280, height: 900 }, { name: 'phone', width: 390, height: 844 }]) {
+test.setTimeout(60_000);
+// One test per style x theme x viewport cell (they were one 8-cell loop): the cells are independent, so they run in parallel.
+for (const style of ['orbit', 'mono']) {
+  for (const theme of ['light', 'dark']) {
+    for (const viewport of [{ name: 'desktop', width: 1280, height: 900 }, { name: 'phone', width: 390, height: 844 }]) {
+      test(`solve settings stay on one desktop line and unknown routes have a styled recovery page: ${style} / ${theme} / ${viewport.name}`, async ({ page }) => {
+        await mkdir(output, { recursive: true });
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
         await page.goto('/#/solve');
         await page.evaluate(({ themeMode, brainStyle }) => {
@@ -62,7 +63,7 @@ test('solve settings stay on one desktop line and unknown routes have a styled r
         await missing.locator('#not-found-drills').click();
         await expect(page).toHaveURL(/#\/drills$/);
         await expect(page.locator('#drills-view')).toBeVisible();
-      }
+      });
     }
   }
-});
+}

@@ -27,7 +27,8 @@ for (const [path, view] of [['/drills', 'drills'], ['/progress', 'progress']]) {
         await expect(pageCanvases).toHaveCount(1);
 
         await page.setViewportSize({ width: 390, height: 844 });
-        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+        // Poll: the resize reflows asynchronously, so a single read right after setViewportSize raced it (the old flake).
+        await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
         await expect(pageCanvases).toHaveCount(1);
       });
     }
