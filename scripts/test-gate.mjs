@@ -35,7 +35,9 @@ export const PWA_BUILD_MS = 15_000;
 export const ROTATION_FILL = 0.6;
 // Playwright stops itself this long before the suite deadline and writes the report of what finished,
 // so a slow machine truncates the rotation instead of killing the run with nothing recorded.
-export const STOP_MARGIN_MS = 4_000;
+export const STOP_MARGIN_MS = 7_000;
+// Not worth starting the PWA specs (preview server + browser) with less than this left once the build is done.
+export const PWA_MIN_START_MS = 9_000;
 export const PWA_MAX_MS = 25_000;
 export const PWA_CONFIG = 'scripts/test-pwa.config.mjs';
 export const GATE_DIR = 'test-results/gate';
@@ -183,7 +185,7 @@ export function gateStages(plan, { browser = true, checks = true, stopAfterMs = 
   const pwa = plan.rotation?.run.filter((item) => item.key.startsWith(PWA_PREFIX)) ?? [];
   const build = 'npm run build && node scripts/check-no-dev-gallery.mjs && npm run gallery:coverage';
   // The PWA specs run against the gate's own build (the preview server serves dist/), so they wait for it in the same stage.
-  const pwaRun = `PLAYWRIGHT_JSON_OUTPUT_NAME=${path.join(GATE_DIR, 'report-pwa.json')} npx playwright test --config=${PWA_CONFIG} --update-snapshots=none --reporter=line,json ${pwa.map((item) => `'${item.spec}'`).join(' ')}`;
+  const pwaRun = `[ $(( CUBESIGHT_DEADLINE_MS - $(date +%s%3N) )) -gt ${PWA_MIN_START_MS} ] || { echo 'PWA specs skipped: no time left after the build'; exit 0; }; PLAYWRIGHT_JSON_OUTPUT_NAME=${path.join(GATE_DIR, 'report-pwa.json')} npx playwright test --config=${PWA_CONFIG} --update-snapshots=none --reporter=line,json ${pwa.map((item) => `'${item.spec}'`).join(' ')}`;
   if (checks) {
     // Same checks as `npm run lint`, but cached (only changed files are re-linted) and split so they overlap.
     stages.push(['lint-js', 'npx', ['eslint', '--cache', '--cache-location', `${LINT_CACHE_DIR}/eslintcache`, '.']]);
@@ -260,6 +262,8 @@ export async function finishRotation(root, plan, { commit, now = new Date() } = 
     browser: Boolean(browserReport) && !failures.some((f) => !f.key.startsWith(PWA_PREFIX)) && !ownCut(false),
     'build+pwa': Boolean(pwaReport) && !failures.some((f) => f.key.startsWith(PWA_PREFIX)) && !ownCut(true),
   };
+  const ownUnfinished = unfinishedOwn.map((item) => (item.kind === 'case' ? `${path.posix.basename(item.spec)} › ${item.grepTitle.replace(/^\S+\.spec\.js\s/u, '')}` : path.posix.basename(item.spec)));
+  if (ownUnfinished.length) lines.push(`FAILED: ${ownUnfinished.length} test(s) selected by your change did not finish before the time limit (the machine is busy or the plan was too big): ${ownUnfinished.slice(0, 5).join('; ')}${ownUnfinished.length > 5 ? '; ...' : ''}`);
   if (cutRotation.length) lines.push(`${cutRotation.length} rotation test(s) did not get to run before the time limit (the machine is busy); they stay the stalest and go first next time.`);
   recordRun(store, { outcomes, deferred: rotation.deferred, commit, now });
   await saveRotation(root, store);
@@ -268,5 +272,5 @@ export async function finishRotation(root, plan, { commit, now = new Date() } = 
     ...(await pwaSpecs(root)).map((spec) => ({ key: `${PWA_PREFIX}${spec}`, label: `${path.posix.basename(spec)} (PWA)` })),
   ];
   lines.push(freshnessLine({ tests: suite, store, root, now }));
-  return { lines, failed: failures.length > 0, stageOk };
+  return { lines, failed: failures.length > 0 || ownUnfinished.length > 0, stageOk };
 }

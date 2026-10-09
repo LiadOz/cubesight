@@ -123,7 +123,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   await mkdir(runtimeTmp, { recursive: true });
   const env = { ...gateEnv(root, plan), TMPDIR: runtimeTmp };
   if (!env.PW_PORT) env.PW_PORT = String(await freePort());
-  env.CUBESIGHT_DEADLINE_MS = String(Date.now() + SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS);
+  env.CUBESIGHT_DEADLINE_MS = String(Math.round(Date.now() + SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS));
   if (!env.PW_PWA_PORT) env.PW_PWA_PORT = String(await freePort());
   const budgetMs = SUITE_BUDGET_MS - (performance.now() - started);
   const result = await runTier({ stages, budgetMs, parallel: true, env });
