@@ -238,6 +238,12 @@
   position: absolute; z-index: 3; left: var(--corner); top: calc(var(--oy) + var(--keys-y) * var(--u));
   display: flex; flex-wrap: nowrap; gap: calc(27 * var(--u)); min-height: 0;
 }
+/* User revision: the disconnected Space/Tab row is centred and slightly raised. */
+.brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="disconnected"] .b-keys {
+  left: calc(var(--ox) + var(--c-x) * var(--u));
+  top: calc(var(--oy) + (var(--ds-keys-idle-y) - 32) * var(--u));
+  translate: -50% 0;
+}
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-key { display: inline-flex; align-items: center; gap: calc(8 * var(--u)); height: calc(var(--ds-keys-idle-h) * var(--u)); padding: 0; color: var(--b-muted); font: 500 calc(var(--ds-keys-action-size) * var(--u)) / 1 var(--b-font-sans); white-space: nowrap; }
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-key:hover { color: var(--b-ink); }
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-key kbd {
