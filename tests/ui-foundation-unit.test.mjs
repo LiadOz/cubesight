@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arcPath, clusterMarkers, miniGlyphSize, placeLabels, polar, ringLayout } from '../src/ui/orbit/geometry.js';
+import { arcPath, clusterMarkers, markerGroups, miniGlyphSize, placeLabels, polar, ringLayout } from '../src/ui/orbit/geometry.js';
 import { applyMoves, createSolvedState, stateFromScramble } from '../src/cross-cube.js';
 import { caseDisplayState, normalizeCaseColorSetting, orientCaseState } from '../src/ui/cube/orientation.js';
 import { resolveSlotPieces } from '../src/ui/cube/slots.js';
@@ -59,6 +59,29 @@ test('Orbit marker clustering handles crowded markers and the zero-degree seam',
   assert.equal(new Set(clustered.flatMap(cluster => cluster.items.map(marker => marker.key))).size, 14);
   assert.equal(miniGlyphSize(8), 17);
   assert.equal(miniGlyphSize(200), 48);
+});
+
+test('dense review markers stay anchored as count badges with every critique accessible', () => {
+  for (const pitch of [32, 88]) {
+    const markers = Array.from({ length: 20 }, (_, i) => ({ key: `critique-${i}`, angle: 100 + i * .2, label: `pause ${i}` }));
+    const groups = markerGroups([...markers, { key: 'isolated', angle: 230 }], { radius: 300, pitch });
+    assert.equal(groups.length, 2);
+    const dense = groups.find(group => group.count === 20);
+    assert.equal(dense.radius, 300);
+    assert.ok(dense.angle >= 100 && dense.angle <= 104, 'badge stays at the actual solve moments');
+    assert.deepEqual(dense.items.map(item => item.key), markers.map(item => item.key));
+    assert.equal(groups.find(group => group.count === 1).angle, 230);
+  }
+});
+
+test('review clustering handles unwrapped Orbit angles and preserves the two-marker fan', () => {
+  const dense = markerGroups([{ key: 'a', angle: 358 }, { key: 'b', angle: 361 }, { key: 'c', angle: 363 }], { radius: 300 });
+  assert.equal(dense.length, 1);
+  assert.equal(dense[0].count, 3);
+  assert.ok(Math.abs(dense[0].angle) < 5);
+  const pair = markerGroups([{ key: 'a', angle: 100 }, { key: 'b', angle: 101 }], { radius: 300 });
+  assert.deepEqual(pair.map(group => group.count), [1, 1]);
+  assert.deepEqual(pair.map(group => group.radius), [300, 274]);
 });
 
 test('case orientations preserve source state and enforce requested center colors', () => {

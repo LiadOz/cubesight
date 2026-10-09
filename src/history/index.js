@@ -158,9 +158,9 @@ export function initHistory(host) {
         if (route.kind === 'replay' && stage) seekMove(stage.start, { updateUrl: false });
       },
       onMarker: marker => {
-        if (route.kind === 'replay' && marker.key) {
+        if (marker.key) {
           const target = viewModel().selected?.markers?.find(item => item.id === marker.key);
-          if (target) seekMove(target.at ?? (target.idx ?? 0) + 1, { updateUrl: false });
+          if (target && route.kind === 'replay') seekMove(target.at ?? (target.idx ?? 0) + 1, { updateUrl: false });
           location.hash = href(historyReviewPath(record.at, marker.key));
         }
       },

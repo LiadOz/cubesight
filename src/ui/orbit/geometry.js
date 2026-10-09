@@ -113,7 +113,7 @@ function clampLabelX(value, width, side) {
 }
 
 export function clusterMarkers(markers = [], thresholdDeg = 5) {
-  const sorted = markers.map((marker, index) => ({ ...marker, angle: Number(marker.angle) || 0, _index: index }))
+  const sorted = markers.map((marker, index) => ({ ...marker, angle: ((Number(marker.angle) || 0) % 360 + 360) % 360, _index: index }))
     .sort((a, b) => a.angle - b.angle);
   const groups = [];
   for (const marker of sorted) {
@@ -231,4 +231,15 @@ export function fanMarkers(markers = [], { radius, pitch = 26, maxLanes = 4, thr
     });
   }
   return out.sort((a, b) => a.trueAngle - b.trueAngle || a.lane - b.lane);
+}
+
+/** Keep small groups on the approved two radii; dense groups stay anchored as count badges. */
+export function markerGroups(markers = [], { radius, pitch = 26, fan = true, thresholdDeg = 5 } = {}) {
+  // Include the count badge's extra radius, and use chord distance so hit targets cannot overlap.
+  const spacing = Math.max(thresholdDeg, 2 * Math.asin(Math.min(1, pitch / (2 * radius))) * 180 / Math.PI);
+  return clusterMarkers(markers, spacing).flatMap(cluster => {
+    if (!fan || cluster.count > 2) return [{ ...cluster, radius }];
+    return fanMarkers(cluster.items, { radius, pitch, maxLanes: 2, thresholdDeg: spacing + .001 })
+      .map(marker => ({ key: String(marker.key), items: [marker], count: 1, angle: marker.angle, radius: marker.radius, trueAngle: marker.trueAngle, lane: marker.lane }));
+  });
 }

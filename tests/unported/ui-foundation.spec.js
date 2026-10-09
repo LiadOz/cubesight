@@ -71,28 +71,29 @@ test('Orbit takes fresh host bounds when a resize interrupts a morph', async ({ 
   expect(fitted.renderedWidth).toBeLessThanOrEqual(fitted.hostWidth);
 });
 
-test('crowded Orbit markers fan out onto their own badges and stay reachable by keyboard with exact marker lookup', async ({ page }) => {
-  // Approved (W-20, TC-00 Q3 B): a crowded ring fans markers out instead of merging them into one count badge.
+test('crowded Orbit markers stay reachable by keyboard with exact marker lookup', async ({ page }) => {
   await page.goto('/src/ui/gallery.html?flow=results');
   const total = await page.evaluate(() => window.__f0Orbit.current.markers.length);
   expect(total).toBeGreaterThan(2);
-  await expect(page.locator('.f0-orbit [data-marker-cluster]')).toHaveCount(total);
-  await expect(page.locator('.f0-orbit [data-marker-cluster].is-cluster')).toHaveCount(0);
+  const represented = await page.locator('.f0-orbit [data-marker-keys]').evaluateAll(nodes => nodes.flatMap(node => JSON.parse(node.dataset.markerKeys)));
+  expect(new Set(represented).size).toBe(total);
   const key = await page.evaluate(() => window.__f0Orbit.current.markers.find(marker => marker.key === 'mark-1')?.key);
   expect(await page.evaluate(keyValue => window.__f0Orbit.getMarkerElement(keyValue)?.dataset.markerKeys, key)).toContain('mark-1');
   await page.locator('.f0-orbit [data-marker-cluster]').filter({ has: page.locator('title') }).first().waitFor();
   await page.evaluate(() => window.__f0Orbit.getMarkerElement('mark-1').focus());
   await page.keyboard.press('Space');
+  const detail = page.locator('[data-marker-detail-key="mark-1"]');
+  if (await detail.count()) await detail.click();
   await expect(page.locator('.f0-coach .ui-coach-line__text')).toContainText(/pause|efficient/);
 });
 
-test('phone Orbit markers each expose their own 40px target and stay in the viewport', async ({ page }) => {
+test('phone Orbit marker badges expose 40px targets and stay in the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/src/ui/gallery.html?flow=results');
   await page.waitForTimeout(420);
   const badges = page.locator('.f0-orbit [data-marker-cluster]');
   const count = await badges.count();
-  expect(count).toBeGreaterThan(2);
+  expect(count).toBeGreaterThan(0);
   const targets = await badges.evaluateAll(nodes => nodes.map(node => { const rect = node.querySelector('.orbit__marker-hit').getBoundingClientRect(); return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, width: rect.width, height: rect.height }; }));
   for (const target of targets) { expect(target.width).toBeGreaterThanOrEqual(40 - 0.5); expect(target.height).toBeGreaterThanOrEqual(40 - 0.5); }
   for (let a = 0; a < targets.length; a++) for (let b = a + 1; b < targets.length; b++) expect(Math.hypot(targets[a].x - targets[b].x, targets[a].y - targets[b].y)).toBeGreaterThanOrEqual(39.5);
@@ -155,12 +156,15 @@ test('Orbit morph interpolates segment and marker geometry and lays out dense ma
   });
   expect(mid.during).not.toBeCloseTo(mid.before, 1);
   expect(mid.during).not.toBeCloseTo(mid.target, 1);
-  // Twelve markers within a few degrees fan out: twelve badges, none merged, none overlapping, all hittable.
-  expect(mid.badges).toBe(12);
-  expect(mid.clusters).toBe(0);
+  // Dense moments share one anchored badge; every individual fact remains in its disclosure.
+  expect(mid.badges).toBe(1);
+  expect(mid.clusters).toBe(1);
   expect(mid.details).toBe(0);
   expect(mid.overlaps).toBe(false);
-  expect(mid.reachable).toBe(12);
+  expect(mid.reachable).toBe(1);
+  await page.locator('.f0-orbit .is-cluster').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-marker-detail-key]')).toHaveCount(12);
 });
 
 test('stage labels keep names, values and deltas on separate collision-free rows around the centered Cube', async ({ page }) => {
