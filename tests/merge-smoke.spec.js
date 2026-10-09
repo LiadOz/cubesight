@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 import { mountFakeCube, startScramble, completeScramble, solveReverse } from './layout/fake-cube.js';
 
 test.use({ reducedMotion: 'reduce' });

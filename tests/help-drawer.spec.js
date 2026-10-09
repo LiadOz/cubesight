@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('help drawer keeps inside clicks, closes with Escape, and resumes the exact trainer route', async ({ page }) => {
   await page.goto('/#/drills/corners?mode=trace');

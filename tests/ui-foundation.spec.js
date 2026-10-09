@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 test('Orbit morph interruption, collapse/expand, keyboard activation and dynamic growth preserve one focused segment', async ({ page }) => {
   await page.goto('/src/ui/gallery.html?flow=results&theme=dark');

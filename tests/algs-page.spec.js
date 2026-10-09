@@ -48,6 +48,9 @@ test('case drill deep link is preserved and opens the requested case', async ({ 
 test('changing to a different algorithm case resets scroll to the page top', async ({ page }) => {
   // The case and drill now fit a 1280x900 window without scrolling, so use a window short enough for the page to scroll.
   await page.setViewportSize({ width: 1280, height: 480 });
+  // Opening the drill smooth-scrolls its panel into view (algs/page.js); that animation outlived the scroll this test
+  // sets up and left the page part-way down. Reduced motion skips it, so the reset to the top is all that is measured.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/#/algs/oll/1/drill');
   await expect(page.locator('[data-drill]')).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));

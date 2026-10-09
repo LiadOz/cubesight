@@ -8,7 +8,8 @@ export default defineConfig({
   timeout: 30_000,
   retries: 0,
   outputDir: 'test-results/pwa',
-  workers: 1,
+  fullyParallel: true,
+  workers: Number(process.env.PW_WORKERS || 4),
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 390, height: 844 },
