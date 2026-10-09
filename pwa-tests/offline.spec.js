@@ -6,7 +6,8 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
   page.on('request', (request) => requestedOrigins.add(new URL(request.url()).origin));
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
-  await page.goto('/');
+  // The Rust core loads with the drills that use it, so the badge is checked on the corner drill's route.
+  await page.goto('/#/drills/corners');
   await expect(page.locator('#engine-badge')).toHaveText('RUST · WASM');
 
   const manifest = await page.evaluate(async () => {
