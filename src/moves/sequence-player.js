@@ -6,9 +6,10 @@ import { createLinearTimeline } from '../brain/styles/mono/timeline-linear.js';
 import '../brain/css/orbit.css';
 import '../brain/css/mono.css';
 import './sequence-player.css';
+import { motionOff } from '../ui/motion.js';
 
 let activePlayer = null;
-const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = motionOff;
 
 /** The shared Orbit (open ring, no labels) as the progress ring around the page's cube. */
 function createSequenceOrbit(host) {

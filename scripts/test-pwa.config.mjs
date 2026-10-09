@@ -1,6 +1,6 @@
-// The PWA offline specs as `npm test` runs them: against the build the gate has just made.
-// playwright.pwa.config.js builds again before it serves; inside the gate that would race the
-// gate's own build over dist/, so this wraps it and serves the existing dist/ instead.
+// The PWA offline specs as `npm test` runs them: against the test build npm test has just made
+// in test-results/dist-test (the app built with VITE_CUBESIGHT_TEST_STUB=1, so the cube is the
+// placeholder and never drawn in software WebGL: that alone was most of the suite's CPU).
 // (Specs: pwa-tests/. Run by npm test against the built app.)
 import path from 'node:path';
 import { defineConfig } from 'playwright/test';
@@ -16,5 +16,5 @@ export default defineConfig({
   outputDir: path.join(root, 'test-results/pwa-gate'),
   globalTimeout: process.env.CUBESIGHT_DEADLINE_MS ? Math.max(1000, Number(process.env.CUBESIGHT_DEADLINE_MS) - Date.now()) : 0,
   use: { ...base.use, baseURL: `http://127.0.0.1:${port}` },
-  webServer: { command: `npm run preview -- --port ${port}`, url: `http://127.0.0.1:${port}`, reuseExistingServer: false },
+  webServer: { command: `npx vite preview --outDir test-results/dist-test --host 127.0.0.1 --strictPort --port ${port}`, url: `http://127.0.0.1:${port}`, cwd: root, reuseExistingServer: false },
 });

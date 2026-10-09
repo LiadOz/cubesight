@@ -3,7 +3,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { isMove, toPhysicalTurn } from './moves/notation.js';
+import { CUE_START_DELAY_MS, cueFraction, cuePeak } from './moves/cue.js';
 import { convexHull } from './ui/cube/bounds.js';
+import { reducedMotion } from './ui/motion.js';
 
 const FACE_NORMALS = {
   U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1],
@@ -118,30 +120,6 @@ function stickerTransform(mesh, face, x, y, z) {
   if (face === 'L') { mesh.position.x -= offset; mesh.rotation.y = -Math.PI / 2; }
 }
 
-/**
- * TEST-ONLY: a renderer that keeps every scene, animation and data-attribute path but never touches WebGL, so browser
- * tests that do not assert cube pixels can run in parallel (headless WebGL is software-rendered on the CPU).
- * Guard: `import.meta.env.DEV` is statically false in a production build, so the stub branch is removed from shipped
- * code; in dev it needs the dev server to have been started with VITE_CUBESIGHT_TEST_STUB=1 (set only by
- * playwright.config.js's webServer). A page can opt back into real WebGL with an init script that sets
- * window.__CUBESIGHT_REAL_GL__ = true. Without the env var (the default for every other dev server, preview
- * and build) the real WebGLRenderer is always used.
- */
-function useStubRenderer() {
-  return Boolean(import.meta.env?.DEV && import.meta.env?.VITE_CUBESIGHT_TEST_STUB === '1' && !globalThis.__CUBESIGHT_REAL_GL__);
-}
-function createRenderer() {
-  if (!useStubRenderer()) return new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-  const domElement = document.createElement('canvas');
-  domElement.dataset.rendererStub = '1';
-  domElement.style.display = 'block'; // what three's own canvas does
-  return {
-    domElement, outputColorSpace: null, toneMapping: null, toneMappingExposure: 1,
-    setPixelRatio() {}, setClearColor() {}, render() {}, dispose() {},
-    setSize(width, height) { domElement.width = Math.max(1, width); domElement.height = Math.max(1, height); },
-  };
-}
-
 export function createCube3D(container, options = {}) {
   const scene = new THREE.Scene();
   // The approved frames (docs/design/orbit-v3, SPEC-A-EXACT section 5) draw the cube as a symmetric isometric: a hexagon
@@ -154,7 +132,7 @@ export function createCube3D(container, options = {}) {
   camera.position.copy(cornerCameraPosition);
   camera.lookAt(0, 0, 0);
 
-  const renderer = createRenderer();
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -550,8 +528,7 @@ export function createCube3D(container, options = {}) {
   let stopped = false;
   let feedbackActive = false;
   let animationFrame;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const clock = new THREE.Clock();
+    const clock = new THREE.Clock();
   let moveAnimation = null;
   // the move cue (see 'Move cue' below); declared before the first frame() runs
   let cueWanted = null;   // { id, move, held, loop, pose }
@@ -812,31 +789,11 @@ export function createCube3D(container, options = {}) {
 
   // --- Move cue -----------------------------------------------------------------------
   // setCue(move, { loop, held, pose }) makes the ACTUAL layer the move turns lean into
-  // the turn: it eases out to a partial turn (about 36 degrees, further and twice for a
-  // double), holds, eases back to rest, pauses and loops. `move` is written for the hold
-  // in `held`; without `held` the cue follows what getHeldFaces reports each frame, so the
-  // gyro re-orients it. The cue never fights a real turn: while animateMove or the live
-  // queue runs, the layer is put back at rest at once; the cue starts over (after a short
-  // beat) when the cube is idle again. `pose` (0..1) freezes the cue at that fraction of
-  // its peak (screenshots); reduced motion / loop:false freeze it at a small offset.
-  const CUE_PEAK = { quarter: 36, double: 60, rot: 30, rotDouble: 50 };
-  const CUE_START_DELAY_MS = 350;
-  const CUE_STILL_POSE = .45;
-  const smooth = t => { const x = Math.min(Math.max(t, 0), 1); return x * x * (3 - 2 * x); };
-  // One pulse: ease out, hold, ease back (fractions of the period), starting at `at`.
-  const pulse = (phase, at, out, hold, back) => {
-    const t = phase - at;
-    if (t <= 0) return 0;
-    if (t < out) return smooth(t / out);
-    if (t < out + hold) return 1;
-    if (t < out + hold + back) return 1 - smooth((t - out - hold) / back);
-    return 0;
-  };
-  function cueShape(phase, double) {
-    if (!double) return pulse(phase, 0, .28, .12, .28);
-    return Math.max(pulse(phase, 0, .14, .05, .14), pulse(phase, .36, .14, .05, .14));
-  }
-  const cueLoopMs = double => (double ? 2800 : 2400);
+  // the turn; the motion itself is moves/cue.js. `move` is written for the hold in `held`;
+  // without `held` the cue follows what getHeldFaces reports each frame, so the gyro
+  // re-orients it. The cue never fights a real turn: while animateMove or the live queue
+  // runs, the layer is put back at rest at once; the cue starts over (after a short beat)
+  // when the cube is idle again.
   const cueOutlineMaterial = new THREE.LineBasicMaterial({ color: '#65e8ff', transparent: true, opacity: .75, toneMapped: false });
   const cueQuat = new THREE.Quaternion();
   const cueWorld = new THREE.Vector3();
@@ -866,7 +823,7 @@ export function createCube3D(container, options = {}) {
       outline.add(box);
       cubeGroup.add(outline);
     }
-    const peak = spec.kind === 'rot' ? (double ? CUE_PEAK.rotDouble : CUE_PEAK.rot) : (double ? CUE_PEAK.double : CUE_PEAK.quarter);
+    const peak = cuePeak(spec.kind, double);
     cueLive = { key: `${move}|${held.bottom}${held.front}`, spec, held, axis: new THREE.Vector3(...spec.axis), peak, double, members, outline, startedAt: now + CUE_START_DELAY_MS, angle: 0 };
     renderer.domElement.dataset.cue = spec.move;
     renderer.domElement.dataset.cueLayers = spec.layers.join(',');
@@ -878,14 +835,7 @@ export function createCube3D(container, options = {}) {
     if (cueLive && cueLive.key !== key) teardownCue();
     if (!cueLive) buildCue(held, now);
     const live = cueLive;
-    let fraction;
-    if (cueWanted.pose != null) fraction = cueWanted.pose;
-    else if (!cueWanted.loop || reducedMotion.matches) fraction = CUE_STILL_POSE;
-    else if (now < live.startedAt) fraction = 0;
-    else {
-      const period = cueLoopMs(live.double);
-      fraction = cueShape(((now - live.startedAt) % period) / period, live.double);
-    }
+    const fraction = cueFraction({ now, startedAt: live.startedAt, double: live.double, pose: cueWanted.pose, loop: cueWanted.loop, reducedMotion: reducedMotion.matches });
     const angle = Math.sign(live.spec.angle) * live.peak * fraction;
     live.angle = angle;
     cueQuat.setFromAxisAngle(live.axis, angle * Math.PI / 180);

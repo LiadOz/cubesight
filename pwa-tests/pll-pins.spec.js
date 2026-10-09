@@ -53,7 +53,7 @@ async function seedPin(page, pin) {
 }
 
 test('saved non-D PLL pin starts exact, then advances to a verified same-case different-AUF variation', async ({ page, context }) => {
-  await page.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => null; });
+  await page.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => null; window.__CUBESIGHT_NO_WEBGL__ = true; });
   await installAndGoOffline(page, context);
   const trial = generatePllCase('T', { auf: 'U' });
   const canonicalSetup = [...trial.setup, 'U'];

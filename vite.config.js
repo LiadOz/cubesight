@@ -28,6 +28,18 @@ const buildInfoPlugin = {
   },
 };
 
+// Tests never run the 3D cube: with VITE_CUBESIGHT_TEST_STUB=1 (set only by the test servers and the
+// offline tests' build) every import of cube-3d.js resolves to the empty placeholder instead.
+const cubePlaceholderPlugin = {
+  name: 'cubesight-test-cube-placeholder',
+  enforce: 'pre',
+  async resolveId(source, importer, options) {
+    if (process.env.VITE_CUBESIGHT_TEST_STUB !== '1' || !/(^|\/)cube-3d\.js$/.test(source)) return null;
+    const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+    return resolved ? path.join(path.dirname(resolved.id), 'cube-placeholder.js') : null;
+  },
+};
+
 // Generated search experiments are research artifacts, never application data.
 const researchBoundaryPlugin = {
   name: 'cubesight-research-boundary',
@@ -138,6 +150,7 @@ export default defineConfig({
     __CUBESIGHT_REVISION__: JSON.stringify(revision),
   },
   plugins: [
+    cubePlaceholderPlugin,
     buildInfoPlugin,
     // Dev server only (apply: 'serve'): the image gallery's /__gallery listing. Never part of a build.
     galleryPlugin(),

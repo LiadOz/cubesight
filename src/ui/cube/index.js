@@ -7,9 +7,10 @@ import { readStickerPalette, themedRender } from '../../brain/cube-theme.js';
 import { createCube3D } from '../../cube-3d.js';
 import { caseDisplayState, normalizeCaseColorSetting } from './orientation.js';
 import './cube.css';
+import { motionOff } from '../motion.js';
 
 const SIZES = { XS: 72, S: 128, M: 196, L: 300, XL: 460 };
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reducedMotion = motionOff;
 const caseStateSeed = state => JSON.stringify(state?.cubies?.map(cubie => [cubie.id, cubie.position, cubie.stickers]) || []);
 /** Recognition view: top-face stickers that are not the top colour carry no colour cue (A-08 sticker-unknown). */
 const UNKNOWN_STICKER = '#2a2d33';

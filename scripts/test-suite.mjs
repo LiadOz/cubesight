@@ -54,7 +54,9 @@ const results = await Promise.all([
   run('unit', 'npm', ['run', '--silent', 'test:unit']),
   run('browser', pw, ['test', '--reporter=line,json'], { PLAYWRIGHT_JSON_OUTPUT_NAME: browserReport }),
   (async () => {
-    const build = await run('build', 'sh', ['-c', 'npm run --silent build && node scripts/check-no-dev-gallery.mjs && npm run --silent gallery:coverage']);
+    // The shipped build is built and checked; the offline tests run on a second build with the
+    // cube placeholder compiled in (src/cube-3d.js), so they never draw WebGL in software.
+    const build = await run('build', 'sh', ['-c', 'npm run --silent build && node scripts/check-no-dev-gallery.mjs && npm run --silent gallery:coverage && VITE_CUBESIGHT_TEST_STUB=1 npx vite build --logLevel warn --outDir test-results/dist-test --emptyOutDir']);
     if (build.code !== 0) return [build];
     return [build, await run('offline', pw, ['test', '--config=scripts/test-pwa.config.mjs', '--reporter=line'])];
   })(),

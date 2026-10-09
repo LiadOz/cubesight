@@ -20,6 +20,7 @@ import { buildAlgOrbitSegments, buildAlgViewModel, parseAlgRouteContext } from '
 import { parseDemoPaste, serializeDemo } from '../demo/model.js';
 import '../pages/page.css';
 import './page.css';
+import { motionOff } from '../ui/motion.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const safeHttpUrl = value => { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url.href : null; } catch { return null; } };
@@ -297,7 +298,7 @@ export function mountAlgsPage(root, { database = null, storage = globalThis.loca
     session.start({ algId });
     const panel = root.querySelector('[data-drill]');
     panel.innerHTML = drillMarkup(caseData, alg, mode); panel.hidden = false;
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (!motionOff()) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
   function refreshCubeStatus() {
