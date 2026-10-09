@@ -3,7 +3,15 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { readFile as read } from 'node:fs/promises';
-import { tierVerdict, runTier, SUITE_BUDGET_MS } from '../scripts/test-suite.mjs';
+import { tierVerdict, runTier, SUITE_BUDGET_MS, suiteTimeout } from '../scripts/test-suite.mjs';
+
+test('an explicit slow-run timeout preserves the minute default and rejects invalid limits', () => {
+  assert.equal(suiteTimeout({}), 60_000);
+  assert.equal(suiteTimeout({ CUBESIGHT_TEST_TIMEOUT_MS: '120000' }), 120_000);
+  for (const value of ['59999', 'NaN', 'Infinity', '120000.5']) {
+    assert.throws(() => suiteTimeout({ CUBESIGHT_TEST_TIMEOUT_MS: value }), /at least 60000/);
+  }
+});
 
 test('there is one suite with one budget of a minute, and no long suite behind it', async () => {
   assert.equal(SUITE_BUDGET_MS, 60_000);

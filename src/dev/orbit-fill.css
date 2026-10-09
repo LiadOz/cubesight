@@ -1,0 +1,21 @@
+:root { font-family:'Manrope Variable',sans-serif; --orbit-bg:#141311; --orbit-ink:#ece6d8; --orbit-muted:#9a9486; --orbit-track:#34312b; --orbit-accent:#3dbfad; --page-bg:var(--orbit-bg); --page-ink:var(--orbit-ink); --page-muted:var(--orbit-muted); color-scheme:dark; }
+:root[data-theme='light'] { --orbit-bg:#f0ede5; --orbit-ink:#1a1b17; --orbit-muted:#65675e; --orbit-track:#d0ccc0; color-scheme:light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--orbit-bg); color:var(--orbit-ink); }
+.orbit-fill-preview { padding:20px 16px; display:grid; justify-items:center; gap:12px; }
+.proposal-controls,.proposal-settings { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+.proposal-capture { width:min(580px,100%); padding:12px 14px; text-align:center; }
+.proposal-id { font:12px 'DM Mono',monospace; color:var(--orbit-muted); }
+.proposal-capture h1 { margin:8px 0; font-size:26px; font-weight:500; }
+.proposal-description,.proposal-note { margin:8px 0; font:12px/1.6 'DM Mono',monospace; color:var(--orbit-muted); }
+.proposal-stage { position:relative; width:100%; aspect-ratio:1; display:grid; place-items:center; }
+.proposal-orbit { position:absolute; inset:0; display:grid; place-items:center; }
+.proposal-orbit .orbit__svg { width:100% !important; height:100% !important; }
+.proposal-cube { position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
+.proposal-cube .shared-cube { width:48%; }
+.proposal-slot { position:absolute; bottom:2%; left:50%; transform:translateX(-50%); padding:4px 12px; background:var(--orbit-bg); font:300 34px 'DM Mono',monospace; }
+/* Proposed behavior: retain the unfilled track instead of recoloring the full
+   segment immediately. All geometry and stroke widths come from shared Orbit. */
+.proposal-orbit .orbit__segment.is-current .orbit__segment-track { stroke:var(--orbit-track); stroke-width:var(--orbit-w-track); }
+:root[data-fill-variant='C'] .proposal-orbit .orbit__current-dot { visibility:hidden; }
+@media(max-width:640px) { .proposal-capture { padding:4px 0; } .proposal-capture h1 { font-size:22px; } .proposal-slot { font-size:26px; } }

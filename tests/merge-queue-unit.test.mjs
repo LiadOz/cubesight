@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -212,7 +212,9 @@ async function repoWithMainCheckedOut() {
 }
 
 test('a checkout of trunk is still seen when core.bare has been flipped on it', async () => {
-  const root = await repoWithMainCheckedOut();
+  // The queue symlinks test-results into its artifact directory; Git reports
+  // the physical checkout path, so compare the same path spelling.
+  const root = await realpath(await repoWithMainCheckedOut());
   try {
     git(root, ['config', 'core.bare', 'true']);
     const holders = await worktreesHoldingBranch(root, 'main', path.join(root, 'not-the-live-checkout'));

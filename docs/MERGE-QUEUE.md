@@ -14,6 +14,8 @@ Trunk is checked out in the live checkout, and moving a checked-out branch ref w
 
 `--validate-only` never advances trunk. `--no-explain` skips the extra "does it pass alone?" run on rejection. `--base <branch>` changes trunk.
 
+When the user explicitly allows a longer run, `CUBESIGHT_TEST_TIMEOUT_MS=120000 npm run queue -- <branch>` gives the same selected tests longer to finish. Selection still uses the normal one-minute plan, no assertions are skipped, and the default timeout stays 60 seconds. The queue's outer timeout still applies.
+
 ## What a rejection looks like
 ```
 REJECTED  cube-camera

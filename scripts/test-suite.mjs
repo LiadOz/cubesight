@@ -25,6 +25,17 @@ function freePort() {
 
 // There is exactly one suite, `npm test`, and it has exactly one budget.
 export const SUITE_BUDGET_MS = 60_000;
+// Explicitly authorized slow runs can wait longer without selecting more tests
+// or changing the normal one-minute plan.
+export function suiteTimeout(env = process.env) {
+  const raw = env.CUBESIGHT_TEST_TIMEOUT_MS;
+  if (raw == null || raw === '') return SUITE_BUDGET_MS;
+  const timeout = Number(raw);
+  if (!Number.isSafeInteger(timeout) || timeout < SUITE_BUDGET_MS) {
+    throw new Error('CUBESIGHT_TEST_TIMEOUT_MS must be an integer of at least 60000.');
+  }
+  return timeout;
+}
 // Playwright web servers can create their own process groups. Include every
 // descendant before terminating the runner, so an expired tier leaves no server.
 export function terminateProcessTree(pid) {
@@ -113,22 +124,23 @@ export async function runTier({ tier = 'test', stages, budgetMs = SUITE_BUDGET_M
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const started = performance.now();
+  const timeoutMs = suiteTimeout();
   const option = (name) => { const i = process.argv.indexOf(name); return i >= 0 ? process.argv[i + 1] : null; };
   const root = process.cwd();
   const plan = await planGate({ root, trunk: option('--trunk') ?? DEFAULT_TRUNK, base: option('--base'), started });
   console.log(formatPlan(plan, { verbose: process.argv.includes('--verbose') }));
   await prepareGateDirectory(root);
-  const stages = gateStages(plan, { stopAfterMs: SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS });
+  const stages = gateStages(plan, { stopAfterMs: timeoutMs - (performance.now() - started) - STOP_MARGIN_MS });
   const runtimeTmp = path.resolve('test-results/runtime-tmp');
   await mkdir(runtimeTmp, { recursive: true });
   const env = { ...gateEnv(root, plan), TMPDIR: runtimeTmp };
   if (!env.PW_PORT) env.PW_PORT = String(await freePort());
-  env.CUBESIGHT_DEADLINE_MS = String(Math.round(Date.now() + SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS));
+  env.CUBESIGHT_DEADLINE_MS = String(Math.round(Date.now() + timeoutMs - (performance.now() - started) - STOP_MARGIN_MS));
   if (!env.PW_PWA_PORT) env.PW_PWA_PORT = String(await freePort());
-  const budgetMs = SUITE_BUDGET_MS - (performance.now() - started);
+  const budgetMs = timeoutMs - (performance.now() - started);
   const result = await runTier({ stages, budgetMs, parallel: true, env });
   result.durationMs = Math.round(performance.now() - started);
-  result.budgetMs = SUITE_BUDGET_MS;
+  result.budgetMs = timeoutMs;
   result.overBudgetMs = Math.max(0, Math.round(result.durationMs - result.budgetMs));
   result.commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim());
