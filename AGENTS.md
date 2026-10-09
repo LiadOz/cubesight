@@ -34,3 +34,10 @@ Publish screenshots as a post in the in-app gallery (`gallery/README.md`): `gall
 
 ## 6. Report
 Commits, files, test results, the gallery link, deviations from the spec, open questions.
+
+## 7. Time accounting
+The user wants to see where time goes, so every task keeps a clock.
+- **When you start:** run `date -u +%H:%MZ`, state the time in your first message, and create `.agents/artifacts/<task>/timelog.md` with that line.
+- **As you work:** append one line when each phase starts — `HH:MMZ <what> (expect ~N min)`. Always add one **before any command you expect to take over a minute**, saying why you need it *now*. If you are about to wait more than ~5 minutes on a test run, first ask whether a targeted run answers the same question.
+- **When you finish:** your report opens with a **Time** block — start, end, elapsed — then the three things that took longest and *why*, e.g. `38 min waiting for the full Playwright suite: needed a baseline before changing the config`.
+- **The lead checks it.** `node scripts/agent-time.mjs <your transcript>` measures every tool call from the transcript's own timestamps, groups it (waiting on tests, builds, editing, the model's own time) and separates out periods when the whole session was paused. Where your account and the measurement disagree, the measurement wins.
