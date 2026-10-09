@@ -1,6 +1,6 @@
 import { analyzeSolveAsync, analysisInputFromRecord, summarizeAnalysis } from '../../src/analysis/index.js';
 import { loadNodeSolver } from '../../src/analysis/node-solver.js';
-import { HISTORY_SEED } from '../layout/fixtures/state-seeds.js';
+import { HISTORY_SEED } from './history-seed.js';
 
 const preparedRecords = new Map();
 

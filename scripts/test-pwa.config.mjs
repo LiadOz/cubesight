@@ -6,7 +6,8 @@ import path from 'node:path';
 import { defineConfig } from 'playwright/test';
 import base from '../playwright.pwa.config.js';
 
-const port = process.env.PW_PWA_PORT || process.env.PW_PORT || 4175;
+// One above the browser tests' port: `npm test` runs both at once.
+const port = process.env.PW_PWA_PORT || (process.env.PW_PORT ? Number(process.env.PW_PORT) + 1 : 4175);
 const root = process.cwd();
 
 export default defineConfig({

@@ -1,5 +1,5 @@
 import { test, expect } from './helpers/coverage-test.js';
-import { mountFakeCube, startScramble, completeScramble, solveReverse } from './layout/fake-cube.js';
+import { mountFakeCube, startScramble, completeScramble, solveReverse } from './helpers/fake-cube.js';
 
 test.use({ reducedMotion: 'reduce' });
 
