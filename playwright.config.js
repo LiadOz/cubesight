@@ -11,8 +11,9 @@ const port = process.env.PW_PORT || 4174;
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.js',
-  // Dedicated Tier 2 commands own these suites; do not execute them twice.
-  testIgnore: ['**/layout/**', '**/snapshots/**'],
+  // tests/unported/: feature tests parked out of npm test until their checks move to unit
+  // tests (docs/TESTS-TO-PORT.md). Run one by hand: PW_UNPORTED=1 npx playwright test tests/unported/<spec>.
+  testIgnore: process.env.PW_UNPORTED ? ['**/layout/**'] : ['**/layout/**', '**/unported/**'],
   timeout: 20_000,
   retries: 0,
   outputDir: 'test-results/playwright',
