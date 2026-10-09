@@ -3,6 +3,7 @@
 //   changed files = diff against trunk (merge-base) + uncommitted work
 //   run           = lint, ALL unit tests, build, then the browser tests the diff reaches
 //   budget        = 60 s wall clock; whatever does not fit is deferred and listed, never dropped
+import { cpus, loadavg } from 'node:os';
 import { mkdir, readdir, rm, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gitChanges, mergeBase, packBrowser, playwrightArgs, selectTests, tierLabel } from './test-select.mjs';
@@ -13,6 +14,7 @@ export const GATE_BUDGET_MS = 60_000;
 // Dev-server start + Playwright start + result ingestion, none of which is test time.
 export const BROWSER_OVERHEAD_MS = 9_000;
 export const GATE_DIR = 'test-results/gate';
+const LINT_CACHE_DIR = 'test-results/lint-cache'; // survives between runs, unlike GATE_DIR
 
 async function currentSpecs(root) {
   const specs = [];
@@ -38,7 +40,8 @@ export async function planGate({ root = process.cwd(), trunk = DEFAULT_TRUNK, ba
   const specHashes = head ? {} : await hashSpecs(root, await currentSpecs(root));
   const selection = await selectTests({ root, changes, model, head, specHashes });
   const browserBudget = Math.max(0, budgetMs - (performance.now() - started) - BROWSER_OVERHEAD_MS);
-  const packed = packBrowser([...selection.items.values()], { budgetMs: browserBudget, workers });
+  const slowdown = loadSlowdown();
+  const packed = packBrowser([...selection.items.values()], { budgetMs: browserBudget, workers, slowdown });
   const args = playwrightArgs(packed.run);
   return { root, baseRef, head, changes, model, mapSource: source, selection, packed, browserBudget, workers, ...args, wholeSpecs: wholeSpecHashes(packed.run, specHashes) };
 }
@@ -48,6 +51,13 @@ function wholeSpecHashes(run, specHashes) {
   const whole = {};
   for (const item of run) if (item.kind === 'spec' && specHashes[item.spec] !== undefined) whole[item.spec] = specHashes[item.spec];
   return whole;
+}
+
+// Recorded durations come from a quiet machine; when the machine is oversubscribed every test takes
+// proportionally longer, so estimate with that slowdown (and defer more) rather than overrun the budget.
+export function loadSlowdown() {
+  if (process.env.CUBESIGHT_GATE_NO_LOAD_SCALE) return 1;
+  return Math.min(3, Math.max(1, loadavg()[0] / Math.max(1, cpus().length)));
 }
 
 const seconds = (ms) => `${(ms / 1000).toFixed(1)}s`;
@@ -63,7 +73,7 @@ export function formatPlan(plan, { verbose = false } = {}) {
   for (const item of selection.items.values()) if (!item.floor) counts[tierLabel(item.tier)] = (counts[tierLabel(item.tier)] ?? 0) + 1;
   lines.push(`Unit tests: all, ~7 s. Those that import a changed module: ${[...selection.unit].join(', ') || 'none'}.`);
   lines.push(`Browser: ${selection.items.size} selected (${Object.entries(counts).map(([label, n]) => `${n} ${label}`).join(', ') || 'smoke floor only'}); `
-    + `${packed.run.length} will run, est. ${seconds(packed.estimatedMs)} on ${plan.workers} workers within ${seconds(plan.browserBudget)}; ${packed.deferred.length} deferred.`);
+    + `${packed.run.length} will run, est. ${seconds(packed.estimatedMs)} on ${plan.workers} workers within ${seconds(plan.browserBudget)}${packed.slowdown > 1.05 ? ` (machine load: timings scaled x${packed.slowdown.toFixed(1)})` : ''}; ${packed.deferred.length} deferred.`);
   const describe = (item) => item.kind === 'case' ? `${path.posix.basename(item.spec)} › ${item.grepTitle.replace(/^\S+\.spec\.js\s/u, '')}` : item.kind === 'title' ? `${path.posix.basename(item.spec)} › ${item.title}` : `${path.posix.basename(item.spec)} (whole spec)`;
   const listing = verbose ? packed.run : packed.run.slice(0, 12);
   for (const item of listing) lines.push(`  run  [${tierLabel(item.tier)}] ${describe(item)} (~${seconds(item.durationMs)})${item.reasons[0] ? `  <- ${item.reasons[0]}` : ''}`);
@@ -88,7 +98,9 @@ export function formatPlan(plan, { verbose = false } = {}) {
 export function gateStages(plan, { browser = true, checks = true } = {}) {
   const stages = [];
   if (checks) {
-    stages.push(['lint', 'npm', ['run', 'lint']]);
+    // Same checks as `npm run lint`, but cached (only changed files are re-linted) and split so they overlap.
+    stages.push(['lint-js', 'npx', ['eslint', '--cache', '--cache-location', `${LINT_CACHE_DIR}/eslintcache`, '.']]);
+    stages.push(['lint-css', 'npx', ['stylelint', '--cache', '--cache-location', `${LINT_CACHE_DIR}/stylelintcache`, 'src/**/*.css']]);
     stages.push(['unit', 'npm', ['run', 'test:unit']]);
     stages.push(['build', 'sh', ['-c', 'npm run build && node scripts/check-no-dev-gallery.mjs && npm run gallery:coverage']]);
   } else stages.push(['unit', 'npm', ['run', 'test:unit']]);

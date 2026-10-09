@@ -777,16 +777,16 @@ export async function selectTests({ root, changes, model, head = null, specHashe
 }
 
 // ------------------------------------------------------------------------ pack
-function makespan(items, workers) {
+function makespan(items, workers, slowdown = 1) {
   const bySpec = new Map();
-  for (const item of items) bySpec.set(item.spec, (bySpec.get(item.spec) ?? 0) + item.durationMs);
+  for (const item of items) bySpec.set(item.spec, (bySpec.get(item.spec) ?? 0) + item.durationMs * slowdown);
   const loads = Array.from({ length: workers }, () => 0);
   for (const total of [...bySpec.values()].sort((a, b) => b - a)) loads[loads.indexOf(Math.min(...loads))] += total;
   return Math.max(...loads);
 }
 
 /** Order by relevance, then fit what we can into the budget; the rest is deferred, never dropped. */
-export function packBrowser(items, { budgetMs, workers = 2, broadSample = 8 }) {
+export function packBrowser(items, { budgetMs, workers = 2, broadSample = 8, slowdown = 1 }) {
   const all = [...items];
   const floor = all.filter((item) => item.floor);
   const rest = all.filter((item) => !item.floor);
@@ -812,9 +812,9 @@ export function packBrowser(items, { budgetMs, workers = 2, broadSample = 8 }) {
   for (const item of ordered) {
     // Broad hits only sample: they say little about which tests matter, so they never fill the budget.
     if (item.tier === 2 && broadRun >= broadSample) { deferred.push(item); continue; }
-    if (makespan([...run, item], workers) <= budgetMs) { run.push(item); if (item.tier === 2) broadRun += 1; } else deferred.push(item);
+    if (makespan([...run, item], workers, slowdown) <= budgetMs) { run.push(item); if (item.tier === 2) broadRun += 1; } else deferred.push(item);
   }
-  return { run, deferred, estimatedMs: makespan(run, workers), floor };
+  return { run, deferred, estimatedMs: makespan(run, workers, slowdown), floor, slowdown };
 }
 
 /** The Playwright arguments that run exactly these items. */
