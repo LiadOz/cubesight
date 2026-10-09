@@ -33,17 +33,17 @@ test('iPhone: no Web Bluetooth at all gives a clear toast, never a silent stall'
   await context.close();
 });
 
-test('Android: a dismissed chooser says what to check and the recording keeps the error', async ({ browser }) => {
+test('Android: no cube found says what to check and the recording keeps the error', async ({ browser }) => {
   const context = await browser.newContext({ userAgent: ANDROID, viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await context.newPage();
   await openAndConnect(page, `Object.defineProperty(Navigator.prototype, 'bluetooth', { get: () => ({
     getAvailability: async () => true,
-    requestDevice: async () => { throw Object.assign(new Error('User cancelled the requestDevice() chooser.'), { name: 'NotFoundError' }); },
+    requestDevice: async () => { throw Object.assign(new Error('Bluetooth adapter not available.'), { name: 'NotFoundError' }); },
   }) });`);
   await expect(page.locator('.ui-toast-slot')).toContainText('Turn on Bluetooth and Location');
   await expect(page.locator('html')).toHaveAttribute('data-cube-phase', 'disconnected');
   const diag = (await recording(page)).events.filter(event => event.kind === 'diag').map(event => event.data.label);
-  expect(diag.some(label => /Connection failed at picker: NotFoundError: User cancelled/.test(label))).toBe(true);
+  expect(diag.some(label => /Connection failed at picker: NotFoundError: Bluetooth adapter not available/.test(label))).toBe(true);
   await context.close();
 });
 
