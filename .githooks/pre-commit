@@ -3,6 +3,14 @@
 # which runs `git config core.hooksPath .githooks`). Bypass with --no-verify.
 set -e
 cd "$(git rev-parse --show-toplevel)"
+# Never let a test see this repository's git environment. In a linked worktree,
+# git hands hooks GIT_DIR=.git/worktrees/<name>, whose config is shared with the
+# user's live checkout. A test that ran `git init` in a temp folder re-initialised
+# that directory and wrote core.bare=true into the shared config, so every git
+# command in the live checkout failed -- and the merge queue, seeing no branch
+# checked out there, advanced main underneath it. The working directory set above
+# is all git needs to find this repository.
+for name in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$name"; done
 echo "pre-commit: npm run lint"
 npm run --silent lint
 echo "pre-commit: affected unit tests"
