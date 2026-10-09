@@ -13,19 +13,20 @@ import { existsSync, statfsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const DEFAULT_TRUNK = 'feature/smart-cube-guidance';
+export const DEFAULT_TRUNK = 'main';
 const GATE_TIMEOUT_MS = Number(process.env.CUBESIGHT_QUEUE_GATE_TIMEOUT_MS) || 300_000;
 
 /**
- * THE ONE PLACE that names the gate. Prefers the `tier1` npm script once the
- * test-health work lands it; until then it falls back to the equivalent
- * `test:merge` (lint+unit+build+gallery checks in parallel with the browser
- * smoke set). Read from the merged result, so the gate matches what trunk will be.
+ * THE ONE PLACE that names the gate: `tier1`, the change-aware gate (scripts/test-gate.mjs).
+ * It runs lint, every unit test, the build and the browser tests the merged diff
+ * reaches (smoke set as the floor) inside 60 s. `baseCommit` is the trunk tip the
+ * candidate was merged onto, so the gate selects against exactly what this merge
+ * changes. Falls back to `test:merge` for trees that predate `tier1`.
  */
-export async function chooseGate(worktree) {
+export async function chooseGate(worktree, { baseCommit = null } = {}) {
   const scripts = JSON.parse(await readFile(path.join(worktree, 'package.json'), 'utf8')).scripts ?? {};
   const script = scripts.tier1 ? 'tier1' : 'test:merge';
-  return { name: 'tier1', command: 'npm', args: ['run', script] };
+  return { name: 'tier1', command: 'npm', args: ['run', script, ...(baseCommit ? ['--', '--base', baseCommit] : [])] };
 }
 
 // ---------------------------------------------------------------- safety rules
@@ -169,7 +170,7 @@ export async function runQueueAttempt({
 
   // Install dependencies for and run the gate in a prepared worktree.
   async function gateWorktree(wt, name) {
-    const gateList = gates ?? [await chooseGate(wt.dir)];
+    const gateList = gates ?? [await chooseGate(wt.dir, { baseCommit: name === 'merged' ? record.baseCommit : null })];
     if (installDependencies) {
       const dep = await ensureDependencies(wt.dir, root, wt.env, logPath, liveCheckout);
       record.dependencies = { ...record.dependencies, [name]: dep };
