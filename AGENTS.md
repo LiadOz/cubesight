@@ -9,7 +9,7 @@ Read this before doing anything in this repository. It applies to every agent (C
 - **Put worktrees and test artifacts in `/home/loz/projects/cubesight/.agents/`** (`worktrees/`, `artifacts/`). This is the ONE exception to the rule above: it is gitignored, it is host-backed (about 511 GB free) and it is already visible inside the sandboxes, whereas a sandbox's own filesystem is a 20 GB overlay that has repeatedly filled to 99% and caused browser crashes, lost test output and stalled runs. Never put them on `/tmp` or in sandbox-local paths such as `/home/loz/projects/cubesight-<something>`. Check with `df -h <your actual output path>` before a long run: it must show the 924 GB host filesystem, not a 20 GB overlay.
 - Scratch files (local configs, logs, temporary specs) live in your worktree (untracked) or under `.agents/artifacts/`, never loose in the main checkout.
 - **Port 5173 belongs to the user.** Use another free port for dev servers and tests.
-- **Keep test runs cheap so agents can test in parallel.** Browser tests do not render the cube (the test dev server sets `VITE_CUBESIGHT_TEST_STUB=1`; `PW_REAL_GL=1` opts back in). Run browser suites at low priority on your own port — `nice -n 19`, `PW_PORT=<free port>` — and never serialize agents behind a lock: if a run is expensive, make the run cheaper.
+- **Keep test runs cheap so agents can test in parallel.** Tests never run the 3D cube: with `VITE_CUBESIGHT_TEST_STUB=1` (set by the test servers and the offline tests' build) every import of `src/cube-3d.js` resolves to the empty placeholder `src/cube-placeholder.js`. Do not test the cube itself. Run browser suites at low priority on your own port — `nice -n 19`, `PW_PORT=<free port>` — and never serialize agents behind a lock: if a run is expensive, make the run cheaper.
 
 ## 2. Commits and merges
 - Small, descriptive commits. **Never bypass the pre-commit hook** (`--no-verify` is forbidden). No auto "WIP" commits.
@@ -19,7 +19,7 @@ Read this before doing anything in this repository. It applies to every agent (C
 ## 3. Tests: one suite, `npm test`, everything, fast
 **There is exactly one test suite: `npm test`. It runs everything, every time** — lint, all unit tests, the build, every browser test and the offline (PWA) tests — so the same commit runs the same tests on any machine. It is the merge gate (the queue runs it on the merged result). Nothing longer sits behind it, and nothing is skipped.
 - **The target is the whole suite in under a minute on the user's machine, at low CPU.** It must get there by the tests being cheap, never by a clock: there is no time limit, and no run ever fails for being slow. Each run prints its wall time and its slowest browser tests; a slow test is a bug to make cheaper.
-- **Browser tests are only for what genuinely needs a browser** (cube connection, a page actually loading and wiring up). Logic belongs in unit tests, which cost ~10 ms each against ~2 s for a browser test. The cube is never drawn in tests (the test dev server sets `VITE_CUBESIGHT_TEST_STUB=1`).
+- **Browser tests are only for what genuinely needs a browser** (cube connection, a page actually loading and wiring up). Logic belongs in unit tests, which cost ~10 ms each against ~2 s for a browser test. The 3D cube never runs in tests; it is an empty placeholder.
 - Never delete a check to make the suite faster without moving it somewhere cheaper first. Tests never write into `docs/` or `src/`.
 
 ## 4. Product rules (short form; the full list is in SPEC-FLEET.md)

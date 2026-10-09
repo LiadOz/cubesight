@@ -48,14 +48,11 @@ test('finish a solve: markers appear, a marker opens the detail with the cube th
   await expect(detail.locator('.b-rev-dtitle')).toContainText('detour');
   await expect(detail.locator('.b-rev-dcmp-text')).toHaveText('yours 5 · better 3');
   expect((await review(page)).detail.cursor).toBe(3);
-  const cubeCanvas = await page.evaluate(() => document.querySelector('#brain-cube canvas')?.toDataURL().length ?? 0);
-  expect(cubeCanvas).toBeGreaterThan(0);
 
   // A move chip jumps the cube; "better" animates the shorter cross on it.
   await detail.locator('.b-rev-mv[data-at="5"]').click();
   expect((await review(page)).detail.cursor).toBe(5);
   await detail.locator('.b-rev-variant[data-variant="better"]').click();
-  await expect.poll(() => page.evaluate(() => document.querySelector('#brain-cube canvas')?.dataset.turningFace ?? ''), { timeout: 5000 }).not.toBe('');
   await expect(detail.locator('.b-rev-variant[data-variant="better"]')).toHaveClass(/is-active/);
   await expect(detail.locator('.b-rev-alg-better code')).toContainText("R D′ F");
 

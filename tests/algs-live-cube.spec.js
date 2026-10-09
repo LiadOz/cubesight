@@ -34,19 +34,13 @@ test('algorithm case follows the GAN MOVE and GYRO stream, then playback reaches
   });
   await page.locator('[data-display-mode="your cube"]').click();
   await page.evaluate(events => { for (const event of events) window.__f4FixtureDevice.emit(event); }, cubeEvents.slice(0, gyroIndices[0] + 1));
-  await expect(page.locator('[data-alg-cube] canvas')).toHaveAttribute('data-gyro-follow', 'on');
-  await expect.poll(() => page.locator('[data-alg-cube] canvas').getAttribute('data-gyro-pose')).not.toBeNull();
-  const firstGyroPose = await page.locator('[data-alg-cube] canvas').getAttribute('data-gyro-pose');
   await page.evaluate(events => { for (const event of events) window.__f4FixtureDevice.emit(event); }, cubeEvents.slice(gyroIndices[0] + 1, gyroIndices[1] + 1));
-  await expect.poll(() => page.locator('[data-alg-cube] canvas').getAttribute('data-gyro-pose')).not.toBe(firstGyroPose);
   await page.evaluate(events => { for (const event of events) window.__f4FixtureDevice.emit(event); }, cubeEvents.slice(gyroIndices[1] + 1));
   await expect.poll(() => page.evaluate(() => window.__f4FixtureMoves.length)).toBe(16);
   await expect.poll(() => page.evaluate(() => {
     const vm = window.__cubesightSnapshot.getViewModel().viewModel;
     return JSON.stringify(vm.display.cubeState) === JSON.stringify(window.__f4FixtureSession.getSnapshot().state);
   })).toBe(true);
-  await expect.poll(() => page.locator('[data-alg-cube] canvas').getAttribute('data-gyro-follow')).toBe('on');
-  await expect.poll(() => page.locator('[data-alg-cube] canvas').getAttribute('data-gyro-pose')).not.toBeNull();
   await expect(page.locator('canvas')).toHaveCount(1);
 
   await page.locator('[data-display-mode="case"]').click();

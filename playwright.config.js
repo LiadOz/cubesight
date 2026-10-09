@@ -3,11 +3,8 @@ import { defineConfig } from 'playwright/test';
 // PW_PORT lets parallel worktrees run the suite without colliding on one port.
 const port = process.env.PW_PORT || 4174;
 
-// The tests do not test the cube's pixels, and headless Chromium draws WebGL in software
-// (SwiftShader, on the CPU): four concurrent real-GL pages took a 20-core machine to load 38.
-// So the dev server runs with VITE_CUBESIGHT_TEST_STUB=1, where the cube keeps all its logic,
-// animation and data attributes but never touches WebGL (src/cube-3d.js; dev server only, never
-// in a production build). That is what lets the suite run wide.
+// Tests never run the 3D cube: the dev server runs with VITE_CUBESIGHT_TEST_STUB=1, so every
+// import of src/cube-3d.js resolves to the empty placeholder src/cube-placeholder.js (vite.config.js).
 export default defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.js',
@@ -30,8 +27,7 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- --port ${port}`,
     url: `http://127.0.0.1:${port}`,
-    // PW_REAL_GL=1 turns the no-render mode off for the whole run (real WebGL, slow, serial-only).
-    env: process.env.PW_REAL_GL ? {} : { VITE_CUBESIGHT_TEST_STUB: '1' },
+    env: { VITE_CUBESIGHT_TEST_STUB: '1' },
     // A gate must validate current modules, never a stale worktree server.
     reuseExistingServer: false,
   },

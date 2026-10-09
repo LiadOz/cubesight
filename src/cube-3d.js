@@ -120,29 +120,6 @@ function stickerTransform(mesh, face, x, y, z) {
   if (face === 'L') { mesh.position.x -= offset; mesh.rotation.y = -Math.PI / 2; }
 }
 
-/**
- * TEST-ONLY: a renderer that keeps every scene, animation and data-attribute path but never touches WebGL, so browser
- * tests that do not assert cube pixels can run in parallel (headless WebGL is software-rendered on the CPU).
- * Guard: VITE_CUBESIGHT_TEST_STUB is replaced at build time, so without it (every shipped build and every other
- * dev server) the branch is statically false and removed. Only the tests set it: the browser tests' dev server
- * (playwright.config.js) and the offline tests' own build (scripts/test-suite.mjs, test-results/dist-test).
- * A page can opt back into real WebGL with an init script that sets window.__CUBESIGHT_REAL_GL__ = true.
- */
-function useStubRenderer() {
-  return Boolean(import.meta.env.VITE_CUBESIGHT_TEST_STUB === '1' && !globalThis.__CUBESIGHT_REAL_GL__);
-}
-function createRenderer() {
-  if (!useStubRenderer()) return new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-  const domElement = document.createElement('canvas');
-  domElement.dataset.rendererStub = '1';
-  domElement.style.display = 'block'; // what three's own canvas does
-  return {
-    domElement, outputColorSpace: null, toneMapping: null, toneMappingExposure: 1,
-    setPixelRatio() {}, setClearColor() {}, render() {}, dispose() {},
-    setSize(width, height) { domElement.width = Math.max(1, width); domElement.height = Math.max(1, height); },
-  };
-}
-
 export function createCube3D(container, options = {}) {
   const scene = new THREE.Scene();
   // The approved frames (docs/design/orbit-v3, SPEC-A-EXACT section 5) draw the cube as a symmetric isometric: a hexagon
@@ -155,7 +132,7 @@ export function createCube3D(container, options = {}) {
   camera.position.copy(cornerCameraPosition);
   camera.lookAt(0, 0, 0);
 
-  const renderer = createRenderer();
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;

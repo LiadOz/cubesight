@@ -28,7 +28,7 @@ for (const [id, route, seeded] of SCREENS) {
       for (const [width, height] of SIZES) {
         await page.setViewportSize({ width, height });
         // Wait out the pages' own loading states instead of a fixed time.
-        await page.waitForFunction(() => !/generating scramble|checking \w+ cross/.test(document.body.innerText)
+        await page.waitForFunction(() => !/generating scramble|checking \w+ cross|loading \w+…/.test(document.body.innerText)
           && !document.querySelector('[data-state="loading"]'));
         if (id === 'timer') await page.locator('.has-ready-scramble').waitFor();
         const maxScrollWidth = await settleAndMeasureOverflow(page, { maxMs: 300 });
