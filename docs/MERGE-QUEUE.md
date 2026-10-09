@@ -1,6 +1,6 @@
 # The merge queue (F18)
 
-The queue is the methodology for when a merge to trunk (`main`) happens. It is not a CI service; it is a script run locally. **Nothing lands on trunk unless the Tier 1 gate passes on the MERGED RESULT of the change and the current trunk.** A branch that is green alone but breaks in combination is rejected, and trunk stays untouched.
+The queue is the methodology for when a merge to trunk (`main`) happens. It is not a CI service; it is a script run locally. **Nothing lands on trunk unless `npm test` passes on the MERGED RESULT of the change and the current trunk.** A branch that is green alone but breaks in combination is rejected, and trunk stays untouched.
 
 ## For an agent: queue your work
 1. Commit everything (uncommitted work is not queued). Update from trunk: `git merge main`, resolve, run `npm run test:affected`.
@@ -17,7 +17,7 @@ Trunk is checked out in the live checkout, and moving a checked-out branch ref w
 ## What a rejection looks like
 ```
 REJECTED  cube-camera
-          Gate tier1 exited 1
+          Gate test exited 1
           diagnosis: .agents/artifacts/merge-queue/<attempt>/diagnosis.md
 ```
 `diagnosis.md` has: the base, candidate and merge-base commits; the reason; whether the candidate passes the gate **alone** (then it is a combination failure) ; files changed on both sides (or "none: the interaction is semantic", like the algs ring/cube drift where Orbit sizing and the cube camera each changed different files); the trunk commits the branch has not seen; and the last 60 lines of the gate log. `attempt.json` records branch, base, candidate and result commits, gate results and duration; `gate.log` is the full output. A textual conflict is rejected before the gate, naming the files.
@@ -32,7 +32,7 @@ REJECTED  cube-camera
 Enforced: git/npm never run in the live checkout (any command whose cwd is inside it, other than under `.agents/`, throws; the live checkout is the repository's main worktree, or `CUBESIGHT_LIVE_CHECKOUT`); `--no-verify` and `git stash` are refused at the single spawn point; trunk is never advanced while any worktree has it checked out; trunk is advanced only by compare-and-swap after a green gate on the merged result; runs are serialized by a lock; the gate has a wall-clock timeout and its process group is killed; artifacts and scratch worktrees go to the host-backed `.agents/` (the "host" mount, or any disk with 100 GiB free), checked before running. Documented only: branch hygiene (small branches, update from trunk often), not editing the gate, and that agents never push.
 
 ## The gate
-`chooseGate()` in `scripts/merge-queue.mjs` is the single place that names it: `npm run tier1 -- --base <trunk tip>` if the merged result's `package.json` has it, otherwise `npm run test:merge`. Tier 1 is the change-aware gate (`scripts/test-gate.mjs`, the same thing as `npm test`): lint, every unit test, the build, and the browser tests the merged diff reaches, with the smoke set as the floor, inside 60 s; what does not fit is listed as deferred for Tier 2. Tier 2 (`test:regression`) is not run per merge.
+`chooseGate()` in `scripts/merge-queue.mjs` is the single place that names it: `npm test -- --base <trunk tip>` run in the merged result. There is exactly one suite and nothing behind it: `npm test` runs lint, every unit test, the build, the browser tests the merged diff reaches (smoke set as the floor) and then a rotation of the tests longest without a passing run, PWA offline specs included, all inside 60 s. A selected test that does not fit is recorded as owed and runs first in the next run's rotation (the record is shared by every worktree), so nothing is skipped for good and there is no later, longer stage. A rotation test that fails rejects the merge too, and the report says it was a rotation test and lists the commits since it last passed.
 
 ## Proof
 `node scripts/merge-queue-demo.mjs` builds a throwaway repository with two branches that are each green alone and red together (modelled on the 15 px ring/cube drift), queues them, and shows the second rejected with trunk untouched. `tests/merge-queue-unit.test.mjs` covers the same plus the safety rules.

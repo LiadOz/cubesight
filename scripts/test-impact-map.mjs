@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Full refresh of the committed impact map seed (tests/impact-map.json).
 //
-// This belongs to Tier 2 or a schedule, never to the gate: it runs every browser
-// test with coverage on. The gate keeps its own overlay fresh from each run.
+// An optional maintenance tool, not part of any suite: it runs every browser test with
+// coverage on. `npm test` keeps the map fresh by itself, because its rotation runs every
+// test over a day and folds each run's coverage into the overlay.
 //
 //   node scripts/test-impact-map.mjs                 full capture, then write the seed
 //   node scripts/test-impact-map.mjs --from-raw DIR [--report FILE] [--merge]   rebuild from a capture already on disk (--merge adds to the seed)

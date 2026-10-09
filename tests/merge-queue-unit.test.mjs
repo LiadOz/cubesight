@@ -134,7 +134,7 @@ async function fixtureRepo() {
 test('queue lands green branches in order and rejects a combination failure, leaving trunk at the last green tip', async () => {
   const dir = await fixtureRepo();
   try {
-    const gate = { name: 'tier1', command: 'x', args: [] };
+    const gate = { name: 'test', command: 'x', args: [] };
     // Gate stand-in for the ring/cube drift: each change passes alone, both together fail.
     const strict = async (g, ctx) => {
       const [ring, camera] = await Promise.all(['ring.txt', 'cube.txt'].map(f => readFile(path.join(ctx.cwd, f), 'utf8')));
@@ -146,7 +146,7 @@ test('queue lands green branches in order and rejects a combination failure, lea
       gates: [gate], gateRunner: strict, installDependencies: false, explainAlone: false,
     });
     assert.deepEqual(summary.results.map(r => r.status), ['landed', 'landed', 'rejected']);
-    assert.match(summary.results[2].failure, /Gate tier1 exited 1/);
+    assert.match(summary.results[2].failure, /Gate test exited 1/);
     assert.match(await readFile(summary.results[2].diagnosis, 'utf8'), /Trunk was NOT changed/);
     // trunk contains the two greens, not the rejected branch
     assert.equal(git(dir, ['rev-parse', 'trunk']), summary.endTip);
@@ -163,7 +163,7 @@ test('queue does not advance trunk while a worktree has it checked out; it hands
     const before = git(dir, ['rev-parse', 'trunk']);
     const summary = await runQueue({
       repoRoot: dir, branches: ['unrelated'], base: 'trunk', liveCheckout: path.join(dir, 'elsewhere'),
-      gates: [{ name: 'tier1', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
+      gates: [{ name: 'test', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
       installDependencies: false,
     });
     assert.equal(summary.results[0].status, 'green');
@@ -181,7 +181,7 @@ test('a textual conflict with trunk is rejected with the conflicting files named
     git(dir, ['switch', 'scratch-home']);
     const summary = await runQueue({
       repoRoot: dir, branches: ['orbit-sizing', 'clash'], base: 'trunk', liveCheckout: path.join(dir, 'elsewhere'),
-      gates: [{ name: 'tier1', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
+      gates: [{ name: 'test', command: 'x', args: [] }], gateRunner: async g => ({ name: g.name, exitCode: 0, durationMs: 1 }),
       installDependencies: false, explainAlone: false,
     });
     assert.deepEqual(summary.results.map(r => r.status), ['landed', 'rejected']);

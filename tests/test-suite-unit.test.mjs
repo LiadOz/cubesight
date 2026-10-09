@@ -2,10 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { tierVerdict, runTier, TIER_BUDGETS } from '../scripts/test-tiers.mjs';
+import { readFile as read } from 'node:fs/promises';
+import { tierVerdict, runTier, SUITE_BUDGET_MS } from '../scripts/test-suite.mjs';
 
-test('test tiers enforce the user budgets', () => {
-  assert.deepEqual(TIER_BUDGETS, { merge: 60_000, regression: 600_000 });
+test('there is one suite with one budget of a minute, and no long suite behind it', async () => {
+  assert.equal(SUITE_BUDGET_MS, 60_000);
+  const { scripts } = JSON.parse(await read(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(scripts.test, 'node scripts/test-suite.mjs');
+  for (const name of ['tier1', 'tier2', 'test:merge', 'test:regression']) assert.equal(scripts[name], undefined, `${name} must not exist`);
+  assert.doesNotMatch(await read(new URL('../scripts/test-suite.mjs', import.meta.url), 'utf8'), /regression/iu);
 });
 test('a failing stage stops the tier', async () => {
   const result = await runTier({ tier: 'proof', budgetMs: 2000, stages: [
