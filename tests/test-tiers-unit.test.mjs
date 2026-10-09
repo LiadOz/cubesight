@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { runTier, TIER_BUDGETS } from '../scripts/test-tiers.mjs';
+import { tierVerdict, runTier, TIER_BUDGETS } from '../scripts/test-tiers.mjs';
 
 test('test tiers enforce the user budgets', () => {
   assert.deepEqual(TIER_BUDGETS, { merge: 60_000, regression: 600_000 });
@@ -55,4 +55,19 @@ test('a tier deadline also terminates a server in a separate process group', asy
   }
   assert.ok(status === null || /State:\s+Z/.test(status), 'escaped server cannot remain running');
   await unlink(pidFile);
+});
+
+// The merge queue once rejected a correct change for taking 60.2s of 60s on a busy
+// machine. Budget is enforced by planning and by the hard deadline (a killed stage
+// fails); overhead alone must not reject clean work.
+test('a run whose stages all finished cleanly passes even if overhead pushed it past the budget', () => {
+  const stages = [['a'], ['b']];
+  const ok = tierVerdict({ stages, results: [{ exitCode: 0 }, { exitCode: 0 }], durationMs: 60_200, budgetMs: 60_000 });
+  assert.deepEqual(ok, { passed: true, overBudgetMs: 200 });
+});
+test('a failed, killed or missing stage still fails the tier whatever the time', () => {
+  const stages = [['a'], ['b']];
+  assert.equal(tierVerdict({ stages, results: [{ exitCode: 0 }, { exitCode: 1 }], durationMs: 10, budgetMs: 60_000 }).passed, false);
+  assert.equal(tierVerdict({ stages, results: [{ exitCode: 0 }, { exitCode: 0, timedOut: true }], durationMs: 10, budgetMs: 60_000 }).passed, false);
+  assert.equal(tierVerdict({ stages, results: [{ exitCode: 0 }], durationMs: 10, budgetMs: 60_000 }).passed, false);
 });

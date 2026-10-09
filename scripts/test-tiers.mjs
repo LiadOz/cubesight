@@ -81,6 +81,23 @@ export async function runStage([name, command, args], { remainingMs, cwd = proce
   return { name, exitCode: timedOut ? 1 : exitCode, durationMs: Math.round(performance.now() - start), timedOut };
 }
 
+/**
+ * Whether a tier passed, and by how much it overran.
+ *
+ * The budget is enforced by planning (the gate selects what fits and defers the
+ * rest) and by a hard deadline that kills any stage still running when time is
+ * up -- a killed stage fails. So a run in which every stage finished cleanly is a
+ * pass even if the total crept past the budget by process overhead: the merge
+ * queue rejected a correct change for taking 60.2s of 60s on a busy machine,
+ * which made the gate depend on machine load rather than on the code. A small
+ * overrun is reported loudly instead.
+ */
+export function tierVerdict({ stages, results, durationMs, budgetMs }) {
+  const completed = results.length === stages.length;
+  const clean = results.every(result => !result.exitCode && !result.timedOut);
+  return { passed: completed && clean, overBudgetMs: Math.max(0, Math.round(durationMs - budgetMs)) };
+}
+
 export async function runTier({ tier, stages, budgetMs = TIER_BUDGETS[tier], parallel = false, ...options }) {
   if (!Number.isFinite(budgetMs) || budgetMs <= 0) throw new Error('A positive tier budget is required.');
   const start = performance.now();
@@ -100,7 +117,7 @@ export async function runTier({ tier, stages, budgetMs = TIER_BUDGETS[tier], par
     if (result.exitCode) break;
   }
   const durationMs = Math.round(performance.now() - start);
-  return { tier, budgetMs, durationMs, passed: results.length === stages.length && results.every(result => !result.exitCode) && durationMs <= budgetMs, stages: results };
+  return { tier, budgetMs, durationMs, ...tierVerdict({ stages, results, durationMs, budgetMs }), stages: results };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -133,7 +150,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const result = await runTier({ tier, stages, budgetMs, parallel: tier === 'merge', env });
   result.durationMs = Math.round(performance.now() - started);
   result.budgetMs = TIER_BUDGETS[tier];
-  result.passed = result.passed && result.durationMs <= result.budgetMs;
+  result.overBudgetMs = Math.max(0, Math.round(result.durationMs - result.budgetMs));
   result.commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   result.workingTreeDirty = Boolean(execFileSync('git', ['status', '--porcelain', '--untracked-files=normal'], { encoding: 'utf8' }).trim());
   result.generatedAt = new Date().toISOString();
@@ -149,6 +166,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   await mkdir(output, { recursive: true });
   await writeFile(path.join(output, `${tier}-latest.json`), `${JSON.stringify(result, null, 2)}\n`);
   console.log(`${tier}: ${(result.durationMs / 1000).toFixed(1)}s / ${result.budgetMs / 1000}s; ${result.passed ? 'passed' : 'failed'}`);
+  if (result.overBudgetMs > 0) console.log(`WARNING: ${tier} ran ${(result.overBudgetMs / 1000).toFixed(1)}s over its ${result.budgetMs / 1000}s budget. Not a failure (every stage finished cleanly), but the plan should fit: check machine load, or why the estimate was low.`);
   if (plan?.packed.deferred.length) console.log(`${plan.packed.deferred.length} selected test(s) were deferred past the budget; Tier 2 / the merge queue's full stage must cover them.`);
   if (!result.passed) process.exitCode = 1;
 }
