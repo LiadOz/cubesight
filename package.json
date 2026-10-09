@@ -9,7 +9,7 @@
     "build:wasm": "cargo build --manifest-path wasm-core/Cargo.toml --target wasm32-unknown-unknown --release && wasm-bindgen wasm-core/target/wasm32-unknown-unknown/release/corner_recognition_core.wasm --out-dir src/wasm --target web --out-name cubesight_core",
     "generate:pwa-assets": "pwa-assets-generator",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node scripts/test-tiers.mjs merge",
+    "test": "node scripts/test-suite.mjs",
     "test:browser": "playwright test",
     "test:pwa": "playwright test --config=playwright.pwa.config.js",
     "test:unit": "node --test tests/*-unit.test.mjs",
@@ -33,11 +33,7 @@
     "test:impact-map": "node scripts/test-impact-map.mjs",
     "test:replay": "node scripts/test-replay.mjs",
     "test:health": "node scripts/test-health.mjs",
-    "test:flaky": "node scripts/test-flaky.mjs",
-    "tier1": "node scripts/test-tiers.mjs merge",
-    "tier2": "node scripts/test-tiers.mjs regression",
-    "test:merge": "node scripts/test-tiers.mjs merge",
-    "test:regression": "node scripts/test-tiers.mjs regression"
+    "test:flaky": "node scripts/test-flaky.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

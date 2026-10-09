@@ -507,7 +507,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
       let a; let b;
       try { a = JSON.parse(change.oldText ?? '{}'); b = JSON.parse(change.newText ?? '{}'); } catch { a = {}; b = { x: 1 }; }
       const dependenciesChanged = JSON.stringify([a.dependencies, a.devDependencies, a.overrides]) !== JSON.stringify([b.dependencies, b.devDependencies, b.overrides]);
-      if (dependenciesChanged) { entry.summary = 'dependencies changed'; result.smokeOnly = true; warn('package.json dependencies changed: only the smoke floor runs in the gate; Tier 2 must cover the rest.'); }
+      if (dependenciesChanged) { entry.summary = 'dependencies changed'; result.smokeOnly = true; warn('package.json dependencies changed: only the smoke floor runs now; the rotation covers the rest over the next runs.'); }
       else entry.summary = 'scripts/metadata only; no browser impact';
       continue;
     }
@@ -523,7 +523,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
         for (const hit of hits) addIds(testsOf(hit), 1, `uses ${path.posix.basename(file)}`);
         if (importerHits) entry.summary += `; ${importerHits} importing module(s)`;
       }
-      warn(`${file}: configuration/asset change cannot be narrowed to functions; the smoke floor plus anything that imports it runs, and Tier 2 must cover the rest.`);
+      warn(`${file}: configuration/asset change cannot be narrowed to functions; the smoke floor plus anything that imports it runs, and the rotation covers the rest over the next runs.`);
       tally(); continue;
     }
     if (/^(?:eslint|stylelint)\.config\./u.test(file)) { entry.kind = 'lint-config'; entry.summary = 'lint runs on every gate'; continue; }
@@ -696,10 +696,10 @@ export async function selectTests({ root, changes, model, head = null, specHashe
     entry.summary = `${impact.touched} rule(s); classes/ids: ${[...impact.tokens].slice(0, 6).join(', ') || 'none'}${impact.tokens.size > 6 ? ', ...' : ''}`;
     for (const token of impact.tokens) mentions.add(token);
     const hits = await wordSearch(impact.tokens, 1, 'class/id');
-    note(`${change.file}: CSS has no JS coverage. Rule: the classes and ids it styles are searched for in the code, so tests that execute the functions mentioning them run; layout and visual coverage is Tier 2 (npm run test:layout, test:snapshots).`);
+    note(`${change.file}: CSS has no JS coverage. Rule: the classes and ids it styles are searched for in the code, so tests that execute the functions mentioning them run; layout and visual coverage is the visual-review tool's (npm run review), not this suite.`);
     if (impact.global || impact.hadGlobalRules) {
       result.smokeOnly = !hits;
-      warn(`${change.file}: global/element selectors or custom properties changed (cannot be tied to one class); the smoke floor${hits ? ' plus the class-level hits' : ''} runs. Layout/visual suites in Tier 2 cover the rest.`);
+      warn(`${change.file}: global/element selectors or custom properties changed (cannot be tied to one class); the smoke floor${hits ? ' plus the class-level hits' : ''} runs. Layout and visual review is the review tool's (npm run review).`);
     } else if (!hits) warn(`${change.file}: no code or spec mentions the changed classes (${[...impact.tokens].join(', ')}); only the smoke floor runs.`);
   }
 
@@ -715,7 +715,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
     entry.summary = `${changedLines.length} changed line(s)`;
     const hits = await wordSearch(tokens, 1, 'id/class');
     if (changedLines.some((line) => /<(?:script|link|meta|title|head|html)\b/u.test(line)) || !tokens.size) {
-      warn(`${change.file}: document-level markup changed; the smoke floor${hits ? ' plus id/class hits' : ''} runs, and Tier 2 covers the rest.`);
+      warn(`${change.file}: document-level markup changed; the smoke floor${hits ? ' plus id/class hits' : ''} runs, and the rotation covers the rest over the next runs.`);
       result.smokeOnly = result.smokeOnly || !hits;
     }
   }
@@ -777,7 +777,7 @@ export async function selectTests({ root, changes, model, head = null, specHashe
 }
 
 // ------------------------------------------------------------------------ pack
-function makespan(items, workers, slowdown = 1) {
+export function makespan(items, workers, slowdown = 1) {
   const bySpec = new Map();
   for (const item of items) bySpec.set(item.spec, (bySpec.get(item.spec) ?? 0) + item.durationMs * slowdown);
   const loads = Array.from({ length: workers }, () => 0);

@@ -1,7 +1,7 @@
 // The impact map: which browser tests executed which modules and functions.
 //
 // Two files, one model:
-//   tests/impact-map.json                    committed seed, refreshed by a full run (Tier 2 / scheduled)
+//   tests/impact-map.json                    committed seed (an optional full capture, or a copy of a well-rotated overlay)
 //   test-results/impact-map/live.json        per-worktree overlay, updated by every gate run
 // The overlay starts as a copy of the seed and is discarded when the seed changes,
 // so a pulled seed is never shadowed by older local knowledge. Nothing in the

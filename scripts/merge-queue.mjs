@@ -4,7 +4,7 @@
 //   npm run queue -- <branch> [<branch> ...]      land branches, in order
 //
 // For each candidate: merge it into the CURRENT trunk tip in a scratch worktree
-// under .agents/, run the Tier 1 gate on that MERGED RESULT, and only then
+// under .agents/, run `npm test` (the one suite) on that MERGED RESULT, and only then
 // advance trunk. A rejection leaves trunk untouched and writes a diagnosis.
 // Plain Node and git; no dependencies.
 import { spawn } from 'node:child_process';
@@ -17,16 +17,16 @@ export const DEFAULT_TRUNK = 'main';
 const GATE_TIMEOUT_MS = Number(process.env.CUBESIGHT_QUEUE_GATE_TIMEOUT_MS) || 300_000;
 
 /**
- * THE ONE PLACE that names the gate: `tier1`, the change-aware gate (scripts/test-gate.mjs).
- * It runs lint, every unit test, the build and the browser tests the merged diff
- * reaches (smoke set as the floor) inside 60 s. `baseCommit` is the trunk tip the
- * candidate was merged onto, so the gate selects against exactly what this merge
- * changes. Falls back to `test:merge` for trees that predate `tier1`.
+ * THE ONE PLACE that names the gate: `npm test`, the one suite (scripts/test-gate.mjs).
+ * It runs lint, every unit test, the build, the browser tests the merged diff reaches
+ * (smoke set as the floor) and a rotation of the stalest tests, inside 60 s. There is no
+ * longer suite behind it. `baseCommit` is the trunk tip the candidate was merged onto, so
+ * the gate selects against exactly what this merge changes.
  */
 export async function chooseGate(worktree, { baseCommit = null } = {}) {
   const scripts = JSON.parse(await readFile(path.join(worktree, 'package.json'), 'utf8')).scripts ?? {};
-  const script = scripts.tier1 ? 'tier1' : 'test:merge';
-  return { name: 'tier1', command: 'npm', args: ['run', script, ...(baseCommit ? ['--', '--base', baseCommit] : [])] };
+  if (!scripts.test) throw new Error(`${worktree}/package.json has no "test" script; the queue gates on \`npm test\`.`);
+  return { name: 'test', command: 'npm', args: ['test', ...(baseCommit ? ['--', '--base', baseCommit] : [])] };
 }
 
 // ---------------------------------------------------------------- safety rules
