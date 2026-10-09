@@ -43,3 +43,11 @@ On 2026-10-09 the suite had to reach about a minute within the hour, so these fe
 - `pll-start.spec.js`: 2 tests, 1.4 s
 - `pinned-pseudo-f2l.spec.js`: 1 tests, 1.2 s
 - `review-drill-link.spec.js`: 1 tests, 0.7 s
+
+## The old snapshot suite (not restored)
+
+The pre-2026-10-09 snapshot suite (`tests/snapshots/`, 104 tests: about 720 images, 676 accessibility-tree and 916 view-model snapshots, deleted in 842fae3; restore with `git checkout 5d90711 -- tests/snapshots playwright.snapshots.config.js scripts/snapshots-compare.mjs`) was tried again with the cube placeholder on 2026-10-09:
+
+- It took 131 s wall and 415 CPU-s with 4 workers, every test failing. Part of that time is the failures themselves (each mismatched screenshot retries for 5 s), so a green run would be faster.
+- Its images and its view-model files carry the 3D cube (camera, gyro, cube state); those parts have to go, and every image re-approved, because the cube is now a placeholder.
+- Its view-model files also differ in app behaviour since they were approved on 2026-10-04 (for example a missing "start solve" action and `plan: null`). Each of those is either an intended change or a regression, and needs a decision before re-approving.
