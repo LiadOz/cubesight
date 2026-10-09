@@ -1,6 +1,6 @@
 // DOM checks for the exact Orbit: results states are coloured, the ring is r 300 with open gaps, labels stay on their
 // segment, a crowded ring fans markers out, and the coach connector is one short curve from the end of the text.
-import { test, expect } from 'playwright/test';
+import { test, expect } from './helpers/coverage-test.js';
 
 const mount = async (page, script, arg) => {
   await page.setViewportSize({ width: 1440, height: 900 });

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test } from 'playwright/test';
+import { expect, test } from './helpers/coverage-test.js';
 
 const recording = JSON.parse(readFileSync(new URL('./fixtures/algs-page-gan-session.json', import.meta.url), 'utf8'));
 const cubeEvents = recording.events.filter(event => event.kind === 'cube-event').map(event => event.data.event);

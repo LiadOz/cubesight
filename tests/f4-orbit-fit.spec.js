@@ -1,4 +1,4 @@
-import { expect, test } from 'playwright/test';
+import { expect, test } from './helpers/coverage-test.js';
 
 for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
   test(`Cross Scout keeps its cube centred and settings reachable at ${viewport.width} × ${viewport.height}`, async ({ page }) => {

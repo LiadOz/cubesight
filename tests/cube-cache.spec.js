@@ -1,4 +1,4 @@
-import { expect, test } from 'playwright/test';
+import { expect, test } from './helpers/coverage-test.js';
 
 test('shared Cube keeps custom render data through theme changes', async ({ page }) => {
   await page.goto('/src/ui/gallery.html');

@@ -1,4 +1,4 @@
-import { expect, test } from 'playwright/test';
+import { expect, test } from './helpers/coverage-test.js';
 import { applyDemoMove, parseDemoHash, parseDemoPaste, setupState } from '../src/demo/model.js';
 import { describeMove, expandToHeld } from '../src/moves/notation.js';
 import { GOLD } from './analysis-golden.mjs';
