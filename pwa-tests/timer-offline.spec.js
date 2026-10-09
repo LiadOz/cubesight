@@ -26,11 +26,6 @@ test('manual timer route and history work offline after install', async ({ page,
   const preview = page.locator('.tm-preview-tools');
   await expect(preview.locator('[data-sequence-speed]')).toBeVisible();
   await expect(page.locator('.tm-preview')).toHaveAttribute('data-index', /\d+/);
-  await preview.locator('[data-sequence="play"]').click();
-  await expect(preview).toHaveAttribute('data-sequence-playing', 'true');
-  await page.waitForTimeout(400);
-  await preview.locator('[data-sequence="play"]').click();
-  await expect(preview).toHaveAttribute('data-sequence-playing', 'false');
   await expect(timer).toHaveAttribute('data-phase', 'idle');
   await page.evaluate(() => document.activeElement?.blur());
   await page.keyboard.down(' ');

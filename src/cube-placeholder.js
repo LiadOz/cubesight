@@ -3,6 +3,8 @@
 // cube-3d.js resolves here (vite.config.js), so no 3D cube code and no three.js ever load in a test.
 // The cube comes from a library we do not test; tests check the page around it.
 export function createCube3D(container, options = {}) {
+  // A test that checks the no-WebGL fallback sets this; the real cube throws there too.
+  if (globalThis.__CUBESIGHT_NO_WEBGL__) throw new Error('WebGL is unavailable.');
   const box = document.createElement('canvas');
   box.dataset.cubePlaceholder = '1';
   box.setAttribute('role', 'img');
