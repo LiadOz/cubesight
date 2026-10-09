@@ -27,6 +27,10 @@ for (const [id, route, seeded] of SCREENS) {
       await page.goto(`/#${route}`);
       for (const [width, height] of SIZES) {
         await page.setViewportSize({ width, height });
+        // Wait out the pages' own loading states instead of a fixed time.
+        await page.waitForFunction(() => !/generating scramble|checking \w+ cross/.test(document.body.innerText)
+          && !document.querySelector('[data-state="loading"]'));
+        if (id === 'timer') await page.locator('.has-ready-scramble').waitFor();
         const maxScrollWidth = await settleAndMeasureOverflow(page, { maxMs: 300 });
         expect(maxScrollWidth, `${id} scrolls sideways at ${width}px`).toBeLessThanOrEqual(width);
         await expect(page).toHaveScreenshot(`${id}-${theme}-${width}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.002 });

@@ -14,6 +14,7 @@ import './move-guide.css';
 import { setAttr, setText, toggleClass } from '../brain/dom.js';
 import { describeMove, displayMove, heldAfter, isMove, normalizeMove } from './notation.js';
 import { readGuidePrefs } from './prefs.js';
+import { motionOff } from '../ui/motion.js';
 
 const STATUS_WORD = { wrong: 'Unintended move.' };
 
@@ -24,7 +25,7 @@ function el(tag, className, text) {
   return node;
 }
 
-const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduced = motionOff;
 
 /**
  * @param {HTMLElement} host

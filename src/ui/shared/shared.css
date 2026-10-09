@@ -131,3 +131,12 @@
 .ui-nav-drawer .theme-label { display:inline; }
 .ui-nav-drawer .help-button { font-size:0; gap:0; }
 .ui-nav-drawer .help-button::after { content:'help'; font:600 15px 'Manrope Variable','Manrope',sans-serif; }
+
+/* The animations switch is off (src/ui/motion.js): nothing animates anywhere. */
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}

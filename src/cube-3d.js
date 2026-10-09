@@ -5,6 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { isMove, toPhysicalTurn } from './moves/notation.js';
 import { CUE_START_DELAY_MS, cueFraction, cuePeak } from './moves/cue.js';
 import { convexHull } from './ui/cube/bounds.js';
+import { reducedMotion } from './ui/motion.js';
 
 const FACE_NORMALS = {
   U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1],
@@ -551,8 +552,7 @@ export function createCube3D(container, options = {}) {
   let stopped = false;
   let feedbackActive = false;
   let animationFrame;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const clock = new THREE.Clock();
+    const clock = new THREE.Clock();
   let moveAnimation = null;
   // the move cue (see 'Move cue' below); declared before the first frame() runs
   let cueWanted = null;   // { id, move, held, loop, pose }

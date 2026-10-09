@@ -23,6 +23,9 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1280, height: 900 },
     reducedMotion: process.env.PW_MOTION === 'reduce' ? 'reduce' : 'no-preference',
+    // Animations off (src/ui/motion.js): tests never wait for one. A spec that tests motion
+    // opts out with test.use({ storageState: { cookies: [], origins: [] } }).
+    storageState: { cookies: [], origins: [{ origin: `http://127.0.0.1:${port}`, localStorage: [{ name: 'cubesight-motion', value: 'off' }] }] },
   },
   webServer: {
     command: `npm run dev -- --port ${port}`,

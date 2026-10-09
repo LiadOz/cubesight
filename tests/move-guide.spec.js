@@ -8,6 +8,9 @@ const gallery = (page, style = 'orbit', theme = 'dark', extra = '') => page.goto
 const cueState = page => page.evaluate(() => window.gallery.cube.getCueState());
 const cueAngle = page => cueState(page).then(state => state?.angle ?? 0);
 
+// The cue's motion is what this spec tests, so animations stay on.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test('overflowing move strips scroll with Home, End, and arrow keys', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await gallery(page, 'orbit', 'dark');

@@ -8,6 +8,7 @@ import { syncPageTokens } from '../pages/tokens.js';
 import { applyDemoMove, parseDemoHash, parseDemoPaste, serializeDemo, setupState } from './model.js';
 import { buildDemoViewModel } from './view-model.js';
 import './demo.css';
+import { motionOff } from '../ui/motion.js';
 
 const el = (tag, text = '', className = '') => {
   const node = document.createElement(tag);
@@ -218,7 +219,7 @@ export function createDemoPage(root) {
     renderState();
     const move = part.alg[moveIndex];
     const nextState = applyDemoMove(cube.state, move);
-    try { await cube.animateMove(move, nextState, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260 / Math.max(.25, Number(speedControl.value()) || 1)); }
+    try { await cube.animateMove(move, nextState, motionOff() ? 0 : 260 / Math.max(.25, Number(speedControl.value()) || 1)); }
     catch (error) { if (currentGeneration === generation) { inFlight = false; playing = false; renderState(); } throw error; }
     if (currentGeneration !== generation) return;
     inFlight = false;

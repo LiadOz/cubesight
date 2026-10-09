@@ -3,6 +3,7 @@ import { groupEndLabels } from './end-labels.js';
 import { CANVAS, ORBIT } from '../design-spec.js';
 import './orbit.css';
 import { COMPLETION_DURATION, completionPlan, completionSegments, isCompleted, segmentKey } from './completion.js';
+import { reducedMotion } from '../motion.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const SIZES = { XL: 520, L: 420, M: 300, S: 210, mini: 44 };
@@ -48,7 +49,7 @@ export class Orbit {
     if (!host) throw new Error('Orbit needs a host element.');
     this.host = host;
     this.options = { size: 'L', shape: 'open', gap: 70, start: 180, direction: 'clockwise', segments: [], ...options };
-    this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    this.reducedMotion = reducedMotion;
     this.sequence = 0;
     this.displayed = null;
     this.expandedClusters = new Set();
