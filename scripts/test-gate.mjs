@@ -30,6 +30,12 @@ export const BROWSER_OVERHEAD_MS = 9_000;
 export const PACK_FILL = 0.75;
 // The build (which the PWA stage waits for) takes roughly this long; the PWA stage gets what the browser budget has beyond it.
 export const PWA_BUILD_MS = 15_000;
+// The rotation only spends this share of the browser budget (the change's own tests may use PACK_FILL): it is the part
+// that can be cut, so it leaves the larger margin. Playwright's own time limit (below) is the safety net.
+export const ROTATION_FILL = 0.6;
+// Playwright stops itself this long before the suite deadline and writes the report of what finished,
+// so a slow machine truncates the rotation instead of killing the run with nothing recorded.
+export const STOP_MARGIN_MS = 4_000;
 export const PWA_MAX_MS = 25_000;
 export const PWA_CONFIG = 'scripts/test-pwa.config.mjs';
 export const GATE_DIR = 'test-results/gate';
@@ -103,9 +109,11 @@ export async function planRotation({ root, changes, model, selection, packed, sp
   }
   // Items the change selected that did not fit are owed: they head the next run's rotation.
   const deferred = [...packed.deferred.filter((item) => item.tier !== 2), ...ownDeferred];
-  const result = fillRotation({ candidates, store, run: [...packed.run, ...ownRun], budgetMs: fillBudget, pwaBudgetMs: pwaBudget, workers, slowdown });
+  const result = fillRotation({ candidates, store, run: [...packed.run, ...ownRun], budgetMs: Math.min(fillBudget, fillBudget * (ROTATION_FILL / PACK_FILL)), pwaBudgetMs: pwaBudget, workers, slowdown });
   for (const item of result.added) item.reasons = [store.owed[item.key] ? 'owed: a change selected it earlier and it did not fit' : store.tests[item.key] ? `rotation: last passed ${store.tests[item.key].at.slice(0, 16)}Z` : 'rotation: no passing run recorded yet'];
-  return { run: [...ownRun, ...result.added], own: ownRun, rotationAdded: result.added, deferred, store, candidates: candidates.length, estimatedMs: result.estimatedMs };
+  const rotationBudget = Math.min(fillBudget, fillBudget * (ROTATION_FILL / PACK_FILL));
+  const unreachable = candidates.filter((item) => (item.key.startsWith(PWA_PREFIX) ? pwaCost([item]) : item.durationMs) * slowdown > (item.key.startsWith(PWA_PREFIX) ? pwaBudget : rotationBudget));
+  return { run: [...ownRun, ...result.added], own: ownRun, unreachable, rotationAdded: result.added, deferred, store, candidates: candidates.length, estimatedMs: result.estimatedMs };
 }
 
 // Specs that run in full this time: their map entry can be replaced wholesale afterwards.
@@ -161,6 +169,7 @@ export function formatPlan(plan, { verbose = false } = {}) {
     const pwa = rotation.run.filter((item) => item.key.startsWith(PWA_PREFIX));
     const browserAdded = added.filter((item) => !item.key.startsWith(PWA_PREFIX));
     lines.push(`Rotation: ${browserAdded.length} browser test(s) added from the ${rotation.candidates} not selected, stalest first${rotation.own.length || added.some((item) => item.key.startsWith(PWA_PREFIX)) ? `; PWA offline: ${pwa.length} spec(s) (${pwa.map((item) => path.posix.basename(item.spec, '.spec.js')).join(', ')})` : '; PWA offline: none this run'}.`);
+    if (rotation.unreachable?.length) lines.push(`  WARNING: ${rotation.unreachable.length} test(s) are longer than the whole rotation budget and can never be reached (${rotation.unreachable.slice(0, 2).map((item) => `${path.posix.basename(item.spec)} ~${seconds(item.durationMs)}`).join(', ')}${rotation.unreachable.length > 2 ? ', ...' : ''}). Make them cheaper; they are never skipped on purpose.`);
     for (const item of added.slice(0, verbose ? Infinity : 4)) lines.push(`  rotation ${describe(item)} (~${seconds(item.durationMs)})  <- ${item.reasons[0]}`);
     if (!verbose && added.length > 4) lines.push(`  ... and ${added.length - 4} more`);
   }
@@ -168,7 +177,8 @@ export function formatPlan(plan, { verbose = false } = {}) {
 }
 
 /** Stages for runTier: lint, unit, build checks and the selected browser tests, in parallel. */
-export function gateStages(plan, { browser = true, checks = true } = {}) {
+export function gateStages(plan, { browser = true, checks = true, stopAfterMs = null } = {}) {
+  const stop = Number.isFinite(stopAfterMs) ? [`--global-timeout=${Math.max(1000, Math.round(stopAfterMs))}`] : [];
   const stages = [];
   const pwa = plan.rotation?.run.filter((item) => item.key.startsWith(PWA_PREFIX)) ?? [];
   const build = 'npm run build && node scripts/check-no-dev-gallery.mjs && npm run gallery:coverage';
@@ -183,7 +193,7 @@ export function gateStages(plan, { browser = true, checks = true } = {}) {
   } else stages.push(['unit', 'npm', ['run', 'test:unit']]);
   if (browser && plan.specs.length) {
     stages.push(['browser', 'npx', ['playwright', 'test', '--config=playwright.merge.config.js', '--update-snapshots=none', '--max-failures=5',
-      `--workers=${plan.workers}`, '--reporter=line,json', ...plan.specs, ...(plan.grep ? [`--grep=${plan.grep}`] : [])]]);
+      `--workers=${plan.workers}`, '--reporter=line,json', ...stop, ...plan.specs, ...(plan.grep ? [`--grep=${plan.grep}`] : [])]]);
   }
   return stages;
 }
@@ -223,21 +233,34 @@ const readReport = async (file) => { try { return JSON.parse(await readFile(file
  */
 export async function finishRotation(root, plan, { commit, now = new Date() } = {}) {
   const rotation = plan.rotation;
-  if (!rotation?.store) return { lines: [], failed: false };
+  if (!rotation?.store) return { lines: [], failed: false, stageOk: {} };
   const directory = path.join(root, GATE_DIR);
   const browserReport = await readReport(path.join(directory, 'report.json'));
   const pwaReport = await readReport(path.join(directory, 'report-pwa.json'));
+  const browserResults = browserReport ? reportResults(browserReport, root) : new Map();
+  const pwaResults = pwaReport ? reportResults(pwaReport, root) : new Map();
   const outcomes = [
-    ...(browserReport ? outcomesFromResults(reportResults(browserReport, root)) : []),
-    ...(pwaReport ? outcomesFromResults(reportResults(pwaReport, root), { pwa: true }) : []),
+    ...outcomesFromResults(browserResults),
+    ...(pwaReport ? outcomesFromResults(pwaResults, { pwa: true }) : []),
   ];
   const store = rotation.store;
-  const failures = outcomes.filter((outcome) => outcome.status !== 'passed');
+  const failures = outcomes.filter((outcome) => outcome.status === 'failed' || outcome.status === 'timedOut');
   const ownItems = [...plan.packed.run, ...rotation.own];
   const ownKeys = new Set(ownItems.map((item) => item.key));
   const ownSpecs = new Set(ownItems.filter((item) => item.kind !== 'case').map((item) => item.spec));
   // Attribution reads the store as it was BEFORE this run's passes overwrite last-passed.
   const lines = describeFailures({ failures, ownKeys, ownSpecs, store, root, now });
+  // Did every test the change selected finish? Anything the time limit cut that was only rotation is not a failure.
+  const finished = new Set(outcomes.filter((outcome) => outcome.status === 'passed').map((outcome) => outcome.key));
+  const finishedSpecs = new Set(outcomes.filter((outcome) => outcome.status === 'passed').map((outcome) => outcome.spec));
+  const unfinishedOwn = ownItems.filter((item) => !(item.kind === 'case' || item.key.startsWith(PWA_PREFIX) ? finished.has(item.key) : finishedSpecs.has(item.spec)));
+  const ownCut = (pwa) => unfinishedOwn.filter((item) => item.key.startsWith(PWA_PREFIX) === pwa).length;
+  const cutRotation = rotation.rotationAdded.filter((item) => !finished.has(item.key) && !failures.some((f) => f.key === item.key));
+  const stageOk = {
+    browser: Boolean(browserReport) && !failures.some((f) => !f.key.startsWith(PWA_PREFIX)) && !ownCut(false),
+    'build+pwa': Boolean(pwaReport) && !failures.some((f) => f.key.startsWith(PWA_PREFIX)) && !ownCut(true),
+  };
+  if (cutRotation.length) lines.push(`${cutRotation.length} rotation test(s) did not get to run before the time limit (the machine is busy); they stay the stalest and go first next time.`);
   recordRun(store, { outcomes, deferred: rotation.deferred, commit, now });
   await saveRotation(root, store);
   const suite = [
@@ -245,5 +268,5 @@ export async function finishRotation(root, plan, { commit, now = new Date() } = 
     ...(await pwaSpecs(root)).map((spec) => ({ key: `${PWA_PREFIX}${spec}`, label: `${path.posix.basename(spec)} (PWA)` })),
   ];
   lines.push(freshnessLine({ tests: suite, store, root, now }));
-  return { lines, failed: failures.length > 0 };
+  return { lines, failed: failures.length > 0, stageOk };
 }

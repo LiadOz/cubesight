@@ -133,10 +133,10 @@ export function recordRun(store, { outcomes, deferred = [], commit, now = new Da
 
 /** Playwright report(s) -> outcomes. Browser tests by id; a PWA spec passes when all its tests do. */
 export function outcomesFromResults(results, { pwa = false } = {}) {
-  if (!pwa) return [...results].filter(([, r]) => r.status !== 'skipped').map(([key, r]) => ({ key, status: r.status, durationMs: r.durationMs, spec: r.spec, grepTitle: r.grepTitle }));
+  if (!pwa) return [...results].filter(([, r]) => r.status !== 'skipped' && r.status !== 'interrupted').map(([key, r]) => ({ key, status: r.status, durationMs: r.durationMs, spec: r.spec, grepTitle: r.grepTitle }));
   const bySpec = new Map();
   for (const result of results.values()) {
-    if (result.status === 'skipped') continue;
+    if (result.status === 'skipped' || result.status === 'interrupted') continue;
     const entry = bySpec.get(result.spec) ?? { key: `${PWA_PREFIX}${result.spec}`, status: 'passed', durationMs: 0, spec: result.spec, grepTitle: path.posix.basename(result.spec), titles: [] };
     if (result.status !== 'passed') { entry.status = 'failed'; entry.titles.push(result.titlePath.slice(1).join(' ')); }
     entry.durationMs += result.durationMs;
@@ -209,7 +209,7 @@ export function freshnessLine({ tests, store, root = null, now = new Date(), fre
   let oldestText = '';
   if (oldest) {
     const behind = root && oldest.passed.commit ? tryGit(root, ['rev-list', '--count', `${oldest.passed.commit}..HEAD`]) : null;
-    oldestText = `oldest pass: ${ageLabel(oldest.age)} ago${behind ? `, ${behind} commit(s) back` : ''} (${oldest.test.label})`;
+    oldestText = `oldest pass: ${ageLabel(oldest.age)} ago${behind && behind !== '0' ? `, ${behind} commit(s) back` : ''} (${oldest.test.label})`;
   }
   return `Suite freshness: ${fresh}/${total} tests (${percent}%) passed in the last ${ageLabel(freshMs)}${[tail, oldestText].filter(Boolean).map((text) => `; ${text}`).join('')}.`;
 }

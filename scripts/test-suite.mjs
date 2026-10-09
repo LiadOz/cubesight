@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
-import { DEFAULT_TRUNK, finishRotation, formatPlan, gateEnv, gateStages, planGate, prepareGateDirectory, updateMapFromRun } from './test-gate.mjs';
+import { DEFAULT_TRUNK, STOP_MARGIN_MS, finishRotation, formatPlan, gateEnv, gateStages, planGate, prepareGateDirectory, updateMapFromRun } from './test-gate.mjs';
 
 /**
  * Claim a free port for this run's dev server.
@@ -118,11 +118,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const plan = await planGate({ root, trunk: option('--trunk') ?? DEFAULT_TRUNK, base: option('--base'), started });
   console.log(formatPlan(plan, { verbose: process.argv.includes('--verbose') }));
   await prepareGateDirectory(root);
-  const stages = gateStages(plan);
+  const stages = gateStages(plan, { stopAfterMs: SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS });
   const runtimeTmp = path.resolve('test-results/runtime-tmp');
   await mkdir(runtimeTmp, { recursive: true });
   const env = { ...gateEnv(root, plan), TMPDIR: runtimeTmp };
   if (!env.PW_PORT) env.PW_PORT = String(await freePort());
+  env.CUBESIGHT_DEADLINE_MS = String(Date.now() + SUITE_BUDGET_MS - (performance.now() - started) - STOP_MARGIN_MS);
   if (!env.PW_PWA_PORT) env.PW_PWA_PORT = String(await freePort());
   const budgetMs = SUITE_BUDGET_MS - (performance.now() - started);
   const result = await runTier({ stages, budgetMs, parallel: true, env });
@@ -136,6 +137,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   console.log(await updateMapFromRun(root, plan));
   const rotation = await finishRotation(root, plan, { commit: result.commit });
   for (const line of rotation.lines) console.log(line);
+  // A Playwright run that stopped at its own time limit with nothing of the change's unfinished is not a failure.
+  for (const stage of result.stages) {
+    if (stage.exitCode && !stage.timedOut && rotation.stageOk[stage.name]) { stage.exitCode = 0; stage.note = 'stopped at its time limit; only rotation tests were cut'; }
+  }
+  Object.assign(result, tierVerdict({ stages, results: result.stages, durationMs: result.durationMs, budgetMs: result.budgetMs }));
   if (rotation.failed) result.passed = false;
   const output = path.resolve('test-results/health');
   await mkdir(output, { recursive: true });

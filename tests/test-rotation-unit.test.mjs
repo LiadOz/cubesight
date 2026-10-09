@@ -142,3 +142,30 @@ test('outcomes: a PWA spec passes only when all its tests pass', () => {
   const out = outcomesFromResults(results, { pwa: true });
   assert.deepEqual(out.map((o) => [o.key, o.status, o.durationMs]), [['pwa:pwa-tests/a.spec.js', 'failed', 200], ['pwa:pwa-tests/b.spec.js', 'passed', 50]]);
 });
+
+test('a run cut at its time limit passes when only rotation tests were cut, and fails when the change\'s own test was', async () => {
+  const { finishRotation, GATE_DIR } = await import('../scripts/test-gate.mjs');
+  const { mkdir, writeFile: write } = await import('node:fs/promises');
+  const make = async (statuses) => {
+    const root = await mkdtemp(path.join(tmpdir(), 'rot-finish-'));
+    await mkdir(path.join(root, GATE_DIR), { recursive: true });
+    const specs = Object.entries(statuses).map(([id, status]) => ({ id, title: id, file: `${id}.spec.js`, tests: status ? [{ results: [{ status, duration: 10 }] }] : [] }));
+    await write(path.join(root, GATE_DIR, 'report.json'), JSON.stringify({ config: { rootDir: path.join(root, 'tests') }, suites: [{ title: '', specs }] }));
+    process.env.CUBESIGHT_ROTATION_FILE = path.join(root, 'rotation.json');
+    const own = item('own'); const cut = item('cut');
+    const plan = { model: { tests: new Map() }, currentSpecs: new Set(), packed: { run: [own], deferred: [] }, rotation: { store: emptyStore(), own: [], rotationAdded: [cut], deferred: [] } };
+    return finishRotation(root, plan, { commit: 'abc', now: NOW });
+  };
+  const saved = process.env.CUBESIGHT_ROTATION_FILE;
+  try {
+    const rotationCut = await make({ own: 'passed', cut: null });
+    assert.equal(rotationCut.stageOk.browser, true);
+    assert.equal(rotationCut.failed, false);
+    assert.match(rotationCut.lines.join('\n'), /1 rotation test\(s\) did not get to run/u);
+    const ownCut = await make({ own: null, cut: 'passed' });
+    assert.equal(ownCut.stageOk.browser, false);
+    const broken = await make({ own: 'passed', cut: 'failed' });
+    assert.equal(broken.failed, true);
+    assert.match(broken.lines.join('\n'), /FAILED ROTATION TEST/u);
+  } finally { if (saved === undefined) delete process.env.CUBESIGHT_ROTATION_FILE; else process.env.CUBESIGHT_ROTATION_FILE = saved; }
+});

@@ -13,6 +13,7 @@ export default defineConfig({
   ...base,
   testDir: path.join(root, 'pwa-tests'),
   outputDir: path.join(root, 'test-results/pwa-gate'),
+  globalTimeout: process.env.CUBESIGHT_DEADLINE_MS ? Math.max(1000, Number(process.env.CUBESIGHT_DEADLINE_MS) - Date.now()) : 0,
   use: { ...base.use, baseURL: `http://127.0.0.1:${port}` },
   webServer: { command: `npm run preview -- --port ${port}`, url: `http://127.0.0.1:${port}`, reuseExistingServer: false },
 });
