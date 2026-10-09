@@ -1,19 +1,7 @@
 import { test, expect } from './helpers/coverage-test.js';
 
-test('exposes the installed build and a network version marker', async ({ page, request }) => {
-  await page.goto('/');
-  await expect(page.locator('#app > footer')).toHaveCount(0);
-  const response = await request.get('/version.json');
-  expect(response.ok()).toBe(true);
-  const server = await response.json();
-  await page.goto('/#/help');
-  await page.getByRole('link', { name: 'build and credits', exact: true }).click();
-  await expect(page.locator('[data-help-build]')).toHaveText(server.revision === 'development' ? server.revision : server.revision.slice(0, 7));
-  await page.locator('[data-help-update]').click();
-  await expect(page.locator('[data-help-update-status]')).toContainText('is current');
-  await expect(page.locator('.ui-toast-slot .toast')).toContainText('CubeSight build');
-  await expect(page.locator('#app > footer')).toHaveCount(0);
-});
+// Route logic (redirect table, query keeping, home choice, key scopes) is unit-tested in
+// routes-unit.test.mjs. These tests check the wiring once per page, in one browser page each.
 
 const routes = [
   // [path, view id, nav item lit, document title]
@@ -30,58 +18,53 @@ const routes = [
   ['timer', 'timer', 'solve', 'timer'],
   ['dev/studio', 'smart', null, 'studio'],
 ];
+const view = (page, tool) => tool === 'help' ? page.getByRole('dialog', { name: 'help', exact: true }) : page.locator(`#${tool}-view`);
+const attempts = page => page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2') || '{"attempts":0}').attempts);
 
-for (const [path, tool, nav, title] of routes) {
-  test(`#/${path} supports direct links and refresh`, async ({ page }) => {
+test('every route loads from a direct link and a refresh, lights its nav item, and ignores drill keys', async ({ page }) => {
+  test.setTimeout(60_000);
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/?source=test');
+  await expect(page).toHaveURL(/\?source=test#\/solve$/);
+  for (const [path, tool, nav, title] of routes) {
     await page.goto(`/?source=bookmark#/${path}`);
     for (let i = 0; i < 2; i++) {
-      await expect(tool === 'help' ? page.getByRole('dialog', { name: 'help', exact: true }) : page.locator(`#${tool}-view`)).toBeVisible();
+      await expect(view(page, tool)).toBeVisible();
       if (nav) await expect(page.getByRole('link', { name: nav, exact: true })).toHaveAttribute('aria-current', 'page');
       else await expect(page.locator('.main-nav [aria-current]')).toHaveCount(0);
       await expect(page).toHaveTitle(`${title} · CubeSight`);
-      for (const [, other] of routes) {
-        if (other !== tool) await expect(page.locator(`#${other}-view`)).toBeHidden();
-      }
+      for (const [, other] of routes) if (other !== tool) await expect(page.locator(`#${other}-view`)).toBeHidden();
       if (i === 0) await page.reload();
     }
     await expect(page).toHaveURL(new RegExp(`\\?source=bookmark#/${path}$`));
-  });
-}
+    if (!['corner', 'f2l', 'help'].includes(tool)) {
+      const before = await attempts(page);
+      for (const key of ['w', '1', 's', 'n']) await page.keyboard.press(key);
+      expect(await attempts(page), `drill keys on #/${path}`).toBe(before);
+      await expect(page.locator('#pause-overlay')).toBeHidden();
+    }
+  }
+  await page.goto('/?source=test#/unknown');
+  await expect(page).toHaveURL(/\?source=test#\/unknown$/);
+  await expect(page.locator('#not-found-view')).toBeVisible();
+  await expect(page.locator('#brain-view')).toBeHidden();
+  expect(errors).toEqual([]);
+});
 
-// Old hash -> new hash, with a query string in the hash and one before it.
-const redirects = [
-  ['brain', 'solve', 'brain'],
-  ['corners', 'drills/corners', 'corner'],
-  ['f2l', 'drills/f2l', 'f2l'],
-  ['pll-recognition', 'drills/pll', 'pll'],
-  ['pll', 'drills/pll', 'pll'],
-  ['cross-scout', 'drills/scout', 'scout'],
-  ['scout', 'drills/scout', 'scout'],
-  ['debug', 'dev/studio', 'smart'],
-  ['smart-cube', 'dev/studio', 'smart'],
-  ['dev', 'dev/studio', 'smart'],
-];
-for (const [oldPath, newPath, tool] of redirects) {
-  test(`old #/${oldPath} redirects to #/${newPath}, keeping query parameters`, async ({ page }) => {
-    await page.goto(`/?source=test#/${oldPath}?cases=Aa,Ab&mode=mix`);
-    await expect(page).toHaveURL(new RegExp(`\\?source=test#/${newPath}\\?cases=Aa,Ab&mode=mix$`));
-    await expect(tool === 'help' ? page.getByRole('dialog', { name: 'help', exact: true }) : page.locator(`#${tool}-view`)).toBeVisible();
-    await page.goto(`/#/${oldPath}`);
-    await page.reload();
-    await expect(page).toHaveURL(new RegExp(`#/${newPath}$`));
-    await expect(tool === 'help' ? page.getByRole('dialog', { name: 'help', exact: true }) : page.locator(`#${tool}-view`)).toBeVisible();
-  });
-}
-
-test('redirects replace the old entry, so Back does not loop', async ({ page }) => {
+test('an old link redirects with its query, and the redirect replaces the history entry', async ({ page }) => {
+  await page.goto('/?source=test#/pll-recognition?cases=Aa,Ab&mode=mix');
+  await expect(page).toHaveURL(/\?source=test#\/drills\/pll\?cases=Aa,Ab&mode=mix$/);
+  await expect(page.locator('#pll-view')).toBeVisible();
   await page.goto('/#/algs');
-  await page.evaluate(() => { location.hash = '#/pll-recognition'; });
-  await expect(page).toHaveURL(/#\/drills\/pll$/);
+  await page.evaluate(() => { location.hash = '#/smart-cube'; });
+  await expect(page).toHaveURL(/#\/dev\/studio$/);
+  await expect(page.locator('#smart-view')).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(/#\/algs$/);
 });
 
-test('navigation supports history, same-page links and home', async ({ page }) => {
+test('navigation supports history, same-page links, home and the studio link', async ({ page }) => {
   await page.goto('/#/solve');
   await page.getByRole('link', { name: 'drills', exact: true }).click();
   await expect(page.locator('#drills-view')).toBeVisible();
@@ -102,54 +85,25 @@ test('navigation supports history, same-page links and home', async ({ page }) =
   await page.getByRole('link', { name: 'CubeSight home' }).click();
   await expect(page.locator('#brain-view')).toBeVisible();
   await expect(page).toHaveURL(/#\/solve$/);
-});
-
-test('the desktop home is the solve screen, with or without a cube', async ({ page }) => {
-  await page.goto('/?source=test');
-  await expect(page).toHaveURL(/\?source=test#\/solve$/);
-  await expect(page.locator('#brain-view')).toBeVisible();
-});
-
-test('unknown routes show recovery without dropping query parameters', async ({ page }) => {
-  await page.goto('/?source=test#/unknown');
-  await expect(page).toHaveURL(/\?source=test#\/unknown$/);
-  await expect(page.locator('#not-found-view')).toBeVisible();
-  await expect(page.locator('#brain-view')).toBeHidden();
-});
-
-test('the solve screen debug drawer links to the studio', async ({ page }) => {
-  await page.goto('/#/solve');
   await page.locator('.brain-pill-setup > summary').click();
   await page.locator('#brain-debug-toggle').click();
-  await expect(page.getByTestId('open-studio')).toBeVisible();
   await page.getByTestId('open-studio').click();
   await expect(page).toHaveURL(/#\/dev\/studio$/);
   await expect(page.locator('#smart-view')).toBeVisible();
 });
 
-test('direct Scout navigation does not arm the corner inactivity prompt', async ({ page }) => {
+test('help shows the installed build and checks for an update; scout does not arm the corner prompt', async ({ page, request }) => {
+  const server = await (await request.get('/version.json')).json();
   await page.clock.install();
+  await page.goto('/#/help');
+  await page.getByRole('link', { name: 'build and credits', exact: true }).click();
+  await expect(page.locator('[data-help-build]')).toHaveText(server.revision === 'development' ? server.revision : server.revision.slice(0, 7));
+  await page.locator('[data-help-update]').click();
+  await expect(page.locator('[data-help-update-status]')).toContainText('is current');
+  await expect(page.locator('.ui-toast-slot .toast')).toContainText('CubeSight build');
+  await expect(page.locator('#app > footer')).toHaveCount(0);
   await page.goto('/#/cross-scout?mode=explore');
-  // Readiness is the Cube, not the highlight button: that button stays disabled and
-  // hidden until a plan is chosen, which is not what this test is about.
   await expect(page.locator('#scout-cube canvas')).toBeVisible();
   await page.clock.fastForward(11_000);
   await expect(page.locator('#pause-overlay')).toBeHidden();
-  await expect(page.locator('#scout-view')).toBeVisible();
-});
-
-test('drill keys do nothing on other pages', async ({ page }) => {
-  const attempts = () => page.evaluate(() => JSON.parse(localStorage.getItem('cubesight-progress-v2') || '{"attempts":0}').attempts);
-  await page.goto('/#/drills/corners');
-  await expect(page.locator('#cube canvas')).toBeVisible();
-  for (const hash of ['#/dev/studio', '#/algs', '#/progress', '#/drills']) {
-    await page.goto(`/${hash}`);
-    const before = await attempts();
-    await page.keyboard.press('w');
-    await page.keyboard.press('1');
-    await page.keyboard.press('s');
-    await page.keyboard.press('n');
-    expect(await attempts()).toBe(before);
-    await expect(page.locator('#pause-overlay')).toBeHidden();
-  }
 });
