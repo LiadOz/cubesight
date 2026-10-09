@@ -331,7 +331,7 @@ export class Orbit {
       hit.addEventListener('pointerleave', event => options.onSegmentLeave?.(segment, event));
       hit.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.onSegment?.(segment, event); } });
       group.append(hit);
-      if ((state === 'current' || segment.completionLeading) && !moveRing) {
+      if (options.showCurrentDot !== false && (state === 'current' || segment.completionLeading) && !moveRing) {
         const end = arc.from + (arc.to - arc.from) * (segment.caretPosition ?? Math.min(1, offset + ratio)), point = polar(cx, cy, radius, end);
         group.append(svg('circle', { class: 'orbit__current-dot', cx: point.x, cy: point.y, r: 5.5 * fontScale, fill: color }));
       }

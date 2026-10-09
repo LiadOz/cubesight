@@ -1,5 +1,29 @@
 import { test, expect } from './helpers/coverage-test.js';
 
+test('color-only Orbits keep the completion sweep without a dot; ordinary Orbits retain their current indicator', async ({ page }) => {
+  await page.goto('/src/ui/gallery.html?flow=solving');
+  const dot = page.locator('.f0-orbit .orbit__current-dot');
+  await expect(dot).toHaveCount(1);
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 100));
+  await page.evaluate(() => {
+    const orbit = window.__f0Orbit;
+    window.__colorOnlySegments = orbit.options.segments;
+    window.__colorOnlyCompletion = orbit.update({ showCurrentDot: false,
+      segments: orbit.options.segments.map(segment => segment.state === 'current' ? { ...segment, state: 'done', fill: 1 } : segment),
+    });
+  });
+  await page.clock.runFor(60);
+  await expect(page.locator('.f0-orbit .is-completing .orbit__segment-fill')).toHaveCount(1);
+  await expect(dot).toHaveCount(0);
+  await page.clock.runFor(180);
+  await page.evaluate(() => window.__colorOnlyCompletion);
+  await expect(page.locator('.f0-orbit .is-completing')).toHaveCount(0);
+  await expect(dot).toHaveCount(0);
+  await page.evaluate(() => window.__f0Orbit.update({ showCurrentDot: true, segments: window.__colorOnlySegments }, { animate: false }));
+  await expect(dot).toHaveCount(1);
+});
+
 test('Orbit morph interruption, collapse/expand, keyboard activation and dynamic growth preserve one focused segment', async ({ page }) => {
   await page.goto('/src/ui/gallery.html?flow=results&theme=dark');
   await expect(page.locator('.f0-cube canvas')).toHaveCount(1);
