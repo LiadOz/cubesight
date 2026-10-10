@@ -29,6 +29,12 @@ test('crowded history critiques stay grouped and open individual reviews with po
   await expect(entries).toHaveCount(8);
   await expect(entries.first()).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const detailBox = await page.locator('.orbit__marker-details').boundingBox();
+  expect(detailBox.x).toBeGreaterThanOrEqual(0);
+  expect(detailBox.x + detailBox.width).toBeLessThanOrEqual(390);
+  const priorities = await entries.evaluateAll(nodes => nodes.map(node => JSON.parse(node.title).importance));
+  expect(priorities).toEqual([...priorities].sort((a, b) => b - a));
+  expect(priorities[0]).toBeGreaterThan(priorities.at(-1));
   const selectedId = await entries.first().getAttribute('data-marker-detail-key');
   await entries.first().click();
   await expect(page).toHaveURL(new RegExp(`/review/${selectedId}$`));

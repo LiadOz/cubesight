@@ -201,7 +201,7 @@ export function presentResultsOrbit(orbit, vm, { dispatch = () => {} } = {}) {
     const info = segment.caseKey ? caseLinks[segment.caseKey] ?? caseLinks[segment.caseKey.split(':')[0]] : null;
     return { ...stageSegment(segment, { results: true, caseInfo: info, tag: tags.get(segment.key), selectable: true }), importance: segment.state === 'done' ? 20 : 10, onCase: Boolean(info) };
   });
-  const markers = (vm.review?.markers ?? []).map(marker => ({ key: marker.id, segment: marker.seg, position: marker.frac, label: marker.label, tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'spark' : 'warning' }));
+  const markers = (vm.review?.markers ?? []).map(marker => ({ key: marker.id, segment: marker.seg, position: marker.frac, label: marker.label, importance: 1 / (marker.rank || Infinity), tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'spark' : 'warning' }));
   void orbit.update({ size: 'XL', shape: 'open', gap: 70, label: 'Past solve results', segments, markers,
     onSegment: segment => dispatch({ type: 'openDetail', kind: 'stage', key: segment.key }),
     onMarker: marker => dispatch({ type: 'selectMarker', id: marker.key }),

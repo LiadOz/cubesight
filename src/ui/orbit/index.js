@@ -445,7 +445,9 @@ export class Orbit {
       const rootBox = root.getBoundingClientRect(), orbitBox = this.element.getBoundingClientRect(), anchorBox = anchor?.getBoundingClientRect();
       const width = Math.min(300, window.innerWidth - 24, Math.max(180, orbitBox.width - 16));
       details.style.width = `${width}px`;
-      const left = Math.max(8, Math.min(Math.max(8, orbitBox.width - width - 8), (anchorBox?.left ?? rootBox.left) - orbitBox.left + (anchorBox?.width ?? 0) / 2 - width / 2));
+      const minLeft = Math.max(8, 12 - orbitBox.left);
+      const maxLeft = Math.min(orbitBox.width - width - 8, window.innerWidth - orbitBox.left - width - 12);
+      const left = Math.max(minLeft, Math.min(Math.max(minLeft, maxLeft), (anchorBox?.left ?? rootBox.left) - orbitBox.left + (anchorBox?.width ?? 0) / 2 - width / 2));
       const height = details.getBoundingClientRect().height;
       const below = (anchorBox?.bottom ?? rootBox.top) - orbitBox.top + 10;
       const above = (anchorBox?.top ?? rootBox.top) - orbitBox.top - height - 10;
