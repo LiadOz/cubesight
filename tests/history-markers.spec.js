@@ -64,6 +64,22 @@ test('recorded crowded solve keeps stage values clear of badges on phone and des
         return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
       }).map(badge => `${label.dataset.labelFor}:${badge.dataset.markerKeys}`));
     })).toEqual([]);
+    await expect(page.locator('.ui-coach-line__connector')).toHaveClass(/is-linked/);
+    await expect.poll(() => page.evaluate(() => {
+      const path = document.querySelector('.ui-coach-line__connector path');
+      const matrix = path.getScreenCTM(), length = path.getTotalLength();
+      const protectedBoxes = [...document.querySelectorAll('.history-stage .orbit__label text, .f1-results__number')].map(node => node.getBoundingClientRect());
+      const range = document.createRange(); range.selectNodeContents(document.querySelector('.ui-coach-line__text'));
+      const lines = [...range.getClientRects()];
+      protectedBoxes.push(...(innerWidth <= 640 ? lines.slice(1) : lines.slice(0, -1)));
+      for (let index = 1; index < 150; index++) {
+        const p = path.getPointAtLength(length * index / 150);
+        const screen = new DOMPoint(p.x, p.y).matrixTransform(matrix);
+        const hit = protectedBoxes.find(rect => screen.x > rect.left && screen.x < rect.right && screen.y > rect.top && screen.y < rect.bottom);
+        if (hit) return JSON.stringify({ viewport: innerWidth, screen: { x: screen.x, y: screen.y }, hit: hit.toJSON(), path: path.getAttribute('d') });
+      }
+      return true;
+    })).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
   }

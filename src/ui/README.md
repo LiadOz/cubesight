@@ -61,6 +61,6 @@ createActions(host, [{ label, onClick, href, primary }]); // displays at most th
 createChip(host, { label, value, pressed, onClick });
 ```
 
-The global header uses the shared session snapshot and neutral connection phases. Its menu actions are named `connect`, `sync`, `recenter`, `disconnect`, `forget`, `save-recording`, and `report-problem`. `createCoachLine` takes an Orbit marker key or marker object; it resolves the exact key after every Orbit morph and repositions its dotted connector after scroll and resize.
+The global header uses the shared session snapshot and neutral connection phases. Its menu actions are named `connect`, `sync`, `recenter`, `disconnect`, `forget`, `save-recording`, and `report-problem`. `createCoachLine` takes an Orbit marker key or marker object; it resolves the exact key after every Orbit morph and repositions its dotted connector after scroll and resize. Nearby markers use a direct curve; obstructed routes follow an inset circular lane, clear of the centre, stage labels and bottom slot. Wrapped text clears before the curve bends; phone sentences connect from their left edge through the margin beside the time.
 
 The gallery at `gallery.html` uses one live Cube across all nine flow fixtures. Add visual examples there before introducing a page-specific Orbit or Cube pattern.
