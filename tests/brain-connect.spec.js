@@ -14,12 +14,16 @@ async function mountConnectingBrain(page, style) {
       const { logConnection } = await import('/src/smart-cube-diag.js');
       const solved = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
       let observer;
-      const control = { attempts: 0, failNext: false, release: null, step: 0 };
+      const control = { attempts: 0, failNext: false, release: null, step: 0, facelets: solved, holdReport: false };
+      control.report = () => observer?.next({ type: 'FACELETS', facelets: control.facelets });
       const connection = {
         deviceName: 'GAN test cube', protocol: { name: 'GAN Gen4' },
-        capabilities: { facelets: true },
+        capabilities: { facelets: true, reset: true },
         events$: { subscribe(value) { observer = value; return { unsubscribe() { observer = null; } }; } },
-        async sendCommand() { queueMicrotask(() => observer?.next({ type: 'FACELETS', facelets: solved })); },
+        async sendCommand(command) {
+          if (command.type === 'REQUEST_RESET') control.facelets = solved;
+          if (command.type === 'REQUEST_FACELETS' && !control.holdReport) queueMicrotask(control.report);
+        },
         async disconnect() {},
       };
       const gate = () => new Promise(resolve => { control.step++; control.release = resolve; });
@@ -64,7 +68,7 @@ for (const style of STYLES) {
     const button = page.getByRole('dialog', { name: 'Cube and recording actions' }).getByRole('menuitem', { name: 'connect', exact: true });
     const status = brain.locator('.b-idle-status');
     const release = () => page.evaluate(() => window.testBrain.control.release());
-    const indicator = brain.locator(style === 'orbit' ? '.orbit__svg' : '.b-progress i');
+    const indicator = brain.locator(style === 'orbit' ? '.b-slot-timeline > .orbit' : '.b-progress i');
 
     await expect(brain).toHaveAttribute('data-screen', 'disconnected');
     await expect(page.locator('.ui-cube-menu')).toHaveAttribute('data-phase', 'disconnected');
@@ -89,15 +93,18 @@ for (const style of STYLES) {
     });
     expect(animated).toEqual({ chip: true, button: true });
     await expect.poll(() => indicator.evaluate(n => n.getAnimations().length)).toBeGreaterThan(0);
+    if (style === 'orbit') await indicator.evaluate(n => { window.connectSweep = n.getAnimations()[0]; });
     // The line under the button is the newest step: the picker, then the adapter's status.
     await expect(status).toHaveText('Starting connection…');
     const [header, statusBox] = await Promise.all([page.locator('.site-header').boundingBox(), status.boundingBox()]);
     expect(statusBox.y, 'connection detail stays below the header').toBeGreaterThanOrEqual(header.y + header.height);
     await release();
     await expect(status).toHaveText('Watching for the cube’s advertisements…');
+    if (style === 'orbit') expect(await indicator.evaluate(n => n.getAnimations().includes(window.connectSweep))).toBe(true);
     await release();
     // A step only the connection log sees (the address prompt) is kept as the status too.
     await expect(status).toContainText('asking for one-time manual entry');
+    if (style === 'orbit') expect(await indicator.evaluate(n => n.getAnimations().includes(window.connectSweep))).toBe(true);
     await expect(page.locator('.ui-cube-menu')).toHaveAttribute('data-phase', 'connecting');
     await release();
     await expect(brain).toHaveAttribute('data-screen', 'idle');
@@ -132,3 +139,32 @@ for (const style of STYLES) {
     await expect(brain).toHaveAttribute('data-screen', 'idle');
   });
 }
+
+test('one continuous sweep through verification, then an explicit sync repairs the reported state', async ({ page }) => {
+  await mountConnectingBrain(page, 'orbit');
+  await page.evaluate(() => {
+    window.testBrain.control.facelets = 'FUDUUUUUURRRRRRBFDFFFBFFBLUUDRFDDDRBDLLLLDLLLFBLBBBRDB';
+    window.testBrain.control.holdReport = true;
+  });
+  await connectFromHeader(page);
+  const brain = page.locator('#brain-view .brain');
+  const orbit = brain.locator('.b-slot-timeline > .orbit');
+  await expect(brain).toHaveAttribute('data-connection-busy', 'true');
+  await expect.poll(() => orbit.evaluate(n => n.getAnimations().length)).toBeGreaterThan(0);
+  await orbit.evaluate(n => { window.connectSweep = n.getAnimations()[0]; });
+  await releaseSteps(page);
+  await expect(page.locator('.ui-cube-menu')).toHaveAttribute('data-phase', 'awaiting-solved');
+  expect(await orbit.evaluate(n => n.getAnimations().includes(window.connectSweep))).toBe(true);
+  await page.evaluate(() => window.testBrain.control.report());
+  await expect(brain).toHaveAttribute('data-connection-busy', 'false');
+  await expect(orbit).toHaveAttribute('data-shape', 'open');
+  await expect(brain.locator('.b-idle-status')).toContainText('physically solved');
+  expect(await orbit.evaluate(n => n.getAnimations().length)).toBe(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(brain.locator('.b-idle-status')).toBeInViewport({ ratio: 1 });
+  await page.evaluate(() => { window.testBrain.control.holdReport = false; });
+  await page.getByRole('button', { name: /open cube and recording actions/ }).click();
+  await page.locator('[data-cube-action="sync"]').click();
+  await expect(page.locator('.ui-cube-menu')).toHaveAttribute('data-phase', 'tracking');
+  await expect(brain).toHaveAttribute('data-screen', 'idle');
+});

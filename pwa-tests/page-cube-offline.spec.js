@@ -1,6 +1,6 @@
 import { test, expect } from 'playwright/test';
 
-test('drills and progress cold routes load their 3D cube while offline', async ({ browser, baseURL }) => {
+test('drills menu and progress cold routes load while offline', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   await page.goto('/#/solve');
@@ -10,8 +10,8 @@ test('drills and progress cold routes load their 3D cube while offline', async (
 
   await context.setOffline(true);
   await page.goto('/#/drills');
-  await expect(page.locator('#drills-view .hub-cube-mount canvas')).toHaveCount(1, { timeout: 15_000 });
   await expect(page.locator('#drills-view .hub-row')).toHaveCount(6);
+  await expect(page.locator('#drills-view canvas, #drills-view .cs-orbit, #drills-view .hub-cube')).toHaveCount(0);
   await page.goto('/#/progress');
   await expect(page.locator('#progress-view .progress-cube-mount canvas')).toHaveCount(1, { timeout: 15_000 });
   await expect(page.locator('#progress-view h1')).toHaveText('progress');
@@ -21,6 +21,6 @@ test('drills and progress cold routes load their 3D cube while offline', async (
   await expect(page.locator('#brain-view')).toBeHidden();
   await expect(page).toHaveURL(/#\/drills\/cross\?from=offline$/);
   await page.locator('#not-found-drills').click();
-  await expect(page.locator('#drills-view .hub-cube-mount canvas')).toHaveCount(1);
+  await expect(page.locator('#drills-view .hub-row')).toHaveCount(6);
   await context.close();
 });

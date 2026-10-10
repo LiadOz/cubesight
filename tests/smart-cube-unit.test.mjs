@@ -30,6 +30,40 @@ function fakeCube() {
 
 const UP = String.fromCharCode(39);
 
+for (const repaired of [true, false]) {
+  test(`explicit sync repairs a stale GAN state only after a solved report (reset succeeds: ${repaired})`, async () => {
+    const device = fakeCube();
+    // The repeated state from the 2026-10-10 recording, despite the physical cube being solved.
+    device.setFacelets('FUDUUUUUURRRRRRBFDFFFBFFBLUUDRFDDDRBDLLLLDLLLFBLBBBRDB');
+    device.connection.capabilities.reset = true;
+    const commands = [];
+    const send = device.connection.sendCommand;
+    device.connection.sendCommand = async command => {
+      commands.push(command.type);
+      if (command.type === 'REQUEST_RESET' && repaired) device.setFacelets(SOLVED);
+      return send(command);
+    };
+    const session = createSmartCubeSession(device.connect);
+    await session.connect();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(session.getSnapshot().phase, 'awaiting-solved');
+    assert.deepEqual(commands, ['REQUEST_FACELETS'], 'connecting never resets the physical cube');
+    assert.match(session.getSnapshot().detail, /physically solved/);
+    if (repaired) {
+      await session.syncSolved();
+      assert.equal(session.getSnapshot().phase, 'tracking');
+      assert.equal(session.getSnapshot().facelets, SOLVED);
+      device.emit({ type: 'MOVE', move: 'R' });
+      assert.deepEqual(session.getSnapshot().moves, ['R']);
+    } else {
+      await assert.rejects(session.syncSolved(), /Solve the cube, then sync/);
+      assert.equal(session.getSnapshot().phase, 'awaiting-solved');
+    }
+    assert.deepEqual(commands, ['REQUEST_FACELETS', 'REQUEST_FACELETS', 'REQUEST_RESET', 'REQUEST_FACELETS']);
+    await session.disconnect();
+  });
+}
+
 test('smart cube tracks canonical moves only after a solved baseline', async () => {
   const device = fakeCube();
   const session = createSmartCubeSession(device.connect);

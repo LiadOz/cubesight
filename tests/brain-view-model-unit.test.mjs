@@ -406,11 +406,18 @@ test('the cross hindsight names the colour, not a face letter', () => {
 });
 
 
+test('an unsolved report ends the busy connection state while keeping sync available', () => {
+  const device = deviceFor({ phase: 'awaiting-solved', facelets: 'unsolved report', detail: 'Solve the cube, then sync.' });
+  assert.equal(device.busy, false);
+  assert.equal(device.actions.sync, true);
+  assert.equal(deviceFor({ phase: 'awaiting-solved', facelets: null }).busy, true);
+});
+
 test('disconnected solve keeps connection failure details beside the header retry action', () => {
   const input = { session: { phase: 'disconnected', detail: 'Connection failed: GATT server busy' }, live: { phase: 'idle' }, settings: normalizeSettings(), records: [], now: 0 };
   const failed = buildViewModel(input);
   assert.equal(failed.status, 'Connection failed: GATT server busy');
   assert.equal(failed.device.failed, true);
   assert.equal(failed.device.actions.connect, true);
-  assert.equal(buildViewModel({ ...input, session: { phase: 'disconnected', detail: '' } }).status, 'Connect a cube from the header to start a solve.');
+  assert.equal(buildViewModel({ ...input, session: { phase: 'disconnected', detail: '' } }).status, '');
 });

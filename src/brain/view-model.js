@@ -119,7 +119,7 @@ export function deviceFor(session, supported = true, connectStep = '', live = nu
     gyro,
     detail,
     // The attach is under way (the picker, the address lookup, the first read of the cube), or just failed.
-    busy: connecting || phase === 'syncing',
+    busy: connecting || phase === 'syncing' && !s.facelets,
     failed,
     actions: {
       // Offered even without Web Bluetooth: connecting then explains what's missing.
@@ -766,7 +766,7 @@ export function buildViewModel(input, prev = null) {
     status: input.status ?? (live?.phase === 'interrupted'
       ? `Connection lost. Your solve is paused. ${live.interrupted.canResume ? 'The cube is back. Resume.' : device.detail}`
       : live?.notice && screen === 'disconnected' ? live.notice
-        : screen === 'disconnected' && device.actions.connect && !device.failed ? 'Connect a cube from the header to start a solve.' : device.detail),
+        : screen === 'disconnected' && device.actions.connect && !device.failed ? '' : device.detail),
     error: input.error ?? '',
     chromeDimmed: ['scramble', 'inspection', 'ready', 'solving'].includes(screen),
     commandOpen: Boolean(input.commandOpen),

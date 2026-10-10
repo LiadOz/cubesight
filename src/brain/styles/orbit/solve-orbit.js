@@ -135,9 +135,10 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
   orbit.element.addEventListener('orbitchange', () => decorate(orbit));
   let lastScreen = '';
   let lastInspection = null;
+  let lastBusy = false;
 
   function model(vm) {
-    const connecting = vm.device?.phase === 'connecting' || vm.device?.phase === 'syncing';
+    const connecting = vm.device?.busy && (vm.device.phase === 'connecting' || vm.device.phase === 'syncing');
     if (connecting) return { shape: 'full', gap: 0, direction: 'clockwise', segments: [{ key: 'connecting', weight: 1, fill: .18, state: 'current', label: '' }], markers: [], caret: null, labelKind: 'stage' };
     if (vm.screen === 'scramble') {
       const undo = vm.scramble?.recovery?.[0];
@@ -165,6 +166,10 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
   return {
     orbit,
     update(vm) {
+      const busy = vm.device?.busy && (vm.device.phase === 'connecting' || vm.device.phase === 'syncing');
+      // All handshake steps share one sweep; status/gyro updates do not redraw it.
+      if (busy && lastBusy) return;
+      lastBusy = busy;
       const next = model(vm);
       lastScreen = vm.screen;
       lastInspection = vm.screen === 'inspection' ? vm.inspection : null;

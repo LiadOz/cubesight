@@ -109,10 +109,10 @@
   top: calc(var(--oy) + (var(--c-y) - var(--c-orbit) / 2) * var(--u));
 }
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-slot-timeline > .orbit { position: absolute; left: 50%; top: 50%; translate: -50% -50%; pointer-events: auto; }
-.brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="connecting"] .orbit:not(.is-morphing) .orbit__svg { animation: solve-connect-sweep 2.4s linear infinite; }
+.brain[data-brain-style="orbit"][data-layout="orbit"][data-connection-busy="true"] .orbit { animation: solve-connect-sweep 2.4s linear infinite; }
 .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="connecting"] .orbit__segment-track { stroke: var(--b-track); stroke-width: 3; }
-@keyframes solve-connect-sweep { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="connecting"] .orbit:not(.is-morphing) .orbit__svg { animation: none; } }
+@keyframes solve-connect-sweep { to { rotate: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .brain[data-brain-style="orbit"][data-layout="orbit"][data-connection-busy="true"] .orbit { animation: none; } }
 /* A bright full-length track would conceal the live remaining/fill arc. */
 .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="inspection"] .orbit__segment-track,
 .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="solving"] .orbit__segment.is-current .orbit__segment-track { stroke: var(--b-track); stroke-width: var(--orbit-w-track, 3); }
@@ -238,6 +238,12 @@
   position: absolute; z-index: 3; left: var(--corner); top: calc(var(--oy) + var(--keys-y) * var(--u));
   display: flex; flex-wrap: nowrap; gap: calc(27 * var(--u)); min-height: 0;
 }
+/* User revision: the disconnected Space/Tab row is centred and slightly raised. */
+.brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="disconnected"] .b-keys {
+  left: calc(var(--ox) + var(--c-x) * var(--u));
+  top: calc(var(--oy) + (var(--ds-keys-idle-y) - 32) * var(--u));
+  translate: -50% 0;
+}
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-key { display: inline-flex; align-items: center; gap: calc(8 * var(--u)); height: calc(var(--ds-keys-idle-h) * var(--u)); padding: 0; color: var(--b-muted); font: 500 calc(var(--ds-keys-action-size) * var(--u)) / 1 var(--b-font-sans); white-space: nowrap; }
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-key:hover { color: var(--b-ink); }
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-key kbd {
@@ -256,6 +262,9 @@
   font: 500 calc(var(--ds-insp-hint-size) * var(--u)) / 1.3 var(--b-font-sans); color: var(--b-muted);
 }
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-idle-status, .brain[data-brain-style="orbit"][data-layout="orbit"] .b-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="connecting"] .b-idle-status:not(:empty) {
+  top: calc(var(--oy) + var(--ds-start-y) * var(--u));
+}
 .brain[data-brain-style="orbit"][data-layout="orbit"] .b-coach { display: none; }
 .brain[data-brain-style="orbit"][data-layout="orbit"] :is(.b-toast, #brain-error) { position: fixed; right: 24px; bottom: 56px; z-index: 70; max-width: min(380px, calc(100vw - 48px)); margin: 0; padding: 14px 18px; border-radius: var(--b-radius-control); background: var(--b-surface-2); text-align: left; font: 500 14px var(--b-font-sans); }
 
@@ -347,6 +356,10 @@
   .brain[data-brain-style="orbit"][data-layout="orbit"] .b-art--phone { display: block; width: calc(var(--ds-phone-w) * var(--u)); height: calc(var(--ds-phone-h) * var(--u)); }
   .brain[data-brain-style="orbit"][data-layout="orbit"] :is(.b-keys, .b-config-line, .b-stats-line, .b-note, .b-cube-reset, .b-plan) { display: none; }
   .brain[data-brain-style="orbit"][data-layout="orbit"] .b-tabs { top: 120px; }
+  .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="connecting"] .b-idle-status:not(:empty) {
+    top: calc(var(--oy) + var(--ds-phone-coach-body-y) * var(--u));
+    width: calc(100% - 2 * var(--corner));
+  }
 
   /* Stage title and callout (A-09 left) */
   .brain[data-brain-style="orbit"][data-layout="orbit"][data-screen="solving"] .b-steptitle:not(:has(strong:empty)) {
