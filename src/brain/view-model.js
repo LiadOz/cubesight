@@ -119,7 +119,7 @@ export function deviceFor(session, supported = true, connectStep = '', live = nu
     gyro,
     detail,
     // The attach is under way (the picker, the address lookup, the first read of the cube), or just failed.
-    busy: connecting || phase === 'syncing',
+    busy: connecting || phase === 'syncing' && !s.facelets,
     failed,
     actions: {
       // Offered even without Web Bluetooth: connecting then explains what's missing.
