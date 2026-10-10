@@ -19,6 +19,7 @@
 // recording can still be replayed.
 
 import { setConnectionSink, inspectBluetoothSupport } from './smart-cube-diag.js';
+import { planRecordingChunks, restoreRecordingChunks } from './recording-chunks.js';
 
 export const RECORDING_FORMAT = 'cubesight-recording';
 // v2: recordings may contain link-loss / reconnect / desync-check behaviour, so a
@@ -49,6 +50,9 @@ let persistTimer = 0;
 let persistenceReady = null;
 let discardStoredOnHydrate = false;
 let persistenceHydrated = false;
+let persistedChunks = new Map();
+let persistInFlight = false;
+let persistenceGeneration = 0;
 
 function schedulePersist() {
   if (!persistence || persistTimer || !isRecording()) return;
@@ -101,14 +105,26 @@ function restoreEmergencyTail() {
 }
 
 async function persistBuffer() {
-  if (!persistence) return;
+  if (!persistence || !persistenceHydrated || persistInFlight) { schedulePersist(); return; }
+  persistInFlight = true;
+  const generation = persistenceGeneration;
   try {
+    const plan = planRecordingChunks(events, persistedChunks);
     const safeHeader = anonymizeRecording({ events: header }).events;
-    const row = { key: 'active', recording: getRecording(), header: safeHeader, cap };
+    // Scrub only changed chunks. Include the pinned handshake so names in
+    // diagnostic strings receive the same aliases as the connection metadata.
+    const chunks = plan.writes.map(chunk => ({ key: chunk.key,
+      events: anonymizeRecording({ header, events: chunk.events }).events }));
+    const row = { key: 'active', chunked: true, recording: recordingWithEvents([], { diagnostics: diagTrail, header }), header: safeHeader, cap };
     const tx = persistence.transaction('buffer', 'readwrite');
-    tx.objectStore('buffer').put(row);
+    const buffer = tx.objectStore('buffer');
+    buffer.put(row);
+    for (const chunk of chunks) buffer.put(chunk);
+    for (const key of plan.deletes) buffer.delete(key);
     await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error); });
+    if (generation === persistenceGeneration) persistedChunks = plan.signatures;
   } catch { /* Recording remains available in memory when IndexedDB is unavailable. */ }
+  finally { persistInFlight = false; }
 }
 
 /** Restore and persist the bounded always-on ring buffer across reloads. */
@@ -134,7 +150,7 @@ export function enableRecordingPersistence({ factory = globalThis.indexedDB, nam
     request.onsuccess = () => {
       persistence = request.result;
       persistence.onversionchange = () => { persistence.close(); persistence = null; };
-      const read = persistence.transaction('buffer').objectStore('buffer').get('active');
+      const read = persistence.transaction('buffer').objectStore('buffer').getAll();
       read.onerror = () => {
         const restored = restoreEmergencyTail();
         persistenceHydrated = true;
@@ -144,7 +160,8 @@ export function enableRecordingPersistence({ factory = globalThis.indexedDB, nam
       };
       read.onsuccess = () => {
         try {
-          const saved = read.result;
+          const rows = read.result;
+          const saved = restoreRecordingChunks(rows.find(row => row.key === 'active'), rows);
           const pending = events;
           const emergency = readEmergencyTail();
           let restored = false;
@@ -154,8 +171,10 @@ export function enableRecordingPersistence({ factory = globalThis.indexedDB, nam
             && Number.isInteger(version) && version > 0 && version <= RECORDING_VERSION
             && Array.isArray(saved.recording.events);
           const corrupted = Boolean(saved) && !validSaved && !ignoreSaved;
+          persistedChunks = validSaved && saved.chunked ? planRecordingChunks(saved.recording.events).signatures : new Map();
           if (validSaved || (!discardStoredOnHydrate && emergency?.events?.length)) {
             const rec = validSaved ? parseRecording(saved.recording) : null;
+            diagTrail = Array.isArray(rec?.diagnostics) ? rec.diagnostics.slice(-300) : [];
             cap = Math.max(100, Math.min(MAX_CAP, Number(saved?.cap) || DEFAULT_CAP));
             events = rec?.events.slice(-cap) || [];
             seq = events.reduce((max, entry) => Math.max(max, Number(entry.seq) || 0), 0);
@@ -348,11 +367,13 @@ export function clearRecording() {
   events = [];
   dropped = 0;
   discardStoredOnHydrate = true;
+  persistenceGeneration++;
+  persistedChunks = new Map();
   clearEmergencyTail();
   if (persistence) {
     try {
       const transaction = persistence.transaction('buffer', 'readwrite');
-      transaction.objectStore('buffer').delete('active');
+      transaction.objectStore('buffer').clear();
       transaction.oncomplete = () => { if (persistenceHydrated) discardStoredOnHydrate = false; };
     }
     catch { /* A fresh in-memory recording remains available. */ }
@@ -375,6 +396,10 @@ function withDiagTrail(list) {
 
 /** A JSON-serializable copy of the recording (plus a final snapshot for divergence checks). */
 export function getRecording(extra = {}) {
+  return recordingWithEvents(withDiagTrail(events), extra);
+}
+
+function recordingWithEvents(recordedEvents, extra) {
   return anonymizeRecording({
     format: RECORDING_FORMAT,
     version: RECORDING_VERSION,
@@ -385,7 +410,7 @@ export function getRecording(extra = {}) {
     env: typeof navigator !== 'undefined' ? { userAgent: navigator.userAgent, href: typeof location !== 'undefined' ? location.href : '', bluetooth: inspectBluetoothSupport() } : { node: typeof process !== 'undefined' ? process.version : '' },
     final: checkpoint(),
     ...extra,
-    events: withDiagTrail(events).map(e => ({ ...e })),
+    events: recordedEvents.map(e => ({ ...e })),
   });
 }
 
