@@ -297,45 +297,62 @@ export function phaseSplits(records) {
 export function aggregateByCase(records, field) {
   const groups = new Map();
   for (const r of records) {
-    const key = r?.[field];
+    const rawKey = r?.[field];
+    const key = canonicalWeakCase(field, rawKey);
     if (!key) continue;
-    const stage = field === 'ollCase' ? r?.analysis?.lastLayer?.oll : field === 'pllCase' ? r?.analysis?.lastLayer?.pll : null;
-    const g = groups.get(key) || { case: key, attempts: 0, solved: 0, times: [], tps: [], extraLooks: 0, likelyExtraLooks: 0 };
+    const kind = field === 'ollCase' ? 'oll' : field === 'pllCase' ? 'pll' : null;
+    const stage = kind ? r?.analysis?.lastLayer?.[kind] : null;
+    const g = groups.get(key) || { case: key, attempts: 0, solved: 0, recognitionTimes: [], executionTimes: [], extraLooks: 0, likelyExtraLooks: 0 };
     g.attempts++;
     if (stage?.extraLook === true) g.extraLooks++;
     if (stage?.likelyExtraLook === true) g.likelyExtraLooks++;
-    if (r.solved) {
-      g.solved++;
-      if (Number.isFinite(r.solveMs)) g.times.push(r.solveMs);
-      if (Number.isFinite(r.tps)) g.tps.push(r.tps);
-    }
+    if (r.solved) g.solved++;
+    const recognitionMs = stage?.recognitionMs ?? r?.[`${kind}RecognitionMs`] ?? r?.analysis?.[`${kind}Case`]?.recognitionMs;
+    const executionMs = stage?.executionMs ?? r?.[`${kind}ExecutionMs`] ?? r?.analysis?.[`${kind}Case`]?.executionMs;
+    if (Number.isFinite(recognitionMs) && recognitionMs >= 0) g.recognitionTimes.push(recognitionMs);
+    if (Number.isFinite(executionMs) && executionMs >= 0) g.executionTimes.push(executionMs);
     groups.set(key, g);
   }
   return [...groups.values()].map(g => ({
     case: g.case,
     attempts: g.attempts,
     accuracy: g.solved / g.attempts,
-    medianSolveMs: median(g.times),
-    medianTPS: median(g.tps),
+    extraLookRate: g.extraLooks / g.attempts,
+    medianRecognitionMs: median(g.recognitionTimes),
+    medianExecutionMs: median(g.executionTimes),
+    recognitionSamples: g.recognitionTimes.length,
+    executionSamples: g.executionTimes.length,
     extraLooks: g.extraLooks,
     likelyExtraLooks: g.likelyExtraLooks,
   }));
 }
 
-// Cases most needing attention: proven extra looks first, then lower accuracy
-// and slower medians. `minAttempts` avoids ranking one-off cases as weaknesses.
+function canonicalWeakCase(field, value) {
+  if (field !== 'ollCase' && field !== 'pllCase') return null;
+  const raw = typeof value === 'object' && value ? value.id : value;
+  if (typeof raw !== 'string') return null;
+  const valueText = raw.trim();
+  if (field === 'ollCase') {
+    const match = valueText.match(/^(?:oll\/|oll\s*)(\d+)(?:\s|$)/i);
+    return match ? `oll/${Number(match[1])}` : /^oll\/\d+$/i.test(valueText) ? `oll/${Number(valueText.slice(4))}` : null;
+  }
+  const match = valueText.match(/^(?:pll\/)?([A-Za-z][A-Za-z0-9-]*)$/);
+  return match ? `pll/${match[1].toLocaleUpperCase('en-US')}` : null;
+}
+
+// Cases most needing attention: proven extra looks first, then slower measured
+// stage recognition/execution. Full-solve duration is deliberately excluded.
 export function weakCases(records, field, limit = 6, minAttempts = 2) {
   return aggregateByCase(records, field)
-    .filter(g => g.attempts >= minAttempts)
+    .filter(g => g.attempts >= minAttempts && (g.extraLooks > 0 || g.recognitionSamples >= 2 || g.executionSamples >= 2))
     .sort((a, b) => {
       // A proven extra look is a direct recall signal and outranks speed.
-      if (a.extraLooks !== b.extraLooks) return b.extraLooks - a.extraLooks;
-      // Worst first: lowest accuracy, then slowest median (nulls sort as slow
-      // so error-only cases do not get hidden behind timed cases).
-      if (a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;
-      const am = a.medianSolveMs ?? Infinity;
-      const bm = b.medianSolveMs ?? Infinity;
-      return bm - am;
+      if (a.extraLookRate !== b.extraLookRate) return b.extraLookRate - a.extraLookRate;
+      // Then measured case time. Missing evidence is not treated as slow.
+      const ar = a.medianRecognitionMs ?? -1, br = b.medianRecognitionMs ?? -1;
+      if (ar !== br) return br - ar;
+      const ae = a.medianExecutionMs ?? -1, be = b.medianExecutionMs ?? -1;
+      return be - ae;
     })
     .slice(0, limit);
 }
