@@ -1,6 +1,6 @@
 // The drills hub (#/drills): a plain list of the trainers in the new visual
 // language (Orbit / Mono tokens), a "continue" row for the last drill, and a
-// needs-a-cube marker on each. Phase 1 has no "for you" block and no stats.
+// keyboard shortcut on each. Phase 1 has no "for you" block and no stats.
 //
 // createDrillsHub(root) -> { setActive(bool), detach() }. The hub owns its own
 // keys (c p f x open a drill, enter continues) while it is the active page.
@@ -9,11 +9,9 @@ import '../pages/page.css';
 import './hub.css';
 import { loadSettings } from '../brain/settings.js';
 import { createSolvedState } from '../cross-cube.js';
-import { Orbit } from '../ui/orbit/index.js';
-import { Cube } from '../ui/cube/index.js';
 import { readCaseColorSetting } from '../ui/cube/case-color.js';
 import { caseDisplayState } from '../ui/cube/orientation.js';
-import { CUBE_LABELS, DRILLS, agoLabel, drillSettings, lastDrill } from './catalog.js';
+import { DRILLS, agoLabel, drillSettings, lastDrill } from './catalog.js';
 import { dayStreak, loadShell } from './rounds.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { buildDrillViewModel } from './view-model.js';
@@ -25,56 +23,23 @@ const el = (tag, className, text) => {
   return node;
 };
 
-function cubeMarker(drill) {
-  const marker = el('span', 'hub-cube', CUBE_LABELS[drill.cube]);
-  marker.dataset.cube = drill.cube;
-  return marker;
-}
-
 export function createDrillsHub(root, storage = globalThis.localStorage) {
-  let active = false, detached = false, cube = null;
-  let heroOrbit = null;
-  const rowOrbits = [];
+  let active = false, detached = false;
   const page = el('section', 'brain cs-page drills-hub');
   const hero = el('section', 'hub-hero');
   const intro = el('div', 'hub-hero-copy');
   const head = el('header', 'cs-head');
   const h1 = el('h1', null, 'drills');
-  const sub = el('p', 'cs-sub', 'short rounds, one key to start. no cube needed unless marked.');
+  const sub = el('p', 'cs-sub', 'short rounds, one key to start.');
   head.append(h1, sub);
   intro.append(head);
-  const stage = el('div', 'hub-hero-stage');
-  stage.setAttribute('aria-label', '3D cube preview');
-  const cubeMount = el('div', 'hub-cube-mount');
-  cubeMount.setAttribute('aria-label', '3D cube');
-  const orbitMount = el('div', 'hub-orbit-mount');
-  stage.append(orbitMount, cubeMount);
-  hero.append(intro, stage);
+  hero.append(intro);
   const content = el('div', 'hub-content');
   page.append(hero, content);
   root.replaceChildren(page);
 
-  function mountCube() {
-    if (!active || cube || detached) return Promise.resolve(cube);
-    try {
-      cube = new Cube(cubeMount, { state: createSolvedState(), mode: 'case', size: 'L', caseColorSetting: readCaseColorSetting(), caseSeed: 'drills-hub', label: 'Drills cube preview' });
-      heroOrbit = new Orbit(orbitMount, { size: 'L', shape: 'open', fitHost: true, label: 'Drills orbit', segments: [] });
-      return Promise.resolve(cube);
-    } catch {
-      cubeMount.textContent = '3D cube preview unavailable.';
-      return Promise.resolve(null);
-    }
-  }
-
-  function unmountCube() {
-    heroOrbit?.destroy(); heroOrbit = null;
-    cube?.destroy(); cube = null;
-    cubeMount.replaceChildren();
-  }
-
   function render() {
     page.dataset.brainStyle = loadSettings(storage).style;
-    rowOrbits.splice(0).forEach(orbit => orbit.destroy());
     content.replaceChildren();
     const rounds = loadShell(storage);
     const streak = dayStreak(rounds.days);
@@ -103,7 +68,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     const list = el('ul', 'hub-list');
     list.setAttribute('aria-label', 'drills');
     list.append(el('li', 'hub-list-head', ''));
-    list.firstChild.append(el('span', null, 'drill'), el('span', 'hub-col-modes', 'modes'), el('span', 'hub-col-cube', 'cube'));
+    list.firstChild.append(el('span', null, 'drill'), el('span', 'hub-col-modes', 'modes'));
     for (const drill of DRILLS) {
       const row = el('li', 'hub-row');
       const link = el('a', 'hub-link');
@@ -112,10 +77,8 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
       const key = el('kbd', 'hub-key', drill.key);
       const name = el('span', 'hub-name');
       name.append(el('strong', null, drill.title), el('span', 'hub-blurb', drill.blurb));
-      const glyph = el('span', 'hub-row-orbit');
-      rowOrbits.push(new Orbit(glyph, { size: 'mini', glyphSize: 32, label: `${drill.title} orbit`, segments: [{ key: drill.id, weight: 1, state: 'future' }] }));
       name.append(key);
-      link.append(glyph, name, el('span', 'hub-modes', drill.modes.join(' · ')), cubeMarker(drill), el('span', 'hub-chevron'));
+      link.append(name, el('span', 'hub-modes', drill.modes.join(' · ')), el('span', 'hub-chevron'));
       link.lastChild.setAttribute('aria-hidden', 'true');
       row.append(link);
       list.append(row);
@@ -158,7 +121,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
   render();
 
   return {
-    get ready() { return Promise.resolve(cube); },
+    get ready() { return Promise.resolve(); },
     getViewModel() {
       const last = lastDrill(storage);
       const rounds = loadShell(storage);
@@ -175,14 +138,11 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
       const wasActive = active;
       active = Boolean(value);
       if (active && !wasActive) render();   // pick up a new "continue" and the current style
-      if (active) mountCube();
-      else if (wasActive) unmountCube();
     },
     detach() {
       detached = true; active = false;
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('cubesight-theme', onTheme);
-      unmountCube();
       if (page.parentNode === root) page.remove();
     },
   };
