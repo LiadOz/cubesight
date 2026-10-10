@@ -1,10 +1,14 @@
 import { createRightDrawer } from '../ui/shared/index.js';
+import { CUBE_BOX } from '../brain/layout-spec.js';
+import { CANVAS } from '../ui/design-spec.js';
 import './settings-drawer.css';
 
 /** One settings surface for modes, pacing and round length across drills. */
 export function createTrainerSettingsDrawer(host, onRoundClick) {
   const page = host.closest('.cs-page, .legacy-drill-view') || host.closest('[id$="-view"]');
   page.classList.add('drill-focus-page');
+  page.style.setProperty('--drill-cube-box', CUBE_BOX);
+  page.style.setProperty('--drill-canvas-height', CANVAS.desktop.height);
   const drawer = createRightDrawer(page, { title: 'drill settings' });
   drawer.element.classList.add('trainer-settings-drawer');
   // Settings keys belong to their controls, never to the case underneath.

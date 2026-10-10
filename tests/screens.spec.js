@@ -34,7 +34,7 @@ for (const [id, route, seeded] of SCREENS) {
         if (id === 'timer') await page.locator('.has-ready-scramble').waitFor();
         const maxScrollWidth = await settleAndMeasureOverflow(page, { maxMs: 300 });
         expect(maxScrollWidth, `${id} scrolls sideways at ${width}px`).toBeLessThanOrEqual(width);
-        const imageId = CENTERED_DRILLS.has(id) ? `${id}-centered-fit` : id === 'drills' ? 'drills-menu' : id;
+        const imageId = CENTERED_DRILLS.has(id) ? `${id}-hero-cube` : id === 'drills' ? 'drills-menu' : id;
         await expect(page).toHaveScreenshot(`${imageId}-${theme}-${width}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.002 });
       }
     }
