@@ -238,7 +238,8 @@ export function markerGroups(markers = [], { radius, pitch = 26, fan = true, thr
   // Include the count badge's extra radius, and use chord distance so hit targets cannot overlap.
   const spacing = Math.max(thresholdDeg, 2 * Math.asin(Math.min(1, pitch / (2 * radius))) * 180 / Math.PI);
   return clusterMarkers(markers, spacing).flatMap(cluster => {
-    if (!fan || cluster.count > 2) return [{ ...cluster, radius }];
+    if (!fan || cluster.count > 2) return [{ ...cluster, radius,
+      items: [...cluster.items].sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0)) }];
     return fanMarkers(cluster.items, { radius, pitch, maxLanes: 2, thresholdDeg: spacing + .001 })
       .map(marker => ({ key: String(marker.key), items: [marker], count: 1, angle: marker.angle, radius: marker.radius, trueAngle: marker.trueAngle, lane: marker.lane }));
   });

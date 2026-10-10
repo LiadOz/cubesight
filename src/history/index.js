@@ -133,7 +133,7 @@ export function initHistory(host) {
       const at = Math.max(0, Number(marker.at ?? marker.idx + 1) || 0);
       const stage = ends.find(item => marker.stage === item.key) || ends.find(item => at <= item.end) || ends.at(-1);
       const span = Math.max(1, (stage?.end ?? 0) - (stage?.start ?? 0));
-      return { key: marker.id, segment: stage?.key, position: clamp((at - (stage?.start ?? 0)) / span, 0, 1), label: marker.label || marker.note || 'review marker', tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'good' : 'bad' };
+      return { key: marker.id, segment: stage?.key, position: clamp((at - (stage?.start ?? 0)) / span, 0, 1), label: marker.label || marker.note || 'review marker', importance: marker.score, tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'good' : 'bad' };
     });
   }
   function selectedRecord() {

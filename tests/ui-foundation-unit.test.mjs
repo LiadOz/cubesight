@@ -84,6 +84,15 @@ test('review clustering handles unwrapped Orbit angles and preserves the two-mar
   assert.deepEqual(pair.map(group => group.radius), [300, 274]);
 });
 
+test('crowded critiques rank by impact without shifting the cluster anchor or dropping moments', () => {
+  const markers = [{ key: 'small', angle: 100, importance: 1 }, { key: 'big', angle: 101, importance: 8 }, { key: 'medium', angle: 102, importance: 4 }];
+  const [group] = markerGroups(markers, { radius: 300 });
+  assert.equal(group.angle, 101);
+  assert.equal(group.count, 3);
+  assert.deepEqual(group.items.map(item => item.key), ['big', 'medium', 'small']);
+  assert.deepEqual(markers.map(item => item.key), ['small', 'big', 'medium']);
+});
+
 test('case orientations preserve source state and enforce requested center colors', () => {
   const source = stateFromScramble('R U F2 L D B2');
   const before = JSON.stringify(source);
