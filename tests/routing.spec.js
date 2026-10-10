@@ -34,7 +34,8 @@ test('every route loads from a direct link and a refresh, lights its nav item, a
       if (nav) await expect(page.getByRole('link', { name: nav, exact: true })).toHaveAttribute('aria-current', 'page');
       else await expect(page.locator('.main-nav [aria-current]')).toHaveCount(0);
       await expect(page).toHaveTitle(`${title} · CubeSight`);
-      for (const [, other] of routes) if (other !== tool) await expect(page.locator(`#${other}-view`)).toBeHidden();
+      const otherViews = routes.filter(([, other]) => other !== tool).map(([, other]) => `#${other}-view:visible`).join(',');
+      await expect(page.locator(otherViews), `only ${tool} is visible`).toHaveCount(0);
       if (i === 0) await page.reload();
     }
     await expect(page).toHaveURL(new RegExp(`\\?source=bookmark#/${path}$`));
