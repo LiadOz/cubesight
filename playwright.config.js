@@ -15,7 +15,7 @@ export default defineConfig({
   retries: 0,
   outputDir: 'test-results/playwright',
   fullyParallel: true,
-  workers: Number(process.env.PW_WORKERS || 4),
+  workers: Number(process.env.PW_WORKERS || (process.env.CUBESIGHT_TEST_LOW_CPU === '1' ? 3 : 4)),
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 1280, height: 900 },

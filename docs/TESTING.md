@@ -44,3 +44,38 @@ coverage when making screen tests cheaper.
 The existing parked feature specs in `tests/unported/` are tracked in
 `TESTS-TO-PORT.md`; one offline spec is marked `fixme` in `KNOWN-ISSUES.md`.
 These are coverage debt, not a technique for making the gate faster.
+
+## CPU and GPU
+
+`npm run test:low-cpu` runs the same full gate with six unit-file processes,
+three browser workers, and two offline workers. Use it when resource spikes
+make the machine difficult to use. It trades elapsed time for lower peak load;
+it is not a faster gate. The default `npm test` retains the original worker
+counts. Overrides remain available via `UNIT_WORKERS`, `PW_WORKERS`, and
+`PW_PWA_WORKERS` (the last overrides the offline count separately).
+
+In the first measured comparison, the default gate took 38.3 seconds with
+291 CPU-seconds, a sampled peak of 19.1 cores, and 7.3 GB summed process RSS.
+The bounded profile took 57.9 seconds with 344 CPU-seconds, 13.0 peak cores,
+and 5.4 GB RSS. A repeat under competing browser jobs took 94.3 seconds;
+the subsequent default-worker control took 106.1 seconds and 392 CPU-seconds
+with 7.3 GB RSS. Background load varied across these runs.
+These measurements support lower peak load, not lower total CPU or a speedup.
+Summed RSS counts shared pages more than once; it is not unique physical memory.
+
+To inspect Chromium's graphics backend on the machine running the tests:
+
+```sh
+npm run test:gpu-info
+```
+
+This compares the default launch with `--enable-gpu` and saves device, renderer,
+and feature status to `test-results/gpu/info.json`. SwiftShader is a software
+renderer; enabling the flag alone does not supply a hardware device. The agent
+environment exposed no GPU, and both launches reported SwiftShader with
+software-disabled compositing and rasterization. Hardware performance needs a
+measurement on a host with an accessible GPU. The diagnostic does not render
+the 3D cube, and the gate keeps its cube placeholder.
+
+Known snapshot coverage debt: the references named light currently contain
+dark pages; see `KNOWN-ISSUES.md`. CPU changes do not regenerate those images.
