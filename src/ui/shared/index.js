@@ -4,6 +4,7 @@ import './families.css';
 import { APP_NAME } from '../../copy/nav.js';
 import { createToastSlot as mountToastSlot } from './families.js';
 import { buildSharedViewModel } from './snapshot-model.js';
+import { coachConnectorPath } from './coach-connector.js';
 export { createBreadcrumbs, createCountPill, createDialog, createDisclosure, createFileInput, createFilledInput, createFilledSelect, createGroup, createLineChart, createListRow, createMoveDisplay, createNavigationRail, createPanel, createRangeInput, createRightDrawer, createSection, createSectionHeader, createSearch, createTextarea, createTimerReadout, createWipeComparison } from './families.js';
 
 export function createHeader(host, { title = APP_NAME, sections = ['solve', 'drills', 'algs', 'progress', 'history'], active = 'solve', compass = null, session = null, actions = {}, help = null, themeToggle = true, showDevDrawer = true } = {}) {
@@ -134,11 +135,15 @@ export function createKeyBar(host, keys = []) {
 
 const coachLines = new WeakMap();
 /** Where the sentence's own text ends: the last line box of its text, not the right edge of the (full width) paragraph. */
-function textEnd(sentence) {
+function textEnd(sentence, ring) {
   const range = document.createRange(); range.selectNodeContents(sentence);
   const rects = [...range.getClientRects()].filter(rect => rect.width > 0 && rect.height > 0);
   range.detach?.();
   const last = rects.at(-1);
+  if (last && ring && last.top > ring.y + ring.radius) {
+    const first = rects[0];
+    return { x: first.left, y: first.top + first.height / 2 };
+  }
   if (last) return { x: last.right, y: last.top + last.height / 2 };
   const box = sentence.getBoundingClientRect();
   return { x: box.left, y: box.top + box.height / 2 };
@@ -146,7 +151,7 @@ function textEnd(sentence) {
 
 /**
  * Coach sentence with the A-05 dotted connector to a selected Orbit marker (W-20: one sentence in the rail and a
- * dotted curve to its marker). The curve leaves the end of the sentence's text and is always the short Bezier.
+ * dotted curve to its marker). Nearby markers use a short Bezier; distant markers follow the Orbit's contour.
  * Exactly one coach line (and one connector) exists per connector host: creating another replaces the old one.
  */
 export function createCoachLine(host, { text = '', marker = null, orbit = null, connectorHost = host } = {}) {
@@ -183,31 +188,25 @@ export function createCoachLine(host, { text = '', marker = null, orbit = null, 
     // a `display: contents` host never gets one, so the connector would simply never draw.
     const box = connector.getBoundingClientRect();
     if (!box.width || !box.height) { timer = setTimeout(repaint, 30); return; }
-    const targetBox = target.getBoundingClientRect(), start = textEnd(sentence);
-    const x1 = Math.max(0, start.x - box.left), y1 = start.y - box.top;
-    const x2 = targetBox.left + targetBox.width / 2 - box.left, y2 = targetBox.top + targetBox.height / 2 - box.top;
-    connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`); connector.removeAttribute('width'); connector.removeAttribute('height');
-    // Still the approved curve: if it would cut through the Cube, its control points bow over (or under) the cube
-    // instead of the old orthogonal detour.
-    let d = null;
-    const c1 = [x1 + (x2 - x1) * .32, y1], c2 = [x1 + (x2 - x1) * .68, y2];
-    const cube = orbit.element.closest('.f0-stage')?.querySelector('.f0-cube canvas') || document.querySelector('.shared-cube canvas');
-    const cubeBox = cube?.getBoundingClientRect();
-    if (cubeBox) {
-      const left = cubeBox.left - box.left, right = cubeBox.right - box.left, top = cubeBox.top - box.top, bottom = cubeBox.bottom - box.top;
-      let blocked = false;
-      for (let step = 0; step <= 40 && !blocked; step++) {
-        const t = step / 40, u = 1 - t, x = u ** 3 * x1 + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * x2, y = u ** 3 * y1 + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * y2;
-        blocked = x > left && x < right && y > top && y < bottom;
-      }
-      if (blocked) {
-        // Only when the Cube is in the way: pass over (or under) it with rounded corners and come straight in to the marker.
-        const lane = top - 24 > 8 ? top - 24 : bottom + 24, vertical = Math.sign(y2 - lane) || 1, horizontal = Math.sign(x2 - x1) || 1;
-        const corner = Math.max(4, Math.min(36, Math.abs(y2 - lane) / 2, Math.abs(x2 - x1) / 2));
-        d = `M ${x1} ${y1} C ${x1 + horizontal * 24} ${y1}, ${x1 + horizontal * 24} ${lane}, ${x1 + horizontal * 48} ${lane} L ${x2 - horizontal * corner} ${lane} C ${x2} ${lane}, ${x2} ${lane}, ${x2} ${lane + vertical * corner} L ${x2} ${y2}`;
-      }
+    const root = orbit.element.querySelector('.orbit__svg');
+    const matrix = root?.getScreenCTM();
+    const model = orbit.current;
+    const center = matrix && model ? new DOMPoint(model.cx, model.cy).matrixTransform(matrix) : null;
+    const screenRing = center ? { x: center.x, y: center.y, radius: model.radius * Math.hypot(matrix.a, matrix.b), gap: model.gap } : null;
+    const ring = screenRing ? { ...screenRing, x: screenRing.x - box.left, y: screenRing.y - box.top, left: -box.left, right: window.innerWidth - box.left } : null;
+    if (ring) ring.obstacles = [...orbit.element.querySelectorAll('.orbit__label text')].map(label => {
+      const rect = label.getBoundingClientRect();
+      return { left: rect.left - box.left, right: rect.right - box.left, top: rect.top - box.top, bottom: rect.bottom - box.top };
+    });
+    const targetBox = target.getBoundingClientRect(), start = textEnd(sentence, screenRing);
+    const from = { x: Math.max(0, start.x - box.left), y: start.y - box.top };
+    if (screenRing && start.y <= screenRing.y + screenRing.radius && start.x < screenRing.x) {
+      // Clear all of a wrapped sentence before bending upward, not just its shorter final line.
+      from.exitX = sentence.getBoundingClientRect().right - box.left + screenRing.radius * .04;
     }
-    path.setAttribute('d', d ?? `M ${x1} ${y1} C ${c1[0]} ${c1[1]}, ${c2[0]} ${c2[1]}, ${x2} ${y2}`);
+    const to = { x: targetBox.left + targetBox.width / 2 - box.left, y: targetBox.top + targetBox.height / 2 - box.top };
+    connector.setAttribute('viewBox', `0 0 ${Math.max(1, box.width)} ${Math.max(1, box.height)}`); connector.removeAttribute('width'); connector.removeAttribute('height');
+    path.setAttribute('d', coachConnectorPath(from, to, ring));
     timer = setTimeout(() => { connector.classList.add('is-linked'); wrap.classList.add('is-linked'); }, 30);
   };
   const link = (nextMarker, nextOrbit = orbit) => {
