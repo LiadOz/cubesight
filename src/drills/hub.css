@@ -1,11 +1,6 @@
 /* Drills hub (T-01 on desktop, T-07 on a phone). Reads only the --b-* tokens. */
 
-.hub-hero { display: grid; grid-template-columns: minmax(0, 1fr) 220px; align-items: center; gap: 28px; }
 .hub-hero-copy { min-width: 0; }
-.hub-hero-stage { display: grid; place-items: center; min-width: 0; height: 220px; position: relative; }
-.hub-cube-mount { position: absolute; width: 66%; aspect-ratio: 1; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.hub-orbit-mount { position: absolute; inset: 0; }
-.hub-cube-mount canvas { display: block; width: 100%; height: 100%; }
 .hub-content { display: flex; flex-direction: column; gap: 20px; min-width: 0; flex: 1; }
 
 .hub-continue {
@@ -26,10 +21,10 @@
 
 .hub-list { list-style: none; display: grid; }
 .hub-list-head, .hub-link {
-  display: grid; grid-template-columns: 34px minmax(0, 1.3fr) minmax(0, 1.4fr) 150px 18px; align-items: center; gap: 18px;
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.4fr) 18px; align-items: center; gap: 18px;
 }
 .hub-list-head {
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.4fr) 150px; padding: 0 0 10px 52px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.4fr) 18px; padding: 0 0 10px;
   border-bottom: 1px solid var(--b-hairline); color: var(--b-faint); font: 400 12px var(--b-font-mono);
 }
 .hub-list-head > span:first-child { grid-column: 1; }
@@ -38,14 +33,9 @@
 .hub-key { justify-self: start; }
 .hub-name { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; min-width: 0; }
 .hub-name .hub-key { grid-column: 2; grid-row: 1; }
-.hub-name strong { font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+.hub-name strong { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
 .hub-blurb { grid-column: 1 / -1; color: var(--b-muted); font-size: 14px; }
-.hub-modes { color: var(--b-muted); font: 400 13px var(--b-font-mono); }
-.hub-cube { display: inline-flex; align-items: center; gap: 8px; color: var(--b-muted); font: 400 12px var(--b-font-mono); }
-.hub-cube::before { content: ''; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; }
-.hub-cube[data-cube="optional"]::before { background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
-.hub-cube[data-cube="needed"] { color: var(--b-warn-text); }
-.hub-cube[data-cube="needed"]::before { background: currentColor; }
+.hub-modes { color: var(--b-muted); font: 400 14px var(--b-font-mono); }
 .hub-chevron { width: 8px; height: 8px; border-top: 1.5px solid var(--b-faint); border-right: 1.5px solid var(--b-faint); transform: rotate(45deg); }
 @media (hover: hover) { .hub-link:hover .hub-name strong { color: var(--b-accent-text); } .hub-link:hover .hub-chevron { border-color: var(--b-accent); } }
 
@@ -54,39 +44,32 @@
 .hub-page-links { display: flex; gap: 20px; }
 .hub-page-links a { color: var(--b-accent-text); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
 
-/* Phone and touch: no key column, no modes; the cube marker sits under the name, a chevron ends the row. */
+/* Phone and touch: full-width names, with a chevron ending each row. */
 @media (max-width: 700px) {
-  .hub-hero { grid-template-columns: minmax(0, 1fr) 112px; gap: 10px; }
-  .hub-hero-stage { height: 112px; border-radius: var(--b-radius-key); }
+  .cs-page.brain.drills-hub { padding-block: 16px; }
   .hub-content { gap: 16px; }
-  .hub-continue { flex-direction: column; align-items: stretch; padding: 18px; gap: 16px; }
-  .hub-play { justify-content: center; padding: 14px 18px; font-size: 16px; }
+  .hub-continue { flex-direction: column; align-items: stretch; padding: 10px 0; gap: 8px; }
+  .hub-play { justify-content: center; padding: 10px 18px; font-size: 16px; }
   .hub-play kbd, .hub-keys, .hub-list-head, .hub-link .hub-key, .hub-modes { display: none; }
-  .hub-link { grid-template-columns: minmax(0, 1fr) 18px; gap: 6px 12px; padding: 14px 0; }
-  .hub-name strong { font-size: 18px; }
-  .hub-cube { grid-column: 1; grid-row: 2; font-size: 11px; }
-  .hub-chevron { grid-column: 2; grid-row: 1; }
+  .hub-link { grid-template-columns: minmax(0, 1fr) 18px; gap: 12px; padding: 9px 0; }
+  .hub-name strong { font-size: 20px; }
 }
 @media (pointer: coarse) { .hub-keys, .hub-play kbd { display: none; } }
 
 @media (min-width: 900px) {
-  .cs-page.brain.drills-hub { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); align-items: center; gap: 36px; padding-block: 16px; }
-  .hub-hero { display: flex; flex-direction: column; align-items: stretch; gap: 16px; }
-  .hub-hero-stage { height: auto; width: 100%; aspect-ratio: 1; }
+  .cs-page.brain.drills-hub { gap: 16px; padding-block: 20px; }
   .hub-content { gap: 12px; }
-  .hub-link { padding: 10px 0; gap: 12px; grid-template-columns: 34px minmax(0, 1.3fr) minmax(0, 1fr) 120px 12px; }
-  .hub-name strong { font-size: 18px; }
-  .hub-blurb { font-size: 12px; }
-  .hub-modes { font-size: 12px; }
+  .hub-link { padding: 14px 0; }
   .hub-keys { padding-top: 4px; }
-  .hub-list-head { padding-bottom: 8px; font-size: 11px; }
 }
-@media (max-width: 700px) {
-  .hub-row-orbit { grid-column: 1; grid-row: 1 / 3; }
-  .hub-link { grid-template-columns: 32px minmax(0, 1fr) 18px; padding: 10px 0; }
-  .hub-name { grid-column: 2; }
-  .hub-cube { grid-column: 2; }
-  .hub-chevron { grid-column: 3; }
-  .hub-continue { padding: 10px 0; gap: 8px; }
-  .hub-play { padding: 10px 18px; }
+
+/* Keep all six drills visible on shorter desktop screens. */
+@media (min-width: 900px) and (max-height: 800px) {
+  .cs-page.brain.drills-hub { gap: 12px; padding-block: 12px; }
+  .hub-hero .cs-head { display: flex; align-items: baseline; gap: 24px; }
+  .hub-hero .cs-sub { margin-top: 0; }
+  .hub-link { padding: 6px 0; }
+  .hub-name strong { font-size: 22px; }
+  .hub-continue { padding-block: 8px; }
+  .hub-content { gap: 8px; }
 }
