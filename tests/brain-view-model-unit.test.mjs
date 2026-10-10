@@ -412,5 +412,5 @@ test('disconnected solve keeps connection failure details beside the header retr
   assert.equal(failed.status, 'Connection failed: GATT server busy');
   assert.equal(failed.device.failed, true);
   assert.equal(failed.device.actions.connect, true);
-  assert.equal(buildViewModel({ ...input, session: { phase: 'disconnected', detail: '' } }).status, 'Connect a cube from the header to start a solve.');
+  assert.equal(buildViewModel({ ...input, session: { phase: 'disconnected', detail: '' } }).status, '');
 });

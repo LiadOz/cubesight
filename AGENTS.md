@@ -3,7 +3,7 @@
 Read this before doing anything in this repository. It applies to every agent (Claude, Codex, or other) on every task. The product spec and work packages live in `docs/ideas/SPEC-FLEET.md`; read the parts relevant to your task (its ground rules and the user's binding feedback always apply).
 
 ## 1. Where you work
-- **Never modify the main checkout** `/home/loz/projects/cubesight` directly. It is the user's live checkout and dev server. Do not create, edit or delete files there; do not run `npm ci`/`npm install`, builds, tests or servers there; never delete or move its `node_modules`.
+- **Never modify the main checkout** `/home/loz/projects/cubesight` directly. It is the user's live checkout and dev server. The only permitted change there is the final fast-forward to a green merge-queue tip described below. Do not create, edit or delete files there directly; do not run `npm ci`/`npm install`, builds, tests or servers there; never delete or move its `node_modules`.
 - Work in **your own git worktree** (e.g. `git worktree add .agents/worktrees/<task> -b <branch> main`) or the isolated worktree you were given. Branch from the tip of `main`.
 - Dependencies in your worktree: install there, or symlink read-only: `ln -s /home/loz/projects/cubesight/node_modules node_modules`. Vite in a worktree needs `server.fs.allow` for that path.
 - **Put worktrees and test artifacts in `/home/loz/projects/cubesight/.agents/`** (`worktrees/`, `artifacts/`). This is the ONE exception to the rule above: it is gitignored, it is host-backed (about 511 GB free) and it is already visible inside the sandboxes, whereas a sandbox's own filesystem is a 20 GB overlay that has repeatedly filled to 99% and caused browser crashes, lost test output and stalled runs. Never put them on `/tmp` or in sandbox-local paths such as `/home/loz/projects/cubesight-<something>`. Check with `df -h <your actual output path>` before a long run: it must show the 924 GB host filesystem, not a 20 GB overlay.
@@ -13,7 +13,7 @@ Read this before doing anything in this repository. It applies to every agent (C
 
 ## 2. Commits and merges
 - Small, descriptive commits. **Never bypass the pre-commit hook** (`--no-verify` is forbidden). No auto "WIP" commits.
-- Never push. Land work with `npm run queue -- <your-branch>` from your own worktree (how it works, what a rejection looks like and how to recover: [`docs/MERGE-QUEUE.md`](docs/MERGE-QUEUE.md)). The queue merges your branch into the current trunk and runs `npm test` on the merged result; it never advances trunk while a worktree has it checked out, so the lead (the user's main Claude session) takes a green tip with the `git merge --ff-only` command it prints. Never run git in the live checkout yourself to land work.
+- Never push. Land work with `npm run queue -- <your-branch>` from your own worktree (how it works, what a rejection looks like and how to recover: [`docs/MERGE-QUEUE.md`](docs/MERGE-QUEUE.md)). The queue merges your branch into the current trunk and runs `npm test` on the merged result; it never advances trunk while a worktree has it checked out, so the agent completing the task runs the printed `git merge --ff-only <sha>` command in the live checkout after checking that it is on `main` and has no uncommitted changes. This final fast-forward to the tested queue result is the only exception to the live-checkout restriction. No separate lead session is required; never bypass the queue.
 - **Trunk is `main`, and `main` is what is deployed. Branch from it, merge back within hours, and update from it often.** (`feature/smart-cube-guidance` is retired.) Do not create or use a second integration branch, and never re-apply your own commits onto another branch: that duplication is what made the history unreadable. Work lands only through the merge queue (F18), which runs the gate on the *merged result*, so a change that passes alone but breaks in combination is rejected rather than landing.
 
 ## 3. Tests: one suite, `npm test`, everything, fast
@@ -35,10 +35,3 @@ Publish screenshots as a post in the in-app gallery (`gallery/README.md`): `gall
 
 ## 6. Report
 Commits, files, test results, the gallery link, deviations from the spec, open questions.
-
-## 7. Time accounting
-The user wants to see where time goes, so every task keeps a clock.
-- **When you start:** run `date -u +%H:%MZ`, state the time in your first message, and create `.agents/artifacts/<task>/timelog.md` with that line.
-- **As you work:** append one line when each phase starts — `HH:MMZ <what> (expect ~N min)`. Always add one **before any command you expect to take over a minute**, saying why you need it *now*. If you are about to wait more than ~5 minutes on a test run, first ask whether a targeted run answers the same question.
-- **When you finish:** your report opens with a **Time** block — start, end, elapsed — then the three things that took longest and *why*, e.g. `38 min waiting for the full Playwright suite: needed a baseline before changing the config`.
-- **The lead checks it.** `node scripts/agent-time.mjs <your transcript>` measures every tool call from the transcript's own timestamps, groups it (waiting on tests, builds, editing, the model's own time) and separates out periods when the whole session was paused. Where your account and the measurement disagree, the measurement wins.

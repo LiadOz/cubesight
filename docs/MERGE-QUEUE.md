@@ -5,12 +5,12 @@ The queue is the methodology for when a merge to trunk (`main`) happens. It is n
 ## For an agent: queue your work
 1. Commit everything (uncommitted work is not queued). Update from trunk: `git merge main`, resolve, run `npm test`.
 2. From **your own worktree**: `npm run queue -- <your-branch>` (no argument queues the branch you are on).
-3. Read the result. `LANDED` means trunk advanced. `GREEN` means the gate passed but the queue deliberately did not move trunk (see below); tell the lead the printed tip. `REJECTED` means trunk is unchanged and a diagnosis file path is printed.
+3. Read the result. `LANDED` means trunk advanced. `GREEN` means the gate passed but the queue deliberately did not move trunk (see below); check that the live checkout is on `main` and has no uncommitted changes, then run the printed fast-forward command there yourself. No separate lead session is required. `REJECTED` means trunk is unchanged and a diagnosis file path is printed.
 
-## For the lead: run the queue
+## Queue multiple branches
 `npm run queue -- <branch-a> <branch-b> <branch-c>` processes them in order. Each is merged onto the tip left by the previous one and gated there, so queued changes are validated in combination. A rejected branch does not block the ones after it; they are tested against the tip without it.
 
-Trunk is checked out in the live checkout, and moving a checked-out branch ref would desync that working tree. So while any worktree has trunk checked out, the queue **validates but does not advance trunk**. It prints the green tip and the one command to take it, which you run in that checkout yourself: `git merge --ff-only <sha>` (the commit it names is a descendant of trunk, so it is a fast-forward and your working tree stays in sync). When trunk is not checked out anywhere (for example you work on another branch), the queue fast-forwards it itself with a compare-and-swap, and re-tests if trunk moved meanwhile.
+Trunk is checked out in the live checkout, and moving a checked-out branch ref would desync that working tree. So while any worktree has trunk checked out, the queue **validates but does not advance trunk**. It prints the green tip and the one command to take it, which the agent completing the task runs in that checkout after checking it is on `main` with no uncommitted changes: `git merge --ff-only <sha>` (the commit it names is a descendant of trunk, so it is a fast-forward and your working tree stays in sync). When trunk is not checked out anywhere (for example you work on another branch), the queue fast-forwards it itself with a compare-and-swap, and re-tests if trunk moved meanwhile.
 
 `--validate-only` never advances trunk. `--no-explain` skips the extra "does it pass alone?" run on rejection. `--base <branch>` changes trunk.
 
