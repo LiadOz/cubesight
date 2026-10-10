@@ -73,7 +73,7 @@ test('discovery follows registered Git worktrees and excludes merge-queue scratc
   git('init', '-b', 'main');
   git('-c', 'user.name=gallery test', '-c', 'user.email=gallery@example.invalid', 'commit', '--allow-empty', '-m', 'fixture');
   git('worktree', 'add', '-b', 'proposal', other);
-  git('worktree', 'add', '--detach', path.join(root, 'merge-queue', 'scratch'));
+  git('worktree', 'add', '--detach', path.join(root, '.agents/worktrees/merge-queue/scratch'));
   assert.deepEqual(galleryWorktrees(repo), [repo, other]);
   assert.deepEqual(galleryWorktrees(other), [other, repo]);
   post(other, 'registered');

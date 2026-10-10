@@ -14,7 +14,7 @@ export function galleryWorktrees(projectRoot) {
   try { output = execFileSync('git', ['-C', projectRoot, 'worktree', 'list', '--porcelain', '-z'], { encoding: 'utf8', timeout: 3000 }); }
   catch { return [projectRoot]; }
   const roots = output.split('\0').filter(field => field.startsWith('worktree ')).map(field => field.slice(9))
-    .filter(root => !root.split(path.sep).includes('merge-queue') && fs.existsSync(root));
+    .filter(root => !root.split(path.sep).join('/').includes('/.agents/worktrees/merge-queue/') && fs.existsSync(root));
   return [...new Set([path.resolve(projectRoot), ...roots])];
 }
 
