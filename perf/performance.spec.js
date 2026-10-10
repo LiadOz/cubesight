@@ -4,8 +4,25 @@ import os from 'node:os';
 import { expect, test } from 'playwright/test';
 import { GOLD } from '../tests/analysis-golden.mjs';
 import { mountTestBrain, startGuidedScramble } from '../tests/helpers/fake-brain.js';
+import { inspectBrowserGpu, requireHardwareWebGL, isHardwareWebGL } from '../scripts/browser-gpu.mjs';
 
 const outputDir = path.resolve('test-results/perf');
+const fixtureOrigin = `http://127.0.0.1:${Number(process.env.PW_PORT || 4176) + 1}`;
+
+test.beforeAll(async ({ browser }) => {
+  if (process.env.CUBESIGHT_PERF_GPU === '1') requireHardwareWebGL(await inspectBrowserGpu(browser));
+});
+
+async function cubeRenderer(page, graphics) {
+  const webgl = await page.locator('#brain-view .b-cube-wrap canvas').evaluate(canvas => {
+    const gl = canvas.getContext('webgl2');
+    const debug = gl?.getExtension('WEBGL_debug_renderer_info');
+    return { available: Boolean(gl), renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : null };
+  });
+  const hardwareWebGL = isHardwareWebGL({ ...graphics, webgl });
+  if (process.env.CUBESIGHT_PERF_GPU === '1') requireHardwareWebGL({ ...graphics, webgl, hardwareWebGL });
+  return { ...webgl, hardwareWebGL };
+}
 
 async function startFrameSample(page, durationMs, key = '__f11FrameSample') {
   await page.evaluate(({ duration, sampleKey }) => {
@@ -269,6 +286,7 @@ test('captures production-cache startup and deterministic solve/render performan
 
   const startupCdp = await page.context().newCDPSession(page);
   const browserVersion = browser.version();
+  const graphics = await inspectBrowserGpu(browser);
   const environment = {
     browserVersion,
     nodeVersion: process.version,
@@ -277,12 +295,15 @@ test('captures production-cache startup and deterministic solve/render performan
     viewport: { width: 1280, height: 900 },
     cpuThrottleDesktop: 1,
     cpuThrottlePhone: 4,
-    renderer: 'SwiftShader',
+    renderer: graphics.webgl.renderer || graphics.renderer || 'unavailable',
+    gpu: graphics,
+    graphicsMode: process.env.CUBESIGHT_PERF_GPU === '1' ? 'hardware' : 'software-baseline',
     serviceWorkerCacheRequired: true,
   };
 
   await page.goto('/#/solve');
   await page.locator('#brain-view .brain').waitFor();
+  environment.cube = await cubeRenderer(page, graphics);
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller), undefined, { timeout: 30_000 });
   const desktopStartup = await startupSample(page, 'desktop-installed-pwa');
@@ -304,7 +325,7 @@ test('captures production-cache startup and deterministic solve/render performan
 
   await startupCdp.detach();
   await page.close();
-  const scenarioContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4177', viewport: { width: 390, height: 844 } });
+  const scenarioContext = await browser.newContext({ baseURL: fixtureOrigin, viewport: { width: 390, height: 844 } });
   await scenarioContext.addInitScript(() => {
     window.__f11LongTasks = [];
     try {
@@ -312,13 +333,14 @@ test('captures production-cache startup and deterministic solve/render performan
     } catch { /* longtask entries are not available in every Chromium build */ }
   });
   page = await scenarioContext.newPage();
-  await page.goto('http://127.0.0.1:4177/perf/fixture.html');
+  await page.goto(`${fixtureOrigin}/perf/fixture.html`);
   const cdp = await page.context().newCDPSession(page);
-  const scenarioEnvironment = { origin: 'Vite development server at http://127.0.0.1:4177', metricsAreProduction: false };
+  const scenarioEnvironment = { origin: `Vite development server at ${fixtureOrigin}`, metricsAreProduction: false };
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
 
   const brain = {};
   await mountTestBrain(page, 'orbit', { route: true, fixture: true });
+  scenarioEnvironment.cube = await cubeRenderer(page, graphics);
   const initialCanvas = await page.locator('#brain-view .b-cube-wrap canvas').count();
   const phoneIdleStart = await page.evaluate(() => performance.now());
   brain.idleGyroPhone = await frameSample(page, 1200, () => page.evaluate(() => window.testBrain.emitGyroBurst(1100, 16)));
@@ -344,7 +366,7 @@ test('captures production-cache startup and deterministic solve/render performan
 
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto('http://127.0.0.1:4177/perf/fixture.html');
+  await page.goto(`${fixtureOrigin}/perf/fixture.html`);
   await mountTestBrain(page, 'orbit', { route: true, fixture: true, connectDelayMs: 900, awaitConnect: false });
   const desktopConnectStart = await page.evaluate(() => performance.now());
   brain.connectSpin = await frameSample(page, 850, () => page.waitForFunction(() => window.testBrain?.session.getSnapshot().phase === 'tracking', undefined, { timeout: 5_000 }));
@@ -463,7 +485,7 @@ test('captures production-cache startup and deterministic solve/render performan
     categories: 'devtools.timeline,blink.user_timing,loading,v8,disabled-by-default-devtools.timeline',
     transferMode: 'ReturnAsStream',
   });
-  await page.goto('http://127.0.0.1:4177/perf/fixture.html');
+  await page.goto(`${fixtureOrigin}/perf/fixture.html`);
   await mountTestBrain(page, 'orbit', { route: true, fixture: true });
   await frameSample(page, 1000, () => page.evaluate(() => window.testBrain.emitGyroBurst(900, 16)));
   const tracePath = await writeTrace(cdp);
