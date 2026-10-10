@@ -42,8 +42,8 @@ test('the theme button shows the current mode and switches it', async ({ page })
 test('the drills hub lists each drill with its cube marker and opens it by key', async ({ page }) => {
   await page.goto('/#/drills');
   await expect(page.locator('.hub-row')).toHaveCount(6);
-  await expect(page.locator('[data-drill="corners"] .hub-cube')).toHaveText('no cube needed');
-  await expect(page.locator('[data-drill="scout"] .hub-cube')).toHaveText('no cube needed');
+  await expect(page.locator('.drills-hub canvas, .drills-hub .cs-orbit, .hub-cube')).toHaveCount(0);
+  await expect(page.locator('.drills-hub')).not.toContainText('no cube needed');
   await page.keyboard.press('p');
   await expect(page).toHaveURL(/#\/drills\/pll$/);
   await expect(page.locator('#pll-view')).toBeVisible();
