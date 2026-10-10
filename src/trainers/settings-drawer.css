@@ -51,6 +51,7 @@
   .drill-focus-page #cp-cube > .shared-cube { width: 240px; height: 240px; }
   .drill-focus-page .cp-question { font-size: 20px; }
 }
+
 @media (max-width: 700px) {
   :root:has(.drill-focus-page:not([hidden])) .drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.trainer-shell, .pll-trainer-shell) { display: flex; flex-direction: column; height: auto; }
   :root:has(.drill-focus-page:not([hidden])) .drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.cube-stage, .pll-cube-stage) { height: 280px; }
@@ -60,4 +61,49 @@
   .drill-focus-page #cp-cube > .shared-cube { width: 220px; height: 220px; }
   .drill-focus-page .lookahead-choice { font-size: 12px; }
   .drill-focus-page:not(.oll-page) .cs-head .trainer-case-color-control { position: static; }
+}
+
+/* Use the solve hero's silhouette proportions instead of the shared L-size cap. */
+.drill-focus-page { --drill-hero-size: min(calc(var(--drill-cube-box) * 100svh / var(--drill-canvas-height)), 560px); }
+@media (min-width: 701px) {
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.cube-stage, .pll-cube-stage) { height: 52svh; max-height: 540px; }
+  .drill-focus-page.legacy-drill-view[data-brain-style]:is(#corner-view, #f2l-view, #pll-view) :is(.cube-mount, .pll-cube-mount) { position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: var(--drill-hero-size); height: var(--drill-hero-size); min-height: 0; max-height: none; flex: none; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.cube-mount, .pll-cube-mount) > .shared-cube { width: 100% !important; height: 100%; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.cube-stage, .pll-cube-stage) > .orbit { width: calc(var(--drill-hero-size) * 1.4) !important; height: calc(var(--drill-hero-size) * 1.4) !important; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) .trainer-orbit-slot { top: calc(50% + var(--drill-hero-size) * .47); bottom: auto; }
+  .drill-focus-page :is(#la-cube, #cp-cube) { height: 48svh; max-height: 500px; width: min(560px, 100%); display: grid; place-items: center; }
+  .drill-focus-page :is(#la-cube, #cp-cube) > .shared-cube { width: min(var(--drill-hero-size), 100%); height: auto; }
+  .drill-focus-page :is(#la-cube, #cp-cube) > .orbit { width: calc(var(--drill-hero-size) * 1.4) !important; height: calc(var(--drill-hero-size) * 1.4) !important; }
+  .drill-focus-page :is(#la-cube, #cp-cube) .trainer-orbit-slot { top: 50%; bottom: auto; left: calc(50% + var(--drill-hero-size) * .72); transform: translateY(-50%); }
+}
+@media (min-width: 701px) and (max-height: 780px) {
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.cube-stage, .pll-cube-stage) { height: 46svh; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.intro-row, .pll-intro) h1 { font-size: 22px; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.eyebrow, .pll-eyebrow) { font-size: 10px; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.answer-grid, .pll-answer-grid) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) .trainer-orbit-slot { top: 50%; left: calc(50% + var(--drill-hero-size) * .72); transform: translateY(-50%); }
+  .drill-focus-page .cp-layout { gap: 4px; }
+  .drill-focus-page .cp-work { gap: 4px; }
+  .drill-focus-page .cp-faces { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .drill-focus-page:not(.oll-page) .cs-head { display: flex; align-items: baseline; gap: 12px; }
+  .drill-focus-page:not(.oll-page) .cs-head .trainer-case-color-control { top: 0; }
+}
+@media (max-width: 700px) {
+  :root:has(.drill-focus-page:not([hidden])) .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.cube-stage, .pll-cube-stage) { height: 340px; }
+  :root:has(.drill-focus-page:not([hidden])) .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.cube-mount, .pll-cube-mount) { width: 280px; height: 280px; max-height: none; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.cube-mount, .pll-cube-mount) > .shared-cube { width: 100% !important; height: 100%; }
+  .drill-focus-page :is(#la-cube, #cp-cube) { width: min(340px, 100%); height: 340px; max-height: none; }
+  .drill-focus-page :is(#la-cube, #cp-cube) > .shared-cube { width: 280px !important; height: 280px; max-width: 100%; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) .trainer-orbit-stage > .orbit,
+  .drill-focus-page :is(#la-cube, #cp-cube) > .orbit { width: 340px !important; height: 340px !important; }
+  :root:has(#pll-view:not([hidden])) #pll-view.drill-focus-page .pll-cube-mount { width: 280px; height: 280px; max-height: none; }
+  .drill-focus-page:not(.oll-page) .cs-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .drill-focus-page:not(.oll-page) .cs-head .cs-eyebrow { flex-basis: 100%; }
+  .drill-focus-page:not(.oll-page) .cs-head h1 { font-size: 20px; }
+  .drill-focus-page:not(.oll-page) .cs-head .ui-field__label { display: none; }
+  .drill-focus-page:not(.oll-page) .cs-head .sel { min-width: 130px; }
+}
+@media (min-width: 701px) and (max-width: 900px) {
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view) .trainer-orbit-slot,
+  .drill-focus-page :is(#la-cube, #cp-cube) .trainer-orbit-slot { left: auto; right: 0; }
 }
