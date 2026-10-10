@@ -201,7 +201,9 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
       if (snapshot.phase === 'awaiting-solved') {
         if (resumeCtx) finishResume(event.facelets);
         else if (event.facelets === SOLVED_FACELETS) establishSolvedBaseline();
-        else publish({ detail: MSG.syncFirst });
+        else publish({ detail: connection?.capabilities?.reset
+          ? 'The cube reports an unsolved state. If it is physically solved, sync solved cube from the header.'
+          : MSG.syncFirst });
       } else if (snapshot.phase === 'tracking') verifyFacelets(event.facelets);
     } else if (event.type === 'MOVE' && snapshot.phase === 'tracking') {
       logConnection({ kind: 'debug', label: `[session] MOVE event.move=${JSON.stringify(event.move)} phase=${snapshot.phase} moves.len=${snapshot.moves.length}` });
@@ -423,10 +425,7 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
     });
   }
 
-  async function syncSolved() {
-    if (!connection) throw new Error('Connect a cube first.');
-    if (!connection.capabilities?.facelets) { establishSolvedBaseline(); return; }
-    if (faceletsRequest) throw new Error('Already checking the cube.');
+  async function readFacelets() {
     const facelets = new Promise((resolve, reject) => {
       faceletsRequest = { resolve, reject, timer: setTimeout(() => endFaceletsRequest(new Error('Cube did not report its state. Try again.')), 6000) };
     });
@@ -434,10 +433,28 @@ export function createSmartCubeSession(connectDevice, { now = () => Date.now(), 
     void facelets.catch(() => {});
     try {
       await connection.sendCommand({ type: 'REQUEST_FACELETS' });
-      if (await facelets !== SOLVED_FACELETS) throw new Error(MSG.syncFirst);
-      establishSolvedBaseline();
+      return await facelets;
     } catch (error) {
       endFaceletsRequest(error);
+      throw error;
+    }
+  }
+
+  async function syncSolved() {
+    if (!connection) throw new Error('Connect a cube first.');
+    if (!connection.capabilities?.facelets) { establishSolvedBaseline(); return; }
+    if (faceletsRequest) throw new Error('Already checking the cube.');
+    try {
+      let facelets = await readFacelets();
+      if (facelets !== SOLVED_FACELETS && connection.capabilities?.reset) {
+        // This explicit action confirms the physical cube is solved. Repair
+        // its internal state, then require a fresh solved report before tracking.
+        await connection.sendCommand({ type: 'REQUEST_RESET' });
+        facelets = await readFacelets();
+      }
+      if (facelets !== SOLVED_FACELETS) throw new Error(MSG.syncFirst);
+      establishSolvedBaseline();
+    } catch (error) {
       publish({ detail: error.message });
       throw error;
     }

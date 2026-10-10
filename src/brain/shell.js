@@ -675,6 +675,7 @@ export function createShell(root, { dispatch }) {
   function update(vm, prev = last) {
     const p = prev ?? null;
     brain.dataset.screen = vm.screen;
+    brain.dataset.connectionBusy = String(vm.screen === 'connecting' && vm.device.busy);
     brain.dataset.theme = vm.theme;
     toggleClass(brain, 'is-chrome-dimmed', vm.chromeDimmed);
     if (vm.debugOpen !== p?.debugOpen) syncDebugOpen(Boolean(vm.debugOpen));
