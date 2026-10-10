@@ -1,10 +1,9 @@
-// Solve record schema plus the LEGACY localStorage store.
+// Solve record schema plus the legacy localStorage history adapter.
 //
 // `cleanRecord` is the one validator for a solve record; the IndexedDB history
 // (src/store/history.js, what the Brain uses) shares it. The sync
-// loadSolves/saveSolves/appendSolve/updateSolve functions below are the
-// original localStorage store: it is kept because the v1 Brain still uses it,
-// and as the one-time migration source for the IndexedDB history. After the
+// loadSolves/saveSolves/appendSolve/updateSolve remain for the one-time
+// migration source, backups and compatibility with older imported data. After
 // migration the localStorage key is left untouched as a backup.
 //
 // Storage is best-effort (private mode / quota must never break practice).
