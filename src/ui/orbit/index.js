@@ -303,6 +303,12 @@ export class Orbit {
     const groupOf = new Map(); groups.forEach(group => group.keys.forEach(key => groupOf.set(key, group)));
     const angleOf = key => layoutByKey.get(key)?.mid ?? 0;
     const hiddenLabel = segment => compactLabels && (segment.state === 'future' || segment.state === 'current');   // a phone labels only what is behind you (A-09 / A-12b)
+    const clusters = markerGroups(markers, { radius, pitch: Math.max(2 * (markerR + 3) + 4, 2 * hitRadius + 4), fan: fanned, thresholdDeg: Number(options.markerClusterDegrees) || 5 });
+    const labelObstacles = clusters.map(cluster => {
+      const point = polar(cx, cy, cluster.radius ?? radius, cluster.angle);
+      const badgeRadius = Math.max(hitRadius, markerR + (cluster.count > 1 ? 3 : 0));
+      return { left: point.x - badgeRadius, right: point.x + badgeRadius, top: point.y - badgeRadius, bottom: point.y + badgeRadius };
+    });
     const labelItems = mini || sideLabels ? [] : segments.map((segment, index) => {
       if (hiddenLabel(segment)) return null;
       const key = String(segment.key ?? index);
@@ -312,7 +318,7 @@ export class Orbit {
     }).filter(Boolean);
     // Room beside the drawing on a phone (the page margin), in view units, less a 4 px safety gap.
     const overhang = hostBox.width > 0 ? Math.max(0, Math.min(hostBox.left, window.innerWidth - hostBox.right) - 4) * k : 0;
-    const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: options.clampLabels ?? window.innerWidth <= 640, overhang });
+    const placedLabels = ringLabels(labelItems, { cx, cy, stageRadius: STAGE_RADIUS, moveRadius: MOVE_RADIUS, pitch: 22 * fontScale / 1, windowSize: MOVE_WINDOW, ringStart: startAngle, ringSweep: sweep, view, clampToView: options.clampLabels ?? window.innerWidth <= 640, overhang, obstacles: labelObstacles });
     const labelPositions = new Map(placedLabels.labels.map(label => [label.key, label]));
     this.labelModel = placedLabels;
     const parts = [];
@@ -373,7 +379,6 @@ export class Orbit {
       const at = Number(options.caret), p = polar(cx, cy, radius, at), p1 = polar(cx, cy, radius + 10, at);
       root.append(svg('line', { class: 'orbit__caret', x1: p.x, y1: p.y, x2: p1.x, y2: p1.y }));
     }
-    const clusters = markerGroups(markers, { radius, pitch: Math.max(2 * (markerR + 3) + 4, 2 * hitRadius + 4), fan: fanned, thresholdDeg: Number(options.markerClusterDegrees) || 5 });
     for (const cluster of clusters) {
       const p = polar(cx, cy, cluster.radius ?? radius, cluster.angle);
       if (cluster.count === 1 && fanned && (cluster.lane > 0 || Math.abs(cluster.angle - cluster.trueAngle) > 0.01)) {

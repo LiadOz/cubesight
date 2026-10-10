@@ -1,4 +1,5 @@
 import { test, expect } from 'playwright/test';
+import fs from 'node:fs';
 import { seedHistory } from './helpers/history-seed.js';
 
 const record = {
@@ -38,4 +39,32 @@ test('crowded history critiques stay grouped and open individual reviews with po
   const selectedId = await entries.first().getAttribute('data-marker-detail-key');
   await entries.first().click();
   await expect(page).toHaveURL(new RegExp(`/review/${selectedId}$`));
+});
+
+test('recorded crowded solve keeps stage values clear of badges on phone and desktop', async ({ page }) => {
+  const record = JSON.parse(fs.readFileSync(new URL('./fixtures/crowded-review-record.json', import.meta.url), 'utf8'));
+  await seedHistory(page, { version: 1, records: [record] });
+  await page.goto('/#/history/1000000');
+  await expect(page.locator('.history-stage .orbit__marker-cluster')).not.toHaveCount(0);
+  for (const pair of [['better-pair-2', 'best-pair-2'], ['best-pair-3', 'efficient-pair-3']]) {
+    const selector = `.history-stage [data-marker-keys*="${pair[0]}"][data-marker-keys*="${pair[1]}"]`;
+    const cluster = page.locator(selector);
+    await expect(cluster).toHaveCount(1);
+    await cluster.click();
+    for (const key of pair) await expect(page.locator(`[data-marker-detail-key="${key}"]`)).toBeVisible();
+    await page.locator('.orbit__marker-details-close').click();
+  }
+  for (const size of [{ width: 390, height: 844 }, { width: 1280, height: 720 }]) {
+    await page.setViewportSize(size);
+    await expect.poll(() => page.evaluate(() => {
+      const labels = [...document.querySelectorAll('.history-stage .orbit__label')];
+      const badges = [...document.querySelectorAll('.history-stage .orbit__marker-cluster')];
+      return labels.flatMap(label => badges.filter(badge => {
+        const a = label.getBoundingClientRect(), b = badge.getBoundingClientRect();
+        return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      }).map(badge => `${label.dataset.labelFor}:${badge.dataset.markerKeys}`));
+    })).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  }
 });
