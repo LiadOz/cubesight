@@ -170,7 +170,7 @@ export function mountGalleryPage(host) {
     const group = groupByPath(path);
     if (!group) return `${head('group', 'Folder not found', '')}<p class="g-empty">No images under <code>${esc(path)}</code>. <a href="${hashFor('')}">All folders</a></p>`;
     const images = query.trim() ? group.images.filter(image => matchesQuery(query, image.title, image.file, image.id, image.caption)) : group.images;
-    const posts = data.posts.filter(post => post.images.some(image => decodeURIComponent(image.path).startsWith(`/${group.path}/`)));
+    const posts = data.posts.filter(post => post.images.some(image => decodeURIComponent(image.path).startsWith(group.imageBase || `/${group.path}/`)));
     return `${head('group', esc(group.title), esc(group.description))}
       <p class="g-crumbs"><a href="${hashFor('')}">all folders</a> / <code>${esc(group.path)}</code> · <span class="g-kind">${esc(kindLabel(group.kind))}</span> ${group.count} images · updated <time title="${esc(fullDate(group.mtime))}">${esc(ago(group.mtime))}</time>
         ${group.index ? ` · <a href="${esc(group.index)}" target="_blank" rel="noopener">static page</a>` : ''}
@@ -181,6 +181,7 @@ export function mountGalleryPage(host) {
 
   // Markdown: relative image names resolve against the post's folder; '/x' is a project path.
   const resolver = post => (name, role) => {
+    if (post.assetBase && name.startsWith('/') && !name.startsWith('//')) return post.assetBase + name;
     if (/^(?:https?:|#|\/)/i.test(name)) return name;
     if (role === 'link' && !/\.(?:png|jpe?g|webp|svg)$/i.test(name)) return name;
     return post.base + name.split('/').map(encodeURIComponent).join('/');
@@ -192,7 +193,7 @@ export function mountGalleryPage(host) {
     const images = post.images;
     return `<article class="g-post" id="post-${esc(post.id)}" data-post="${esc(post.id)}" data-testid="post" data-lb-scope data-scope-id="${esc(post.id)}">
       <header>
-        <p class="g-meta"><time datetime="${esc(post.date)}">${esc(niceDate(post.date))}</time><span class="g-branch" style="--lane:${branchColor(Math.max(0, branchOrder.indexOf(post.branch)))}">${esc(post.branch)}</span>${statusBadge(post.status)}${post.author ? `<span class="g-author">${esc(post.author)}</span>` : ''}</p>
+        <p class="g-meta"><time datetime="${esc(post.date)}">${esc(niceDate(post.date))}</time><span class="g-branch" style="--lane:${branchColor(Math.max(0, branchOrder.indexOf(post.branch)))}">${esc(post.branch)}</span>${statusBadge(post.status)}${post.author ? `<span class="g-author">${esc(post.author)}</span>` : ''}${post.worktree ? `<span>worktree · ${esc(post.worktree)}</span>` : ''}</p>
         <h2>${full ? esc(post.title) : `<a href="${hashFor(`post/${post.id}`)}">${esc(post.title)}</a>`}</h2>
         ${post.decision ? `<p class="g-decision">${esc(post.decision)}</p>` : ''}
       </header>
@@ -211,7 +212,7 @@ export function mountGalleryPage(host) {
   function blogView() {
     const branches = ['all', ...new Set(data.posts.map(post => post.branch))];
     const posts = data.posts.filter(post => (branch === 'all' || post.branch === branch)
-      && matchesQuery(query, post.title, post.id, post.branch, post.status, post.decision, post.body, post.author));
+      && matchesQuery(query, post.title, post.id, post.branch, post.status, post.decision, post.body, post.author, post.worktree));
     return `${head('blog', 'Development blog', 'One post per exploration or iteration, newest first. Branches are lanes on the timeline.')}
       <div class="g-toolbar">${search('Search posts')}${chips('branch', branches.map(b => [b, b]), branch)}</div>
       <div class="g-posts">${posts.map(post => postArticle(post, { full: false })).join('') || '<p class="g-empty">No posts match.</p>'}</div>`;

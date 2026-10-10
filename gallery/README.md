@@ -81,3 +81,16 @@ The old, pre-blog screenshots are in `gallery/_import/<date>-<source>/`; each ha
 Posts are SHORT: a few lines ("3 options" + one line each on what differs). At most 3 questions, asked VISUALLY in one decision image `<ID>-00-decide.png` that shows all options side by side (①②③, Q1–Q3). Put it first in the post's images. No long question lists in the text.
 
 As few images as possible: only genuinely new or undecided parts; never re-show approved widgets except as context. Decision image + at most 2-3 details per option.
+
+## Posts from other worktrees
+
+The dev gallery includes posts from every registered Git worktree of this repository, including
+uncommitted posts. Use the same `#/dev/gallery/post/<id>` links on port 5173; there is no need to
+merge a branch, copy images, or run another server just to review it. Click **refresh** to discover
+new posts. Posts from another checkout show `worktree · <name>` beside their metadata.
+
+Inherited posts are listed once, with the serving checkout taking precedence. Keep post IDs unique
+and put each iteration in a new folder as above. Images (including project-relative references in
+post bodies) are served from the post's own worktree. Keep that worktree until its post is merged;
+removing it also removes its unpublished posts from the gallery. Merge-queue scratch checkouts are
+excluded. This discovery and asset serving exist only in development; production stays unchanged.

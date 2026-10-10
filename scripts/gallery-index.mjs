@@ -243,11 +243,12 @@ function postImagePaths(projectRoot, dirAbs, listed) {
 }
 
 /** Every post.md under gallery/, newest first. Returns { posts, warnings }. */
-export function scanPosts(projectRoot, galleryDir = 'gallery') {
+export function scanPosts(projectRoot, galleryDir = 'gallery', { excludeIds = new Set(), excludePaths = new Set(), validateParents = true } = {}) {
   const posts = [];
   const warnings = [];
   const rootAbs = path.join(projectRoot, galleryDir);
   const walk = dirAbs => {
+    if (excludePaths.has(toPosix(path.relative(projectRoot, dirAbs)))) return;
     let entries;
     try { entries = fs.readdirSync(dirAbs, { withFileTypes: true }); } catch { return; }
     for (const entry of entries) {
@@ -261,6 +262,7 @@ export function scanPosts(projectRoot, galleryDir = 'gallery') {
     const slug = path.basename(dirAbs);
     const dated = /^(\d{4}-\d{2}-\d{2})/.exec(slug);
     const { data } = parsed;
+    if (excludeIds.has(String(data.id || slug))) return;
     const manifest = manifestOfDir(dirAbs);
     const resolved = [];
     const seen = new Set();
@@ -294,7 +296,7 @@ export function scanPosts(projectRoot, galleryDir = 'gallery') {
     if (ids.has(post.id)) warnings.push(`duplicate post id "${post.id}" (${post.path})`);
     ids.add(post.id);
   }
-  for (const post of posts) {
+  for (const post of validateParents ? posts : []) {
     for (const parent of post.parent) if (!ids.has(parent)) warnings.push(`post "${post.id}": unknown parent "${parent}"`);
   }
   posts.sort((a, b) => b.date.localeCompare(a.date) || b.mtime - a.mtime || natural(a.id, b.id));
@@ -327,12 +329,14 @@ export function galleryPlugin() {
   return {
     name: 'cubesight-dev-gallery',
     apply: 'serve',
-    configureServer(server) {
+    async configureServer(server) {
+      const { buildWorktreeGalleryIndex, serveWorktreeGalleryAsset } = await import('./gallery-worktrees.mjs');
+      server.middlewares.use('/__gallery-assets', (request, response) => serveWorktreeGalleryAsset(server.config.root, request, response));
       server.middlewares.use('/__gallery', (request, response, next) => {
         if (request.method !== 'GET') { next(); return; }
         response.setHeader('Content-Type', 'application/json');
         response.setHeader('Cache-Control', 'no-store');
-        response.end(JSON.stringify(buildGalleryIndex(server.config.root)));
+        response.end(JSON.stringify(buildWorktreeGalleryIndex(server.config.root)));
       });
     },
   };
