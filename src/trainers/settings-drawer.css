@@ -1,0 +1,63 @@
+.drill-focus-page .trainer-settings-trigger { position: fixed; z-index: 10; bottom: 24px; left: 48px; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--b-muted); font: 500 12px var(--b-font-sans); cursor: pointer; }
+.trainer-settings-trigger .key { padding: 3px 7px; border-radius: var(--b-radius-key); background: var(--b-key-bg); color: var(--b-key-ink); font: 500 11px var(--b-font-mono); }
+.drill-focus-page .trainer-settings-drawer { color: var(--b-ink); background: var(--b-bg); font-family: var(--b-font-sans); }
+.trainer-settings-drawer :is(.training-settings, .pll-settings, .scout-input) { margin: 24px 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.trainer-settings-drawer :is(.training-settings, .pll-settings) > summary { display: none; }
+.trainer-settings-drawer :is(.mode-bar, .pll-controls) { display: flex; flex-direction: column; align-items: stretch; gap: 24px; padding: 0; }
+.trainer-settings-drawer :is(.mode-group, .pll-control-group, .learning-controls) { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin: 0; }
+.trainer-settings-drawer :is(.segmented, .pll-segmented) { flex-wrap: wrap; }
+.trainer-round-settings h3 { margin: 24px 0 16px; font: 500 14px var(--b-font-sans); color: var(--b-accent-text); }
+.trainer-round-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.trainer-round-options button { min-height: 44px; padding: 8px 16px; border: 0; border-radius: var(--b-radius-control); background: var(--b-surface-2); color: var(--b-ink); font: inherit; cursor: pointer; }
+.drill-focus-page .quick-round-presets[hidden], .drill-focus-page .quick-round-note[hidden] { display: none; }
+
+/* The case stays on the page centreline, with the answer controls below it. */
+.drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.trainer-shell, .pll-trainer-shell),
+.drill-focus-page :is(.lookahead-layout, .cp-layout) { display: flex; flex-direction: column; height: auto; min-height: 0; align-items: center; gap: 12px; }
+.drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.cube-stage, .pll-cube-stage) { width: 100%; height: clamp(280px, 44svh, 420px); min-height: 0; padding: 0; }
+.drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.answer-stage, .pll-answer-stage, .scout-plan) { width: min(640px, 100%); padding: 0; align-items: center; text-align: center; }
+.drill-focus-page :is(.case-meta, .pll-case-meta, .stage-topline, .cube-caption, .pll-stage-topline, .pll-cube-caption, .timing-note, .intro-copy, .pll-intro-copy) { display: none; }
+.drill-focus-page :is(.answer-grid, .pll-answer-grid) { width: 100%; }
+.drill-focus-page :is(.prompt-block, .pll-prompt) { margin: 0 0 12px; }
+.drill-focus-page .prompt-block p { font-size: 20px; }
+.drill-focus-page .prompt-block br { display: none; }
+.drill-focus-page :is(.feedback-line, .pll-feedback-row) { width: 100%; margin-top: 8px; padding: 0; border: 0; }
+.drill-focus-page :is(.lookahead-session, .cp-session) { padding: 0; border: 0; background: transparent; overflow: visible; }
+.drill-focus-page :is(#la-cube, #cp-cube) { width: min(420px, 100%); height: clamp(280px, 44svh, 420px); min-height: 0; background: transparent; }
+.drill-focus-page #cp-cube { display: grid; place-items: center; }
+.drill-focus-page #cp-cube > .shared-cube { width: 260px; height: 260px; max-width: 100%; }
+.drill-focus-page :is(.lookahead-work, .cp-work) { width: min(640px, 100%); padding: 0; text-align: center; gap: 8px; }
+.drill-focus-page :is(.lookahead-hint, .cp-hint, .cp-source) { display: none; }
+.drill-focus-page .cp-faces { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.drill-focus-page .lookahead-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 10px 0; }
+.drill-focus-page .lookahead-actions { display: none; }
+.drill-focus-page #cp-next { align-self: center; }
+.drill-focus-page:not(.oll-page) { position: relative; }
+.drill-focus-page:not(.oll-page) .cs-head .trainer-case-color-control { position: absolute; right: 0; top: 16px; }
+.drill-focus-page:not(.oll-page) .cs-head .cs-sub { display: none; }
+.drill-focus-page:not(.oll-page) .cs-head h1 { font-size: 22px; }
+.drill-focus-page:is(#corner-view, #f2l-view, #pll-view) :is(.answer-grid, .pll-answer-grid) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.drill-focus-page:is(#corner-view, #f2l-view, #pll-view) .brain.quick-round { margin-bottom: 4px; }
+.drill-focus-page#f2l-view .f2l-instructions { margin: 0 0 8px; }
+.drill-focus-page#f2l-view .f2l-footer-actions { margin-top: 8px; }
+.drill-focus-page#f2l-view .selected-piece-card { width: 100%; padding: 8px 16px; }
+.drill-focus-page#f2l-view .f2l-timings { margin-top: 8px; }
+@media (min-width: 701px) and (max-height: 780px) {
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.intro-row, .pll-intro) { margin: 0; padding: 4px 0; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.cube-stage, .pll-cube-stage) > .orbit { width: 360px !important; height: 360px !important; }
+  .drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) .cube-stage > .cube-mount { width: 260px; height: 260px; }
+  .drill-focus-page .trainer-settings-trigger { bottom: 8px; }
+  .drill-focus-page #cp-cube { height: 250px; }
+  .drill-focus-page #cp-cube > .shared-cube { width: 240px; height: 240px; }
+  .drill-focus-page .cp-question { font-size: 20px; }
+}
+@media (max-width: 700px) {
+  :root:has(.drill-focus-page:not([hidden])) .drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.trainer-shell, .pll-trainer-shell) { display: flex; flex-direction: column; height: auto; }
+  :root:has(.drill-focus-page:not([hidden])) .drill-focus-page:is(#corner-view, #f2l-view, #pll-view, #scout-view) :is(.cube-stage, .pll-cube-stage) { height: 280px; }
+  .drill-focus-page .trainer-settings-trigger { position: static; align-self: center; margin: 8px auto; }
+  .drill-focus-page :is(#la-cube, #cp-cube) { height: 280px; width: 280px; }
+  .drill-focus-page #la-cube > .shared-cube { width: 220px !important; }
+  .drill-focus-page #cp-cube > .shared-cube { width: 220px; height: 220px; }
+  .drill-focus-page .lookahead-choice { font-size: 12px; }
+  .drill-focus-page:not(.oll-page) .cs-head .trainer-case-color-control { position: static; }
+}

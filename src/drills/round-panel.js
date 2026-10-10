@@ -1,5 +1,6 @@
 import { createRoundStore, QUICK_ROUNDS } from './rounds.js';
 import { loadSettings } from '../brain/settings.js';
+import { createTrainerSettingsDrawer } from '../trainers/settings-drawer.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { createOrbit } from '../ui/orbit/index.js';
 import { readCaseColorSetting } from '../ui/cube/case-color.js';
@@ -78,6 +79,7 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
   if (stage) orbit.element.addEventListener('orbitchange', () => decorateRing(orbit));
   let store = sharedStore || createRoundStore(storage, { now }), active = false, timer = null, summary = null, preset = QUICK_ROUNDS[drill];
   let completed = false;
+  const settingsDrawer = createTrainerSettingsDrawer(host, onRoundClick);
   function finish(result) {
     if (!result) return;
     summary = result; completed = true; onComplete(result); render();
@@ -110,15 +112,17 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
       ? `<div class="quick-round-result" role="status"><strong>round complete</strong><span>${summary.correct} of ${summary.total} correct · ${summary.medianMs == null ? '—' : (summary.medianMs / 1000).toFixed(2) + ' s median'} · best combo ${summary.bestCombo}</span><span class="quick-round-metrics"><strong>combo ${round?.combo ?? summary.bestCombo}</strong><strong>avg ${average}</strong></span><div class="quick-round-answers" aria-label="Round answers">${chips}</div><div><button type="button" data-round="again">one more round</button><a href="#/drills">change drill</a><button type="button" data-round="done">done</button></div></div>`
       : `<div class="quick-round-line"><span data-round-remaining>${running ? remaining : 'quick round'}</span><span class="quick-round-metrics"><strong>combo ${round?.combo ?? 0}</strong><strong>avg ${average}</strong></span>${running ? `<button type="button" data-round="stop">finish round</button>` : Object.entries(PRESETS).map(([key, value]) => `<button type="button" data-round="${key}">${key === '2m' ? '2 min' : label(value)}</button>`).join('')}<small>${store.streak ? `${store.streak} day${store.streak === 1 ? '' : 's'} active` : 'every round counts'}</small></div><div class="quick-round-answers" aria-label="Round answers">${chips}</div>`;
     if (!stage) content.querySelectorAll('button, a').forEach(control => control.classList.add('act'));
+    settingsDrawer.sync(content);
     syncPageTokens(panel);
   }
-  panel.addEventListener('click', event => {
+  function onRoundClick(event) {
     const key = event.target.closest('[data-round]')?.dataset.round;
     if (PRESETS[key]) start(PRESETS[key]);
     else if (key === 'again') start();
     else if (key === 'stop') finish(store.finish('stopped'));
     else if (key === 'done') { store.discard(); completed = false; summary = null; render(); onRestart(); }
-  });
+  }
+  panel.addEventListener('click', onRoundClick);
   const tick = () => {
     if (!active || completed || store.current?.drill !== drill || store.current.status !== 'active') return;
     const round = store.current;
@@ -152,6 +156,7 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
     },
     setActive(value) {
       active = Boolean(value); if (timer) clearInterval(timer); timer = null;
+      settingsDrawer.setActive(active);
       if (!active) return;
       if (!sharedStore) store = createRoundStore(storage, { now });
       completed = false; summary = null;
@@ -180,6 +185,6 @@ export function createRoundPanel(host, { drill, onRestart = () => {}, onComplete
     },
     resetElapsed() { elapsedFill = 0; },
     refresh() { render(); },
-    destroy() { active = false; if (timer) clearInterval(timer); orbit.destroy(); panel.remove(); },
+    destroy() { active = false; if (timer) clearInterval(timer); settingsDrawer.destroy(); orbit.destroy(); panel.remove(); },
   };
 }
