@@ -27,6 +27,8 @@ import { buildStagePlan, xcrossLabel } from './stage-plan.js';
 import { createTrack, trackMilestones, splitsFromTrack, stageProgress } from './milestones.js';
 import { buildViewModel, frameState } from './view-model.js';
 import { coachLines } from './coach-lines.js';
+import { reviewEmphasis } from './review/emphasis.js';
+import { stagePieces } from '../ui/cube/pieces.js';
 import { resolveKey } from './keys.js';
 import { fmtSeconds, fmtResult } from './format.js';
 import { getThemePreference, setThemePreference, THEME_EVENT } from '../theme.js';
@@ -142,11 +144,24 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     voiceCallouts.update({ callout: next.inspection?.callout, enabled: settings.voice, calloutsEnabled: settings.inspection.callouts });
     shell.update(next, prev);
     renderToggles();
+    updateReviewEmphasis();
     ensureLoop();
   }
 
   // Coach lens switches (#brain-toggles): the controller owns them.
   let paintedToggles = null;
+  let paintedEmphasis = '';
+  function updateReviewEmphasis() {
+    const detail = vm?.results?.review?.detail;
+    const wanted = detail && reviewEmphasis(reviewRecord(), detail.stageKey, reviewUi.variant, reviewUi.targetSlots);
+    const dimOthers = detail?.kind === 'stage';
+    const key = JSON.stringify([wanted, dimOthers]);
+    if (!cube || key === paintedEmphasis) return;
+    paintedEmphasis = key;
+    const found = wanted && stagePieces(cube.state, wanted.stage, wanted.options);
+    if (found) cube.highlight({ ...found, dimOthers }); else cube.clearHighlight();
+  }
+
   function renderToggles() {
     const box = $('#brain-toggles');
     if (!box || paintedToggles === settings.toggles) return;
@@ -381,18 +396,18 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
     reviewHold = true;
     playToken++;
     cube.setState(positionState(rec, n));
-    reviewUi = { ...reviewUi, cursor: n };
+    reviewUi = { ...reviewUi, cursor: n, variant: 'yours', targetSlots: null };
   }
 
   /** Animate `moves` on the cube from position `from` (yours or the better solution). */
-  async function playMoves(from, moves, variant) {
+  async function playMoves(from, moves, variant, targetSlots = null) {
     const rec = reviewRecord();
     if (!cube || !replayable(rec)) return;
     reviewHold = true;
     const token = ++playToken;
     let state = positionState(rec, from);
     cube.setState(state);
-    reviewUi = { ...reviewUi, variant, cursor: from };
+    reviewUi = { ...reviewUi, variant, cursor: from, targetSlots };
     render();
     await pause(320);
     for (const move of moves) {
@@ -612,6 +627,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         scrambleText = settings.scramble === 'paste' ? scrambleText : '';
         return start();
       }
+      case 'replaySolve': location.hash = `#/history/${currentAt()}/replay`; break;
       case 'retry': {
         const scramble = live.getSnapshot().record?.scramble || lastScramble;
         closeReview();
@@ -640,7 +656,7 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
       case 'playOption': {
         const compare = vm?.results?.review?.detail?.compare;
         const option = compare?.options?.[action.option];
-        if (compare && option?.moves?.length) return playMoves(compare.from, option.moves, 'better');
+        if (compare && option?.moves?.length) return playMoves(compare.from, option.moves, 'better', option.slots);
         break;
       }
       case 'stepMarker': {
@@ -870,6 +886,16 @@ export function mountBrainController(root, cubeSession, { createShell, loadStyle
         records = history?.records ?? [];
         const latest = loadSettings(globalThis.localStorage);
         applySettings(latest);
+      }
+      const request = new URLSearchParams(location.hash.split('?')[1] ?? '');
+      if (request.get('start') === 'next') {
+        globalThis.history.replaceState(null, '', '#/solve');
+        await dispatch({ type: 'next' });
+      } else if (request.has('retry')) {
+        const record = records.find(row => row.at === Number(request.get('retry')));
+        globalThis.history.replaceState(null, '', '#/solve');
+        const scramble = record?.scramble || record?.scrambleTurns?.join(' ');
+        if (scramble) { scrambleText = scramble; startCustom(); }
       }
       render();
     },

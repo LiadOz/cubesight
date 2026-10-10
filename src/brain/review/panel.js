@@ -78,7 +78,7 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     const compare = shown?.detail?.compare;
     const moves = compare?.status === 'better' && compare.better.length ? compare.better : compare?.yours;
     if (!moves?.length || !compare.demoTitle) return false;
-    const href = comparisonDemoHref(compare, moves);
+    const href = comparisonDemoHref(compare, moves, moves === compare.better ? 'better' : 'yours');
     const link = `${location.origin}${location.pathname}${location.search}${href}`;
     const copy = navigator.clipboard?.writeText?.(link);
     if (copy) copy.then(() => { if (target) target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
@@ -95,7 +95,7 @@ export function createReviewPanel(host, { dispatch, compact = false }) {
     else if (target.dataset.act === 'copy-demo' && shown?.detail?.compare?.demoTitle) {
       const moves = target.dataset.variant === 'better' ? shown.detail.compare.better : shown.detail.compare.yours;
       if (!moves?.length) return;
-      const href = comparisonDemoHref(shown.detail.compare, moves);
+      const href = comparisonDemoHref(shown.detail.compare, moves, target.dataset.variant);
       const copy = navigator.clipboard?.writeText?.(`${location.origin}${location.pathname}${location.search}${href}`);
       if (copy) copy.then(() => { target.textContent = 'link copied'; }).catch(() => { location.hash = href; });
       else location.hash = href;

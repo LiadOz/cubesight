@@ -12,10 +12,10 @@ import { serializeDemo } from '../../demo/model.js';
 
 const words = text => (text ? text.split(' ') : []);
 
-export function comparisonDemoHref(compare, moves) {
+export function comparisonDemoHref(compare, moves, variant = 'better') {
   return serializeDemo({ title: compare.demoTitle, parts: [{
     title: compare.demoTitle, setup: words(compare.setup), alg: moves, steps: [],
-    highlight: compare.highlight ? [compare.highlight] : [], caseId: compare.caseId,
+    highlight: (compare[`${variant}Highlight`] ?? compare.highlight) ? [compare[`${variant}Highlight`] ?? compare.highlight] : [], caseId: compare.caseId,
     speed: 1, colorSetting: compare.colorSetting,
   }] });
 }
@@ -90,6 +90,11 @@ function movesView(row, markers, record) {
   for (let i = row.from; i < row.to; i++) {
     const here = markers.filter(m => m.idx === i && m.kind !== 'xcross' && m.tone !== 'good');
     const flags = [...new Set(here.map(m => m.kind))];
+    const loss = row.key === 'cross' && a?.cross?.losses?.find(loss => loss.i === i);
+    if (loss) {
+      const kind = loss.loss === 2 ? 'detour' : 'extra-move';
+      if (!flags.includes(kind)) flags.push(kind);
+    }
     if (cancelAt.has(i) && !flags.includes('cancel')) flags.push('cancel');
     out.push({ i, at: i + 1, text: fmtMoves(moves[i] ?? ''), flags });
   }
@@ -135,6 +140,8 @@ export function buildDetail({ kind, key, record, markers = [], rows = [], plan =
   compare.setup = [record.scramble, ...(record.solveMoves ?? []).slice(0, compare.from)].filter(Boolean).join(' ');
   compare.caseId = caseId;
   compare.highlight = targetSlot ? `pair:${targetSlot}` : '';
+  compare.yoursHighlight = pairInfo?.chosenSlot ? `pair:${pairInfo.chosenSlot}` : caseInfo?.targetPair ? `pair:${caseInfo.targetPair}` : '';
+  compare.betterHighlight = compare.highlight;
   compare.colorSetting = record.colorSetting ?? 'yellow top';
   compare.demoTitle = `${stageKey} solve moment`;
   const stageMarkers = markers.filter(m => m.stage === stageKey);

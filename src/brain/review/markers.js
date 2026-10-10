@@ -306,6 +306,18 @@ export function buildMarkers({ record, stages = [], plan = [], baselines = null,
     marker.stageLabel = plan.find(p => p.key === marker.stage)?.label ?? marker.stage;
   }
   out.sort((x, y) => y.score - x.score || x.idx - y.idx);
+  // One move-efficiency idea per cross/pair. Keep the strongest example;
+  // the recording still retains every loss and cancellation for move review.
+  const efficiencyKinds = new Set(['detour', 'extra-move', 'cancel', 'better-pair', 'better-cross', 'missed-xcross', 'better-xcross']);
+  const efficiencyStages = new Set();
+  for (let i = 0; i < out.length;) {
+    const marker = out[i];
+    if (marker.tone === 'warn' && /^(cross|pair[1-4])$/.test(marker.stage) && efficiencyKinds.has(marker.kind)) {
+      if (efficiencyStages.has(marker.stage)) { out.splice(i, 1); continue; }
+      efficiencyStages.add(marker.stage);
+    }
+    i++;
+  }
   out.forEach((marker, i) => { marker.rank = i + 1; marker.prominent = i < PROMINENT; });
   // Keep at least one good moment among the prominent ones (when there is one): it is where you were good.
   const goodFirst = out.findIndex(m => m.tone === 'good');

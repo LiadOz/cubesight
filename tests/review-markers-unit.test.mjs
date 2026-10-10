@@ -35,20 +35,16 @@ test('the mock cross (SPEC 4.1) gives a detour marker on move 4 with the shorter
   assert.equal(defaultId, detour.id, 'the most costly moment is selected by default');
 });
 
-test('markers rank by cost, the top few are prominent, and none are dropped', async () => {
+test('markers rank by cost with one efficiency warning per stage, preserving pauses and rotations', async () => {
   const base = await replayRecord();
   const record = await analysed({ ...base, moveTimes: timesFor(base.solveMoves.length, { pauses: { 20: 1800 } }) });
   const { markers, prominentIds } = buildMarkers({ record, stages: fullRows(), plan: PLAN, faceColors: FACE_COLORS });
-  const a = record.analysis;
-  const expected = a.cross.losses.length + a.pauses.length + a.cancels.length + record.rotationMarks.length + a.pseudo.length
-    + a.skips.filter(s => s.kind !== 'xcross').length + (a.xcross ? 1 : 0) + 1
-    + a.pairs.filter(pair => pair.better && pair.yours.split(' ').length - pair.better.moves.split(' ').length >= 2).length
-    + (a.cross?.done && a.cross.proven && a.cross.extra <= 1 ? 1 : 0)
-    + a.pairs.filter(pair => pair.proven && pair.chosenProven && pair.chosenSlot && pair.chosenSlot === pair.bestSlot).length
-    + a.pairs.filter(pair => pair.chosenProven && pair.chosenShortest != null && pair.yours.split(' ').length <= pair.chosenShortest + 1).length
-    + (a.lastLayer?.oll && a.lastLayer?.pll && !a.lastLayer.oll.better && !a.lastLayer.pll.better
-      && a.lastLayer.oll.used?.stm === a.lastLayer.oll.best?.stm && a.lastLayer.pll.used?.coreStm === a.lastLayer.pll.best?.coreStm ? 1 : 0); // proven good evidence
-  assert.equal(markers.length, expected, 'every fact becomes a marker');
+  const efficiencyKinds = ['detour', 'extra-move', 'cancel', 'better-pair', 'better-cross', 'missed-xcross', 'better-xcross'];
+  for (const stage of ['cross', 'pair1', 'pair2', 'pair3', 'pair4']) {
+    assert.ok(markers.filter(marker => marker.stage === stage && efficiencyKinds.includes(marker.kind)).length <= 1);
+  }
+  assert.equal(markers.filter(marker => marker.kind === 'pause').length, record.analysis.pauses.length);
+  assert.equal(markers.filter(marker => marker.kind === 'rotation').length, record.rotationMarks.length);
   assert.equal(markers.length > PROMINENT, true);
   assert.equal(markers.filter(m => m.prominent).length, PROMINENT);
   assert.equal(prominentIds.length, PROMINENT);
@@ -183,4 +179,27 @@ test('confirmed last-layer looks create a case-specific ring marker', () => {
   assert.equal(marker.caseId, 'oll/10');
   assert.equal(marker.nextCaseId, 'oll/34');
   assert.match(marker.note, /OLL Corner Case → Fish/);
+});
+
+
+test('repeated spare moves and overlapping cancellations become one cross or pair warning', () => {
+  const record = {
+    solveMoves: ['R', 'U', "R'", "U'", 'F', 'U', "F'", "U'"], moveCount: 8, tps: 4,
+    analysis: {
+      marks: { cross: 3, pairs: [7] }, skips: [], pseudo: [], pauses: [],
+      cross: { done: true, moves: 4, d0: 2, extra: 2, losses: [
+        { i: 0, move: 'R', loss: 1, d: 2, best: "U R" },
+        { i: 1, move: 'U', loss: 2, d: 1, best: "R" },
+      ] },
+      pairs: [{ n: 1, from: 4, yours: "F U F' U'", better: { slot: 'FR', moves: 'R U' } }],
+      cancels: [{ from: 0, to: 1, waste: 1 }, { from: 4, to: 5, waste: 1 }],
+    },
+  };
+  const stages = [{ key: 'cross', moves: 4 }, { key: 'pair1', moves: 4 }];
+  const { markers } = buildMarkers({ record, stages, plan: PLAN });
+  assert.equal(markers.filter(marker => marker.stage === 'cross').length, 1);
+  assert.equal(markers.find(marker => marker.stage === 'cross').kind, 'detour');
+  assert.equal(markers.filter(marker => marker.stage === 'pair1').length, 1);
+  assert.ok(markers.find(marker => marker.stage === 'cross').better.moves.length);
+  assert.equal(record.analysis.cross.losses.length, 2, 'recorded move evidence remains intact');
 });

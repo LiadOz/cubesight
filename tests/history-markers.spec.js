@@ -38,7 +38,9 @@ test('crowded history critiques stay grouped and open individual reviews with po
   expect(priorities[0]).toBeGreaterThan(priorities.at(-1));
   const selectedId = await entries.first().getAttribute('data-marker-detail-key');
   await entries.first().click();
-  await expect(page).toHaveURL(new RegExp(`/review/${selectedId}$`));
+  await expect(page).toHaveURL(/#\/history\/1000000$/);
+  await expect(page.locator('.b-rev-detail')).toBeVisible();
+  await expect(page.locator(`.b-rev-chip[data-marker="${selectedId}"]`)).toHaveClass(/is-selected/);
 });
 
 test('recorded crowded solve keeps stage values clear of badges on phone and desktop', async ({ page }) => {

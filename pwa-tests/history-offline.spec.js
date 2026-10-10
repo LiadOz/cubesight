@@ -14,7 +14,8 @@ test('history, replay and data tools load offline after installation', async ({ 
   await expect(page.locator('.history-count')).toContainText('1 solves');
   await page.locator('.history-solve a').click();
   await expect(page.locator('.history-stage__cube canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'replay', exact: true }).click();
+  await page.getByRole('button', { name: 'more…', exact: true }).click();
+  await page.getByRole('button', { name: 'replay solve', exact: true }).click();
   await expect(page.locator('.history-stage__subline')).toContainText('move 0 of 2');
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.history-stage__subline')).toContainText('move 1 of 2');

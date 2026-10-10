@@ -47,7 +47,7 @@ export function createOrbitResults(host, ctx = {}) {
   caseMenu.append(caseTitle, caseLinks);
   const actions = el('div', 'f1-results__actions');
   const actionRow = createActions(actions, [
-    { label: 'next scramble', primary: true, onClick: () => mode === 'past' ? ctx.onReplay?.() : ctx.dispatch?.({ type: 'next' }) },
+    { label: 'next scramble', primary: true, onClick: () => ctx.dispatch?.({ type: 'next' }) },
     { label: 'review', href: '#/review' },
     { label: 'more…', onClick: () => { more.open = !more.open; } },
   ]);
@@ -56,9 +56,14 @@ export function createOrbitResults(host, ctx = {}) {
   const more = document.createElement('details'); more.className = 'f1-results__more';
   const moreBody = el('div', 'f1-results__more-body');
   const coachDemo = el('button', 'ui-action f1-results__coach-demo', 'copy coach demo link'); coachDemo.type = 'button'; coachDemo.dataset.action = 'coach-demo'; coachDemo.hidden = true;
-  const penalty = el('button', 'ui-action', 'edit +2 / DNF'); penalty.type = 'button'; penalty.dataset.action = 'penalty';
   const retry = el('button', 'ui-action', 'retry scramble'); retry.type = 'button'; retry.dataset.action = 'retry';
-  moreBody.append(coachDemo, penalty, retry); const moreSummary = document.createElement('summary'); moreSummary.hidden = true; moreSummary.textContent = 'more actions'; more.append(moreSummary, moreBody);
+  const replay = el('button', 'ui-action', 'replay solve'); replay.type = 'button'; replay.dataset.action = 'replay';
+  moreBody.append(coachDemo, retry, replay);
+  for (const [value, label] of [['+2', '+2'], ['DNF', 'DNF'], ['', 'clear penalty']]) {
+    const button = el('button', 'ui-action', label); button.type = 'button'; button.dataset.action = 'penalty'; button.dataset.penalty = value; moreBody.append(button);
+  }
+  const remove = el('button', 'ui-action', 'delete solve'); remove.type = 'button'; remove.dataset.action = 'delete-solve'; moreBody.append(remove);
+  const moreSummary = document.createElement('summary'); moreSummary.hidden = true; moreSummary.textContent = 'more actions'; more.append(moreSummary, moreBody);
   actions.append(more);
   const keysHost = el('div', 'f1-results__keys');
   root.append(historyNav, time, coachTag, coachHost, casePrompt, caseMenu, detailHost, actions, keysHost);
@@ -98,8 +103,11 @@ export function createOrbitResults(host, ctx = {}) {
   root.addEventListener('click', event => {
     const button = event.target.closest?.('[data-action]');
     if (!button || !root.contains(button)) return;
+    if (button.closest('.f1-results__more')) more.open = false;
     if (button.dataset.action === 'retry') ctx.dispatch?.({ type: 'retry' });
-    if (button.dataset.action === 'penalty') ctx.dispatch?.({ type: 'togglePenalty', penalty: currentRecord?.penalty === '+2' ? null : '+2' });
+    if (button.dataset.action === 'penalty') ctx.dispatch?.({ type: 'setPenalty', penalty: button.dataset.penalty || null });
+    if (button.dataset.action === 'replay') ctx.dispatch?.({ type: 'replaySolve' });
+    if (button.dataset.action === 'delete-solve') ctx.dispatch?.({ type: 'deleteSolve', at: currentRecord?.at });
     if (button.dataset.action === 'coach-demo') review.copyCoachDemo(button);
     if (button.dataset.action === 'case' && selectedCase) showCase(selectedCase);
   });
@@ -146,7 +154,7 @@ export function createOrbitResults(host, ctx = {}) {
     root.querySelector('.f1-results__time').dataset.tone = r.time.tone;
     coach.update({ text: r.review.coach.text, marker: r.review.selectedId, orbit: ctx.resultsOrbit });
     review.update(r.review);
-    coachDemo.hidden = mode === 'past' || !r.review.coach.markerId;
+    coachDemo.hidden = !r.review.coach.markerId;
     if (mode === 'past') {
       presentResultsOrbit(ctx.resultsOrbit, r, { dispatch: action => ctx.dispatch?.(action) });
       if (r.review.detail?.replayable && r.review.detail.variant !== 'better' && typeof externalCube?.setState === 'function') {
@@ -159,13 +167,10 @@ export function createOrbitResults(host, ctx = {}) {
       ? resolvePastReviewHref(pastNavigation, r.review.selectedId ?? firstMarker, fallbackReview)
       : fallbackReview;
     reviewLink.href = fullReview;
-    next.hidden = mode === 'past';
-    if (mode === 'past' && ctx.onReplay) {
-      next.hidden = false; next.textContent = 'replay';
-    } else next.textContent = 'next scramble';
-    more.hidden = mode === 'past';
+    next.hidden = false; next.textContent = 'next scramble';
+    more.hidden = false;
     keyBar.remove();
-    const liveKeys = mode === 'past' ? [{ key: '[ ]', label: 'markers' }] : [{ key: 'space', label: 'next scramble' }, { key: '[ ]', label: 'markers' }];
+    const liveKeys = [{ key: 'space', label: 'next scramble' }, { key: '[ ]', label: 'markers' }];
     keyBar = createKeyBar(keysHost, liveKeys);
     caseMenu.hidden = true;
     selectedCase = page?.caseChoice ? (r.caseLinks?.[page.caseChoice] ?? null) : caseForStage(r, r.review.detail);
