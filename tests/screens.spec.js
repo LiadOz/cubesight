@@ -16,6 +16,7 @@ const SCREENS = [
   ['timer', '/timer'], ['help', '/help'], ['not-found', '/not-found'],
 ];
 const SIZES = [[1440, 900], [390, 844]];
+const CENTERED_DRILLS = new Set(['corners', 'f2l', 'pll-drill', 'oll-drill', 'lookahead', 'cross-planning']);
 
 for (const [id, route, seeded] of SCREENS) {
   test(`screen ${id}`, async ({ page }) => {
@@ -33,7 +34,8 @@ for (const [id, route, seeded] of SCREENS) {
         if (id === 'timer') await page.locator('.has-ready-scramble').waitFor();
         const maxScrollWidth = await settleAndMeasureOverflow(page, { maxMs: 300 });
         expect(maxScrollWidth, `${id} scrolls sideways at ${width}px`).toBeLessThanOrEqual(width);
-        await expect(page).toHaveScreenshot(`${id === 'drills' ? 'drills-menu' : id}-${theme}-${width}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.002 });
+        const imageId = CENTERED_DRILLS.has(id) ? `${id}-centered-fit` : id === 'drills' ? 'drills-menu' : id;
+        await expect(page).toHaveScreenshot(`${imageId}-${theme}-${width}.png`, { animations: 'disabled', caret: 'hide', maxDiffPixelRatio: 0.002 });
       }
     }
   });
