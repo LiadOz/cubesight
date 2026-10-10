@@ -161,7 +161,7 @@ export function labelWindow(count, currentIndex = 0, size = 22) {
  * Only a scramble too long for one radius (`maxSingle`) is windowed to `windowSize` around the current move.
  * items: {key, angle, kind:'move'|'stage', width?, height?, current?}
  */
-export function ringLabels(items, { cx, cy, stageRadius, moveRadius, pitch = 22, lanes = 3, windowSize = 22, ringStart = 215, ringSweep = 290, view = 760, clampToView = false, overhang = 0 } = {}) {
+export function ringLabels(items, { cx, cy, stageRadius, moveRadius, pitch = 22, lanes = 3, windowSize = 22, ringStart = 215, ringSweep = 290, view = 760, clampToView = false, overhang = 0, obstacles = [] } = {}) {
   const moves = items.filter(item => item.kind === 'move');
   const arc = moveRadius * ringSweep * Math.PI / 180;
   const maxSingle = Math.floor(arc / pitch);
@@ -196,6 +196,27 @@ export function ringLabels(items, { cx, cy, stageRadius, moveRadius, pitch = 22,
     const x = !clampToView ? point.x : anchor === 'start' ? Math.min(point.x, view + overhang - width) : anchor === 'end' ? Math.max(point.x, width - overhang) : Math.max(width / 2 - overhang, Math.min(view + overhang - width / 2, point.x));
     return { key: item.key, kind: 'stage', angle, radius: stageRadius, lane: 0, x: round(x), y: round(y), anchor, side: pole ? `center-${pole}` : angle < 180 ? 'right' : 'left', hidden: false };
   });
+  // Badge positions are fixed to their moments. Move a colliding stage block
+  // by the smallest vertical distance, keeping its side and all its text.
+  const occupied = [...obstacles];
+  const dimensions = new Map(items.map(item => [item.key, item]));
+  for (const label of placed.filter(label => label.kind === 'stage')) {
+    const item = dimensions.get(label.key), height = item.height ?? 44, width = item.width ?? 0;
+    const left = label.anchor === 'start' ? label.x : label.anchor === 'end' ? label.x - width : label.x - width / 2;
+    const box = y => ({ left, right: left + width, top: y - height / 2, bottom: y + height / 2 });
+    const clear = y => {
+      const a = box(y);
+      return occupied.every(b => a.right + 4 <= b.left || b.right + 4 <= a.left || a.bottom + 4 <= b.top || b.bottom + 4 <= a.top);
+    };
+    const original = label.y;
+    if (!clear(original)) {
+      for (let offset = 4; offset <= view; offset += 4) {
+        const candidate = [original - offset, original + offset].find(y => y >= height / 2 && y <= view - height / 2 && clear(y));
+        if (candidate != null) { label.y = round(candidate); break; }
+      }
+    }
+    occupied.push(box(label.y));
+  }
   return { labels: placed, window: win, fanned: fan };
 }
 
@@ -233,14 +254,10 @@ export function fanMarkers(markers = [], { radius, pitch = 26, maxLanes = 4, thr
   return out.sort((a, b) => a.trueAngle - b.trueAngle || a.lane - b.lane);
 }
 
-/** Keep small groups on the approved two radii; dense groups stay anchored as count badges. */
-export function markerGroups(markers = [], { radius, pitch = 26, fan = true, thresholdDeg = 5 } = {}) {
+/** Nearby critique moments share one anchored badge, including pairs. */
+export function markerGroups(markers = [], { radius, pitch = 26, thresholdDeg = 5 } = {}) {
   // Include the count badge's extra radius, and use chord distance so hit targets cannot overlap.
   const spacing = Math.max(thresholdDeg, 2 * Math.asin(Math.min(1, pitch / (2 * radius))) * 180 / Math.PI);
-  return clusterMarkers(markers, spacing).flatMap(cluster => {
-    if (!fan || cluster.count > 2) return [{ ...cluster, radius,
-      items: [...cluster.items].sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0)) }];
-    return fanMarkers(cluster.items, { radius, pitch, maxLanes: 2, thresholdDeg: spacing + .001 })
-      .map(marker => ({ key: String(marker.key), items: [marker], count: 1, angle: marker.angle, radius: marker.radius, trueAngle: marker.trueAngle, lane: marker.lane }));
-  });
+  return clusterMarkers(markers, spacing).map(cluster => ({ ...cluster, radius,
+    items: [...cluster.items].sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0)) }));
 }

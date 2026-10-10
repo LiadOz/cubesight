@@ -1,0 +1,1296 @@
+{
+  "scramble": "D2 L2 B' U2 F L2 B' L2 F R2 B L2 D' R D2 U' R' D' F2 L R'",
+  "solveMs": 33220,
+  "solveMoves": [
+    "R",
+    "U'",
+    "D",
+    "R'",
+    "R'",
+    "U'",
+    "D",
+    "R'",
+    "R'",
+    "F",
+    "R",
+    "D'",
+    "D'",
+    "L2",
+    "U",
+    "L",
+    "U",
+    "L'",
+    "U",
+    "L",
+    "U'",
+    "L'",
+    "F",
+    "U",
+    "F'",
+    "U'",
+    "U",
+    "R'",
+    "U",
+    "R",
+    "U'",
+    "R'",
+    "U",
+    "R",
+    "U",
+    "R'",
+    "U",
+    "U",
+    "R",
+    "U'",
+    "B",
+    "U",
+    "B'",
+    "U",
+    "U",
+    "L",
+    "U",
+    "F",
+    "U'",
+    "F'",
+    "L'",
+    "U'",
+    "U'",
+    "B'",
+    "R'",
+    "F",
+    "R",
+    "B",
+    "R'",
+    "F'",
+    "R",
+    "B'",
+    "F",
+    "F",
+    "B'",
+    "D",
+    "B'",
+    "F",
+    "B'",
+    "F",
+    "U",
+    "U",
+    "F",
+    "B'",
+    "F",
+    "B'",
+    "D",
+    "F",
+    "B'",
+    "F",
+    "B'",
+    "U",
+    "U"
+  ],
+  "moveCount": 83,
+  "moveTimes": [
+    0,
+    631.5,
+    1438,
+    3781.699999999255,
+    4499,
+    5263.5,
+    7873.599999997765,
+    8368.199999999255,
+    9044.800000000745,
+    10123.699999999255,
+    10576.89999999851,
+    11248.199999999255,
+    11338.5,
+    11880.39999999851,
+    14219.39999999851,
+    14488.5,
+    14761,
+    14983.300000000745,
+    15344.099999997765,
+    15663.699999999255,
+    15928.300000000745,
+    16603.300000000745,
+    18178,
+    18628.300000000745,
+    19214.199999999255,
+    20878.5,
+    21328.099999997765,
+    21778.599999997765,
+    21913.199999999255,
+    22184.599999997765,
+    22318.300000000745,
+    22498.599999997765,
+    22633.599999997765,
+    22904.5,
+    23629.699999999255,
+    24027.800000000745,
+    24173.5,
+    24214.199999999255,
+    24388,
+    24523.099999997765,
+    25110.39999999851,
+    25154.599999997765,
+    25255,
+    26548.199999999255,
+    26683.39999999851,
+    27049.199999999255,
+    27322.5,
+    27405.39999999851,
+    27504.39999999851,
+    27539.800000000745,
+    27766.39999999851,
+    28405.39999999851,
+    28532.300000000745,
+    28621.5,
+    28936.39999999851,
+    28956.099999997765,
+    29113,
+    29343.699999999255,
+    29482.800000000745,
+    29619.800000000745,
+    29655,
+    30654.300000000745,
+    30659,
+    30872.5,
+    30883.699999999255,
+    31086.800000000745,
+    31323.800000000745,
+    31332.39999999851,
+    31554,
+    31559.800000000745,
+    31687.39999999851,
+    31874.300000000745,
+    32021.099999997765,
+    32043.800000000745,
+    32133.599999997765,
+    32219.599999997765,
+    32452.099999997765,
+    32900.699999999255,
+    32905.39999999851,
+    32917.5,
+    33034.199999999255,
+    33168.199999999255,
+    33266.300000000745
+  ],
+  "splits": [
+    {
+      "key": "cross",
+      "ms": 11880.39999999851,
+      "moves": 14,
+      "skipped": false
+    },
+    {
+      "key": "pair1",
+      "ms": 0.0,
+      "moves": 0,
+      "skipped": true
+    },
+    {
+      "key": "pair2",
+      "ms": 4722.900000002235,
+      "moves": 8,
+      "skipped": false
+    },
+    {
+      "key": "pair3",
+      "ms": 2610.89999999851,
+      "moves": 3,
+      "skipped": false
+    },
+    {
+      "key": "pair4",
+      "ms": 6040.800000000745,
+      "moves": 18,
+      "skipped": false
+    },
+    {
+      "key": "eo",
+      "ms": 2511.39999999851,
+      "moves": 8,
+      "skipped": false
+    },
+    {
+      "key": "co",
+      "ms": 1888.6000000014901,
+      "moves": 10,
+      "skipped": false
+    },
+    {
+      "key": "cp",
+      "ms": 0,
+      "moves": 0,
+      "skipped": true
+    },
+    {
+      "key": "ep",
+      "ms": 3611.300000000745,
+      "moves": 22,
+      "skipped": false
+    }
+  ],
+  "analysis": {
+    "v": 4,
+    "engine": 5,
+    "face": "D",
+    "crossSource": "given",
+    "solved": true,
+    "timed": true,
+    "marks": {
+      "cross": 13,
+      "pairs": [
+        13,
+        21,
+        24,
+        42
+      ],
+      "eo": 50,
+      "co": 60,
+      "cp": 60,
+      "solved": 82
+    },
+    "xcross": "xcross",
+    "skips": [
+      {
+        "kind": "xcross",
+        "idx": 13,
+        "count": 1
+      },
+      {
+        "kind": "cp",
+        "idx": 60
+      }
+    ],
+    "pseudo": [],
+    "offsets": [],
+    "pauses": [
+      {
+        "i": 2,
+        "ms": 807,
+        "allow": 350,
+        "stage": "cross",
+        "boundary": "inside"
+      },
+      {
+        "i": 3,
+        "ms": 2344,
+        "allow": 350,
+        "stage": "cross",
+        "boundary": "inside"
+      },
+      {
+        "i": 6,
+        "ms": 2610,
+        "allow": 350,
+        "stage": "cross",
+        "boundary": "inside"
+      },
+      {
+        "i": 9,
+        "ms": 1079,
+        "allow": 350,
+        "stage": "cross",
+        "boundary": "inside"
+      },
+      {
+        "i": 14,
+        "ms": 2339,
+        "allow": 600,
+        "stage": "pair2",
+        "boundary": "cross-f2l"
+      },
+      {
+        "i": 22,
+        "ms": 1575,
+        "allow": 450,
+        "stage": "pair3",
+        "boundary": "f2l-f2l"
+      },
+      {
+        "i": 25,
+        "ms": 1664,
+        "allow": 450,
+        "stage": "pair4",
+        "boundary": "f2l-f2l"
+      },
+      {
+        "i": 43,
+        "ms": 1293,
+        "allow": 650,
+        "stage": "eo",
+        "boundary": "f2l-oll"
+      }
+    ],
+    "medianGapMs": 224,
+    "cancels": [
+      {
+        "from": 3,
+        "to": 4,
+        "waste": 1
+      },
+      {
+        "from": 7,
+        "to": 8,
+        "waste": 1
+      },
+      {
+        "from": 11,
+        "to": 12,
+        "waste": 1
+      },
+      {
+        "from": 25,
+        "to": 26,
+        "waste": 2
+      },
+      {
+        "from": 61,
+        "to": 64,
+        "waste": 2
+      },
+      {
+        "from": 66,
+        "to": 69,
+        "waste": 2
+      },
+      {
+        "from": 72,
+        "to": 75,
+        "waste": 2
+      },
+      {
+        "from": 77,
+        "to": 80,
+        "waste": 2
+      }
+    ],
+    "cross": {
+      "moves": 14,
+      "d0": 7,
+      "extra": 7,
+      "total": 7,
+      "done": true,
+      "proven": true,
+      "target": {
+        "kind": "xcross",
+        "slots": [
+          "FR"
+        ],
+        "mask": 1
+      },
+      "best": "F' R F' L D2 F2 D2",
+      "faces": {
+        "U": 7,
+        "D": 5,
+        "F": 5,
+        "B": 7,
+        "R": 6,
+        "L": 6
+      },
+      "faceProven": {
+        "U": true,
+        "D": true,
+        "F": true,
+        "B": true,
+        "R": true,
+        "L": true
+      },
+      "faceComplete": true,
+      "xcrossFaces": {
+        "U": {
+          "opportunities": [
+            {
+              "slot": "BR",
+              "mask": 1,
+              "length": 8,
+              "moves": [
+                "U2",
+                "D2",
+                "F'",
+                "B2",
+                "R",
+                "L'",
+                "U'",
+                "R2"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FR",
+              "mask": 2,
+              "length": 9,
+              "moves": [
+                "U",
+                "R'",
+                "D'",
+                "F",
+                "R2",
+                "L2",
+                "F2",
+                "R",
+                "B"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FL",
+              "mask": 4,
+              "length": 9,
+              "moves": [
+                "U'",
+                "D",
+                "L",
+                "U2",
+                "B'",
+                "D",
+                "F",
+                "D",
+                "L2"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BL",
+              "mask": 8,
+              "length": 9,
+              "moves": [
+                "U",
+                "R",
+                "D",
+                "R2",
+                "F",
+                "L",
+                "U2",
+                "F2",
+                "B'"
+              ],
+              "proven": true
+            }
+          ],
+          "best": {
+            "slot": "BR",
+            "mask": 1,
+            "length": 8,
+            "moves": [
+              "U2",
+              "D2",
+              "F'",
+              "B2",
+              "R",
+              "L'",
+              "U'",
+              "R2"
+            ],
+            "proven": true
+          },
+          "complete": true,
+          "proven": true
+        },
+        "D": {
+          "opportunities": [
+            {
+              "slot": "FR",
+              "mask": 1,
+              "length": 7,
+              "moves": [
+                "F'",
+                "R",
+                "F'",
+                "L",
+                "D2",
+                "F2",
+                "D2"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FL",
+              "mask": 2,
+              "length": 8,
+              "moves": [
+                "R",
+                "F2",
+                "U2",
+                "L2",
+                "B",
+                "L'",
+                "U'",
+                "L"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BL",
+              "mask": 4,
+              "length": 8,
+              "moves": [
+                "R",
+                "L",
+                "F2",
+                "B2",
+                "U2",
+                "L2",
+                "U",
+                "B"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BR",
+              "mask": 8,
+              "length": 7,
+              "moves": [
+                "D'",
+                "F2",
+                "R",
+                "L2",
+                "U",
+                "L'",
+                "B"
+              ],
+              "proven": true
+            }
+          ],
+          "best": {
+            "slot": "FR",
+            "mask": 1,
+            "length": 7,
+            "moves": [
+              "F'",
+              "R",
+              "F'",
+              "L",
+              "D2",
+              "F2",
+              "D2"
+            ],
+            "proven": true
+          },
+          "complete": true,
+          "proven": true
+        },
+        "F": {
+          "opportunities": [
+            {
+              "slot": "FR",
+              "mask": 1,
+              "length": 8,
+              "moves": [
+                "R2",
+                "L",
+                "F'",
+                "U2",
+                "F2",
+                "D'",
+                "L'",
+                "F"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BR",
+              "mask": 2,
+              "length": 8,
+              "moves": [
+                "F'",
+                "B'",
+                "U",
+                "D2",
+                "R'",
+                "F'",
+                "U",
+                "R'"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BL",
+              "mask": 4,
+              "length": 8,
+              "moves": [
+                "D",
+                "F2",
+                "R",
+                "B",
+                "U'",
+                "L",
+                "U'",
+                "R'"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FL",
+              "mask": 8,
+              "length": 8,
+              "moves": [
+                "U",
+                "B",
+                "R'",
+                "D'",
+                "L2",
+                "F'",
+                "D",
+                "R"
+              ],
+              "proven": true
+            }
+          ],
+          "best": {
+            "slot": "FR",
+            "mask": 1,
+            "length": 8,
+            "moves": [
+              "R2",
+              "L",
+              "F'",
+              "U2",
+              "F2",
+              "D'",
+              "L'",
+              "F"
+            ],
+            "proven": true
+          },
+          "complete": true,
+          "proven": true
+        },
+        "B": {
+          "opportunities": [
+            {
+              "slot": "BR",
+              "mask": 1,
+              "length": 7,
+              "moves": [
+                "D2",
+                "L",
+                "D",
+                "F2",
+                "R'",
+                "U2",
+                "B"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BL",
+              "mask": 2,
+              "length": 8,
+              "moves": [
+                "U",
+                "D2",
+                "L",
+                "D",
+                "R'",
+                "F",
+                "B",
+                "L2"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FL",
+              "mask": 4,
+              "length": 8,
+              "moves": [
+                "R'",
+                "D'",
+                "R'",
+                "L",
+                "B2",
+                "D'",
+                "R",
+                "B'"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FR",
+              "mask": 8,
+              "length": 9,
+              "moves": [
+                "R",
+                "D'",
+                "B",
+                "D2",
+                "L",
+                "D'",
+                "R2",
+                "B'",
+                "R2"
+              ],
+              "proven": true
+            }
+          ],
+          "best": {
+            "slot": "BR",
+            "mask": 1,
+            "length": 7,
+            "moves": [
+              "D2",
+              "L",
+              "D",
+              "F2",
+              "R'",
+              "U2",
+              "B"
+            ],
+            "proven": true
+          },
+          "complete": true,
+          "proven": true
+        },
+        "R": {
+          "opportunities": [
+            {
+              "slot": "FR",
+              "mask": 1,
+              "length": 9,
+              "moves": [
+                "U",
+                "D",
+                "R2",
+                "B2",
+                "R",
+                "F'",
+                "R",
+                "D'",
+                "R"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BR",
+              "mask": 2,
+              "length": 8,
+              "moves": [
+                "D",
+                "L",
+                "F2",
+                "R",
+                "U2",
+                "B'",
+                "L",
+                "F2"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BL",
+              "mask": 4,
+              "length": 8,
+              "moves": [
+                "R2",
+                "U2",
+                "D2",
+                "B2",
+                "D",
+                "R'",
+                "L'",
+                "B"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FL",
+              "mask": 8,
+              "length": 7,
+              "moves": [
+                "U'",
+                "R'",
+                "U'",
+                "B2",
+                "R'",
+                "D'",
+                "B"
+              ],
+              "proven": true
+            }
+          ],
+          "best": {
+            "slot": "FL",
+            "mask": 8,
+            "length": 7,
+            "moves": [
+              "U'",
+              "R'",
+              "U'",
+              "B2",
+              "R'",
+              "D'",
+              "B"
+            ],
+            "proven": true
+          },
+          "complete": true,
+          "proven": true
+        },
+        "L": {
+          "opportunities": [
+            {
+              "slot": "FL",
+              "mask": 1,
+              "length": 7,
+              "moves": [
+                "L2",
+                "F2",
+                "L",
+                "U",
+                "B",
+                "R'",
+                "F'"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "FR",
+              "mask": 2,
+              "length": 8,
+              "moves": [
+                "F'",
+                "L'",
+                "D",
+                "F'",
+                "D2",
+                "L",
+                "U",
+                "F'"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BR",
+              "mask": 4,
+              "length": 9,
+              "moves": [
+                "U",
+                "D'",
+                "L",
+                "F2",
+                "L2",
+                "U",
+                "L'",
+                "F",
+                "B"
+              ],
+              "proven": true
+            },
+            {
+              "slot": "BL",
+              "mask": 8,
+              "length": 8,
+              "moves": [
+                "F2",
+                "R2",
+                "B'",
+                "D",
+                "L'",
+                "B'",
+                "L2",
+                "U"
+              ],
+              "proven": true
+            }
+          ],
+          "best": {
+            "slot": "FL",
+            "mask": 1,
+            "length": 7,
+            "moves": [
+              "L2",
+              "F2",
+              "L",
+              "U",
+              "B",
+              "R'",
+              "F'"
+            ],
+            "proven": true
+          },
+          "complete": true,
+          "proven": true
+        }
+      },
+      "startProven": true,
+      "losses": [
+        {
+          "i": 0,
+          "move": "R",
+          "loss": 1,
+          "d": 7,
+          "best": "F' R F' L D2 F2 D2",
+          "after": 7
+        },
+        {
+          "i": 1,
+          "move": "U'",
+          "loss": 1,
+          "d": 7,
+          "best": "U2 D2 F B2 R' D2 L2",
+          "after": 7
+        },
+        {
+          "i": 4,
+          "move": "R'",
+          "loss": 2,
+          "d": 5,
+          "best": "U' R' D' L2 B'",
+          "after": 6
+        },
+        {
+          "i": 5,
+          "move": "U'",
+          "loss": 1,
+          "d": 6,
+          "best": "U L U F2 D' B'",
+          "after": 6
+        },
+        {
+          "i": 7,
+          "move": "R'",
+          "loss": 1,
+          "d": 5,
+          "best": "R2 F R D2 L2",
+          "after": 5
+        },
+        {
+          "i": 11,
+          "move": "D'",
+          "loss": 1,
+          "d": 2,
+          "best": "D2 L2",
+          "after": 2
+        }
+      ]
+    },
+    "pairs": [
+      {
+        "n": 2,
+        "from": 14,
+        "to": 21,
+        "yours": "U L U L' U L U' L'",
+        "w": 8,
+        "yoursErgonomicScore": 18,
+        "frame": 0,
+        "proofScope": "cross-and-pair-up-to-D-offset",
+        "chosenSlot": "BL",
+        "chosenSlots": [
+          "BL"
+        ],
+        "chosenShortest": 6,
+        "chosenProven": true,
+        "bestSlot": "BL",
+        "better": {
+          "slot": "BL",
+          "slots": [
+            "BL"
+          ],
+          "moves": "U L F' L F L2",
+          "w": 14,
+          "stm": 6,
+          "etm": 6,
+          "generators": "FLU",
+          "ergonomicScore": 13.5,
+          "goalShift": 0
+        },
+        "options": [
+          {
+            "slots": [
+              "BL"
+            ],
+            "moves": "U L F' L F L2",
+            "stm": 6,
+            "etm": 6,
+            "generators": "FLU",
+            "ergonomicScore": 13.5,
+            "plannerWeight": 14,
+            "proven": true,
+            "goalShift": 0
+          },
+          {
+            "slots": [
+              "BR"
+            ],
+            "moves": "R' U R B L' U2 L B'",
+            "stm": 8,
+            "etm": 8,
+            "generators": "BLRU",
+            "ergonomicScore": 17,
+            "plannerWeight": 16,
+            "proven": true,
+            "goalShift": 0
+          }
+        ],
+        "shortest": 6,
+        "proven": true,
+        "complete": false,
+        "ms": 47.7
+      },
+      {
+        "n": 3,
+        "from": 22,
+        "to": 24,
+        "yours": "F U F'",
+        "w": 11,
+        "yoursErgonomicScore": 7,
+        "frame": 0,
+        "proofScope": "cross-and-pair-up-to-D-offset",
+        "chosenSlot": "FL",
+        "chosenSlots": [
+          "FL"
+        ],
+        "chosenShortest": 3,
+        "chosenProven": true,
+        "bestSlot": "FL",
+        "better": null,
+        "options": [
+          {
+            "slots": [
+              "FL"
+            ],
+            "moves": "F U F'",
+            "stm": 3,
+            "etm": 3,
+            "generators": "FU",
+            "ergonomicScore": 7,
+            "plannerWeight": 11,
+            "proven": true,
+            "goalShift": 0
+          },
+          {
+            "slots": [
+              "BR"
+            ],
+            "moves": "R' U R B L' U2 L B'",
+            "stm": 8,
+            "etm": 8,
+            "generators": "BLRU",
+            "ergonomicScore": 17,
+            "plannerWeight": 16,
+            "proven": true,
+            "goalShift": 0
+          }
+        ],
+        "shortest": 3,
+        "proven": true,
+        "complete": false,
+        "ms": 25.6
+      },
+      {
+        "n": 4,
+        "from": 25,
+        "to": 42,
+        "yours": "U' U R' U R U' R' U R U R' U U R U' B U B'",
+        "w": 26,
+        "yoursErgonomicScore": 24,
+        "frame": 0,
+        "proofScope": "cross-and-pair-up-to-D-offset",
+        "chosenSlot": "BR",
+        "chosenSlots": [
+          "BR"
+        ],
+        "chosenShortest": 6,
+        "chosenProven": true,
+        "bestSlot": "BR",
+        "better": {
+          "slot": "BR",
+          "slots": [
+            "BR"
+          ],
+          "moves": "R' U2 R B U B'",
+          "w": 14,
+          "stm": 6,
+          "etm": 6,
+          "generators": "BRU",
+          "ergonomicScore": 12,
+          "goalShift": 0
+        },
+        "options": [
+          {
+            "slots": [
+              "BR"
+            ],
+            "moves": "R' U2 R B U B'",
+            "stm": 6,
+            "etm": 6,
+            "generators": "BRU",
+            "ergonomicScore": 12,
+            "plannerWeight": 14,
+            "proven": true,
+            "goalShift": 0
+          }
+        ],
+        "shortest": 6,
+        "proven": true,
+        "complete": false,
+        "ms": 0.4
+      }
+    ],
+    "ollCase": {
+      "id": "oll/53",
+      "recognitionMs": 1293.199999999255,
+      "executionMs": 3107
+    },
+    "pllCase": {
+      "id": "pll/H",
+      "auf": "U U",
+      "recognitionMs": 999.3000000007451,
+      "executionMs": 2612
+    },
+    "lastLayer": {
+      "oll": {
+        "caseId": "oll/53",
+        "name": "Frying Pan",
+        "number": 53,
+        "from": 43,
+        "to": 60,
+        "used": {
+          "moves": "U U L U F U' F' L' U' U' B' R' F R B R' F' R",
+          "core": "",
+          "stm": 18,
+          "coreStm": 0,
+          "auf": "",
+          "aufStm": 0
+        },
+        "recognizedAlg": null,
+        "configuredLooks": 2,
+        "looksTaken": 2,
+        "extraLook": false,
+        "likelyExtraLook": false,
+        "looks": [
+          {
+            "caseId": "oll/24",
+            "name": "T, Chameleon, Shark, Hammerhead, Little Horse, Stingray",
+            "at": 50,
+            "evidence": "configured-look"
+          }
+        ],
+        "best": {
+          "id": "s.oll.53.1",
+          "moves": "B' R' F R' F' R F R' F' R2 B",
+          "notation": "y l' U' L U' L' U L U' L' U2 l y'",
+          "sourceNotation": "l' U' L U' L' U L U' L' U2 l",
+          "stm": 11,
+          "etm": 13,
+          "rank": 1,
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": "SpeedSolving Wiki community contributors",
+          "sourceUrl": "https://www.speedsolving.com/wiki/index.php/OLL"
+        },
+        "better": {
+          "stm": 7,
+          "loss": 7,
+          "best": "B' R' F R' F' R F R' F' R2 B"
+        },
+        "extraAuf": null,
+        "recognitionMs": 1293.199999999255,
+        "executionMs": 3107
+      },
+      "pll": {
+        "caseId": "pll/H",
+        "name": "H",
+        "number": null,
+        "from": 61,
+        "to": 82,
+        "used": {
+          "moves": "B' F F B' D B' F B' F U U F B' F B' D F B' F B' U U",
+          "core": "B' F F B' D B' F B' F U U F B' F B' D F B' F B'",
+          "stm": 22,
+          "coreStm": 20,
+          "auf": "U U",
+          "aufStm": 2
+        },
+        "recognizedAlg": null,
+        "configuredLooks": 1,
+        "looksTaken": 1,
+        "extraLook": false,
+        "likelyExtraLook": false,
+        "looks": [],
+        "best": {
+          "id": "s.pll.H.1",
+          "moves": "R2 L2 D R2 L2 U2 R2 L2 D R2 L2 U2",
+          "notation": "M2 U M2 U2 M2 U M2 U2",
+          "sourceNotation": "M2 U M2 U2 M2 U M2",
+          "stm": 8,
+          "etm": 12,
+          "rank": 1,
+          "credit": "SpeedSolving Wiki community contributors",
+          "source": "SpeedSolving Wiki community contributors",
+          "sourceUrl": "https://www.speedsolving.com/wiki/index.php/PLL"
+        },
+        "better": {
+          "stm": 13,
+          "loss": 13,
+          "best": "R2 L2 D R2 L2 U2 R2 L2 D R2 L2 U2"
+        },
+        "extraAuf": {
+          "loss": 1,
+          "indices": [
+            20
+          ],
+          "used": "U U",
+          "best": "U2"
+        },
+        "recognitionMs": 999.3000000007451,
+        "executionMs": 2612
+      },
+      "reference": 19
+    },
+    "lastLayerReference": 19
+  },
+  "rotationMarks": [
+    {
+      "idx": 12,
+      "tMs": 11248.199999999255,
+      "from": {
+        "bottom": "D",
+        "front": "F"
+      },
+      "to": {
+        "bottom": "D",
+        "front": "L"
+      }
+    },
+    {
+      "idx": 41,
+      "tMs": 25110.39999999851,
+      "from": {
+        "bottom": "D",
+        "front": "L"
+      },
+      "to": {
+        "bottom": "D",
+        "front": "F"
+      }
+    },
+    {
+      "idx": 55,
+      "tMs": 28936.39999999851,
+      "from": {
+        "bottom": "D",
+        "front": "F"
+      },
+      "to": {
+        "bottom": "L",
+        "front": "F"
+      }
+    },
+    {
+      "idx": 77,
+      "tMs": 32452.099999997765,
+      "from": {
+        "bottom": "L",
+        "front": "F"
+      },
+      "to": {
+        "bottom": "U",
+        "front": "F"
+      }
+    }
+  ],
+  "rotations": 4,
+  "crossFace": "D",
+  "solved": true,
+  "at": 1000000,
+  "source": "smart",
+  "focus": "learning"
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { arcPath, clusterMarkers, markerGroups, miniGlyphSize, placeLabels, polar, ringLayout } from '../src/ui/orbit/geometry.js';
+import { arcPath, clusterMarkers, markerGroups, ringLabels, miniGlyphSize, placeLabels, polar, ringLayout } from '../src/ui/orbit/geometry.js';
 import { applyMoves, createSolvedState, stateFromScramble } from '../src/cross-cube.js';
 import { caseDisplayState, normalizeCaseColorSetting, orientCaseState } from '../src/ui/cube/orientation.js';
 import { resolveSlotPieces } from '../src/ui/cube/slots.js';
@@ -74,14 +74,14 @@ test('dense review markers stay anchored as count badges with every critique acc
   }
 });
 
-test('review clustering handles unwrapped Orbit angles and preserves the two-marker fan', () => {
+test('review clustering handles unwrapped Orbit angles and groups two-marker pairs', () => {
   const dense = markerGroups([{ key: 'a', angle: 358 }, { key: 'b', angle: 361 }, { key: 'c', angle: 363 }], { radius: 300 });
   assert.equal(dense.length, 1);
   assert.equal(dense[0].count, 3);
   assert.ok(Math.abs(dense[0].angle) < 5);
   const pair = markerGroups([{ key: 'a', angle: 100 }, { key: 'b', angle: 101 }], { radius: 300 });
-  assert.deepEqual(pair.map(group => group.count), [1, 1]);
-  assert.deepEqual(pair.map(group => group.radius), [300, 274]);
+  assert.deepEqual(pair.map(group => group.count), [2]);
+  assert.deepEqual(pair.map(group => group.radius), [300]);
 });
 
 test('crowded critiques rank by impact without shifting the cluster anchor or dropping moments', () => {
@@ -165,4 +165,19 @@ test('Cube highlight resolves cross, pair and exact piece ids to real cubies', (
   assert.deepEqual(resolveSlotPieces(state, { type: 'pair', cornerId: 'UFR', edgeId: 'FR' }), ['UFR', 'FR']);
   assert.deepEqual(resolveSlotPieces(state, 'UFR'), ['UFR']);
   assert.deepEqual(resolveSlotPieces(state, { type: 'cross', face: 'U' }).filter(id => id.includes('U')).length, 4);
+});
+
+test('anchored stage values avoid critique badges and adjacent labels without dropping text', () => {
+  const items = [{ key: 'co', kind: 'stage', angle: 90, width: 76, height: 36 }, { key: 'cp', kind: 'stage', angle: 95, width: 76, height: 36 }];
+  const obstacles = [{ left: 670, right: 730, top: 350, bottom: 410 }];
+  const { labels } = ringLabels(items, { cx: 380, cy: 380, stageRadius: 340, moveRadius: 320, view: 760, clampToView: true, obstacles });
+  const boxes = [...obstacles];
+  assert.equal(labels.length, 2);
+  for (const label of labels) {
+    assert.equal(label.hidden, false);
+    assert.equal(label.x, 684);
+    const box = { left: label.x, right: label.x + 76, top: label.y - 18, bottom: label.y + 18 };
+    for (const other of boxes) assert.ok(box.right <= other.left || other.right <= box.left || box.bottom <= other.top || other.bottom <= box.top);
+    boxes.push(box);
+  }
 });
