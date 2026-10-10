@@ -17,6 +17,7 @@
     "test:unit": "node scripts/test-units.mjs",
     "queue": "node scripts/merge-queue.mjs",
     "perf": "node scripts/perf.mjs",
+    "perf:gpu": "node scripts/perf.mjs --gpu",
     "perf:check": "node scripts/perf-check.mjs",
     "test:rust": "cargo test --manifest-path wasm-core/Cargo.toml",
     "lint": "npm run lint:js && npm run lint:css",

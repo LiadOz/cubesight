@@ -69,13 +69,64 @@ To inspect Chromium's graphics backend on the machine running the tests:
 npm run test:gpu-info
 ```
 
-This compares the default launch with `--enable-gpu` and saves device, renderer,
-and feature status to `test-results/gpu/info.json`. SwiftShader is a software
-renderer; enabling the flag alone does not supply a hardware device. The agent
-environment exposed no GPU, and both launches reported SwiftShader with
-software-disabled compositing and rasterization. Hardware performance needs a
-measurement on a host with an accessible GPU. The diagnostic does not render
-the 3D cube, and the gate keeps its cube placeholder.
+This compares the default headless shell with full Chromium's GPU mode and
+Vulkan backend. It saves devices, feature status, and the renderer of a real
+WebGL2 context to `test-results/gpu/info.json`. SwiftShader, llvmpipe, and WARP
+are software renderers; a launch flag does not establish hardware acceleration.
+The diagnostic creates a small context without rendering the 3D cube.
+
+## Hardware cube performance capture
+
+The production cube already uses Three.js WebGL with
+`powerPreference: 'high-performance'`. Its normal browser chooses the driver.
+The existing `npm run perf` intentionally forces SwiftShader for a reproducible
+software baseline. To measure the same startup, gyro, move playback, solve,
+analysis-worker, frame interval, and memory scenarios on a real GPU:
+
+```sh
+mkdir -p /home/loz/projects/cubesight/.agents/artifacts/gpu
+PW_PORT=4410 TMPDIR=/home/loz/projects/cubesight/.agents/artifacts/gpu \
+  nice -n 19 npm run perf:gpu
+```
+
+Run in your worktree. The short temp path avoids full Chromium's Unix socket
+path-length limit. The command tries full Chromium's automatic hardware
+selection, then Vulkan. You can select `CUBESIGHT_GPU_BACKEND=gl` or `vulkan`,
+or use `CUBESIGHT_GPU_HEADED=1` with an accessible X11/Wayland session.
+Do not use Xvfb as evidence of a physical GPU.
+
+The GPU command verifies hardware WebGL2 before any build or engine benchmark,
+then checks the capture browser and the actual cube context. It rejects
+software fallback and unidentified/disabled contexts. Reports identify the
+renderer and graphics mode instead of hardcoding SwiftShader. Output remains
+in `test-results/perf/`; copy reports to separate artifact folders before
+comparing hardware and software captures. Normal `npm test` keeps its cube
+placeholder. This is a performance investigation, not an additional merge gate.
+
+Hardware timings must be compared on the same machine and scenario; the phone
+viewport and CPU throttle do not measure an Android GPU. JavaScript logic and
+WASM search still run on the CPU, so hardware rendering does not establish a
+whole-suite speedup.
+
+In the SBX Docker session checked on 2026-10-10, no `/dev/dri` or NVIDIA devices,
+display socket, or display-class PCI device was visible. The Docker socket
+controls a nested daemon named `cubesight-codex`, not the outer host. Nested
+containers cannot supply a GPU that the SBX runtime has not exposed. The outer
+runtime must provide GPU device access and compatible graphics drivers first
+(for Intel/AMD typically DRM render devices; NVIDIA requires its container
+runtime and graphics driver capabilities). For an outer Docker launcher, the
+relevant options are `--device=/dev/dri` with render-device group permissions
+for Intel/AMD, or `--gpus all -e NVIDIA_DRIVER_CAPABILITIES=graphics,utility`
+for NVIDIA after installing its container toolkit. Headed NVIDIA capture also
+needs the `display` capability and display socket access. Apply these to the
+outer SBX launcher; adding them to this nested daemon cannot reach the host.
+The repository command can verify
+that setup, but cannot create hardware access with Chromium flags.
+
+Primary references: [Chromium headless GPU setup](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/gpu/using-gpu-hardware-in-headless-chrome.md)
+and [Playwright full Chromium headless mode](https://playwright.dev/docs/browsers#chromium-new-headless-mode),
+[Docker GPU access](https://docs.docker.com/engine/containers/gpu/), and
+[NVIDIA graphics driver capabilities](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html).
 
 Known snapshot coverage debt: the references named light currently contain
 dark pages; see `KNOWN-ISSUES.md`. CPU changes do not regenerate those images.
