@@ -15,6 +15,8 @@ import { DRILLS, agoLabel, drillSettings, lastDrill } from './catalog.js';
 import { dayStreak, loadShell } from './rounds.js';
 import { syncPageTokens } from '../pages/tokens.js';
 import { buildDrillViewModel } from './view-model.js';
+import { openHistory } from '../store/history.js';
+import { weakPracticeCases, weakPracticeHref } from './weak-case-practice.js';
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -35,6 +37,7 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
   intro.append(head);
   hero.append(intro);
   const content = el('div', 'hub-content');
+  let history = null, historyGeneration = 0, weakKind = 'pll';
   page.append(hero, content);
   root.replaceChildren(page);
 
@@ -64,6 +67,56 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     play.append(el('kbd', null, 'enter'));
     goOn.append(copy, play);
     content.append(goOn);
+
+    const solveRecords = history?.records ?? [];
+    const weakRows = weakPracticeCases(solveRecords, weakKind);
+    const hasWeakPractice = weakRows.length > 0 || weakPracticeCases(solveRecords, weakKind === 'pll' ? 'oll' : 'pll').length > 0;
+    page.toggleAttribute('data-has-weak-practice', hasWeakPractice);
+    if (hasWeakPractice) {
+      const weakSection = el('section', 'hub-weak-section');
+      const weakHead = el('div', 'hub-weak-head');
+      const weakHeading = el('strong', 'hub-weak-title', `weakest ${weakKind.toUpperCase()} cases`);
+      const trainHref = weakPracticeHref(weakRows);
+      let trainAction = null;
+      if (trainHref) {
+        trainAction = el('a', 'hub-weak-primary', `weakest · drill ${weakRows.filter(item => item.recognitionHref).length} cases`);
+        trainAction.href = trainHref;
+        trainAction.setAttribute('aria-label', `Drill your weakest ${weakKind.toUpperCase()} cases from your solves`);
+        trainAction.dataset.weakPractice = weakKind;
+        trainAction.dataset.weakCases = weakRows.filter(item => item.recognitionHref).map(item => item.caseValue).join(',');
+      }
+      weakHead.append(trainAction ?? weakHeading);
+      const weakTabs = el('div', 'hub-weak-tabs');
+      for (const kind of ['pll', 'oll']) {
+        const tab = el('button', 'chip hub-weak-tab', kind.toUpperCase());
+        tab.type = 'button'; tab.setAttribute('aria-pressed', String(kind === weakKind));
+        tab.addEventListener('click', () => { weakKind = kind; render(); });
+        weakTabs.append(tab);
+      }
+      weakHead.append(weakTabs); weakSection.append(weakHead);
+      const weakList = el('ol', 'hub-weak-list');
+      weakRows.forEach(({ row, stats, recognitionHref, executionHref }) => {
+        const item = el('li', 'hub-weak-row');
+        const label = el('span', 'hub-weak-case-name', row.name);
+        const evidence = [
+          stats.extraLooks ? `${stats.extraLooks} extra ${stats.extraLooks === 1 ? 'look' : 'looks'} / ${stats.attempts}` : null,
+          Number.isFinite(stats.medianRecognitionMs) ? `recog ${(stats.medianRecognitionMs / 1000).toFixed(2)} s` : null,
+          Number.isFinite(stats.medianExecutionMs) ? `exec ${(stats.medianExecutionMs / 1000).toFixed(2)} s` : null,
+        ].filter(Boolean).join(' · ');
+        const meta = el('span', 'hub-weak-meta', evidence);
+        const actions = el('span', 'hub-weak-actions');
+        if (recognitionHref) {
+          const recognize = el('a', null, 'recognize'); recognize.href = recognitionHref; actions.append(recognize);
+        }
+        if (executionHref) {
+          const execute = el('a', null, 'execute'); execute.href = executionHref; actions.append(execute);
+        }
+        item.append(label, meta, actions); weakList.append(item);
+      });
+      if (weakRows.length) weakSection.append(weakList);
+      else weakSection.append(el('p', 'hub-weak-empty', `no ${weakKind.toUpperCase()} cases with two solves and measured times yet`));
+      content.append(weakSection);
+    }
 
     const list = el('ul', 'hub-list');
     list.setAttribute('aria-label', 'drills');
@@ -115,10 +168,19 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     const drill = DRILLS.find(item => item.key === key);
     if (drill) location.hash = drill.href;
   }
+  function refreshWeakCase() {
+    const generation = ++historyGeneration;
+    void openHistory().then(store => {
+      if (detached || generation !== historyGeneration) return;
+      history = store;
+      if (active) render();
+    }).catch(() => {});
+  }
   const onTheme = () => { if (active && !detached) render(); };
   document.addEventListener('cubesight-theme', onTheme);
   document.addEventListener('keydown', onKey);
   render();
+  refreshWeakCase();
 
   return {
     get ready() { return Promise.resolve(); },
@@ -137,10 +199,11 @@ export function createDrillsHub(root, storage = globalThis.localStorage) {
     setActive(value) {
       const wasActive = active;
       active = Boolean(value);
-      if (active && !wasActive) render();   // pick up a new "continue" and the current style
+      if (active && !wasActive) { render(); refreshWeakCase(); }   // pick up a new "continue" and the current style
     },
     detach() {
       detached = true; active = false;
+      historyGeneration++;
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('cubesight-theme', onTheme);
       if (page.parentNode === root) page.remove();

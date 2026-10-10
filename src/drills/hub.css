@@ -17,6 +17,19 @@
   border-radius: var(--b-radius-control); background: var(--b-ink); color: var(--b-bg); font-weight: 700; font-size: 14px;
 }
 .hub-play kbd { background: transparent; color: inherit; border: 1px solid currentColor; opacity: .7; padding: 0 6px; }
+.hub-weak-section { border-top: 1px solid var(--b-hairline); padding-top: 8px; }
+.hub-weak-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hub-weak-title { font-size: 15px; font-weight: 650; }
+.hub-weak-tabs { display: inline-flex; gap: 4px; }
+.hub-weak-tab { min-height: 30px; height: 30px; padding-inline: 9px; font-size: 11px; }
+.hub-weak-primary { color: var(--b-accent-text); font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.hub-weak-list { display: grid; list-style: none; margin: 4px 0 0; padding: 0; }
+.hub-weak-row { min-height: 28px; display: grid; grid-template-columns: minmax(72px, .35fr) minmax(0, 1fr) auto; align-items: center; gap: 10px; border-bottom: 1px solid var(--b-hairline); }
+.hub-weak-case-name { font-weight: 600; font-size: 14px; }
+.hub-weak-meta { min-width: 0; color: var(--b-muted); font-size: 12px; }
+.hub-weak-actions { display: flex; gap: 12px; font-size: 12px; }
+.hub-weak-actions a { color: var(--b-accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.hub-weak-empty { margin: 8px 0 2px; color: var(--b-muted); font-size: 12px; }
 @media (hover: hover) { .hub-continue:hover .hub-play { background: var(--b-accent); color: var(--b-on-accent); } }
 
 .hub-list { list-style: none; display: grid; }
@@ -49,10 +62,19 @@
   .cs-page.brain.drills-hub { padding-block: 16px; }
   .hub-content { gap: 16px; }
   .hub-continue { flex-direction: column; align-items: stretch; padding: 10px 0; gap: 8px; }
+  .hub-weak-row { grid-template-columns: minmax(50px, auto) minmax(0, 1fr) auto; gap: 6px; }
+  .hub-weak-meta { font-size: 11px; }
   .hub-play { justify-content: center; padding: 10px 18px; font-size: 16px; }
   .hub-play kbd, .hub-keys, .hub-list-head, .hub-link .hub-key, .hub-modes { display: none; }
   .hub-link { grid-template-columns: minmax(0, 1fr) 18px; gap: 12px; padding: 9px 0; }
   .hub-name strong { font-size: 20px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-content { gap: 8px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-continue { padding-block: 4px; gap: 4px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-link { padding-block: 4px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-blurb { display: none; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-weak-row { min-height: 48px; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 5px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-weak-actions { gap: 3px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-weak-actions a { display: inline-flex; min-height: 40px; align-items: center; padding-inline: 4px; }
 }
 @media (pointer: coarse) { .hub-keys, .hub-play kbd { display: none; } }
 
@@ -68,8 +90,13 @@
   .cs-page.brain.drills-hub { gap: 12px; padding-block: 12px; }
   .hub-hero .cs-head { display: flex; align-items: baseline; gap: 24px; }
   .hub-hero .cs-sub { margin-top: 0; }
-  .hub-link { padding: 6px 0; }
-  .hub-name strong { font-size: 22px; }
-  .hub-continue { padding-block: 8px; }
-  .hub-content { gap: 8px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-link { padding: 4px 0; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-name { display: flex; align-items: baseline; gap: 9px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-name strong { font-size: 17px; white-space: nowrap; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-blurb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-name .hub-key { margin-left: auto; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-continue { padding-block: 8px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-content { gap: 8px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-weak-section { padding-top: 5px; }
+  .cs-page.brain.drills-hub[data-has-weak-practice] .hub-weak-row { min-height: 24px; }
 }

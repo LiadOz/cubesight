@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   computeTPS, ao5, summarize, rollingTrend, trendGroups,
-  phaseSplits, weakCases, median,
+  phaseSplits, weakCases, aggregateByCase, median,
 } from '../src/solve-metrics.js';
 import { ao12, resultMs, isDnf } from '../src/solve-metrics.js';
 import { loadSolves, saveSolves, appendSolve } from '../src/solve-store.js';
@@ -72,29 +72,47 @@ test('phaseSplits averages phases and computes share of total', () => {
   assert.ok(Math.abs(ps.f2lPct - 4500 / 11000 * 100) < 0.01);
 });
 
-test('aggregateByCase and weakCases rank lowest accuracy then slowest', () => {
+test('aggregateByCase reports outcomes and weakCases rank measured PLL stage time', () => {
   const rs = [
-    rec(10000, 60, { pllCase: 'T' }),
-    rec(10000, 60, { pllCase: 'T' }),
-    rec(8000, 60, { pllCase: 'Ua' }),
-    rec(20000, 60, { pllCase: 'Z', solved: false }),
-    rec(20000, 60, { pllCase: 'Z', solved: false }),
+    Object.assign(rec(10000, 60, { pllCase: 'T' }), { analysis: { lastLayer: { pll: { recognitionMs: 1000, executionMs: 2000 } } } }),
+    Object.assign(rec(10000, 60, { pllCase: 'T' }), { analysis: { lastLayer: { pll: { recognitionMs: 1200, executionMs: 2200 } } } }),
+    Object.assign(rec(8000, 60, { pllCase: 'Ua' }), { analysis: { lastLayer: { pll: { recognitionMs: 2000, executionMs: 3000 } } } }),
+    Object.assign(rec(20000, 60, { pllCase: 'Z', solved: false }), { analysis: { lastLayer: { pll: { recognitionMs: 8000, executionMs: 4000 } } } }),
+    Object.assign(rec(20000, 60, { pllCase: 'Z', solved: false }), { analysis: { lastLayer: { pll: { recognitionMs: 9000, executionMs: 4500 } } } }),
   ];
+  assert.equal(aggregateByCase(rs, 'pllCase').find(row => row.case === 'pll/Z').accuracy, 0);
   const weak = weakCases(rs, 'pllCase', 6, 2);
-  assert.equal(weak[0].case, 'Z');     // 0% accuracy, 2 attempts
-  assert.equal(weak[0].accuracy, 0);
+  assert.equal(weak[0].case, 'pll/Z');
+  assert.equal(weak[0].medianRecognitionMs, 8500);
 });
 
 test('a catalog-backed extra look outranks slower cases in the weak-case queue', () => {
   const rs = [
-    rec(20000, 60, { ollCase: 'OLL 34' }),
-    rec(20000, 60, { ollCase: 'OLL 34' }),
+    Object.assign(rec(20000, 60, { ollCase: 'OLL 34' }), { analysis: { lastLayer: { oll: { recognitionMs: 2000, executionMs: 5000 } } } }),
+    Object.assign(rec(20000, 60, { ollCase: 'OLL 34' }), { analysis: { lastLayer: { oll: { recognitionMs: 1900, executionMs: 4800 } } } }),
     Object.assign(rec(9000, 60, { ollCase: 'OLL 27' }), { analysis: { lastLayer: { oll: { extraLook: true } } } }),
-    rec(9000, 60, { ollCase: 'OLL 27' }),
+    Object.assign(rec(9000, 60, { ollCase: 'OLL 27' }), { analysis: { lastLayer: { oll: { recognitionMs: 1000, executionMs: 3000 } } } }),
   ];
   const weak = weakCases(rs, 'ollCase', 6, 2);
-  assert.equal(weak[0].case, 'OLL 27');
+  assert.equal(weak[0].case, 'oll/27');
   assert.equal(weak[0].extraLooks, 1);
+});
+
+test('weak OLL ranking uses canonical IDs and measured stage times, never full solve time', () => {
+  const rs = [
+    Object.assign(rec(60000, 70, { ollCase: 'OLL 34' }), { analysis: { lastLayer: { oll: { recognitionMs: 500, executionMs: 1200, likelyExtraLook: true } } } }),
+    Object.assign(rec(60000, 70, { ollCase: 'oll/34' }), { analysis: { lastLayer: { oll: { recognitionMs: 600, executionMs: 1300 } } } }),
+    Object.assign(rec(5000, 50, { ollCase: 'oll/27' }), { analysis: { lastLayer: { oll: { recognitionMs: 1500, executionMs: 3000 } } } }),
+    Object.assign(rec(5000, 50, { ollCase: 'oll/27' }), { analysis: { lastLayer: { oll: { recognitionMs: 1700, executionMs: 3200 } } } }),
+    rec(90000, 90, { ollCase: 'unverified label' }),
+  ];
+  const weak = weakCases(rs, 'ollCase', 6, 2);
+  assert.equal(weak.length, 2, 'unknown labels do not become drill targets');
+  assert.equal(weak[0].case, 'oll/27', 'long measured OLL recognition beats unrelated full solve duration');
+  assert.equal(weak[0].medianRecognitionMs, 1600);
+  assert.equal(weak[0].medianExecutionMs, 3100);
+  assert.equal(weak.find(row => row.case === 'oll/34').likelyExtraLooks, 1);
+  assert.equal(weak.find(row => row.case === 'oll/34').extraLooks, 0, 'inferred looks are not presented as proven');
 });
 
 test('rollingTrend produces a trailing mean of tps over time', () => {
