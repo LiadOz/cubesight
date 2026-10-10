@@ -12,6 +12,8 @@ import { spawn } from 'node:child_process';
 import { readFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
+if (process.argv.includes('--low-cpu')) process.env.CUBESIGHT_TEST_LOW_CPU = '1';
+
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const out = path.join(root, 'test-results', 'suite');
 const browserReport = path.join(out, 'browser.json');
