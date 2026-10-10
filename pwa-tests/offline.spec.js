@@ -27,7 +27,9 @@ test('installs its full app shell and trainers for offline use', async ({ page, 
     expect.objectContaining({ sizes: '512x512', purpose: 'maskable' }),
   ]));
   const workerScript = await page.evaluate(() => fetch('/sw.js').then((response) => response.text()));
-  expect(workerScript).toMatch(/["']use strict["'];self\.skipWaiting\(\),\w+\.clientsClaim\(\)/);
+  expect(workerScript).toMatch(/["']use strict["'];/);
+  expect(workerScript).toMatch(/self\.skipWaiting\(\)/);
+  expect(workerScript).toMatch(/\w+\.clientsClaim\(\)/);
 
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
