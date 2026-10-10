@@ -9,7 +9,7 @@ export default defineConfig({
   retries: 0,
   outputDir: 'test-results/pwa',
   fullyParallel: true,
-  workers: Number(process.env.PW_WORKERS || 4),
+  workers: Number(process.env.PW_PWA_WORKERS || process.env.PW_WORKERS || (process.env.CUBESIGHT_TEST_LOW_CPU === '1' ? 2 : 4)),
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 390, height: 844 },
