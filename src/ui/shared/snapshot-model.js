@@ -20,7 +20,7 @@ export function buildSharedViewModel(input = {}) {
   const phase = source.phase || 'disconnected';
   const interrupted = phase === 'interrupted' || (phase === 'disconnected' && source.link?.status === 'lost');
   const connectionPhase = interrupted ? 'interrupted' : phase;
-  const statusText = ({ disconnected: 'disconnected', connecting: 'connecting', 'awaiting-solved': 'syncing', tracking: 'connected', desynced: 'desynced', interrupted: 'interrupted' })[connectionPhase] || connectionPhase;
+  const statusText = ({ disconnected: 'disconnected', connecting: 'connecting', 'awaiting-solved': source.facelets ? 'needs sync' : 'syncing', tracking: 'connected', desynced: 'desynced', interrupted: 'interrupted' })[connectionPhase] || connectionPhase;
   const canSync = source.canSync ?? phase === 'tracking';
   const canDisconnect = source.canDisconnect ?? phase === 'tracking';
   const actions = ACTIONS.map(([id, label]) => ({
