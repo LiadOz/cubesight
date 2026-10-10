@@ -157,12 +157,14 @@ export function initHistory(host) {
         if (suppressOrbitClick) { suppressOrbitClick = false; return; }
         const stage = selected?.stages?.find(item => item.key === segment.key);
         if (route.kind === 'replay' && stage) seekMove(stage.start, { updateUrl: false });
+        else if (route.kind === 'past') openReviewDetail({ kind: 'stage', key: segment.key });
       },
       onMarker: marker => {
         if (marker.key) {
           const target = viewModel().selected?.markers?.find(item => item.id === marker.key);
           if (target && route.kind === 'replay') seekMove(target.at ?? (target.idx ?? 0) + 1, { updateUrl: false });
-          location.hash = href(historyReviewPath(record.at, marker.key));
+          if (route.kind === 'past') openReviewDetail({ kind: 'marker', key: marker.key });
+          else location.hash = href(historyReviewPath(record.at, marker.key));
         }
       },
     }, { animate });
@@ -289,6 +291,16 @@ export function initHistory(host) {
     if (deleted) {
       const undo = make('button', 'undo delete', 'ui-action'); undo.type = 'button'; undo.dataset.action = 'undo'; actionsHost.append(undo);
     }
+  }
+  function openReviewDetail(detail) {
+    if (!currentRecord) return;
+    const at = currentRecord.at;
+    reviewPlaybackGeneration++; cube?.stop();
+    inlineReviewDetail = detail; reviewVariant = 'yours'; reviewSlots = null; reviewCursor = null;
+    if (resultPresenter?.build) updatePastPresenter();
+    else void ensureResultsPresenter().then(() => {
+      if (active && currentRecord?.at === at && ['past', 'review'].includes(route.kind)) updatePastPresenter();
+    });
   }
   function reviewUiForRoute() {
     if (route.kind === 'review' && !inlineReviewDetail) return {
@@ -509,10 +521,7 @@ export function initHistory(host) {
         mode: 'past', resultsOrbit: orbit, resultsCube: cube,
         dispatch: action => {
           if ((action.type === 'selectMarker' || action.type === 'openDetail') && currentRecord) {
-            reviewPlaybackGeneration++; cube?.stop();
-            inlineReviewDetail = { kind: action.type === 'selectMarker' ? 'marker' : action.kind, key: action.type === 'selectMarker' ? action.id : action.key };
-            reviewVariant = 'yours'; reviewSlots = null; reviewCursor = null;
-            updatePastPresenter();
+            openReviewDetail({ kind: action.type === 'selectMarker' ? 'marker' : action.kind, key: action.type === 'selectMarker' ? action.id : action.key });
           } else if (action.type === 'closeDetail') closeReviewDetail();
           else if (action.type === 'playVariant') void playReviewVariant(action.variant);
           else if (action.type === 'playOption') {

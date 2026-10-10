@@ -42,9 +42,13 @@ test('history and fresh results share their menu; penalties persist and replay r
 });
 
 test('a history stage opens the shared drawer with move scrubbing and pinning', async ({ page }) => {
+  let releaseControls;
+  const controlsReady = new Promise(resolve => { releaseControls = resolve; });
+  await page.route('**/src/brain/styles/orbit/results-orbit.js*', async route => { await controlsReady; await route.continue(); });
   await seedHistory(page, { ...HISTORY_SEED, records: [{ ...HISTORY_SEED.records[0], splits: [{ key: 'cross', ms: 12340, moves: 2 }] }] });
-  await page.goto('/#/history/1000000');
+  await page.goto('/#/history/1000000', { waitUntil: 'domcontentloaded' });
   await page.locator('.history-stage [data-segment="cross"]').press('Enter');
+  releaseControls();
   const detail = page.locator('.b-rev-detail');
   await expect(detail).toBeVisible();
   expect(await detail.evaluate(node => getComputedStyle(node).position)).toBe('fixed');
