@@ -6,6 +6,7 @@ import { buildStagePlan } from '../brain/stage-plan.js';
 import { analysisClient } from '../analysis/client.js';
 import { buildImportedReconstruction, parseAlgCubingUrl } from '../review/import-parser.js';
 import { stagePieces } from '../ui/cube/pieces.js';
+import { reviewEmphasis } from '../brain/review/emphasis.js';
 import { Cube } from '../ui/cube/index.js';
 import { Orbit, createMiniOrbit } from '../ui/orbit/index.js';
 import { createSolvedState } from '../cross-cube.js';
@@ -42,7 +43,7 @@ export function initHistory(host) {
   let cube = null, orbit = null, resultPresenter = null, resultPresenterPromise = null, presenterKey = '';
   let currentRecord = null, replayMove = 0, cubeMove = 0, cubeTargetMove = 0, cubePlaybackGeneration = 0, cubeAnimationRunning = false;
   let replaySpeed = 1, playing = false, raf = 0, playStarted = 0, playBase = 0, renderedResults = null, reviewPlaybackGeneration = 0;
-  let inlineReviewDetail = null, reviewVariant = 'yours', reviewCursor = null, moment = null;
+  let inlineReviewDetail = null, reviewVariant = 'yours', reviewCursor = null, reviewSlots = null, moment = null;
   let listScrollTop = 0;
   let suppressOrbitClick = false, deleted = null, miniOrbits = [];
   let settings = normalizeSettings(loadSettings(globalThis.localStorage));
@@ -156,12 +157,14 @@ export function initHistory(host) {
         if (suppressOrbitClick) { suppressOrbitClick = false; return; }
         const stage = selected?.stages?.find(item => item.key === segment.key);
         if (route.kind === 'replay' && stage) seekMove(stage.start, { updateUrl: false });
+        else if (route.kind === 'past') openReviewDetail({ kind: 'stage', key: segment.key });
       },
       onMarker: marker => {
         if (marker.key) {
           const target = viewModel().selected?.markers?.find(item => item.id === marker.key);
           if (target && route.kind === 'replay') seekMove(target.at ?? (target.idx ?? 0) + 1, { updateUrl: false });
-          location.hash = href(historyReviewPath(record.at, marker.key));
+          if (route.kind === 'past') openReviewDetail({ kind: 'marker', key: marker.key });
+          else location.hash = href(historyReviewPath(record.at, marker.key));
         }
       },
     }, { animate });
@@ -190,14 +193,11 @@ export function initHistory(host) {
     const selected = viewModel().selected, analysis = selected?.analysis;
     // The approved replay frame (A-11) shows the whole cube plain, so only a review moment or an opened stage emphasises pieces.
     let key = null;
-    if (route.kind === 'review') key = selected?.markers?.find(item => item.id === route.marker)?.stage ?? null;
+    if (route.kind === 'review' && !inlineReviewDetail) key = selected?.markers?.find(item => item.id === route.marker)?.stage ?? null;
     else if (inlineReviewDetail?.kind === 'stage') key = inlineReviewDetail.key;
+    else if (inlineReviewDetail?.kind === 'marker') key = selected?.markers?.find(item => item.id === inlineReviewDetail.key)?.stage ?? null;
     if (!key) return null;
-    const pairNumber = /^pair(\d)$/.exec(key)?.[1];
-    const slot = pairNumber ? analysis?.pairs?.find(pair => String(pair.n) === pairNumber)?.chosenSlot ?? null : null;
-    const target = analysis?.cross?.target;
-    const stage = key === 'cross' && target?.slots?.length ? 'xcross' : key;
-    return { stage, options: { crossFace: analysis?.face || 'D', slot, slots: key === 'cross' ? target?.slots ?? [] : [] } };
+    return reviewEmphasis({ ...record, analysis }, key, reviewVariant, reviewSlots);
   }
   let lastEmphasis = '';
   function applyCubeEmphasis(record, cursor) {
@@ -206,7 +206,7 @@ export function initHistory(host) {
     const key = wanted ? JSON.stringify([record.at, wanted]) : '';
     // Re-painting cancels a running turn, so only touch the cube when the emphasis actually changes.
     // A-06 outlines the moment's pieces and leaves the rest of the cube at full colour; only an opened stage dims the others.
-    const dim = route.kind !== 'review';
+    const dim = route.kind !== 'review' && inlineReviewDetail?.kind !== 'marker';
     if (key === lastEmphasis && cube.lastHighlight?.dimOthers === Boolean(wanted && dim)) return;
     lastEmphasis = key;
     const found = wanted && cube.state ? stagePieces(cube.state, wanted.stage, wanted.options) : null;
@@ -280,35 +280,35 @@ export function initHistory(host) {
     }));
     if ([...select.options].some(option => option.value === old)) select.value = old;
   }
-  function makeActions(record, past = false) {
+  function makeActions(record) {
     actionsHost.replaceChildren();
-    if (!record) return;
-    const more = make('details', undefined, 'history-more');
-    const summary = make('summary', 'more…');
-    const menu = make('div', undefined, 'history-more__menu');
-    for (const [action, label] of [['none', 'clear penalty'], ['plus2', '+2'], ['dnf', 'DNF'], ['delete', 'delete']]) {
-      const button = make('button', label); button.type = 'button'; button.dataset.action = action; menu.append(button);
-    }
-    if (deleted) {
-      const undo = make('button', 'undo delete'); undo.type = 'button'; undo.dataset.action = 'undo'; menu.append(undo);
-    }
-    more.append(summary, menu);
-    if (route.kind === 'list') {
-      // A-07: the primary action with its key, then replay as a text action. The edit menu lives on the past solve.
+    if (route.kind !== 'list') return;
+    if (record) {
       const open = make('a', 'open this solve', 'history-open'); open.href = href(historyPath(record.at)); open.append(make('kbd', 'enter', 'key'));
       const replay = make('a', 'replay', 'history-replay-link'); replay.href = href(replayPath(record.at));
       actionsHost.append(open, replay);
-      return;
     }
-    if (route.kind === 'past' || route.kind === 'review') actionsHost.append(more);
+    if (deleted) {
+      const undo = make('button', 'undo delete', 'ui-action'); undo.type = 'button'; undo.dataset.action = 'undo'; actionsHost.append(undo);
+    }
+  }
+  function openReviewDetail(detail) {
+    if (!currentRecord) return;
+    const at = currentRecord.at;
+    reviewPlaybackGeneration++; cube?.stop();
+    inlineReviewDetail = detail; reviewVariant = 'yours'; reviewSlots = null; reviewCursor = null;
+    if (resultPresenter?.build) updatePastPresenter();
+    else void ensureResultsPresenter().then(() => {
+      if (active && currentRecord?.at === at && ['past', 'review'].includes(route.kind)) updatePastPresenter();
+    });
   }
   function reviewUiForRoute() {
-    if (route.kind === 'review') return {
+    if (route.kind === 'review' && !inlineReviewDetail) return {
       selectedId: route.marker,
       variant: reviewVariant, cursor: reviewCursor,
       detail: { kind: 'marker', key: route.marker },
     };
-    return inlineReviewDetail ? { variant: reviewVariant, cursor: reviewCursor, detail: { ...inlineReviewDetail } } : {};
+    return inlineReviewDetail ? { selectedId: inlineReviewDetail.kind === 'marker' ? inlineReviewDetail.key : null, variant: reviewVariant, cursor: reviewCursor, detail: { ...inlineReviewDetail } } : {};
   }
   function updatePastPresenter(record = currentRecord) {
     if (!resultPresenter?.build || !record) return null;
@@ -316,10 +316,11 @@ export function initHistory(host) {
     const presented = replayRecord(record);
     if (selected?.at === record.at) presented.analysis = selected.analysis;
     const records = storageRecords().map(item => item.at === record.at ? presented : replayRecord(item));
-    const model = resultPresenter.build({ record: presented, records, settings, plan: buildStagePlan(settings), pins: store.pins.list, reviewUi: reviewUiForRoute(), analysisStatus: record.analysis ? 'complete' : 'none' });
+    const model = resultPresenter.build({ record: presented, records, settings, plan: buildStagePlan(settings), pins: store.pins.list, reviewUi: reviewUiForRoute(), analysisStatus: presented.analysis ? 'done' : 'none' });
     renderedResults = model.vm;
     resultPresenter.update({ screen: 'results', results: model.vm, history: { navigation: navigationFor(record), replayHref: href(replayPath(record.at)) } });
     syncMoment(record);
+    applyCubeEmphasis(record);
     return model;
   }
   /** The review route draws one moment as frame A-06 does (two move rings, the coach sentence, the two actions); other routes drop it. */
@@ -333,17 +334,18 @@ export function initHistory(host) {
     moment.update(model);
   }
   function dropMoment() { moment?.destroy(); moment = null; }
-  async function playReviewVariant(variant) {
+  async function playReviewVariant(variant, option = null) {
     if (!['yours', 'better'].includes(variant) || !currentRecord || !resultPresenter?.build) return;
     const compare = renderedResults?.review?.detail?.compare;
-    const moves = variant === 'better' ? compare?.better : compare?.yours;
+    const moves = option?.moves ?? (variant === 'better' ? compare?.better : compare?.yours);
     if (!compare || !Array.isArray(moves) || !moves.length || !cube) return;
     const recordAt = currentRecord.at, routePath = route.path, playbackCube = cube;
     const generation = ++reviewPlaybackGeneration;
-    reviewVariant = variant; reviewCursor = compare.from;
+    reviewVariant = variant; reviewCursor = compare.from; reviewSlots = option?.slots ?? null;
     updatePastPresenter();
     const startState = stateAfter(replayRecord(currentRecord), compare.from);
     cube.setState(startState);
+    applyCubeEmphasis(currentRecord);
     await cube.play(moves, { fullTurns: true, speed: 1, startState });
     if (generation !== reviewPlaybackGeneration || !active || cube !== playbackCube || currentRecord?.at !== recordAt || route.path !== routePath) return;
     reviewCursor = compare.from + moves.length;
@@ -518,19 +520,29 @@ export function initHistory(host) {
       resultPresenter = renderers.createOrbitResults(rail, {
         mode: 'past', resultsOrbit: orbit, resultsCube: cube,
         dispatch: action => {
-          if (action.type === 'selectMarker' && currentRecord) {
-            reviewPlaybackGeneration++; inlineReviewDetail = null; reviewVariant = 'yours'; reviewCursor = null;
-            location.hash = href(historyReviewPath(currentRecord.at, action.id));
-          } else if (action.type === 'openDetail' && action.key && currentRecord) {
-            if (action.kind === 'marker') {
-              reviewPlaybackGeneration++; inlineReviewDetail = null; reviewVariant = 'yours'; reviewCursor = null;
-              location.hash = href(historyReviewPath(currentRecord.at, action.key));
-            } else {
-              reviewPlaybackGeneration++; cube?.stop(); inlineReviewDetail = { kind: 'stage', key: action.key }; reviewVariant = 'yours'; reviewCursor = null;
-              void renderPast(currentRecord);
-            }
+          if ((action.type === 'selectMarker' || action.type === 'openDetail') && currentRecord) {
+            openReviewDetail({ kind: action.type === 'selectMarker' ? 'marker' : action.kind, key: action.type === 'selectMarker' ? action.id : action.key });
           } else if (action.type === 'closeDetail') closeReviewDetail();
           else if (action.type === 'playVariant') void playReviewVariant(action.variant);
+          else if (action.type === 'playOption') {
+            const option = renderedResults?.review?.detail?.compare?.options?.[action.option];
+            if (option) void playReviewVariant('better', option);
+          } else if (action.type === 'togglePin') {
+            const payload = renderedResults?.review?.pin?.payload;
+            if (payload && !store.readOnly) { store.pins.toggle(payload); void store.pins.flush(); updatePastPresenter(); }
+          } else if (action.type === 'jumpTo' && Number.isInteger(action.at)) {
+            reviewPlaybackGeneration++; cube?.stop(); reviewVariant = 'yours'; reviewSlots = null; reviewCursor = action.at;
+            updatePastPresenter();
+          } else if (action.type === 'next') location.hash = '#/solve?start=next';
+          else if (action.type === 'retry' && currentRecord) location.hash = `#/solve?retry=${currentRecord.at}`;
+          else if (action.type === 'replaySolve' && currentRecord) location.hash = href(replayPath(currentRecord.at));
+          else if (action.type === 'setPenalty' && currentRecord) {
+            store.setPenalty(currentRecord.at, action.penalty); void store.flush(); render();
+          } else if (action.type === 'deleteSolve' && currentRecord) {
+            deleted = store.remove(currentRecord.at);
+            if (deleted) { void store.flush(); location.hash = '#/history'; } else report(store.warning);
+          }
+
         },
         onReplay: () => { location.hash = href(replayPath(currentRecord.at)); },
         pastNavigation: navigationFor(currentRecord),
@@ -591,7 +603,7 @@ export function initHistory(host) {
   function renderKeys() {
     const keys = {
       list: [{ key: 'j k', label: 'move' }, { key: 'enter', label: 'open' }, { key: '/', label: 'search' }],
-      past: [{ key: 'esc', label: 'history' }, { key: '‹ ›', label: 'prev / next solve' }, { key: '[ ]', label: 'markers' }],
+      past: [{ key: 'space', label: 'next scramble' }, { key: 'esc', label: 'history' }, { key: '‹ ›', label: 'prev / next solve' }, { key: '[ ]', label: 'markers' }],
       review: [{ key: '[ ]', label: 'prev / next marker' }, { key: 'space', label: 'play line' }, { key: 'esc', label: 'back' }],
       replay: [{ key: 'space', label: 'play / pause' }, { key: '‹ ›', label: 'step' }, { key: '[ ]', label: 'markers' }, { key: 'esc', label: 'results' }],
       import: [],
@@ -739,7 +751,7 @@ export function initHistory(host) {
   }
   function closeReviewDetail() {
     if (!currentRecord) return;
-    reviewPlaybackGeneration++; cube?.stop(); inlineReviewDetail = null; reviewVariant = 'yours'; reviewCursor = null;
+    reviewPlaybackGeneration++; cube?.stop(); inlineReviewDetail = null; reviewVariant = 'yours'; reviewSlots = null; reviewCursor = null;
     if (route.kind === 'review') location.hash = href(historyPath(currentRecord.at));
     else void renderPast(currentRecord);
   }
@@ -759,9 +771,14 @@ export function initHistory(host) {
   function reviewMarkerStep(step) {
     const markers = viewModel().selected?.markers || [];
     if (!markers.length || !currentRecord) return;
-    const index = markers.findIndex(item => item.id === route.marker);
-    const target = markers[index < 0 ? (step > 0 ? 0 : markers.length - 1) : Math.max(0, Math.min(markers.length - 1, index + step))];
-    location.hash = href(historyReviewPath(currentRecord.at, target.id));
+    const selected = inlineReviewDetail?.kind === 'marker' ? inlineReviewDetail.key : renderedResults?.review?.selectedId ?? route.marker;
+    const index = Math.max(0, markers.findIndex(item => item.id === selected));
+    const target = markers[(index + step + markers.length) % markers.length];
+    if (route.kind === 'past') {
+      reviewPlaybackGeneration++; cube?.stop();
+      inlineReviewDetail = { kind: 'marker', key: target.id }; reviewVariant = 'yours'; reviewSlots = null; reviewCursor = null;
+      updatePastPresenter();
+    } else location.hash = href(historyReviewPath(currentRecord.at, target.id));
   }
   function onKeyDown(event) {
     if (!active || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -783,7 +800,7 @@ export function initHistory(host) {
       if (event.key === 'Escape') { event.preventDefault(); location.hash = '#/history'; }
       else if (event.key === 'ArrowLeft') { event.preventDefault(); neighbourSolve(-1); }
       else if (event.key === 'ArrowRight') { event.preventDefault(); neighbourSolve(1); }
-      else if (event.key === ' ' && !event.target.closest?.('button, a, summary')) { event.preventDefault(); location.hash = href(replayPath(currentRecord.at)); }
+      else if (event.key === ' ' && !event.target.closest?.('button, a, summary')) { event.preventDefault(); location.hash = '#/solve?start=next'; }
       else if (event.key === '[' || event.key === ']') { event.preventDefault(); reviewMarkerStep(event.key === '[' ? -1 : 1); }
       return;
     }
@@ -835,7 +852,7 @@ export function initHistory(host) {
     if (next.kind === 'not-found') { location.hash = '#/not-found'; return; }
     if (route.kind === 'list' && next.kind !== 'list') listScrollTop = window.scrollY;
     if (route.kind !== next.kind || route.at !== next.at || route.marker !== next.marker) { stopPlayback(); reviewPlaybackGeneration++; cubePlaybackGeneration++; cubeAnimationRunning = false; cube?.stop(); }
-    if (route.kind !== next.kind || route.at !== next.at || route.marker !== next.marker) { inlineReviewDetail = null; reviewVariant = 'yours'; reviewCursor = null; }
+    if (route.kind !== next.kind || route.at !== next.at || route.marker !== next.marker) { inlineReviewDetail = null; reviewVariant = 'yours'; reviewSlots = null; reviewCursor = null; }
     route = next;
     if (next.kind !== 'past' && next.kind !== 'review') renderedResults = null;
     if (next.at != null) { selectedAt = next.at; replayMove = next.kind === 'replay' ? 0 : replayMove; }
