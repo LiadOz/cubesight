@@ -1,4 +1,4 @@
-import { arcPath, clusterMarkers, fanMarkers, looksLikeMoves, miniGlyphSize, ORBIT_GEOMETRY, polar, ringLabels, ringLayout } from './geometry.js';
+import { arcPath, markerGroups, looksLikeMoves, miniGlyphSize, ORBIT_GEOMETRY, polar, ringLabels, ringLayout } from './geometry.js';
 import { groupEndLabels } from './end-labels.js';
 import { CANVAS, ORBIT } from '../design-spec.js';
 import './orbit.css';
@@ -373,12 +373,10 @@ export class Orbit {
       const at = Number(options.caret), p = polar(cx, cy, radius, at), p1 = polar(cx, cy, radius + 10, at);
       root.append(svg('line', { class: 'orbit__caret', x1: p.x, y1: p.y, x2: p1.x, y2: p1.y }));
     }
-    const clusters = fanned
-      ? fanMarkers(markers, { radius, pitch: Math.max(2 * markerR + 4, hitPx * k), maxLanes: 5 }).map(marker => ({ key: String(marker.key), items: [marker], count: 1, angle: marker.angle, radius: marker.radius, trueAngle: marker.trueAngle, lane: marker.lane }))
-      : clusterMarkers(markers, Number(options.markerClusterDegrees) || 5);
+    const clusters = markerGroups(markers, { radius, pitch: Math.max(2 * (markerR + 3) + 4, 2 * hitRadius + 4), fan: fanned, thresholdDeg: Number(options.markerClusterDegrees) || 5 });
     for (const cluster of clusters) {
       const p = polar(cx, cy, cluster.radius ?? radius, cluster.angle);
-      if (fanned && (cluster.lane > 0 || Math.abs(cluster.angle - cluster.trueAngle) > 0.01)) {
+      if (cluster.count === 1 && fanned && (cluster.lane > 0 || Math.abs(cluster.angle - cluster.trueAngle) > 0.01)) {
         const origin = polar(cx, cy, radius, cluster.trueAngle);
         root.append(svg('line', { class: 'orbit__marker-leader', x1: origin.x, y1: origin.y, x2: p.x, y2: p.y }), svg('circle', { class: 'orbit__marker-origin', cx: origin.x, cy: origin.y, r: 2.5 * fontScale }));
       }
@@ -389,7 +387,7 @@ export class Orbit {
       else { const mark = svg('text', { class: 'orbit__marker-mark', x: 0, y: 4 }); mark.textContent = cluster.items[0].type === 'bad' || cluster.items[0].tone === 'bad' ? '!' : '✦'; group.append(mark); }
       const expand = event => {
         event.stopPropagation();
-        if (this.expandedClusters.has(cluster.key)) this.expandedClusters.delete(cluster.key);
+        if (event.type === 'keydown' && this.expandedClusters.has(cluster.key)) this.expandedClusters.delete(cluster.key);
         else { this.expandedClusters.clear(); this.expandedClusters.add(cluster.key); }
         options.onMarkerCluster?.(cluster.items, event);
         if (cluster.count === 1) options.onMarker?.(cluster.items[0], event);
@@ -398,7 +396,7 @@ export class Orbit {
           if (event.type === 'keydown') this.element.querySelector('.orbit__marker-details button:not(.orbit__marker-details-close)')?.focus({ preventScroll: true });
         }
       };
-      group.addEventListener('click', expand); group.addEventListener('pointerenter', event => { options.onMarkerHover?.(cluster.items, event); if (cluster.count > 1) { this.expandedClusters.add(cluster.key); this.draw(this.current); } }); group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); expand(event); } });
+      group.addEventListener('click', expand); group.addEventListener('pointerenter', event => { options.onMarkerHover?.(cluster.items, event); if (cluster.count > 1 && !this.expandedClusters.has(cluster.key)) { this.expandedClusters.clear(); this.expandedClusters.add(cluster.key); this.draw(this.current); } }); group.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); expand(event); } });
       root.append(group);
     }
     const sections = options.sections || [];
@@ -417,7 +415,7 @@ export class Orbit {
       details.setAttribute('aria-label', `${activeCluster.count} marker details`);
       const heading = document.createElement('div');
       heading.className = 'orbit__marker-details-heading';
-      heading.textContent = `${activeCluster.count} marker facts`;
+      heading.textContent = `${activeCluster.count} review moments`;
       const close = document.createElement('button');
       close.className = 'orbit__marker-details-close';
       close.type = 'button'; close.textContent = 'Close'; close.setAttribute('aria-label', 'Close marker details');
@@ -434,7 +432,7 @@ export class Orbit {
         const facts = [marker.label, marker.time, marker.timeMs, marker.atMs, marker.timestamp, marker.durationMs,
           marker.moveIndex == null ? null : `move ${marker.moveIndex}`, marker.segment, marker.value, marker.delta]
           .filter(value => value != null && value !== '').map(String);
-        button.textContent = `${key} · ${facts.length ? facts.join(' · ') : 'marker fact'}`;
+        button.textContent = facts.length ? facts.join(' · ') : 'review moment';
         button.title = JSON.stringify(marker);
         button.setAttribute('aria-label', `${key}: ${facts.join(', ') || 'marker fact'}`);
         button.addEventListener('click', event => options.onMarker?.(marker, event));
@@ -447,8 +445,13 @@ export class Orbit {
       const rootBox = root.getBoundingClientRect(), orbitBox = this.element.getBoundingClientRect(), anchorBox = anchor?.getBoundingClientRect();
       const width = Math.min(300, window.innerWidth - 24, Math.max(180, orbitBox.width - 16));
       details.style.width = `${width}px`;
-      const left = Math.max(8, Math.min(Math.max(8, orbitBox.width - width - 8), (anchorBox?.left ?? rootBox.left) - orbitBox.left + (anchorBox?.width ?? 0) / 2 - width / 2));
-      const top = Math.max(8, Math.min(orbitBox.height - 180, (anchorBox?.bottom ?? rootBox.top) - orbitBox.top + 10));
+      const minLeft = Math.max(8, 12 - orbitBox.left);
+      const maxLeft = Math.min(orbitBox.width - width - 8, window.innerWidth - orbitBox.left - width - 12);
+      const left = Math.max(minLeft, Math.min(Math.max(minLeft, maxLeft), (anchorBox?.left ?? rootBox.left) - orbitBox.left + (anchorBox?.width ?? 0) / 2 - width / 2));
+      const height = details.getBoundingClientRect().height;
+      const below = (anchorBox?.bottom ?? rootBox.top) - orbitBox.top + 10;
+      const above = (anchorBox?.top ?? rootBox.top) - orbitBox.top - height - 10;
+      const top = Math.max(8, Math.min(orbitBox.height - height - 8, below + height <= orbitBox.height - 8 ? below : above));
       details.style.left = `${left}px`; details.style.top = `${top}px`;
       const ratio = rootBox.width / view;
       root.append(svg('line', { class: 'orbit__marker-detail-connector', x1: (anchorBox.left + anchorBox.width / 2 - rootBox.left) / ratio, y1: (anchorBox.top + anchorBox.height / 2 - rootBox.top) / ratio, x2: (orbitBox.left + left + width / 2 - rootBox.left) / ratio, y2: (orbitBox.top + top - rootBox.top) / ratio }));

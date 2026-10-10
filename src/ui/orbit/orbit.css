@@ -37,7 +37,7 @@
 .orbit__caret { stroke: var(--orbit-ink, #eeeae1); stroke-width: 2; }
 .orbit__marker-cluster, .orbit__marker-expanded { cursor: pointer; outline: none; }
 .orbit__marker-ring { stroke: var(--orbit-bg, #141512); stroke-width: 3; }
-.orbit__marker-mark, .orbit__marker-count, .orbit__marker-expanded > text:not(.orbit__marker-expanded-label) { fill: #141512; font: 800 13px 'DM Mono', monospace; text-anchor: middle; }
+.orbit__marker-mark, .orbit__marker-count, .orbit__marker-expanded > text:not(.orbit__marker-expanded-label) { fill: #141512; font: 800 calc(13px * var(--orbit-label-scale, 1)) 'DM Mono', monospace; text-anchor: middle; }
 .orbit__marker-hit { fill: transparent; stroke: transparent; pointer-events: all; }
 .orbit__marker-details { position:absolute; z-index:5; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; max-height:min(48vh,280px); padding:12px; border:1px solid var(--orbit-track,#555); border-radius:12px; background:var(--orbit-bg,#141512); color:var(--orbit-ink,#eeeae1); box-shadow:0 8px 28px #0008; }
 .orbit__marker-details-heading { align-self:center; font:700 12px 'DM Mono',monospace; }

@@ -159,7 +159,7 @@ export function createSolveOrbit(host, { dispatch = () => {} } = {}) {
       const caseInfo = caseLinks[segment.key] ?? (segment.key === 'pll' || segment.key === 'ep' ? caseLinks.pll : segment.key === 'oll' || segment.key === 'co' ? caseLinks.oll : null);
       return stageSegment({ ...segment, currentText: vm.screen === 'solving' && segment.state === 'current' ? '0.00' : '' }, { results: Boolean(results), caseInfo, tag: tags.get(segment.key), selectable: Boolean(results) });
     });
-    const markers = (results?.review?.markers ?? []).map(marker => ({ key: marker.id, segment: marker.seg, position: marker.frac, label: marker.label, tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'spark' : 'warning' }));
+    const markers = (results?.review?.markers ?? []).map(marker => ({ key: marker.id, segment: marker.seg, position: marker.frac, label: marker.label, importance: 1 / (marker.rank || Infinity), tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'spark' : 'warning' }));
     return { shape: 'open', gap: 70, direction: 'clockwise', segments, markers, caret: null, labelKind: 'stage' };
   }
 
@@ -201,7 +201,7 @@ export function presentResultsOrbit(orbit, vm, { dispatch = () => {} } = {}) {
     const info = segment.caseKey ? caseLinks[segment.caseKey] ?? caseLinks[segment.caseKey.split(':')[0]] : null;
     return { ...stageSegment(segment, { results: true, caseInfo: info, tag: tags.get(segment.key), selectable: true }), importance: segment.state === 'done' ? 20 : 10, onCase: Boolean(info) };
   });
-  const markers = (vm.review?.markers ?? []).map(marker => ({ key: marker.id, segment: marker.seg, position: marker.frac, label: marker.label, tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'spark' : 'warning' }));
+  const markers = (vm.review?.markers ?? []).map(marker => ({ key: marker.id, segment: marker.seg, position: marker.frac, label: marker.label, importance: 1 / (marker.rank || Infinity), tone: marker.tone === 'good' ? 'good' : 'bad', type: marker.tone === 'good' ? 'spark' : 'warning' }));
   void orbit.update({ size: 'XL', shape: 'open', gap: 70, label: 'Past solve results', segments, markers,
     onSegment: segment => dispatch({ type: 'openDetail', kind: 'stage', key: segment.key }),
     onMarker: marker => dispatch({ type: 'selectMarker', id: marker.key }),
